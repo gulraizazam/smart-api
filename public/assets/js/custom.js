@@ -1708,7 +1708,8 @@ function selectUser(name, user_id, search_id, flag = 1) {
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
-    if (flag == 1) {
+    // Only call getServices if plan modal is visible (not on consultation screen)
+    if (flag == 1 && typeof getServices === 'function' && $('#modal_edit_regions').is(':visible')) {
         getServices('add');
     }
 }
@@ -1718,7 +1719,8 @@ function selectUserPlan(name, user_id, search_id, flag = 1) {
     $("." + search_id).val(name);
     $(".suggesstion-box-plan").hide();
     $("." + search_id).focus();
-    if (flag == 1) {
+    // Only call getServices if plan modal is visible
+    if (flag == 1 && typeof getServices === 'function' && $('#modal_edit_regions').is(':visible')) {
         getServices('add');
     }
 }
@@ -1838,7 +1840,8 @@ function selectLead(name, lead_id, search_id, flag = 1) {
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
-    if (flag == 1) {
+    // Only call getServices if plan modal is visible
+    if (flag == 1 && typeof getServices === 'function' && $('#modal_edit_regions').is(':visible')) {
         getServices('add');
     }
 }

@@ -151,7 +151,9 @@
                                     {{number_format($service_price)}}
                                 </td>
                                 <td>
-                                    @if($discount != null)
+                                    @if($Invoiceinfo->discount_name)
+                                        {{$Invoiceinfo->discount_name}}
+                                    @elseif($discount != null)
                                         {{$discount->name}}
                                     @else
                                         -

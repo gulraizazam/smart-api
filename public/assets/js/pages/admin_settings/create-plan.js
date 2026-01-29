@@ -309,7 +309,7 @@ var table_columns = [
         field: 'package_id',
         title: 'Plan ID',
         sortable: false,
-        width: 60,
+        width: 50,
         template: function (data) {
             let display_url = route('admin.packages.display', { id: data.id });
             return '<a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`)">' + data.package_id + '</a>';
@@ -318,7 +318,7 @@ var table_columns = [
         field: 'plan_name',
         title: 'Plan Name',
         sortable: false,
-        width: 120,
+        width: 150,
         template: function (data) {
             return data.plan_name || '-';
         }
@@ -326,7 +326,7 @@ var table_columns = [
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
-        width: 70,
+        width: 60,
         template: function (data) {
             return data.patient_id ? 'C-' + data.patient_id : 'N/A';
         }
@@ -354,7 +354,7 @@ var table_columns = [
         field: 'refunded',
         title: 'Refund',
         sortable: false,
-        width: 70,
+        width: 60,
     }, {
         field: 'balance',
         title: 'Balance',
@@ -1294,6 +1294,8 @@ function createPlan(url, id) {
         $('#packages_add').find('#discount_value_1').val('');
         $('#packages_add').find("#add_appointment_id").empty();
         $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
+        $('#add_service_id').val(null).trigger('change');
+        $('#add_sold_by').html('<option value="">Select</option>').val(null).trigger('change');
     }, 500)
 
     $("#add_discount_type").attr('disabled', true);
@@ -2702,7 +2704,7 @@ jQuery(document).ready(function () {
                             "<td>" + grandTotal + "</td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
-
+                            "<input type='hidden' class='discount_id' name='discount_id' value='" + (resposne.data.servicesData.bundlesData.discount_id ?? '') + "' />" +
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
@@ -2735,12 +2737,12 @@ jQuery(document).ready(function () {
                         }
                         
                         // Reset form fields after successful addition
-                        $('#add_service_id').val('').trigger('change');
-                        $('#add_discount_id').val('').trigger('change');
-                        $('#add_discount_type').val('').trigger('change');
+                        $('#add_service_id').val(null).trigger('change');
+                        $('#add_discount_id').val(null).trigger('change');
+                        $('#add_discount_type').val(null).trigger('change');
                         $('#discount_value_1').val('');
                         $('#net_amount_1').val('');
-                        $('#add_sold_by').val('').trigger('change');
+                        $('#add_sold_by').val(null).trigger('change');
                     } else {
                         $('#AlreadyExitMessage').show();
                     }
@@ -2812,7 +2814,8 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
+                bundleId: $(this).find('td:nth-child(9)').find("input[name='bundle_id']").val(),
+                DiscountId: $(this).find('td:nth-child(9)').find("input[name='discount_id']").val(),
                 sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val()
 
             });
@@ -3050,7 +3053,7 @@ jQuery(document).ready(function () {
                             "<td><span>-</span></td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
-
+                            "<input type='hidden' class='discount_id' name='discount_id' value='" + (resposne.data.servicesData.bundlesData.discount_id ?? '') + "' />" +
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
@@ -3071,9 +3074,9 @@ jQuery(document).ready(function () {
                         edit_keyfunction_grandtotal();
                         
                         // Reset form fields after successful addition
-                        $('#edit_service_id').val('').trigger('change');
+                        $('#edit_service_id').val(null).trigger('change');
                         $('#edit_net_amount_1').val('');
-                        $('#edit_sold_by').val('').trigger('change');
+                        $('#edit_sold_by').val(null).trigger('change');
                     } else {
                         if (resposne.data.setteled == 1) {
                             $('#casesetteled').show();
@@ -3133,7 +3136,8 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(10)').find('input').val(),
+                bundleId: $(this).find('td:nth-child(10)').find("input[name='bundle_id']").val(),
+                DiscountId: $(this).find('td:nth-child(10)').find("input[name='discount_id']").val(),
                 sold_by: $(this).find('td:nth-child(11)').find("input[name='sold_by[]']").val()
 
             });

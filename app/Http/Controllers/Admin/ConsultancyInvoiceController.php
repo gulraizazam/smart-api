@@ -414,7 +414,7 @@ class ConsultancyInvoiceController extends Controller
         } else {
             $is_exclusive = 0;
         }
-        $data['total_price'] = $request->price;
+        $data['total_price'] = $request->price ?? 0;
         $data['account_id'] = Auth::User()->account_id;
         $data['patient_id'] = $appointmentinfo->patient_id;
         $data['appointment_id'] = $request->appointment_id;
@@ -431,8 +431,8 @@ class ConsultancyInvoiceController extends Controller
         $data_detail['tax_exclusive_serviceprice'] = $request->amount_create;
         $data_detail['tax_percenatage'] = $appointmentinfo->location->tax_percentage;
         $data_detail['tax_price'] = $request->tax_create;
-        $data_detail['tax_including_price'] = $request->price;
-        $data_detail['net_amount'] = $request->price;
+        $data_detail['tax_including_price'] = $request->price ?? 0;
+        $data_detail['net_amount'] = $request->price ?? 0;
         $data_detail['is_exclusive'] = $is_exclusive;
 
         $data_detail['qty'] = '1';
@@ -456,9 +456,9 @@ class ConsultancyInvoiceController extends Controller
         $invoice_detail = InvoiceDetails::createRecord($data_detail, $invoice);
 
         $data_package['cash_flow'] = 'in';
-        $data_package['cash_amount'] = $request->cash;
+        $data_package['cash_amount'] = $request->cash ?? 0;
         $data_package['patient_id'] = $appointmentinfo->patient_id;
-        $data_package['payment_mode_id'] = $payment_mode_id;
+        $data_package['payment_mode_id'] = $payment_mode_id ?? 0;
         $data_package['account_id'] = Auth::User()->account_id;
         $data_package['appointment_type_id'] = $appointmentinfo->appointment_type_id;
         $data_package['appointment_id'] = $request->appointment_id;
@@ -472,7 +472,7 @@ class ConsultancyInvoiceController extends Controller
 
         $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
-        $out_transcation = $request->cash + $request->settle;
+        $out_transcation = ($request->cash ?? 0) + ($request->settle ?? 0);
 
         $out_transcation_price = $out_transcation - $invoice_detail->tax_price;
         $out_transcation_tax = $invoice_detail->tax_price;

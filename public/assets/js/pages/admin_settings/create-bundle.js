@@ -785,9 +785,9 @@ $(document).ready(function() {
                         toggle(bundlesData.id);
 
                         // Clear form fields
-                        $('#add_service_id_bundle').val('').trigger('change');
+                        $('#add_service_id_bundle').val(null).trigger('change');
                         $('#net_amount_bundle').val('');
-                        $('#add_sold_by_bundle').val('').trigger('change');
+                        $('#add_sold_by_bundle').val(null).trigger('change');
                         
                         // Hide service required validation alert
                         $('#add_service_id_bundle_error').html('').hide();
@@ -836,9 +836,9 @@ function deleteBundleRowTem(id) {
         $("#add_sold_by_bundle").prop("disabled", false);
         
         // Clear the fields
-        $('#add_service_id_bundle').val('').trigger('change');
+        $('#add_service_id_bundle').val(null).trigger('change');
         $('#net_amount_bundle').val('');
-        $('#add_sold_by_bundle').val('').trigger('change');
+        $('#add_sold_by_bundle').val(null).trigger('change');
         
         toastr.success('Service deleted successfully');
     }
@@ -862,6 +862,8 @@ function resetVoucherAddBundle(event) {
         $('#bundles_add').find("#add_appointment_id_bundle").empty();
         $('#bundles_add').find('#add_appointment_id_bundle').val(null).trigger('change');
         $("#bundle_services").html("");
+        $('#add_service_id_bundle').val(null).trigger('change');
+        $('#add_sold_by_bundle').html('<option value="">Select</option>').val(null).trigger('change');
         
         $('#successMessageBundle').hide();
         $('#duplicateErrBundle').hide();

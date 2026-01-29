@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Plan</h2>
+        <h2 class="fw-bolder">Edit Bundle</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
@@ -40,7 +40,7 @@
         </div>
         <div id="edit_consume" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
-            This package includes a service that is consumed and cannot be deleted.
+            This plan includes a service that is consumed and cannot be deleted.
         </div>
         <div id="edit_percentageMessage" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>

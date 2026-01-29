@@ -3246,11 +3246,10 @@ class AppointmentsController extends Controller
         // Get package bundles - only if we have bundle IDs
         $packagebundles = [];
         if (!empty($bundleIds)) {
-            $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
-                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            $packagebundles = PackageBundles::join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
                 ->where('package_bundles.package_id', '=', $package->id)
                 ->whereIn('package_bundles.bundle_id', $bundleIds)
-                ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
+                ->select('package_bundles.*', 'package_bundles.discount_name as discountname', 'bundles.name as bundlename')
                 ->get();
         }
 
@@ -3584,13 +3583,12 @@ class AppointmentsController extends Controller
                     ['packages.id', '=', $request->package_id],
                     ['package_services.service_id', '=', $appointmentinfo->service_id],
                     ['package_services.is_consumed', '= 0'],
-                ])->select('package_bundles.discount_type', 'package_bundles.discount_price', 'package_bundles.discount_id')->first();
+                ])->select('package_bundles.discount_type', 'package_bundles.discount_price', 'package_bundles.discount_id', 'package_bundles.discount_name')->first();
             if ($packages->discount_type != null) {
-                $discount_info = Discounts::find($packages->discount_id);
                 $data_detail['discount_type'] = $packages->discount_type;
                 $data_detail['discount_price'] = $packages->discount_price;
                 $data_detail['discount_id'] = $packages->discount_id;
-                $data_detail['discount_name'] = $discount_info->name ?? '';
+                $data_detail['discount_name'] = $packages->discount_name ?? '';
             }
             $data_detail['package_id'] = $request->package_id;
         }
@@ -4391,6 +4389,7 @@ class AppointmentsController extends Controller
             ->select('invoices.*',
                 'invoice_details.discount_type',
                 'invoice_details.discount_price',
+                'invoice_details.discount_name',
                 'invoice_details.service_price',
                 'invoice_details.net_amount',
                 'invoice_details.service_id',
