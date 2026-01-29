@@ -217,19 +217,15 @@ $(document).ready(function () {
         var tax_treatment_type_id = $('#tax_treatment_type_id').val();
 
         if (outstand == cash) {
-            $('#definefield').hide();
             status = true;
         } else {
             if (payment_mode_id == 0) {
-                $('#definefield').show();
                 toastr.error("Kindly define payment mode")
                 status = false;
                 $(this).attr("disabled", false);
                 hideSpinner();
             } else {
-                $('#definefield').hide();
                 status = true;
-
             }
         }
 
@@ -255,26 +251,49 @@ $(document).ready(function () {
                     'tax_treatment_type_id': tax_treatment_type_id,
                 },
                 success: function (resposne) {
+                    hideSpinner();
+                    $('#savepackageinformation').prop('disabled', false);
+                    
                     if (resposne.status == false) {
                         toastr.error("Invoice can not be generated in past and future dates!");
                     } else if (resposne.status) {
                         let invoice_id = resposne.data.invoice_id;
-                        $('#successMessage').show();
                         toastr.success("Invoice successfully created");
+                        
+                        // Enable Print Consultation Form button after invoice is created
+                        $('#savepackageinformation_form').prop('disabled', false);
+                        // Store invoice_id for Print Consultation Form button
+                        $('#savepackageinformation_form').data('invoice-id', invoice_id);
+                        
                         reInitTable('consultancy');
-                        closeAllPopup('.modal-dialog')
-                        $("#consultancy-invoice-create").remove();
-                        // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
-                        displayInvoice(route('admin.appointments.InvoiceDisplay', { id: invoice_id }), invoice_id);
+                        
+                        // Open print invoice in new tab using setTimeout to prevent UI blocking
+                        setTimeout(function() {
+                            window.open(route('admin.invoices.invoice_pdf', [invoice_id, 'print', 1]), '_blank');
+                        }, 100);
                     } else {
-                        $('#wrongMessage').show();
                         toastr.error(" Something Went Wrong!");
                     }
-
+                },
+                error: function() {
                     hideSpinner();
-
+                    $('#savepackageinformation').prop('disabled', false);
+                    toastr.error("Something went wrong!");
                 }
             });
+        }
+    });
+
+    /*Print Consultation Form button click handler*/
+    $(document).on("click", "#savepackageinformation_form", function () {
+        let invoice_id = $(this).data('invoice-id');
+        if (invoice_id) {
+            // Open print consultation form in new tab
+            window.open(route('admin.invoices.invoice_pdf', [invoice_id]), '_blank');
+            
+            // Close the modal after printing
+            closeAllPopup('.modal-dialog');
+            $("#consultancy-invoice-create").remove();
         }
     });
 
@@ -387,17 +406,14 @@ $(document).ready(function () {
                             } else {
                                 var discountname = packagebundles.discountname;
                             }
-                            if (packagebundles.discount_type == null) {
-                                var discounttype = '-';
-                            } else {
-                                var discounttype = packagebundles.discount_type;
-                            }
                             if (packagebundles.discount_price == null) {
                                 var discountprice = '0.00';
                             } else {
                                 var discountprice = packagebundles.discount_price;
                             }
-                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString() + "</td></tr>");
+                            // Calculate tax amount as difference between Amount and Discount Price
+                            var taxAmount = packagebundles.tax_including_price - parseInt(packagebundles.tax_exclusive_net_amount);
+                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_including_price.toLocaleString() + "</td><td>" + Math.ceil(taxAmount).toLocaleString() + "</td></tr>");
 
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
@@ -405,10 +421,12 @@ $(document).ready(function () {
 
                                     if (packageservices.is_consumed == '0') {
                                         var consume = 'NO';
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax Amt. : " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
                                     } else {
                                         var consume = 'YES';
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax Amt. : " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
                                     }
                                 }
                             });

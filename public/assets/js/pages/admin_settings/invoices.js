@@ -306,6 +306,14 @@ function setInvoiceData(response) {
         let service = response.data.service;
         let discount = response.data.discount;
         let tax = response.data.tax;
+        let doctor = response.data.doctor;
+
+        // Set modal title: PatientName - Consultation with DoctorName
+        let modalTitle = patient?.name || 'Patient';
+        if (doctor?.name) {
+            modalTitle += ' - Consultation with ' + doctor.name;
+        }
+        $(".rota-title").text(modalTitle);
 
         $("#invoice-pdf").attr("href", route('admin.invoices.invoice_pdf', Invoiceinfo.invoice_id))
 

@@ -193,21 +193,72 @@ class PackagesController extends Controller
                 $bundleData['tax_price'] = ceil($bundleData['tax_including_price'] - $bundleData['tax_exclusive_net_amount']);
             }
 
-            // Get bundle services for display
+            // Get bundle services for display with proper tax calculation
             $bundleServices = BundleHasServices::with('service')
                 ->where('bundle_id', $bundle->id)
                 ->get();
 
-            $packageServicesData = [];
+            // Prepare services for price calculation
+            $calculableServices = [];
             foreach ($bundleServices as $bundleService) {
-                $packageServicesData[] = [
-                    'name' => $bundleService->service->name ?? 'Unknown',
+                $calculableServices[] = [
+                    'service_price' => $bundleService->calculated_price,
+                    'calculated_price' => $bundleService->calculated_price,
                     'service_id' => $bundleService->service_id,
-                    'tax_exclusive_price' => 0,
-                    'tax_price' => 0,
-                    'tax_including_price' => 0,
-                    'is_consumed' => 0,
                 ];
+            }
+
+            // Calculate proportional prices for each service
+            $calculatedServicesPrices = Bundles::calculatePrices(
+                $calculableServices,
+                $bundleData['tax_exclusive_net_amount'],
+                $bundleData['tax_including_price']
+            );
+
+            // Get service details with tax treatment types
+            $serviceIds = array_column($calculatedServicesPrices, 'service_id');
+            $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+            $packageServicesData = [];
+            foreach ($calculatedServicesPrices as $calculatedService) {
+                $serviceInfo = $servicesInfo->get($calculatedService['service_id']);
+                
+                if ($serviceInfo) {
+                    // Determine if service price is tax-inclusive or tax-exclusive
+                    $serviceTaxType = $serviceInfo->tax_treatment_type_id;
+                    $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
+                    
+                    // Calculate tax for this service
+                    if ($serviceTaxType == Config::get('constants.tax_both')) {
+                        if ($isExclusive) {
+                            $taxExclusivePrice = $calculatedService['calculated_price'];
+                            $taxPrice = ceil($taxExclusivePrice * ($locationInfo->tax_percentage / 100));
+                            $taxIncludingPrice = ceil($taxExclusivePrice + $taxPrice);
+                        } else {
+                            $taxIncludingPrice = $calculatedService['calculated_price'];
+                            $taxExclusivePrice = ceil((100 * $taxIncludingPrice) / ($locationInfo->tax_percentage + 100));
+                            $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
+                        }
+                    } elseif ($serviceTaxType == Config::get('constants.tax_is_exclusive')) {
+                        $taxExclusivePrice = $calculatedService['calculated_price'];
+                        $taxPrice = ceil($taxExclusivePrice * ($locationInfo->tax_percentage / 100));
+                        $taxIncludingPrice = ceil($taxExclusivePrice + $taxPrice);
+                    } else {
+                        // tax_is_inclusive
+                        $taxIncludingPrice = $calculatedService['calculated_price'];
+                        $taxExclusivePrice = ceil((100 * $taxIncludingPrice) / ($locationInfo->tax_percentage + 100));
+                        $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
+                    }
+                    
+                    $packageServicesData[] = [
+                        'name' => $serviceInfo->name,
+                        'service_id' => $calculatedService['service_id'],
+                        'tax_exclusive_price' => $taxExclusivePrice,
+                        'tax_price' => $taxPrice,
+                        'tax_including_price' => $taxIncludingPrice,
+                        'is_consumed' => 0,
+                    ];
+                }
             }
 
             return ApiHelper::apiResponse($this->success, 'Bundle service added successfully', true, [
@@ -1531,33 +1582,385 @@ class PackagesController extends Controller
                     //     'dis_price_info' => $select_discount,
                     // ));
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+                    
+                    // For single type bundles (individual services), get the actual service price
+                    $net_amount = $service_data->price;
+                    if ($service_data->type == 'single') {
+                        $bundleService = BundleHasServices::where('bundle_id', $service_data->id)->first();
+                        if ($bundleService) {
+                            $actualService = Services::find($bundleService->service_id);
+                            if ($actualService) {
+                                $net_amount = $actualService->price;
+                            }
+                        }
+                    }
 
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
                         'dis_price_info' => $select_discount,
-                        'net_amount' => $service_data->price,
+                        'net_amount' => $net_amount,
                     ]);
                 } else {
                     $discounts = $discounts->toArray();
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+                    
+                    // For single type bundles (individual services), get the actual service price
+                    $net_amount = $service_data->price;
+                    if ($service_data->type == 'single') {
+                        $bundleService = BundleHasServices::where('bundle_id', $service_data->id)->first();
+                        if ($bundleService) {
+                            $actualService = Services::find($bundleService->service_id);
+                            if ($actualService) {
+                                $net_amount = $actualService->price;
+                            }
+                        }
+                    }
 
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '1',
-                        'net_amount' => $service_data->price,
+                        'net_amount' => $net_amount,
                     ]);
                 }
             }
             
         }
         
+        // For single type bundles (individual services), get the actual service price
+        $net_amount = isset($bundle) ? $bundle->price : 0;
+        if ($bundle && $bundle->type == 'single') {
+            $bundleService = BundleHasServices::where('bundle_id', $bundle->id)->first();
+            if ($bundleService) {
+                $actualService = Services::find($bundleService->service_id);
+                if ($actualService) {
+                    $net_amount = $actualService->price;
+                }
+            }
+        }
         
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
-            'net_amount' => isset($bundle) ? $bundle->price : 0,
+            'net_amount' => $net_amount,
         ]);
     }
    
+    /**
+     * Get service info for simple plans (non-bundle)
+     * Directly queries services table instead of bundles
+     *
+     * @param request
+     * @return mixed
+     */
+    public function getserviceinfo_for_plan(Request $request)
+    {
+        $discounts = Collection::make();
+        $today = Carbon::now()->toDateString();
+
+        // Get logged-in user's role IDs
+        $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
+        $service = Services::find($request->service_id);
+        
+        if (!$service) {
+            return ApiHelper::apiResponse($this->error, 'Service not found.', false);
+        }
+
+        $service_id = $service->id;
+        $location_id = $request->location_id;
+
+        $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
+       
+        $generalDiscountsQuery = Discounts::whereIn('id', $discountIds)
+            ->where('discount_type', '!=', 'voucher')
+            ->where('active', '=', '1')
+            ->whereDate('start', '<=', $today)
+            ->whereDate('end', '>=', $today);
+
+        // Apply role filter only if not super admin
+        if (!$isSuperAdmin) {
+            $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
+                $query->whereIn('role_id', $userRoleIds);
+            });
+        }
+
+        $generalDiscounts = $generalDiscountsQuery->get();
+
+        // Fetch VOUCHER discounts (user-specific)
+        $voucherDiscounts = Collection::make();
+        $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
+            ->pluck('voucher_id')
+            ->toArray();
+        
+        if ($checkUserVouchers) {
+            $voucherDiscountsQuery = Discounts::whereIn('id', $discountIds)
+                ->whereIn('id', $checkUserVouchers)
+                ->where('discount_type', '=', 'voucher');
+
+            $voucherDiscounts = $voucherDiscountsQuery->get();
+        }
+
+        // Merge both collections
+        $discounts = $generalDiscounts->merge($voucherDiscounts);
+
+        // Check birthday promotion validity
+        foreach ($discounts as $key => $discount) {
+            if ($discount->slug == 'birthday') {
+                $pre_days = $discount->pre_days;
+                $post_days = $discount->post_days;
+
+                $today_1 = Carbon::today();
+                $today_2 = Carbon::today();
+                $today_3 = Carbon::today();
+
+                $predate = $today_1->subDay($pre_days)->format('Y-m-d');
+                $postdate = $today_2->addDay($post_days)->format('Y-m-d');
+
+                $patient_info = User::find($request->patient_id);
+
+                if ($patient_info->dob) {
+                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year . '-' . 'm-d');
+
+                    if (($patientbirthday >= $predate) && ($patientbirthday <= $postdate)) {
+                        // Birthday is valid
+                    } else {
+                        $discounts->forget($key);
+                    }
+                } else {
+                    $discounts->forget($key);
+                }
+            }
+        }
+
+        $Discount_array = [];
+       
+        if (count($discounts) > 0) {
+            foreach ($discounts as $discount) {
+                if ($discount->slug != 'custom') {
+                    if ($discount->type == Config::get('constants.Fixed')) {
+                        $discount_type = $discount->type;
+                        $discount_price = $discount->amount;
+                        $net_amount = ($service->price) - ($discount_price);
+                        $Discount_array[$discount->id] = [
+                            'id' => $discount->id,
+                            'discount_type' => $discount_type,
+                            'discount_price' => $discount_price,
+                            'net_amount' => $net_amount,
+                        ];
+                    } else {
+                        $discount_type = $discount->type;
+                        $discount_price = $discount->amount;
+                        $discount_price_cal = $service->price * (($discount_price) / 100);
+                        $net_amount = ($service->price) - ($discount_price_cal);
+                        $Discount_array[$discount->id] = [
+                            'id' => $discount->id,
+                            'discount_type' => $discount_type,
+                            'discount_price' => $discount_price,
+                            'net_amount' => $net_amount,
+                        ];
+                    }
+                }
+            }
+
+            $select_discount = [];
+            $lowest = false;
+            if (count($Discount_array) > 0) {
+                foreach ($Discount_array as $value) {
+                    if ($lowest === false || $value['net_amount'] < $lowest) {
+                        $lowest = $value['net_amount'];
+                        $select_discount = $value;
+                    }
+                }
+                $discounts = $discounts->toArray();
+
+                return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+                    'discounts' => $discounts,
+                    'checked_custom' => '0',
+                    'dis_price_info' => $select_discount,
+                    'net_amount' => $service->price,
+                ]);
+            } else {
+                $discounts = $discounts->toArray();
+
+                return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+                    'discounts' => $discounts,
+                    'checked_custom' => '1',
+                    'net_amount' => $service->price,
+                ]);
+            }
+        }
+        
+        return ApiHelper::apiResponse($this->success, 'Records found.', false, [
+            'net_amount' => $service->price,
+        ]);
+    }
+
+    /**
+     * Get discount info for simple plans (non-bundle)
+     * Directly queries services table instead of bundles
+     *
+     * @param request
+     * @return mixed
+     */
+    public function getdiscountinfo_for_plan(Request $request)
+    {
+        if ($request->discount_id) {
+            $discount_is_voucher = false;
+            $service_id = $request->service_id;
+            $patient_id = $request->patient_id;
+            $service_data = Services::find($service_id);
+
+            if (!$service_data) {
+                return ApiHelper::apiResponse($this->error, 'Service not found', false);
+            }
+
+            $discount_id = $request->discount_id;
+            $discount_data = Discounts::find($discount_id);
+           
+            if ($discount_data->slug == 'custom') {
+                return ApiHelper::apiResponse($this->success, 'custom', true, [
+                    'custom_checked' => 1,
+                ]);
+            } else {
+                if ($discount_data->type == Config::get('constants.Fixed') && $discount_data->discount_type !="voucher") {
+                    $discount_type = Config::get('constants.Fixed');
+                    $discount_price = $discount_data->amount;
+                    $net_amount = ($service_data->price) - ($discount_data->amount);
+                } else if ($discount_data->type == Config::get('constants.Percentage') && $discount_data->discount_type !="voucher") {
+                    $discount_type = Config::get('constants.Percentage');
+                    $discount_price = $discount_data->amount;
+                    $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                    $net_amount = ($service_data->price) - ($discount_price_cal);
+                } else if ($discount_data->type == "Configurable" && $discount_data->discount_type !="voucher") {
+                    $discount_type = "Configurable";
+                    $discount_price = $discount_data->amount;
+                    $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                    $net_amount = ($service_data->price) - ($discount_price_cal);
+                } else if ($discount_data->discount_type == "voucher") {
+                    $patientVoucher = UserVouchers::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
+                    if ($patientVoucher) {
+                        $discount_type = Config::get('constants.Fixed');
+                        $discount_price = $patientVoucher->amount;
+                        $discount_is_voucher = true;
+                        $net_amount = ($service_data->price) - ($discount_price);
+                        if($net_amount < 0){
+                            $net_amount = 0;
+                        }
+                    } else {
+                        $discount_type = "";
+                        $discount_price = 0;
+                        $discount_is_voucher = false;
+                        $net_amount = $service_data->price;
+                    }
+                }
+                return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+                    'discount_type' => $net_amount < 0 ? '' : $discount_type,
+                    'discount_price' => $discount_price,
+                    'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
+                    'custom_checked' => 0,
+                    'discount_is_voucher' => $discount_is_voucher,
+                ]);
+            }
+        }
+
+        return ApiHelper::apiResponse($this->success, 'No Record Found', false);
+    }
+
+    /**
+     * Get custom discount info for simple plans (non-bundle)
+     * Directly queries services table instead of bundles
+     *
+     * @param request
+     * @return mixed
+     */
+    public function getdiscountinfocustom_for_plan(Request $request)
+    {
+        $status = true;
+        $service_id = $request->service_id;
+        $service_data = Services::find($service_id);
+        
+        if (!$service_data) {
+            return ApiHelper::apiResponse($this->error, 'Service not found', false);
+        }
+
+        $discount_id = $request->discount_id;
+        $discount_data = Discounts::find($discount_id);
+        
+        if ($discount_data->slug == 'custom') {
+            $discount_id = $request->discount_id;
+        } else {
+            if($discount_data->discount_type == "voucher"){
+                $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+                if ($discountValue) {
+                    $request->discount_value = $discountValue->amount;
+                } else {
+                    $request->discount_value = 0;
+                }
+            } else {
+                $request->discount_value = $discount_data->amount;
+            }
+        }
+        
+        if ($discount_data->type == 'Fixed' && $discount_data->discount_type != 'voucher') {
+            if ($request->discount_type == Config::get('constants.Fixed')) {
+                if ($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price) {
+                    return false;
+                }
+                $discount_type = Config::get('constants.Fixed');
+                $discount_price = $request->discount_value;
+                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                $net_amount = ($service_data->price) - ($discount_price);
+            } else {
+                $discount_type = Config::get('constants.Percentage');
+                $discount_price = $request->discount_value;
+                $discount_price_cal = ($discount_data->amount / $service_data->price) * 100;
+                if ($request->discount_value > $discount_price_cal) {
+                    $status = false;
+                }
+                $amount_after_per = ($request->discount_value / 100) * $service_data->price;
+                $net_amount = $service_data->price - $amount_after_per;
+            }
+        } else if($discount_data->type == 'Fixed' && $discount_data->discount_type == 'voucher'){
+            $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+            if($discountValue){
+                $discount_type = Config::get('constants.Fixed');
+                $discount_price = $discountValue->amount;
+                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                $net_amount = ($service_data->price) - ($discount_price);
+                if($net_amount < 0){
+                    $net_amount = 0;
+                }
+            } else {
+                $discount_price = 0;
+                $net_amount = ($service_data->price) - ($discount_price);
+            }
+        } else {
+            if ($request->discount_type == Config::get('constants.Fixed')) {
+                $discount_price = $request->discount_value;
+                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                if ($discount_price_in_percentage > $discount_data->amount) {
+                    return false;
+                }
+                $net_amount = ($service_data->price) - ($request->discount_value);
+            } else {
+                if ($request->discount_value > $discount_data->amount) {
+                    return false;
+                }
+                $discount_price = $request->discount_value;
+                $discount_price_in_percentage = ($request->discount_value / 100) * $service_data->price;
+                $net_amount = ($service_data->price) - ($discount_price_in_percentage);
+            }
+        }
+
+        if ($status == true) {
+            return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
+                'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
+            ]);
+        }
+
+        return ApiHelper::apiResponse($this->error, 'Invalid discount value', false);
+    }
+
     /**
      * Get service info whan discount not selected
      *
@@ -1734,12 +2137,11 @@ class PackagesController extends Controller
 
             $package = Packages::findOrFail($request->package_id);
             
-            // Update appointment
-            $package->appointment_id = $request->appointment_id;
-            $package->save();
-            
             // Handle payment if provided
             if ($request->payment_mode_id && $request->cash_amount > 0) {
+                // Only update appointment_id and updated_at when payment is added
+                $package->appointment_id = $request->appointment_id;
+                $package->save();
                 $packageAdvance = new PackageAdvances();
                 $packageAdvance->package_id = $package->id;
                 $packageAdvance->payment_mode_id = $request->payment_mode_id;

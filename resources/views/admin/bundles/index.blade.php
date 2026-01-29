@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-@section('title', 'Package List')
+@section('title', 'Bundles List')
 @section('content')
 
     <!--begin::Content-->
@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Package List</h3>
+                            <h3 class="card-label">Bundles List</h3>
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->

@@ -317,7 +317,7 @@
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
                                     </i>
-                                    <span class="menu-text">Packages</span>
+                                    <span class="menu-text">Bundles</span>
                                 </a>
                             </li>
                             @endcan

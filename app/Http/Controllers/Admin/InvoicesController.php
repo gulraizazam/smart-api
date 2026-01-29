@@ -338,6 +338,13 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
+        
+        // Get doctor name from appointment
+        $doctor = null;
+        if ($Invoiceinfo->appointment_id) {
+            $appointment = Appointments::with('doctor')->find($Invoiceinfo->appointment_id);
+            $doctor = $appointment?->doctor;
+        }
 
         if ($Invoiceinfo) {
             $Invoiceinfo->created_at = Carbon::parse($Invoiceinfo->created_at)->format('F j,Y');
@@ -352,6 +359,7 @@ class InvoicesController extends Controller
             'invoicestatus' => $invoicestatus,
             'company_phone_number' => $company_phone_number,
             'location_info' => $location_info,
+            'doctor' => $doctor,
         ]);
     }
 
@@ -362,6 +370,11 @@ class InvoicesController extends Controller
     {
         if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
+        }
+        
+        // 'print' is used as placeholder to pass flag without downloading
+        if ($download === 'print') {
+            $download = null;
         }
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')

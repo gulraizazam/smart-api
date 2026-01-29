@@ -15,13 +15,13 @@
                             <div class="card-toolbar">
                                 <div class="dropdown  dropdown-inline">
                                     <select class="form-control" name="type" onchange="changeDate();" id="recordfilter">
-                                        <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                        <option value="today" {{ (request('type')=='today' || !request('type')) ? 'selected' : '' }}>Today
                                         </option>
                                         <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                         <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                         <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                             Week</option>
-                                        <option value="thismonth" {{ (request('type')=='thismonth' || !request('type')) ? 'selected' : '' }}>This
+                                        <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                             Month</option>
                                     </select>
                                 </div>

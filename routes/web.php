@@ -337,6 +337,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::resource('packages', PackagesController::class)->only('index')->middleware('permission:plans_manage');
         Route::post('packages/resetvoucherpacakgebundles', [PackagesController::class, 'resetvoucherpacakgebundles'])->name('packages.resetvoucherpacakgebundles');
+        Route::get('packages/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('packages.getserviceinfo_for_plan');
+        Route::get('packages/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('packages.getdiscountinfo_for_plan');
+        Route::get('packages/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('packages.getdiscountinfocustom_for_plan');
         // Package Route end
 
         // Non Refunds Route start

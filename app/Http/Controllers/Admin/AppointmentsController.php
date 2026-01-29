@@ -3118,13 +3118,33 @@ class AppointmentsController extends Controller
                     $location_information = Locations::find($appointment->location_id);
                     $location_id = $appointment->location_id;
                     $serviceinfo = Services::where('id', '=', $appointment->service_id)->first();
+                    
+                    // Get service price from package_services.actual_price if exists, otherwise use services.price
+                    $service_price = $serviceinfo->price;
+                    if ($service_in_plan) {
+                        $package_service = DB::table('package_services')
+                            ->join('packages', 'package_services.package_id', '=', 'packages.id')
+                            ->where([
+                                'packages.active' => '1',
+                                'packages.patient_id' => $appointment->patient_id,
+                                'package_services.service_id' => $appointment->service_id,
+                                'packages.location_id' => $appointment->location_id,
+                            ])
+                            ->select('package_services.actual_price')
+                            ->first();
+                        
+                        if ($package_service && $package_service->actual_price !== null) {
+                            $service_price = $package_service->actual_price;
+                        }
+                    }
+                    
                     if ($serviceinfo->tax_treatment_type_id == Config::get('constants.tax_both') || $serviceinfo->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                        $amount_create = $amount_create_is_inclusive = $serviceinfo->price;
-                        $tax_create = ceil($serviceinfo->price * ($location_information->tax_percentage / 100));
+                        $amount_create = $amount_create_is_inclusive = $service_price;
+                        $tax_create = ceil($service_price * ($location_information->tax_percentage / 100));
                         $price = ceil($amount_create + (($amount_create * $location_information->tax_percentage) / 100));
 
                     } else {
-                        $price = $amount_create_is_inclusive = $serviceinfo->price;
+                        $price = $amount_create_is_inclusive = $service_price;
                         $amount_create = ceil((100 * $price) / ($location_information->tax_percentage + 100));
                         $tax_create = ceil($price - $amount_create);
                     }
@@ -3162,8 +3182,14 @@ class AppointmentsController extends Controller
 
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select', '0');
+        
+        // Get patient name for modal title
+        $patient = null;
+        if (isset($appointment)) {
+            $patient = User::find($appointment->patient_id);
+        }
 
-        return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive', 'service_in_plan'));
+        return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive', 'service_in_plan', 'patient'));
     }
 
     /*
@@ -4398,11 +4424,26 @@ class AppointmentsController extends Controller
             $discount = null;
         }
         $service = Services::find($Invoiceinfo->service_id);
+        
+        // Get service price from package_services.actual_price first, fallback to services.price
+        if ($package_service && $package_service->actual_price !== null) {
+            $service_price = $package_service->actual_price;
+        } else {
+            $service_price = $service->price;
+        }
+        
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
+        
+        // Get doctor name from appointment
+        $doctor = null;
+        if ($Invoiceinfo->appointment_id) {
+            $appointment = Appointments::with('doctor')->find($Invoiceinfo->appointment_id);
+            $doctor = $appointment?->doctor;
+        }
 
-        return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle'));
+        return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'service_price', 'doctor'));
     }
 
     public function appointmentexcel(Request $request)

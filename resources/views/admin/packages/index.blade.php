@@ -75,7 +75,7 @@
                                 <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
                                     data-target="#modal_add_plan">
                                     <i class="la la-plus"></i>
-                                    Add New
+                                    Add Procedures
                                 </a>
                                 &nbsp;
                                 <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"

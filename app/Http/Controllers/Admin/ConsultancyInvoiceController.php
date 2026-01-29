@@ -24,6 +24,7 @@ use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\User;
+use App\Models\Accounts;
 use App\Services\MetaConversionApiService;
 use App\Helpers\ActivityLogger;
 use Auth;
@@ -128,6 +129,16 @@ class ConsultancyInvoiceController extends Controller
         }
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select', '0');
+        
+        // Get patient and doctor info for the modal header
+        $patient = null;
+        $doctor = null;
+        $account = null;
+        if (isset($appointment)) {
+            $patient = User::find($appointment->patient_id);
+            $doctor = $appointment->doctor;
+            $account = Accounts::find($appointment->account_id);
+        }
 
         if (is_null($type)) {
 
@@ -147,10 +158,13 @@ class ConsultancyInvoiceController extends Controller
                 'discounts' => $discounts,
                 'cash' => $cash,
                 'price_tax' => $price_tax,
+                'patient' => $patient,
+                'doctor' => $doctor,
+                'account' => $account,
             ]);
         }
 
-        return view('admin.appointments.consultancyinvoice.create', compact('price', 'appointment_type', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'paymentmodes', 'location_info', 'tax', 'tax_amt', 'invoice_status', 'discounts', 'cash', 'price_tax'));
+        return view('admin.appointments.consultancyinvoice.create', compact('price', 'appointment_type', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'paymentmodes', 'location_info', 'tax', 'tax_amt', 'invoice_status', 'discounts', 'cash', 'price_tax', 'patient', 'doctor', 'account'));
     }
 
     /*

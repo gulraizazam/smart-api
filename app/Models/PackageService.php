@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PackageService extends Model
 {
-    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','sold_by','base_service_id'];
+    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed','consumed_at', 'price', 'orignal_price', 'actual_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','sold_by','base_service_id'];
 
     protected static $_table = 'package_services';
 
-    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','sold_by','base_service_id'];
+    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed','consumed_at', 'price', 'orignal_price', 'actual_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','sold_by','base_service_id'];
 
     protected $table = 'package_services';
 
@@ -27,6 +27,12 @@ class PackageService extends Model
 
        $find_package_bundle = PackageBundles::find($data['package_bundle_id']);
        $find_discount = Discounts::find($find_package_bundle->discount_id);
+
+       // Fetch actual price from services table
+       if (isset($data['service_id'])) {
+           $service = Services::find($data['service_id']);
+           $data['actual_price'] = $service ? $service->price : null;
+       }
 
        if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] > 0){
         $find_package = Packages::where('random_id',$data['random_id'])->first();

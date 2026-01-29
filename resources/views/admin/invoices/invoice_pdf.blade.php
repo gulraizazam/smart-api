@@ -342,7 +342,7 @@
             <th>Consultancy\Service</th>
             <th> Service Price</th>
             <th> Discount Name</th>
-            <th> Discount Type</th>
+          
             <th> Discount Price</th>
             <th> Subtotal</th>
             <th> Tax %</th>
@@ -353,11 +353,13 @@
             <td> 1</td>
             <td>{{$service->name}} </td>
             <td>
-                @if($Invoiceinfo->is_exclusive == '0' && $bundle->type == 'single')
+                @if($Invoiceinfo->is_exclusive == '0' && isset($bundle) && $bundle?->type == 'single')
                     {{number_format(($Invoiceinfo->service_price)-($Invoiceinfo->tax_price))}}
-                @elseif($Invoiceinfo->is_exclusive == '0' && $bundle->type == 'multiple')
+                @elseif($Invoiceinfo->is_exclusive == '0' && isset($bundle) && $bundle?->type == 'multiple')
                     {{number_format($Invoiceinfo->service_price)}}
                 @elseif($Invoiceinfo->is_exclusive == '1')
+                    {{number_format($Invoiceinfo->service_price)}}
+                @else
                     {{number_format($Invoiceinfo->service_price)}}
                 @endif
 
@@ -369,19 +371,9 @@
                     -
                 @endif
             </td>
+           
             <td>
-                @if($Invoiceinfo->discount_type != null)
-                    {{$Invoiceinfo->discount_type}}
-                @else
-                    -
-                @endif
-            </td>
-            <td>
-                @if($Invoiceinfo->discount_price != null)
-                    {{number_format($Invoiceinfo->discount_price)}}
-                @else
-                    -
-                @endif
+                 {{number_format($Invoiceinfo->tax_including_price)}}
             </td>
             <td>
                 @if($Invoiceinfo->is_exclusive == '0')
@@ -473,10 +465,12 @@
 </table>--}}
 
 <script>
-
-    window.print();
-    setTimeout(function () { window.close(); }, 100);
-
+    window.onload = function() {
+        window.print();
+    };
+    window.onafterprint = function() {
+        window.close();
+    };
 </script>
 
 

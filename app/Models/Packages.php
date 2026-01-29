@@ -14,7 +14,7 @@ class Packages extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['random_id', 'name', 'sessioncount', 'total_price', 'is_exclusive', 'plan_type', 'account_id', 'patient_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'location_id', 'appointment_id', 'is_refund'];
+    protected $fillable = ['random_id', 'name', 'plan_name', 'sessioncount', 'total_price', 'is_exclusive', 'plan_type', 'account_id', 'patient_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'location_id', 'appointment_id', 'is_refund'];
 
     protected static $_fillable = ['name', 'sessioncount', 'total_price', 'is_exclusive', 'plan_type', 'patient_id', 'active', 'location_id', 'appointment_id', 'is_refund', 'created_at', 'updated_at', 'deleted_at'];
 

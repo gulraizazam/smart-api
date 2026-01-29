@@ -315,6 +315,14 @@ var table_columns = [
             return '<a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`)">' + data.package_id + '</a>';
         }
     }, {
+        field: 'plan_name',
+        title: 'Plan Name',
+        sortable: false,
+        width: 120,
+        template: function (data) {
+            return data.plan_name || '-';
+        }
+    }, {
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
@@ -327,12 +335,7 @@ var table_columns = [
         title: 'Name',
         sortable: false,
         width: 80,
-    }, {
-        field: 'location_id',
-        title: 'Centre',
-        sortable: false,
-        width: 'auto',
-    }, {
+    },  {
         field: 'total',
         title: 'Total',
         sortable: false,
@@ -349,14 +352,19 @@ var table_columns = [
         width: 60,
     }, {
         field: 'refunded',
-        title: 'Refund Amount',
+        title: 'Refund',
         sortable: false,
         width: 70,
     }, {
-        field: 'refund',
-        title: 'Refund',
+        field: 'balance',
+        title: 'Balance',
         sortable: false,
-        width: 60,
+        width: 70,
+    },{
+        field: 'location_id',
+        title: 'Centre',
+        sortable: false,
+        width: 'auto',
     }, {
         field: 'created_at',
         title: 'Created At',
@@ -1536,9 +1544,9 @@ function getServiceDiscount($this, type = '') {
     if (service_id && patient_id) {
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getserviceinfo'),
+            url: route('admin.packages.getserviceinfo_for_plan'),
             data: {
-                'bundle_id': service_id, //Basically it is bundle id
+                'service_id': service_id, // Direct service_id for simple plans
                 'location_id': location_id,
                 'patient_id': patient_id
             },
@@ -1661,7 +1669,7 @@ function getDiscountInfo($this) {
         if (service_id && discount_id != '0') {
             $.ajax({
                 type: 'get',
-                url: route('admin.packages.getdiscountinfo'),
+                url: route('admin.packages.getdiscountinfo_for_plan'),
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
@@ -1786,9 +1794,9 @@ function editDiscountValue($this) {
 
             $.ajax({
                 type: 'get',
-                url: route('admin.packages.getdiscountinfo_custom'),
+                url: route('admin.packages.getdiscountinfocustom_for_plan'),
                 data: {
-                    'service_id': service_id,//Basicailly it is bundle id
+                    'service_id': service_id,
                     'discount_id': discount_id,
                     'discount_value': discount_value ?? 0,
                     'discount_type': discount_type,
@@ -1837,9 +1845,9 @@ function changeDiscount($this) {
     if (service_id && discount_id && discount_value && discount_type) {
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getdiscountinfo_custom'),
+            url: route('admin.packages.getdiscountinfocustom_for_plan'),
             data: {
-                'service_id': service_id, //Basicailly it is bundle id
+                'service_id': service_id,
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
@@ -1911,9 +1919,9 @@ function editServiceDiscount($this, type = '') {
 
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getserviceinfo'),
+            url: route('admin.packages.getserviceinfo_for_plan'),
             data: {
-                'bundle_id': service_id, //Basically it is bundle id
+                'service_id': service_id, // Direct service_id for simple plans
                 'location_id': location_id,
                 'patient_id': patient_id
             },
@@ -2035,7 +2043,7 @@ function editDiscountInfo($this) {
             
             $.ajax({
                 type: 'get',
-                url: route('admin.packages.getdiscountinfo'),
+                url: route('admin.packages.getdiscountinfo_for_plan'),
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
@@ -2145,9 +2153,9 @@ function getDiscountValue($this) {
     if (service_id && discount_id && discount_type) {
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getdiscountinfo_custom'),
+            url: route('admin.packages.getdiscountinfocustom_for_plan'),
             data: {
-                'service_id': service_id,//Basicailly it is bundle id
+                'service_id': service_id,
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
@@ -2225,9 +2233,9 @@ function changeDiscount($this, type) {
     if (service_id && discount_id) {
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getdiscountinfo_custom'),
+            url: route('admin.packages.getdiscountinfocustom_for_plan'),
             data: {
-                'service_id': service_id, //Basicailly it is bundle id
+                'service_id': service_id,
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
