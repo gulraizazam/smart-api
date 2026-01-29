@@ -479,11 +479,11 @@ class ResourceRotasController extends Controller
                     $location = Locations::where('id', '=', $resourcerota->location_id)->first();
                     $records['data'][] = [
                         'id' => $resourcerota->id,
-                        'name' => $resourceinfo->name,
-                        'type' => $resourcetypeinfo->name,
+                        'name' => $resourceinfo->name ?? 'N/A',
+                        'type' => $resourcetypeinfo->name ?? 'N/A',
                         'region' => (array_key_exists($resourcerota->region_id, $Regions)) ? $Regions[$resourcerota->region_id]->name : 'N/A',
-                        'city' => $city->name,
-                        'location' => $location->name,
+                        'city' => $city->name ?? 'N/A',
+                        'location' => $location->name ?? 'N/A',
                         'from' => $resourcerota->start ? \Carbon\Carbon::parse($resourcerota->start)->format('D M, j Y') : null,
                         'to' => $resourcerota->end ? \Carbon\Carbon::parse($resourcerota->end)->format('D M, j Y') : null,
                         'created_at' => Carbon::parse($resourcerota->created_at)->format('F j,Y h:i A'),
