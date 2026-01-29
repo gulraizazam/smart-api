@@ -362,10 +362,12 @@
 
 
 <script>
-
-   window.print();
-   setTimeout(function () { window.close(); }, 100);
-
+    window.onload = function() {
+        window.print();
+    };
+    window.onafterprint = function() {
+        window.close();
+    };
 </script>
 
 </body>

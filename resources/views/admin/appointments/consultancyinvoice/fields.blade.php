@@ -37,18 +37,32 @@
 
     {{--That if condition show for consultancey--}}
     <div class="table-responsive">
-        <table class="table table-striped table-bordered table-advance table-hover">
+        <table id="allocate_services" class="table table-bordered table-advance">
 
             <thead>
             <tr>
-                <th> Name</th>
-                <th> Price</th>
+                <th>#</th>
+                <th>Consultancy\Service</th>
+                <th>Service Price</th>
+                <th>Discount Name</th>
+                <th>Discount Price</th>
+                <th>Subtotal</th>
+                <th>Tax %</th>
+                <th>Tax</th>
+                <th>Total</th>
             </tr>
             </thead>
             <tbody>
             <tr>
+                <td>1</td>
                 <td>{{$service?->name ?? 'N/A'}}</td>
                 <td>{{number_format($price_tax)}}</td>
+                <td>-</td>
+                <td>0</td>
+                <td>{{number_format($price_tax)}}</td>
+                <td>{{$location_info->tax_percentage ?? 0}}</td>
+                <td>{{number_format($tax ?? 0)}}</td>
+                <td>{{number_format($tax_amt ?? 0)}}</td>
             </tr>
             </tbody>
         </table>
@@ -69,22 +83,26 @@
                            class="form-control float-right custom_field pr-0 text-right" id="created_at" readonly> -->
                 <!-- </div> -->
 
-                <div class="col-md-12 mt-5 mb-10">
-                    <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="number" name="cash" id="cash" value="{{$cash}}" class="form-control float-right">
+                @if($price_tax > 0)
+                <div class="row mt-5 mb-10">
+                    <div class="col-md-6">
+                        <strong class="mt-5">Consultation Fee</strong>
+                        <input style="width: 100%;" type="number" name="cash" id="cash" value="{{$price_tax}}" class="form-control" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Payment Mode <span class="text-danger">*</span></strong>
+                        {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control','id'=>'payment_mode_id', 'style' => 'width:100%;', 'required' => 'required']) !!}
+                    </div>
                 </div>
+                @endif
 
-                <div class="col-md-12 mt-5">
-                    <strong>Payment Mode</strong>
-                    {!! Form::select('payment_mode_id',$paymentmodes ,old('payment_mode_id'),['class' => 'form-control float-right','id'=>'payment_mode_id', 'style' => 'width:50%;']) !!}
-
-                </div>
-
-                <br>
                 <div class="col-md-12 mt-5 mb-10">
-                    <div id="addinvoice">
-                        <button class="btn btn-primary spinner-button" name="savepackageinformation" id="savepackageinformation"
-                                style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Show Invoice
+                    <div id="addinvoice" class="text-center">
+                        <button class="btn btn-success margin-bottom-5" name="savepackageinformation" id="savepackageinformation"
+                                data-print-type="invoice" style="margin-top:20px;"><i class="fa fa-print"></i> Print Invoice
+                        </button>
+                        <button class="btn btn-info margin-bottom-5" name="savepackageinformation_form" id="savepackageinformation_form"
+                                data-print-type="form" style="margin-top:20px;" disabled><i class="fa fa-print"></i> Print Consultation Form
                         </button>
                     </div>
 

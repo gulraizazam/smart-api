@@ -105,10 +105,10 @@
                                 <th>Consultancy\Service</th>
                                 <th>Service Price</th>
                                 <th>Discount Name</th>
-                                <th>Discount Type</th>
+                                
                                 <th>Discount Price</th>
                                 <th>Subtotal</th>
-                                <th>Tax %</th>
+                                
                                 <th>Tax Price</th>
                                 <th>Total</th>
                             </tr>
@@ -120,10 +120,10 @@
                                 <td id="service_name"></td>
                                 <td id="service_price"></td>
                                 <td id="discount_name"></td>
-                                <td id="discount_type"></td>
+                              
                                 <td id="discount_price"></td>
                                 <td id="invoice_subtotal"></td>
-                                <td id="invoice_tax"></td>
+                               
                                 <td id="invoice_tax_price"></td>
                                 <td id="total_price"></td>
                             </tr>

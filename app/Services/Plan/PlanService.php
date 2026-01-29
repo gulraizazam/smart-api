@@ -388,6 +388,7 @@ class PlanService
                 'patient_id' => $package->patient_id ?? 'N/A',
                 'name' => $package->user->name ?? 'N/A',
                 'package_id' => $package->name,
+                'plan_name' => $package->plan_name ?? '',
                 'location_id' => $this->formatLocation($package),
                 'location_name' => $package->location->name ?? 'N/A',
                 'city_name' => $package->location->city->name ?? 'N/A',
@@ -398,8 +399,8 @@ class PlanService
                 'cash_receive_raw' => $package->cash_receive ?? 0,
                 'settle_amount' => number_format($package->settle_amount ?? 0, 0),
                 'settle_amount_raw' => $package->settle_amount ?? 0,
-                'refund' => $package->is_refund == '1' ? 'Yes' : 'No',
                 'refunded' => number_format($package->refund_amount_calculated ?? 0, 0),
+                'balance' => number_format(($package->total_price ?? 0) - ($package->cash_receive ?? 0), 0),
                 'active' => $package->active,
                 'status' => $package->active == 1 ? 'Active' : 'Inactive',
                 'date' => $package->created_at->format('Y-m-d'),
@@ -1300,6 +1301,9 @@ class PlanService
             // Store package bundles and services (optimized with bulk operations)
             $this->storePackageBundlesOptimized($package, $data);
 
+            // Generate and update plan_name from first two services
+            $this->updatePlanName($package);
+
             // Handle payment if cash amount provided
             if (!empty($data['cash_amount']) && $data['cash_amount'] != '0') {
                 $this->handlePackagePayment($package, $data, $appointmentId);
@@ -1453,8 +1457,14 @@ class PlanService
                 $packageBundle['Total']
             );
 
+            // Fetch all service IDs to get actual prices and tax treatment types
+            $serviceIds = array_column($calculatedServicesPrices, 'service_id');
+            $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
             // Prepare all services for bulk insert
             foreach ($calculatedServicesPrices as $calculatedServicePrice) {
+                $serviceInfo = $servicesInfo->get($calculatedServicePrice['service_id']);
+                
                 $dataService = [
                     'random_id' => $data['random_id'],
                     'package_id' => $package->id,
@@ -1462,17 +1472,23 @@ class PlanService
                     'service_id' => $calculatedServicePrice['service_id'],
                     'price' => $calculatedServicePrice['calculated_price'],
                     'orignal_price' => $calculatedServicePrice['service_price'],
+                    'actual_price' => $serviceInfo ? $serviceInfo->price : null,
                     'created_at' => Filters::getCurrentTimeStamp(),
                     'updated_at' => Filters::getCurrentTimeStamp(),
                     'sold_by' => $packageBundle['sold_by'] ?? null,
                 ];
 
-                // Calculate tax for this service
+                // Use the service's own tax_treatment_type_id to determine if price is inclusive or exclusive
+                // tax_treatment_type_id = 3 means tax-inclusive (break down the price)
+                // tax_treatment_type_id = 2 means tax-exclusive (add tax on top)
+                $serviceTaxType = $serviceInfo ? $serviceInfo->tax_treatment_type_id : $serviceData->tax_treatment_type_id;
+                $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
+                
                 $taxData = $this->calculateServiceTaxForPackage(
-                    $serviceData->tax_treatment_type_id,
+                    $serviceTaxType,
                     $calculatedServicePrice['calculated_price'],
                     $locationInfo->tax_percentage,
-                    ($data['is_exclusive'] ?? '0') == '1'
+                    $isExclusive
                 );
 
                 $allPackageServices[] = array_merge($dataService, $taxData);
@@ -1533,6 +1549,33 @@ class PlanService
         }
 
         return $taxData;
+    }
+
+    /**
+     * Generate and update plan_name from first two bundles
+     * If one bundle: plan_name = bundle name
+     * If two or more bundles: plan_name = first two bundle names comma separated
+     */
+    protected function updatePlanName(Packages $package): void
+    {
+        // Get the first two bundles for this package with their names
+        $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
+            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            ->orderBy('package_bundles.id', 'asc')
+            ->limit(2)
+            ->pluck('bundles.name')
+            ->toArray();
+
+        if (empty($packageBundles)) {
+            return;
+        }
+
+        // Generate plan_name: single bundle name or two bundle names comma separated
+        $planName = implode(', ', $packageBundles);
+
+        // Update only plan_name without touching updated_at (use query builder to bypass timestamps)
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+        $package->plan_name = $planName;
     }
 
     /**
@@ -1999,6 +2042,9 @@ class PlanService
             // Store package bundles and services (optimized)
             if ($hasNewServices) {
                 $this->storePackageBundlesOptimized($package, $data);
+                
+                // Update plan_name only when new services are added
+                $this->updatePlanName($package);
             }
 
             // Handle payment if provided

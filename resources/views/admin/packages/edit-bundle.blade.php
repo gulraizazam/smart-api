@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Bundle Plan</h2>
+        <h2 class="fw-bolder">Edit Plan</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
@@ -195,7 +195,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="button" class="btn btn-light me-3 " >Cancel</button>
+                <button type="button" class="btn btn-light me-3" >Cancel</button>
                 <button id="EditBundleFinal" type="button" class="btn btn-primary spinner-button-edit-save">
                     <span class="indicator-label">save</span>
                 </button>

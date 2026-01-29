@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Create Invoice</h2>
+        <h2 class="fw-bolder">Generate Invoice for <span style="color: #3699FF;">{{ isset($patient) ? ucfirst($patient->name) : '' }}</span></h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">

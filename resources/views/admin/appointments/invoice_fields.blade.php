@@ -68,7 +68,6 @@
                         <th> Name</th>
                         <th> Price</th>
                         <th> Discount Name</th>
-                        <th> Discount Type</th>
                         <th> Discount Price</th>
                         <th> Amount</th>
                     </tr>
@@ -77,7 +76,6 @@
                     <tr>
                         <td>{{$service->name}}</td>
                         <td><?php echo number_format($amount_create_is_inclusive);?></td>
-                        <td>-</td>
                         <td>-</td>
                         <td>0.00</td>
                         <td><?php echo number_format($amount_create_is_inclusive);?></td>
@@ -107,10 +105,8 @@
                         <th> Name</th>
                         <th> Price</th>
                         <th> Discount Name</th>
-                        <th> Discount Type</th>
                         <th> Discount Price</th>
                         <th> Amount</th>
-                        <th> Tax %</th>
                         <th> Tax Amt.</th>
                     </tr>
                     </thead>

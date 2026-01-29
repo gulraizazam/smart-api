@@ -1,6 +1,6 @@
 <div class="modal-content">
     <div class="modal-header" id="kt_modal_password_header">
-        <h2 class="fw-bolder">Create Bundle</h2>
+        <h2 class="fw-bolder">Add Bundle</h2>
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
      data-kt-users-modal-action="close" 
      onclick="resetVoucherAddBundle(event); return false;">

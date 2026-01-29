@@ -6,7 +6,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title">Display</h2>
+        <h2 class="fw-bolder rota-title">{{ ucfirst($patient->name) }}@if(isset($doctor) && $doctor) - {{ $Invoiceinfo->appointment_type_id == 1 ? 'Consultation' : 'Treatment' }} with <span style="color: #3699FF;">{{ $doctor->name }}</span>@endif</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -135,11 +135,10 @@
                                 <th>Consultancy\Service</th>
                                 <th>Service Price</th>
                                 <th>Discount Name</th>
-                                <th>Discount Type</th>
                                 <th>Discount Price</th>
                                 <th>Subtotal</th>
                                 <th>Tax %</th>
-                                <th>Tax Price</th>
+                                <th>Tax</th>
                                 <th>Total</th>
                             </tr>
                             </thead>
@@ -149,7 +148,7 @@
                                 <td>1</td>
                                 <td>{{$service->name}} </td>
                                 <td>
-                                    {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
+                                    {{number_format($service_price)}}
                                 </td>
                                 <td>
                                     @if($discount != null)
@@ -158,19 +157,9 @@
                                         -
                                     @endif
                                 </td>
+                               
                                 <td>
-                                    @if($Invoiceinfo->discount_type != null)
-                                        {{$Invoiceinfo->discount_type}}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($Invoiceinfo->discount_price != null)
-                                        {{number_format($Invoiceinfo->discount_price)}}
-                                    @else
-                                        -
-                                    @endif
+                                     {{number_format($Invoiceinfo->tax_including_price)}}
                                 </td>
                                 <td>
                                     {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
@@ -202,12 +191,12 @@
                             @if($Invoiceinfo->appointment_type_id == 1)
 
                                 <a class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id,'download',1]) }}">Print Invoice
+                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'print', 1]) }}">Print Invoice
                                     <i class="fa fa-print"></i>
                                 </a>
 
-                                <a class="btn btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Print Consultancy Form
+                                <a class="btn btn-info blue hidden-print margin-bottom-5" target="_blank"
+                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print Consultation Form
                                     <i class="fa fa-print"></i>
                                 </a>
 
@@ -216,11 +205,6 @@
                                 <a class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
                                 href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id]) }}">Print Invoice
                                     <i class="fa fa-print"></i>
-                                </a>
-
-                                <a class="btn  btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.invoices.invoice_pdf',[$Invoiceinfo->id, 'download']) }}">Download 
-                                    <i class="fa fa-download"></i>
                                 </a>
 
                             @endif
