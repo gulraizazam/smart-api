@@ -97,6 +97,9 @@
 
 
     @push('datatable-js')
+        <script>
+            var changePages = 100;
+        </script>
         <script src="{{asset('assets/js/pages/admin_settings/resourcerotas.js')}}"></script>
     @endpush
 
