@@ -896,20 +896,24 @@ class PlanService
         DB::beginTransaction();
         
         try {
-            // Get the bundle directly using bundle_id
-            // The validation already ensures bundle_id exists in bundles table
-            $bundle = Bundles::find($data['bundle_id']);
+            // Get the service using bundle_id (which is actually a service_id from services table)
+            $service = Services::find($data['bundle_id']);
+            if (!$service) {
+                throw new PlanException('Service not found', 404);
+            }
+            
+            // Find the bundle that contains this service
+            $bundleHasService = BundleHasServices::where('service_id', $service->id)->first();
+            if (!$bundleHasService) {
+                throw new PlanException('No bundle found for this service', 404);
+            }
+            
+            $bundle = Bundles::find($bundleHasService->bundle_id);
             if (!$bundle) {
                 throw new PlanException('Bundle not found', 404);
             }
             
-            \Log::info('Adding service to package', [
-                'service_id_received' => $data['bundle_id'],
-                'bundle_found_id' => $bundle->id,
-                'bundle_name' => $bundle->name,
-                'bundle_price' => $bundle->price
-            ]);
-
+            
             $location = Locations::find($data['location_id']);
             if (!$location) {
                 throw new PlanException('Location not found', 404);
