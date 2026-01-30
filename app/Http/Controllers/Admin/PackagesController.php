@@ -862,7 +862,7 @@ class PackagesController extends Controller
     {
         // Validate required fields
         $validator = Validator::make($request->all(), [
-            'bundle_id' => 'required|integer|exists:bundles,id',
+            'bundle_id' => 'required|integer|exists:services,id',
             'location_id' => 'required|integer|exists:locations,id',
             'user_id' => 'required|integer|exists:users,id',
             'random_id' => 'required|string',
