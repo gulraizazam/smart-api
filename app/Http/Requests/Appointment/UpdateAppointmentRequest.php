@@ -49,6 +49,7 @@ class UpdateAppointmentRequest extends FormRequest
             'appointment_status_id' => 'sometimes|exists:appointment_statuses,id',
             'location_id' => 'sometimes|exists:locations,id',
             'service_id' => 'nullable|exists:services,id',
+            'treatment_service_id' => 'nullable|exists:services,id',
             'doctor_id' => 'nullable|exists:users,id',
             'patient_id' => 'nullable|exists:users,id',
             'lead_id' => 'nullable|exists:leads,id',

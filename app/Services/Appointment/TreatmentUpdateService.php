@@ -274,9 +274,9 @@ class TreatmentUpdateService
             $data['doctor_id'] = $appointment->doctor_id;
         }
 
-        // Service - for treatments, use treatment_service_id
-        if (isset($requestData['treatment_service_id']) && $requestData['treatment_service_id']) {
-            $data['service_id'] = $requestData['treatment_service_id'];
+        // Service - service_id contains the new value to update
+        if (isset($requestData['service_id']) && $requestData['service_id']) {
+            $data['service_id'] = $requestData['service_id'];
         }
 
         // City and region from location
