@@ -73,9 +73,9 @@ class InventoryReportsController extends Controller
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationId, $startDate, $endDate) {
 
-                // Opening Stock = Sum of inventory quantity before date range - orders before date range
-                $inventoryBefore = DB::table('inventories')
-                    ->where('product_id', $product->id)
+                // Opening Stock = Sum of all stock IN before date range - orders before date range
+                $stockInBefore = Stock::where('product_id', $product->id)
+                    ->where('stock_type', 'in')
                     ->where('created_at', '<', $startDate)
                     ->when($locationId, function ($query) use ($locationId) {
                         $query->where('location_id', $locationId);
@@ -95,11 +95,11 @@ class InventoryReportsController extends Controller
                     })
                     ->sum('quantity');
 
-                $openingStock = $inventoryBefore - $soldBefore;
+                $openingStock = $stockInBefore - $soldBefore;
 
-                // Addition in range = inventory records created within the date range
-                $additionInRange = DB::table('inventories')
-                    ->where('product_id', $product->id)
+                // Addition in range = stock IN records created within the date range
+                $additionInRange = Stock::where('product_id', $product->id)
+                    ->where('stock_type', 'in')
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->when($locationId, function ($query) use ($locationId) {
                         $query->where('location_id', $locationId);
