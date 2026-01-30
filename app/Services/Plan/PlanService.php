@@ -896,23 +896,9 @@ class PlanService
         DB::beginTransaction();
         
         try {
-            // Find the bundle that contains this service
-            // The dropdown sends service_id, but we need to find the corresponding bundle
-            $bundleHasService = BundleHasServices::where('service_id', $data['bundle_id'])
-                ->where('end_node', 1) // Only get bundles where this is an end node service
-                ->first();
-            
-            if (!$bundleHasService) {
-                // If not found as end_node, try without end_node filter
-                $bundleHasService = BundleHasServices::where('service_id', $data['bundle_id'])->first();
-            }
-            
-            if (!$bundleHasService) {
-                throw new PlanException('No bundle found for this service', 404);
-            }
-            
-            // Now get the actual bundle
-            $bundle = Bundles::find($bundleHasService->bundle_id);
+            // Get the bundle directly using bundle_id
+            // The validation already ensures bundle_id exists in bundles table
+            $bundle = Bundles::find($data['bundle_id']);
             if (!$bundle) {
                 throw new PlanException('Bundle not found', 404);
             }
