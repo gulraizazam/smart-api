@@ -73,9 +73,15 @@ class InventoryReportsController extends Controller
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationId, $startDate, $endDate) {
 
-                // Opening Stock = Inventory before range - sold before range
-                $inventoryBefore = $product->inventories
+                // Opening Stock = All stock IN before range - All orders before range
+                $stockInBefore = Stock::where('product_id', $product->id)
+                    ->where('stock_type', 'in')
                     ->where('created_at', '<', $startDate)
+                    ->when($locationId, function ($query) use ($locationId) {
+                        $query->where('location_id', $locationId);
+                    }, function ($query) {
+                        $query->whereIn('location_id', ACL::getUserCentres());
+                    })
                     ->sum('quantity');
 
                 $soldBefore = OrderDetail::where('product_id', $product->id)
@@ -89,13 +95,16 @@ class InventoryReportsController extends Controller
                     })
                     ->sum('quantity');
 
-                $openingStock = $inventoryBefore - $soldBefore;
+                $openingStock = $stockInBefore - $soldBefore;
 
                 // Addition in range from stocks table
-                $additionInRange = DB::table('stocks')
-                    ->where('product_id', $product->id)
+                $additionInRange = Stock::where('product_id', $product->id)
                     ->where('stock_type', 'in')
-                    ->where('location_id', $locationId)
+                    ->when($locationId, function ($query) use ($locationId) {
+                        $query->where('location_id', $locationId);
+                    }, function ($query) {
+                        $query->whereIn('location_id', ACL::getUserCentres());
+                    })
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->sum('quantity');
 
