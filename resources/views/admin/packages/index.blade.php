@@ -255,12 +255,39 @@
                         if (response.status) {
                             $("#search_location_id").val(response.data.center).change();
                             $("#add_plan_location_id").val(response.data.center).change();
+                            $("#add_bundle_location_id").val(response.data.center).change();
+                        } else {
+                            // If no specific center returned, check if user has only one location
+                            autoSelectSingleLocation();
                         }
                     },
                     error: function() {
-
+                        // On error, still try to auto-select if only one location
+                        autoSelectSingleLocation();
                     }
                 });
+            }
+
+            function autoSelectSingleLocation() {
+                // Auto-select location if user has only one location in the dropdown
+                var $bundleLocationDropdown = $("#add_bundle_location_id");
+                var $planLocationDropdown = $("#add_plan_location_id");
+                
+                // For bundle modal - count options excluding the placeholder
+                var bundleOptions = $bundleLocationDropdown.find('option').filter(function() {
+                    return $(this).val() !== '';
+                });
+                if (bundleOptions.length === 1) {
+                    $bundleLocationDropdown.val(bundleOptions.first().val()).change();
+                }
+                
+                // For plan modal - count options excluding the placeholder
+                var planOptions = $planLocationDropdown.find('option').filter(function() {
+                    return $(this).val() !== '';
+                });
+                if (planOptions.length === 1) {
+                    $planLocationDropdown.val(planOptions.first().val()).change();
+                }
             }
         </script>
     @endpush
