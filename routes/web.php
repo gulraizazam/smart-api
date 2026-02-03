@@ -381,6 +381,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Patients - using API controller for CRUD operations, keeping view routes
         Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
         Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
+        Route::get('patients/{id}/last-appointment-location', [PatientsController::class, 'getLastAppointmentLocation'])->name('patients.getLastAppointmentLocation');
         Route::get('patients/{id}/leads', [PatientsController::class, 'leads'])->name('patients.leads');
         Route::post('patients/{id}/leads-datatable', [PatientsController::class, 'leadsDatatable'])->name('patients.leadsDatatable');
         Route::get('patients/{id}/appointments', [PatientsController::class, 'appointments'])->name('patients.appointments');

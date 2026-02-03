@@ -2,6 +2,11 @@
 // OPTIMIZED: Using new endpoint with 90% performance improvement (3-4 queries instead of 100+)
 var table_url = route('admin.plans.optimized.datatable', { patient_id: patientCardID });
 
+// Variables for edit plan functionality
+var total_amountArray = [];
+var edit_amountArray = [];
+var ExistingTotal = 0;
+
 var table_columns = [
     {
         field: 'package_id',
@@ -50,6 +55,14 @@ var table_columns = [
                 return '<span class="badge badge-danger">Inactive</span>';
             }
         }
+    }, {
+        field: 'actions',
+        title: 'Actions',
+        width: 100,
+        sortable: false,
+        template: function(data) {
+            return actions(data);
+        }
     }];
 
 
@@ -61,77 +74,834 @@ function actions(data) {
 
         let edit_url = route('admin.plans.edit', { id: id });
         let delete_url = route('admin.plans.destroy', { id: id });
-        let display_url = route('admin.plans.display', { id: id });
+        let display_url = route('admin.packages.display', { id: id });
         let log_url = route('admin.plans.log', { id: id, patient_id: patientCardID, type: 'web' });
-        let sms_log_url = route('admin.packages.sms_logs', { id: id });
 
-        if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
-            let actions = '<div class="dropdown dropdown-inline action-dots">\
-        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
-            <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-        </a>\
-        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
-            <ul class="navi flex-column navi-hover py-2">\
-                <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
-                    Choose an action: \
-                    </li>';
-
-            if (permissions.edit) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Edit</span>\
-                    </a>\
-                </li>';
-            }
-
-            if (permissions.delete) {
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-trash"></i></span>\
-                        <span class="navi-text">Delete</span>\
+        let actionsHtml = '<div class="dropdown dropdown-inline action-dots">\
+            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+            </a>\
+            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+                <ul class="navi flex-column navi-hover py-2">\
+                    <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                        Choose an action:\
+                    </li>\
+                    <li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="viewPlan(\'' + display_url + '\');" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-eye"></i></span>\
+                            <span class="navi-text">Display</span>\
                         </a>\
-                     </li>';
-            }
-
-            if (permissions.create) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-eye"></i></span>\
-                        <span class="navi-text">Display</span>\
-                    </a>\
-                </li>';
-            }
-
-            if (permissions.log) {
-                actions += '<li class="navi-item">\
-                        <a href="'+ log_url + '" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-file"></i></span>\
-                        <span class="navi-text">Log</span>\
+                    </li>\
+                    <li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editPlanRow(\'' + edit_url + '\');" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Edit</span>\
                         </a>\
-                     </li>';
-            }
-
-            if (permissions.sms_log) {
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_log_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-sms"></i></span>\
-                        <span class="navi-text">Sms Log</span>\
+                    </li>\
+                    <li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="deletePlanAction(' + id + ');" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-trash"></i></span>\
+                            <span class="navi-text">Delete</span>\
                         </a>\
-                     </li>';
-            }
+                    </li>\
+                </ul>\
+            </div>\
+        </div>';
 
-            actions += '</ul>\
-        </div>\
-    </div>';
-
-            return actions;
-        }
+        return actionsHtml;
     }
     return '';
 }
 
+// View plan display - copied from main plans module (create-plan.js)
+function viewPlan($route) {
+    $("#modal_display").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: $route,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            displayData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            toastr.error('Failed to load plan data');
+        }
+    });
+}
+
+// Display plan data - copied from main plans module (create-plan.js)
+function displayData(response) {
+
+    try {
+
+        let packageadvances = response.data.packageadvances;
+        let package_data = response.data.package;
+        let packagebundles = response.data.packagebundles;
+        let packageservices = response.data.packageservices;
+        let membership = response.data.membership;
+
+        $("#modal_display #package_pdf").attr("href", route('admin.packages.package_pdf', package_data.id))
+
+        let history_options = noRecordFoundTable(4);
+
+        if (Object(packageadvances).length) {
+
+            history_options = '';
+            Object.values(packageadvances).forEach(function (packageadvance) {
+
+                if (packageadvance.cash_amount != '0') {
+                    history_options += '<tr>';
+                    history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
+                    if (packageadvance.is_refund == 1) {
+                        history_options += '<td>out / refund</td>';
+                    } else if (packageadvance.is_setteled == 1) {
+                        history_options += '<td>out / settled</td>';
+                    }
+                    else {
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
+                    history_options += '<td>' + packageadvance.cash_amount + '</td>';
+                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
+                    history_options += '<tr>';
+                }
+            });
+        }
+
+
+        let service_options = noRecordFoundTable(10);
+
+        if (packagebundles.length) {
+            service_options = '';
+            Object.values(packagebundles).forEach(function (packagebundle) {
+                service_options += '<tr>';
+                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
+                service_options += '<td>';
+                if (packagebundle.discount_id == null) {
+                    service_options += '-';
+                } else if (packagebundle.discount_name) {
+                    service_options += packagebundle.discount_name;
+                } else {
+                    service_options += packagebundle.discount.name;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+                if (packagebundle.discount_type == null) {
+                    service_options += '-';
+                } else {
+                    service_options += packagebundle.discount_type;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+
+                if (packagebundle.discount_price == null) {
+                    service_options += '0.00';
+                } else {
+                    service_options += packagebundle.discount_price;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
+
+                service_options += '<td>' + packagebundle.tax_price + '</td>';
+                service_options += '<td>' + packagebundle.tax_including_price + '</td>';
+
+                // Get sold_by names for this bundle (for display view)
+                let soldByNames = [];
+                Object.values(packageservices).forEach(function (ps) {
+                    if (ps.package_bundle_id == packagebundle.id && ps.sold_by && ps.sold_by.name) {
+                        if (!soldByNames.includes(ps.sold_by.name)) {
+                            soldByNames.push(ps.sold_by.name);
+                        }
+                    }
+                });
+                service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
+
+                service_options += '</tr>';
+
+
+                Object.values(packageservices).forEach(function (packageservice) {
+                    let consume = 'No';
+                    if (packageservice.package_bundle_id == packagebundle.id) {
+
+                        if (packageservice.is_consumed == '0') {
+                            consume = 'No';
+                        } else {
+                            consume = 'Yes';
+                        }
+
+                        service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
+                        service_options += '<td></td>';
+                        service_options += '<td>' + packageservice.service.name + '</td>';
+                        service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
+
+                        service_options += '<td>Tax Amt. : ' + packageservice.tax_price + '</td>';
+                        service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
+                         service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
+                        service_options += '</tr>';
+                    }
+
+                });
+            });
+        }
+
+        $("#modal_display .display_plans").html(service_options);
+        $("#modal_display #membership_name").text(membership);
+
+
+        $("#modal_display .plan_history").html(history_options);
+        var totalam = Math.round(response.data.grand_total);
+        $("#modal_display .package_total_price").text(totalam);
+        $("#modal_display #user_name").text(package_data.user.name)
+        $("#modal_display #location_name").text(package_data.location.name)
+
+
+    } catch (error) {
+        showException(error);
+    }
+
+}
+
+// Toggle function for expanding/collapsing service rows
+function toggle(id) {
+    $('.' + id).toggle();
+}
+
+// Edit plan row - copied from main plans module (create-plan.js)
+function editPlanRow(url) {
+    total_amountArray = [];
+    edit_amountArray = [];
+    ExistingTotal = 0;
+    $('.error-msg').html('');
+    $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    $("#edit_discount_id").html('<option value="">Select Discount/Voucher</option>');
+    $("#edit_discount_type").attr('disabled', true);
+    $("#edit_discount_value_1").val('');
+    $("#edit_discount_value_1").attr('disabled', true);
+    hideMessages();
+    if ($("#update_plane_form").length) {
+        $("#update_plane_form")[0].reset();
+    }
+
+    $("#modal_edit_plan").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setEditData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            toastr.error('Failed to load plan data');
+        }
+    });
+}
+
+// Delete plan row
+function deletePlanRow(url) {
+    if (confirm('Are you sure you want to delete this plan?')) {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: url,
+            type: 'DELETE',
+            success: function(response) {
+                if (response.status) {
+                    toastr.success(response.message || 'Plan deleted successfully');
+                    reInitTable();
+                } else {
+                    toastr.error(response.message || 'Failed to delete plan');
+                }
+            },
+            error: function(xhr) {
+                toastr.error('Failed to delete plan');
+            }
+        });
+    }
+}
+
 /*actions*/
+
+function createBundleForPatient(id) {
+    // Reset form fields
+    $('#successMessageBundle').hide();
+    hideSpinner("-save");
+    hideSpinner("-add");
+    
+    $("#bundle_services").html("");
+    $("#modal_add_bundle_form").modal("show");
+    
+    // Initialize Select2 on bundle form dropdowns (location is now hidden, not a dropdown)
+    setTimeout(function() {
+        $('#add_appointment_id_bundle').select2({
+            dropdownParent: $('#modal_add_bundle_form')
+        });
+        $('#add_service_id_bundle').select2({
+            dropdownParent: $('#modal_add_bundle_form')
+        });
+        $('#add_sold_by_bundle').select2({
+            dropdownParent: $('#modal_add_bundle_form')
+        });
+        $('#payment_mode_id_bundle').select2({
+            dropdownParent: $('#modal_add_bundle_form')
+        });
+    }, 100);
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.plans.createplan', { id: id }),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data) {
+                setBundleDataForPatient(response, id);
+            } else {
+                console.error('Invalid response structure:', response);
+                toastr.error('Failed to load bundle data');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Create bundle error:', xhr, thrownError);
+            errorMessage(xhr);
+        }
+    });
+}
+
+function setBundleDataForPatient(response, patient_id) {
+    let discounts = response?.data?.discounts || {};
+    let paymentmodes = response?.data?.paymentmodes || {};
+    let random_id = response?.data?.random_id || '';
+    let patientName = response?.data?.patient_name || '';
+    let lastConsultationLocationName = response?.data?.last_consultation_location_name || '';
+
+    // Set discount options
+    let discount_options = '<option value="">Select Discount</option>';
+    if (discounts && Object.keys(discounts).length > 0) {
+        Object.values(discounts).forEach(function (discount) {
+            discount_options += '<option value="' + discount.id + '">' + discount.name + '</option>';
+        });
+    }
+    $("#add_discount_id_bundle").html(discount_options);
+
+    // Set payment mode options
+    let payment_options = '<option value="">Select Payment Mode</option>';
+    if (paymentmodes && Object.keys(paymentmodes).length > 0) {
+        Object.entries(paymentmodes).forEach(function([id, name]) {
+            payment_options += '<option value="' + id + '">' + name + '</option>';
+        });
+    }
+    $("#payment_mode_id_bundle").html(payment_options);
+
+    // Set patient ID and random ID
+    $("#parent_id_bundle").val(patient_id);
+    $("#add_patient_id_bundle").val(patient_id);
+    $("#random_id_bundle").val(random_id);
+
+    // Set patient name as text
+    $(".bundlePatientName").text(patientName || 'Unknown');
+
+    // Pre-select location and appointment if last consultation exists
+    let lastConsultationLocationId = response?.data?.last_consultation_location_id;
+    let lastConsultationId = response?.data?.last_consultation_id;
+    let appointmentArray = response?.data?.appointmentArray || {};
+
+    if (lastConsultationLocationId) {
+        // Set location ID in hidden field and display name
+        $("#add_bundle_location_id").val(lastConsultationLocationId);
+        $(".bundleLocationName").text(lastConsultationLocationName || 'Unknown Location');
+        
+        // Populate appointments dropdown
+        let appointment_options = '<option value="">Select Appointment</option>';
+        if (appointmentArray && Object.keys(appointmentArray).length > 0) {
+            Object.entries(appointmentArray).forEach(function([id, appointmentData]) {
+                let displayName = appointmentData.name || appointmentData;
+                appointment_options += '<option value="' + id + '">' + displayName + '</option>';
+            });
+        }
+        $("#add_appointment_id_bundle").html(appointment_options);
+        
+        // Pre-select the last consultation
+        if (lastConsultationId) {
+            $("#add_appointment_id_bundle").val(lastConsultationId);
+        }
+        
+        // Load services for this location
+        setTimeout(function() {
+            loadServicesBundleForPatient(lastConsultationLocationId);
+            loadSoldByForBundle(lastConsultationLocationId, patient_id);
+        }, 200);
+    } else {
+        $(".bundleLocationName").text('No Location');
+    }
+
+    // Set membership info from API
+    setTimeout(function() {
+        if (lastConsultationLocationId && patient_id) {
+            loadMembershipForBundle(lastConsultationLocationId, patient_id);
+        }
+    }, 300);
+}
+
+function loadSoldByForBundle(locationId, patientId) {
+    let url = route('admin.packages.getappointmentinfo', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data) {
+                // Populate sold by dropdown
+                if (response.data.users) {
+                    let users = response.data.users;
+                    let soldByOptions = '<option value="">Select</option>';
+                    
+                    Object.entries(users).forEach(function([id, name]) {
+                        soldByOptions += '<option value="' + id + '">' + name + '</option>';
+                    });
+                    
+                    $("#add_sold_by_bundle").html(soldByOptions);
+                    
+                    // Pre-select the doctor if available
+                    if (response.data.selected_doctor_id) {
+                        $("#add_sold_by_bundle").val(response.data.selected_doctor_id);
+                    }
+                }
+                
+                // Set membership info
+                if (response.data.membership) {
+                    $("#patient_membership_bundle").val(response.data.membership);
+                }
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading sold by data for bundle:', thrownError);
+        }
+    });
+}
+
+function getServiceDiscountBundle(element) {
+    var bundle_id = element.val();
+    var patient_id = $('#add_patient_id_bundle').val() || $('#parent_id_bundle').val() || patientCardID;
+    var location_id = $('#add_bundle_location_id').val();
+
+    // Clear price if no bundle selected
+    if (!bundle_id) {
+        $("#net_amount_bundle").val('');
+        $("#package_total_bundle").val('0');
+        $("#grand_total_bundle").val('0');
+        return;
+    }
+
+    if (bundle_id && location_id) {
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.getserviceinfo'),
+            data: {
+                'bundle_id': bundle_id,
+                'location_id': location_id,
+                'patient_id': patient_id
+            },
+            success: function (response) {
+                if (response.data && response.data.net_amount !== undefined) {
+                    var netAmount = parseFloat(response.data.net_amount).toFixed(2);
+                    $("#net_amount_bundle").val(netAmount);
+                    $("#net_amount_bundle").prop("disabled", true);
+                    // Update Total and Cash Received Remain fields
+                    $("#package_total_bundle").val(netAmount);
+                    $("#grand_total_bundle").val(parseFloat(netAmount).toLocaleString());
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching bundle info:', error);
+                $("#net_amount_bundle").val('');
+            }
+        });
+    }
+}
+
+function loadServicesBundleForPatient(locationId) {
+    if (!locationId || locationId == '') {
+        $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+        return;
+    }
+
+    let url = route('admin.packages.getbundles', {
+        _query: {
+            location_id: locationId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response.status && response.data && response.data.bundles) {
+                let bundles = response.data.bundles;
+                let bundle_options = '<option value="">Select Bundle</option>';
+
+                // Handle both array and object formats
+                if (Array.isArray(bundles)) {
+                    bundles.forEach(function (bundle) {
+                        bundle_options += '<option value="' + bundle.id + '">' + bundle.name + ' - Rs. ' + bundle.price + '</option>';
+                    });
+                } else {
+                    Object.values(bundles).forEach(function (bundle) {
+                        bundle_options += '<option value="' + bundle.id + '">' + bundle.name + ' - Rs. ' + bundle.price + '</option>';
+                    });
+                }
+
+                $("#add_service_id_bundle").html(bundle_options);
+            } else {
+                console.log('No bundles found in response:', response);
+                $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading services for bundle:', thrownError);
+            $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+        }
+    });
+}
+
+// Handle Add button click for patient-specific Add Bundle modal
+$(document).on('click', '#AddPackageBundle', function () {
+    // Check if we're in the patient-specific modal (has bundlePatientName class)
+    if ($('.bundlePatientName').length === 0) {
+        return; // Let the original handler in create-bundle.js handle it
+    }
+
+    $('.create-bundle-error').html('');
+
+    // Check if a service already exists in the table
+    if ($('#bundle_services tr').length > 0) {
+        toastr.error('A plan can have only one bundle at a time. Please remove the current bundle to add a new one.');
+        return false;
+    }
+
+    // Validation
+    if (!$('#add_bundle_location_id').val()) {
+        toastr.error('Location is required');
+        return false;
+    }
+
+    if (!$('#add_patient_id_bundle').val()) {
+        toastr.error('Patient is required');
+        return false;
+    }
+
+    if (!$('#add_appointment_id_bundle').val()) {
+        $('#add_appointment_id_bundle_error').html('Please select appointment');
+        return false;
+    }
+
+    if (!$('#add_service_id_bundle').val()) {
+        $('#add_service_id_bundle_error').html('Please select service');
+        return false;
+    }
+
+    if (!$('#add_sold_by_bundle').val()) {
+        $('#add_sold_by_bundle_error').html('Please select sold by');
+        return false;
+    }
+
+    $(this).attr("disabled", true);
+    
+    var random_id = $('#random_id_bundle').val();
+    var service_id = $('#add_service_id_bundle').val(); // Bundle id
+    var net_amount = $('#net_amount_bundle').val();
+    var package_total = $('#package_total_bundle').val();
+    var sold_by = $('#add_sold_by_bundle').val();
+    var location_id = $('#add_bundle_location_id').val();
+    var user_id = $('#add_patient_id_bundle').val();
+
+    if (service_id && net_amount && location_id) {
+        showSpinner("-add");
+
+        var formData = {
+            'random_id': random_id,
+            'bundle_id': service_id,
+            'discount_id': null,
+            'net_amount': net_amount,
+            'discount_type': null,
+            'discount_price': null,
+            'package_total': package_total,
+            'is_exclusive': null,
+            'location_id': location_id,
+            'user_id': user_id,
+            'package_bundles[]': [],
+            'sold_by': sold_by
+        };
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            type: 'post',
+            url: route('admin.packages.savebundle_service'),
+            data: formData,
+            success: function (response) {
+                if (response.status) {
+                    let servicesData = response.data.servicesData;
+                    let bundlesData = servicesData.bundlesData;
+                    let packageServicesData = servicesData.packageServicesData;
+
+                    // Calculate total
+                    let totalAmount = bundlesData.tax_including_price.toLocaleString();
+                    let grandTotal = totalAmount.replace(/,/g, '');
+                    
+                    // Update package total
+                    let currentTotal = parseFloat($('#package_total_bundle').val() || 0);
+                    let newTotal = currentTotal + parseFloat(bundlesData.tax_including_price);
+                    $("#package_total_bundle").val(newTotal.toFixed(2));
+
+                    // Add row to table
+                    $('#bundle_services').append(
+                        "<tr id='table_bundle' class='HR_" + random_id + " HR_" + bundlesData.id + "'>" +
+                        "<td><a href='javascript:void(0)' onClick='toggle(" + bundlesData.id + ")'>" + servicesData.service_name + "</a></td>" +
+                        "<td>" + servicesData.service_price.toLocaleString() + "</td>" +
+                        "<td>" + bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                        "<td>" + bundlesData.tax_price + "</td>" +
+                        "<td>" + grandTotal + "</td>" +
+                        "<td>" +
+                        "<input type='hidden' class='package_bundles_bundle' name='package_bundles[]' value='" + bundlesData.package_bundle_id + "' />" +
+                        "<input type='hidden' class='original_bundle_id' value='" + bundlesData.id + "' />" +
+                        "<input type='hidden' class='package_bundles_sold_by_bundle' name='sold_by[]' value='" + servicesData.sold_by + "' />" +
+                        "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteBundleRowTemPatient(" + bundlesData.package_bundle_id + ")'>" + trashBtn() + "</button>" +
+                        "</td>" +
+                        "</tr>"
+                    );
+
+                    // Add child services
+                    jQuery.each(packageServicesData, function (i, packageService) {
+                        let consume = packageService.is_consumed == '0' ? 'No' : 'Yes';
+                        $('#bundle_services').append(
+                            "<tr class='inner_records_hr HR_" + bundlesData.id + " " + bundlesData.id + "'>" +
+                            "<td></td>" +
+                            "<td>" + packageService.name + "</td>" +
+                            "<td>Amount: " + packageService.tax_exclusive_price.toLocaleString() + "</td>" +
+                            "<td>Tax: " + packageService.tax_price + "</td>" +
+                            "<td>Total Amount: " + packageService.tax_including_price.toLocaleString() + "</td>" +
+                            "<td></td>" +
+                            "</tr>"
+                        );
+                    });
+
+                    // Toggle to show child services
+                    toggle(bundlesData.id);
+
+                    // Clear form fields
+                    $('#add_service_id_bundle').val(null).trigger('change');
+                    $('#net_amount_bundle').val('');
+                    $('#add_sold_by_bundle').val(null).trigger('change');
+                    
+                    // Disable Add button after service added (only 1 service allowed)
+                    $("#AddPackageBundle").prop("disabled", true);
+                    $("#add_service_id_bundle").prop("disabled", true);
+                    $("#add_sold_by_bundle").prop("disabled", true);
+
+                } else {
+                    toastr.error(response.message || 'Failed to add bundle');
+                    $("#AddPackageBundle").attr("disabled", false);
+                }
+
+                hideSpinner("-add");
+            },
+            error: function (xhr, status, error) {
+                console.error('Error adding bundle:', error);
+                toastr.error('Failed to add service');
+                hideSpinner("-add");
+                $("#AddPackageBundle").attr("disabled", false);
+            }
+        });
+    } else {
+        toastr.error('Please fill all required fields');
+        $(this).attr("disabled", false);
+    }
+});
+
+// Handle Save button click for patient-specific Add Bundle modal
+$(document).on('click', '#AddPackageFinalBundle', function () {
+    // Check if we're in the patient-specific modal (has bundlePatientName class)
+    if ($('.bundlePatientName').length === 0) {
+        return; // Let the original handler in create-bundle.js handle it
+    }
+
+    $('.create-bundle-error').html('');
+    
+    // Validate payment mode and cash amount
+    if ($('#payment_mode_id_bundle').val()) {
+        if (!$('#cash_amount_bundle').val()) {
+            $('#cash_amount_bundle_error').html('Please enter cash amount');
+            return false;
+        }
+    }
+
+    var random_id = $('#random_id_bundle').val();
+    var patient_id = $('#add_patient_id_bundle').val();
+    var total = $('#package_total_bundle').val();
+    var payment_mode_id = $('#payment_mode_id_bundle').val();
+    var cash_amount = $('#cash_amount_bundle').val() || '0';
+    var grand_total = $('#grand_total_bundle').val();
+    if (!grand_total || grand_total === '') {
+        grand_total = total;
+        $('#grand_total_bundle').val(grand_total);
+    }
+    var location_id = $('#add_bundle_location_id').val();
+    var appointment_id = $('#add_appointment_id_bundle').val();
+
+    var formData = {
+        'random_id': random_id,
+        'patient_id': patient_id,
+        'location_id': location_id,
+        'total': total,
+        'payment_mode_id': payment_mode_id,
+        'cash_amount': cash_amount,
+        'grand_total': grand_total,
+        'is_exclusive': null,
+        'plan_type': 'bundle',
+        'appointment_id': appointment_id,
+        package_bundles: []
+    };
+
+    // Collect bundle data from table
+    $('#bundle_services').find('tr:not(.inner_records_hr)').each(function () {
+        var $row = $(this);
+        var bundleData = {
+            serviceName: $row.find('td:nth-child(1) a').text().trim(),
+            RegularPrice: $row.find('td:nth-child(2)').text().trim(),
+            DiscountName: '-',
+            Type: '-',
+            DiscountValue: '0.00',
+            Amount: $row.find('td:nth-child(3)').text().trim(),
+            Tax: $row.find('td:nth-child(4)').text().trim(),
+            Total: $row.find('td:nth-child(5)').text().trim(),
+            bundleId: $row.find('td:nth-child(6) input.original_bundle_id').val(),
+            sold_by: $row.find('td:nth-child(6) input.package_bundles_sold_by_bundle').val()
+        };
+        
+        formData['package_bundles'].push(bundleData);
+    });
+    
+    // Validate that we have bundle data
+    if (formData['package_bundles'].length === 0) {
+        toastr.error('No bundle found in table. Please add a bundle first.');
+        $('#inputfieldMessageBundle').show();
+        return false;
+    }
+
+    if (payment_mode_id == '' && cash_amount > 0) {
+        toastr.error("Please select the payment mode");
+        return false;
+    }
+
+    // Validate required fields
+    if (random_id && patient_id && total && location_id) {
+        showSpinner("-save");
+
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.savepackages'),
+            data: formData,
+            success: function (response) {
+                if (response.status) {
+                    toastr.success("Bundle plan successfully created");
+                    
+                    // Close modal and reload datatable
+                    $('#modal_add_bundle_form').modal('hide');
+                    reInitTable();
+                } else {
+                    toastr.error(response.message || 'Failed to create bundle plan');
+                }
+
+                hideSpinner("-save");
+            },
+            error: function (xhr, status, error) {
+                console.error('Error saving bundle plan:', error);
+                toastr.error('Failed to create bundle plan');
+                hideSpinner("-save");
+            }
+        });
+    } else {
+        $('#inputfieldMessageBundle').show();
+        toastr.error('Please fill all required fields');
+    }
+});
+
+// Delete bundle row for patient-specific modal
+function deleteBundleRowTemPatient(id) {
+    $.ajax({
+        type: 'get',
+        url: route('admin.packages.deleteplanrowtem'),
+        data: {
+            'id': id
+        },
+        success: function (response) {
+            if (response.status) {
+                // Remove rows from table
+                $(".HR_" + id).remove();
+                
+                // Reset total
+                $("#package_total_bundle").val('0');
+                
+                // Re-enable all fields and Add button
+                $("#AddPackageBundle").prop("disabled", false);
+                $("#add_service_id_bundle").prop("disabled", false);
+                $("#add_sold_by_bundle").prop("disabled", false);
+            }
+        }
+    });
+}
+
+function loadMembershipForBundle(locationId, patientId) {
+    let url = route('admin.packages.getappointmentinfo', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data && response.data.membership) {
+                $(".bundleMembershipInfo").text(response.data.membership);
+            } else {
+                $(".bundleMembershipInfo").text('No Membership');
+            }
+        }
+    });
+}
 
 function createPlan(id) {
 
@@ -143,42 +913,35 @@ function createPlan(id) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#modal_edit_regions").modal("show");
-
-            setPlanData(response, id);
-
+            // Check if response has data before proceeding
+            if (response && response.data) {
+                $("#modal_edit_regions").modal("show");
+                setPlanData(response, id);
+            } else {
+                console.error('Invalid response structure:', response);
+                toastr.error('Failed to load plan data');
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Create plan error:', xhr, thrownError);
             errorMessage(xhr);
             reInitValidation(Validation);
         }
     });
 
-    getServices();
-
 }
 
 function setPlanData(response, patient_id) {
 
-    let locations = response.data.locations
-    let discounts = response.data.discounts;
-    let discount_types = response.data.discount_type;
-    let paymentmodes = response.data.paymentmodes;
-    let random_id = response.data.random_id;
-
-    let location_options = '<option value="">Select Centre</option>';
-
-    if (locations) {
-        Object.entries(locations).forEach(function (location) {
-            location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
-        });
-    }
-
-    $("#add_location_id").html(location_options);
+    let locations = response?.data?.locations || {};
+    let discounts = response?.data?.discounts || {};
+    let discount_types = response?.data?.discount_type || {};
+    let paymentmodes = response?.data?.paymentmodes || {};
+    let random_id = response?.data?.random_id || '';
 
     let discount_options = '<option value="">Select Discount</option>';
 
-    if (discounts) {
+    if (discounts && Object.keys(discounts).length > 0) {
         Object.values(discounts).forEach(function (discount) {
             discount_options += '<option value="' + discount.id + '">' + discount.name + '</option>';
         });
@@ -188,7 +951,7 @@ function setPlanData(response, patient_id) {
 
     let discount_type_options = '<option value="">Select Discount Type</option>';
 
-    if (discount_types) {
+    if (discount_types && Object.keys(discount_types).length > 0) {
         Object.entries(discount_types).forEach(function (discount_type) {
             discount_type_options += '<option value="' + discount_type[0] + '">' + discount_type[1] + '</option>';
         });
@@ -199,7 +962,7 @@ function setPlanData(response, patient_id) {
 
     let payment_mode_options = '<option value="">Select Payment Mode</option>';
 
-    if (paymentmodes) {
+    if (paymentmodes && Object.keys(paymentmodes).length > 0) {
         Object.entries(paymentmodes).forEach(function (paymentmode) {
             payment_mode_options += '<option value="' + paymentmode[0] + '">' + paymentmode[1] + '</option>';
         });
@@ -211,20 +974,106 @@ function setPlanData(response, patient_id) {
 
     $("#random_id_1").val(random_id);
 
+    // Set membership info if available
+    let patientMembership = response?.data?.patient_membership || 'No Membership';
+    $(".membershipInfo").text(patientMembership);
+
+    // Pre-select location and appointment if last consultation exists
+    let lastConsultationLocationId = response?.data?.last_consultation_location_id;
+    let lastConsultationId = response?.data?.last_consultation_id;
+    let lastConsultationLocationName = response?.data?.last_consultation_location_name;
+    let appointmentArray = response?.data?.appointmentArray || {};
+
+    if (lastConsultationLocationId) {
+        // Set location ID in hidden field
+        $("#add_location_id").val(lastConsultationLocationId);
+        
+        // Display location name in heading from backend response
+        let locationName = lastConsultationLocationName || 'Unknown Location';
+        $(".locationName").text(locationName);
+        
+        // Populate appointments dropdown from API response
+        let appointment_options = '<option value="">Select Appointment</option>';
+        if (appointmentArray && Object.keys(appointmentArray).length > 0) {
+            Object.entries(appointmentArray).forEach(function([id, appointmentData]) {
+                // appointmentData is an object with id, name, doctor_id
+                let displayName = appointmentData.name || appointmentData;
+                let appointmentId = appointmentData.id || id;
+                appointment_options += '<option value="' + id + '">' + displayName + '</option>';
+            });
+        }
+        $("#add_appointment_id").html(appointment_options);
+        
+        // Pre-select the last consultation
+        if (lastConsultationId) {
+            $("#add_appointment_id").val(lastConsultationId);
+        }
+        
+        // Load services and sold by data with location_id and patient_id - wait for DOM to update
+        setTimeout(function() {
+            let locationId = $("#add_location_id").val();
+            if (locationId && patient_id) {
+                loadServicesForPatient(locationId, patient_id);
+                loadSoldByForPatient(locationId, patient_id);
+            }
+        }, 200);
+    } else {
+        // No last consultation, clear appointments
+        $("#add_appointment_id").html('<option value="">Select Appointment</option>');
+        $(".locationName").text('No Location');
+    }
+
+}
+
+function loadServicesForPatient(locationId, patientId) {
+    let url = route('admin.packages.getservice', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data && response.data.service) {
+                let services = response.data.service;
+                let service_options = '<option value="">Select Service</option>';
+
+                Object.values(services).forEach(function (value) {
+                    service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                });
+
+                $("#add_service_id").html(service_options);
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading services:', thrownError);
+            $("#add_service_id").html('<option value="">Select Service</option>');
+        }
+    });
 }
 
 function getServices(type = 'add', patient_id) {
 
     let location = $("#" + type + "_location_id").val();
 
-    let url = route('admin.packages.getservice');
+    let queryParams = {};
     if (location != '') {
-        url = route('admin.packages.getservice', {
-            _query: {
-                location_id: location,
-            }
-        });
+        queryParams.location_id = location;
     }
+    if (patient_id) {
+        queryParams.patient_id = patient_id;
+    }
+
+    let url = route('admin.packages.getservice', {
+        _query: queryParams
+    });
 
     $.ajax({
         headers: {
@@ -351,40 +1200,38 @@ function setEditData(response) {
 
     try {
 
-        let appointmentArray = response.data.appointmentArray;
-        let end_previous_date = response.data.end_previous_date;
-        let grand_total = response.data.grand_total;
-        let locationhasservice = response.data.locationhasservice;
-        let locations = response.data.locations;
-        let package = response.data.package;
-        let packageadvances = response.data.packageadvances;
-        let packagebundles = response.data.packagebundles;
-        let packageservices = response.data.packageservices;
-        let paymentmodes = response.data.paymentmodes;
-        let range = response.data.range;
-        let total_price = response.data.total_price;
+        let appointmentArray = response?.data?.appointmentArray || [];
+        let end_previous_date = response?.data?.end_previous_date || '';
+        let grand_total = response?.data?.grand_total || 0;
+        let locationhasservice = response?.data?.locationhasservice || [];
+        let locations = response?.data?.locations || {};
+        let package = response?.data?.package || {};
+        let packageadvances = response?.data?.packageadvances || [];
+        let packagebundles = response?.data?.packagebundles || [];
+        let packageservices = response?.data?.packageservices || [];
+        let paymentmodes = response?.data?.paymentmodes || {};
+        let users = response?.data?.users || {};
+        let range = response?.data?.range || {};
+        let total_price = response?.data?.total_price || 0;
+        let patient = package?.user;
+        let location = package?.location;
+        let membership = response?.data?.membership || '';
+        let selected_user_id = response?.data?.selectedUserId || '';
+        let selectedAppointmentId = response?.data?.selectedAppointmentId || '';
 
-        $(".patientName").text(package?.user?.name);
-        $(".locationName").text(package?.location?.name);
-        $("#edit_location_id").val(package?.location?.id);
-        $("#edit_patient_id").val(package?.patient_id);
+        // Populate patient name, membership, location (using patient card edit modal selectors)
+        $(".patientName").text(patient?.name || '');
+        $(".membershipInfo").text(membership || 'No Membership');
+        $(".locationName").text(location?.name || '');
+        
+        // Set hidden fields
+        $("#edit_location_id").val(location?.id);
+        $("#edit_parent_id").val(package?.patient_id);
         $("#edit_random_id").val(package?.random_id);
-        $("#edit_package_total").val(total_price);
-
-        let membershipText = 'No Membership';
-        if (package?.user?.membership) {
-            let membership = package.user.membership;
-            let end_date = moment(membership.end_date);
-            let isExpired = end_date.isBefore(moment());
-            let status = isExpired ? 'Expired' : (membership.active === 1 ? 'Active' : 'Inactive');
-            
-            if (membership.is_referral == 1) {
-                membershipText = `Ref: (${membership.code})-${status}`;
-            } else {
-                membershipText = `Gold - ${membership.code} - ${status}`;
-            }
-        }
-        $(".membershipInfo").text(membershipText);
+        $("#edit_random_id_1").val(package?.random_id);
+        $("#edit_package_total_1").val(total_price ? total_price.toFixed(2) : '0.00');
+        $("#edit_grand_total_1").val(grand_total);
+        $('#edit_cash_amount_1').prop('disabled', true);
 
         let history_options = noRecordFoundTable(5);
 
@@ -412,10 +1259,10 @@ function setEditData(response) {
                     history_options += '<td>';
 
                     if (end_previous_date <= packageadvance?.created_at && packageadvance?.cash_flow == 'in') {
-                        if (permissions.patients_plan_cash_edit) {
+                        if (typeof permissions !== 'undefined' && permissions.patients_plan_cash_edit) {
                             history_options += '<a onclick="planeEdit(' + packageadvance.id + ', ' + package.id + ');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
                         }
-                        if (permissions.patients_plan_cash_delete) {
+                        if (typeof permissions !== 'undefined' && permissions.patients_plan_cash_delete) {
                             history_options += '<button onclick="deletePlaneHistory(`' + route('admin.packages.delete_cash') + '`, ' + packageadvance.id + ');" class="btn btn-sm btn-danger">Delete</button>';
                         }
                     }
@@ -430,45 +1277,54 @@ function setEditData(response) {
 
         $(".edit_plan_history").html(history_options);
 
+        // Appointment dropdown with pre-selection
         let appointment_options = '<option value="">Select Appointment</option>';
-        if (appointmentArray.length) {
+        if (appointmentArray && Object.keys(appointmentArray).length > 0) {
             Object.values(appointmentArray).forEach(function (appointment) {
-
-                appointment_options += '<option value="' + appointment.id + '">' + appointment.name + '</option>';
+                let selected = (appointment.id === selectedAppointmentId) ? 'selected' : '';
+                appointment_options += '<option value="' + appointment.id + '" ' + selected + '>' + appointment.name + '</option>';
             });
         }
-
         $("#edit_appointment_id").html(appointment_options);
 
-
-        $("#edit_appointment_id").find('option').each(function () {
-            let app_id = 0;
-            if ($(this).val() != '') {
-                let valueArray = $(this).val().split('.');
-                app_id = valueArray[0];
-                if (app_id == package.appointment_id) {
-                    $("#edit_appointment_id").val($(this).val())
-                }
-            }
-        });
-
-        let servic_options = '<option value="">Select Service</option>';
-        if (locationhasservice.length) {
+        // Services dropdown
+        let serviceOptions = '<option value="">Select Service</option>';
+        if (locationhasservice && locationhasservice.length) {
             Object.values(locationhasservice).forEach(function (service) {
-
-                servic_options += '<option value="' + service.id + '">' + service.name + '</option>';
+                serviceOptions += '<option value="' + service?.id + '">' + service?.name + '</option>';
             });
         }
+        $("#edit_service_id").html(serviceOptions);
 
-        $("#edit_service_id").html(servic_options);
+        // Sold By dropdown with pre-selection
+        let userOptions = '<option value="">Select</option>';
+        if (users) {
+            Object.entries(users).forEach(function ([id, name]) {
+                let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
+                userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+            });
+        }
+        $("#edit_sold_by").html(userOptions);
 
+        // Payment mode dropdown
+        let payment_options = '<option value="">Select Payment Mode</option>';
+        if (paymentmodes) {
+            Object.entries(paymentmodes).forEach(function (paymentmode) {
+                payment_options += '<option value="' + paymentmode[0] + '">' + paymentmode[1] + '</option>';
+            });
+        }
+        $("#edit_payment_mode_id").html(payment_options);
 
-        let service_options = noRecordFoundTable(9);
+        // Services table
+        let service_options = noRecordFoundTable(10);
 
         if (packagebundles.length) {
-            service_options = noRecordFoundTable(9);
+            service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
-                service_options += '<tr>';
+                // Delete button
+                let del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+
+                service_options += '<tr class="HR_' + packagebundle.id + '">';
                 service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
@@ -499,29 +1355,42 @@ function setEditData(response) {
                 service_options += '</td>';
 
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
-                service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
+                service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
-                service_options += "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteEditPlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                
+                // Get sold_by names for this bundle
+                let soldByNames = [];
+                Object.values(packageservices).forEach(function (ps) {
+                    if (ps.package_bundle_id == packagebundle.id && ps.sold_by && ps.sold_by.name) {
+                        if (!soldByNames.includes(ps.sold_by.name)) {
+                            soldByNames.push(ps.sold_by.name);
+                        }
+                    }
+                });
+                service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
+                
+                service_options += del_icon;
 
                 service_options += '</tr>';
 
 
                 Object.values(packageservices).forEach(function (packageservice) {
-                    let consume = 'NO';
+                    let consume = 'No';
                     if (packageservice.package_bundle_id == packagebundle.id) {
                         if (packageservice.is_consumed == '0') {
-                            consume = 'NO';
+                            consume = 'No';
                         } else {
-                            consume = 'YES';
+                            consume = 'Yes';
                         }
 
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
-                        service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
-                        service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td>Tax:' + packageservice.tax_price + '</td>';
+                        service_options += '<td>Total Amount:' + packageservice.tax_including_price + '</td>';
+                        service_options += '<td colspan="2">Is Consumed:' + consume + '</td>';
+                        service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
                         service_options += '</tr>';
                     }
 
@@ -529,7 +1398,6 @@ function setEditData(response) {
             });
         }
 
-        $(".service_not_found").remove();
         $("#edit_plan_services").html(service_options);
 
 
@@ -984,30 +1852,7 @@ function setSmsLogs(response) {
 
 }
 
-function viewPlan($route) {
-
-    $("#modal_display").modal("show");
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: $route,
-        type: "GET",
-        cache: false,
-        success: function (response) {
-
-            displayData(response);
-
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
-
-}
-
-function displayData(response) {
+function displayDataForEdit(response) {
 
     try {
 
@@ -1083,11 +1928,7 @@ function displayData(response) {
                 Object.values(packageservices).forEach(function (packageservice) {
 
                     if (packageservice.package_bundle_id == packagebundle.id) {
-                        if (packageservice.is_consumed == '0') {
-                            let consume = 'NO';
-                        } else {
-                            let consume = 'YES';
-                        }
+                        let consume = packageservice.is_consumed == '0' ? 'NO' : 'YES';
 
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
                         service_options += '<td></td>';
@@ -1161,12 +2002,12 @@ function setFilters(filter_values, active_filters) {
 
     try {
 
-        let locations = filter_values.locations;
-        let statuses = filter_values.status;
+        let locations = filter_values?.locations || {};
+        let statuses = filter_values?.status || {};
 
         let location_options = '<option value="">All</option>';
 
-        if (locations) {
+        if (locations && Object.keys(locations).length > 0) {
             Object.entries(locations).forEach(function (location) {
                 location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
             });
@@ -1174,7 +2015,7 @@ function setFilters(filter_values, active_filters) {
 
         let status_options = '<option value="">All</option>';
 
-        if (statuses) {
+        if (statuses && Object.keys(statuses).length > 0) {
             Object.entries(statuses).forEach(function (status) {
                 status_options += '<option value="' + status[0] + '">' + status[1] + '</option>';
             });
@@ -1241,34 +2082,68 @@ function edit_keyfunction_grandtotal() {
 
     hideMessages();
 
-    var cash_amount = $('#edit_cash_amount').val();
-    var total = $('#edit_package_total').val();
+    var cash_amount = $('#edit_cash_amount_1').val();
+    var total = $('#edit_package_total_1').val();
     var random_id = $('#edit_random_id').val();
 
-    if (cash_amount && total) {
+    if (total) {
         $.ajax({
             type: 'GET',
             url: route('admin.packages.getgrandtotal_update'),
             data: {
-                'cash_amount': cash_amount,
+                'cash_amount': cash_amount ?? 0,
                 'total': total,
                 'random_id': random_id
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#edit_total_price").val(resposne?.data?.grand_total ?? 0);
+                    $("#edit_grand_total_1").val(resposne?.data?.grand_total ?? 0);
                 } else {
                     $('#edit_wrongMessage').show();
                 }
             },
         });
-    } else {
-        $('#edit_inputfieldMessage').show();
     }
 }
 
 function toggle(id) {
     $("." + id).toggle();
+}
+
+// Delete plan action - calls API endpoint DELETE /api/packages/{id}
+function deletePlanAction(id) {
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: '/api/packages/' + id,
+                type: 'DELETE',
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message || 'Plan deleted successfully');
+                        reInitTable();
+                    } else {
+                        toastr.error(response.message || 'Failed to delete plan');
+                    }
+                },
+                error: function(xhr) {
+                    toastr.error('Failed to delete plan');
+                }
+            });
+        }
+    });
 }
 
 /*Delete The record*/
@@ -1491,8 +2366,10 @@ jQuery(document).ready(function () {
 
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_location_id').val();
+        var user_id = $('#add_patient_id').val();
+        var sold_by = $('#add_sold_by').val();
         
-        if (service_id && net_amount && location_id) {
+        if (service_id && net_amount && location_id && user_id && sold_by) {
 
             showSpinner("-add");
 
@@ -1500,12 +2377,14 @@ jQuery(document).ready(function () {
                 if (discount_price == '') {
                     hideSpinner("-add");
                     $('#inputfieldMessage').show();
+                    $(this).attr("disabled", false);
                     return false;
                 }
                 if (discount_type == 'Percentage') {
                     if (discount_price > 100) {
                         $('#percentageMessage').show();
                         hideSpinner("-add");
+                        $(this).attr("disabled", false);
                         return false;
                     }
                 }
@@ -1522,6 +2401,7 @@ jQuery(document).ready(function () {
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
                 'user_id': user_id,
+                'sold_by': sold_by,
                 'package_bundles[]': []
             };
 
@@ -1531,7 +2411,7 @@ jQuery(document).ready(function () {
 
             $.ajax({
                 type: 'get',
-                url: route('admin.packages.savepackages_service'),
+                url: route('admin.plans.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
                  
@@ -1565,19 +2445,40 @@ jQuery(document).ready(function () {
                             $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Tax Amt. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
 
-                        keyfunction_grandtotal();
+                        // Call getgrandtotal API after adding service
+                        var cash_amount = $('#add_cash_amount').val() || 0;
+                        var total = $("#add_package_total").val() || 0;
+                        
+                        $.ajax({
+                            type: 'get',
+                            url: route('admin.packages.getgrandtotal'),
+                            data: {
+                                'cash_amount': cash_amount,
+                                'total': total
+                            },
+                            success: function(grandTotalResponse) {
+                                if (grandTotalResponse.status && grandTotalResponse.data) {
+                                    $("#add_total_price").val(grandTotalResponse.data.grand_total);
+                                }
+                            }
+                        });
 
                         var rows = $('#plan_services tbody tr').length;
 
                         if (rows >= 3) {
                             $("#add_location_id").prop("disabled", true);
                         }
-                        /*we enable add button after all functionality enable*/
-                        // $('#AddPackage_1').attr("disabled", false);
+                        
+                        // Reset form fields after successful addition
+                        $('#add_service_id').val(null).trigger('change');
+                        $('#add_discount_id').val(null).trigger('change');
+                        $('#add_discount_type').val(null).trigger('change');
+                        $('#add_discount_value').val('');
+                        $('#net_amount_1').val('');
+                        $('#add_sold_by').val(null).trigger('change');
 
                     } else {
                         $('#AlreadyExitMessage').show();
-                        // $('#AddPackage_1').attr("disabled", false);
                     }
 
                     hideSpinner("-add");
@@ -1778,21 +2679,21 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
-    /*function for final package information save*/
+    /*function for final package information save - copied from main plans module*/
     $("#EditPackageFinal").click(function () {
-
+        $('.error-msg').html('');
         hideMessages();
-
+        
         var random_id = $('#edit_random_id').val();
-        var patient_id = $('#edit_patient_id').val();
-        var total = $('#edit_package_total').val();
+        var patient_id = patientCardID;
+        var total = $('#edit_package_total_1').val();
         var payment_mode_id = $('#edit_payment_mode_id').val();
-        var cash_amount = $('#edit_cash_amount').val();
-        var grand_total = $('#edit_total_price').val();
+        var cash_amount = $('#edit_cash_amount_1').val();
+        var grand_total = $('#edit_grand_total_1').val();
         var location_id = $('#edit_location_id').val();
         var is_exclusive = $('#edit_is_exclusive').val();
         var appointment_id = $('#edit_appointment_id').val();
-
+        
         var formData = {
             'random_id': random_id,
             'patient_id': patient_id,
@@ -1803,43 +2704,72 @@ jQuery(document).ready(function () {
             'grand_total': grand_total,
             'is_exclusive': is_exclusive,
             'appointment_id': appointment_id,
-            'package_bundles[]': []
+            package_bundles: []
         };
 
-        $(".package_bundles").each(function () {
-            formData['package_bundles[]'].push($(this).val());
+        $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
+            formData['package_bundles'].push({
+                serviceName: $(this).find('td:first-child a').text(),
+                RegularPrice: $(this).find('td:nth-child(2)').text(),
+                DiscountName: $(this).find('td:nth-child(3)').text(),
+                Type: $(this).find('td:nth-child(4)').text(),
+                DiscountValue: $(this).find('td:nth-child(5)').text(),
+                Amount: $(this).find('td:nth-child(6)').text(),
+                Tax: $(this).find('td:nth-child(7)').text(),
+                Total: $(this).find('td:nth-child(8)').text(),
+                bundleId: $(this).find('td:nth-child(10)').find("input[name='bundle_id']").val(),
+                DiscountId: $(this).find('td:nth-child(10)').find("input[name='discount_id']").val(),
+                sold_by: $(this).find('td:nth-child(11)').find("input[name='sold_by[]']").val()
+            });
         });
+
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
         }
 
+        if (payment_mode_id == '' && cash_amount > 0) {
+            $('#payment_mode_id').html('Please select payment mode');
+            return false;
+        }
+
+        if (payment_mode_id && cash_amount == '') {
+            $('#cash_amount_error').html('Please enter cash amount');
+            return false;
+        }
+
+        if (total <= 0) {
+            toastr.error("Please add atleast one service");
+            return false;
+        }
+
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
-
             showSpinner("-edit-save");
-
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.updatepackages'),
                 data: formData,
                 success: function (resposne) {
-
                     if (resposne.status) {
-                        $('#successMessage').show();
-                        toastr.success(resposne.message)
-                        /* closePopup('update_plane_form');
-                         reInitTable();*/
-                        setTimeout(function () {
-                            window.location.reload();
-                        }, 200);
+                        toastr.success(resposne.message || 'Plan updated successfully');
+                        $("#modal_edit_plan").modal("hide");
+                        reInitTable();
                     } else {
-                        $('#edit_wrongMessage').show();
-                        toastr.error(resposne.message)
+                        if (resposne.data?.setteled == 1) {
+                            $('#casesetteledamount').show();
+                        } else {
+                            $('#edit_wrongMessage').show();
+                            toastr.error(resposne.message)
+                        }
                     }
 
                     hideSpinner("-edit-save");
                 },
-                error: function () {
+                error: function (response) {
+                    errors = response?.responseJSON?.errors;
+                    if (errors) {
+                        errors.appointment_id ? $('#appointment_id').html(errors.appointment_id) : $('#appointment_id').html('');
+                    }
                     hideSpinner("-edit-save");
                 }
             });
@@ -1852,4 +2782,221 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
+    // Service selection handler - fetch service price and available discounts
+    $(document).on('change', '#add_service_id', function() {
+        getServiceDiscountForPatient($(this));
+    });
+
+    // Discount selection handler - calculate final price with discount
+    $(document).on('change', '#add_discount_id', function() {
+        getDiscountInfoForPatient($(this));
+    });
+
+});
+
+// Load sold by data from getappointmentinfo API
+function loadSoldByForPatient(locationId, patientId) {
+    let url = route('admin.packages.getappointmentinfo', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data) {
+                // Populate sold by dropdown
+                if (response.data.users) {
+                    let users = response.data.users;
+                    let soldByOptions = '<option value="">Select</option>';
+                    
+                    Object.entries(users).forEach(function([id, name]) {
+                        soldByOptions += '<option value="' + id + '">' + name + '</option>';
+                    });
+                    
+                    $("#add_sold_by").html(soldByOptions);
+                    
+                    // Pre-select the doctor if available
+                    if (response.data.selected_doctor_id) {
+                        $("#add_sold_by").val(response.data.selected_doctor_id);
+                    }
+                }
+                
+                // Set membership info from API response
+                if (response.data.membership) {
+                    $(".membershipInfo").text(response.data.membership);
+                }
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading sold by data:', thrownError);
+            $("#add_sold_by").html('<option value="">Select</option>');
+        }
+    });
+}
+
+// Get service price and available discounts when service is selected
+function getServiceDiscountForPatient($this) {
+    var service_id = $this.val();
+    var patient_id = $('#add_patient_id').val();
+    var location_id = $('#add_location_id').val();
+    
+    if (!service_id) {
+        $("#add_discount_id").html('<option value="">Select Discount</option>');
+        $("#add_discount_type").val('').trigger('change');
+        $("#add_discount_type").prop("disabled", true);
+        $("#add_discount_value").val('');
+        $("#add_discount_value").prop("disabled", true);
+        $("#net_amount_1").val('');
+        $("#net_amount_1").prop("disabled", false);
+        return;
+    }
+    
+    if (service_id && patient_id && location_id) {
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.getserviceinfo_for_plan'),
+            data: {
+                'service_id': service_id,
+                'location_id': location_id,
+                'patient_id': patient_id
+            },
+            success: function (response) {
+                if (response.status) {
+                    let discounts = response.data.discounts;
+                    let options = '<option value="">Select Discount</option>';
+                    
+                    if (discounts) {
+                        jQuery.each(discounts, function (i, discount) {
+                            options += '<option value="' + discount.id + '">' + discount.name + '</option>';
+                        });
+                    }
+                    
+                    $("#add_discount_id").html(options);
+                    $("#net_amount_1").val((response.data.net_amount).toFixed(2));
+                    $("#net_amount_1").prop("disabled", true);
+                    
+                    // Reset discount fields
+                    $("#add_discount_type").val('').trigger('change');
+                    $("#add_discount_type").prop("disabled", true);
+                    $("#add_discount_value").val('');
+                    $("#add_discount_value").prop("disabled", true);
+                } else {
+                    $("#add_discount_id").html('<option value="">Select Discount</option>');
+                    $("#net_amount_1").val((response.data.net_amount).toFixed(2));
+                    $("#net_amount_1").prop("disabled", true);
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load service information');
+            }
+        });
+    }
+}
+
+// Calculate final price when discount is selected
+function getDiscountInfoForPatient($this) {
+    var service_id = $('#add_service_id').val();
+    var discount_id = $this.val();
+    var patient_id = $('#add_patient_id').val();
+    
+    if (!discount_id || discount_id == '') {
+        // No discount selected - reset to service price
+        if (service_id) {
+            getServiceDiscountForPatient($('#add_service_id'));
+        }
+        return;
+    }
+    
+    if (discount_id == '0') {
+        // No discount option selected
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.getserviceinfo_discount_zero'),
+            data: {
+                'bundle_id': service_id
+            },
+            success: function (response) {
+                if (response.status) {
+                    $("#add_discount_type").prop("disabled", true);
+                    $("#add_discount_type").val('').trigger('change');
+                    $("#add_discount_value").prop("disabled", true);
+                    $("#add_discount_value").val('');
+                    $("#net_amount_1").val((response.data.net_amount).toFixed(2));
+                    $("#net_amount_1").prop("disabled", true);
+                }
+            }
+        });
+    } else {
+        // Discount selected - get discount details and calculate price
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.getdiscountinfo_for_plan'),
+            data: {
+                'service_id': service_id,
+                'discount_id': discount_id,
+                'patient_id': patient_id
+            },
+            success: function (response) {
+                if (response.status) {
+                    if (response.data.custom_checked == 0) {
+                        $("#add_discount_type").val(response.data.discount_type).trigger('change');
+                        $("#add_discount_type").prop("disabled", true);
+                        $("#add_discount_value").val(response.data.discount_price);
+                        $("#add_discount_value").prop("disabled", true);
+                        $("#net_amount_1").val((response.data.net_amount).toFixed(2));
+                        $("#net_amount_1").prop("disabled", true);
+                    } else {
+                        // Custom discount - allow user to enter values
+                        $("#add_discount_type").prop("disabled", false);
+                        $("#add_discount_value").prop("disabled", false);
+                        $("#net_amount_1").prop("disabled", false);
+                    }
+                }
+            },
+            error: function() {
+                toastr.error('Failed to load discount information');
+            }
+        });
+    }
+}
+
+function checkpaymentMode() {
+    if ($('#edit_payment_mode_id').val()) {
+        $('#edit_cash_amount_1').prop('disabled', false);
+    } else {
+        $('#edit_cash_amount_1').val(0);
+        $('#edit_cash_amount_1').prop('disabled', true);
+        if (typeof edit_keyfunction_grandtotal === 'function') {
+            edit_keyfunction_grandtotal();
+        }
+    }
+}
+
+// Bind input event for cash amount field to update grand total (matching create-plan.js behavior)
+// Using event delegation since modal content is loaded dynamically
+$(document).on('input', '#edit_cash_amount_1', function () {
+    let val = $(this).val();
+
+    // Reset if first character is 0 and length > 1 and doesn't start with "0."
+    if (val.length > 1 && val.startsWith("0") && !val.startsWith("0.")) {
+        $(this).val('');
+        return;
+    }
+
+    // Reset if value is negative
+    if (parseFloat(val) < 0) {
+        $(this).val('');
+        return;
+    }
+
+    // Call your function if value is valid
+    edit_keyfunction_grandtotal();
 });

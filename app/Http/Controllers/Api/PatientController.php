@@ -105,8 +105,12 @@ class PatientController extends Controller
     public function getTabCounts(int $id): JsonResponse
     {
         try {
+            $accountId = Auth::user()->account_id;
+            
             $counts = [
-                'appointments' => \DB::table('appointments')->where('patient_id', $id)->count(),
+                'appointments' => \DB::table('appointments')->where('patient_id', $id)->where('account_id', $accountId)->count(),
+                'consultations' => \DB::table('appointments')->where('patient_id', $id)->where('appointment_type_id', 1)->where('deleted_at',null)->count(),
+                'treatments' => \DB::table('appointments')->where('patient_id', $id)->where('account_id', $accountId)->where('deleted_at',null)->where('appointment_type_id', 2)->count(),
                 'vouchers' => \DB::table('user_vouchers')->where('user_id', $id)->count(),
                 'documents' => \DB::table('documents')->where('user_id', $id)->count(),
                 'plans' => \DB::table('packages')->where('patient_id', $id)->count(),
@@ -341,18 +345,14 @@ class PatientController extends Controller
         }
     }
 
-    /**
-     * Get patient vouchers datatable (OPTIMIZED)
-     */
-    public function vouchersDatatable(int $id, Request $request): JsonResponse
-    {
-        try {
-            $result = $this->patientService->getPatientVouchers($id, $request);
-            return response()->json($result);
-        } catch (Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
+    // REMOVED: consultationsDatatable() and treatmentsDatatable() methods
+    // Now using same controllers as main modules:
+    // - Consultations: AppointmentsController@datatable with patient_id parameter
+    // - Treatments: TreatmentsController@datatable with patient_id parameter
+
+    // REMOVED: vouchersDatatable() method
+    // Now using same controller as main module:
+    // - Vouchers: UserVouchersController@datatable with patient_id parameter
 
     /**
      * Upload document for patient (OPTIMIZED API)

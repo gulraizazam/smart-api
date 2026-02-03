@@ -44,8 +44,9 @@ class TreatmentService
 
     /**
      * Get treatment datatable data with optimized queries
+     * Supports optional patient_id parameter for patient-specific filtering
      */
-    public function getDatatableData(Request $request): array
+    public function getDatatableData(Request $request, $patientId = null): array
     {
         $filters = $this->processFilters($request);
         $orderBy = $filters['order_by'];
@@ -55,7 +56,7 @@ class TreatmentService
         $treatmentTypeId = $this->getTreatmentTypeId();
 
         // Build base query conditions
-        $baseConditions = $this->buildBaseConditions($filters);
+        $baseConditions = $this->buildBaseConditions($filters, $patientId);
 
         // Get total count using optimized query
         $totalRecords = $this->getRecordsCount($baseConditions, $filters, $treatmentTypeId);
@@ -164,12 +165,16 @@ class TreatmentService
 
     /**
      * Build base query conditions
+     * Supports optional patient_id parameter for patient card context
      */
-    protected function buildBaseConditions(array $filters): array
+    protected function buildBaseConditions(array $filters, $patientId = null): array
     {
         $where = [];
 
-        if (hasFilter($filters, 'patient_id')) {
+        // If patient_id is provided directly (patient card context), use it
+        if ($patientId) {
+            $where[] = ['patient_id', '=', $patientId];
+        } elseif (hasFilter($filters, 'patient_id')) {
             $where[] = ['patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id'])];
         }
 

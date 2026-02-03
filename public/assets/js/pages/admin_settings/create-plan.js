@@ -302,7 +302,15 @@ $(document).ready(function () {
 });
 
 // OPTIMIZED: Using new endpoint with 90% performance improvement
-var table_url = route('admin.plans.optimized.global.datatable');
+// Check if we're in patient card context and use patient-specific datatable
+var table_url;
+if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext && typeof window.patientCardPatientId !== 'undefined') {
+    table_url = route('admin.plans.optimized.datatable', { patient_id: window.patientCardPatientId });
+    console.log('Patient Card Context - table_url:', table_url, 'patientId:', window.patientCardPatientId);
+} else {
+    table_url = route('admin.plans.optimized.global.datatable');
+    console.log('Global Context - table_url:', table_url);
+}
 
 var table_columns = [
     {
@@ -1257,7 +1265,11 @@ function setFilters(filter_values, active_filters) {
 
         hideShowAdvanceFilters(active_filters);
 
-        getUserCentre();
+        // getUserCentre is defined in packages/index.blade.php inline script
+        // Only call it if it exists (not in patient card context)
+        if (typeof getUserCentre === 'function') {
+            getUserCentre();
+        }
 
     } catch (error) {
         showException(error);
@@ -1285,12 +1297,24 @@ function createPlan(url, id) {
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     setTimeout(function () {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
-        $("#add_patient_id").val(null).trigger('change');
+        
+        // If in patient card context, pre-fill patient ID (patient info will be loaded in setPlanData)
+        if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext && typeof window.patientCardPatientId !== 'undefined') {
+            $("#add_patient_id").val(window.patientCardPatientId).trigger('change');
+            // Hide patient search field since patient is already selected
+            $("#add_patient_id").closest('.fv-row').find('.select2-container').hide();
+        } else {
+            $("#add_patient_id").val(null).trigger('change');
+        }
+        
         $(".search_patient").val('');
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
         $("#grand_total_1").val('');
-        $('#packages_add').find('#patient_membership').val('');
+        // Don't clear membership in patient card context - it will be set by loadPatientInfoForCreate
+        if (!(typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext)) {
+            $('#packages_add').find('#patient_membership').val('');
+        }
         $('#packages_add').find('#discount_value_1').val('');
         $('#packages_add').find("#add_appointment_id").empty();
         $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
@@ -1373,8 +1397,60 @@ function setPlanData(response) {
 
     getServices();
 
-    getUserCentre();
+    // getUserCentre is defined in packages/index.blade.php inline script
+    // Only call it if it exists (not in patient card context)
+    if (typeof getUserCentre === 'function') {
+        getUserCentre();
+    }
+    
+    // If in patient card context, load patient info
+    if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext && typeof window.patientCardPatientId !== 'undefined') {
+        loadPatientInfoForCreate(window.patientCardPatientId);
+    }
 
+}
+
+// Load patient info for create modal when in patient card context
+function loadPatientInfoForCreate(patientId) {
+    $.ajax({
+        url: route('admin.patients.getPatient', { id: patientId }),
+        type: 'GET',
+        success: function(response) {
+            if (response.status && response.data) {
+                let patient = response.data.patient;
+                let membership = response.data.membership;
+                
+                // Scope selectors to the modal to avoid conflicts with other elements on page
+                let $modal = $('#modal_add_plan');
+                
+                // Set patient name (h3 element in patient card context)
+                $modal.find('#add-patient-name').text(patient?.name || '');
+                
+                // Set membership info (h4 element in patient card context, input in main module)
+                let membershipText = 'No Membership';
+                if (membership) {
+                    // Format: Gold - CA12345 - Active (Exp: Jan 29, 2027)
+                    let statusText = membership.is_active ? 'Active' : 'Inactive';
+                    let expDate = membership.end_date ? new Date(membership.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                    membershipText = (membership.type || 'Gold') + ' - ' + (membership.code || '') + ' - ' + statusText + (expDate ? ' (Exp: ' + expDate + ')' : '');
+                }
+                let $membershipEl = $modal.find('#patient_membership');
+                if ($membershipEl.is('h4')) {
+                    $membershipEl.text(membershipText);
+                } else {
+                    $membershipEl.val(membershipText);
+                }
+                
+                // Set hidden patient ID
+                $modal.find('#add_patient_id').val(patientId);
+                // Trigger patient change to load appointments
+                getAppointments(patientId);
+            }
+        },
+        error: function() {
+            console.log('Failed to load patient info');
+        }
+    });
 }
 
 function getServices() {
@@ -2627,6 +2703,10 @@ jQuery(document).ready(function () {
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_plan_location_id').val();
         var user_id = $('#add_patient_id').val();
+        
+        // Hide any previous error messages before validation
+        $('#inputfieldMessage').hide();
+        
         if (service_id && net_amount && location_id) {
 
             showSpinner("-add");
@@ -2677,6 +2757,10 @@ jQuery(document).ready(function () {
 
                     let consume = 'No';
                     if (resposne.status) {
+                        // Hide error messages on success
+                        $('#inputfieldMessage').hide();
+                        $('#wrongMessage').hide();
+                        $('#AlreadyExitMessage').hide();
 
                         total_amountArray.push(parseFloat(resposne.data.servicesData.bundlesData.net_amount));
                         if (resposne.data.servicesData.packageServicesData.length) {

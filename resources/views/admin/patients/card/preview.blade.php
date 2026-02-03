@@ -71,10 +71,36 @@
                                         Add New
                                     </button>
                                 </div>
-                                {{-- Add New button removed from Plans tab --}}
+                                <div class="card-toolbar submit-btn toolbar-plan-form d-none">
+                                    @if(Gate::allows('plans_create'))
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createPlan('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_plan">
+                                            <i class="la la-plus"></i> Add Procedures
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createBundle('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_bundle">
+                                            <i class="la la-plus"></i> Add Bundle
+                                        </button>
+                                    @endif
+                                </div>
                                 <div class="card-toolbar submit-btn toolbar-finance-form d-none">
                                     <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createFinance('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_finance_form">
                                         Add New
+                                    </button>
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-voucher-form d-none">
+                                    @if(Gate::allows('vouchers_create'))
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="assignVoucherToPatient();" data-toggle="modal" data-target="#modal_assign_voucher_patient">
+                                            <i class="la la-plus"></i> Add Voucher
+                                        </button>
+                                    @endif
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-consultation-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2" id="create-consultation-btn">
+                                        <i class="la la-plus"></i> Create Consultation
+                                    </button>
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-treatment-form d-none">
+                                    <button type="button" class="btn btn-sm btn-success mr-2" id="create-treatment-btn">
+                                        <i class="la la-plus"></i> Create Treatment
                                     </button>
                                 </div>
                             </div>
@@ -178,6 +204,8 @@
     @push('datatable-js')
         <script>
             let patientCardID = "{{request('id')}}";
+            // Skip auto-initialization of patient datatable - tabs will handle their own initialization
+            window.skipPatientDatatableInit = true;
         </script>
         <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
         <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
@@ -191,5 +219,15 @@
             @include('admin.patients.edit')
         </div>
     </div>
+
+    {{-- Assign Voucher Modal --}}
+    <div class="modal fade" id="modal_assign_voucher_patient" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="assign_voucher_patient">
+            @include('admin.patients.assignVoucher')
+        </div>
+    </div>
+
+    {{-- Include all appointment modals from main module (for consultations and treatments tabs) --}}
+    @include('admin.appointments.appointment-forms.modals')
 
 @endsection

@@ -33,10 +33,16 @@ class ConsultancyDatatableService
 
     /**
      * Get consultancy datatable data with optimized queries and filters
+     * Supports optional patient_id parameter for patient-specific filtering
      */
-    public function getDatatableData(Request $request): array
+    public function getDatatableData(Request $request, $patientId = null): array
     {
         $filters = getFilters($request->all());
+        
+        // If patient_id is provided (patient card context), add it to filters
+        if ($patientId) {
+            $filters['patient_id'] = $patientId;
+        }
         
         // Handle sorting
         [$orderBy, $order] = $this->handleSorting($request);

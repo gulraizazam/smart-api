@@ -3,11 +3,21 @@
     <div class="datatable datatable-bordered datatable-head-custom plan-form"></div>
     <!--end: Datatable-->
 
-    <div class="modal fade" id="modal_add_plan_form" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_plan" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered very-big-modal" id="add_plan_form">
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="packages_add">
 
-            @include('admin.patients.card.plans.create')
+            @include('admin.packages.create', ['isPatientCard' => true])
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_add_bundle" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_add">
+
+            @include('admin.packages.create-bundle', ['isPatientCard' => true])
 
         </div>
         <!--end::Modal dialog-->
@@ -15,10 +25,18 @@
 
     <div class="modal fade" id="modal_edit_plan" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered very-big-modal" id="edit_plan_form">
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="packages_edit">
 
-            @include('admin.patients.card.plans.edit')
+            @include('admin.packages.edit', ['isPatientCard' => true])
 
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_bundle" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_edit">
+            @include('admin.packages.edit-bundle', ['isPatientCard' => true])
         </div>
         <!--end::Modal dialog-->
     </div>
@@ -35,9 +53,9 @@
 
     <div class="modal fade" id="modal_display" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered big-modal" id="edit_documents_form">
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="invoices_display">
 
-            @include('admin.patients.card.plans.display')
+            @include('admin.packages.display')
 
         </div>
         <!--end::Modal dialog-->
