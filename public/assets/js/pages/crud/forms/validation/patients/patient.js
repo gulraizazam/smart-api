@@ -244,7 +244,17 @@ var AssignVoucherValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable('patient');
+                    
+                    // Check if we're on patient detail page or main patients page
+                    if (typeof patientCardID !== 'undefined' && patientCardID) {
+                        // Refresh voucher datatable on patient detail page
+                        if (typeof patientDatatable !== 'undefined' && patientDatatable['.voucher-form']) {
+                            patientDatatable['.voucher-form'].search({datatable_reload: 'reload'}, 'search');
+                        }
+                    } else {
+                        // Refresh main patients datatable
+                        reInitTable('patient');
+                    }
                 } else {
                     toastr.error(response.message);
                 }

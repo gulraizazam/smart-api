@@ -67,34 +67,30 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-3 mt-5">
+                        <div class="fv-row col-md-2 mt-5">
                             <p class="required fw-bold fs-6 mb-2 pl-0">Patient Name</p>
-                            <h3 class="editPatientName">{{getPatientName(request('id'))}}</h3>
+                            <h3 class="patientName">{{getPatientName(request('id'))}}</h3>
+                        </div>
+
+                        <div class="fv-row col-md-2 mt-5">
+                            <p class="required fw-bold fs-6 mb-2 pl-0">Membership</p>
+                            <h3 class="membershipInfo"></h3>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
-                            <select onchange="getServices('add', '{{request('id')}}');" id="add_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-                                <option value="">Select Centre</option>
-                            </select>
+                            <p class="required fw-bold fs-6 mb-2 pl-0">Location</p>
+                            <h3 class="locationName"></h3>
+                            <input type="hidden" id="add_location_id" name="location_id">
                         </div>
 
-                        <div class="fv-row col-md-3 mt-5">
+                        <div class="fv-row col-md-5 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                             <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
                                 <option value="">Select Appointment</option>
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-3 mt-5">
-                            <div class="checkbox-inline mt-12">
-                                <span>Is Exclusive </span> &nbsp;
-                                <label for="is_exclusive" class="checkbox checkbox-rounded">
-                                    <input id="is_exclusive" type="checkbox" checked="checked" value="1" name="is_exclusive">
-                                    <span></span>
-                                </label>
-                            </div>
-                        </div>
+                       
 
                     </div>
                 </div>
@@ -123,17 +119,25 @@
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
                             <input onkeyup="getDiscountValue($(this));" type="number" name="discount_value" class="form-control" id="add_discount_value">
                         </div>
 
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                             <input type="number" readonly name="price" class="form-control" id="net_amount_1">
                         </div>
 
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
+                            <select id="add_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
+                                <option value="">Select</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_sold_by_errorr" class="create-plan-error"></b></small>
+                        </div>
+
+                        <div class="fv-row col-md-2 mt-5">
                             <div class="text-center mt-10">
                                 <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
                                     <span class="indicator-label">Add</span>
@@ -153,7 +157,7 @@
                         <thead>
                         <tr>
                             <th>Service Name</th>
-                            <th>Service/Bundle Price</th>
+                            <th>Service Price</th>
                             <th>Discount Name</th>
                             <th>Discount Type</th>
                             <th>Discount Price</th>

@@ -12,11 +12,21 @@
 
     @can('patients_appointment_manage')
         <div class="navi-item mb-2">
-            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointment-form');" class="change-tab appointment-form-tab navi-link py-4">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'consultation-form');" class="change-tab consultation-form-tab navi-link py-4">
                 <span class="navi-icon mr-2">
-                    <i class="la la-clock"></i>
+                    <i class="la la-user-md"></i>
                 </span>
-                <span class="navi-text font-size-lg">Appointments</span>
+                <span class="navi-text font-size-lg">Consultations</span>
+            </a>
+        </div>
+    @endcan
+    @can('patients_appointment_manage')
+        <div class="navi-item mb-2">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'treatment-form');" class="change-tab treatment-form-tab navi-link py-4">
+                <span class="navi-icon mr-2">
+                    <i class="la la-stethoscope"></i>
+                </span>
+                <span class="navi-text font-size-lg">Treatments</span>
             </a>
         </div>
     @endcan
@@ -145,7 +155,7 @@
             <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointment-form');" class="change-tab appointment-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
-                             <i class="la la-clock"></i>
+                             <i class="la la-calendar-check"></i>
                         </span>
                         <p class="navi-text">Appointments <span id="tab-count-appointments"></span></p>
                     </a>

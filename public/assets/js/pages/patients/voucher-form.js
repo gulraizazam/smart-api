@@ -1,5 +1,6 @@
 
-var table_url = route('admin.patients.vouchersDatatable', {id: patientCardID});
+// Use direct URL since API routes may not be in Ziggy
+var table_url = '/api/patients/' + patientCardID + '/vouchers-datatable';
 
 var table_columns = [
     {
@@ -51,17 +52,8 @@ var table_columns = [
             let balance = parseFloat(String(data.balance || '0').replace(/,/g, '')) || 0;
             let percentage = total > 0 ? Math.round((consumed / total) * 100) : 0;
             
-            // Check if expired
-            let isExpired = false;
-            if (data.endDate) {
-                let endDate = moment(data.endDate);
-                isExpired = endDate.isBefore(moment());
-            }
-            
-            // Determine status
-            if (isExpired) {
-                return '<span class="badge badge-danger">Expired</span>';
-            } else if (percentage >= 100 || balance <= 0) {
+            // Determine status based on usage only
+            if (percentage >= 100 || balance <= 0) {
                 return '<span class="badge badge-secondary">Fully Used</span>';
             } else if (percentage > 0) {
                 return '<span class="badge badge-warning">Partially Used</span>';
@@ -71,26 +63,11 @@ var table_columns = [
         }
     },
     {
-        field: 'startDate',
+        field: 'created_at',
         title: 'Start Date',
         width: 'auto',
         template: function(data) {
-            return data.startDate ? formatDate(data.startDate) : '-';
-        }
-    },
-    {
-        field: 'endDate',
-        title: 'End Date',
-        width: 'auto',
-        template: function(data) {
-            if (!data.endDate) return '-';
-            let endDate = moment(data.endDate);
-            let isExpired = endDate.isBefore(moment());
-            let formattedDate = formatDate(data.endDate);
-            if (isExpired) {
-                return '<span class="text-danger">' + formattedDate + '</span>';
-            }
-            return formattedDate;
+            return data.created_at ? formatDate(data.created_at) : '-';
         }
     },
    

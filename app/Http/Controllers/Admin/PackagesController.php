@@ -104,17 +104,30 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(Request $request)
     {
         if (!Gate::allows('plans_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
-            $data = $this->planService->getCreateFormData(ACL::getUserCentres());
+            // Get patient ID from route parameter
+            $patientId = $request->route('id');
+            
+            // Use patient-specific method if patient ID is provided
+            if ($patientId) {
+                \Log::info('Loading patient-specific plan data for patient: ' . $patientId);
+                $data = $this->planService->getCreateFormDataForPatient(ACL::getUserCentres(), (int)$patientId);
+            } else {
+                \Log::info('Loading general plan data (no patient ID)');
+                $data = $this->planService->getCreateFormData(ACL::getUserCentres());
+            }
+            
             return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Plans Create Form Data Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Plans Create Form Data Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return ApiHelper::apiResponse($this->error, 'Failed to load form data.', false);
         }
     }
@@ -400,8 +413,6 @@ class PackagesController extends Controller
      */
     public function savepackages_service(Request $request)
     {
-
-       
         $status = true;
         $service_data = Bundles::find($request->bundle_id);
         $find_package = Packages::where('random_id', $request->random_id)->first();
@@ -422,23 +433,7 @@ class PackagesController extends Controller
             if ($request->is_exclusive == '') {
                 $request->merge(['is_exclusive' => 1]);
             }
-            if ($request->get('package_bundles')) {
-                $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
-                if ($package_bundles) {
-                    foreach ($package_bundles as $bundle) {
-                        if ($service_data->tax_treatment_type_id == 1) {
-                            if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
-                                $status = false;
-                            }
-                        } else { /*this is commented because we want to add services with different prices*/
-                            if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
-                                //$status = false;
-                                $status = true;
-                            }
-                        }
-                    }
-                }
-            }
+            // Removed duplicate service check - allow adding same service multiple times
             if ($status == true) {
                 /*First we need to make the data to save in package bundle*/
                 $data = $request->all();
@@ -656,8 +651,9 @@ class PackagesController extends Controller
                     $myarray[0]['grand_total'] =  $grand_total;
                 }
 
+                // Return first element to match frontend expectation
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                    'myarray' => $myarray,
+                    'myarray' => $myarray[0] ?? $myarray,
                 ]);
             }
 
@@ -673,26 +669,7 @@ class PackagesController extends Controller
             if ($request->is_exclusive == '') {
                 $request->merge(['is_exclusive' => 1]);
             }
-            if ($request->get('package_bundles')) {
-                $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
-                if ($package_bundles) {
-                    foreach ($package_bundles as $bundle) {
-                        if ($service_data->tax_treatment_type_id == 1) {
-
-                            if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
-
-                                $status = false;
-                            }
-                        } else { /*this is commented because we want to add services with different prices*/
-                            if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
-                                //$status = false;
-                                $status = true;
-                            }
-                        }
-                    }
-                }
-            }
-
+            // Removed duplicate service check - allow adding same service multiple times
             if ($status == true) {
                 /*First we need to make the data to save in package bundle*/
                 $data = $request->all();

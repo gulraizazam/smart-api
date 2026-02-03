@@ -65,10 +65,12 @@ class PlansController extends Controller
             // Get datatable data using service
             $datatableData = $this->planService->getDatatableData($filters, $patientId);
 
-            // Apply pagination
-            $iDisplayLength = intval($request->get('length', 10));
+            // Apply pagination - support both KTDatatable format and DataTables format
+            $pagination = $request->input('pagination', []);
+            $iDisplayLength = intval($pagination['perpage'] ?? $request->get('length', 30));
             $iDisplayLength = $iDisplayLength < 0 ? $datatableData['total'] : $iDisplayLength;
-            $iDisplayStart = intval($request->get('start', 0));
+            $page = intval($pagination['page'] ?? 1);
+            $iDisplayStart = intval($request->get('start', ($page - 1) * $iDisplayLength));
 
             // Get paginated results
             $packages = $datatableData['query']
@@ -80,11 +82,32 @@ class PlansController extends Controller
             // Format records for datatable
             $formattedRecords = $this->planService->formatDatatableRecords($packages);
 
+            // Calculate pagination
+            $totalPages = $iDisplayLength > 0 ? ceil($datatableData['total'] / $iDisplayLength) : 1;
+
             return response()->json([
-                'draw' => intval($request->get('draw')),
-                'recordsTotal' => $datatableData['total'],
-                'recordsFiltered' => $datatableData['total'],
+                'meta' => [
+                    'page' => $page,
+                    'pages' => $totalPages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $datatableData['total'],
+                    'sort' => strtolower($datatableData['order']),
+                    'field' => $datatableData['orderBy'],
+                ],
                 'data' => $formattedRecords,
+                'permissions' => [
+                    'edit' => Gate::allows('patients_plan_edit'),
+                    'delete' => Gate::allows('patients_plan_destroy'),
+                    'active' => Gate::allows('patients_plan_active'),
+                    'inactive' => Gate::allows('patients_plan_inactive'),
+                    'create' => Gate::allows('patients_plan_create'),
+                    'log' => Gate::allows('patients_plan_log'),
+                    'sms_log' => Gate::allows('patients_plan_sms_log'),
+                    'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+                    'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
+                ],
+                'filter_values' => $datatableData['filter_values'] ?? [],
+                'active_filters' => $filters,
             ]);
 
         } catch (PlanException $e) {
@@ -271,6 +294,8 @@ class PlansController extends Controller
                     'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
                     'plans_edit_sold_by' => Gate::allows('plans_edit_sold_by'),
                 ],
+                'filter_values' => $datatableData['filter_values'] ?? [],
+                'active_filters' => $filters,
             ]);
 
         } catch (PlanException $e) {

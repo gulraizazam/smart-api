@@ -129,13 +129,15 @@ class AppointmentsController extends Controller
 
     /**
      * Display a listing of Lead_statuse.
+     * Supports optional patient_id parameter for patient-specific filtering
      *
      * @param \Illuminate\Http\Request
+     * @param int|null $patientId
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request, $patientId = null)
     {
-        return $this->getDefaultListing($request);
+        return $this->getDefaultListing($request, $patientId);
     }
 
     // REMOVED: treatmentDatatable() - Migrated to App\Http\Controllers\Api\TreatmentsController@datatable
@@ -175,14 +177,15 @@ class AppointmentsController extends Controller
 
     /**
      * Get Default Listing for Appointments
+     * Supports optional patient_id parameter for patient-specific filtering
      *
      * @return mixed
      */
-   private function getDefaultListing(Request $request)
+   private function getDefaultListing(Request $request, $patientId = null)
     {
         // Use optimized ConsultancyDatatableService
         $datatableService = app(\App\Services\Appointment\ConsultancyDatatableService::class);
-        $records = $datatableService->getDatatableData($request);
+        $records = $datatableService->getDatatableData($request, $patientId);
         
         return ApiHelper::apiDataTable($records);
     }

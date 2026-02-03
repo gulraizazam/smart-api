@@ -33,7 +33,11 @@
                         <strong style="font-size:18px;display: block;" id="user_name"></strong>
                     </div>
                     <div class="form-group col-md-4">
-                        <label style="font-size: 14px;">Patient</label>
+                        <label style="font-size: 14px;">Membership</label>
+                        <strong style="font-size:18px;display: block;" id="membership_name"></strong>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label style="font-size: 14px;">Centre</label>
                         <strong style="font-size:18px;display: block;" id="location_name"></strong>
                     </div>
                 </div>
@@ -46,17 +50,18 @@
                         <table id="plans_service" class="table table-bordered table-advance">
 
                             <thead>
-                            <tr>
-                                <th>Service Name</th>
-                                <th>Service Price</th>
-                                <th>Discount Name</th>
-                                <th>Discount Type</th>
-                                <th>Discount Price</th>
-                                <th>Subtotal</th>
-                                <th>Tax %</th>
-                                <th>Tax Price</th>
-                                <th>Total</th>
-                            </tr>
+                                <tr>
+                                    <th>Service Name</th>
+                                    <th>Regular Price</th>
+                                    <th>Discount Name</th>
+                                    <th>Type</th>
+                                    <th>Discount Value</th>
+                                    <th>Subtotal</th>
+
+                                    <th>Tax Price</th>
+                                    <th>Total</th>
+                                    <th>Sold By</th>
+                                </tr>
                             </thead>
 
                             <tbody class="display_plans"></tbody>
@@ -82,21 +87,21 @@
                         <table id="plan_history" class="table table-bordered table-advance">
 
                             <thead>
-                            <tr>
-                                <th>Payment Mode</th>
-                                <th>Cash Flow</th>
-                                <th>Cash Amount</th>
-                                <th>Created At</th>
-                            </tr>
+                                <tr>
+                                    <th>Payment Mode</th>
+                                    <th>Cash Flow</th>
+                                    <th>Cash Amount</th>
+                                    <th>Created At</th>
+                                </tr>
                             </thead>
 
                             <tbody class="plan_history">
-                            <tr>
-                                <td id="payment_mode"></td>
-                                <td id="cash_flow"></td>
-                                <td id="cash_amount"></td>
-                                <td id="Created At"></td>
-                            </tr>
+                                <tr>
+                                    <td id="payment_mode"></td>
+                                    <td id="cash_flow"></td>
+                                    <td id="cash_amount"></td>
+                                    <td id="Created At"></td>
+                                </tr>
                             </tbody>
 
                         </table>
@@ -105,8 +110,7 @@
 
                 <div class="row float-right">
                     <div class="col-md-12 col-sm-12 col-xs-12 mt-10">
-                        <a class="patient_print btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                           href="">Print
+                        <a id="package_pdf" class="btn btn-lg btn-primary blue hidden-print margin-bottom-5" target="_blank" href="">Print
                             <i class="fa fa-print"></i>
                         </a>
                     </div>
