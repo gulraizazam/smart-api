@@ -29,8 +29,8 @@ class PlansController extends Controller
     public function datatable(Request $request, int $patientId): JsonResponse
     {
         try {
-            // Check permission
-            if (!Gate::allows('patients_plan_manage')) {
+            // Check permission - use same permission as main plans module
+            if (!Gate::allows('plans_manage')) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You are not authorized to access this resource.',
@@ -137,7 +137,7 @@ class PlansController extends Controller
     public function getLookupData(int $patientId): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_plan_manage')) {
+            if (!Gate::allows('plans_manage')) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You are not authorized to access this resource.',
@@ -369,7 +369,7 @@ class PlansController extends Controller
     public function getStatistics(int $patientId): JsonResponse
     {
         try {
-            if (!Gate::allows('patients_plan_manage')) {
+            if (!Gate::allows('plans_manage')) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You are not authorized to access this resource.',
