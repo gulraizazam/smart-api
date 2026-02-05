@@ -1606,6 +1606,7 @@ function getDiscountInfo($this) {
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
     var patient_id = $('#add_patient_id').val();
+    var location_id = $('#add_plan_location_id').val();
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -1675,8 +1676,8 @@ function getDiscountInfo($this) {
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
-                    'patient_id': patient_id
-                   
+                    'patient_id': patient_id,
+                    'location_id': location_id
                 },
                 success: function (resposne) {
 
@@ -1802,7 +1803,8 @@ function editDiscountValue($this) {
                     'discount_id': discount_id,
                     'discount_value': discount_value ?? 0,
                     'discount_type': discount_type,
-                    'patient_id': patient_id
+                    'patient_id': patient_id,
+                    'location_id': $('#edit_location_id').val()
                 },
                 success: function (resposne) {
                     if (resposne.status) {
@@ -1853,7 +1855,8 @@ function changeDiscount($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
-                'patient_id': patient_id
+                'patient_id': patient_id,
+                'location_id': location_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -2049,7 +2052,8 @@ function editDiscountInfo($this) {
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
-                    'patient_id': $('#edit_parent_id').val()
+                    'patient_id': $('#edit_parent_id').val(),
+                    'location_id': $('#edit_location_id').val()
                 },
                 success: function (resposne) {
 
@@ -2161,7 +2165,8 @@ function getDiscountValue($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
-                'patient_id': patient_id
+                'patient_id': patient_id,
+                'location_id': location_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -2241,7 +2246,8 @@ function changeDiscount($this, type) {
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
-                'patient_id': patient_id
+                'patient_id': patient_id,
+                'location_id': type == 'edit' ? $('#edit_location_id').val() : $('#add_plan_location_id').val()
             },
             success: function (resposne) {
                 if (resposne.status) {

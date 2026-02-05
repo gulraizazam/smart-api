@@ -13,6 +13,8 @@ use App\Models\GetDiscountService;
 use App\Models\BaseDiscountService;
 use App\Http\Controllers\Controller;
 use App\Models\DiscountHasLocations;
+use App\Models\Services;
+use App\Models\MembershipType;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Helpers\Widgets\ServiceWidget;
@@ -65,12 +67,14 @@ class DiscountsController extends Controller
         try {
             $roles = Role::pluck('name', 'id')->toArray();
             $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+            $customerTypes = MembershipType::where('active', 1)->pluck('name', 'id')->toArray();
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'discount_types' => config('constants.discount_types'),
                 'discount_groups' => config('constants.discount_groups'),
                 'amount_types' => config('constants.amount_types'),
                 'roles'=>$roles,
-                'locations'=>$locations
+                'locations'=>$locations,
+                'customer_types'=>$customerTypes
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -139,10 +143,10 @@ class DiscountsController extends Controller
     {
         return Validator::make($request->all(), [
             'name' => 'required',
-            'type' => 'required',
+            'discount_type' => 'required',
             'start' => 'required',
             'end' => 'required',
-             'roles' => 'required|array',
+            'roles' => 'required|array',
             'roles.*' => 'exists:roles,id',
         ]);
     }
@@ -545,6 +549,7 @@ class DiscountsController extends Controller
                 $base_discount_services = BaseDiscountService::where(['discount_id' => $id])->get();
                 $get_discount_services = GetDiscountService::where(['discount_id' => $id])->get();
                 $roles = Role::pluck('name', 'id')->toArray();
+                $customerTypes = MembershipType::where('active', 1)->pluck('name', 'id')->toArray();
 
                 // 🔹 Get selected role ids for this discount
                 $selected_role_ids = $discount->roles()->pluck('role_id')->toArray();
@@ -556,6 +561,7 @@ class DiscountsController extends Controller
                     'get_discount_services' => $get_discount_services,
                     'roles' => $roles,
                     'selected_roles' => $selected_role_ids,
+                    'customer_types' => $customerTypes,
                 ]);
             }
         } catch (\Exception $e) {
@@ -741,33 +747,145 @@ class DiscountsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $myString = $request->id;
-        $myArray = explode(',', $myString);
-        $data = [];
+        // Validate required fields for allocation
+        $validator = Validator::make($request->all(), [
+            'allocation_type' => 'required|in:Fixed,Percentage',
+            'allocation_amount' => 'required|numeric|min:0',
+            'location_id' => 'required',
+            'service_ids' => 'required|array|min:1',
+        ]);
 
-        $data['discount_id'] = $request->discount_id;
-        $data['location_id'] = $myArray[0];
-        $data['service_id'] = $myArray[1];
-
-        $checked = DiscountHasLocations::where([
-            ['location_id', '=', $myArray[0]],
-            ['service_id', '=', $myArray[1]],
-            ['discount_id', '=', $request->discount_id],
-        ])->count();
-
-        if ($checked == '0') {
-
-            $record = DiscountHasLocations::create($data);
-
-            $record_location_name = $record->location->city->name . '-' . $record->location->name;
-            $record_service_name = $record->service->name;
-
-            $myarray = ['record' => $record, 'record_locaiton_name' => $record_location_name, 'record_service_name' => $record_service_name];
-
-            return ApiHelper::apiResponse($this->success, 'Record Saved successfully.', true, $myarray);
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Duplicate record found.', false);
+        $location_id = $request->location_id;
+        $service_ids = $request->service_ids;
+        $discount_id = $request->discount_id;
+
+        // Filter out children if their parent is also selected
+        // Get parent_ids of all selected services
+        $selectedParentIds = Services::whereIn('id', $service_ids)->whereNotNull('parent_id')->pluck('parent_id')->toArray();
+        
+        // Find which selected services are parents of other selected services
+        $parentsInSelection = array_intersect($service_ids, $selectedParentIds);
+        
+        // If a parent is selected, remove its children from the list
+        if (!empty($parentsInSelection)) {
+            $childrenToRemove = Services::whereIn('parent_id', $parentsInSelection)
+                ->whereIn('id', $service_ids)
+                ->pluck('id')
+                ->toArray();
+            $service_ids = array_diff($service_ids, $childrenToRemove);
+        }
+
+        // Get "All Services" service ID (slug = 'all')
+        $allServicesId = Services::where('slug', 'all')->value('id');
+        
+        // Check if "All Services" is in the selected services
+        $isAllServices = in_array($allServicesId, $service_ids);
+        
+        // Check if "All Services" already exists for this location and discount
+        $allServicesExists = DiscountHasLocations::where([
+            ['location_id', '=', $location_id],
+            ['service_id', '=', $allServicesId],
+            ['discount_id', '=', $discount_id],
+        ])->exists();
+        
+        // If "All Services" exists and trying to add individual service, block it
+        if ($allServicesExists && !$isAllServices) {
+            return ApiHelper::apiResponse($this->success, 'Cannot add individual service. "All Services" is already allocated for this location.', false);
+        }
+        
+        // Check if any selected child service has its parent already allocated for this location
+        $childServices = Services::whereIn('id', $service_ids)->whereNotNull('parent_id')->get();
+        if ($childServices->isNotEmpty()) {
+            $parentIds = $childServices->pluck('parent_id')->unique()->toArray();
+            
+            // Check if any of these parents are already allocated
+            $existingParentAllocations = DiscountHasLocations::where('location_id', $location_id)
+                ->where('discount_id', $discount_id)
+                ->whereIn('service_id', $parentIds)
+                ->with('service')
+                ->get();
+            
+            if ($existingParentAllocations->isNotEmpty()) {
+                $parentNames = $existingParentAllocations->map(function($alloc) {
+                    return $alloc->service->name;
+                })->implode(', ');
+                return ApiHelper::apiResponse($this->success, 'Cannot add child service. Parent category "' . $parentNames . '" is already allocated for this location.', false);
+            }
+        }
+        
+        // If adding "All Services", remove existing individual services for this location
+        $removedIds = [];
+        if ($isAllServices) {
+            $existingAllocations = DiscountHasLocations::where([
+                ['location_id', '=', $location_id],
+                ['discount_id', '=', $discount_id],
+                ['service_id', '!=', $allServicesId],
+            ])->get();
+            
+            foreach ($existingAllocations as $allocation) {
+                $removedIds[] = $allocation->id;
+            }
+            
+            // Delete existing individual services
+            DiscountHasLocations::where([
+                ['location_id', '=', $location_id],
+                ['discount_id', '=', $discount_id],
+                ['service_id', '!=', $allServicesId],
+            ])->delete();
+        }
+
+        $createdRecords = [];
+        $duplicateCount = 0;
+
+        foreach ($service_ids as $service_id) {
+            // Check if record already exists
+            $exists = DiscountHasLocations::where([
+                ['location_id', '=', $location_id],
+                ['service_id', '=', $service_id],
+                ['discount_id', '=', $discount_id],
+            ])->exists();
+
+            if (!$exists) {
+                $data = [
+                    'discount_id' => $discount_id,
+                    'location_id' => $location_id,
+                    'service_id' => $service_id,
+                    'type' => $request->allocation_type,
+                    'amount' => $request->allocation_amount,
+                    'slug' => $request->allocation_slug ?? 'default',
+                ];
+
+                $record = DiscountHasLocations::create($data);
+
+                $createdRecords[] = [
+                    'id' => $record->id,
+                    'location_name' => $record->location->city->name . '-' . $record->location->name,
+                    'service_name' => $record->service->name,
+                    'type' => $record->type,
+                    'amount' => $record->amount,
+                    'slug' => $record->slug,
+                ];
+            } else {
+                $duplicateCount++;
+            }
+        }
+
+        if (count($createdRecords) > 0) {
+            $message = count($createdRecords) . ' record(s) saved successfully.';
+            if ($duplicateCount > 0) {
+                $message .= ' ' . $duplicateCount . ' duplicate(s) skipped.';
+            }
+            return ApiHelper::apiResponse($this->success, $message, true, [
+                'records' => $createdRecords,
+                'removed_ids' => $removedIds,
+            ]);
+        }
+
+        return ApiHelper::apiResponse($this->success, 'All selected services already exist for this location.', false);
     }
 
     /**
@@ -786,6 +904,30 @@ class DiscountsController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
             'id' => $request->id,
+        ]);
+    }
+
+    /**
+     * Delete multiple service allocations (group delete)
+     *
+     * @param  request
+     */
+    public function deleteDserviceGroup(Request $request)
+    {
+        if (!Gate::allows('discounts_allocate')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        $ids = explode(',', $request->ids);
+        
+        if (empty($ids)) {
+            return ApiHelper::apiResponse($this->error, 'No IDs provided', false);
+        }
+
+        $deletedCount = DiscountHasLocations::whereIn('id', $ids)->delete();
+
+        return ApiHelper::apiResponse($this->success, $deletedCount . ' allocation(s) deleted successfully.', true, [
+            'deleted_ids' => $ids,
         ]);
     }
 }

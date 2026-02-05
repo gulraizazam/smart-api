@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DiscountHasLocations extends Model
 {
-    protected $fillable = ['discount_id', 'location_id', 'service_id'];
+    protected $fillable = ['discount_id', 'location_id', 'service_id', 'type', 'amount', 'slug'];
 
     protected $table = 'discount_has_locations';
 

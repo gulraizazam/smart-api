@@ -175,10 +175,24 @@ var AllocateValidation = function () {
                             }
                         }
                     },
-                    service_id: {
+                    'service_id[]': {
                         validators: {
                             notEmpty: {
                                 message: 'The service field is required'
+                            }
+                        }
+                    },
+                    allocation_type: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The type field is required'
+                            }
+                        }
+                    },
+                    allocation_amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
                             }
                         }
                     },
@@ -223,18 +237,30 @@ jQuery(document).ready(function() {
 function submitData(callback) {
 
     let ids = [];
-    ids.push($("#locations").val());
-    ids.push($("#services").val());
+    let location_id = $("#locations").val();
+    let service_ids = $("#services").val(); // Now returns array for multiselect
 
+    // Get allocation-level fields (required in new approach)
+    let allocation_type = $("#allocation_type").val();
+    let allocation_amount = $("#allocation_amount").val();
+    let allocation_slug = $("#allocation_slug").val();
 
     showSpinner();
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: '/api/saveDervice',
+        url: '/api/discounts/saveDervice',
         type: "POST",
-        data: {voucher_id: $("#discount_id").val(), id: ids.join(',')},
+        data: {
+            voucher_id: $("#discount_id").val(), 
+            discount_id: $("#discount_id").val(),
+            location_id: location_id,
+            service_ids: service_ids,
+            allocation_type: allocation_type,
+            allocation_amount: allocation_amount,
+            allocation_slug: allocation_slug
+        },
         cache: false,
         timeout: 30000,
         beforeSend: function() {
@@ -244,7 +270,34 @@ function submitData(callback) {
            
             if (response.status == true) {
                 var data = response.data;
-                $('#allocate_services').append(serviceLocation(data.record.id, data.record_locaiton_name, data.record_service_name));
+                
+                // Remove any individual services that were replaced by "All Services"
+                if (data.removed_ids && data.removed_ids.length > 0) {
+                    data.removed_ids.forEach(function(id) {
+                        $('.HR_' + id).remove();
+                    });
+                }
+                
+                // Handle multiple records (multiselect services) - display as grouped row
+                if (data.records && data.records.length > 0) {
+                    let ids = data.records.map(r => r.id);
+                    let serviceNames = data.records.map(r => r.service_name).join(', ');
+                    let firstRecord = data.records[0];
+                    $('#allocate_services').append(serviceLocationGrouped(
+                        ids, 
+                        firstRecord.location_name, 
+                        serviceNames,
+                        firstRecord.type || '-',
+                        firstRecord.amount || '-',
+                        firstRecord.slug || 'default'
+                    ));
+                }
+                
+                // Reset allocation form fields after successful add
+                $("#services").val(null).trigger('change');
+                $("#allocation_type").val('').trigger('change');
+                $("#allocation_amount").val('');
+                $("#allocation_slug").val('default').trigger('change');
                 callback({
                     'status': response.status,
                     'message': response.message,

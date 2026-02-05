@@ -1669,7 +1669,9 @@ class PackagesController extends Controller
         $service_id = $service->id;
         $location_id = $request->location_id;
 
-        $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
+        // Get allocations with type/amount for hybrid approach
+        $allocations = DiscountWidget::loadPlanDiscountAllocationsByLocationService($location_id, $service_id, Auth::User()->account_id);
+        $discountIds = array_keys($allocations);
        
         $generalDiscountsQuery = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
@@ -1736,29 +1738,45 @@ class PackagesController extends Controller
        
         if (count($discounts) > 0) {
             foreach ($discounts as $discount) {
-                if ($discount->slug != 'custom') {
-                    if ($discount->type == Config::get('constants.Fixed')) {
-                        $discount_type = $discount->type;
-                        $discount_price = $discount->amount;
-                        $net_amount = ($service->price) - ($discount_price);
-                        $Discount_array[$discount->id] = [
-                            'id' => $discount->id,
-                            'discount_type' => $discount_type,
-                            'discount_price' => $discount_price,
-                            'net_amount' => $net_amount,
-                        ];
-                    } else {
-                        $discount_type = $discount->type;
-                        $discount_price = $discount->amount;
-                        $discount_price_cal = $service->price * (($discount_price) / 100);
-                        $net_amount = ($service->price) - ($discount_price_cal);
-                        $Discount_array[$discount->id] = [
-                            'id' => $discount->id,
-                            'discount_type' => $discount_type,
-                            'discount_price' => $discount_price,
-                            'net_amount' => $net_amount,
-                        ];
-                    }
+                // Get allocation for this discount - type/amount are now stored in allocation table
+                $allocation = $allocations[$discount->id] ?? null;
+                
+                // Skip if no allocation found or allocation has no type/amount set
+                if (!$allocation || !$allocation->type || $allocation->amount === null) {
+                    continue;
+                }
+                
+                // Skip custom slug discounts (they have special handling)
+                if ($allocation->slug == 'custom') {
+                    continue;
+                }
+                
+                $effective_type = $allocation->type;
+                $effective_amount = $allocation->amount;
+                
+                if ($effective_type == Config::get('constants.Fixed')) {
+                    $discount_type = $effective_type;
+                    $discount_price = $effective_amount;
+                    $net_amount = ($service->price) - ($discount_price);
+                    $Discount_array[$discount->id] = [
+                        'id' => $discount->id,
+                        'discount_type' => $discount_type,
+                        'discount_price' => $discount_price,
+                        'net_amount' => $net_amount,
+                        'slug' => $allocation->slug,
+                    ];
+                } else {
+                    $discount_type = $effective_type;
+                    $discount_price = $effective_amount;
+                    $discount_price_cal = $service->price * (($discount_price) / 100);
+                    $net_amount = ($service->price) - ($discount_price_cal);
+                    $Discount_array[$discount->id] = [
+                        'id' => $discount->id,
+                        'discount_type' => $discount_type,
+                        'discount_price' => $discount_price,
+                        'net_amount' => $net_amount,
+                        'slug' => $allocation->slug,
+                    ];
                 }
             }
 
@@ -1808,6 +1826,7 @@ class PackagesController extends Controller
             $discount_is_voucher = false;
             $service_id = $request->service_id;
             $patient_id = $request->patient_id;
+            $location_id = $request->location_id;
             $service_data = Services::find($service_id);
 
             if (!$service_data) {
@@ -1816,24 +1835,38 @@ class PackagesController extends Controller
 
             $discount_id = $request->discount_id;
             $discount_data = Discounts::find($discount_id);
+            
+            // Get allocation-level type/amount (now stored in allocation table only)
+            $allocations = DiscountWidget::loadPlanDiscountAllocationsByLocationService($location_id, $service_id, Auth::User()->account_id);
+            $allocation = $allocations[$discount_id] ?? null;
+            
+            // Type/amount are now stored in allocation table
+            $effective_type = $allocation ? $allocation->type : null;
+            $effective_amount = $allocation ? $allocation->amount : null;
+            $allocation_slug = $allocation ? $allocation->slug : 'default';
            
-            if ($discount_data->slug == 'custom') {
+            if ($allocation_slug == 'custom') {
                 return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
                 ]);
             } else {
-                if ($discount_data->type == Config::get('constants.Fixed') && $discount_data->discount_type !="voucher") {
+                // Initialize default values
+                $discount_type = '';
+                $discount_price = 0;
+                $net_amount = $service_data->price;
+                
+                if ($effective_type == Config::get('constants.Fixed') && $discount_data->discount_type !="voucher") {
                     $discount_type = Config::get('constants.Fixed');
-                    $discount_price = $discount_data->amount;
-                    $net_amount = ($service_data->price) - ($discount_data->amount);
-                } else if ($discount_data->type == Config::get('constants.Percentage') && $discount_data->discount_type !="voucher") {
+                    $discount_price = $effective_amount;
+                    $net_amount = ($service_data->price) - ($effective_amount);
+                } else if ($effective_type == Config::get('constants.Percentage') && $discount_data->discount_type !="voucher") {
                     $discount_type = Config::get('constants.Percentage');
-                    $discount_price = $discount_data->amount;
+                    $discount_price = $effective_amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
-                } else if ($discount_data->type == "Configurable" && $discount_data->discount_type !="voucher") {
+                } else if ($effective_type == "Configurable" && $discount_data->discount_type !="voucher") {
                     $discount_type = "Configurable";
-                    $discount_price = $discount_data->amount;
+                    $discount_price = $effective_amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 } else if ($discount_data->discount_type == "voucher") {
@@ -1859,6 +1892,7 @@ class PackagesController extends Controller
                     'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
                     'custom_checked' => 0,
                     'discount_is_voucher' => $discount_is_voucher,
+                    'slug' => $allocation_slug,
                 ]);
             }
         }
@@ -1877,6 +1911,7 @@ class PackagesController extends Controller
     {
         $status = true;
         $service_id = $request->service_id;
+        $location_id = $request->location_id;
         $service_data = Services::find($service_id);
         
         if (!$service_data) {
@@ -1886,7 +1921,16 @@ class PackagesController extends Controller
         $discount_id = $request->discount_id;
         $discount_data = Discounts::find($discount_id);
         
-        if ($discount_data->slug == 'custom') {
+        // Get allocation-level type/amount (now stored in allocation table only)
+        $allocations = DiscountWidget::loadPlanDiscountAllocationsByLocationService($location_id, $service_id, Auth::User()->account_id);
+        $allocation = $allocations[$discount_id] ?? null;
+        
+        // Type/amount are now stored in allocation table
+        $effective_type = $allocation ? $allocation->type : null;
+        $effective_amount = $allocation ? $allocation->amount : null;
+        $allocation_slug = $allocation ? $allocation->slug : 'default';
+        
+        if ($allocation_slug == 'custom') {
             $discount_id = $request->discount_id;
         } else {
             if($discount_data->discount_type == "voucher"){
@@ -1897,13 +1941,17 @@ class PackagesController extends Controller
                     $request->discount_value = 0;
                 }
             } else {
-                $request->discount_value = $discount_data->amount;
+                $request->discount_value = $effective_amount;
             }
         }
         
-        if ($discount_data->type == 'Fixed' && $discount_data->discount_type != 'voucher') {
+        // Initialize default values
+        $net_amount = $service_data->price;
+        $discount_price = 0;
+        
+        if ($effective_type == 'Fixed' && $discount_data->discount_type != 'voucher') {
             if ($request->discount_type == Config::get('constants.Fixed')) {
-                if ($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price) {
+                if ($request->discount_value > $effective_amount || $request->discount_value > $service_data->price) {
                     return false;
                 }
                 $discount_type = Config::get('constants.Fixed');
@@ -1913,14 +1961,14 @@ class PackagesController extends Controller
             } else {
                 $discount_type = Config::get('constants.Percentage');
                 $discount_price = $request->discount_value;
-                $discount_price_cal = ($discount_data->amount / $service_data->price) * 100;
+                $discount_price_cal = ($effective_amount / $service_data->price) * 100;
                 if ($request->discount_value > $discount_price_cal) {
                     $status = false;
                 }
                 $amount_after_per = ($request->discount_value / 100) * $service_data->price;
                 $net_amount = $service_data->price - $amount_after_per;
             }
-        } else if($discount_data->type == 'Fixed' && $discount_data->discount_type == 'voucher'){
+        } else if($effective_type == 'Fixed' && $discount_data->discount_type == 'voucher'){
             $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
             if($discountValue){
                 $discount_type = Config::get('constants.Fixed');
@@ -1937,13 +1985,15 @@ class PackagesController extends Controller
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
-                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
-                if ($discount_price_in_percentage > $discount_data->amount) {
-                    return false;
+                if ($service_data->price > 0) {
+                    $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                    if ($discount_price_in_percentage > $effective_amount) {
+                        return false;
+                    }
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
             } else {
-                if ($request->discount_value > $discount_data->amount) {
+                if ($request->discount_value > $effective_amount) {
                     return false;
                 }
                 $discount_price = $request->discount_value;

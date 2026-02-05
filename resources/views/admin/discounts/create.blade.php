@@ -35,52 +35,13 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable On <span class="text text-danger">*</span></label>
-                            <select id="add_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type" onchange="discountType(this,'add')">
+                            <select id="add_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select </option>
                                 <option value="Treatment">Treatment</option>
                                 <option value="Consultancy">Consultancy</option>
                                 <option value="Inventory">Inventory</option>
                             </select>
                         </div>
-                    
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
-                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" >
-                                <option value="">Select Amount Type</option>
-                                <option value="Fixed">Fixed</option>
-                                <option value="Percentage">Percentage</option>
-                                
-                            </select>
-                        </div>
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Type</label>
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input type="radio" class="group_slug" value="default" checked name="slug">
-                                    <span></span>
-                                    Fixed
-                                </label>
-                            </div>
-
-                            <div class="radio-inline tax-radios mb-3" id="custom">
-                                <label class="radio">
-                                    <input type="radio" class="group_slug" value="custom" name="slug">
-                                    <span></span>
-                                    Custom
-                                </label>
-
-                            </div>
-
-                        </div>
-                        
-                        
-                        <div class="fv-row col-md-12 mt-5" id="amount">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
-                            <input min="0" id="add_amount" class="form-control" type="number" name="amount">
-                        </div>
-                    </div>
-                   
-                    <div class="row">
 
                         <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
@@ -91,12 +52,20 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
                             <input type="text" id="add_end" class="form-control datatable-input" name="end">
                         </div>
-<div class="fv-row col-md-12 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
-                        <select id="add_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
 
-                        </select>
-                    </div>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
+                            <select id="add_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
+
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Customer Type</label>
+                            <select id="add_customer_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="customer_type_id">
+                                <option value="">All</option>
+                            </select>
+                        </div>
                     
                         <span class="switch switch-icon mt-5">
                            <label for="add_active" class="fw-bold fs-6">

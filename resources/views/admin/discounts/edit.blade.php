@@ -30,82 +30,19 @@
 
                 <div class="form-group">
                     <div class="row">
-
-                        <div class="fv-row col-md-6 mt-5 discount_type">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable on</label>
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input  class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
-                                    <span></span>
-                                    Treatment
-                                </label>
-                            </div>
-
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input class="consultancy" type="radio" value="Consultancy" name="discount_type" onchange="discountType(this,'edit');">
-                                    <span></span>
-                                    Consultancy
-                                </label>
-
-                            </div>
-
-                            <div class="radio-inline tax-radios">
-                                <label class="radio">
-                                    <input type="radio" value="Inventory" name="discount_type" onchange="discountType(this,'edit');">
-                                    <span></span>
-                                    Inventory
-                                </label>
-
-                            </div>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5 discount_group">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug" >
-                                    <span></span>
-                                    Fixed
-                                </label>
-                            </div>
-
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug" >
-                                    <span></span>
-                                    Custom
-                                </label>
-
-                            </div>
-
-                        </div>
-
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Name <span class="text text-danger">*</span></label>
                             <input id="edit_name" class="form-control" type="text" name="name">
                         </div>
-                        <input type="hidden" name="type" id="disc_type">
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
-                            <select disabled id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
-                                <option value="">Select Amount Type</option>
-                                <option value="Fixed">Fixed</option>
-                                <option value="Percentage">Percentage</option>
-                               
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable On <span class="text text-danger">*</span></label>
+                            <select id="edit_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                                <option value="">Select </option>
+                                <option value="Treatment">Treatment</option>
+                                <option value="Consultancy">Consultancy</option>
+                                <option value="Inventory">Inventory</option>
                             </select>
                         </div>
-                       
-                        
-                            
-                        <div class="fv-row col-md-12 mt-5" id="edit_amount_div">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
-                            <input min="0" id="edit_amount" class="form-control" type="number" name="amount">
-                        </div>
-                    </div>
-
-                    
-                    <div class="row">
 
                         <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
@@ -116,12 +53,21 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_end" class="form-control datatable-input" name="end">
                         </div>
+
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
                             <select id="edit_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple name="roles[]">
                                 <!-- options will be filled by JS -->
                             </select>
                         </div>
+
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Customer Type</label>
+                            <select id="edit_customer_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="customer_type_id">
+                                <option value="">All</option>
+                            </select>
+                        </div>
+                    
                         <span class="switch switch-icon mt-5">
                            <label for="edit_active" class="fw-bold fs-6">
                             <input id="edit_active" checked value="1" type="checkbox" name="active">
@@ -131,7 +77,7 @@
                         </span>
 
                     </div>
-
+                    
                 </div>
 
             </div>
