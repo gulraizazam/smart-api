@@ -71,19 +71,19 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
     columns.push({
         field: 'service_id',
         title: 'Service',
-        width: 80,
+        width: 70,
     });
     
     columns.push({
         field: 'doctor_id',
         title: 'Doctor',
-        width: 80,
+        width: 70,
     });
     
     columns.push({
         field: 'appointment_status_id',
         title: 'Status',
-        width: 80,
+        width: 70,
         template: function (data) {
             var statusPerms = perms || (typeof permissions !== 'undefined' ? permissions : {});
             if (statusPerms.status) {
