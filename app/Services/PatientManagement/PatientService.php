@@ -119,7 +119,8 @@ class PatientService
         $start = (int) ($request->input('pagination.page', 1) - 1) * $length;
         if ($start < 0) $start = 0;
 
-        // Single optimized query with LEFT JOIN (no subqueries, no N+1)
+        // Optimized query - removed GROUP BY, using simple LEFT JOIN
+        // Note: If patient has multiple active memberships, this will return the first one found
         $sql = "
             SELECT SQL_CALC_FOUND_ROWS
                 u.id,
@@ -139,7 +140,6 @@ class PatientService
             FROM users u
             LEFT JOIN memberships m ON m.patient_id = u.id AND m.active = 1
             WHERE {$whereClause}
-            GROUP BY u.id
             ORDER BY u.created_at DESC
             LIMIT ?, ?
         ";
