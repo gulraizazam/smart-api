@@ -28,8 +28,7 @@ class PatientService
 
     /**
      * Get datatable data for patients listing
-     * ULTRA-OPTIMIZED: Raw SQL with single query, LEFT JOIN for memberships, SQL_CALC_FOUND_ROWS
-     * Performance: ~10x faster than Eloquent approach
+     * OPTIMIZED: Single query approach, cached filters, optimized eager loading
      */
     public function getDatatableData(Request $request): array
     {
@@ -47,24 +46,29 @@ class PatientService
             $records['message'] = $deleteResult['message'];
         }
 
+        // Build base query once (reused for count and data)
+        $baseQuery = $this->buildOptimizedQuery($request, $accountId, $applyFilter, $filters);
+
+        // Get total count using optimized count query
+        $iTotalRecords = $this->getOptimizedCount($baseQuery);
+
         [$orderBy, $order] = getSortBy($request);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        // Build optimized raw SQL query
-        $result = $this->executeUltraFastQuery($request, $accountId, $applyFilter, $filters, $userId);
-
-        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $result['total']);
+        // Get paginated data with eager loading
+        $patients = $this->getOptimizedRecords($baseQuery, $iDisplayStart, $iDisplayLength);
 
         // Add cached filter data
         $records = $this->getFiltersDataCached($records, $userId);
 
-        if (!empty($result['data'])) {
-            $records['data'] = $result['data'];
+        if ($patients->isNotEmpty()) {
+            $records['data'] = $patients;
             $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
                 'perpage' => $iDisplayLength,
-                'total' => $result['total'],
+                'total' => $iTotalRecords,
                 'sort' => $order,
             ];
         }
@@ -73,211 +77,6 @@ class PatientService
         $records['permissions'] = $this->getCachedPermissions($userId);
 
         return $records;
-    }
-
-    /**
-     * Execute ultra-fast raw SQL query with LEFT JOIN for memberships
-     * Single query returns both count and data using SQL_CALC_FOUND_ROWS
-     */
-    private function executeUltraFastQuery(Request $request, int $accountId, bool $applyFilter, array $filters, int $userId): array
-    {
-        $canViewInactive = Gate::allows('view_inactive_patients');
-        $patientTypeId = Config::get('constants.patient_id');
-
-        // Build WHERE conditions
-        $conditions = [];
-        $bindings = [];
-
-        // Base conditions (always applied)
-        $conditions[] = "u.user_type_id = ?";
-        $bindings[] = $patientTypeId;
-
-        $conditions[] = "u.account_id = ?";
-        $bindings[] = $accountId;
-
-        $conditions[] = "u.deleted_at IS NULL";
-
-        // Active filter
-        if (!$canViewInactive) {
-            $conditions[] = "u.active = 1";
-        }
-
-        // Apply dynamic filters
-        $this->buildRawFilters($conditions, $bindings, $filters, $applyFilter, $userId);
-
-        // Membership filter
-        if (isset($filters['membership'])) {
-            $conditions[] = "m.membership_type_id = ?";
-            $bindings[] = $filters['membership'];
-            Filters::put($userId, self::FILTER_KEY, 'memberships', $filters['membership']);
-        }
-
-        $whereClause = implode(' AND ', $conditions);
-
-        // Get pagination params
-        $length = (int) ($request->input('pagination.perpage', $request->input('length', 10)));
-        $start = (int) ($request->input('pagination.page', 1) - 1) * $length;
-        if ($start < 0) $start = 0;
-
-        // First get total count (separate query for compatibility with all MySQL versions)
-        $countSql = "
-            SELECT COUNT(DISTINCT u.id) as total
-            FROM users u
-            LEFT JOIN memberships m ON m.patient_id = u.id AND m.active = 1
-            WHERE {$whereClause}
-        ";
-        
-        $countBindings = array_slice($bindings, 0); // Copy bindings without LIMIT params
-        $totalResult = DB::select($countSql, $countBindings);
-        $total = $totalResult[0]->total ?? 0;
-
-        // Main data query with pagination
-        $sql = "
-            SELECT
-                u.id,
-                u.id as patient_id,
-                u.name,
-                u.email,
-                u.phone,
-                u.gender,
-                u.active,
-                u.created_at,
-                m.id as membership_id,
-                m.code as membership_code,
-                m.membership_type_id,
-                m.end_date as membership_end_date,
-                m.active as membership_active,
-                m.is_referral
-            FROM users u
-            LEFT JOIN memberships m ON m.patient_id = u.id AND m.active = 1
-            WHERE {$whereClause}
-            ORDER BY u.created_at DESC
-            LIMIT ?, ?
-        ";
-
-        $bindings[] = $start;
-        $bindings[] = $length;
-
-        // Execute main query
-        $rows = DB::select($sql, $bindings);
-
-        // Transform to expected format
-        $data = array_map(function ($row) {
-            $membership = null;
-            if ($row->membership_id) {
-                $membership = (object) [
-                    'id' => $row->membership_id,
-                    'patient_id' => $row->id,
-                    'code' => $row->membership_code,
-                    'membership_type_id' => $row->membership_type_id,
-                    'end_date' => $row->membership_end_date,
-                    'active' => $row->membership_active,
-                    'is_referral' => $row->is_referral,
-                ];
-            }
-
-            return (object) [
-                'id' => $row->id,
-                'patient_id' => $row->patient_id,
-                'name' => $row->name,
-                'email' => $row->email,
-                'phone' => $row->phone,
-                'gender' => $row->gender,
-                'active' => $row->active,
-                'created_at' => $row->created_at,
-                'membership' => $membership,
-            ];
-        }, $rows);
-
-        return [
-            'data' => $data,
-            'total' => (int) $total,
-        ];
-    }
-
-    /**
-     * Build raw SQL filter conditions
-     */
-    private function buildRawFilters(array &$conditions, array &$bindings, array $filters, bool $applyFilter, int $userId): void
-    {
-        // Patient ID filter
-        if (hasFilter($filters, 'patient_id')) {
-            $searchValue = GeneralFunctions::patientSearch($filters['patient_id']);
-            $conditions[] = "u.id LIKE ?";
-            $bindings[] = '%' . $searchValue . '%';
-            Filters::put($userId, self::FILTER_KEY, 'patient_id', $filters['patient_id']);
-        } elseif (!$applyFilter && ($storedValue = Filters::get($userId, self::FILTER_KEY, 'patient_id'))) {
-            $conditions[] = "u.id LIKE ?";
-            $bindings[] = '%' . GeneralFunctions::patientSearch($storedValue) . '%';
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'patient_id');
-        }
-
-        // Name filter
-        if (hasFilter($filters, 'name')) {
-            $conditions[] = "u.name LIKE ?";
-            $bindings[] = '%' . $filters['name'] . '%';
-            Filters::put($userId, self::FILTER_KEY, 'name', $filters['name']);
-        } elseif (!$applyFilter && ($storedValue = Filters::get($userId, self::FILTER_KEY, 'name'))) {
-            $conditions[] = "u.name LIKE ?";
-            $bindings[] = '%' . $storedValue . '%';
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'name');
-        }
-
-        // Gender filter (exact match)
-        if (hasFilter($filters, 'gender')) {
-            $conditions[] = "u.gender = ?";
-            $bindings[] = $filters['gender'];
-            Filters::put($userId, self::FILTER_KEY, 'gender', $filters['gender']);
-        } elseif (!$applyFilter && ($storedValue = Filters::get($userId, self::FILTER_KEY, 'gender'))) {
-            $conditions[] = "u.gender = ?";
-            $bindings[] = $storedValue;
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'gender');
-        }
-
-        // Phone filter
-        if (hasFilter($filters, 'phone')) {
-            $phone = GeneralFunctions::cleanNumber($filters['phone']);
-            $conditions[] = "u.phone LIKE ?";
-            $bindings[] = '%' . $phone . '%';
-            Filters::put($userId, self::FILTER_KEY, 'phone', $filters['phone']);
-        } elseif (!$applyFilter && ($storedValue = Filters::get($userId, self::FILTER_KEY, 'phone'))) {
-            $conditions[] = "u.phone LIKE ?";
-            $bindings[] = '%' . GeneralFunctions::cleanNumber($storedValue) . '%';
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'phone');
-        }
-
-        // Status filter
-        if (hasFilter($filters, 'status')) {
-            if ($filters['status'] !== null && ($filters['status'] == 0 || $filters['status'] == 1)) {
-                $conditions[] = "u.active = ?";
-                $bindings[] = (int) $filters['status'];
-            }
-            Filters::put($userId, self::FILTER_KEY, 'status', $filters['status']);
-        } elseif (!$applyFilter && (($storedValue = Filters::get($userId, self::FILTER_KEY, 'status')) !== null)) {
-            if ($storedValue == 0 || $storedValue == 1) {
-                $conditions[] = "u.active = ?";
-                $bindings[] = (int) $storedValue;
-            }
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'status');
-        }
-
-        // Date range filter
-        if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
-            $endDateTime = date('Y-m-d 23:59:59', strtotime($dateRange[1]));
-            $conditions[] = "u.created_at BETWEEN ? AND ?";
-            $bindings[] = $startDateTime;
-            $bindings[] = $endDateTime;
-            Filters::put($userId, self::FILTER_KEY, 'created_at', $filters['created_at']);
-        } elseif ($applyFilter) {
-            Filters::forget($userId, self::FILTER_KEY, 'created_at');
-        }
     }
 
     /**
@@ -1380,125 +1179,75 @@ class PatientService
     }
 
     /**
-     * Get patient consultations datatable data (appointment_type_id = 1)
+     * Get patient vouchers datatable data (OPTIMIZED)
+     * Uses user_vouchers table joined with discounts table
      */
-    public function getPatientConsultations(int $patientId, Request $request): array
+    public function getPatientVouchers(int $patientId, Request $request): array
     {
-        $accountId = Auth::user()->account_id;
-        $filters = getFilters($request->all());
-        
-        // Build base query for consultations (appointment_type_id = 1)
-        $baseQuery = DB::table('appointments')
-            ->where('appointments.patient_id', $patientId)
-            ->where('appointments.account_id', $accountId)
-            ->where('appointments.appointment_type_id', 1)
-            ->whereNull('appointments.deleted_at');
-        
-        // Apply filters
-        if (!empty($filters['date_from'])) {
-            $baseQuery->where('appointments.scheduled_date', '>=', $filters['date_from']);
-        }
-        if (!empty($filters['date_to'])) {
-            $baseQuery->where('appointments.scheduled_date', '<=', $filters['date_to']);
-        }
-        if (!empty($filters['service_id'])) {
-            $baseQuery->where('appointments.service_id', $filters['service_id']);
-        }
-        if (!empty($filters['location_id'])) {
-            $baseQuery->where('appointments.location_id', $filters['location_id']);
-        }
-        if (!empty($filters['appointment_status_id'])) {
-            $baseQuery->where('appointments.appointment_status_id', $filters['appointment_status_id']);
-        }
-
-        // Add JOINs before count to avoid issues
-        $baseQuery->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-            ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
-            ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
-            ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
-            ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id');
-        
-        $iTotalRecords = (clone $baseQuery)->count();
+        // Get count first
+        $iTotalRecords = DB::table('user_vouchers')
+            ->where('user_id', $patientId)
+            ->count();
 
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        // Add city join and invoices join
-        $baseQuery->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
-            ->leftJoin('invoices', 'appointments.id', '=', 'invoices.appointment_id');
-
-        // Single optimized query with all JOINs
-        $appointments = (clone $baseQuery)
+        // Single optimized query with JOIN to discounts table
+        $vouchers = DB::table('user_vouchers')
             ->select([
-                'appointments.id',
-                'appointments.patient_id',
-                'appointments.scheduled_date',
-                'appointments.scheduled_time',
-                'appointments.created_at',
-                'appointments.doctor_id as doctorId',
-                'appointments.location_id as locationId',
-                'invoices.id as invoice_id',
-                'doctors.name as doctor_name',
-                'locations.name as location_name',
-                'cities.name as city_name',
-                'services.name as service_name',
-                'appointment_statuses.name as status_name',
-                'creators.name as created_by_name',
+                'user_vouchers.id',
+                'user_vouchers.voucher_id',
+                'user_vouchers.amount',
+                'user_vouchers.total_amount',
+                'user_vouchers.created_at',
+                'discounts.name as voucher_name',
+                'discounts.start as start_date',
+                'discounts.end as end_date',
             ])
-            ->orderBy('appointments.scheduled_date', 'DESC')
+            ->leftJoin('discounts', 'user_vouchers.voucher_id', '=', 'discounts.id')
+            ->where('user_vouchers.user_id', $patientId)
+            ->orderBy('user_vouchers.created_at', 'DESC')
             ->offset($iDisplayStart)
             ->limit($iDisplayLength)
             ->get();
 
-        // Transform data to match main consultancy datatable format
-        $data = $appointments->map(function ($apt) {
+        $data = $vouchers->map(function ($voucher) use ($patientId) {
+            // Calculate consumed and balance amounts
+            $totalAmount = $voucher->total_amount ?? 0;
+            $currentBalance = $voucher->amount;
+            
+            // If amount is null or 0 but total_amount exists, check if voucher has been used
+            if ($currentBalance === null || ($currentBalance == 0 && $totalAmount > 0)) {
+                // Check if any package_vouchers exist for this user/voucher combination
+                $hasUsage = DB::table('package_vouchers')
+                    ->where('user_id', $patientId)
+                    ->where('voucher_id', $voucher->voucher_id)
+                    ->exists();
+                
+                // If no usage exists, balance = total_amount (voucher not used yet)
+                if (!$hasUsage) {
+                    $currentBalance = $totalAmount;
+                } else {
+                    $currentBalance = $currentBalance ?? 0;
+                }
+            }
+            
+            $consumedAmount = $totalAmount - $currentBalance;
+            
             return [
-                'id' => $apt->id,
-                'patient_id' => $apt->patient_id,
-                'Patient_ID' => GeneralFunctions::patientSearchStringAdd($apt->patient_id),
-                'scheduled_date' => $apt->scheduled_date ? Carbon::parse($apt->scheduled_date)->format('M d, Y') . ' at ' . ($apt->scheduled_time ? Carbon::parse($apt->scheduled_time)->format('h:i A') : '') : '-',
-                'scheduled_time' => $apt->scheduled_time ?? '',
-                'doctor_id' => $apt->doctor_name ?? '',
-                'doctorId' => $apt->doctorId,
-                'location_id' => $apt->location_name ?? '',
-                'locationId' => $apt->locationId,
-                'city_id' => $apt->city_name ?? '',
-                'service_id' => $apt->service_name ?? '',
-                'appointment_status_id' => $apt->status_name ?? '',
-                'created_at' => $apt->created_at ?? '',
-                'created_by' => $apt->created_by_name ?? '',
-                'invoice' => $apt->invoice_id ? true : false,
-                'invoice_id' => $apt->invoice_id ?? 0,
+                'id' => $voucher->id,
+                'user_voucher_id' => $voucher->id,
+                'name' => $voucher->voucher_name ?? '',
+                'service' => '',
+                'total_amount' => number_format($totalAmount, 2),
+                'consumed_amount' => number_format($consumedAmount, 2),
+                'balance' => number_format($currentBalance, 2),
+                'amount' => $voucher->amount ?? 0,
+                'startDate' => $voucher->start_date ?? '',
+                'endDate' => $voucher->end_date ?? '',
+                'created_at' => $voucher->created_at ? Carbon::parse($voucher->created_at)->format('D M, d Y h:i A') : '',
             ];
         });
-
-        // Get filter options
-        $locations = DB::table('locations')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-        
-        $services = DB::table('services')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-        
-        $statuses = DB::table('appointment_statuses')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-
-        // Get permissions for actions
-        $permissions = [
-            'edit' => Gate::allows('appointments_edit'),
-            'delete' => Gate::allows('appointments_destroy'),
-            'status' => Gate::allows('appointments_status'),
-            'invoice' => Gate::allows('appointments_invoice'),
-            'invoice_display' => Gate::allows('appointments_invoice_display'),
-        ];
 
         return [
             'data' => $data,
@@ -1510,149 +1259,14 @@ class PatientService
                 'total' => $iTotalRecords,
                 'sort' => $order,
             ],
-            'permissions' => $permissions,
+            'permissions' => [
+                'edit' => Gate::allows('vouchers_edit'),
+                'delete' => Gate::allows('vouchers_destroy'),
+            ],
             'filter_values' => [
-                'locations' => $locations,
-                'services' => $services,
-                'appointment_statuses' => $statuses,
+                'patient' => null,
             ],
-            'active_filters' => $filters,
-        ];
-    }
-
-    /**
-     * Get patient treatments datatable data (appointment_type_id = 2)
-     */
-    public function getPatientTreatments(int $patientId, Request $request): array
-    {
-        $accountId = Auth::user()->account_id;
-        $filters = getFilters($request->all());
-        
-        // Build base query for treatments (appointment_type_id = 2)
-        $baseQuery = DB::table('appointments')
-            ->where('appointments.patient_id', $patientId)
-            ->where('appointments.account_id', $accountId)
-            ->where('appointments.appointment_type_id', 2)
-            ->whereNull('appointments.deleted_at');
-        
-        // Apply filters
-        if (!empty($filters['date_from'])) {
-            $baseQuery->where('appointments.scheduled_date', '>=', $filters['date_from']);
-        }
-        if (!empty($filters['date_to'])) {
-            $baseQuery->where('appointments.scheduled_date', '<=', $filters['date_to']);
-        }
-        if (!empty($filters['service_id'])) {
-            $baseQuery->where('appointments.service_id', $filters['service_id']);
-        }
-        if (!empty($filters['location_id'])) {
-            $baseQuery->where('appointments.location_id', $filters['location_id']);
-        }
-        if (!empty($filters['appointment_status_id'])) {
-            $baseQuery->where('appointments.appointment_status_id', $filters['appointment_status_id']);
-        }
-
-        // Add JOINs before count to avoid issues
-        $baseQuery->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
-            ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
-            ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
-            ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
-            ->leftJoin('resources', 'appointments.resource_id', '=', 'resources.id')
-            ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id');
-        
-        $iTotalRecords = (clone $baseQuery)->count();
-
-        [$orderBy, $order] = getSortBy($request);
-        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-        // Add invoices join
-        $baseQuery->leftJoin('invoices', 'appointments.id', '=', 'invoices.appointment_id');
-
-        // Single optimized query with all JOINs
-        $appointments = (clone $baseQuery)
-            ->select([
-                'appointments.id',
-                'appointments.patient_id',
-                'appointments.scheduled_date',
-                'appointments.scheduled_time',
-                'appointments.created_at',
-                'invoices.id as invoice_id',
-                'doctors.name as doctor_name',
-                'locations.name as location_name',
-                'services.name as service_name',
-                'appointment_statuses.name as status_name',
-                'resources.name as machine_name',
-                'creators.name as created_by_name',
-            ])
-            ->orderBy('appointments.scheduled_date', 'DESC')
-            ->offset($iDisplayStart)
-            ->limit($iDisplayLength)
-            ->get();
-
-        // Transform data
-        $data = $appointments->map(function ($apt) {
-            return [
-                'id' => $apt->id,
-                'patient_id' => $apt->patient_id,
-                'scheduled_date' => $apt->scheduled_date ? Carbon::parse($apt->scheduled_date)->format('M d, Y') : '',
-                'scheduled_time' => $apt->scheduled_time ?? '',
-                'doctor_id' => $apt->doctor_name ?? '',
-                'location_id' => $apt->location_name ?? '',
-                'service_id' => $apt->service_name ?? '',
-                'appointment_status_id' => $apt->status_name ?? '',
-                'machine_id' => $apt->machine_name ?? '',
-                'created_at' => $apt->created_at ?? '',
-                'created_by' => $apt->created_by_name ?? '',
-                'invoice' => $apt->invoice_id ? true : false,
-                'invoice_id' => $apt->invoice_id ?? 0,
-            ];
-        });
-
-        // Get filter options
-        $locations = DB::table('locations')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-        
-        $services = DB::table('services')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-        
-        $statuses = DB::table('appointment_statuses')
-            ->where('account_id', $accountId)
-            ->where('active', 1)
-            ->pluck('name', 'id')
-            ->toArray();
-
-        // Get permissions for actions
-        $permissions = [
-            'edit' => Gate::allows('treatments_edit'),
-            'delete' => Gate::allows('treatments_destroy'),
-            'status' => Gate::allows('treatments_status'),
-            'invoice' => Gate::allows('treatments_invoice'),
-            'invoice_display' => Gate::allows('treatments_invoice_display'),
-        ];
-
-        return [
-            'data' => $data,
-            'meta' => [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ],
-            'permissions' => $permissions,
-            'filter_values' => [
-                'locations' => $locations,
-                'services' => $services,
-                'appointment_statuses' => $statuses,
-            ],
-            'active_filters' => $filters,
+            'active_filters' => [],
         ];
     }
 }
