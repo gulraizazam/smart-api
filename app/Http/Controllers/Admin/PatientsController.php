@@ -83,6 +83,28 @@ class PatientsController extends Controller
             return abort(401);
         }
 
+        // Valid sections with their required permissions (matching main modules)
+        $sectionPermissions = [
+            'profile' => 'patients_manage',
+            'consultations' => 'appointments_manage',
+            'treatments' => 'treatments_manage',
+            'plans' => 'plans_manage',
+            'invoices' => 'invoices_manage',
+            'refunds' => 'refunds_manage',
+            'documents' => 'patients_manage',
+            'activity' => 'patients_manage',
+        ];
+
+        // Validate section
+        if (!array_key_exists($section, $sectionPermissions)) {
+            $section = 'profile';
+        }
+
+        // Check section-specific permission
+        if (!Gate::allows($sectionPermissions[$section])) {
+            return abort(401, 'Unauthorized to access this section');
+        }
+
         // Get patient data
         $patient = \App\Models\Patients::find($id);
         if (!$patient) {
@@ -95,25 +117,20 @@ class PatientsController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
-        // Get permissions
+        // Get permissions for UI elements
         $permissions = [
-            'edit' => Gate::allows('appointments_edit'),
-            'delete' => Gate::allows('appointments_delete'),
+            'edit' => Gate::allows('patients_edit'),
+            'delete' => Gate::allows('patients_delete'),
             'status' => Gate::allows('appointments_status'),
-            'consultancy' => Gate::allows('consultancy_manage'),
+            'consultancy' => Gate::allows('appointments_manage'),
             'treatment' => Gate::allows('treatments_manage'),
             'invoice' => Gate::allows('consultancy_invoice'),
             'invoice_display' => Gate::allows('consultancy_invoice_display'),
             'log' => Gate::allows('appointments_log'),
             'plans_create' => Gate::allows('plans_create'),
+            'plans_manage' => Gate::allows('plans_manage'),
             'contact' => Gate::allows('contact'),
         ];
-
-        // Valid sections
-        $validSections = ['profile', 'consultations', 'treatments', 'plans', 'invoices', 'refunds', 'documents', 'activity'];
-        if (!in_array($section, $validSections)) {
-            $section = 'profile';
-        }
 
         return view('admin.patients.card-v2.index', [
             'patient' => $patient,
