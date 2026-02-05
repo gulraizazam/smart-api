@@ -26,8 +26,8 @@ class Documents extends BaseModal
     public function getFullUrlAttribute()
     {
         if ($this->url) {
-            // Use asset() with storage path for correct URL
-            return asset('storage/' . $this->url);
+            // Use storage path for correct URL
+            return asset('storage/app/public/' . $this->url);
         }
         return null;
     }
