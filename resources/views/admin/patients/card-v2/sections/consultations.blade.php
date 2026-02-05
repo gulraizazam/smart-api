@@ -20,7 +20,7 @@
 function openNewConsultationWithLocation() {
     // Fetch last consultancy location for this patient
     $.ajax({
-        url: '{{ route("admin.patients.lastAppointmentLocation", ["id" => $patientId]) }}',
+        url: '{{ route("admin.patients.getLastAppointmentLocation", ["id" => $patientId]) }}',
         type: 'GET',
         data: { appointment_type: 'consultancy' },
         success: function(response) {
