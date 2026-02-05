@@ -2,9 +2,11 @@
 <div class="section-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Personal Information</h4>
-        <button type="button" class="btn btn-primary btn-sm" onclick="editPatientProfile('{{ route('admin.patients.edit', ['id' => $patientId]) }}', {{ $patientId }})">
-            <i class="la la-pencil"></i> Edit
-        </button>
+        @if($permissions['edit'])
+            <button type="button" class="btn btn-primary btn-sm" onclick="editPatientProfile('{{ route('admin.patients.edit', ['id' => $patientId]) }}', {{ $patientId }})">
+                <i class="la la-pencil"></i> Edit
+            </button>
+        @endif
     </div>
     
     <div class="row">
