@@ -3,28 +3,10 @@ var table_url = route('admin.discounts.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 30,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    }, {
         field: 'name',
         title: 'Name',
         sortable: false,
         width: 200,
-    },{
-        field: 'type',
-        title: 'Type',
-        sortable: false,
-        width: 80,
-    },{
-        field: 'amount',
-        title: 'Amount',
-        sortable: false,
-        width: 60
     },{
         field: 'discount_type',
         title: 'Applicable On',
@@ -178,31 +160,49 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
-    Object.values(discount_locations).forEach(function(value, index) {
-        
-        let location_name = value.location.city.name +"-"+ value.location.name;
-        location_services += serviceLocation(value.id, location_name, value.service.name);
-        
-       
-    });
+        // Group services by location_id + type + amount + slug (same allocation settings)
+        let grouped = {};
+        Object.values(discount_locations).forEach(function(value, index) {
+            let location_name = value.location.city.name + "-" + value.location.name;
+            let display_type = value.type || '-';
+            let display_amount = value.amount !== null ? value.amount : '-';
+            let display_slug = value.slug || 'default';
+            
+            // Create a unique key for grouping: location_id + type + amount + slug
+            let groupKey = value.location.id + '_' + display_type + '_' + display_amount + '_' + display_slug;
+            
+            if (!grouped[groupKey]) {
+                grouped[groupKey] = {
+                    ids: [],
+                    location_name: location_name,
+                    service_names: [],
+                    type: display_type,
+                    amount: display_amount,
+                    slug: display_slug
+                };
+            }
+            grouped[groupKey].ids.push(value.id);
+            grouped[groupKey].service_names.push(value.service.name);
+        });
 
-        
+        // Build table rows from grouped data
+        Object.values(grouped).forEach(function(group) {
+            let serviceNamesDisplay = group.service_names.join(', ');
+            location_services += serviceLocationGrouped(group.ids, group.location_name, serviceNamesDisplay, group.type, group.amount, group.slug);
+        });
 
         $('.HR_SERVICES').remove()
         $('#allocate_services').append(location_services)
 
         $("#discount_id").val(discount.id);
+        $("#allocate_discount_name").text(discount.name);
 
         $("#locations").html(location_options);
 
-        $("#edit_amount_type").val(discount.type);
-        $("#edit_amount").val(discount.amount);
-        $("#edit_pre_days").val(discount.pre_days);
-        $("#edit_post_days").val(discount.post_days);
-        $("#edit_start").val(discount.start);
-        $("#edit_end").val(discount.end);
-
-        $("#edit_active").prop("checked", discount.active);
+        // Reset allocation form fields
+        $("#allocation_type").val('').trigger('change');
+        $("#allocation_amount").val('');
+        $("#allocation_slug").val('default').trigger('change');
 
     } catch (error) {
         showException(error);
@@ -280,7 +280,7 @@ function deleteModel(id) {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 type: 'post',
-                url: '/api/deleteDservice',
+                url: '/api/discounts/deleteDservice',
                 data: {'id': id
                 },
                 success: function (response) {
@@ -383,13 +383,20 @@ function setEditData(response) {
         
 
         $("#edit_name").val(discount.name);
-        $("#edit_amount_type").val(discount.type);
-        $("#disc_type").val(discount.type);
-        $("#edit_amount").val(discount.amount);
-        $("#edit_pre_days").val(discount.pre_days);
-        $("#edit_post_days").val(discount.post_days);
+        $("#edit_amount_types").val(discount.discount_type).trigger('change');
         $("#edit_start").val(discount.start);
         $("#edit_end").val(discount.end);
+
+        // Populate customer types dropdown
+        let customerTypes = response.data.customer_types;
+        let customerTypeOptions = '<option value="">All</option>';
+        if (customerTypes) {
+            Object.entries(customerTypes).forEach(([id, name]) => {
+                let selected = discount.customer_type_id == id ? 'selected' : '';
+                customerTypeOptions += `<option value="${id}" ${selected}>${name}</option>`;
+            });
+        }
+        $("#edit_customer_type").html(customerTypeOptions).trigger("change");
 
         $("#edit_active").prop("checked", discount.active);
         let roles = response.data.roles;
@@ -526,6 +533,17 @@ function createDiscount($route) {
             });
 
             $("#add_user_roles").html(roleOptions).trigger("change");
+            
+            // Populate customer types dropdown
+            let customerTypes = response.data.customer_types;
+            let customerTypeOptions = '<option value="">All</option>';
+            if (customerTypes) {
+                Object.entries(customerTypes).forEach(([id, name]) => {
+                    customerTypeOptions += `<option value="${id}">${name}</option>`;
+                });
+            }
+            $("#add_customer_type").html(customerTypeOptions).trigger("change");
+            
             let locations = response.data.locations;
             let location_options = '<option value="">Select Centre</option>';
             Object.values(locations).forEach(function(value, index) {
@@ -570,7 +588,60 @@ function hideShowAdvanceFilters(active_filters) {
 }
 
 function serviceLocation(id, location_name, service_name) {
-    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td>'+deleteIcon(id)+'</td></tr>';
+    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td>-</td><td>-</td><td>-</td><td>'+deleteIcon(id)+'</td></tr>';
+}
+
+function serviceLocationWithTypeAmount(id, location_name, service_name, type, amount) {
+    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td>'+type+'</td><td>'+amount+'</td><td>-</td><td>'+deleteIcon(id)+'</td></tr>';
+}
+
+function serviceLocationWithAllFields(id, location_name, service_name, type, amount, slug) {
+    let slugDisplay = slug === 'custom' ? 'Custom' : 'Fixed';
+    return '<tr id="HR_" class="HR_SERVICES HR_'+id+'"><td>'+location_name+'</td><td>'+service_name+'</td><td>'+type+'</td><td>'+amount+'</td><td>'+slugDisplay+'</td><td>'+deleteIcon(id)+'</td></tr>';
+}
+
+function serviceLocationGrouped(ids, location_name, service_names, type, amount, slug) {
+    let slugDisplay = slug === 'custom' ? 'Custom' : 'Fixed';
+    let idsArray = ids.join(',');
+    let classNames = ids.map(id => 'HR_' + id).join(' ');
+    return '<tr class="HR_SERVICES ' + classNames + '" data-ids="' + idsArray + '"><td>' + location_name + '</td><td>' + service_names + '</td><td>' + type + '</td><td>' + amount + '</td><td>' + slugDisplay + '</td><td>' + deleteIconGroup(idsArray) + '</td></tr>';
+}
+
+function deleteIconGroup(ids) {
+    return '<a href="javascript:void(0);" onClick="deleteModelGroup(\'' + ids + '\')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
+}
+
+function deleteModelGroup(ids) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!"
+    }).then(function(result) {
+        if (result.value) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: "POST",
+                url: '/api/discounts/deleteDserviceGroup',
+                data: {'ids': ids},
+                success: function (response) {
+                    if (response.status) {
+                        // Remove the row containing all these IDs
+                        let idsArray = ids.split(',');
+                        idsArray.forEach(function(id) {
+                            $('.HR_' + id).remove();
+                        });
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                }
+            });
+        }
+    });
 }
 
 function deleteIcon(id) {

@@ -98,6 +98,141 @@ class DiscountWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
+    public static function loadPlanDiscountAllocationsByLocationService($location_id, $service_id, $account_id)
+    {
+        $searchServices = Services::where([
+            'account_id' => $account_id,
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+
+        if ($searchServices->count()) {
+            $searchServices = $searchServices->toArray();
+        }
+
+        /*
+         * Returns allocation records with type and amount for hybrid approach
+         * Key: discount_id, Value: allocation record with type/amount
+         */
+        $allocations = [];
+
+        // 1. Find All Centres
+        $allLocationId = Locations::where([
+            'slug' => 'all',
+            'account_id' => $account_id,
+        ])->select('id')->first();
+
+        if ($allLocationId) {
+            $allServiceId = Services::where([
+                'slug' => 'all',
+                'account_id' => $account_id,
+            ])->select('id')->first();
+
+            // Find All Services allocations
+            if ($allServiceId) {
+                $rootAllocations = DiscountHasLocations::where([
+                    'service_id' => $allServiceId->id,
+                    'location_id' => $allLocationId->id,
+                ])->get();
+
+                foreach ($rootAllocations as $allocation) {
+                    if (!isset($allocations[$allocation->discount_id])) {
+                        $allocations[$allocation->discount_id] = $allocation;
+                    }
+                }
+            }
+
+            // Find Matching Services
+            $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+            $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
+
+            $serviceAllocations = DiscountHasLocations::where([
+                'location_id' => $allLocationId->id,
+            ])->whereIn('service_id', $serviceWithParents)->get();
+
+            foreach ($serviceAllocations as $allocation) {
+                // More specific allocation overrides less specific
+                $allocations[$allocation->discount_id] = $allocation;
+            }
+        }
+
+        // 2. Find Region-based allocations
+        $singleLocation = Locations::find($location_id);
+        if ($singleLocation) {
+            $regionLocation = Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first();
+
+            if ($regionLocation) {
+                $allServiceId = Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first();
+
+                // Find All Services in region
+                if ($allServiceId) {
+                    $regionAllocations = DiscountHasLocations::where([
+                        'service_id' => $allServiceId->id,
+                        'location_id' => $regionLocation->id,
+                    ])->get();
+
+                    foreach ($regionAllocations as $allocation) {
+                        $allocations[$allocation->discount_id] = $allocation;
+                    }
+                }
+
+                // Find Matching Services in region
+                $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+                $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
+
+                $regionServiceAllocations = DiscountHasLocations::where([
+                    'location_id' => $regionLocation->id,
+                ])->whereIn('service_id', $serviceWithParents)->get();
+
+                foreach ($regionServiceAllocations as $allocation) {
+                    $allocations[$allocation->discount_id] = $allocation;
+                }
+            }
+        }
+
+        // 3. Find Specific Centre allocations (most specific - highest priority)
+        $allServiceId = Services::where([
+            'slug' => 'all',
+            'account_id' => $account_id,
+        ])->select('id')->first();
+
+        if ($allServiceId) {
+            $centreAllocations = DiscountHasLocations::where([
+                'service_id' => $allServiceId->id,
+                'location_id' => $location_id,
+            ])->get();
+
+            foreach ($centreAllocations as $allocation) {
+                $allocations[$allocation->discount_id] = $allocation;
+            }
+        }
+
+        // Find Matching Services at specific centre (highest priority)
+        $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+        $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
+
+        $centreServiceAllocations = DiscountHasLocations::where([
+            'location_id' => $location_id,
+        ])->whereIn('service_id', $serviceWithParents)->get();
+
+        foreach ($centreServiceAllocations as $allocation) {
+            $allocations[$allocation->discount_id] = $allocation;
+        }
+
+        return $allocations;
+    }
+
+    /*
+    * Array of centers with option group of regions (original function - returns only discount IDs)
+    *
+    * @param:  (int) $account_id (array) $service
+    * @return: (mixed)
+    */
     public static function loadPlanDsicountByLocationService($location_id, $service_id, $account_id)
     {
         $searchServices = Services::where([

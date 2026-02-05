@@ -97,7 +97,7 @@
 
     <div class="modal fade" id="modal_allocate_discounts" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_allocate">
+        <div class="modal-dialog modal-dialog-centered modal-xl" id="discounts_allocate">
 
             @include('admin.discounts.allocate')
 
