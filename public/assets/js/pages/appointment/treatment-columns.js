@@ -112,13 +112,7 @@ function getTreatmentColumns(includePatientColumn = true, perms = null) {
     });
     
     // Include city column only for main module
-    if (includePatientColumn) {
-        columns.push({
-            field: 'city_id',
-            title: 'City',
-            width: 80,
-        });
-    }
+    
     
     columns.push({
         field: 'created_at',
