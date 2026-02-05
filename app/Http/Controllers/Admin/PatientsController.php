@@ -87,7 +87,7 @@ class PatientsController extends Controller
         $sectionPermissions = [
             'profile' => 'patients_manage',
             'consultations' => 'appointments_manage',
-            'treatments' => 'treatments_manage',
+            'treatments' => 'appointments_manage', // Same as main treatments module route
             'plans' => 'plans_manage',
             'invoices' => 'invoices_manage',
             'refunds' => 'refunds_manage',

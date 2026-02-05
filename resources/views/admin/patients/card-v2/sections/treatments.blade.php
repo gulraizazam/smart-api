@@ -2,7 +2,7 @@
 <div class="section-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Treatments</h4>
-        @can('treatments_manage')
+        @can('treatments_services')
             <a href="{{ route('admin.treatment.index') }}?patient_id={{ $patientId }}" class="btn btn-primary btn-sm">
                 <i class="la la-plus"></i> New Treatment
             </a>
