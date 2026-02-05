@@ -2,7 +2,7 @@
 <div class="section-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Documents</h4>
-        <a href="javascript:void(0);" onclick="$('#modal_add_document_form').modal('show');" class="btn btn-primary btn-sm">
+        <a href="javascript:void(0);" onclick="addDocumentForm({{ $patientId }}); $('#modal_add_document_form').modal('show');" class="btn btn-primary btn-sm">
             <i class="la la-plus"></i> Add Document
         </a>
     </div>
