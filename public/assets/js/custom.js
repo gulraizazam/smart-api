@@ -669,9 +669,17 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 treatmentFilters();
             }
+            // Also reload patient card datatable if exists
+            if (typeof window.treatmentsDatatable !== 'undefined') {
+                window.treatmentsDatatable.reload();
+            }
         } else if (page == 'consultancy') {
             if (typeof datatable !== 'undefined') {
                 consultancyFilters();
+            }
+            // Also reload patient card datatable if exists
+            if (typeof window.consultationsDatatable !== 'undefined') {
+                window.consultationsDatatable.reload();
             }
         } else if (page == "user") {
             if (typeof datatable !== 'undefined') {
@@ -700,6 +708,10 @@ function reInitTable(page = null) {
         } else if (page == "plan") {
             if (typeof datatable !== 'undefined') {
                 planFilters();
+            }
+            // Also reload patient card datatable if exists
+            if (typeof window.plansDatatable !== 'undefined') {
+                window.plansDatatable.reload();
             }
         } else if (page == "service") {
             if (typeof datatable !== 'undefined') {
@@ -750,8 +762,14 @@ function reInitTable(page = null) {
                 warehouseFilters();
             }
         } else {
-            datatable.reload();
-            //$('#kt_datatable').KTDatatable('reload');
+            // Reload datatable directly
+            if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext) {
+                // In patient card context, reload the page to refresh datatable
+                // KTDatatable has issues with reload when pagination elements are null
+                location.reload();
+            } else if (typeof datatable !== 'undefined') {
+                datatable.reload();
+            }
         }
 
     }, 400);

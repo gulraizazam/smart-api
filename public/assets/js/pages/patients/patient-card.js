@@ -6,6 +6,16 @@ jQuery(document).ready(function () {
         $("." + result.tab+ '-tab').click();
     }
     activeFirstTab(result.tab);
+    
+    // Handle Create Consultation button
+    $(document).on('click', '#create-consultation-btn', function() {
+        createAppointmentFromPatient('consultancy');
+    });
+    
+    // Handle Create Treatment button
+    $(document).on('click', '#create-treatment-btn', function() {
+        createAppointmentFromPatient('treatment');
+    });
 });
 
 function getTabCounts() {
@@ -20,6 +30,8 @@ function getTabCounts() {
             if (response.status && response.data) {
                 var counts = response.data;
                 $('#tab-count-appointments').text('(' + (counts.appointments || 0) + ')');
+                $('#tab-count-consultations').text('(' + (counts.consultations || 0) + ')');
+                $('#tab-count-treatments').text('(' + (counts.treatments || 0) + ')');
                 $('#tab-count-vouchers').text('(' + (counts.vouchers || 0) + ')');
                 $('#tab-count-documents').text('(' + (counts.documents || 0) + ')');
                 $('#tab-count-plans').text('(' + (counts.plans || 0) + ')');
@@ -193,19 +205,198 @@ function changeProfilePage($this, page_id) {
 function loadDataTable(page_id, loadScript = true) {
     if (loadScript) {
         /*load script on change tab and then init datatable*/
-        let url = asset_url + "assets/js/pages/patients/" + page_id + ".js";
-        $.getScript(url);
-        setTimeout(function () {
-            let className = "." + page_id;
-            let datatableExist = $("#" + page_id).find(className).html();
-            if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
-                if (datatableExist.length === 0) {
-                    KTPatientDatatable.init("." + page_id);
-                } else {
-                    patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
-                }
+        let url;
+        
+        if (page_id === 'plan-form') {
+            // Load patient-specific table_url first, then shared create-plan.js
+            window.isPatientCardContext = true;
+            window.patientCardPatientId = patientCardID;
+            
+            // Check if script already loaded to prevent duplicate initialization
+            if (!window.planScriptLoaded) {
+                window.planScriptLoaded = true;
+                
+                // Load patient-specific plan-form.js to set table_url and table_columns
+                let patientUrl = asset_url + "assets/js/pages/patients/plan-form.js?v=" + Date.now();
+                $.getScript(patientUrl, function() {
+                    // Then load shared create-plan.js for actions/functions
+                    let sharedUrl = asset_url + "assets/js/pages/admin_settings/create-plan.js?v=" + Date.now();
+                    $.getScript(sharedUrl, function() {
+                        // Also load bundle JS files
+                        $.getScript(asset_url + "assets/js/pages/admin_settings/create-bundle.js");
+                        $.getScript(asset_url + "assets/js/pages/admin_settings/edit-bundle.js");
+                        
+                        setTimeout(function () {
+                            let className = "." + page_id;
+                            let datatableExist = $("#" + page_id).find(className).html();
+                            if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
+                                if (datatableExist.length === 0) {
+                                    console.log('Initializing plans datatable with class selector');
+                                    KTPatientDatatable.init("." + page_id);
+                                } else {
+                                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                                }
+                            }
+                        }, 1000);
+                    });
+                });
+            } else {
+                // Script already loaded, just reload datatable
+                setTimeout(function () {
+                    let className = "." + page_id;
+                    let datatableExist = $("#" + page_id).find(className).html();
+                    if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
+                        if (datatableExist.length === 0) {
+                            KTPatientDatatable.init("." + page_id);
+                        } else {
+                            if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                        }
+                    }
+                }, 1000);
             }
-        }, 1000);
+        } else if (page_id === 'consultation-form') {
+            // Load consultations scripts
+            window.isPatientCardContext = true;
+            window.patientCardPatientId = patientCardID;
+            
+            let className = "." + page_id;
+            
+            // Load consultation scripts only once
+            if (!window.consultationScriptLoaded) {
+                window.consultationScriptLoaded = true;
+                
+                // First load the shared consultation-common.js
+                let consultationCommonUrl = asset_url + "assets/js/pages/appointment/consultation-common.js?v=" + Date.now();
+                $.getScript(consultationCommonUrl, function() {
+                    // Then load the patient-specific consultation-form.js
+                    let consultationDatatableUrl = asset_url + "assets/js/pages/patients/consultation-form.js?v=" + Date.now();
+                    $.getScript(consultationDatatableUrl, function() {
+                        // Store the consultation-specific variables
+                        window.consultation_table_url = table_url;
+                        window.consultation_table_columns = table_columns;
+                        
+                        setTimeout(function () {
+                            if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                                patientDatatable[className].destroy();
+                                $(className).empty();
+                            }
+                            KTPatientDatatable.init(className);
+                        }, 300);
+                    });
+                });
+                
+                // Load other required scripts only once
+                let invoiceUrl = asset_url + "assets/js/pages/appointment/invoice.js?v=" + Date.now();
+                $.getScript(invoiceUrl);
+            } else {
+                // Script already loaded, restore consultation-specific variables
+                table_url = window.consultation_table_url;
+                table_columns = window.consultation_table_columns;
+                
+                setTimeout(function () {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                        patientDatatable[className].destroy();
+                        $(className).empty();
+                    }
+                    KTPatientDatatable.init(className);
+                }, 300);
+            }
+        } else if (page_id === 'treatment-form') {
+            // Load treatments scripts
+            window.isPatientCardContext = true;
+            window.patientCardPatientId = patientCardID;
+            
+            let className = "." + page_id;
+            
+            // Load treatment-form.js only once
+            if (!window.treatmentScriptLoaded) {
+                window.treatmentScriptLoaded = true;
+                
+                let treatmentDatatableUrl = asset_url + "assets/js/pages/patients/treatment-form.js?v=" + Date.now();
+                $.getScript(treatmentDatatableUrl, function() {
+                    // Store the treatment-specific variables
+                    window.treatment_table_url = table_url;
+                    window.treatment_table_columns = table_columns;
+                    
+                    setTimeout(function () {
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                            patientDatatable[className].destroy();
+                            $(className).empty();
+                        }
+                        KTPatientDatatable.init(className);
+                    }, 300);
+                });
+                
+                // Load other required scripts only once (if not already loaded by consultations)
+                if (!window.consultationScriptLoaded) {
+                    let invoiceUrl = asset_url + "assets/js/pages/appointment/invoice.js?v=" + Date.now();
+                    let commonUrl = asset_url + "assets/js/pages/appointment/common.js?v=" + Date.now();
+                    $.getScript(invoiceUrl);
+                    $.getScript(commonUrl);
+                }
+            } else {
+                // Script already loaded, restore treatment-specific variables
+                table_url = window.treatment_table_url;
+                table_columns = window.treatment_table_columns;
+                
+                setTimeout(function () {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                        patientDatatable[className].destroy();
+                        $(className).empty();
+                    }
+                    KTPatientDatatable.init(className);
+                }, 300);
+            }
+        } else if (page_id === 'voucher-form') {
+            // Load voucher-form.js for patient card vouchers
+            window.isPatientCardContext = true;
+            window.patientCardPatientId = patientCardID;
+            
+            let className = "." + page_id;
+            
+            // Set table_url directly here before loading script
+            table_url = '/api/patients/' + patientCardID + '/vouchers-datatable';
+            
+            // Load voucher-form.js only once (for columns and functions)
+            if (!window.voucherScriptLoaded) {
+                window.voucherScriptLoaded = true;
+                
+                let voucherUrl = asset_url + "assets/js/pages/patients/voucher-form.js?v=" + Date.now();
+                $.getScript(voucherUrl, function() {
+                    setTimeout(function () {
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                            patientDatatable[className].destroy();
+                            $(className).empty();
+                        }
+                        KTPatientDatatable.init(className);
+                    }, 300);
+                });
+            } else {
+                // Script already loaded, just reinitialize datatable
+                setTimeout(function () {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                        patientDatatable[className].destroy();
+                        $(className).empty();
+                    }
+                    KTPatientDatatable.init(className);
+                }, 300);
+            }
+        } else {
+            url = asset_url + "assets/js/pages/patients/" + page_id + ".js?v=" + Date.now();
+            $.getScript(url);
+            setTimeout(function () {
+                let className = "." + page_id;
+                let datatableExist = $("#" + page_id).find(className).html();
+                if (typeof table_url !== 'undefined' && typeof datatableExist !== 'undefined') {
+                    if (datatableExist.length === 0) {
+                        KTPatientDatatable.init("." + page_id);
+                    } else {
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                    }
+                }
+            }, 1000);
+        }
+        
         $(".change-tab").attr("style", "pointer-events: none !important;color: black");
         $(".horizontal-nav-bar-li").attr("style", "color: white !important");
         setTimeout(function () {
@@ -225,4 +416,286 @@ function savePatientImage() {
             toastr.error(response.message);
         }
     }, true);
+}
+
+/**
+ * Assign voucher to patient from patient detail page
+ * Opens modal and pre-fills patient ID
+ */
+function assignVoucherToPatient() {
+    // Set form action with patient ID
+    $("#modal_edit_vouchers_form").attr("action", route('admin.patients.assignvoucher', {id: patientCardID}));
+    
+    // Clear amount field
+    $('#edit_amount').val('');
+    
+    // Show modal first
+    $("#modal_assign_voucher_patient").modal("show");
+    
+    // Load voucher types - using new ID: patient_voucher_select
+    setTimeout(function() {
+        console.log('Loading vouchers into patient_voucher_select');
+        loadVoucherTypesForPatient(function() {
+            console.log('Vouchers loaded successfully');
+        });
+    }, 300);
+    
+    // Setup form submission handler
+    setupVoucherFormSubmission();
+}
+
+function setupVoucherFormSubmission() {
+    // Remove any existing handlers to avoid duplicates
+    $(document).off('submit', '#modal_edit_vouchers_form');
+    
+    // Add submit handler using event delegation
+    $(document).on('submit', '#modal_edit_vouchers_form', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $form = $(this);
+        var voucherId = $('#patient_voucher_select').val();
+        var amount = $('#edit_amount').val();
+        
+        // Simple validation
+        if (!voucherId) {
+            toastr.error('Please select a voucher type');
+            return false;
+        }
+        
+        if (!amount || amount <= 0) {
+            toastr.error('Please enter a valid amount');
+            return false;
+        }
+        
+        // Show loading
+        var $submitBtn = $form.find('button[type="submit"]');
+        var originalHtml = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Submitting...');
+        
+        // Submit via API
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: '/api/patients/assignvoucher',
+            type: 'POST',
+            data: {
+                patient_id: patientCardID,
+                voucher_id: voucherId,
+                amount: amount
+            },
+            success: function(response) {
+                if (response.status) {
+                    toastr.success(response.message || 'Voucher assigned successfully');
+                    $("#modal_assign_voucher_patient").modal("hide");
+                    
+                    // Reset form
+                    $('#patient_voucher_select').val('');
+                    $('#edit_amount').val('');
+                    
+                    // Refresh voucher datatable
+                    if (typeof patientDatatable !== 'undefined' && patientDatatable['.voucher-form']) {
+                        patientDatatable['.voucher-form'].search({datatable_reload: 'reload'}, 'search');
+                    }
+                } else {
+                    toastr.error(response.message || 'Failed to assign voucher');
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'An error occurred';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                toastr.error(errorMsg);
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalHtml);
+            }
+        });
+        
+        return false;
+    });
+}
+
+// Initialize voucher form submission handler on document ready
+$(document).ready(function() {
+    // Use click handler on submit button instead of form submit
+    $(document).on('click', '#modal_edit_vouchers_form button[type="submit"]', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var voucherId = $('#patient_voucher_select').val();
+        var amount = $('#edit_amount').val();
+        
+        // Simple validation
+        if (!voucherId) {
+            toastr.error('Please select a voucher type');
+            return false;
+        }
+        
+        if (!amount || amount <= 0) {
+            toastr.error('Please enter a valid amount');
+            return false;
+        }
+        
+        // Show loading
+        var $submitBtn = $(this);
+        var originalHtml = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Submitting...');
+        
+        // Submit via API
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: '/api/patients/assignvoucher',
+            type: 'POST',
+            data: {
+                patient_id: patientCardID,
+                voucher_id: voucherId,
+                amount: amount
+            },
+            success: function(response) {
+                if (response.status) {
+                    toastr.success(response.message || 'Voucher assigned successfully');
+                    $("#modal_assign_voucher_patient").modal("hide");
+                    
+                    // Reset form
+                    $('#patient_voucher_select').val('');
+                    $('#edit_amount').val('');
+                    
+                    // Refresh voucher datatable
+                    if (typeof patientDatatable !== 'undefined' && patientDatatable['.voucher-form']) {
+                        patientDatatable['.voucher-form'].search({datatable_reload: 'reload'}, 'search');
+                    }
+                } else {
+                    toastr.error(response.message || 'Failed to assign voucher');
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'An error occurred';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                toastr.error(errorMsg);
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalHtml);
+            }
+        });
+        
+        return false;
+    });
+});
+
+function loadVoucherTypesForPatient(callback) {
+    console.log('Loading voucher types...');
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.vouchersTypes.getListing'),
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            console.log('Voucher types response:', response);
+            if (response.data) {
+                // Build options HTML
+                var optionsHtml = '<option value="">Select Voucher Type</option>';
+                $.each(response.data, function(id, name) {
+                    optionsHtml += '<option value="' + id + '">' + name + '</option>';
+                });
+                
+                // Set options using native DOM - using new ID: patient_voucher_select
+                var selectElement = document.getElementById('patient_voucher_select');
+                if (selectElement) {
+                    selectElement.innerHTML = optionsHtml;
+                    console.log('Options set. Options count:', selectElement.options.length);
+                } else {
+                    console.error('Select element patient_voucher_select not found!');
+                }
+                
+                // Call callback after options are loaded
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            } else {
+                console.error('No data in response');
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            console.error('Error loading voucher types:', thrownError);
+            toastr.error('Failed to load voucher types');
+            
+            if (typeof callback === 'function') {
+                callback();
+            }
+        }
+    });
+}
+
+/**
+ * Create appointment from patient detail page
+ * Gets last appointment location and redirects to calendar
+ */
+function createAppointmentFromPatient(appointmentType) {
+    // Show loading state
+    var btnId = appointmentType === 'consultancy' ? '#create-consultation-btn' : '#create-treatment-btn';
+    var $btn = $(btnId);
+    var originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Loading...');
+    
+    // Get last appointment location for this patient
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.patients.getLastAppointmentLocation', {id: patientCardID}),
+        type: "GET",
+        data: {
+            appointment_type: appointmentType
+        },
+        cache: false,
+        success: function (response) {
+            var locationId = null;
+            
+            if (response.status && response.data && response.data.location_id) {
+                locationId = response.data.location_id;
+            }
+            
+            // Build calendar URL with location filter and tab parameter
+            var calendarRoute = appointmentType === 'consultancy' 
+                ? route('admin.consultancy.index') 
+                : route('admin.treatment.index');
+            
+            // Add location filter and tab parameter
+            var params = [];
+            if (locationId) {
+                params.push('location_id=' + locationId);
+            }
+            params.push('tab=' + appointmentType);
+            
+            calendarRoute += '?' + params.join('&');
+            
+            // Redirect to calendar
+            window.location.href = calendarRoute;
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error getting last appointment location:', thrownError);
+            
+            // Redirect to calendar anyway without location filter but with tab parameter
+            var calendarRoute = appointmentType === 'consultancy' 
+                ? route('admin.consultancy.index') 
+                : route('admin.treatment.index');
+            
+            calendarRoute += '?tab=' + appointmentType;
+            
+            window.location.href = calendarRoute;
+        },
+        complete: function() {
+            // Reset button state
+            $btn.prop('disabled', false).html(originalHtml);
+        }
+    });
 }
