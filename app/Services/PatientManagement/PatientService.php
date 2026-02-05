@@ -119,10 +119,21 @@ class PatientService
         $start = (int) ($request->input('pagination.page', 1) - 1) * $length;
         if ($start < 0) $start = 0;
 
-        // Optimized query - removed GROUP BY, using simple LEFT JOIN
-        // Note: If patient has multiple active memberships, this will return the first one found
+        // First get total count (separate query for compatibility with all MySQL versions)
+        $countSql = "
+            SELECT COUNT(DISTINCT u.id) as total
+            FROM users u
+            LEFT JOIN memberships m ON m.patient_id = u.id AND m.active = 1
+            WHERE {$whereClause}
+        ";
+        
+        $countBindings = array_slice($bindings, 0); // Copy bindings without LIMIT params
+        $totalResult = DB::select($countSql, $countBindings);
+        $total = $totalResult[0]->total ?? 0;
+
+        // Main data query with pagination
         $sql = "
-            SELECT SQL_CALC_FOUND_ROWS
+            SELECT
                 u.id,
                 u.id as patient_id,
                 u.name,
@@ -149,10 +160,6 @@ class PatientService
 
         // Execute main query
         $rows = DB::select($sql, $bindings);
-
-        // Get total count (uses SQL_CALC_FOUND_ROWS - very fast)
-        $totalResult = DB::select("SELECT FOUND_ROWS() as total");
-        $total = $totalResult[0]->total ?? 0;
 
         // Transform to expected format
         $data = array_map(function ($row) {
