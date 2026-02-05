@@ -19,7 +19,7 @@ if (width > 1280) {
             width: 80,
         },{
             field: 'name',
-            title: 'Patient Name',
+            title: 'Name',
             sortable: false,
             width: 120,
         },{
@@ -34,7 +34,7 @@ if (width > 1280) {
             width: 'auto',
         },{
             field: 'service',
-            title: 'Consultancy/Service',
+            title: 'Service',
             sortable: false,
             width: 180,
         },{
@@ -44,7 +44,7 @@ if (width > 1280) {
             width: 80,
         },{
             field: 'invoice_status',
-            title: 'Invoice Status',
+            title: 'Status',
             sortable: false,
             width: 90,
         },{
@@ -101,12 +101,12 @@ if (width > 1280) {
             width: 70,
         },{
             field: 'service',
-            title: 'Consultancy/Service',
+            title: 'Service',
             sortable: false,
             width: 170,
         },{
             field: 'invoice_status',
-            title: 'Invoice Status',
+            title: 'Status',
             sortable: false,
             width: 75,
         },{

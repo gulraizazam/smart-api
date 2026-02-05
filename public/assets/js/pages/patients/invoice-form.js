@@ -9,7 +9,7 @@ var table_columns = [
         width: 80,
     },{
         field: 'name',
-        title: 'Patient Name',
+        title: 'Name',
         sortable: false,
         width: 80,
     },{
@@ -24,19 +24,19 @@ var table_columns = [
         width: 150,
     },{
         field: 'service',
-        title: 'Consultancy/Service',
+        title: 'Service',
         sortable: false,
-        width: 180,
+        width: 100,
     },{
         field: 'invoice_status',
-        title: 'Invoice Status',
+        title: 'Status',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'price',
         title: 'Price',
         sortable: false,
-        width: 'auto',
+      width: 70,
     },{
         field: 'created_at',
         title: 'Created at',
@@ -63,7 +63,7 @@ function actions(data) {
         let invoice = data?.invoice;
 
         let cancel_url = route('admin.invoicepatient.cancel', {id: id});
-        let display_url = route('admin.invoicepatient.displayInvoice', {id: id});
+        let display_url = route('admin.invoices.displayInvoice', {id: id});
         let log_url = route('admin.invoicepatient.invoice_log', {id: id, type: 'web', patient_id: patientCardID });
         let sms_log_url = route('admin.invoices.sms_logs', {id: id});
 
@@ -141,7 +141,7 @@ function viewInvoicePlan($route) {
         cache: false,
         success: function (response) {
 
-            setInvoiceData(response);
+            setInvoiceDisplayData(response);
 
             reInitSelect2(".select2", "");
 
@@ -267,46 +267,59 @@ function displayData(response) {
 
 }
 
-function setInvoiceData(response) {
+// Display invoice data - copied from main invoices module (invoices.js)
+function setInvoiceDisplayData(response) {
 
     try {
 
+        let location_info = response.data.location_info;
+        let Invoiceinfo = response.data.Invoiceinfo;
+        let patient = response.data.patient;
         let company_phone_number = response.data.company_phone_number;
         let account = response.data.account;
         let service = response.data.service;
         let discount = response.data.discount;
         let tax = response.data.tax;
+        let doctor = response.data.doctor;
 
-        let packageadvances = response.data.packageadvances;
-        let Invoiceinfo = response.data.Invoiceinfo;
-        let location_info = response.data.location_info;
-        let packagebundles = response.data.packagebundles;
-        let packageservices = response.data.packageservices;
-        let patient = response.data.patient;
+        // Set modal title: PatientName - Consultation with DoctorName
+        let modalTitle = patient?.name || 'Patient';
+        if (doctor?.name) {
+            modalTitle += ' - Consultation with ' + doctor.name;
+        }
+        $("#modal_invoice_display .rota-title").text(modalTitle);
+
+        $("#modal_invoice_display #invoice-pdf").attr("href", route('admin.invoices.invoice_pdf', Invoiceinfo.invoice_id))
 
         let image = asset_url + 'assets/media/logos/' + location_info.image_src;
 
-        $(".invoice-image").attr('src', image);
-        $("#invoice_info_created_at").text(Invoiceinfo.created_at);
-        $("#invoice_info_id").text(Invoiceinfo.id);
+        $("#modal_invoice_display .invoice-image").attr('src', image);
+        $("#modal_invoice_display #invoice_info_created_at").text(Invoiceinfo.created_at);
+        $("#modal_invoice_display #invoice_info_id").text(Invoiceinfo.id);
 
-        $("#client_id").text("C-" + patient.id);
-        $("#client_name").text(patient.name);
-        $("#client_email").text(patient.email);
+        $("#modal_invoice_display #client_id").text("C-" + patient.id);
+        $("#modal_invoice_display #client_name").text(patient.name);
 
-        $("#company_name").text(account.name)
-        $("#contact_no").text(company_phone_number.data)
-        $("#company_email").text(account.email)
-        $("#clinic_contact").text(account.contact)
-        $("#clinic_name").text(location_info.name)
-        $("#clinic_address").text(location_info.address)
-        $("#clinic_ntn").text(location_info.ntn)
-        $("#clinic_stn").text(location_info.stn)
+        if(patient.email != "" && patient.email != null){
+            $("#modal_invoice_display #client_email_li").show();
+            $("#modal_invoice_display #client_email").text(patient.email);
+        }else{
+            $("#modal_invoice_display #client_email_li").hide();
+        }
+
+        $("#modal_invoice_display #company_name").text(account.name)
+        $("#modal_invoice_display #contact_no").text(company_phone_number.data)
+        $("#modal_invoice_display #company_email").text(account.email)
+        $("#modal_invoice_display #clinic_contact").text(account.contact)
+        $("#modal_invoice_display #clinic_name").text(location_info.name)
+        $("#modal_invoice_display #clinic_address").text(location_info.address)
+        $("#modal_invoice_display #clinic_ntn").text(location_info.ntn)
+        $("#modal_invoice_display #clinic_stn").text(location_info.stn)
 
 
-        $("#service_name").html(service?.name ?? '-');
-
-        $("#service_price").html(service_price ?? '-');
+        $("#modal_invoice_display #service_name").html(service?.name ?? '-');
+        let service_price = getInvoiceServicePrice(Invoiceinfo);
+        $("#modal_invoice_display #service_price").html(service_price ?? '-');
 
         let discount_name = '-';
         if (discount != null) {
@@ -315,12 +328,12 @@ function setInvoiceData(response) {
 
         let discount_type = '-';
         if (discount != null) {
-            discount_type = discount.discount_type;
+            discount_type = Invoiceinfo.discount_type;
         }
 
         let discount_price = 0;
         if (discount != null) {
-            discount_price = discount.discount_price;
+            discount_price = Invoiceinfo.discount_price;
         }
 
         let subtotal = 0;
@@ -334,19 +347,47 @@ function setInvoiceData(response) {
             subtotal = Invoiceinfo.tax_exclusive_serviceprice;
         }
 
-        $("#invoice_subtotal").html(subtotal);
-        $("#discount_price").html(discount_price);
-        $("#discount_type").html(discount_type);
-        $("#discount_name").html(discount_name);
+        $("#modal_invoice_display #invoice_subtotal").html(subtotal);
+        $("#modal_invoice_display #discount_price").html(discount_price);
+        $("#modal_invoice_display #discount_type").html(discount_type);
+        $("#modal_invoice_display #discount_name").html(discount_name);
 
-        $("#invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
-        $("#invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
-        $("#total_price").html(Invoiceinfo?.tax_including_price ?? '-');
-        $("#grand_total_price").html(Invoiceinfo?.tax_including_price ?? '-');
+        $("#modal_invoice_display #invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
+        $("#modal_invoice_display #invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
+        $("#modal_invoice_display #total_price").html(Invoiceinfo?.tax_including_price ?? '-');
+        $("#modal_invoice_display #grand_total_price").html(Invoiceinfo?.tax_including_price ?? '-');
 
     } catch (error) {
         showException(error);
     }
+
+}
+
+// Get service price - copied from main invoices module
+function getInvoiceServicePrice(Invoiceinfo) {
+
+    let service_price = 0;
+    if (Invoiceinfo.is_exclusive == '0') {
+        if (Invoiceinfo.service_price == '0') {
+            service_price = Invoiceinfo.tax_including_price;
+        } else {
+            service_price = parseFloat(Invoiceinfo.service_price) - parseFloat(Invoiceinfo.tax_price);
+        }
+    } else if (Invoiceinfo.is_exclusive == '0') {
+        if (Invoiceinfo.service_price == '0') {
+            service_price = Invoiceinfo.tax_including_price;
+        } else {
+            service_price = Invoiceinfo.service_price;
+        }
+    } else if(Invoiceinfo.is_exclusive == '1') {
+        if (Invoiceinfo.service_price == '0') {
+            service_price = Invoiceinfo.tax_including_price;
+        } else {
+            service_price = Invoiceinfo.service_price;
+        }
+    }
+
+    return service_price;
 
 }
 

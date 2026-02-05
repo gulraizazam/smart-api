@@ -153,11 +153,19 @@
                 </a>
             </li>
             <li class="horizontal-nav-bar-li">
-                    <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointment-form');" class="change-tab appointment-form-tab navi-link py-4">
+                    <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'consultation-form');" class="change-tab consultation-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
-                             <i class="la la-calendar-check"></i>
+                             <i class="la la-user-md"></i>
                         </span>
-                        <p class="navi-text">Appointments <span id="tab-count-appointments"></span></p>
+                        <p class="navi-text">Consultations <span id="tab-count-consultations"></span></p>
+                    </a>
+                </li>
+            <li class="horizontal-nav-bar-li">
+                    <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'treatment-form');" class="change-tab treatment-form-tab navi-link py-4">
+                         <span class="text-muted mb-2 fa_icon">
+                             <i class="la la-stethoscope"></i>
+                        </span>
+                        <p class="navi-text">Treatments <span id="tab-count-treatments"></span></p>
                     </a>
                 </li>
             <li class="horizontal-nav-bar-li">

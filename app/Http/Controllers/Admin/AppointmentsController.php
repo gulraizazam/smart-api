@@ -137,6 +137,10 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request, $patientId = null)
     {
+        // Also check for patient_id in query string (for patient card context)
+        if (!$patientId && $request->has('patient_id')) {
+            $patientId = $request->input('patient_id');
+        }
         return $this->getDefaultListing($request, $patientId);
     }
 

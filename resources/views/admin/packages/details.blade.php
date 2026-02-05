@@ -77,7 +77,7 @@
                                                     <th>Type</th>
                                                     <th>Discount Value</th>
                                                     <th>Subtotal</th>
-                                                    <th>Tax Price</th>
+                                                    <th>Tax</th>
                                                     <th>Total</th>
                                                 </tr>
                                             </thead>

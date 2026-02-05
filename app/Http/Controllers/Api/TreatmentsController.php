@@ -30,6 +30,11 @@ class TreatmentsController extends Controller
             //     return ApiHelper::apiResponse(403, 'Unauthorized access', false);
             // }
 
+            // Also check for patient_id in query string (for patient card context)
+            if (!$patientId && $request->has('patient_id')) {
+                $patientId = $request->input('patient_id');
+            }
+
             // Pass patient_id to service if provided (patient card context)
             $data = $this->treatmentService->getDatatableData($request, $patientId);
 

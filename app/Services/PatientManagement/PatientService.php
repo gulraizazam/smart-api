@@ -1372,12 +1372,280 @@ class PatientService
         ];
     }
 
-    // REMOVED: getPatientConsultations() and getPatientTreatments() methods
-    // Now using same services as main modules with patient_id parameter:
-    // - Consultations: ConsultancyDatatableService@getDatatableData($request, $patientId)
-    // - Treatments: TreatmentService@getDatatableData($request, $patientId)
+    /**
+     * Get patient consultations datatable data (appointment_type_id = 1)
+     */
+    public function getPatientConsultations(int $patientId, Request $request): array
+    {
+        $accountId = Auth::user()->account_id;
+        $filters = getFilters($request->all());
+        
+        // Build base query for consultations (appointment_type_id = 1)
+        $baseQuery = DB::table('appointments')
+            ->where('appointments.patient_id', $patientId)
+            ->where('appointments.account_id', $accountId)
+            ->where('appointments.appointment_type_id', 1)
+            ->whereNull('appointments.deleted_at');
+        
+        // Apply filters
+        if (!empty($filters['date_from'])) {
+            $baseQuery->where('appointments.scheduled_date', '>=', $filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $baseQuery->where('appointments.scheduled_date', '<=', $filters['date_to']);
+        }
+        if (!empty($filters['service_id'])) {
+            $baseQuery->where('appointments.service_id', $filters['service_id']);
+        }
+        if (!empty($filters['location_id'])) {
+            $baseQuery->where('appointments.location_id', $filters['location_id']);
+        }
+        if (!empty($filters['appointment_status_id'])) {
+            $baseQuery->where('appointments.appointment_status_id', $filters['appointment_status_id']);
+        }
 
-    // REMOVED: getPatientVouchers() method
-    // Now using same controller as main module with patient_id parameter:
-    // - Vouchers: UserVouchersController@datatable($request, $patientId)
+        // Add JOINs before count to avoid issues
+        $baseQuery->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
+            ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
+            ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
+            ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id');
+        
+        $iTotalRecords = (clone $baseQuery)->count();
+
+        [$orderBy, $order] = getSortBy($request);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+
+        // Add city join and invoices join
+        $baseQuery->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+            ->leftJoin('invoices', 'appointments.id', '=', 'invoices.appointment_id');
+
+        // Single optimized query with all JOINs
+        $appointments = (clone $baseQuery)
+            ->select([
+                'appointments.id',
+                'appointments.patient_id',
+                'appointments.scheduled_date',
+                'appointments.scheduled_time',
+                'appointments.created_at',
+                'appointments.doctor_id as doctorId',
+                'appointments.location_id as locationId',
+                'invoices.id as invoice_id',
+                'doctors.name as doctor_name',
+                'locations.name as location_name',
+                'cities.name as city_name',
+                'services.name as service_name',
+                'appointment_statuses.name as status_name',
+                'creators.name as created_by_name',
+            ])
+            ->orderBy('appointments.scheduled_date', 'DESC')
+            ->offset($iDisplayStart)
+            ->limit($iDisplayLength)
+            ->get();
+
+        // Transform data to match main consultancy datatable format
+        $data = $appointments->map(function ($apt) {
+            return [
+                'id' => $apt->id,
+                'patient_id' => $apt->patient_id,
+                'Patient_ID' => GeneralFunctions::patientSearchStringAdd($apt->patient_id),
+                'scheduled_date' => $apt->scheduled_date ? Carbon::parse($apt->scheduled_date)->format('M d, Y') . ' at ' . ($apt->scheduled_time ? Carbon::parse($apt->scheduled_time)->format('h:i A') : '') : '-',
+                'scheduled_time' => $apt->scheduled_time ?? '',
+                'doctor_id' => $apt->doctor_name ?? '',
+                'doctorId' => $apt->doctorId,
+                'location_id' => $apt->location_name ?? '',
+                'locationId' => $apt->locationId,
+                'city_id' => $apt->city_name ?? '',
+                'service_id' => $apt->service_name ?? '',
+                'appointment_status_id' => $apt->status_name ?? '',
+                'created_at' => $apt->created_at ?? '',
+                'created_by' => $apt->created_by_name ?? '',
+                'invoice' => $apt->invoice_id ? true : false,
+                'invoice_id' => $apt->invoice_id ?? 0,
+            ];
+        });
+
+        // Get filter options
+        $locations = DB::table('locations')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+        
+        $services = DB::table('services')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+        
+        $statuses = DB::table('appointment_statuses')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+
+        // Get permissions for actions
+        $permissions = [
+            'edit' => Gate::allows('appointments_edit'),
+            'delete' => Gate::allows('appointments_destroy'),
+            'status' => Gate::allows('appointments_status'),
+            'invoice' => Gate::allows('appointments_invoice'),
+            'invoice_display' => Gate::allows('appointments_invoice_display'),
+        ];
+
+        return [
+            'data' => $data,
+            'meta' => [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ],
+            'permissions' => $permissions,
+            'filter_values' => [
+                'locations' => $locations,
+                'services' => $services,
+                'appointment_statuses' => $statuses,
+            ],
+            'active_filters' => $filters,
+        ];
+    }
+
+    /**
+     * Get patient treatments datatable data (appointment_type_id = 2)
+     */
+    public function getPatientTreatments(int $patientId, Request $request): array
+    {
+        $accountId = Auth::user()->account_id;
+        $filters = getFilters($request->all());
+        
+        // Build base query for treatments (appointment_type_id = 2)
+        $baseQuery = DB::table('appointments')
+            ->where('appointments.patient_id', $patientId)
+            ->where('appointments.account_id', $accountId)
+            ->where('appointments.appointment_type_id', 2)
+            ->whereNull('appointments.deleted_at');
+        
+        // Apply filters
+        if (!empty($filters['date_from'])) {
+            $baseQuery->where('appointments.scheduled_date', '>=', $filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $baseQuery->where('appointments.scheduled_date', '<=', $filters['date_to']);
+        }
+        if (!empty($filters['service_id'])) {
+            $baseQuery->where('appointments.service_id', $filters['service_id']);
+        }
+        if (!empty($filters['location_id'])) {
+            $baseQuery->where('appointments.location_id', $filters['location_id']);
+        }
+        if (!empty($filters['appointment_status_id'])) {
+            $baseQuery->where('appointments.appointment_status_id', $filters['appointment_status_id']);
+        }
+
+        // Add JOINs before count to avoid issues
+        $baseQuery->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+            ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
+            ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
+            ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
+            ->leftJoin('resources', 'appointments.resource_id', '=', 'resources.id')
+            ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id');
+        
+        $iTotalRecords = (clone $baseQuery)->count();
+
+        [$orderBy, $order] = getSortBy($request);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+
+        // Add invoices join
+        $baseQuery->leftJoin('invoices', 'appointments.id', '=', 'invoices.appointment_id');
+
+        // Single optimized query with all JOINs
+        $appointments = (clone $baseQuery)
+            ->select([
+                'appointments.id',
+                'appointments.patient_id',
+                'appointments.scheduled_date',
+                'appointments.scheduled_time',
+                'appointments.created_at',
+                'invoices.id as invoice_id',
+                'doctors.name as doctor_name',
+                'locations.name as location_name',
+                'services.name as service_name',
+                'appointment_statuses.name as status_name',
+                'resources.name as machine_name',
+                'creators.name as created_by_name',
+            ])
+            ->orderBy('appointments.scheduled_date', 'DESC')
+            ->offset($iDisplayStart)
+            ->limit($iDisplayLength)
+            ->get();
+
+        // Transform data
+        $data = $appointments->map(function ($apt) {
+            return [
+                'id' => $apt->id,
+                'patient_id' => $apt->patient_id,
+                'scheduled_date' => $apt->scheduled_date ? Carbon::parse($apt->scheduled_date)->format('M d, Y') : '',
+                'scheduled_time' => $apt->scheduled_time ?? '',
+                'doctor_id' => $apt->doctor_name ?? '',
+                'location_id' => $apt->location_name ?? '',
+                'service_id' => $apt->service_name ?? '',
+                'appointment_status_id' => $apt->status_name ?? '',
+                'machine_id' => $apt->machine_name ?? '',
+                'created_at' => $apt->created_at ?? '',
+                'created_by' => $apt->created_by_name ?? '',
+                'invoice' => $apt->invoice_id ? true : false,
+                'invoice_id' => $apt->invoice_id ?? 0,
+            ];
+        });
+
+        // Get filter options
+        $locations = DB::table('locations')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+        
+        $services = DB::table('services')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+        
+        $statuses = DB::table('appointment_statuses')
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('name', 'id')
+            ->toArray();
+
+        // Get permissions for actions
+        $permissions = [
+            'edit' => Gate::allows('treatments_edit'),
+            'delete' => Gate::allows('treatments_destroy'),
+            'status' => Gate::allows('treatments_status'),
+            'invoice' => Gate::allows('treatments_invoice'),
+            'invoice_display' => Gate::allows('treatments_invoice_display'),
+        ];
+
+        return [
+            'data' => $data,
+            'meta' => [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ],
+            'permissions' => $permissions,
+            'filter_values' => [
+                'locations' => $locations,
+                'services' => $services,
+                'appointment_statuses' => $statuses,
+            ],
+            'active_filters' => $filters,
+        ];
+    }
 }

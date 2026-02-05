@@ -198,7 +198,7 @@
 
 
                {{-- <div class="col-md-10 mt-5">
-                    <strong>Tax Price</strong>
+                    <strong>Tax</strong>
                     <strong class="float-right" id="tax_create">{{$tax_create}}</strong>
                 </div>--}}
                 <input type="hidden" class="tax_create" name="tax_create" value="{{$tax_create}}">

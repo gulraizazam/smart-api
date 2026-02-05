@@ -1,117 +1,15 @@
+// Build table URL - append patient_id if in patient card context
 var table_url = route('admin.treatments.datatable');
+if (typeof patientId !== 'undefined' && patientId) {
+    table_url += '?patient_id=' + patientId;
+}
 
-var table_columns = [
-
-    {
-        field: 'Patient_ID',
-        title: 'ID',
-        width: 60,
-        sortable: false,
-        template: function (data) {
-            let detail_url = route('admin.appointments.detail', {id: data.id});
-            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+'</a>';
-        }
-    },{
-        field: 'name',
-        title: 'Patient',
-        width: 80,
-        template: function (data) {
-            var view_url = route('admin.patients.preview', { id: data.patient_id });
-            return '<a href="' + view_url + '" style="color: #626574; font-weight: bold;">' + data.name + '</a>';
-        }
-    },{
-        field: 'phone',
-        title: 'Phone',
-        width: 90,
-        template: function (data) {
-            return phoneClip(data);
-        }
-    },{
-        field: 'scheduled_date',
-        title: 'Scheduled',
-        width: 80,
-        template: function (data) {
-            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled" || data.appointment_status_id == "Converted") {
-                return '<span>'+data.scheduled_date+'</span>';
-            } else {
-                if (permissions.schedule_edit) {
-                    return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
-                } else {
-                    return '<span>'+data.scheduled_date+'</span>';
-                }
-            }
-        }
-    },{
-        field: 'service_id',
-        title: 'Service',
-        width: 90,
-    },{
-        field: 'doctor_id',
-        title: 'Doctor',
-        width: 80,
-    },{
-        field: 'appointment_status_id',
-        title: 'Status',
-        width: 80,
-        template: function (data) {
-
-            let unscheduled_appointment_status = data.unscheduled_appointment_status;
-            let appointment_status = data.appointment_status;
-
-            if (permissions.status) {
-                if (data.scheduled_date == '-') {
-                    return '<span>Un-Scheduled</span>';
-                } else if (data.appointment_status == 2) {
-                    return '<span style="color: #8950FC;">' + data.appointment_status_id + '</span>';
-                } else {
-                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
-                }
-            } else {
-                return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
-            }
-        }
-    },{
-        field: 'location_id',
-        title: 'Centre',
-        width: 90,
-    },{
-        field: 'city_id',
-        title: 'City',
-        width: 80,
-    // },{
-    //     field: 'consultancy_type',
-    //     title: 'Consultancy Type',
-    //     width: 100,
-    // },{
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-        template: function (data) {
-            return formatDate(data.created_at);
-        }
-    },{
-        field: 'created_by',
-        title: 'Created By',
-        width: 'auto',
-    },{
-        field: 'updated_by',
-        title: 'Updated By',
-        width: 'auto',
-    },{
-        field: 'converted_by',
-        title: 'Rescheduled By',
-        width: 'auto',
-    },{
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 190,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }];
+// Use shared column definitions from treatment-columns.js
+// Include patient column only if NOT in patient card context (patientId not defined)
+var includePatientColumn = (typeof patientId === 'undefined' || !patientId);
+var table_columns = (typeof getTreatmentColumns === 'function') 
+    ? getTreatmentColumns(includePatientColumn, null)
+    : [];
 
 function editStatus(id) {
 

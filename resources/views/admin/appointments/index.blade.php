@@ -714,6 +714,8 @@
     @endpush
 
     @push('datatable-js')
+        <script src="{{ asset('assets/js/pages/appointment/consultation-columns.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointment/consultation-common.js') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/datatable.js') }}"></script>
     @endpush
 
