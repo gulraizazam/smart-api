@@ -70,6 +70,61 @@ class PatientsController extends Controller
     }
 
     /**
+     * Patient Card V2 - Section-based navigation
+     * Each section is a separate page load to avoid JS conflicts
+     *
+     * @param  int  $id
+     * @param  string|null  $section
+     * @return \Illuminate\Http\Response
+     */
+    public function cardV2($id, $section = 'profile')
+    {
+        if (!Gate::allows('patients_manage')) {
+            return abort(401);
+        }
+
+        // Get patient data
+        $patient = \App\Models\Patients::find($id);
+        if (!$patient) {
+            return abort(404, 'Patient not found');
+        }
+
+        // Get patient membership (active or expired)
+        $membership = \App\Models\Membership::where('patient_id', $id)
+            ->orderBy('active', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        // Get permissions
+        $permissions = [
+            'edit' => Gate::allows('appointments_edit'),
+            'delete' => Gate::allows('appointments_delete'),
+            'status' => Gate::allows('appointments_status'),
+            'consultancy' => Gate::allows('consultancy_manage'),
+            'treatment' => Gate::allows('treatments_manage'),
+            'invoice' => Gate::allows('consultancy_invoice'),
+            'invoice_display' => Gate::allows('consultancy_invoice_display'),
+            'log' => Gate::allows('appointments_log'),
+            'plans_create' => Gate::allows('plans_create'),
+            'contact' => Gate::allows('contact'),
+        ];
+
+        // Valid sections
+        $validSections = ['profile', 'consultations', 'treatments', 'plans', 'invoices', 'refunds', 'documents', 'activity'];
+        if (!in_array($section, $validSections)) {
+            $section = 'profile';
+        }
+
+        return view('admin.patients.card-v2.index', [
+            'patient' => $patient,
+            'patientId' => $id,
+            'section' => $section,
+            'permissions' => $permissions,
+            'membership' => $membership,
+        ]);
+    }
+
+    /**
      * Get last appointment location for patient
      * Used to redirect to calendar with correct branch filter
      *

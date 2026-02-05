@@ -172,12 +172,13 @@
                             <th>Service Name</th>
                             <th>Regular Price</th>
                             <th>Discount Name</th>
-                            <th>Type</th>
-                            <th>Discount Value</th>
-                            <th>Amount</th>
-                            <th>Tax </th>
+                            <th>Discount</th>
+                            <th>Subtotal</th>
+                            <th>Tax</th>
                             <th>Total</th>
-                            <!-- <th>Is Consumed</th> -->
+                            <th>Consumed</th>
+                            <th>Consumed At</th>
+                            <th>Sold By</th>
                             <th>Action</th>
                         </tr>
                     </thead>

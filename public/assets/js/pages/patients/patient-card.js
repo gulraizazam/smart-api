@@ -234,7 +234,7 @@ function loadDataTable(page_id, loadScript = true) {
                                     console.log('Initializing plans datatable with class selector');
                                     KTPatientDatatable.init("." + page_id);
                                 } else {
-                                    patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
                                 }
                             }
                         }, 1000);
@@ -249,26 +249,77 @@ function loadDataTable(page_id, loadScript = true) {
                         if (datatableExist.length === 0) {
                             KTPatientDatatable.init("." + page_id);
                         } else {
-                            patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                            if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
                         }
                     }
                 }, 1000);
             }
-        } else if (page_id === 'appointment-form') {
-            // Load appointments scripts (handles both consultations and treatments)
+        } else if (page_id === 'consultation-form') {
+            // Load consultations scripts
             window.isPatientCardContext = true;
             window.patientCardPatientId = patientCardID;
             
             let className = "." + page_id;
             
-            // Load appointment-form.js only once
-            if (!window.appointmentScriptLoaded) {
-                window.appointmentScriptLoaded = true;
+            // Load consultation scripts only once
+            if (!window.consultationScriptLoaded) {
+                window.consultationScriptLoaded = true;
                 
-                let appointmentDatatableUrl = asset_url + "assets/js/pages/patients/appointment-form.js?v=" + Date.now();
-                $.getScript(appointmentDatatableUrl, function() {
+                // First load the shared consultation-common.js
+                let consultationCommonUrl = asset_url + "assets/js/pages/appointment/consultation-common.js?v=" + Date.now();
+                $.getScript(consultationCommonUrl, function() {
+                    // Then load the patient-specific consultation-form.js
+                    let consultationDatatableUrl = asset_url + "assets/js/pages/patients/consultation-form.js?v=" + Date.now();
+                    $.getScript(consultationDatatableUrl, function() {
+                        // Store the consultation-specific variables
+                        window.consultation_table_url = table_url;
+                        window.consultation_table_columns = table_columns;
+                        
+                        setTimeout(function () {
+                            if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                                patientDatatable[className].destroy();
+                                $(className).empty();
+                            }
+                            KTPatientDatatable.init(className);
+                        }, 300);
+                    });
+                });
+                
+                // Load other required scripts only once
+                let invoiceUrl = asset_url + "assets/js/pages/appointment/invoice.js?v=" + Date.now();
+                $.getScript(invoiceUrl);
+            } else {
+                // Script already loaded, restore consultation-specific variables
+                table_url = window.consultation_table_url;
+                table_columns = window.consultation_table_columns;
+                
+                setTimeout(function () {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
+                        patientDatatable[className].destroy();
+                        $(className).empty();
+                    }
+                    KTPatientDatatable.init(className);
+                }, 300);
+            }
+        } else if (page_id === 'treatment-form') {
+            // Load treatments scripts
+            window.isPatientCardContext = true;
+            window.patientCardPatientId = patientCardID;
+            
+            let className = "." + page_id;
+            
+            // Load treatment-form.js only once
+            if (!window.treatmentScriptLoaded) {
+                window.treatmentScriptLoaded = true;
+                
+                let treatmentDatatableUrl = asset_url + "assets/js/pages/patients/treatment-form.js?v=" + Date.now();
+                $.getScript(treatmentDatatableUrl, function() {
+                    // Store the treatment-specific variables
+                    window.treatment_table_url = table_url;
+                    window.treatment_table_columns = table_columns;
+                    
                     setTimeout(function () {
-                        if (patientDatatable[className]) {
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
                             patientDatatable[className].destroy();
                             $(className).empty();
                         }
@@ -276,15 +327,20 @@ function loadDataTable(page_id, loadScript = true) {
                     }, 300);
                 });
                 
-                // Load other required scripts only once
-                let invoiceUrl = asset_url + "assets/js/pages/appointment/invoice.js?v=" + Date.now();
-                let commonUrl = asset_url + "assets/js/pages/appointment/common.js?v=" + Date.now();
-                $.getScript(invoiceUrl);
-                $.getScript(commonUrl);
+                // Load other required scripts only once (if not already loaded by consultations)
+                if (!window.consultationScriptLoaded) {
+                    let invoiceUrl = asset_url + "assets/js/pages/appointment/invoice.js?v=" + Date.now();
+                    let commonUrl = asset_url + "assets/js/pages/appointment/common.js?v=" + Date.now();
+                    $.getScript(invoiceUrl);
+                    $.getScript(commonUrl);
+                }
             } else {
-                // Script already loaded, just reinitialize datatable
+                // Script already loaded, restore treatment-specific variables
+                table_url = window.treatment_table_url;
+                table_columns = window.treatment_table_columns;
+                
                 setTimeout(function () {
-                    if (patientDatatable[className]) {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
                         patientDatatable[className].destroy();
                         $(className).empty();
                     }
@@ -308,7 +364,7 @@ function loadDataTable(page_id, loadScript = true) {
                 let voucherUrl = asset_url + "assets/js/pages/patients/voucher-form.js?v=" + Date.now();
                 $.getScript(voucherUrl, function() {
                     setTimeout(function () {
-                        if (patientDatatable[className]) {
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
                             patientDatatable[className].destroy();
                             $(className).empty();
                         }
@@ -318,7 +374,7 @@ function loadDataTable(page_id, loadScript = true) {
             } else {
                 // Script already loaded, just reinitialize datatable
                 setTimeout(function () {
-                    if (patientDatatable[className]) {
+                    if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') {
                         patientDatatable[className].destroy();
                         $(className).empty();
                     }
@@ -335,7 +391,7 @@ function loadDataTable(page_id, loadScript = true) {
                     if (datatableExist.length === 0) {
                         KTPatientDatatable.init("." + page_id);
                     } else {
-                        patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
+                        if (typeof patientDatatable !== 'undefined' && typeof patientDatatable[className] !== 'undefined') patientDatatable[className].search({datatable_reload: 'reload'}, 'search');
                     }
                 }
             }, 1000);

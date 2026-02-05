@@ -22,7 +22,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered big-modal" id="invoices_display">
 
-            @include('admin.patients.card.invoices.displayInvoice')
+            @include('admin.invoices.displayInvoice')
 
         </div>
         <!--end::Modal dialog-->

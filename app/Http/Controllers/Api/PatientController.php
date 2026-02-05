@@ -345,14 +345,31 @@ class PatientController extends Controller
         }
     }
 
-    // REMOVED: consultationsDatatable() and treatmentsDatatable() methods
-    // Now using same controllers as main modules:
-    // - Consultations: AppointmentsController@datatable with patient_id parameter
-    // - Treatments: TreatmentsController@datatable with patient_id parameter
+    /**
+     * Get patient consultations datatable (appointment_type_id = 1)
+     */
+    public function consultationsDatatable(int $id, Request $request): JsonResponse
+    {
+        try {
+            $result = $this->patientService->getPatientConsultations($id, $request);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
 
-    // REMOVED: vouchersDatatable() method
-    // Now using same controller as main module:
-    // - Vouchers: UserVouchersController@datatable with patient_id parameter
+    /**
+     * Get patient treatments datatable (appointment_type_id = 2)
+     */
+    public function treatmentsDatatable(int $id, Request $request): JsonResponse
+    {
+        try {
+            $result = $this->patientService->getPatientTreatments($id, $request);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
 
     /**
      * Upload document for patient (OPTIMIZED API)

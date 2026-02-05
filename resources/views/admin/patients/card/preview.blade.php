@@ -1,6 +1,37 @@
 @extends('admin.layouts.master')
 @section('title', 'Patient')
+
+@push('css')
+<style>
+    /* Hide tabs until JS is ready */
+    .change-tab { cursor: pointer; }
+</style>
+@endpush
+
 @section('content')
+    {{-- Load patient-card-v2.js early so changeProfilePage is available --}}
+    <script src="{{asset('assets/js/pages/patients/patient-card-v2.js')}}"></script>
+    <script>
+        // Patient Card V2 - Initialize context immediately
+        var patientCardID = "{{request('id')}}";
+        var patientCardPermissions = {
+            edit: {{ Gate::allows('appointments_edit') ? 'true' : 'false' }},
+            delete: {{ Gate::allows('appointments_delete') ? 'true' : 'false' }},
+            status: {{ Gate::allows('appointments_status') ? 'true' : 'false' }},
+            consultancy: {{ Gate::allows('consultancy_manage') ? 'true' : 'false' }},
+            treatment: {{ Gate::allows('treatments_manage') ? 'true' : 'false' }},
+            invoice: {{ Gate::allows('consultancy_invoice') ? 'true' : 'false' }},
+            invoice_display: {{ Gate::allows('consultancy_invoice_display') ? 'true' : 'false' }},
+            log: {{ Gate::allows('appointments_log') ? 'true' : 'false' }},
+            image_manage: {{ Gate::allows('appointments_image_manage') ? 'true' : 'false' }},
+            measurement_manage: {{ Gate::allows('appointments_measurement_manage') ? 'true' : 'false' }},
+            medical_form_manage: {{ Gate::allows('appointments_medical_form_manage') ? 'true' : 'false' }},
+            plans_create: {{ Gate::allows('plans_create') ? 'true' : 'false' }},
+            patient_card: {{ Gate::allows('patient_card') ? 'true' : 'false' }},
+            contact: {{ Gate::allows('contact') ? 'true' : 'false' }},
+        };
+        initPatientCardContext(patientCardID, patientCardPermissions);
+    </script>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
             <!--begin::Subheader-->
@@ -144,8 +175,11 @@
                                     @include('admin.patients.card.profile.profile-picture', ['customId' => 'profile-picture-search'])
                                 </div>
 
-                                <div id="appointment-form" class="content-section d-none">
-                                    @include('admin.patients.card.appointments.index', ['customId' => 'appointment-form-search'])
+                                <div id="consultation-form" class="content-section d-none">
+                                    @include('admin.patients.card.consultations.index', ['customId' => 'consultation-form-search'])
+                                </div>
+                                <div id="treatment-form" class="content-section d-none">
+                                    @include('admin.patients.card.treatments.index', ['customId' => 'treatment-form-search'])
                                 </div>
                                 <div id="voucher-form" class="content-section d-none">
                                     @include('admin.patients.card.vouchers.index', ['customId' => 'vouchers-form-search'])
@@ -202,12 +236,11 @@
     </div>
     <!--end::Content-->
     @push('datatable-js')
-        <script>
-            let patientCardID = "{{request('id')}}";
-            // Skip auto-initialization of patient datatable - tabs will handle their own initialization
-            window.skipPatientDatatableInit = true;
-        </script>
-        <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
+        {{-- Shared scripts for consultations/treatments --}}
+        <script src="{{asset('assets/js/pages/appointment/consultation-common.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/invoice.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/common.js')}}"></script>
+        {{-- Legacy scripts --}}
         <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient-card-edit.js')}}"></script>

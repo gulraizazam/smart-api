@@ -380,7 +380,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         // Patients - using API controller for CRUD operations, keeping view routes
         Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
-        Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
+        Route::match(['get', 'post'], 'patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
+        // New Patient Card V2 - Section-based navigation (no JS tab conflicts)
+        Route::get('patients/{id}/card/{section?}', [PatientsController::class, 'cardV2'])->name('patients.card');
         Route::get('patients/{id}/last-appointment-location', [PatientsController::class, 'getLastAppointmentLocation'])->name('patients.getLastAppointmentLocation');
         Route::get('patients/{id}/leads', [PatientsController::class, 'leads'])->name('patients.leads');
         Route::post('patients/{id}/leads-datatable', [PatientsController::class, 'leadsDatatable'])->name('patients.leadsDatatable');

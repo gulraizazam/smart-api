@@ -16,7 +16,7 @@ var table_columns = [
         width: 90,
         sortable: false,
         template: function (data) {
-            var view_url = route('admin.patients.preview', { id: data.id });
+            var view_url = route('admin.patients.card', { id: data.id });
             return '<a href="' + view_url + '" class="text-primary font-weight-bold">' + data.name + '</a>';
         }
     }, {
@@ -29,10 +29,12 @@ var table_columns = [
             if (data.membership == null) {
                 return 'No Membership';
             }
-            var end_date = moment(data.membership.end_date);
-            var isExpired = end_date.isBefore(moment());
+            // If membership is not active, show No Membership
+            if (data.membership.active !== 1) {
+                return 'No Membership';
+            }
             var prefix = data.membership.is_referral == 1 ? 'Ref: ' : '';
-            return prefix + data.membership.code + ' - ' + (isExpired ? 'Expired' : (data.membership.active === 1 ? 'Active' : 'Inactive'));
+            return prefix + data.membership.code + ' - Active';
         }
     }, {
         field: 'phone',
@@ -88,9 +90,9 @@ function actions(data) {
     let id = data.id;
     let url = route('admin.patients.edit', { id: id });
     let delete_url = route('admin.patients.destroy', { id: id });
-    let view_url = route('admin.patients.preview', { id: id });
-    let assign_membership_url = route('admin.patients.preview', { id: id });
-    let assign_voucher_url = route('admin.patients.preview', { id: id });
+    let view_url = route('admin.patients.card', { id: id });
+    let assign_membership_url = route('admin.patients.card', { id: id });
+    let assign_voucher_url = route('admin.patients.card', { id: id });
     let cancel_url = route('admin.memberships.cancel', { id: id });
     if (permissions.edit || permissions.delete || permissions.add_referrals || permissions.manage || permissions.assign_membership || permissions.cancel_membership) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\

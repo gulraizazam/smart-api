@@ -55,12 +55,12 @@
                                     <th>Service Name</th>
                                     <th>Regular Price</th>
                                     <th>Discount Name</th>
-                                    <th>Type</th>
-                                    <th>Discount Value</th>
+                                    <th>Discount</th>
                                     <th>Subtotal</th>
-
-                                    <th>Tax Price</th>
+                                    <th>Tax</th>
                                     <th>Total</th>
+                                    <th>Consumed</th>
+                                    <th>Consumed At</th>
                                     <th>Sold By</th>
                                 </tr>
                             </thead>

@@ -564,12 +564,12 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         Route::put('{id}', [\App\Http\Controllers\Api\PatientController::class, 'update'])->name('update');
         Route::delete('{id}', [\App\Http\Controllers\Api\PatientController::class, 'destroy'])->name('destroy');
         Route::post('{id}/addreferral', [\App\Http\Controllers\Api\PatientController::class, 'addReferral'])->name('addreferral');
-        // Optimized datatables for patient preview tabs
-        Route::get('{id}/appointments-datatable', [\App\Http\Controllers\Api\PatientController::class, 'appointmentsDatatable'])->name('appointmentsDatatable');
-        // Use same controllers as main modules with patient_id parameter
-        Route::post('{id}/consultations-datatable', [\App\Http\Controllers\Admin\AppointmentsController::class, 'datatable'])->name('consultationsDatatable');
-        Route::post('{id}/treatments-datatable', [\App\Http\Controllers\Api\TreatmentsController::class, 'datatable'])->name('treatmentsDatatable');
-        Route::get('{id}/vouchers-datatable', [\App\Http\Controllers\Admin\UserVouchersController::class, 'datatable'])->name('vouchersDatatable');
+        // Optimized datatables for patient preview tabs (using match for GET/POST since KTDatatable uses POST by default)
+        Route::match(['get', 'post'], '{id}/appointments-datatable', [\App\Http\Controllers\Api\PatientController::class, 'appointmentsDatatable'])->name('appointmentsDatatable');
+        // Dedicated endpoints for consultations and treatments filtered by patient
+        Route::match(['get', 'post'], '{id}/consultations-datatable', [\App\Http\Controllers\Api\PatientController::class, 'consultationsDatatable'])->name('consultationsDatatable');
+        Route::match(['get', 'post'], '{id}/treatments-datatable', [\App\Http\Controllers\Api\PatientController::class, 'treatmentsDatatable'])->name('treatmentsDatatable');
+        Route::match(['get', 'post'], '{id}/vouchers-datatable', [\App\Http\Controllers\Admin\UserVouchersController::class, 'datatable'])->name('vouchersDatatable');
         // Optimized document upload
         Route::post('{id}/upload-document', [\App\Http\Controllers\Api\PatientController::class, 'uploadDocument'])->name('uploadDocument');
         Route::post('{id}/update-document/{documentId}', [\App\Http\Controllers\Api\PatientController::class, 'updateDocument'])->name('updateDocument');

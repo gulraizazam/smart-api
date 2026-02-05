@@ -44,7 +44,7 @@
     <div class="row mb-8 advance-filters" style="display: none;">
 
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Invoice Status:</label>
+            <label>Status:</label>
             <select class="form-control filter-field select2" id="search_invoice_status_id">
             </select>
         </div>
