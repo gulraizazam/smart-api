@@ -23,6 +23,7 @@
     <div class="modal-body scroll-y ">
         <!--begin::Form-->
         <form id="modal_edit_vouchers_form" method="post" action="">
+            @csrf
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_patients_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
@@ -30,7 +31,8 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Select Voucher <span class="text text-danger">*</span> </label>
-                            <select name="voucher_id" id="edit_voucher_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_voucher_id" tabindex="-1" aria-hidden="true">
+                            <select name="voucher_id" id="patient_voucher_select" class="form-control" style="width: 100%; height: 40px;">
+                                <option value="">Loading...</option>
                             </select>
                         </div>
                         <div class="fv-row col-md-12 mt-5">

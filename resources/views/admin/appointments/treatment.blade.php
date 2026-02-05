@@ -670,7 +670,7 @@
     @endpush
 
     @push('datatable-js')
-
+        <script src="{{asset('assets/js/pages/appointment/treatment-columns.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/treatmentDatatable.js')}}"></script>
     @endpush
 

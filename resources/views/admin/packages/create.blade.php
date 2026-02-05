@@ -53,33 +53,59 @@
         <div class="d-flex flex-column scroll-y me-n7 pe-7" id="modal_appointment_plan_section" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
             <div class="form-group">
                 <div class="row">
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span></label>
-                        <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
-                            <option value="">Select Centre</option>
-                        </select>
-                        <small class="text-danger ml-1 mt-1"><b id="add_plan_location_id_error" class="create-plan-error"></b></small>
-                    </div>
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                        <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 select2-patient-search" name="patient_id_1">
-                            <option value="">Search Patient by Name or Phone</option>
-                        </select>
-                        <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
-                    </div>
-                    <div class="fv-row col-md-2 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
-                        <input type="text" id="patient_membership" class="form-control form-control-solid mb-3 mb-lg-0" disabled placeholder="No data">
-
-
-                    </div>
-                    <div class="fv-row col-md-4 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
-                        <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">
-                            <option value="">Select Appointment</option>
-                        </select>
-                        <small class="text-danger ml-1 mt-1"><b id="add_appointment_id_error" class="create-plan-error"></b></small>
-                    </div>
+                    @if(isset($isPatientCard) && $isPatientCard)
+                        {{-- Patient Card Context: Show patient info as static text like edit modal --}}
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name</label>
+                            <h3 id="add-patient-name"></h3>
+                            <input type="hidden" id="add_patient_id" name="patient_id_1">
+                        </div>
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Membership</label>
+                            <h4 id="patient_membership" style="font-size:15px">No Membership</h4>
+                        </div>
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span></label>
+                            <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
+                                <option value="">Select Centre</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_plan_location_id_error" class="create-plan-error"></b></small>
+                        </div>
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
+                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">
+                                <option value="">Select Appointment</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_appointment_id_error" class="create-plan-error"></b></small>
+                        </div>
+                    @else
+                        {{-- Main Plans Module: Show patient search dropdown --}}
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span></label>
+                            <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
+                                <option value="">Select Centre</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_plan_location_id_error" class="create-plan-error"></b></small>
+                        </div>
+                        <div class="fv-row col-md-3 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
+                            <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 select2-patient-search" name="patient_id_1">
+                                <option value="">Search Patient by Name or Phone</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
+                        </div>
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
+                            <input type="text" id="patient_membership" class="form-control form-control-solid mb-3 mb-lg-0" disabled placeholder="No data">
+                        </div>
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
+                            <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">
+                                <option value="">Select Appointment</option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="add_appointment_id_error" class="create-plan-error"></b></small>
+                        </div>
+                    @endif
                 </div>
             </div>
             <div class="form-group">
@@ -146,12 +172,13 @@
                             <th>Service Name</th>
                             <th>Regular Price</th>
                             <th>Discount Name</th>
-                            <th>Type</th>
-                            <th>Discount Value</th>
-                            <th>Amount</th>
-                            <th>Tax </th>
+                            <th>Discount</th>
+                            <th>Subtotal</th>
+                            <th>Tax</th>
                             <th>Total</th>
-                            <!-- <th>Is Consumed</th> -->
+                            <th>Consumed</th>
+                            <th>Consumed At</th>
+                            <th>Sold By</th>
                             <th>Action</th>
                         </tr>
                     </thead>

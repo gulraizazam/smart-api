@@ -543,6 +543,7 @@ class Patients extends BaseModal
 
     /**
      * Get Total Records
+     * @deprecated Use PatientService::getDatatableData() instead
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -570,6 +571,7 @@ class Patients extends BaseModal
 
     /**
      * Get Records
+     * @deprecated Use PatientService::getDatatableData() instead
      *
      * @param  (int)  $iDisplayStart Start Index
      * @param  (int)  $iDisplayLength Total Records Length
@@ -645,6 +647,7 @@ class Patients extends BaseModal
 
     /**
      * inactive Record
+     * @deprecated Use PatientService::changeStatus() instead
      *
      * @param id
      * @return (mixed)
@@ -672,6 +675,7 @@ class Patients extends BaseModal
 
     /**
      * active Record
+     * @deprecated Use PatientService::changeStatus() instead
      *
      * @param id
      * @return (mixed)
@@ -775,6 +779,9 @@ class Patients extends BaseModal
         return $childRecords;
     }
 
+    /**
+     * @deprecated Use PatientService::buildWhereConditions() instead
+     */
     public static function filters_patients($request, $account_id, $apply_filter, $filename)
     {
 

@@ -1,6 +1,37 @@
 @extends('admin.layouts.master')
 @section('title', 'Patient')
+
+@push('css')
+<style>
+    /* Hide tabs until JS is ready */
+    .change-tab { cursor: pointer; }
+</style>
+@endpush
+
 @section('content')
+    {{-- Load patient-card-v2.js early so changeProfilePage is available --}}
+    <script src="{{asset('assets/js/pages/patients/patient-card-v2.js')}}"></script>
+    <script>
+        // Patient Card V2 - Initialize context immediately
+        var patientCardID = "{{request('id')}}";
+        var patientCardPermissions = {
+            edit: {{ Gate::allows('appointments_edit') ? 'true' : 'false' }},
+            delete: {{ Gate::allows('appointments_delete') ? 'true' : 'false' }},
+            status: {{ Gate::allows('appointments_status') ? 'true' : 'false' }},
+            consultancy: {{ Gate::allows('consultancy_manage') ? 'true' : 'false' }},
+            treatment: {{ Gate::allows('treatments_manage') ? 'true' : 'false' }},
+            invoice: {{ Gate::allows('consultancy_invoice') ? 'true' : 'false' }},
+            invoice_display: {{ Gate::allows('consultancy_invoice_display') ? 'true' : 'false' }},
+            log: {{ Gate::allows('appointments_log') ? 'true' : 'false' }},
+            image_manage: {{ Gate::allows('appointments_image_manage') ? 'true' : 'false' }},
+            measurement_manage: {{ Gate::allows('appointments_measurement_manage') ? 'true' : 'false' }},
+            medical_form_manage: {{ Gate::allows('appointments_medical_form_manage') ? 'true' : 'false' }},
+            plans_create: {{ Gate::allows('plans_create') ? 'true' : 'false' }},
+            patient_card: {{ Gate::allows('patient_card') ? 'true' : 'false' }},
+            contact: {{ Gate::allows('contact') ? 'true' : 'false' }},
+        };
+        initPatientCardContext(patientCardID, patientCardPermissions);
+    </script>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
             <!--begin::Subheader-->
@@ -71,10 +102,36 @@
                                         Add New
                                     </button>
                                 </div>
-                                {{-- Add New button removed from Plans tab --}}
+                                <div class="card-toolbar submit-btn toolbar-plan-form d-none">
+                                    @if(Gate::allows('plans_create'))
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createPlan('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_plan">
+                                            <i class="la la-plus"></i> Add Procedures
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createBundle('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_bundle">
+                                            <i class="la la-plus"></i> Add Bundle
+                                        </button>
+                                    @endif
+                                </div>
                                 <div class="card-toolbar submit-btn toolbar-finance-form d-none">
                                     <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createFinance('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_finance_form">
                                         Add New
+                                    </button>
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-voucher-form d-none">
+                                    @if(Gate::allows('vouchers_create'))
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="assignVoucherToPatient();" data-toggle="modal" data-target="#modal_assign_voucher_patient">
+                                            <i class="la la-plus"></i> Add Voucher
+                                        </button>
+                                    @endif
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-consultation-form d-none">
+                                    <button type="button" class="btn btn-sm btn-primary mr-2" id="create-consultation-btn">
+                                        <i class="la la-plus"></i> Create Consultation
+                                    </button>
+                                </div>
+                                <div class="card-toolbar submit-btn toolbar-treatment-form d-none">
+                                    <button type="button" class="btn btn-sm btn-success mr-2" id="create-treatment-btn">
+                                        <i class="la la-plus"></i> Create Treatment
                                     </button>
                                 </div>
                             </div>
@@ -118,8 +175,11 @@
                                     @include('admin.patients.card.profile.profile-picture', ['customId' => 'profile-picture-search'])
                                 </div>
 
-                                <div id="appointment-form" class="content-section d-none">
-                                    @include('admin.patients.card.appointments.index', ['customId' => 'appointment-form-search'])
+                                <div id="consultation-form" class="content-section d-none">
+                                    @include('admin.patients.card.consultations.index', ['customId' => 'consultation-form-search'])
+                                </div>
+                                <div id="treatment-form" class="content-section d-none">
+                                    @include('admin.patients.card.treatments.index', ['customId' => 'treatment-form-search'])
                                 </div>
                                 <div id="voucher-form" class="content-section d-none">
                                     @include('admin.patients.card.vouchers.index', ['customId' => 'vouchers-form-search'])
@@ -176,10 +236,11 @@
     </div>
     <!--end::Content-->
     @push('datatable-js')
-        <script>
-            let patientCardID = "{{request('id')}}";
-        </script>
-        <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
+        {{-- Shared scripts for consultations/treatments --}}
+        <script src="{{asset('assets/js/pages/appointment/consultation-common.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/invoice.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/common.js')}}"></script>
+        {{-- Legacy scripts --}}
         <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient-card-edit.js')}}"></script>
@@ -191,5 +252,15 @@
             @include('admin.patients.edit')
         </div>
     </div>
+
+    {{-- Assign Voucher Modal --}}
+    <div class="modal fade" id="modal_assign_voucher_patient" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="assign_voucher_patient">
+            @include('admin.patients.assignVoucher')
+        </div>
+    </div>
+
+    {{-- Include all appointment modals from main module (for consultations and treatments tabs) --}}
+    @include('admin.appointments.appointment-forms.modals')
 
 @endsection

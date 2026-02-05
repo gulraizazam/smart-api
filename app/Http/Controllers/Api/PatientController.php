@@ -105,8 +105,12 @@ class PatientController extends Controller
     public function getTabCounts(int $id): JsonResponse
     {
         try {
+            $accountId = Auth::user()->account_id;
+            
             $counts = [
-                'appointments' => \DB::table('appointments')->where('patient_id', $id)->count(),
+                'appointments' => \DB::table('appointments')->where('patient_id', $id)->where('account_id', $accountId)->count(),
+                'consultations' => \DB::table('appointments')->where('patient_id', $id)->where('appointment_type_id', 1)->where('deleted_at',null)->count(),
+                'treatments' => \DB::table('appointments')->where('patient_id', $id)->where('account_id', $accountId)->where('deleted_at',null)->where('appointment_type_id', 2)->count(),
                 'vouchers' => \DB::table('user_vouchers')->where('user_id', $id)->count(),
                 'documents' => \DB::table('documents')->where('user_id', $id)->count(),
                 'plans' => \DB::table('packages')->where('patient_id', $id)->count(),
@@ -342,12 +346,25 @@ class PatientController extends Controller
     }
 
     /**
-     * Get patient vouchers datatable (OPTIMIZED)
+     * Get patient consultations datatable (appointment_type_id = 1)
      */
-    public function vouchersDatatable(int $id, Request $request): JsonResponse
+    public function consultationsDatatable(int $id, Request $request): JsonResponse
     {
         try {
-            $result = $this->patientService->getPatientVouchers($id, $request);
+            $result = $this->patientService->getPatientConsultations($id, $request);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get patient treatments datatable (appointment_type_id = 2)
+     */
+    public function treatmentsDatatable(int $id, Request $request): JsonResponse
+    {
+        try {
+            $result = $this->patientService->getPatientTreatments($id, $request);
             return response()->json($result);
         } catch (Exception $e) {
             return ApiHelper::apiException($e);

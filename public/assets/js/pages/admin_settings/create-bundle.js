@@ -12,7 +12,18 @@ function createBundle(url, id) {
     
     setTimeout(function () {
         $("#add_discount_id_bundle").html('<option value="">Select Discount</option>');
-        $("#add_patient_id_bundle").val(null).trigger('change');
+        
+        // If in patient card context, pre-fill patient ID
+        if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext && typeof window.patientCardPatientId !== 'undefined') {
+            $("#add_patient_id_bundle").val(window.patientCardPatientId).trigger('change');
+            // Hide patient search field since patient is already selected
+            $("#add_patient_id_bundle").closest('.fv-row').find('.select2-container').hide();
+            // Load patient info for bundle modal
+            loadPatientInfoForBundle(window.patientCardPatientId);
+        } else {
+            $("#add_patient_id_bundle").val(null).trigger('change');
+        }
+        
         $(".search_patient").val('');
         $("#net_amount_bundle").val('');
         $("#package_total_bundle").val('');
@@ -177,6 +188,11 @@ function getServicesBundle(action) {
         cache: false,
         success: function (response) {
             setBundles(response);
+            
+            // In patient card context, also load appointments when location changes
+            if (typeof window.isPatientCardContext !== 'undefined' && window.isPatientCardContext && typeof window.patientCardPatientId !== 'undefined') {
+                getAppointmentsBundle(window.patientCardPatientId);
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -876,4 +892,47 @@ function resetVoucherAddBundle(event) {
         
         $('.create-bundle-error').html('');
     }, 300);
+}
+
+// Load patient info for bundle create modal when in patient card context
+function loadPatientInfoForBundle(patientId) {
+    $.ajax({
+        url: route('admin.patients.getPatient', { id: patientId }),
+        type: 'GET',
+        success: function(response) {
+            if (response.status && response.data) {
+                let patient = response.data.patient;
+                let membership = response.data.membership;
+                
+                // Scope selectors to the modal to avoid conflicts with other elements on page
+                let $modal = $('#modal_add_bundle');
+                
+                // Set patient name (h3 element in patient card context)
+                $modal.find('#add-patient-name-bundle').text(patient?.name || '');
+                
+                // Set membership info (h4 element in patient card context, input in main module)
+                let membershipText = 'No Membership';
+                if (membership) {
+                    // Format: Gold - CA12345 - Active (Exp: Jan 29, 2027)
+                    let statusText = membership.is_active ? 'Active' : 'Inactive';
+                    let expDate = membership.end_date ? new Date(membership.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                    membershipText = (membership.type || 'Gold') + ' - ' + (membership.code || '') + ' - ' + statusText + (expDate ? ' (Exp: ' + expDate + ')' : '');
+                }
+                let $membershipEl = $modal.find('#patient_membership_bundle');
+                if ($membershipEl.is('h4')) {
+                    $membershipEl.text(membershipText);
+                } else {
+                    $membershipEl.val(membershipText);
+                }
+                
+                // Set hidden patient ID
+                $modal.find('#add_patient_id_bundle').val(patientId);
+                // Trigger patient change to load appointments
+                getAppointmentsBundle(patientId);
+            }
+        },
+        error: function() {
+            console.log('Failed to load patient info for bundle');
+        }
+    });
 }

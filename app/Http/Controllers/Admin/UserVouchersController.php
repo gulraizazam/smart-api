@@ -43,11 +43,13 @@ class UserVouchersController extends Controller
 
     /**
      * Display the user vouchers in datatable form.
+     * Supports optional patient_id parameter for patient-specific filtering
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  int|null  $patientId
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request, $patientId = null)
     {
         try {
             $records = [];
@@ -55,6 +57,12 @@ class UserVouchersController extends Controller
 
             $filename = 'vouchers';
             $filters = getFilters($request->all());
+            
+            // If patient_id is provided (patient card context), add it to filters
+            if ($patientId) {
+                $filters['patient_id'] = $patientId;
+            }
+            
             $apply_filter = checkFilters($filters, $filename);
 
             $where = $this->applyFilters($filters, $apply_filter, $filename);

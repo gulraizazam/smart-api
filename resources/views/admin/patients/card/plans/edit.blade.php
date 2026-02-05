@@ -71,7 +71,7 @@
             <div class="form-group">
                 <div class="row">
 
-                    <div class="fv-row col-md-3 mt-5">
+                    <div class="fv-row col-md-2 mt-5">
                         <p class="required fw-bold fs-6 mb-2 pl-0">Patient Name</p>
                         <h3 class="patientName"></h3>
                         <input type="hidden" name="patient_i" id="edit_patient_id">
@@ -83,27 +83,19 @@
                         <input type="hidden" name="location_id" id="edit_location_id">
                     </div>
 
-                    <div class="fv-row col-md-3 mt-5">
+                    <div class="fv-row col-md-2 mt-5">
                         <p class="required fw-bold fs-6 mb-2 pl-0">Membership</p>
                         <h3 class="membershipInfo"></h3>
                     </div>
 
-                    <div class="fv-row col-md-3 mt-5">
+                    <div class="fv-row col-md-5 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                         <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
                             <option value="">Select Appointment</option>
                         </select>
                     </div>
 
-                    <div class="fv-row col-md-3 mt-5">
-                        <div class="checkbox-inline mt-12">
-                            <span>Is Exclusive </span> &nbsp;
-                            <label for="edit_is_exclusive" class="checkbox checkbox-rounded">
-                                <input id="edit_is_exclusive" type="checkbox" value="1" checked="checked" name="is_exclusive">
-                                <span></span>
-                            </label>
-                        </div>
-                    </div>
+                    
 
                 </div>
             </div>
@@ -187,25 +179,25 @@
 
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                        <input type="text" id="edit_package_total" class="form-control" value="0" name="package_total_1">
+                        <input type="text" id="edit_package_total_1" readonly class="form-control" name="package_total_1" value="0">
                     </div>
 
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                        <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                        <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id" onchange="checkpaymentMode()">
                             <option value="">Select Payment Mode</option>
                         </select>
                     </div>
 
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                        <input type="number" min="0" id="edit_cash_amount" class="form-control" value="0" name="cash_amount">
+                        <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount" disabled oninput="validity.valid||(value='');">
                     </div>
 
 
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
-                        <input type="text" min="0" name="total_price" value="0" class="form-control" id="edit_total_price">
+                        <input type="text" readonly min="0" name="total_price" value="0" class="form-control" id="edit_grand_total_1">
                     </div>
 
                 </div>

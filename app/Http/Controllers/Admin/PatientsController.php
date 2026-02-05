@@ -8,25 +8,15 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
-use App\Models\Appointments;
-use App\Models\UserVouchers;
-use App\Models\AppointmentStatuses;
-use App\Models\AppointmentTypes;
 use App\Models\Cities;
-use App\Models\Doctors;
 use App\Models\Documents;
 use App\Models\Leads;
 use App\Models\LeadStatuses;
-use App\Models\Locations;
-use App\Models\Membership;
-use App\Models\MembershipType;
 use App\Models\Patients;
-use App\Models\Services;
 use App\Models\User;
 use Auth;
 use Carbon\Carbon;
 use Config;
-use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Validator;
@@ -60,108 +50,8 @@ class PatientsController extends Controller
         return view('admin.patients.index');
     }
 
-    /**
-     * Display a listing of Lead_statuse.
-     *
-     * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
-     */
-    public function datatable(Request $request)
-    {
-
-        $filename = 'patients';
-        $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
-
-        $records = [];
-        $records['data'] = [];
-
-        if (hasFilter($filters, 'delete')) {
-            $ids = explode(',', $filters['delete']);
-            $Patients = Patients::getBulkData($ids);
-            $anyDeleted = false;
-            if ($Patients) {
-                foreach ($Patients as $Patient) {
-                    // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Patients::isChildExists($Patient->id, Auth::User()->account_id)) {
-                        $anyDeleted = true;
-                        $Patient->delete();
-                    }
-                }
-            }
-            if ($anyDeleted) {
-                $records['status'] = true; // pass custom message(useful for getting status of group actions)
-                $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
-            } else {
-                $records['status'] = false; // pass custom message(useful for getting status of group actions)
-                $records['message'] = 'Child records exist, unable to delete patient'; // pass custom message(useful for getting status of group actions)
-            }
-        }
-
-        // Get Total Records
-        $iTotalRecords = Patients::getTotalRecords($request, Auth::User()->account_id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request);
-
-        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-        $Patients = Patients::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, $filename);
-
-        $records = $this->getFiltersData($records);
-
-        if ($Patients) {
-            $records['data'] = $Patients;
-
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
-        }
-
-        $records['permissions'] = [
-            'edit' => Gate::allows('patients_edit'),
-            'delete' => Gate::allows('patients_destroy'),
-            'active' => Gate::allows('patients_active'),
-            'inactive' => Gate::allows('patients_inactive'),
-            'manage' => Gate::allows('patients_manage'),
-            'contact' => Gate::allows('contact'),
-            'add_referrals' => Gate::allows('patients_add_referrals'),
-            'assign_membership' => Gate::allows('patients_assign_membership'),
-            'cancel_membership' => Gate::allows('patients_cancel_membership'),
-        ];
-
-        return response()->json($records);
-    }
-
-    private function getFiltersData($records)
-    {
-
-        $records['filter_values'] = [
-            'gender' => config('constants.gender_array'),
-            'status' => config('constants.status'),
-            'memberships' => MembershipType::where('active', 1)->pluck('id', 'name'),
-        ];
-
-        $filters = Filters::all(Auth::User()->id, 'patients');
-
-        if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
-        }
-        if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
-        }
-
-        $records['active_filters'] = $filters;
-
-        return $records;
-    }
-
+    // NOTE: datatable() method removed - now handled by Api\PatientController::index()
     // NOTE: create() and store() methods moved to Api\PatientController
-
     // NOTE: edit(), update(), destroy(), status() methods moved to Api\PatientController
 
     /**
@@ -177,6 +67,137 @@ class PatientsController extends Controller
         }
 
         return view('admin.patients.card.preview');
+    }
+
+    /**
+     * Patient Card V2 - Section-based navigation
+     * Each section is a separate page load to avoid JS conflicts
+     *
+     * @param  int  $id
+     * @param  string|null  $section
+     * @return \Illuminate\Http\Response
+     */
+    public function cardV2($id, $section = 'profile')
+    {
+        if (!Gate::allows('patients_manage')) {
+            return abort(401);
+        }
+
+        // Valid sections with their required permissions (matching main modules exactly)
+        // consultancy route: middleware('permission:appointments_manage')
+        // treatment route: middleware('permission:treatments_manage')
+        // packages route: middleware('permission:plans_manage')
+        // invoices route: middleware('permission:invoices_manage')
+        // refunds route: middleware('permission:refunds_manage')
+        $sectionPermissions = [
+            'profile' => 'patients_manage',
+            'consultations' => 'appointments_manage',
+            'treatments' => 'treatments_manage',
+            'plans' => 'plans_manage',
+            'invoices' => 'invoices_manage',
+            'refunds' => 'refunds_manage',
+            'documents' => 'patients_manage',
+            'activity' => 'patients_manage',
+        ];
+
+        // Validate section
+        if (!array_key_exists($section, $sectionPermissions)) {
+            $section = 'profile';
+        }
+
+        // Check section-specific permission
+        if (!Gate::allows($sectionPermissions[$section])) {
+            return abort(401, 'Unauthorized to access this section');
+        }
+
+        // Get patient data
+        $patient = \App\Models\Patients::find($id);
+        if (!$patient) {
+            return abort(404, 'Patient not found');
+        }
+
+        // Get patient membership (active or expired)
+        $membership = \App\Models\Membership::where('patient_id', $id)
+            ->orderBy('active', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        // Get permissions for UI elements
+        $permissions = [
+            'edit' => Gate::allows('patients_edit'),
+            'delete' => Gate::allows('patients_delete'),
+            'status' => Gate::allows('appointments_status'),
+            'consultancy' => Gate::allows('appointments_manage'),
+            'treatment' => Gate::allows('treatments_manage'),
+            'invoice' => Gate::allows('consultancy_invoice'),
+            'invoice_display' => Gate::allows('consultancy_invoice_display'),
+            'log' => Gate::allows('appointments_log'),
+            'plans_create' => Gate::allows('plans_create'),
+            'plans_manage' => Gate::allows('plans_manage'),
+            'contact' => Gate::allows('contact'),
+        ];
+
+        return view('admin.patients.card-v2.index', [
+            'patient' => $patient,
+            'patientId' => $id,
+            'section' => $section,
+            'permissions' => $permissions,
+            'membership' => $membership,
+        ]);
+    }
+
+    /**
+     * Get last appointment location for patient
+     * Used to redirect to calendar with correct branch filter
+     *
+     * @param  int  $id
+     * @param  Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getLastAppointmentLocation($id, Request $request)
+    {
+        try {
+            $appointmentType = $request->input('appointment_type'); // 'consultancy' or 'treatment'
+            
+            // Map appointment type to appointment_type_id
+            $appointmentTypeId = null;
+            if ($appointmentType === 'consultancy') {
+                $appointmentTypeId = Config::get('constants.consultancy_id');
+            } elseif ($appointmentType === 'treatment') {
+                $appointmentTypeId = Config::get('constants.treatment_id');
+            }
+            
+            // Get last appointment for this patient and type
+            $lastAppointment = \App\Models\Appointments::where('patient_id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->when($appointmentTypeId, function ($query) use ($appointmentTypeId) {
+                    return $query->where('appointment_type_id', $appointmentTypeId);
+                })
+                ->orderBy('created_at', 'DESC')
+                ->first();
+            
+            if ($lastAppointment && $lastAppointment->location_id) {
+                return response()->json([
+                    'status' => true,
+                    'data' => [
+                        'location_id' => $lastAppointment->location_id,
+                        'location_name' => $lastAppointment->location->name ?? null
+                    ]
+                ]);
+            }
+            
+            // No appointment found
+            return response()->json([
+                'status' => false,
+                'message' => 'No previous appointment found'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // NOTE: getPatient() method moved to Api\PatientController (show/getPatient)
@@ -431,156 +452,7 @@ class PatientsController extends Controller
     }
 
     // NOTE: appointmentsDatatable() method moved to Api\PatientController
-    
-    public function voucherDatatable($id, Request $request)
-    {
-        try {
-            $records = [];
-            $records['data'] = [];
-
-            // Get vouchers assigned to this user with additional details
-            $query = Voucher::whereHas('userVouchers', function ($query) use ($id) {
-                $query->where('user_vouchers.user_id', $id);
-            })
-            ->with([
-                'userVouchers' => function ($query) use ($id) {
-                    $query->where('user_id', $id);
-                },
-                'voucherHasLocations.service' // Load services relationship
-            ]);
-            $iTotalRecords = $query->count();
-
-            [$orderBy, $order] = getSortBy($request);
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $vouchers = $query->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby('created_at', 'desc')
-                ->get();
-
-            // Transform data to include user_voucher relationship data
-            $transformedVouchers = $vouchers->map(function ($voucher) {
-                $userVoucher = $voucher->userVouchers->first();
-                $serviceNames = $voucher->voucherHasLocations
-                ->pluck('service.name') // assuming service has 'name' field
-                ->filter() // remove nulls
-                ->implode(', ');
-                
-                // Calculate consumed and balance amounts
-                // total_amount is the original voucher amount
-                // amount is the remaining balance (if null/0 and total_amount exists, balance = total_amount)
-                $totalAmount = $userVoucher->total_amount ?? 0;
-                
-                // If amount is null or 0 but total_amount exists, it means voucher hasn't been used yet
-                // So balance should equal total_amount
-                $currentBalance = $userVoucher->amount;
-                if ($currentBalance === null || ($currentBalance == 0 && $totalAmount > 0)) {
-                    // Check if any package_vouchers exist for this user/voucher combination
-                    $hasUsage = \App\Models\PackageVouchers::where('user_id', $userVoucher->user_id)
-                        ->where('voucher_id', $userVoucher->voucher_id)
-                        ->exists();
-                    
-                    // If no usage exists, balance = total_amount (voucher not used yet)
-                    if (!$hasUsage) {
-                        $currentBalance = $totalAmount;
-                    } else {
-                        $currentBalance = $currentBalance ?? 0;
-                    }
-                }
-                
-                $consumedAmount = $totalAmount - $currentBalance;
-                
-                return [
-                    'id' => $voucher->id,
-                    'user_voucher_id' => $userVoucher->id,
-                    'name' => $voucher->name,
-                    'service' => $serviceNames,
-                    'total_amount' => number_format($totalAmount, 2),
-                    'consumed_amount' => number_format($consumedAmount, 2),
-                    'balance' => number_format($currentBalance, 2),
-                    'amount' => $userVoucher->amount,
-                    'startDate' => $voucher->start,
-                    'endDate' => $voucher->end,
-                    'status' => $voucher->status,
-                    'created_at' => $voucher->created_at,
-                ];
-            });
-
-            if ($vouchers->isNotEmpty()) {
-                $records['data'] = $transformedVouchers;
-                $records['meta'] = [
-                    'field' => $orderBy,
-                    'page' => $page,
-                    'pages' => $pages,
-                    'perpage' => $iDisplayLength,
-                    'total' => $iTotalRecords,
-                    'sort' => $order,
-                ];
-            }
-
-            $records['permissions'] = [
-                'edit' => Gate::allows('vouchers_edit'),
-                'delete' => Gate::allows('vouchers_destroy'),
-                'active' => Gate::allows('vouchers_active'),
-                'inactive' => Gate::allows('vouchers_inactive'),
-                'create' => Gate::allows('vouchers_create'),
-                'allocate' => Gate::allows('vouchers_allocate'),
-            ];
-
-            return ApiHelper::apiDataTable($records);
-        } catch (Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    private function getFilterData($records, $fileName)
-    {
-
-        $patient = Patients::getData(request('id'));
-        if ($patient) {
-            $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
-
-            $doctors = Doctors::getActiveOnly(ACL::getUserCentres());
-
-            $locations = Locations::getActiveSorted(ACL::getUserCentres());
-
-            $services = Services::get()->pluck('name', 'id');
-
-            $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
-            if ($appointment_statuses) {
-                $appointment_statuses = $appointment_statuses->pluck('name', 'id');
-            }
-
-            $appointment_types = AppointmentTypes::get()->pluck('name', 'id');
-
-            $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
-
-            $filters = Filters::all(Auth::User()->id, $fileName);
-
-            $records['filter_values'] = [
-                'patient' => $patient,
-                'cities' => $cities,
-                'users' => $users,
-                'doctors' => $doctors,
-                'locations' => $locations,
-                'services' => $services,
-                'appointment_statuses' => $appointment_statuses,
-                'appointment_types' => $appointment_types,
-                'consultancy_types' => config('constants.consultancy_type_array'),
-            ];
-
-            if (isset($filters['created_from'])) {
-                $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
-            }
-            if (isset($filters['created_to'])) {
-                $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
-            }
-
-            $records['active_filters'] = $filters;
-        }
-
-        return $records;
-    }
+    // NOTE: voucherDatatable() method removed - now handled by Api\PatientController::vouchersDatatable()
 
     /**
      * Display a form to upload the image.

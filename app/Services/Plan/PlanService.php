@@ -611,6 +611,141 @@ class PlanService
     }
 
     /**
+     * Get optimized data for create plan form with patient-specific data
+     * 
+     * @param array $userCentres
+     * @param int $patientId
+     * @return array
+     */
+    public function getCreateFormDataForPatient(array $userCentres, int $patientId): array
+    {
+        \Log::info('getCreateFormDataForPatient called', ['patient_id' => $patientId]);
+        
+        // Get base form data
+        $data = $this->getCreateFormData($userCentres);
+        
+        // Add marker to verify this method was called
+        $data['patient_specific_data_loaded'] = true;
+
+        // Get patient name
+        $patientUser = DB::table('users')->where('id', $patientId)->first(['name']);
+        $data['patient_name'] = $patientUser ? $patientUser->name : 'Unknown';
+
+        try {
+            // Get last arrived consultation
+            $lastConsultation = DB::table('appointments')
+                ->where('patient_id', $patientId)
+                ->where('appointment_type_id', 1) // Consultation
+                ->whereIn('appointment_status_id', [2, 16]) // Arrived statuses
+                ->orderBy('created_at', 'DESC')
+                ->first(['id', 'location_id']);
+            
+            \Log::info('Last consultation query result', ['consultation' => $lastConsultation]);
+
+            if ($lastConsultation) {
+                $data['last_consultation_location_id'] = $lastConsultation->location_id;
+                $data['last_consultation_id'] = $lastConsultation->id;
+                
+                // Get location name
+                $location = Locations::with('city:id,name')
+                    ->where('id', $lastConsultation->location_id)
+                    ->first(['id', 'name', 'city_id']);
+                
+                if ($location && $location->city) {
+                    $data['last_consultation_location_name'] = $location->city->name . '-' . $location->name;
+                } else if ($location) {
+                    $data['last_consultation_location_name'] = $location->name;
+                } else {
+                    $data['last_consultation_location_name'] = 'Unknown Location';
+                }
+                
+                // Get appointments for this location with service and doctor details
+                $appointments = DB::table('appointments')
+                    ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
+                    ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
+                    ->where('appointments.patient_id', $patientId)
+                    ->where('appointments.location_id', $lastConsultation->location_id)
+                    ->where('appointments.appointment_type_id', 1) // Consultation
+                    ->whereIn('appointments.appointment_status_id', [2, 16]) // Arrived statuses
+                    ->orderBy('appointments.created_at', 'DESC')
+                    ->select([
+                        'appointments.id',
+                        'appointments.created_at',
+                        'appointments.doctor_id',
+                        'services.name as service_name',
+                        'doctors.name as doctor_name'
+                    ])
+                    ->get();
+                
+                $appointmentArray = [];
+                foreach ($appointments as $appointment) {
+                    if ($appointment->created_at) {
+                        $formattedDate = Carbon::parse($appointment->created_at)->format('F d,Y h:i A');
+                        $serviceName = $appointment->service_name ?? 'Consultation';
+                        
+                        // Check if doctor name already has "Dr" prefix
+                        $doctorName = '';
+                        if ($appointment->doctor_name) {
+                            $doctorName = $appointment->doctor_name;
+                            // Only add "Dr" prefix if it doesn't already exist
+                            if (!str_starts_with($doctorName, 'Dr ') && !str_starts_with($doctorName, 'Dr.')) {
+                                $doctorName = 'Dr ' . $doctorName;
+                            }
+                        }
+                        
+                        // Format: "Service Name - Date Time - Dr Name"
+                        $displayName = $serviceName . ' - ' . $formattedDate;
+                        if ($doctorName) {
+                            $displayName .= ' - ' . $doctorName;
+                        }
+                        
+                        $appointmentArray[$appointment->id] = [
+                            'id' => $appointment->id . '.A',
+                            'name' => $displayName,
+                            'doctor_id' => $appointment->doctor_id
+                        ];
+                    }
+                }
+                
+                $data['appointmentArray'] = $appointmentArray;
+                
+                // Get patient membership info
+                $patient = DB::table('users')
+                    ->leftJoin('user_memberships', 'users.id', '=', 'user_memberships.user_id')
+                    ->leftJoin('membership_types', 'user_memberships.membership_type_id', '=', 'membership_types.id')
+                    ->where('users.id', $patientId)
+                    ->select([
+                        'user_memberships.id as membership_id',
+                        'membership_types.name as membership_name',
+                        'user_memberships.end_date',
+                        'user_memberships.active'
+                    ])
+                    ->first();
+                
+                if ($patient && isset($patient->membership_id) && $patient->membership_id) {
+                    $endDate = Carbon::parse($patient->end_date);
+                    $isExpired = $endDate->isPast();
+                    $status = $isExpired ? 'Expired' : ($patient->active == 1 ? 'Active' : 'Inactive');
+                    $data['patient_membership'] = $patient->membership_name . ' (' . $status . ')';
+                } else {
+                    $data['patient_membership'] = 'No Membership';
+                }
+            }
+
+            return $data;
+        } catch (\Exception $e) {
+            \Log::error('Error in getCreateFormDataForPatient: ' . $e->getMessage(), [
+                'patient_id' => $patientId,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Return data with marker even on error
+            $data['patient_data_error'] = $e->getMessage();
+            return $data;
+        }
+    }
+
+    /**
      * Get appointment information for plan creation (optimized)
      * 
      * @param int $patientId
@@ -1323,15 +1458,17 @@ class PlanService
      */
     protected function handleAppointment(array $data): ?int
     {
-        if (!isset($data['appointment_id'])) {
+        if (!isset($data['appointment_id']) || empty($data['appointment_id'])) {
             return null;
         }
 
         $tagAppoint = explode('.', $data['appointment_id']);
         
-        if ($tagAppoint[1] == 'A') {
+        // Check if appointment_id has the expected format (e.g., "369475.A")
+        if (count($tagAppoint) >= 2 && $tagAppoint[1] == 'A') {
             return (int) $tagAppoint[0];
-        } else {
+        } elseif (count($tagAppoint) >= 2) {
+            // Has format like "369475.S" - create new appointment
             $planAppointmentCalculation = new PlanAppointmentCalculation();
             $appointmentId = $planAppointmentCalculation->storeAppointment(
                 $data['patient_id'],
@@ -1342,6 +1479,9 @@ class PlanService
             );
             $planAppointmentCalculation->saveinvoice($appointmentId);
             return $appointmentId;
+        } else {
+            // Plain appointment ID without suffix (e.g., "369475")
+            return (int) $tagAppoint[0];
         }
     }
 
@@ -1379,6 +1519,29 @@ class PlanService
     protected function storePackageBundlesOptimized(Packages $package, array $data): void
     {
         if (empty($data['package_bundles'])) {
+            return;
+        }
+
+        // Check if package_bundles contains simple IDs (from patient plan form) or structured data
+        $firstBundle = reset($data['package_bundles']);
+        $isSimpleIdFormat = !is_array($firstBundle);
+        
+        if ($isSimpleIdFormat) {
+            // Simple ID format - just update existing package_bundles records to link to this package
+            $packageBundleIds = $data['package_bundles'];
+            PackageBundles::whereIn('id', $packageBundleIds)
+                ->where('random_id', $data['random_id'])
+                ->update([
+                    'package_id' => $package->id,
+                    'is_allocate' => 1
+                ]);
+            
+            // Also update package_services
+            PackageService::whereIn('package_bundle_id', $packageBundleIds)
+                ->where('random_id', $data['random_id'])
+                ->update([
+                    'package_id' => $package->id
+                ]);
             return;
         }
 

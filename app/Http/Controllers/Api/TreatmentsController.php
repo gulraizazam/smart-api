@@ -21,15 +21,22 @@ class TreatmentsController extends Controller
 
     /**
      * Get treatment datatable data
+     * Supports optional patient_id parameter for patient-specific filtering
      */
-    public function datatable(Request $request): JsonResponse
+    public function datatable(Request $request, $patientId = null): JsonResponse
     {
         try {
             // if (!Gate::allows('treatments_manage')) {
             //     return ApiHelper::apiResponse(403, 'Unauthorized access', false);
             // }
 
-            $data = $this->treatmentService->getDatatableData($request);
+            // Also check for patient_id in query string (for patient card context)
+            if (!$patientId && $request->has('patient_id')) {
+                $patientId = $request->input('patient_id');
+            }
+
+            // Pass patient_id to service if provided (patient card context)
+            $data = $this->treatmentService->getDatatableData($request, $patientId);
 
             return ApiHelper::apiDataTable($data);
         } catch (TreatmentException $e) {
