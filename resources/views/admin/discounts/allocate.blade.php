@@ -45,10 +45,10 @@
                 <!-- Second row: Type, Amount, Slug and Add button -->
                 <div class="row align-items-end">
                     <div class="fv-row col-md-3">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Type <span class="text text-danger">*</span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
                         <select id="allocation_type" class="form-control form-control-solid select2" name="allocation_type">
                             <option value="">Select Type</option>
-                            <option value="Fixed">Fixed</option>
+                            <option value="Fixed">Amount</option>
                             <option value="Percentage">Percentage</option>
                         </select>
                     </div>
@@ -59,7 +59,7 @@
                     </div>
 
                     <div class="fv-row col-md-3">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Slug <span class="text text-danger" style="visibility:hidden;">*</span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Group <span class="text text-danger" style="visibility:hidden;">*</span></label>
                         <select id="allocation_slug" class="form-control form-control-solid select2" name="allocation_slug">
                             <option value="default">Fixed</option>
                             <option value="custom">Custom</option>
