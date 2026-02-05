@@ -77,7 +77,7 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
     columns.push({
         field: 'doctor_id',
         title: 'Doctor',
-        width: 70,
+        width: 80,
     });
     
     columns.push({
