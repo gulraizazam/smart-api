@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Consultations</h4>
         @can('consultancy_manage')
-            <a href="javascript:void(0);" onclick="openNewConsultation()" class="btn btn-primary btn-sm">
+            <a href="{{ route('admin.appointments.index') }}?patient_id={{ $patientId }}" class="btn btn-primary btn-sm">
                 <i class="la la-plus"></i> New Consultation
             </a>
         @endcan

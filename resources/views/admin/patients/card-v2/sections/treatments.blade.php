@@ -3,7 +3,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Treatments</h4>
         @can('treatments_manage')
-            <a href="javascript:void(0);" onclick="openNewTreatment()" class="btn btn-primary btn-sm">
+            <a href="{{ route('admin.appointments.treatment') }}?patient_id={{ $patientId }}" class="btn btn-primary btn-sm">
                 <i class="la la-plus"></i> New Treatment
             </a>
         @endcan
