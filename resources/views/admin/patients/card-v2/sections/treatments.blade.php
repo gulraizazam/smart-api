@@ -2,9 +2,11 @@
 <div class="section-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Treatments</h4>
-        <a href="javascript:void(0);" onclick="openNewTreatment()" class="btn btn-primary btn-sm">
-            <i class="la la-plus"></i> New Treatment
-        </a>
+        @can('treatments_manage')
+            <a href="javascript:void(0);" onclick="openNewTreatment()" class="btn btn-primary btn-sm">
+                <i class="la la-plus"></i> New Treatment
+            </a>
+        @endcan
     </div>
     
     {{-- Datatable - uses same ID as main module for shared JS --}}
