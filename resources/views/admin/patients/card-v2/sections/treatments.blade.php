@@ -20,7 +20,7 @@
 function openNewTreatmentWithLocation() {
     // Fetch last treatment location for this patient
     $.ajax({
-        url: '{{ route("admin.patients.lastAppointmentLocation", ["id" => $patientId]) }}',
+        url: '{{ route("admin.patients.getLastAppointmentLocation", ["id" => $patientId]) }}',
         type: 'GET',
         data: { appointment_type: 'treatment' },
         success: function(response) {
