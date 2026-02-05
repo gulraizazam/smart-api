@@ -83,11 +83,16 @@ class PatientsController extends Controller
             return abort(401);
         }
 
-        // Valid sections with their required permissions (matching main modules)
+        // Valid sections with their required permissions (matching main modules exactly)
+        // consultancy route: middleware('permission:appointments_manage')
+        // treatment route: middleware('permission:treatments_manage')
+        // packages route: middleware('permission:plans_manage')
+        // invoices route: middleware('permission:invoices_manage')
+        // refunds route: middleware('permission:refunds_manage')
         $sectionPermissions = [
             'profile' => 'patients_manage',
             'consultations' => 'appointments_manage',
-            'treatments' => 'appointments_manage', // Same as main treatments module route
+            'treatments' => 'treatments_manage',
             'plans' => 'plans_manage',
             'invoices' => 'invoices_manage',
             'refunds' => 'refunds_manage',
