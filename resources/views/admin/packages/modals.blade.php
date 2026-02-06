@@ -28,6 +28,13 @@
     </div>
 </div>
 
+{{-- Add Membership Modal --}}
+<div class="modal fade" id="modal_add_membership" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered very-big-modal" id="memberships_add">
+        @include('admin.packages.create-membership', ['isPatientCard' => $isPatientCard ?? false])
+    </div>
+</div>
+
 {{-- Create Bundle Modal --}}
 <div class="modal fade" id="modal_create_bundle" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_add">

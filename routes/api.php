@@ -433,6 +433,11 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('packages/savebundle_service', [PackagesController::class, 'savebundle_service'])->name('packages.savebundle_service');
     Route::post('packages/updatebundle', [PackagesController::class, 'updatebundle'])->name('packages.updatebundle');
 
+    Route::get('packages/getmemberships', [PackagesController::class, 'getmemberships'])->name('packages.getmemberships');
+    Route::get('packages/getmembershipinfo', [PackagesController::class, 'getmembershipinfo'])->name('packages.getmembershipinfo');
+    Route::get('packages/searchmembershipcodes', [PackagesController::class, 'searchMembershipCodes'])->name('packages.searchmembershipcodes');
+    Route::post('packages/savemembership_service', [PackagesController::class, 'savemembership_service'])->name('packages.savemembership_service');
+
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 
     Route::get('packages/getpackage', [PackagesController::class, 'getpackage'])->name('packages.getpackage');
