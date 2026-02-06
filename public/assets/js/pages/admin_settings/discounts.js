@@ -221,12 +221,7 @@ function setAllocateData(response) {
             $("#allocation_slug").prop('disabled', true);
             $("#modal_allocate_discounts_form .spinner-button").prop('disabled', true);
         } else {
-            $("#locations").prop('disabled', false);
-            $("#services").prop('disabled', false);
-            $("#allocation_type").prop('disabled', false);
-            $("#allocation_amount").prop('disabled', false);
-            $("#allocation_slug").prop('disabled', false);
-            $("#modal_allocate_discounts_form .spinner-button").prop('disabled', false);
+            enableAllocationForm();
         }
 
     } catch (error) {
@@ -288,6 +283,15 @@ function setServicesData(response) {
     $("#services").html(service_options);
 }
 
+function enableAllocationForm() {
+    $("#locations").prop('disabled', false);
+    $("#services").prop('disabled', false);
+    $("#allocation_type").prop('disabled', false);
+    $("#allocation_amount").prop('disabled', false);
+    $("#allocation_slug").prop('disabled', false);
+    $("#modal_allocate_discounts_form .spinner-button").prop('disabled', false);
+}
+
 function deleteModel(id) {
 
 
@@ -315,6 +319,7 @@ function deleteModel(id) {
                 success: function (response) {
 
                     $('.HR_' + response.data.id).remove();
+                    enableAllocationForm();
                 }
             });
 
@@ -667,6 +672,7 @@ function deleteModelGroup(ids) {
                         idsArray.forEach(function(id) {
                             $('.HR_' + id).remove();
                         });
+                        enableAllocationForm();
                         toastr.success(response.message);
                     } else {
                         toastr.error(response.message);
