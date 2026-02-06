@@ -61,7 +61,7 @@
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="fw-bold fs-6 mb-2 pl-0">Customer Type (we are not using this in plans for now)</label>
+                            <label class="fw-bold fs-6 mb-2 pl-0">Customer Type </label>
                             <select id="add_customer_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="customer_type_id">
                                 <option value="">All</option>
                             </select>
