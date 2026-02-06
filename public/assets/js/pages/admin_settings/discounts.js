@@ -240,7 +240,7 @@ function setServicesData(response) {
     let services = response.data.services;
     let locaiton_id = response.data.locaiton_id_1;
     let service_child_value = '';
-    let service_options = '<option value="">Select</option>';
+    let service_options = '';
 
     Object.values(services).forEach(function(value, index) {
         if (value.name == 'All Services') {
@@ -256,6 +256,10 @@ function setServicesData(response) {
             
         }
     });
+    // Destroy existing select2 before repopulating to prevent duplicate "Select" tags
+    if ($('#services').hasClass('select2-hidden-accessible')) {
+        $('#services').select2('destroy');
+    }
     $("#services").html(service_options);
 }
 
