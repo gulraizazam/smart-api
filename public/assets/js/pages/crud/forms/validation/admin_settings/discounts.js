@@ -217,6 +217,8 @@ var AllocateValidation = function () {
                 } else {
                     toastr.error(response.message);
                 }
+                // Reset validator so the form can be resubmitted
+                validate.resetForm(false);
             });
         });
     }
