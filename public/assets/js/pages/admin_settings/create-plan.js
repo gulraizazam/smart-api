@@ -1853,7 +1853,12 @@ function getDiscountInfo($this) {
 
 function editDiscountValue($this) {
    
-    hideMessages();
+    // Don't hide percentage message here - it will be managed by validation logic
+    $('#edit_wrongMessage').hide();
+    $('#edit_inputfieldMessage').hide();
+    $('#edit_AlreadyExitMessage').hide();
+    $('#edit_DiscountRange').hide();
+    $('#edit_datanotexist').hide();
 
     if ($("#edit_discount_value_1").val() < 0) {
         $("#edit_discount_value_1").val('');
@@ -1877,49 +1882,17 @@ function editDiscountValue($this) {
                 $("#edit_discount_value_1").val(discount_value);
             }
         }
-      
-        // Custom discount validation with allocation limits
-        if (slug == 'custom' && window.editCustomDiscountLimits) {
-            var limits = window.editCustomDiscountLimits;
-            
-            if (discount_type == 'Percentage') {
-                // Max percentage is the allocation amount (e.g., 40%)
-                if (discount_value > limits.max_percentage) {
-                    $('#edit_percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
-                    inputSpinner(false, 'EditPackage')
-                    return false;
-                } else {
-                    $('#edit_percentageMessage').hide();
-                }
-            } else if (discount_type == 'Fixed') {
-                // Max fixed amount is the percentage of service price
-                if (discount_value > limits.max_fixed_amount) {
-                    $('#edit_percentageMessage').text('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2)).show();
-                    inputSpinner(false, 'EditPackage')
-                    return false;
-                } else {
-                    $('#edit_percentageMessage').hide();
-                }
-            }
-        } else if (discount_type == 'Percentage') {
-            if (discount_value > 100) {
-                $('#edit_percentageMessage').text('Maximum allowed percentage is 100%').show();
-                inputSpinner(false, 'EditPackage')
-                return false;
-            } else {
-                $('#edit_percentageMessage').hide();
-                inputSpinner(false, 'EditPackage')
-            }
-        }
 
         console.log('Edit discount value - service_id:', service_id, 'discount_id:', discount_id, 'discount_type:', discount_type, 'discount_value:', discount_value, 'location_id:', location_id, 'slug:', slug, 'limits:', window.editCustomDiscountLimits);
         
-        // If custom discount but limits not set, fetch them first
-        if (slug == 'custom' && !window.editCustomDiscountLimits && service_id && discount_id) {
+        // If discount value field is enabled (custom discount) but limits not set, fetch them first
+        var isCustomDiscount = slug == 'custom' || !$('#edit_discount_value_1').prop('disabled');
+        
+        if (isCustomDiscount && !window.editCustomDiscountLimits && service_id && discount_id && location_id) {
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.getdiscountinfo_for_plan'),
-                async: false, // Synchronous to get limits before validation
+                async: false,
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
@@ -1927,6 +1900,7 @@ function editDiscountValue($this) {
                     'location_id': location_id
                 },
                 success: function (resposne) {
+                    console.log('Fetched limits for edit:', resposne);
                     if (resposne.status && resposne.data.custom_checked == 1) {
                         window.editCustomDiscountLimits = {
                             allocation_type: resposne.data.allocation_type,
@@ -1935,28 +1909,75 @@ function editDiscountValue($this) {
                             max_percentage: resposne.data.max_percentage,
                             max_fixed_amount: resposne.data.max_fixed_amount
                         };
+                        // Also set the slug
+                        $('#edit_slug_1').val('custom');
                     }
                 }
             });
         }
+      
+        // Custom discount validation with allocation limits
+        var validationFailed = false;
         
-        // Re-validate with limits after fetching
-        if (slug == 'custom' && window.editCustomDiscountLimits) {
+        if (window.editCustomDiscountLimits) {
             var limits = window.editCustomDiscountLimits;
+            var numDiscountValue = parseFloat(discount_value) || 0;
+            var numMaxPercentage = parseFloat(limits.max_percentage) || 0;
+            var numMaxFixed = parseFloat(limits.max_fixed_amount) || 0;
             
-            if (discount_type == 'Percentage' && discount_value > limits.max_percentage) {
-                $('#edit_percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
+            console.log('Validating - numDiscountValue:', numDiscountValue, 'numMaxPercentage:', numMaxPercentage, 'comparison:', numDiscountValue > numMaxPercentage);
+            
+            if (discount_type == 'Percentage' && numDiscountValue > numMaxPercentage) {
+                console.log('PERCENTAGE LIMIT EXCEEDED - showing alert');
+                validationFailed = true;
+                var msgEl = document.getElementById('edit_percentageMessage');
+                if (msgEl) {
+                    msgEl.innerHTML = 'Maximum allowed percentage is ' + limits.max_percentage + '%';
+                    msgEl.className = 'alert alert-danger';
+                    msgEl.style.display = 'block';
+                    msgEl.style.marginBottom = '15px';
+                }
                 $("#EditPackage").attr("disabled", true);
-                inputSpinner(false, 'EditPackage');
-                return false;
-            } else if (discount_type == 'Fixed' && discount_value > limits.max_fixed_amount) {
-                $('#edit_percentageMessage').text('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2)).show();
+                // Use toastr if available, otherwise show native alert
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Maximum allowed percentage is ' + limits.max_percentage + '%');
+                }
+            } else if (discount_type == 'Percentage') {
+                $('#edit_percentageMessage').addClass('display-hide').css('display', 'none');
+            } else if (discount_type == 'Fixed' && numDiscountValue > numMaxFixed) {
+                console.log('FIXED LIMIT EXCEEDED - showing alert');
+                validationFailed = true;
+                var msgEl = document.getElementById('edit_percentageMessage');
+                if (msgEl) {
+                    msgEl.innerHTML = 'Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2);
+                    msgEl.className = 'alert alert-danger';
+                    msgEl.style.display = 'block';
+                    msgEl.style.marginBottom = '15px';
+                }
                 $("#EditPackage").attr("disabled", true);
-                inputSpinner(false, 'EditPackage');
-                return false;
-            } else {
-                $('#edit_percentageMessage').hide();
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2));
+                }
+            } else if (discount_type == 'Fixed') {
+                $('#edit_percentageMessage').addClass('display-hide').css('display', 'none');
             }
+        } else if (discount_type == 'Percentage') {
+            var numDiscountValue = parseFloat(discount_value) || 0;
+            if (numDiscountValue > 100) {
+                validationFailed = true;
+                $('#edit_percentageMessage').html('Maximum allowed percentage is 100%').removeClass('display-hide').css('display', 'block');
+                $("#EditPackage").attr("disabled", true);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Maximum allowed percentage is 100%');
+                }
+            } else {
+                $('#edit_percentageMessage').addClass('display-hide').css('display', 'none');
+            }
+        }
+        
+        // Don't make AJAX call if validation failed
+        if (validationFailed) {
+            return false;
         }
         
         if (service_id && discount_id && discount_type && discount_value > 0) {
