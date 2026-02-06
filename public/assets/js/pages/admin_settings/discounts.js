@@ -160,6 +160,14 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
+        // Check if "All Centres" + "All Services" is already allocated
+        let hasAllCentresAllServices = false;
+        Object.values(discount_locations).forEach(function(value) {
+            if (value.location && value.location.slug === 'all' && value.service && value.service.slug === 'all') {
+                hasAllCentresAllServices = true;
+            }
+        });
+
         // Group services by location_id + type + amount + slug (same allocation settings)
         let grouped = {};
         Object.values(discount_locations).forEach(function(value, index) {
@@ -203,6 +211,23 @@ function setAllocateData(response) {
         $("#allocation_type").val('').trigger('change');
         $("#allocation_amount").val('');
         $("#allocation_slug").val('default').trigger('change');
+
+        // Disable/enable allocation form based on "All Centres" + "All Services" check
+        if (hasAllCentresAllServices) {
+            $("#locations").prop('disabled', true);
+            $("#services").prop('disabled', true);
+            $("#allocation_type").prop('disabled', true);
+            $("#allocation_amount").prop('disabled', true);
+            $("#allocation_slug").prop('disabled', true);
+            $("#modal_allocate_discounts_form .spinner-button").prop('disabled', true);
+        } else {
+            $("#locations").prop('disabled', false);
+            $("#services").prop('disabled', false);
+            $("#allocation_type").prop('disabled', false);
+            $("#allocation_amount").prop('disabled', false);
+            $("#allocation_slug").prop('disabled', false);
+            $("#modal_allocate_discounts_form .spinner-button").prop('disabled', false);
+        }
 
     } catch (error) {
         showException(error);
