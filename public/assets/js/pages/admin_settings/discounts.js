@@ -522,6 +522,10 @@ function setFilters(filter_values, active_filters) {
 
 function createDiscount($route) {
     $("#add_amount_type").val([]).trigger("change");
+    // Clear previous validation state
+    $("#modal_add_discounts_form .is-invalid").removeClass("is-invalid");
+    $("#modal_add_discounts_form .select2-is-invalid").removeClass("select2-is-invalid");
+    $("#modal_add_discounts_form .select2-selection").removeClass("select2-is-invalid");
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
