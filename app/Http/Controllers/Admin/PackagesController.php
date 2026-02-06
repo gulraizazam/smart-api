@@ -60,6 +60,7 @@ use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Exceptions\PlanException;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
+use App\Models\MembershipType;
 use App\Models\RoleHasUsers;
 use App\Models\Leads;
 use App\Services\MetaConversionApiService;
@@ -296,6 +297,62 @@ class PackagesController extends Controller
     }
 
     /**
+     * Save membership service (Add button in membership creation)
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function savemembership_service(Request $request)
+    {
+        try {
+            $membershipTypeId = $request->membership_id;
+            $membershipType = MembershipType::find($membershipTypeId);
+
+            if (!$membershipType) {
+                return ApiHelper::apiResponse($this->error, 'Membership type not found', false);
+            }
+
+            $locationInfo = Locations::find($request->location_id);
+            $taxPercentage = $locationInfo->tax_percentage ?? 0;
+            $netAmount = (float) $request->net_amount;
+
+            // Calculate tax (tax-inclusive by default for memberships)
+            $taxIncludingPrice = $netAmount;
+            $taxExclusivePrice = ceil((100 * $taxIncludingPrice) / ($taxPercentage + 100));
+            $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
+
+            $membershipsData = [
+                'id' => $membershipType->id,
+                'qty' => '1',
+                'membership_type_id' => $membershipType->id,
+                'service_price' => $membershipType->amount,
+                'service_name' => $membershipType->name,
+                'net_amount' => $netAmount,
+                'tax_percenatage' => $taxPercentage,
+                'tax_exclusive_net_amount' => $taxExclusivePrice,
+                'tax_price' => $taxPrice,
+                'tax_including_price' => $taxIncludingPrice,
+            ];
+
+            return ApiHelper::apiResponse($this->success, 'Membership service added successfully', true, [
+                'servicesData' => [
+                    'service_name' => $membershipType->name,
+                    'service_price' => $membershipType->amount,
+                    'discount_name' => '-',
+                    'discount_type' => '-',
+                    'discount_price' => '0',
+                    'sold_by' => $request->sold_by ?? null,
+                    'membershipsData' => $membershipsData,
+                    'packageServicesData' => [],
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Save Membership Service Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to add membership service: ' . $e->getMessage(), false);
+        }
+    }
+
+    /**
      * Get bundles by location for bundle creation
      *
      * @return \Illuminate\Http\JsonResponse
@@ -329,6 +386,103 @@ class PackagesController extends Controller
         } catch (\Exception $e) {
             \Log::error('Get Bundles Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, 'Failed to load bundles.', false);
+        }
+    }
+
+    /**
+     * Get membership types for membership creation
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getmemberships(Request $request)
+    {
+        try {
+            if (!$request->has('location_id') || !$request->location_id) {
+                return ApiHelper::apiResponse($this->error, 'Location ID is required.', false);
+            }
+
+            // Get active membership types
+            $memberships = MembershipType::where('active', 1)
+                ->select('id', 'name', 'amount as price')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            if ($memberships->isNotEmpty()) {
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'memberships' => $memberships,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'No memberships found', false);
+        } catch (\Exception $e) {
+            \Log::error('Get Memberships Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to load memberships.', false);
+        }
+    }
+
+    /**
+     * Get membership type info (price) for membership creation
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getmembershipinfo(Request $request)
+    {
+        try {
+            $membership_id = $request->membership_id;
+
+            if (!$membership_id) {
+                return ApiHelper::apiResponse($this->error, 'Membership ID is required.', false);
+            }
+
+            $membership = MembershipType::where('id', $membership_id)
+                ->where('active', 1)
+                ->first();
+
+            if ($membership) {
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'net_amount' => (float) $membership->amount,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+        } catch (\Exception $e) {
+            \Log::error('Get Membership Info Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to load membership info.', false);
+        }
+    }
+
+    /**
+     * Search membership codes by keyword and check if assigned
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function searchMembershipCodes(Request $request)
+    {
+        try {
+            $search = $request->search;
+
+            if (!$search || strlen($search) < 2) {
+                return response()->json(['status' => true, 'data' => ['codes' => []]]);
+            }
+
+            $codes = Membership::where('code', 'like', '%' . $search . '%')
+                ->where('active', 1)
+                ->select('id', 'code', 'patient_id', 'membership_type_id')
+                ->limit(20)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'code' => $item->code,
+                        'is_assigned' => !empty($item->patient_id),
+                        'patient_id' => $item->patient_id,
+                    ];
+                });
+
+            return response()->json(['status' => true, 'data' => ['codes' => $codes]]);
+        } catch (\Exception $e) {
+            \Log::error('Search Membership Codes Error: ' . $e->getMessage());
+            return response()->json(['status' => false, 'message' => 'Failed to search codes.']);
         }
     }
 

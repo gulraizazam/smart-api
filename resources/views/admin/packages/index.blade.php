@@ -83,6 +83,12 @@
                                     <i class="la la-plus"></i>
                                     Add Bundle
                                 </a>
+                                &nbsp;
+                                <a href="javascript:void(0);" onclick="createMembership('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
+                                    data-target="#modal_add_membership">
+                                    <i class="la la-plus"></i>
+                                    Add Membership
+                                </a>
                             @endif
 
                             <!--end::Button-->
@@ -115,6 +121,7 @@
         <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}?v={{ time() }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-membership.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
 
@@ -129,6 +136,7 @@
                             $("#search_location_id").val(response.data.center).change();
                             $("#add_plan_location_id").val(response.data.center).change();
                             $("#add_bundle_location_id").val(response.data.center).change();
+                            $("#add_membership_location_id").val(response.data.center).change();
                         } else {
                             // If no specific center returned, check if user has only one location
                             autoSelectSingleLocation();
