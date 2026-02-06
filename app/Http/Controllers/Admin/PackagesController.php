@@ -1823,8 +1823,17 @@ class PackagesController extends Controller
             $allocation_slug = $allocation ? $allocation->slug : 'default';
            
             if ($allocation_slug == 'custom') {
+                // Calculate max allowed amount based on allocation type
+                $max_percentage = $effective_type == 'Percentage' ? $effective_amount : 100;
+                $max_fixed_amount = $service_data->price * ($effective_amount / 100);
+                
                 return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
+                    'allocation_type' => $effective_type,
+                    'allocation_amount' => $effective_amount,
+                    'service_price' => $service_data->price,
+                    'max_percentage' => $max_percentage,
+                    'max_fixed_amount' => round($max_fixed_amount, 2),
                 ]);
             } else {
                 // Initialize default values
@@ -1929,7 +1938,7 @@ class PackagesController extends Controller
         if ($effective_type == 'Fixed' && $discount_data->discount_type != 'voucher') {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 if ($request->discount_value > $effective_amount || $request->discount_value > $service_data->price) {
-                    return false;
+                    $status = false;
                 }
                 $discount_type = Config::get('constants.Fixed');
                 $discount_price = $request->discount_value;
@@ -1965,13 +1974,13 @@ class PackagesController extends Controller
                 if ($service_data->price > 0) {
                     $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
                     if ($discount_price_in_percentage > $effective_amount) {
-                        return false;
+                        $status = false;
                     }
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
             } else {
                 if ($request->discount_value > $effective_amount) {
-                    return false;
+                    $status = false;
                 }
                 $discount_price = $request->discount_value;
                 $discount_price_in_percentage = ($request->discount_value / 100) * $service_data->price;

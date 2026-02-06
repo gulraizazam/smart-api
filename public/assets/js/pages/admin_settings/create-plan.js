@@ -1821,14 +1821,23 @@ function getDiscountInfo($this) {
                                 }
                             }
                         } else {
+                            // Custom discount - enable type selection and store allocation limits
                             $("#add_discount_type").prop("disabled", false);
                             $("#add_discount_type").val('').trigger('change');
-
-                            // $("#discount_value_1").prop("disabled", false);
-                            // $("#discount_value_1").val('');
-                            // $("#net_amount_1").prop("disabled", true);
-                            // $("#net_amount_1").val('');
+                            $("#discount_value_1").prop("disabled", false);
+                            $("#discount_value_1").val('');
+                            $("#net_amount_1").val(parseFloat(resposne.data.service_price).toFixed(2));
+                            $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('custom');
+                            
+                            // Store allocation limits for validation
+                            window.customDiscountLimits = {
+                                allocation_type: resposne.data.allocation_type,
+                                allocation_amount: resposne.data.allocation_amount,
+                                service_price: resposne.data.service_price,
+                                max_percentage: resposne.data.max_percentage,
+                                max_fixed_amount: resposne.data.max_fixed_amount
+                            };
                         }
                     } else {
                         $('#wrongMessage').show();
@@ -1852,22 +1861,49 @@ function editDiscountValue($this) {
         var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
         var discount_id = $('#edit_discount_id').val();
         var discount_type = $('#edit_discount_type').val();
-        var discount_value = $this.val();
-        var patient_id = $('#edit_patient_id').val();
-        if (discount_value.includes('.')) {
-            var parts = discount_value.split('.');
+        var discount_value = parseFloat($this.val()) || 0;
+        var patient_id = $('#edit_parent_id').val();
+        var slug = $('#edit_slug_1').val();
+        var location_id = $('#edit_location_id').val();
+        var inputVal = $this.val() ? $this.val().toString() : '';
+        
+        if (inputVal.includes('.')) {
+            var parts = $this.val().split('.');
             if (parts.length > 1 && parts[1].length > 2) {
                 alert("Maximum 2 digits allowed after the decimal point.");
-                discount_value = discount_value.slice(0, -1);
+                discount_value = parseFloat($this.val().slice(0, -1)) || 0;
                 $("#edit_discount_value_1").val(discount_value)
             } else {
                 $("#edit_discount_value_1").val(discount_value);
             }
         }
       
-        if (discount_type == 'Percentage') {
+        // Custom discount validation with allocation limits
+        if (slug == 'custom' && window.editCustomDiscountLimits) {
+            var limits = window.editCustomDiscountLimits;
+            
+            if (discount_type == 'Percentage') {
+                // Max percentage is the allocation amount (e.g., 40%)
+                if (discount_value > limits.max_percentage) {
+                    $('#edit_percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
+                    inputSpinner(false, 'EditPackage')
+                    return false;
+                } else {
+                    $('#edit_percentageMessage').hide();
+                }
+            } else if (discount_type == 'Fixed') {
+                // Max fixed amount is the percentage of service price
+                if (discount_value > limits.max_fixed_amount) {
+                    $('#edit_percentageMessage').text('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2)).show();
+                    inputSpinner(false, 'EditPackage')
+                    return false;
+                } else {
+                    $('#edit_percentageMessage').hide();
+                }
+            }
+        } else if (discount_type == 'Percentage') {
             if (discount_value > 100) {
-                $('#edit_percentageMessage').show();
+                $('#edit_percentageMessage').text('Maximum allowed percentage is 100%').show();
                 inputSpinner(false, 'EditPackage')
                 return false;
             } else {
@@ -1876,7 +1912,54 @@ function editDiscountValue($this) {
             }
         }
 
-        if (service_id && discount_id && discount_type) {
+        console.log('Edit discount value - service_id:', service_id, 'discount_id:', discount_id, 'discount_type:', discount_type, 'discount_value:', discount_value, 'location_id:', location_id, 'slug:', slug, 'limits:', window.editCustomDiscountLimits);
+        
+        // If custom discount but limits not set, fetch them first
+        if (slug == 'custom' && !window.editCustomDiscountLimits && service_id && discount_id) {
+            $.ajax({
+                type: 'get',
+                url: route('admin.packages.getdiscountinfo_for_plan'),
+                async: false, // Synchronous to get limits before validation
+                data: {
+                    'service_id': service_id,
+                    'discount_id': discount_id,
+                    'patient_id': patient_id,
+                    'location_id': location_id
+                },
+                success: function (resposne) {
+                    if (resposne.status && resposne.data.custom_checked == 1) {
+                        window.editCustomDiscountLimits = {
+                            allocation_type: resposne.data.allocation_type,
+                            allocation_amount: resposne.data.allocation_amount,
+                            service_price: resposne.data.service_price,
+                            max_percentage: resposne.data.max_percentage,
+                            max_fixed_amount: resposne.data.max_fixed_amount
+                        };
+                    }
+                }
+            });
+        }
+        
+        // Re-validate with limits after fetching
+        if (slug == 'custom' && window.editCustomDiscountLimits) {
+            var limits = window.editCustomDiscountLimits;
+            
+            if (discount_type == 'Percentage' && discount_value > limits.max_percentage) {
+                $('#edit_percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
+                $("#EditPackage").attr("disabled", true);
+                inputSpinner(false, 'EditPackage');
+                return false;
+            } else if (discount_type == 'Fixed' && discount_value > limits.max_fixed_amount) {
+                $('#edit_percentageMessage').text('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2)).show();
+                $("#EditPackage").attr("disabled", true);
+                inputSpinner(false, 'EditPackage');
+                return false;
+            } else {
+                $('#edit_percentageMessage').hide();
+            }
+        }
+        
+        if (service_id && discount_id && discount_type && discount_value > 0) {
 
             $.ajax({
                 type: 'get',
@@ -1884,28 +1967,33 @@ function editDiscountValue($this) {
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
-                    'discount_value': discount_value ?? 0,
+                    'discount_value': discount_value,
                     'discount_type': discount_type,
                     'patient_id': patient_id,
-                    'location_id': $('#edit_location_id').val()
+                    'location_id': location_id
                 },
                 success: function (resposne) {
+                    console.log('Edit AJAX response:', resposne);
                     if (resposne.status) {
                         $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
-                        $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
+                        $("#edit_net_amount_1").prop("disabled", true);
                         $("#EditPackage").attr("disabled", false);
                         inputSpinner(false)
                     } else {
                         $("#EditPackage").attr("disabled", true);
                         $('#edit_DiscountRange').show();
-
-                        //inputSpinner(false, 'EditPackage')
                     }
                 },
-                error: function () {
+                error: function (xhr) {
+                    console.log('Edit AJAX Error:', xhr);
                     inputSpinner(false, 'EditPackage')
                 }
             });
+        } else if (service_id && discount_id && discount_type && discount_value == 0) {
+            // Reset to service price when discount value is 0
+            if (window.editCustomDiscountLimits) {
+                $("#edit_net_amount_1").val(parseFloat(window.editCustomDiscountLimits.service_price).toFixed(2));
+            }
         }
     }
 
@@ -2182,15 +2270,23 @@ function editDiscountInfo($this) {
                                 }
                             }
                         } else {
+                            // Custom discount - enable type selection and store allocation limits
                             $("#edit_discount_type").prop("disabled", false);
                             $("#edit_discount_type").val('').trigger('change');
-                            // $("#edit_discount_value_1").prop("disabled", false);
-                            // $("#edit_discount_value_1").val('');
-                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                            $("#edit_discount_value_1").prop("disabled", false);
+                            $("#edit_discount_value_1").val('');
+                            $("#edit_net_amount_1").val(parseFloat(resposne.data.service_price).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
-
-                            // $("#edit_net_amount_1").val('');
                             $("#edit_slug_1").val('custom');
+                            
+                            // Store allocation limits for validation
+                            window.editCustomDiscountLimits = {
+                                allocation_type: resposne.data.allocation_type,
+                                allocation_amount: resposne.data.allocation_amount,
+                                service_price: resposne.data.service_price,
+                                max_percentage: resposne.data.max_percentage,
+                                max_fixed_amount: resposne.data.max_fixed_amount
+                            };
                         }
                     } else {
                         $('#wrongMessage').show();
@@ -2208,13 +2304,16 @@ function getDiscountValue($this) {
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
-    var discount_value = $this.val();
+    var discount_value = parseFloat($this.val()) || 0;
     var patient_id = $('#add_patient_id').val();
-    if (discount_value.includes('.')) {
-        var parts = discount_value.split('.');
+    var slug = $('#slug_1').val();
+    var location_id = $('#add_plan_location_id').val();
+    
+    if ($this.val().includes('.')) {
+        var parts = $this.val().split('.');
         if (parts.length > 1 && parts[1].length > 2) {
             alert("Maximum 2 digits allowed after the decimal point.");
-            discount_value = discount_value.slice(0, -1);
+            discount_value = parseFloat($this.val().slice(0, -1)) || 0;
             $("#discount_value_1").val(discount_value)
         } else {
             $("#discount_value_1").val(discount_value);
@@ -2227,26 +2326,44 @@ function getDiscountValue($this) {
         $("#add_discount_value_error").show()
     }
 
-
-    if (discount_type == 'Percentage') {
+    // Custom discount validation with allocation limits
+    if (slug == 'custom' && window.customDiscountLimits) {
+        var limits = window.customDiscountLimits;
+        
+        if (discount_type == 'Percentage') {
+            // Max percentage is the allocation amount (e.g., 40%)
+            if (discount_value > limits.max_percentage) {
+                $('#percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
+                return false;
+            } else {
+                $('#percentageMessage').hide();
+            }
+        } else if (discount_type == 'Fixed') {
+            // Max fixed amount is the percentage of service price
+            if (discount_value > limits.max_fixed_amount) {
+                $('#percentageMessage').text('Maximum allowed amount is ' + limits.max_fixed_amount.toFixed(2)).show();
+                return false;
+            } else {
+                $('#percentageMessage').hide();
+            }
+        }
+    } else if (discount_type == 'Percentage') {
         if (discount_value > 100) {
-            $('#percentageMessage').show();
-
+            $('#percentageMessage').text('Maximum allowed percentage is 100%').show();
             return false;
         } else {
             $('#percentageMessage').hide();
-
         }
     }
 
-    if (service_id && discount_id && discount_type) {
+    if (service_id && discount_id && discount_type && discount_value > 0) {
         $.ajax({
             type: 'get',
             url: route('admin.packages.getdiscountinfocustom_for_plan'),
             data: {
                 'service_id': service_id,
                 'discount_id': discount_id,
-                'discount_value': discount_value ?? 0,
+                'discount_value': discount_value,
                 'discount_type': discount_type,
                 'patient_id': patient_id,
                 'location_id': location_id
@@ -2254,19 +2371,23 @@ function getDiscountValue($this) {
             success: function (resposne) {
                 if (resposne.status) {
                     $("#net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
-                    $("#net_amount_1").prop("disabled", true, 'AddPackage');
+                    $("#net_amount_1").prop("disabled", true);
+                    $("#AddPackage").removeAttr('disabled');
                     inputSpinner(false)
                 } else {
                     $("#AddPackage").attr("disabled", true);
                     $('#DiscountRange').show();
-                    //inputSpinner(false, 'AddPackage')
-
                 }
             },
-            error: function () {
-
+            error: function (xhr) {
+                console.log('Error:', xhr);
             }
         });
+    } else if (service_id && discount_id && discount_type && discount_value == 0) {
+        // Reset to service price when discount value is 0
+        if (window.customDiscountLimits) {
+            $("#net_amount_1").val(parseFloat(window.customDiscountLimits.service_price).toFixed(2));
+        }
     }
 
 }
