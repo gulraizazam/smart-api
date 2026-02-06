@@ -2398,10 +2398,12 @@ function getDiscountValue($this) {
                 } else {
                     $("#AddPackage").attr("disabled", true);
                     $('#DiscountRange').show();
+                    toastr.error(resposne.message);
                 }
             },
             error: function (xhr) {
                 console.log('Error:', xhr);
+                toastr.error('Something went wrong. Please try again.');
             }
         });
     } else if (service_id && discount_id && discount_type && discount_value == 0) {

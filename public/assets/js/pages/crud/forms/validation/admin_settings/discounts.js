@@ -164,61 +164,35 @@ var AllocateValidation = function () {
     var validation = function () {
         let modal_id = 'modal_allocate_discounts_form';
         let form = document.getElementById(modal_id);
-        let validate = FormValidation.formValidation(
-            form,
-            {
-                fields: {
-                    location_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The centre field is required'
-                            }
-                        }
-                    },
-                    'service_id[]': {
-                        validators: {
-                            notEmpty: {
-                                message: 'The service field is required'
-                            }
-                        }
-                    },
-                    allocation_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The type field is required'
-                            }
-                        }
-                    },
-                    allocation_amount: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount field is required'
-                            }
-                        }
-                    },
-                },
 
-                plugins: {
-                    trigger: new FormValidation.plugins.Trigger(),
-                    // Bootstrap Framework Integration
-                    bootstrap: new FormValidation.plugins.Bootstrap(),
-                    // Validate fields when clicking the Submit button
-                    submitButton: new FormValidation.plugins.SubmitButton(),
-                }
+        // Handle submit manually to avoid submitButton plugin blocking re-submission
+        $(form).on('submit', function(e) {
+            e.preventDefault();
+
+            // Manual validation
+            let location_id = $("#locations").val();
+            let service_ids = $("#services").val();
+            let allocation_type = $("#allocation_type").val();
+            let allocation_amount = $("#allocation_amount").val();
+
+            let errors = [];
+            if (!location_id) errors.push('The centre field is required');
+            if (!service_ids || service_ids.length === 0) errors.push('The service field is required');
+            if (!allocation_type) errors.push('The type field is required');
+            if (!allocation_amount) errors.push('The amount field is required');
+
+            if (errors.length > 0) {
+                toastr.error(errors[0]);
+                select2Validation();
+                return;
             }
-        );
-        validate.on('core.form.invalid', function (e) {
-           select2Validation();
-        });
-        validate.on('core.form.valid', function(event) {
+
             submitData(function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                 } else {
                     toastr.error(response.message);
                 }
-                // Reset validator so the form can be resubmitted
-                validate.resetForm(false);
             });
         });
     }
