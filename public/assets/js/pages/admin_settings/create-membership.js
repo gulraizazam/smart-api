@@ -171,7 +171,7 @@ function getServicesMembership(action) {
 
     // Don't call API if no location is selected
     if (!location || location == '') {
-        $("#add_service_id_membership").html('<option value="">Select Service</option>');
+        $("#add_service_id_membership").html('<option value="">Select Membership Type</option>');
         return;
     }
 
@@ -199,7 +199,7 @@ function getServicesMembership(action) {
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
             $('#datanotexistMembership').show();
-            $("#add_service_id_membership").html('<option value="">Select Service</option>');
+            $("#add_service_id_membership").html('<option value="">Select Membership Type</option>');
         }
     });
 }
@@ -209,12 +209,12 @@ function setMemberships(response) {
         // Check if response has data and memberships array
         if (!response.data || !response.data.memberships) {
             $('#datanotexistMembership').show();
-            $("#add_service_id_membership").html('<option value="">Select Service</option>');
+            $("#add_service_id_membership").html('<option value="">Select </option>');
             return;
         }
 
         let memberships = response.data.memberships;
-        let membership_options = '<option value="">Select Service</option>';
+        let membership_options = '<option value="">Select </option>';
 
         Object.values(memberships).forEach(function (membership) {
             membership_options += '<option value="' + membership.id + '">' + membership.name + ' - Rs. ' + membership.price + '</option>';

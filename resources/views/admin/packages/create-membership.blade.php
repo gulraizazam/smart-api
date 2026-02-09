@@ -1,6 +1,6 @@
 <div class="modal-content">
     <div class="modal-header" id="kt_modal_password_header">
-        <h2 class="fw-bolder">Add Membership</h2>
+        <h2 class="fw-bolder">Assign Membership</h2>
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
      data-kt-users-modal-action="close" 
      onclick="resetVoucherAddMembership(event); return false;">
@@ -110,7 +110,7 @@
             <div class="form-group">
                 <div class="row">
                     <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Membership Type <span class="text text-danger">*</span></label>
                         <select id="add_service_id_membership" onchange="getServiceDiscountMembership($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id_membership">
                             <option value="">Select Service</option>
                         </select>

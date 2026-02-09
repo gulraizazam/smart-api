@@ -614,8 +614,15 @@ function resetCustomFilters() {
     // Reset all other filter fields
     $(".filter-field").val('');
     
-    // Reset Select2 dropdowns
-    $('.select2').val('').trigger('change');
+    // Reset only filter-specific Select2 dropdowns (not modal dropdowns)
+    // Target only the filter section select2 elements to avoid triggering modal handlers
+    $('#appoint_search_centre').val('').trigger('change');
+    $('#appoint_search_service').val('').trigger('change');
+    $('#appoint_search_status').val('').trigger('change');
+    $('#appoint_search_type').val('').trigger('change');
+    $('#appoint_search_doctor').val('').trigger('change');
+    $('#appoint_search_city').val('').trigger('change');
+    $('#appoint_search_consultancy_type').val('').trigger('change');
 
     setQueryStringParameter('type');
     setQueryStringParameter('from');
