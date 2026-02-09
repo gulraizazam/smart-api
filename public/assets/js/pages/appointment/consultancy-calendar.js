@@ -456,8 +456,8 @@ var CustomResourceCalendar = function() {
     var isLoading = false; // Flag to prevent multiple simultaneous loads
     var dragDropInitialized = false;
     var isInitializing = false; // Flag to prevent multiple simultaneous inits
-    var calendarStartTime = 9 * 60; // Default 9 AM in minutes
-    var calendarEndTime = 23 * 60; // Default 11 PM in minutes
+    var calendarStartTime = 11 * 60; // 11 AM in minutes (hardcoded)
+    var calendarEndTime = 23 * 60 + 59; // 11:59 PM in minutes (hardcoded)
 
     return {
         init: function(doctorsList, date) {
@@ -627,27 +627,6 @@ var CustomResourceCalendar = function() {
                     }
                 }
 
-                // Extract start_time and end_time from first response to set calendar bounds
-                var apiStartTime = null;
-                var apiEndTime = null;
-                
-                if (doctors.length === 1) {
-                    var resp = arguments[0];
-                    if (resp && resp.start_time) apiStartTime = resp.start_time;
-                    if (resp && resp.end_time) apiEndTime = resp.end_time;
-                } else {
-                    for (var j = 0; j < arguments.length; j++) {
-                        var resp = arguments[j][0];
-                        if (resp && resp.start_time && !apiStartTime) apiStartTime = resp.start_time;
-                        if (resp && resp.end_time && !apiEndTime) apiEndTime = resp.end_time;
-                    }
-                }
-                
-                // Update calendar time bounds if API returned times
-                if (apiStartTime || apiEndTime) {
-                    CustomResourceCalendar.updateTimeBounds(apiStartTime, apiEndTime);
-                }
-                
                 CustomResourceCalendar.renderAppointments(allEvents);
                 CustomResourceCalendar.renderRotas(allRotas);
 
@@ -819,38 +798,6 @@ var CustomResourceCalendar = function() {
             });
 
          
-        },
-
-        updateTimeBounds: function(apiStartTime, apiEndTime) {
-            // Parse API times (format: "HH:mm:ss" or "HH:mm")
-            var needsRerender = false;
-            
-            if (apiStartTime) {
-                var startMoment = moment(apiStartTime, ['HH:mm:ss', 'HH:mm', 'h:mm A']);
-                if (startMoment.isValid()) {
-                    var newStartMinutes = startMoment.hours() * 60 + startMoment.minutes();
-                    if (newStartMinutes !== calendarStartTime) {
-                        calendarStartTime = newStartMinutes;
-                        needsRerender = true;
-                    }
-                }
-            }
-            
-            if (apiEndTime) {
-                var endMoment = moment(apiEndTime, ['HH:mm:ss', 'HH:mm', 'h:mm A']);
-                if (endMoment.isValid()) {
-                    var newEndMinutes = endMoment.hours() * 60 + endMoment.minutes();
-                    if (newEndMinutes !== calendarEndTime) {
-                        calendarEndTime = newEndMinutes;
-                        needsRerender = true;
-                    }
-                }
-            }
-            
-            // Re-render calendar with new time bounds if they changed
-            if (needsRerender) {
-                this.render();
-            }
         },
 
         createAppointment: function(doctorId, time, element) {
