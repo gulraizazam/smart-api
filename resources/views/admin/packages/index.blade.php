@@ -78,13 +78,13 @@
                                     Add Procedures
                                 </a>
                                 &nbsp;
-                                <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
+                                <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-success" data-toggle="modal"
                                     data-target="#modal_add_bundle">
                                     <i class="la la-plus"></i>
                                     Add Bundle
                                 </a>
                                 &nbsp;
-                                <a href="javascript:void(0);" onclick="createMembership('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
+                                <a href="javascript:void(0);" onclick="createMembership('{{ route('admin.packages.create') }}');" class="btn btn-warning" data-toggle="modal"
                                     data-target="#modal_add_membership">
                                     <i class="la la-plus"></i>
                                     Add Membership

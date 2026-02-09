@@ -11,7 +11,7 @@ class PackageBundles extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['random_id', 'qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'package_id', 'active', 'created_at', 'updated_at', 'deleted_at','base_service_id'];
+    protected $fillable = ['random_id', 'qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'membership_type_id', 'membership_code_id', 'is_allocate', 'package_id', 'active', 'created_at', 'updated_at', 'deleted_at','base_service_id'];
 
     protected static $_fillable = ['qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'package_id', 'active'];
 
@@ -87,6 +87,14 @@ class PackageBundles extends Model
     public function packageservice()
     {
         return $this->hasMany('App\Models\PackageService', 'package_bundle_id');
+    }
+
+    /*
+     * Get relation for membership type
+     */
+    public function membershipType()
+    {
+        return $this->belongsTo('App\Models\MembershipType', 'membership_type_id');
     }
 
     /*
