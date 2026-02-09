@@ -2156,7 +2156,7 @@ class PackagesController extends Controller
             ]);
         }
 
-        return ApiHelper::apiResponse($this->error, 'Invalid discount value', false);
+        return ApiHelper::apiResponse($this->success, 'Invalid discount value', false);
     }
 
     /**
