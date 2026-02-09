@@ -763,6 +763,21 @@ class DiscountsController extends Controller
         $service_ids = $request->service_ids;
         $discount_id = $request->discount_id;
 
+        // Check if "All Centres" + "All Services" is already allocated for this discount
+        $allCentresId = Locations::where('slug', 'all')->value('id');
+        $allServicesIdCheck = Services::where('slug', 'all')->value('id');
+        if ($allCentresId && $allServicesIdCheck) {
+            $allCentresAllServicesExists = DiscountHasLocations::where([
+                ['location_id', '=', $allCentresId],
+                ['service_id', '=', $allServicesIdCheck],
+                ['discount_id', '=', $discount_id],
+            ])->exists();
+
+            if ($allCentresAllServicesExists) {
+                return ApiHelper::apiResponse($this->success, 'Cannot add more allocations. "All Centres" with "All Services" is already allocated for this discount.', false);
+            }
+        }
+
         // Filter out children if their parent is also selected
         // Get parent_ids of all selected services
         $selectedParentIds = Services::whereIn('id', $service_ids)->whereNotNull('parent_id')->pluck('parent_id')->toArray();

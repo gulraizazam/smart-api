@@ -456,6 +456,8 @@ var CustomResourceCalendar = function() {
     var isLoading = false; // Flag to prevent multiple simultaneous loads
     var dragDropInitialized = false;
     var isInitializing = false; // Flag to prevent multiple simultaneous inits
+    var calendarStartTime = 11 * 60; // 11 AM in minutes (hardcoded)
+    var calendarEndTime = 23 * 60 + 59; // 11:59 PM in minutes (hardcoded)
 
     return {
         init: function(doctorsList, date) {
@@ -532,9 +534,9 @@ var CustomResourceCalendar = function() {
             html += '  <div class="resource-calendar-body">';
             html += '    <div class="resource-time-slots">';
 
-            // Generate time slots from 11 AM to 8:45 PM (15 min intervals)
-            var startTime = 11 * 60; // 11 AM in minutes (660)
-            var endTime = 20 * 60 + 45; // 8:45 PM in minutes (1245)
+            // Generate time slots dynamically based on API response
+            var startTime = calendarStartTime; // Dynamic start time in minutes
+            var endTime = calendarEndTime; // Dynamic end time in minutes
             var interval = 15; // 15 minutes
 
             for (var time = startTime; time <= endTime; time += interval) {

@@ -160,6 +160,14 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
+        // Check if "All Centres" + "All Services" is already allocated
+        let hasAllCentresAllServices = false;
+        Object.values(discount_locations).forEach(function(value) {
+            if (value.location && value.location.slug === 'all' && value.service && value.service.slug === 'all') {
+                hasAllCentresAllServices = true;
+            }
+        });
+
         // Group services by location_id + type + amount + slug (same allocation settings)
         let grouped = {};
         Object.values(discount_locations).forEach(function(value, index) {
@@ -204,6 +212,18 @@ function setAllocateData(response) {
         $("#allocation_amount").val('');
         $("#allocation_slug").val('default').trigger('change');
 
+        // Disable/enable allocation form based on "All Centres" + "All Services" check
+        if (hasAllCentresAllServices) {
+            $("#locations").prop('disabled', true);
+            $("#services").prop('disabled', true);
+            $("#allocation_type").prop('disabled', true);
+            $("#allocation_amount").prop('disabled', true);
+            $("#allocation_slug").prop('disabled', true);
+            $("#modal_allocate_discounts_form .spinner-button").prop('disabled', true);
+        } else {
+            enableAllocationForm();
+        }
+
     } catch (error) {
         showException(error);
     }
@@ -240,7 +260,7 @@ function setServicesData(response) {
     let services = response.data.services;
     let locaiton_id = response.data.locaiton_id_1;
     let service_child_value = '';
-    let service_options = '<option value="">Select</option>';
+    let service_options = '';
 
     Object.values(services).forEach(function(value, index) {
         if (value.name == 'All Services') {
@@ -256,7 +276,20 @@ function setServicesData(response) {
             
         }
     });
+    // Destroy existing select2 before repopulating to prevent duplicate "Select" tags
+    if ($('#services').hasClass('select2-hidden-accessible')) {
+        $('#services').select2('destroy');
+    }
     $("#services").html(service_options);
+}
+
+function enableAllocationForm() {
+    $("#locations").prop('disabled', false);
+    $("#services").prop('disabled', false);
+    $("#allocation_type").prop('disabled', false);
+    $("#allocation_amount").prop('disabled', false);
+    $("#allocation_slug").prop('disabled', false);
+    $("#modal_allocate_discounts_form .spinner-button").prop('disabled', false);
 }
 
 function deleteModel(id) {
@@ -286,6 +319,7 @@ function deleteModel(id) {
                 success: function (response) {
 
                     $('.HR_' + response.data.id).remove();
+                    enableAllocationForm();
                 }
             });
 
@@ -518,6 +552,10 @@ function setFilters(filter_values, active_filters) {
 
 function createDiscount($route) {
     $("#add_amount_type").val([]).trigger("change");
+    // Clear previous validation state
+    $("#modal_add_discounts_form .is-invalid").removeClass("is-invalid");
+    $("#modal_add_discounts_form .select2-is-invalid").removeClass("select2-is-invalid");
+    $("#modal_add_discounts_form .select2-selection").removeClass("select2-is-invalid");
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -634,6 +672,7 @@ function deleteModelGroup(ids) {
                         idsArray.forEach(function(id) {
                             $('.HR_' + id).remove();
                         });
+                        enableAllocationForm();
                         toastr.success(response.message);
                     } else {
                         toastr.error(response.message);
