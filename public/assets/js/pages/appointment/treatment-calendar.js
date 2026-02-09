@@ -866,9 +866,9 @@ var TreatmentResourceCalendar = function() {
             html += '  <div class="resource-calendar-body">';
             html += '    <div class="resource-time-slots">';
 
-            // Generate time slots from 11 AM to 8:45 PM (15 min intervals)
-            var startTime = 11 * 60; // 11 AM in minutes
-            var endTime = 20 * 60 + 45; // 8:45 PM in minutes
+            // Generate time slots from 11 AM to 11:59 PM (15 min intervals)
+            var startTime = 11 * 60; // 11 AM in minutes (hardcoded)
+            var endTime = 23 * 60 + 59; // 11:59 PM in minutes (hardcoded)
             var interval = 15; // 15 minutes
 
             for (var time = startTime; time <= endTime; time += interval) {
