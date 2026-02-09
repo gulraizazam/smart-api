@@ -327,7 +327,7 @@
         @if($packagebundles)
             @foreach($packagebundles as $packagebundles)
                 <tr>
-                    <td><?php echo $packagebundles->bundle->name; ?></td>
+                    <td><?php echo $packagebundles->bundle ? $packagebundles->bundle->name : ($packagebundles->membershipType ? $packagebundles->membershipType->name : '-'); ?></td>
                     <td>{{number_format($packagebundles->service_price)}}</td>
                     <td>
                         @if($packagebundles->discount_id == null)

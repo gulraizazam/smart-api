@@ -23,6 +23,7 @@ use App\Models\Activity;
 use App\Models\Leads;
 use App\Models\Patients;
 use App\Models\Membership;
+use App\Models\MembershipType;
 use App\Models\UserHasLocations;
 use App\Models\ServiceHasLocations;
 use App\Models\DoctorHasLocations;
@@ -125,10 +126,17 @@ class PlanService
         $query = Packages::query()
             ->select([
                 'packages.*',
-                // Calculate total as sum of tax_including_price of all services
-                DB::raw('(SELECT COALESCE(SUM(tax_including_price), 0) 
-                         FROM package_services 
-                         WHERE package_services.package_id = packages.id) as total_price'),
+                // Calculate total: for membership plans use package_bundles, for others use package_services
+                DB::raw('(CASE 
+                         WHEN packages.plan_type = "membership" THEN 
+                             (SELECT COALESCE(SUM(tax_including_price), 0) 
+                              FROM package_bundles 
+                              WHERE package_bundles.package_id = packages.id)
+                         ELSE 
+                             (SELECT COALESCE(SUM(tax_including_price), 0) 
+                              FROM package_services 
+                              WHERE package_services.package_id = packages.id)
+                         END) as total_price'),
                 // Aggregate cash_receive in single query
                 DB::raw('(SELECT COALESCE(SUM(cash_amount), 0) 
                          FROM package_advances 
@@ -808,7 +816,8 @@ class PlanService
                 ];
             }
 
-            // Get membership information with eager loading
+            // Get membership information - prioritize active (non-expired) memberships first
+            // Order by: active non-expired first, then by end_date descending
             $membership = DB::table('memberships')
                 ->join('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
                 ->where('memberships.patient_id', $patientId)
@@ -817,6 +826,8 @@ class PlanService
                     'memberships.active',
                     'membership_types.name as type_name'
                 )
+                ->orderByRaw("CASE WHEN memberships.end_date >= ? AND memberships.active = 1 THEN 0 ELSE 1 END", [now()->format('Y-m-d')])
+                ->orderBy('memberships.end_date', 'desc')
                 ->first();
 
             $membershipTypeName = 'No membership';
@@ -1423,8 +1434,13 @@ class PlanService
             // Create package record
             $package = $this->createPackageRecord($data, $appointmentId);
 
-            // Store package bundles and services (optimized with bulk operations)
-            $this->storePackageBundlesOptimized($package, $data);
+            // Store package bundles/memberships and services
+            if (($data['plan_type'] ?? 'plan') === 'membership') {
+                $this->storeMembershipData($package, $data);
+            } else {
+                // Store package bundles and services (optimized with bulk operations)
+                $this->storePackageBundlesOptimized($package, $data);
+            }
 
             // Generate and update plan_name from first two services
             $this->updatePlanName($package);
@@ -1511,6 +1527,89 @@ class PlanService
         $package->update(['name' => sprintf('%05d', $package->id)]);
 
         return $package;
+    }
+
+    /**
+     * Store membership data in package_bundles and package_services
+     * Also updates the memberships table with patient and date info
+     */
+    protected function storeMembershipData(Packages $package, array $data): void
+    {
+        if (empty($data['package_memberships'])) {
+            return;
+        }
+
+        $locationInfo = Locations::find($data['location_id']);
+
+        foreach ($data['package_memberships'] as $membership) {
+            $packageBundleData = [
+                'random_id' => $package->random_id,
+                'is_allocate' => 1,
+                'qty' => 1,
+                'discount_name' => $membership['DiscountName'] ?? null,
+                'discount_type' => $membership['Type'] ?? null,
+                'discount_price' => $membership['DiscountValue'] ?? 0,
+                'service_price' => str_replace(',', '', $membership['RegularPrice']),
+                'net_amount' => str_replace(',', '', $membership['RegularPrice']),
+                'discount_id' => null,
+                'bundle_id' => null,
+                'membership_type_id' => $membership['membershipId'] ?? null,
+                'membership_code_id' => $membership['membershipCodeId'] ?? null,
+                'package_id' => $package->id,
+                'tax_exclusive_net_amount' => str_replace(',', '', $membership['Amount']),
+                'tax_percenatage' => $locationInfo->tax_percentage ?? 0,
+                'tax_price' => $membership['Tax'] ?? 0,
+                'tax_including_price' => str_replace(',', '', $membership['Total']),
+                'location_id' => $data['location_id'],
+            ];
+
+            $packageBundle = PackageBundles::create($packageBundleData);
+
+            // Create package_services record to store sold_by, is_consumed, consumed_at
+            // For memberships, is_consumed=1 and consumed_at matches the payment out entry timestamp
+            $soldBy = $membership['sold_by'] ?? $data['sold_by'] ?? null;
+            $consumedAt = Filters::getCurrentTimeStamp();
+            $packageServiceData = [
+                'random_id' => $package->random_id,
+                'package_id' => $package->id,
+                'package_bundle_id' => $packageBundle->id,
+                'service_id' => null, // Memberships don't have a service_id
+                'is_consumed' => 1,
+                'consumed_at' => $consumedAt,
+                'price' => str_replace(',', '', $membership['RegularPrice']),
+                'orignal_price' => str_replace(',', '', $membership['RegularPrice']),
+                'actual_price' => str_replace(',', '', $membership['RegularPrice']),
+                'is_exclusive' => 0,
+                'tax_exclusive_price' => str_replace(',', '', $membership['Amount']),
+                'tax_percenatage' => $locationInfo->tax_percentage ?? 0,
+                'tax_price' => $membership['Tax'] ?? 0,
+                'tax_including_price' => str_replace(',', '', $membership['Total']),
+                'sold_by' => $soldBy,
+            ];
+            PackageService::create($packageServiceData);
+
+            // Update the memberships table with patient and date information
+            $membershipCodeId = $membership['membershipCodeId'] ?? null;
+            if ($membershipCodeId) {
+                $membershipRecord = Membership::find($membershipCodeId);
+                if ($membershipRecord) {
+                    // Get membership type to determine period (in days)
+                    $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
+                    $durationDays = $membershipType->period ?? 365; // Default 365 days (1 year) if not set
+                    
+                    $startDate = now()->toDateString();
+                    $endDate = now()->addDays($durationDays)->toDateString();
+                    
+                    $membershipRecord->update([
+                        'patient_id' => $data['patient_id'],
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'assigned_at' => now()->toDateString(),
+                        'updated_by' => Auth::id(),
+                    ]);
+                }
+            }
+        }
     }
 
     /**
@@ -1717,6 +1816,23 @@ class PlanService
      */
     protected function updatePlanName(Packages $package): void
     {
+        if ($package->plan_type === 'membership') {
+            // For membership plans, get name from membership_types table
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (!empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+                $package->plan_name = $planName;
+            }
+            return;
+        }
+
         // Get total count of bundles for this package
         $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
         
@@ -1766,6 +1882,57 @@ class PlanService
         ];
 
         $packageAdvance = PackageAdvances::createRecord($packageAdvanceData, $package);
+
+        // For membership plans, create two 'out' entries:
+        // 1. Tax exclusive amount (is_setteled=1)
+        // 2. Tax amount (is_tax=1)
+        // Note: Using PackageAdvances::create() directly since createRecord() hardcodes cash_flow='in'
+        if (($data['plan_type'] ?? '') === 'membership') {
+            // Calculate tax exclusive and tax amounts from package_bundles
+            $packageBundles = PackageBundles::where('package_id', $package->id)->get();
+            $taxExclusiveTotal = $packageBundles->sum('tax_exclusive_net_amount');
+            $taxTotal = $packageBundles->sum('tax_price');
+
+            // Get 'Settle Amount' payment mode ID from database
+            $settlePaymentMode = PaymentModes::where('name', 'Settle Amount')->first();
+            $settlePaymentModeId = $settlePaymentMode ? $settlePaymentMode->id : null;
+
+            // First 'out' entry: Tax exclusive amount
+            PackageAdvances::create([
+                'cash_flow' => 'out',
+                'cash_amount' => $taxExclusiveTotal,
+                'account_id' => Auth::user()->account_id,
+                'patient_id' => $data['patient_id'],
+                'payment_mode_id' => $settlePaymentModeId,
+                'created_by' => Auth::user()->id,
+                'updated_by' => Auth::user()->id,
+                'package_id' => $package->id,
+                'location_id' => $data['location_id'],
+                'is_setteled' => 0,
+                'is_tax' => 0,
+                'created_at' => Filters::getCurrentTimeStamp(),
+                'updated_at' => Filters::getCurrentTimeStamp(),
+            ]);
+
+            // Second 'out' entry: Tax amount
+            if ($taxTotal > 0) {
+                PackageAdvances::create([
+                    'cash_flow' => 'out',
+                    'cash_amount' => $taxTotal,
+                    'account_id' => Auth::user()->account_id,
+                    'patient_id' => $data['patient_id'],
+                    'payment_mode_id' => $settlePaymentModeId,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                    'package_id' => $package->id,
+                    'location_id' => $data['location_id'],
+                    'is_setteled' => 0,
+                    'is_tax' => 1,
+                    'created_at' => Filters::getCurrentTimeStamp(),
+                    'updated_at' => Filters::getCurrentTimeStamp(),
+                ]);
+            }
+        }
 
         // Create plan invoice
         $invoiceNumber = PlanInvoice::generateInvoiceNumber($data['patient_id'], $package->id);
@@ -2019,7 +2186,8 @@ class PlanService
             $totalPrice = PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
 
             // Fetch package bundles with relationships (eager loading)
-            $packageBundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])
+            // Include membershipType for membership plans
+            $packageBundles = PackageBundles::with(['bundle', 'membershipType', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
@@ -2299,7 +2467,8 @@ class PlanService
             }
 
             // Fetch package bundles with relationships (eager loading)
-            $packageBundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])
+            // Include membershipType for membership plans
+            $packageBundles = PackageBundles::with(['bundle', 'membershipType', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
@@ -2309,8 +2478,15 @@ class PlanService
                 ->get();
 
             // Calculate services price
-            $packageServicesPrice = PackageService::where('package_id', $packageId)
-                ->sum('price');
+            // For membership plans, use PackageBundles sum (no child services)
+            // For other plans, use PackageService sum
+            if ($package->plan_type === 'membership') {
+                $packageServicesPrice = PackageBundles::where('package_id', $packageId)
+                    ->sum('tax_including_price');
+            } else {
+                $packageServicesPrice = PackageService::where('package_id', $packageId)
+                    ->sum('price');
+            }
 
             // Fetch package advances with payment mode
             $packageAdvances = PackageAdvances::with('paymentmode')

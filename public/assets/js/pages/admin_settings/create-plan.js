@@ -416,7 +416,12 @@ function actions(data) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
             if (permissions.edit) {
                 // Check plan_type to determine which edit function to call
-                let editFunction = data.plan_type === 'bundle' ? 'editBundle' : 'editRow';
+                let editFunction = 'editRow';
+                if (data.plan_type === 'bundle') {
+                    editFunction = 'editBundle';
+                } else if (data.plan_type === 'membership') {
+                    editFunction = 'editMembership';
+                }
                 actions += '<a href="javascript:void(0);" onclick="' + editFunction + '(`' + edit_url + '`, ' + id + ');" class="btn btn-icon btn-primary btn-sm">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                     </a>';
@@ -673,7 +678,14 @@ function setEditData(response) {
                 // }
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                // Handle both bundle and membership types
+                let bundleName = '-';
+                if (packagebundle.bundle && packagebundle.bundle.name) {
+                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
+                    bundleName = packagebundle.membership_type.name;
+                }
+                service_options += '<td>' + bundleName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
                 if (packagebundle.discount_id == null) {
@@ -1049,7 +1061,14 @@ function displayData(response) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                // Handle both bundle and membership types
+                let itemName = '-';
+                if (packagebundle.bundle && packagebundle.bundle.name) {
+                    itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
+                    itemName = packagebundle.membership_type.name;
+                }
+                service_options += '<td>' + itemName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
                 if (packagebundle.discount_id == null) {

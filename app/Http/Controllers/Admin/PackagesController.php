@@ -2491,7 +2491,8 @@ class PackagesController extends Controller
 
         $account_info = Accounts::find($package->account_id);
 
-        $packagebundles = PackageBundles::where('package_id', '=', $package->id)->get();
+        // Include membershipType relationship for membership plans
+        $packagebundles = PackageBundles::with(['bundle', 'membershipType'])->where('package_id', '=', $package->id)->get();
 
         $packageservices = PackageService::where('package_id', '=', $package->id)->get();
 
@@ -2512,7 +2513,13 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
-        $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+        
+        // For membership plans, use PackageBundles sum; for others use PackageService sum
+        if ($package->plan_type === 'membership') {
+            $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
+        } else {
+            $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+        }
         $cash_amount = $cash_amount_in - $cash_amount_out;
         /*We discuss it in future what happen next*/
         //$grand_total = number_format($package->total_price - $cash_amount_in);

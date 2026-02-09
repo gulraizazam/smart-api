@@ -526,14 +526,10 @@ $(document).ready(function() {
 
     // Handle payment mode change
     $('#payment_mode_id_membership').on('change', function () {
-        if ($(this).val()) {
-            $('#cash_amount_membership').prop('disabled', false);
-            $('#cash_amount_membership').val('');
-            $("#grand_total_membership").val('');
-        } else {
-            $('#cash_amount_membership').val('');
-            $('#cash_amount_membership').prop('disabled', true);
-            // Set grand_total to package_total when no payment
+        // Cash amount is readonly and auto-filled from total
+        // Just update grand_total based on payment mode selection
+        if (!$(this).val()) {
+            // No payment mode selected - set grand_total to package_total
             var packageTotal = $('#package_total_membership').val() || '0';
             $("#grand_total_membership").val(packageTotal);
         }
@@ -617,6 +613,7 @@ $(document).ready(function() {
         // Collect membership data from table
         $('#membership_services').find('tr:not(.inner_records_hr)').each(function () {
             var $row = $(this);
+            var totalTd = $row.find('td:nth-child(5)');
             var membershipData = {
                 serviceName: $row.find('td:nth-child(1) a').text().trim(),
                 RegularPrice: $row.find('td:nth-child(2)').text().trim(),
@@ -625,9 +622,10 @@ $(document).ready(function() {
                 DiscountValue: '0.00',
                 Amount: $row.find('td:nth-child(3)').text().trim(),
                 Tax: $row.find('td:nth-child(4)').text().trim(),
-                Total: $row.find('td:nth-child(5)').text().trim(),
-                membershipId: $row.find('td:nth-child(6) input.original_membership_id').val(),
-                sold_by: $row.find('td:nth-child(6) input.package_memberships_sold_by_membership').val()
+                Total: totalTd.clone().children().remove().end().text().trim(),
+                membershipId: totalTd.find('input.original_membership_id').val(),
+                membershipCodeId: totalTd.find('input.membership_code_id_hidden').val(),
+                sold_by: totalTd.find('input.package_memberships_sold_by_membership').val()
             };
             
             console.log('Membership data collected:', membershipData);
@@ -815,6 +813,7 @@ $(document).ready(function() {
                             "<td>" + membershipsData.tax_price + "</td>" +
                             "<td>" + grandTotal +
                             "<input type='hidden' class='original_membership_id' value='" + membershipsData.id + "' />" +
+                            "<input type='hidden' class='membership_code_id_hidden' value='" + (membership_code_id || '') + "' />" +
                             "<input type='hidden' class='package_memberships_sold_by_membership' name='sold_by[]' value='" + servicesData.sold_by + "' />" +
                             "</td>" +
                             "</tr>"
@@ -978,4 +977,226 @@ function loadPatientInfoForMembership(patientId) {
             console.log('Failed to load patient info for membership');
         }
     });
+}
+
+// Edit Membership Modal Functions
+function editMembership(url, id) {
+    $("#modal_edit_membership").modal("show");
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            setEditMembershipData(response);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+function setEditMembershipData(response) {
+    try {
+        let data = response.data;
+        let package = data.package;
+        let packagebundles = data.packagebundles;
+        let packageadvances = data.packageadvances;
+        let packageservices = data.packageservices || [];
+        let membership = data.membership;
+        let paymentmodes = data.paymentmodes;
+        let appointmentArray = data.appointmentArray || [];
+        
+        // Set package ID
+        $('#edit_package_id_membership').val(package.id);
+        $('#edit_random_id_membership').val(package.random_id);
+        
+        // Set patient info
+        $('#edit_patient_name_membership').text(package.user ? package.user.name : '-');
+        $('#edit_patient_id_membership').val(package.patient_id);
+        
+        // Set membership info - membership is returned as a formatted string from API
+        if (membership && typeof membership === 'string') {
+            $('#edit_patient_membership_membership').text(membership);
+        } else if (membership && membership.code) {
+            // Fallback for object format
+            let membershipText = membership.code;
+            if (membership.end_date) {
+                let endDate = new Date(membership.end_date);
+                let now = new Date();
+                let status = endDate < now ? 'Expired' : 'Active';
+                membershipText += ' - ' + status + ' (Exp: ' + formatDate(membership.end_date, 'MMM DD, yyyy') + ')';
+            }
+            $('#edit_patient_membership_membership').text(membershipText);
+        } else {
+            $('#edit_patient_membership_membership').text('-');
+        }
+        
+        // Set location info
+        let locationName = package.location ? package.location.name : '-';
+        $('#edit_location_name_membership').text(locationName);
+        $('#edit_location_id_membership').val(package.location_id);
+        
+        // Populate appointment dropdown - appointmentArray is an object, not an array
+        let appointmentOptions = '<option value="">Select Appointment</option>';
+        if (appointmentArray && typeof appointmentArray === 'object') {
+            Object.values(appointmentArray).forEach(function(apt) {
+                // apt.id is like "369475.A", package.appointment_id is like 369475
+                // Compare by extracting the numeric part
+                let aptIdNumeric = apt.id ? apt.id.toString().split('.')[0] : '';
+                let selected = aptIdNumeric == package.appointment_id ? 'selected' : '';
+                appointmentOptions += '<option value="' + apt.id + '" ' + selected + '>' + apt.name + '</option>';
+            });
+        }
+        $('#edit_membership_appointment_id').html(appointmentOptions);
+        
+        // Populate payment modes dropdown
+        let paymentOptions = '<option value="">Select Payment Mode</option>';
+        if (paymentmodes) {
+            Object.entries(paymentmodes).forEach(function([id, name]) {
+                paymentOptions += '<option value="' + id + '">' + name + '</option>';
+            });
+        }
+        $('#edit_membership_payment_mode_id').html(paymentOptions);
+        
+        // Populate membership items table with Sold By and Action columns
+        let serviceOptions = '';
+        let totalAmount = 0;
+        
+        if (packagebundles && packagebundles.length) {
+            packagebundles.forEach(function(bundle) {
+                let serviceName = '-';
+                if (bundle.membership_type && bundle.membership_type.name) {
+                    serviceName = bundle.membership_type.name;
+                } else if (bundle.bundle && bundle.bundle.name) {
+                    serviceName = bundle.bundle.name;
+                }
+                
+                // Get sold by names from package services
+                let soldByNames = [];
+                if (packageservices && packageservices.length) {
+                    packageservices.forEach(function(ps) {
+                        if (ps.package_bundle_id == bundle.id && ps.sold_by && ps.sold_by.name) {
+                            if (!soldByNames.includes(ps.sold_by.name)) {
+                                soldByNames.push(ps.sold_by.name);
+                            }
+                        }
+                    });
+                }
+                let soldByText = soldByNames.length > 0 ? soldByNames.join(', ') : '-';
+                
+                serviceOptions += '<tr class="HR_' + bundle.id + '">';
+                serviceOptions += '<td><span style="color: #3699FF;">' + serviceName + '</span></td>';
+                serviceOptions += '<td>' + number_format(bundle.service_price, 2) + '</td>';
+                serviceOptions += '<td>' + number_format(bundle.tax_exclusive_net_amount, 2) + '</td>';
+                serviceOptions += '<td>' + number_format(bundle.tax_price, 2) + '</td>';
+                serviceOptions += '<td>' + number_format(bundle.tax_including_price, 2) + '</td>';
+                serviceOptions += '<td>' + soldByText + '</td>';
+                serviceOptions += '</tr>';
+                
+                totalAmount += parseFloat(bundle.tax_including_price) || 0;
+            });
+        } else {
+            serviceOptions = '<tr><td colspan="6" class="text-center">No record found</td></tr>';
+        }
+        $('#edit_membership_services').html(serviceOptions);
+        
+        // Set totals
+        $('#edit_package_total_membership').val(number_format(totalAmount, 2));
+        
+        // Calculate cash received and balance
+        let cashReceived = 0;
+        let settledAmount = 0;
+        
+        if (packageadvances && packageadvances.length) {
+            packageadvances.forEach(function(advance) {
+                if (advance.cash_flow === 'in' && advance.is_cancel == 0) {
+                    cashReceived += parseFloat(advance.cash_amount) || 0;
+                }
+                if (advance.cash_flow === 'out') {
+                    settledAmount += parseFloat(advance.cash_amount) || 0;
+                }
+            });
+        }
+        
+        let balance = totalAmount - cashReceived;
+        $('#edit_membership_grand_total').val(number_format(balance, 2));
+        
+        // Populate payment history with Edit/Delete actions
+        let historyOptions = '';
+        if (packageadvances && packageadvances.length) {
+            packageadvances.forEach(function(advance) {
+                if (advance.cash_amount != 0) {
+                    historyOptions += '<tr id="history_cash_row_' + advance.id + '">';
+                    
+                    // Payment mode
+                    if (advance.is_tax == 1 && advance.cash_flow === 'out') {
+                        historyOptions += '<td>Tax</td>';
+                    } else {
+                        historyOptions += '<td>' + (advance.paymentmode ? advance.paymentmode.name : '-') + '</td>';
+                    }
+                    
+                    // Cash flow
+                    if (advance.is_refund == 1) {
+                        historyOptions += '<td>out / refund</td>';
+                    } else if (advance.is_setteled == 1) {
+                        historyOptions += '<td>out / settled</td>';
+                    } else {
+                        historyOptions += '<td>' + advance.cash_flow + '</td>';
+                    }
+                    
+                    historyOptions += '<td>' + number_format(advance.cash_amount, 2) + '</td>';
+                    historyOptions += '<td>' + formatDate(advance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
+                    
+                    // Action column - only for 'in' cash flow
+                    historyOptions += '<td>';
+                    if (advance.cash_flow === 'in') {
+                        if (typeof permissions !== 'undefined' && permissions.plans_cash_edit) {
+                            historyOptions += '<a onclick="planeEdit(' + advance.id + ', ' + package.id + ');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
+                        }
+                        if (typeof permissions !== 'undefined' && permissions.plans_cash_delete) {
+                            historyOptions += '<button onclick="deletePlaneHistory(`' + route('admin.packages.delete_cash') + '`, ' + advance.id + ');" class="btn btn-sm btn-danger">Delete</button>';
+                        }
+                    }
+                    historyOptions += '</td>';
+                    
+                    historyOptions += '</tr>';
+                }
+            });
+        }
+        
+        if (!historyOptions) {
+            historyOptions = '<tr><td colspan="5" class="text-center">No record found</td></tr>';
+        }
+        $('#edit_membership_payment_history').html(historyOptions);
+        
+        // Handle payment mode change to enable/disable cash amount
+        $('#edit_membership_payment_mode_id').off('change').on('change', function() {
+            if ($(this).val()) {
+                $('#edit_membership_cash_amount').prop('disabled', false);
+            } else {
+                $('#edit_membership_cash_amount').val(0);
+                $('#edit_membership_cash_amount').prop('disabled', true);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error setting edit membership data:', error);
+    }
+}
+
+function closeEditMembershipModal() {
+    $("#modal_edit_membership").modal("hide");
+}
+
+// Helper function for number formatting
+function number_format(number, decimals) {
+    if (typeof number_format_helper === 'function') {
+        return number_format_helper(number, decimals);
+    }
+    if (isNaN(number)) return '0.00';
+    return parseFloat(number).toFixed(decimals || 2);
 }

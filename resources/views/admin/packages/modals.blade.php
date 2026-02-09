@@ -35,6 +35,13 @@
     </div>
 </div>
 
+{{-- Edit Membership Modal --}}
+<div class="modal fade" id="modal_edit_membership" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered very-big-modal" id="memberships_edit">
+        @include('admin.packages.edit-membership')
+    </div>
+</div>
+
 {{-- Create Bundle Modal --}}
 <div class="modal fade" id="modal_create_bundle" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_add">

@@ -178,7 +178,7 @@
                     </div>
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                        <input type="number" id="cash_amount_membership" class="form-control" placeholder="Enter Amount" name="cash_amount_membership" disabled min="0" oninput="validity.valid||(value='');">
+                        <input type="number" id="cash_amount_membership" class="form-control" placeholder="Enter Amount" name="cash_amount_membership" readonly min="0">
                         <small class="text-danger ml-1 mt-1"><b id="cash_amount_membership_error" class="create-membership-error"></b></small>
                     </div>
                     <div class="fv-row col-md-3 mt-5">
