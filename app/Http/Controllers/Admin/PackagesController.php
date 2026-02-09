@@ -460,14 +460,21 @@ class PackagesController extends Controller
     {
         try {
             $search = $request->search;
+            $membershipTypeId = $request->membership_type_id;
 
             if (!$search || strlen($search) < 2) {
                 return response()->json(['status' => true, 'data' => ['codes' => []]]);
             }
 
-            $codes = Membership::where('code', 'like', '%' . $search . '%')
-                ->where('active', 1)
-                ->select('id', 'code', 'patient_id', 'membership_type_id')
+            $query = Membership::where('code', 'like', '%' . $search . '%')
+                ->where('active', 1);
+
+            // Filter by membership_type_id if provided
+            if ($membershipTypeId) {
+                $query->where('membership_type_id', $membershipTypeId);
+            }
+
+            $codes = $query->select('id', 'code', 'patient_id', 'membership_type_id')
                 ->limit(20)
                 ->get()
                 ->map(function ($item) {
@@ -476,6 +483,7 @@ class PackagesController extends Controller
                         'code' => $item->code,
                         'is_assigned' => !empty($item->patient_id),
                         'patient_id' => $item->patient_id,
+                        'membership_type_id' => $item->membership_type_id,
                     ];
                 });
 
