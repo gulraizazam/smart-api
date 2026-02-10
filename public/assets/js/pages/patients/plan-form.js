@@ -333,6 +333,232 @@ function deletePlanRow(url) {
 
 /*actions*/
 
+function createMembershipForPatient(id) {
+    // Reset form fields
+    $('#successMessageMembership').hide();
+    hideSpinner("-save");
+    hideSpinner("-add");
+    
+    $("#membership_services").html("");
+    $("#modal_add_membership").modal("show");
+    
+    // Initialize Select2 on membership form dropdowns
+    setTimeout(function() {
+        $('#add_appointment_id_membership').select2({
+            dropdownParent: $('#modal_add_membership')
+        });
+        $('#add_service_id_membership').select2({
+            dropdownParent: $('#modal_add_membership')
+        });
+        $('#add_membership_code').select2({
+            dropdownParent: $('#modal_add_membership')
+        });
+        $('#add_sold_by_membership').select2({
+            dropdownParent: $('#modal_add_membership')
+        });
+        $('#payment_mode_id_membership').select2({
+            dropdownParent: $('#modal_add_membership')
+        });
+    }, 100);
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.plans.createplan', { id: id }),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data) {
+                setMembershipDataForPatient(response, id);
+            } else {
+                console.error('Invalid response structure:', response);
+                toastr.error('Failed to load membership data');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Create membership error:', xhr, thrownError);
+            errorMessage(xhr);
+        }
+    });
+}
+
+function setMembershipDataForPatient(response, patient_id) {
+    let paymentmodes = response?.data?.paymentmodes || {};
+    let random_id = response?.data?.random_id || '';
+    let patientName = response?.data?.patient_name || '';
+    let lastConsultationLocationName = response?.data?.last_consultation_location_name || '';
+
+    // Set payment mode options
+    let payment_options = '<option value="">Select Payment Mode</option>';
+    if (paymentmodes && Object.keys(paymentmodes).length > 0) {
+        Object.entries(paymentmodes).forEach(function([id, name]) {
+            payment_options += '<option value="' + id + '">' + name + '</option>';
+        });
+    }
+    $("#payment_mode_id_membership").html(payment_options);
+
+    // Set patient ID and random ID
+    $("#parent_id_membership").val(patient_id);
+    $("#add_patient_id_membership").val(patient_id);
+    $("#random_id_membership").val(random_id);
+
+    // Set patient name as text
+    $("#add-patient-name-membership").text(patientName || 'Unknown');
+
+    // Pre-select location and appointment if last consultation exists
+    let lastConsultationLocationId = response?.data?.last_consultation_location_id;
+    let lastConsultationId = response?.data?.last_consultation_id;
+    let appointmentArray = response?.data?.appointmentArray || {};
+    let locations = response?.data?.locations || {};
+
+    // Populate locations dropdown
+    let location_options = '<option value="">Select Centre</option>';
+    if (locations && Object.keys(locations).length > 0) {
+        Object.entries(locations).forEach(function([id, name]) {
+            if (name !== 'All Cities-All Centres') {
+                location_options += '<option value="' + id + '">' + name + '</option>';
+            }
+        });
+    }
+    $("#add_membership_location_id").html(location_options);
+
+    if (lastConsultationLocationId) {
+        // Pre-select the location
+        $("#add_membership_location_id").val(lastConsultationLocationId);
+        
+        // Populate appointments dropdown
+        let appointment_options = '<option value="">Select Appointment</option>';
+        if (appointmentArray && Object.keys(appointmentArray).length > 0) {
+            Object.entries(appointmentArray).forEach(function([id, appointmentData]) {
+                let displayName = appointmentData.name || appointmentData;
+                appointment_options += '<option value="' + id + '">' + displayName + '</option>';
+            });
+        }
+        $("#add_appointment_id_membership").html(appointment_options);
+        
+        // Pre-select the last consultation
+        if (lastConsultationId) {
+            $("#add_appointment_id_membership").val(lastConsultationId);
+        }
+        
+        // Load sold by for this location
+        setTimeout(function() {
+            loadSoldByForMembership(lastConsultationLocationId, patient_id);
+        }, 200);
+    }
+
+    // Always load membership types (pass patient_id to check for renewals)
+    setTimeout(function() {
+        loadMembershipTypesForPatient(patient_id);
+    }, 200);
+
+    // Set membership info from API
+    setTimeout(function() {
+        if (lastConsultationLocationId && patient_id) {
+            loadPatientMembershipInfo(lastConsultationLocationId, patient_id);
+        }
+    }, 300);
+}
+
+function loadMembershipTypesForPatient(patientId) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.membershiptypes.getactivetypes'),
+        type: "GET",
+        data: {
+            patient_id: patientId
+        },
+        cache: false,
+        success: function (response) {
+            if (response && response.data && response.data.membership_types) {
+                let membershipTypes = response.data.membership_types;
+                let options = '<option value="">Select Membership Type</option>';
+                
+                membershipTypes.forEach(function(type) {
+                    options += '<option value="' + type.id + '" data-price="' + type.amount + '">' + type.name + ' - Rs. ' + parseFloat(type.amount).toLocaleString() + '</option>';
+                });
+                
+                $("#add_service_id_membership").html(options);
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading membership types:', thrownError);
+        }
+    });
+}
+
+function loadSoldByForMembership(locationId, patientId) {
+    let url = route('admin.packages.getappointmentinfo', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data) {
+                // Populate sold by dropdown
+                if (response.data.users) {
+                    let users = response.data.users;
+                    let soldByOptions = '<option value="">Select</option>';
+                    
+                    Object.entries(users).forEach(function([id, name]) {
+                        soldByOptions += '<option value="' + id + '">' + name + '</option>';
+                    });
+                    
+                    $("#add_sold_by_membership").html(soldByOptions);
+                    
+                    // Pre-select the doctor if available
+                    if (response.data.selected_doctor_id) {
+                        $("#add_sold_by_membership").val(response.data.selected_doctor_id);
+                    }
+                }
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading sold by data for membership:', thrownError);
+        }
+    });
+}
+
+function loadPatientMembershipInfo(locationId, patientId) {
+    let url = route('admin.packages.getappointmentinfo', {
+        _query: {
+            location_id: locationId,
+            patient_id: patientId
+        }
+    });
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response && response.data && response.data.membership) {
+                $("#patient_membership_membership").text(response.data.membership);
+            } else {
+                $("#patient_membership_membership").text('No Membership');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading patient membership info:', thrownError);
+        }
+    });
+}
+
 function createBundleForPatient(id) {
     // Reset form fields
     $('#successMessageBundle').hide();
@@ -530,7 +756,18 @@ function getServiceDiscountBundle(element) {
                     $("#net_amount_bundle").prop("disabled", true);
                     // Update Total and Cash Received Remain fields
                     $("#package_total_bundle").val(netAmount);
-                    $("#grand_total_bundle").val(parseFloat(netAmount).toLocaleString());
+                    $("#grand_total_bundle").val(netAmount);
+                } else {
+                    // Fallback: get price from the selected option text (format: "Name - Rs. XXXXX")
+                    var selectedText = element.find('option:selected').text();
+                    var priceMatch = selectedText.match(/Rs\.\s*([\d,]+(?:\.\d+)?)/);
+                    if (priceMatch) {
+                        var price = priceMatch[1].replace(/,/g, '');
+                        $("#net_amount_bundle").val(parseFloat(price).toFixed(2));
+                        $("#net_amount_bundle").prop("disabled", true);
+                        $("#package_total_bundle").val(parseFloat(price).toFixed(2));
+                        $("#grand_total_bundle").val(parseFloat(price).toFixed(2));
+                    }
                 }
             },
             error: function(xhr, status, error) {
@@ -671,14 +908,13 @@ $(document).on('click', '#AddPackageBundle', function () {
                     let bundlesData = servicesData.bundlesData;
                     let packageServicesData = servicesData.packageServicesData;
 
-                    // Calculate total
+                    // Calculate total - use the tax_including_price from response (don't add to existing)
                     let totalAmount = bundlesData.tax_including_price.toLocaleString();
-                    let grandTotal = totalAmount.replace(/,/g, '');
+                    let grandTotal = parseFloat(bundlesData.tax_including_price).toFixed(2);
                     
-                    // Update package total
-                    let currentTotal = parseFloat($('#package_total_bundle').val() || 0);
-                    let newTotal = currentTotal + parseFloat(bundlesData.tax_including_price);
-                    $("#package_total_bundle").val(newTotal.toFixed(2));
+                    // Update package total with the actual total from response (not adding)
+                    $("#package_total_bundle").val(grandTotal);
+                    $("#grand_total_bundle").val(grandTotal);
 
                     // Add row to table
                     $('#bundle_services').append(

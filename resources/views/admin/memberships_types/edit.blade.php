@@ -35,17 +35,29 @@
                             <input type="text" id="edit_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Parent Membership (for Renewals)</label>
+                            <select id="edit_parent_id" name="parent_id" class="form-control form-control-lg form-control-solid mb-2 select2">
+                                <option value="">None (Main Membership)</option>
+                            </select>
+                            <small class="text-muted">Leave empty for main membership, select parent for renewal</small>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Period (Days) <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_period" name="period" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-
-
-                    </div>
-                    <div class="row">
-
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Price <span class="text text-danger">*</span></label>
                             <input type="number" id="edit_membership_amount" name="amount" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="fv-row col-md-12">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Assigned Discounts</label>
+                            <select id="edit_discount_ids" name="discount_ids[]" class="form-control form-control-lg form-control-solid mb-2 select2" multiple="multiple">
+                            </select>
+                            <small class="text-muted">Select discounts that will be exclusive to this membership type</small>
                         </div>
                     </div>
                 </div>

@@ -3578,24 +3578,41 @@ class AppointmentsController extends Controller
         $data_detail['created_at'] = Filters::getCurrentTimeStamp();
         $data_detail['updated_at'] = Filters::getCurrentTimeStamp();
         if ($request->package_service_id) {
-            $tax_info_package_service = PackageService::find($request->package_service_id);
+            $tax_info_package_service = PackageService::with('packagebundle')->find($request->package_service_id);
             $data_detail['tax_percenatage'] = $tax_info_package_service->tax_percenatage;
             $data_detail['package_service_id'] = $request->package_service_id;
+            
+            // Get discount info from the package_bundle via package_service
+            if ($tax_info_package_service->packagebundle) {
+                $packageBundle = $tax_info_package_service->packagebundle;
+                if ($packageBundle->discount_id || $packageBundle->discount_name) {
+                    $data_detail['discount_type'] = $packageBundle->discount_type;
+                    $data_detail['discount_price'] = $packageBundle->discount_price;
+                    $data_detail['discount_id'] = $packageBundle->discount_id;
+                    $data_detail['discount_name'] = $packageBundle->discount_name ?? '';
+                }
+            }
         }
         if ($request->package_id != null) {
-            $packages = DB::table('packages')
-                ->join('package_bundles', 'packages.id', '=', 'package_bundles.package_id')
-                ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
-                ->where([
-                    ['packages.id', '=', $request->package_id],
-                    ['package_services.service_id', '=', $appointmentinfo->service_id],
-                    ['package_services.is_consumed', '= 0'],
-                ])->select('package_bundles.discount_type', 'package_bundles.discount_price', 'package_bundles.discount_id', 'package_bundles.discount_name')->first();
-            if ($packages->discount_type != null) {
-                $data_detail['discount_type'] = $packages->discount_type;
-                $data_detail['discount_price'] = $packages->discount_price;
-                $data_detail['discount_id'] = $packages->discount_id;
-                $data_detail['discount_name'] = $packages->discount_name ?? '';
+            // Only fetch from package_bundles if we don't already have discount info from package_service
+            if (!isset($data_detail['discount_name']) || empty($data_detail['discount_name'])) {
+                $packages = DB::table('packages')
+                    ->join('package_bundles', 'packages.id', '=', 'package_bundles.package_id')
+                    ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
+                    ->where([
+                        ['packages.id', '=', $request->package_id],
+                        ['package_services.service_id', '=', $appointmentinfo->service_id],
+                        ['package_services.is_consumed', '=', 0],
+                    ])->select('package_bundles.discount_type', 'package_bundles.discount_price', 'package_bundles.discount_id', 'package_bundles.discount_name')->first();
+                if ($packages) {
+                    // Set discount data if discount_id or discount_name exists
+                    if ($packages->discount_id || $packages->discount_name) {
+                        $data_detail['discount_type'] = $packages->discount_type;
+                        $data_detail['discount_price'] = $packages->discount_price;
+                        $data_detail['discount_id'] = $packages->discount_id;
+                        $data_detail['discount_name'] = $packages->discount_name ?? '';
+                    }
+                }
             }
             $data_detail['package_id'] = $request->package_id;
         }

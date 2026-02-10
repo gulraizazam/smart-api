@@ -168,6 +168,7 @@ function getServicesMembership(action) {
     hideMessages();
 
     let location = $("#add_membership_location_id").val();
+    let patientId = $("#add_patient_id_membership").val();
 
     // Don't call API if no location is selected
     if (!location || location == '') {
@@ -175,10 +176,17 @@ function getServicesMembership(action) {
         return;
     }
 
+    let queryParams = {
+        location_id: location
+    };
+    
+    // Include patient_id if selected (to show renewals for expired memberships)
+    if (patientId) {
+        queryParams.patient_id = patientId;
+    }
+
     let url = route('admin.packages.getmemberships', {
-        _query: {
-            location_id: location
-        }
+        _query: queryParams
     });
 
     $.ajax({
@@ -479,33 +487,18 @@ function setAppointmentsMembership(response) {
 function keyfunction_grandtotal_membership() {
     hideMessages();
 
-    var cash_amount = $('#cash_amount_membership').val();
-    var total = $('#package_total_membership').val();
+    var cash_amount = parseFloat($('#cash_amount_membership').val()) || 0;
+    var total = parseFloat($('#package_total_membership').val()) || 0;
 
-    if (total) {
-        $.ajax({
-            type: 'GET',
-            url: route('admin.packages.getgrandtotal'),
-            data: {
-                'cash_amount': cash_amount ?? 0,
-                'total': total,
-            },
-            success: function (response) {
-                if (response.status) {
-                    if (response?.data?.grand_total == 1 || response?.data?.grand_total == 0) {
-                        $("#grand_total_membership").val(0);
-                    } else {
-                        $("#grand_total_membership").val(response?.data?.grand_total ?? 0);
-                    }
-                } else {
-                    $('#wrongMessageMembership').show();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error calculating grand total:', error);
-            }
-        });
+    // Calculate remaining = Total - Cash Amount
+    var remaining = total - cash_amount;
+    
+    // Ensure remaining is not negative
+    if (remaining < 0) {
+        remaining = 0;
     }
+    
+    $("#grand_total_membership").val(remaining.toFixed(2));
 }
 
 // Initialize patient selection event handlers
@@ -526,10 +519,12 @@ $(document).ready(function() {
 
     // Handle payment mode change
     $('#payment_mode_id_membership').on('change', function () {
-        // Cash amount is readonly and auto-filled from total
-        // Just update grand_total based on payment mode selection
-        if (!$(this).val()) {
-            // No payment mode selected - set grand_total to package_total
+        if ($(this).val()) {
+            // Payment mode selected - enable cash amount field
+            $('#cash_amount_membership').prop('disabled', false);
+        } else {
+            // No payment mode selected - disable cash amount and set grand_total to package_total
+            $('#cash_amount_membership').prop('disabled', true);
             var packageTotal = $('#package_total_membership').val() || '0';
             $("#grand_total_membership").val(packageTotal);
         }
@@ -546,6 +541,9 @@ $(document).ready(function() {
             
             // Load appointments and membership for selected patient
             getAppointmentsMembership(patientId);
+            
+            // Refresh membership types to show renewals for expired memberships
+            getServicesMembership();
         }
     });
 
@@ -555,6 +553,9 @@ $(document).ready(function() {
         $('#add_appointment_id_membership').append('<option value="">Select Appointment</option>');
         $('#add_appointment_id_membership').val(null).trigger('change');
         $('#patient_membership_membership').val('No data');
+        
+        // Refresh membership types (will show only parent memberships when no patient selected)
+        getServicesMembership();
     });
 
     // Handle Save button click (final save)
@@ -845,10 +846,13 @@ $(document).ready(function() {
                         // Hide service required validation alert
                         $('#add_service_id_membership_error').html('').hide();
 
-                        // Auto-fill cash amount with total and set remaining to 0
+                        // Set cash amount to 0 by default and calculate remaining
                         var totalVal = $('#package_total_membership').val();
-                        $('#cash_amount_membership').val(totalVal);
-                        $('#grand_total_membership').val(0);
+                        $('#cash_amount_membership').val(0);
+                        $('#grand_total_membership').val(totalVal); // Remaining = Total - Cash Amount
+                        
+                        // Enable cash amount field for editing
+                        $('#cash_amount_membership').prop('disabled', false);
 
                         // Disable location and Add button after service added (only 1 service allowed)
                         $("#add_membership_location_id").prop("disabled", true);
@@ -1010,6 +1014,10 @@ function setEditMembershipData(response) {
         let paymentmodes = data.paymentmodes;
         let appointmentArray = data.appointmentArray || [];
         
+        // Reset cash amount and payment mode fields
+        $('#edit_membership_cash_amount').val(0).prop('disabled', true);
+        $('#edit_membership_payment_mode_id').val('').trigger('change');
+        
         // Set package ID
         $('#edit_package_id_membership').val(package.id);
         $('#edit_random_id_membership').val(package.random_id);
@@ -1125,6 +1133,9 @@ function setEditMembershipData(response) {
         let balance = totalAmount - cashReceived;
         $('#edit_membership_grand_total').val(number_format(balance, 2));
         
+        // Store the initial balance for cash amount calculation
+        $('#edit_membership_grand_total').data('initial-balance', balance);
+        
         // Populate payment history with Edit/Delete actions
         let historyOptions = '';
         if (packageadvances && packageadvances.length) {
@@ -1180,7 +1191,82 @@ function setEditMembershipData(response) {
             } else {
                 $('#edit_membership_cash_amount').val(0);
                 $('#edit_membership_cash_amount').prop('disabled', true);
+                // Reset remaining to initial balance when payment mode cleared
+                var initialBalance = parseFloat($('#edit_membership_grand_total').data('initial-balance')) || 0;
+                $('#edit_membership_grand_total').val(initialBalance.toFixed(2));
             }
+        });
+        
+        // Handle cash amount change to update remaining balance
+        $('#edit_membership_cash_amount').off('input').on('input', function() {
+            var cashAmount = parseFloat($(this).val()) || 0;
+            // Use the initial balance (current remaining), not the total price
+            var initialBalance = parseFloat($('#edit_membership_grand_total').data('initial-balance')) || 0;
+            var remaining = initialBalance - cashAmount;
+            if (remaining < 0) {
+                remaining = 0;
+            }
+            $('#edit_membership_grand_total').val(remaining.toFixed(2));
+        });
+        
+        // Handle save button click
+        $('#EditMembershipFinal').off('click').on('click', function() {
+            var packageId = $('#edit_package_id_membership').val();
+            var patientId = $('#edit_patient_id_membership').val();
+            var locationId = $('#edit_location_id_membership').val();
+            var appointmentId = $('#edit_membership_appointment_id').val();
+            var paymentModeId = $('#edit_membership_payment_mode_id').val();
+            var cashAmount = $('#edit_membership_cash_amount').val() || 0;
+            var grandTotal = $('#edit_membership_grand_total').val() || 0;
+            
+            // Validate required fields
+            if (!appointmentId) {
+                toastr.error('Please select an appointment');
+                return;
+            }
+            
+            if (paymentModeId && (!cashAmount || cashAmount == 0)) {
+                toastr.error('Please enter cash amount');
+                return;
+            }
+            
+            // Disable button and show spinner
+            $(this).prop('disabled', true);
+            
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.packages.update_membership_plan'),
+                type: 'POST',
+                data: {
+                    package_id: packageId,
+                    patient_id: patientId,
+                    location_id: locationId,
+                    appointment_id: appointmentId,
+                    payment_mode_id: paymentModeId,
+                    cash_amount: cashAmount,
+                    grand_total: grandTotal
+                },
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message || 'Membership updated successfully');
+                        closeEditMembershipModal();
+                        // Reload datatable if exists
+                        if (typeof reInitTable === 'function') {
+                            reInitTable();
+                        }
+                    } else {
+                        toastr.error(response.message || 'Failed to update membership');
+                    }
+                    $('#EditMembershipFinal').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error('Error updating membership:', xhr);
+                    toastr.error('Failed to update membership');
+                    $('#EditMembershipFinal').prop('disabled', false);
+                }
+            });
         });
         
     } catch (error) {

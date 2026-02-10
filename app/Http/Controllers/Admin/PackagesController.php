@@ -61,6 +61,7 @@ use App\Exceptions\PlanException;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use App\Models\MembershipTypeHasDiscount;
 use App\Models\RoleHasUsers;
 use App\Models\Leads;
 use App\Services\MetaConversionApiService;
@@ -353,6 +354,143 @@ class PackagesController extends Controller
     }
 
     /**
+     * Update membership plan - add payment to existing membership package
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateMembershipPlan(Request $request)
+    {
+        try {
+            $packageId = $request->package_id;
+            $patientId = $request->patient_id;
+            $locationId = $request->location_id;
+            $appointmentId = $request->appointment_id;
+            $paymentModeId = $request->payment_mode_id;
+            $cashAmount = floatval($request->cash_amount ?? 0);
+            $grandTotal = floatval($request->grand_total ?? 0);
+
+            if (!$packageId) {
+                return ApiHelper::apiResponse($this->error, 'Package ID is required', false);
+            }
+
+            $package = Packages::find($packageId);
+            if (!$package) {
+                return ApiHelper::apiResponse($this->error, 'Package not found', false);
+            }
+
+            // If payment mode and cash amount provided, create payment entry
+            if ($paymentModeId && $cashAmount > 0) {
+                $packageAdvanceData = [
+                    'cash_flow' => 'in',
+                    'cash_amount' => $cashAmount,
+                    'account_id' => Auth::user()->account_id,
+                    'patient_id' => $patientId,
+                    'payment_mode_id' => $paymentModeId,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                    'package_id' => $packageId,
+                    'location_id' => $locationId,
+                    'appointment_id' => $appointmentId,
+                    'created_at' => Filters::getCurrentTimeStamp(),
+                    'updated_at' => Filters::getCurrentTimeStamp(),
+                ];
+
+                PackageAdvances::createRecord($packageAdvanceData, $package);
+
+                // If remaining is 0 or less, mark as consumed and update membership
+                if ($grandTotal <= 0) {
+                    // Get package bundles to find membership info
+                    $packageBundle = PackageBundles::where('package_id', $packageId)
+                        ->whereNotNull('membership_code_id')
+                        ->first();
+
+                    if ($packageBundle) {
+                        // Update package_services to mark as consumed
+                        PackageService::where('package_id', $packageId)
+                            ->where('package_bundle_id', $packageBundle->id)
+                            ->update([
+                                'is_consumed' => 1,
+                                'consumed_at' => Filters::getCurrentTimeStamp(),
+                            ]);
+
+                        // Update membership record with patient and dates
+                        $membershipCodeId = $packageBundle->membership_code_id;
+                        if ($membershipCodeId) {
+                            $membershipRecord = Membership::find($membershipCodeId);
+                            if ($membershipRecord) {
+                                $membershipType = MembershipType::find($packageBundle->membership_type_id);
+                                $durationDays = $membershipType->period ?? 365;
+
+                                $startDate = now()->toDateString();
+                                $endDate = now()->addDays($durationDays)->toDateString();
+
+                                $membershipRecord->update([
+                                    'patient_id' => $patientId,
+                                    'start_date' => $startDate,
+                                    'end_date' => $endDate,
+                                    'assigned_at' => now()->toDateString(),
+                                    'updated_by' => Auth::id(),
+                                ]);
+                            }
+                        }
+
+                        // Create 'out' payment entries for settled amount
+                        $taxExclusiveTotal = $packageBundle->tax_exclusive_net_amount;
+                        $taxTotal = $packageBundle->tax_price;
+
+                        $settlePaymentMode = PaymentModes::where('name', 'Settle Amount')->first();
+                        $settlePaymentModeId = $settlePaymentMode ? $settlePaymentMode->id : null;
+
+                        // First 'out' entry: Tax exclusive amount
+                        PackageAdvances::create([
+                            'cash_flow' => 'out',
+                            'cash_amount' => $taxExclusiveTotal,
+                            'account_id' => Auth::user()->account_id,
+                            'patient_id' => $patientId,
+                            'payment_mode_id' => $settlePaymentModeId,
+                            'created_by' => Auth::user()->id,
+                            'updated_by' => Auth::user()->id,
+                            'package_id' => $packageId,
+                            'location_id' => $locationId,
+                            'is_setteled' => 0,
+                            'is_tax' => 0,
+                            'created_at' => Filters::getCurrentTimeStamp(),
+                            'updated_at' => Filters::getCurrentTimeStamp(),
+                        ]);
+
+                        // Second 'out' entry: Tax amount
+                        if ($taxTotal > 0) {
+                            PackageAdvances::create([
+                                'cash_flow' => 'out',
+                                'cash_amount' => $taxTotal,
+                                'account_id' => Auth::user()->account_id,
+                                'patient_id' => $patientId,
+                                'payment_mode_id' => $settlePaymentModeId,
+                                'created_by' => Auth::user()->id,
+                                'updated_by' => Auth::user()->id,
+                                'package_id' => $packageId,
+                                'location_id' => $locationId,
+                                'is_setteled' => 0,
+                                'is_tax' => 1,
+                                'created_at' => Filters::getCurrentTimeStamp(),
+                                'updated_at' => Filters::getCurrentTimeStamp(),
+                            ]);
+                        }
+                    }
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Payment added successfully', true);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'No changes made', true);
+
+        } catch (\Exception $e) {
+            \Log::error('Update Membership Plan Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to update membership: ' . $e->getMessage(), false);
+        }
+    }
+
+    /**
      * Get bundles by location for bundle creation
      *
      * @return \Illuminate\Http\JsonResponse
@@ -401,15 +539,52 @@ class PackagesController extends Controller
                 return ApiHelper::apiResponse($this->error, 'Location ID is required.', false);
             }
 
-            // Get active membership types
-            $memberships = MembershipType::where('active', 1)
-                ->select('id', 'name', 'amount as price')
+            $patientId = $request->patient_id;
+            $expiredMembershipTypeId = null;
+            
+            // Check if patient's latest membership is expired and get its type
+            if ($patientId) {
+                $latestMembership = Membership::where('patient_id', $patientId)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                // Get the expired membership type ID (only if expired)
+                if ($latestMembership && $latestMembership->end_date < now()->format('Y-m-d')) {
+                    // Get the parent membership type ID (in case the expired one was already a renewal)
+                    $expiredType = MembershipType::find($latestMembership->membership_type_id);
+                    if ($expiredType) {
+                        // If it's a renewal, get the parent ID; otherwise use its own ID
+                        $expiredMembershipTypeId = $expiredType->parent_id ?? $expiredType->id;
+                    }
+                }
+            }
+
+            // Get all parent membership types (always show these)
+            $parentMemberships = MembershipType::where('active', 1)
+                ->whereNull('parent_id')
+                ->select('id', 'name', 'amount as price', 'parent_id')
                 ->orderBy('name', 'asc')
                 ->get();
+
+            $memberships = $parentMemberships;
+
+            // If patient has an expired membership, add ONLY the renewal for that specific type
+            if ($expiredMembershipTypeId) {
+                $renewalMembership = MembershipType::where('active', 1)
+                    ->where('parent_id', $expiredMembershipTypeId)
+                    ->select('id', 'name', 'amount as price', 'parent_id')
+                    ->first();
+
+                if ($renewalMembership) {
+                    // Merge parent memberships with the specific renewal
+                    $memberships = $parentMemberships->push($renewalMembership)->sortBy('name')->values();
+                }
+            }
 
             if ($memberships->isNotEmpty()) {
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'memberships' => $memberships,
+                    'expired_membership_type_id' => $expiredMembershipTypeId
                 ]);
             }
 
@@ -470,8 +645,20 @@ class PackagesController extends Controller
                 ->where('active', 1);
 
             // Filter by membership_type_id if provided
+            // Also include codes from parent membership type if this is a renewal (child) type
             if ($membershipTypeId) {
-                $query->where('membership_type_id', $membershipTypeId);
+                $membershipType = MembershipType::find($membershipTypeId);
+                
+                if ($membershipType && $membershipType->parent_id) {
+                    // This is a renewal type, include codes from both parent and this type
+                    $query->where(function($q) use ($membershipTypeId, $membershipType) {
+                        $q->where('membership_type_id', $membershipTypeId)
+                          ->orWhere('membership_type_id', $membershipType->parent_id);
+                    });
+                } else {
+                    // This is a parent type, only show codes for this type
+                    $query->where('membership_type_id', $membershipTypeId);
+                }
             }
 
             $codes = $query->select('id', 'code', 'patient_id', 'membership_type_id')
@@ -1509,7 +1696,6 @@ class PackagesController extends Controller
      */
     public function getserviceinfo(Request $request)
     {
-
         /*because now we not give any discount to package if package have no permission to use. for this we introduce that empty collection */
         $discounts = Collection::make();
         /*end*/
@@ -1518,6 +1704,27 @@ class PackagesController extends Controller
         // Get logged-in user's role IDs
         $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
+        // Check if patient has an active membership
+        $patientActiveMembership = null;
+        $membershipDiscountIds = [];
+        
+        // Always get all discount IDs that are linked to ANY membership type (to exclude them for non-members)
+        $allMembershipLinkedDiscountIds = MembershipTypeHasDiscount::pluck('discount_id')->unique()->toArray();
+        
+        if ($request->patient_id) {
+            $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
+                ->where('active', 1)
+                ->whereDate('end_date', '>=', $today)
+                ->first();
+            
+            if ($patientActiveMembership) {
+                // Get discount IDs linked to this patient's membership type
+                $membershipDiscountIds = MembershipTypeHasDiscount::where('membership_type_id', $patientActiveMembership->membership_type_id)
+                    ->pluck('discount_id')
+                    ->toArray();
+            }
+        }
 
         $bundle = Bundles::find($request->bundle_id);
 
@@ -1545,6 +1752,15 @@ class PackagesController extends Controller
                 $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
                     $query->whereIn('role_id', $userRoleIds);
                 });
+            }
+
+            // Apply membership-based discount filtering
+            if ($patientActiveMembership && !empty($membershipDiscountIds)) {
+                // Patient has active membership - show only discounts linked to their membership type
+                $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+            } elseif (!empty($allMembershipLinkedDiscountIds)) {
+                // Patient has no membership - exclude discounts linked to any membership type
+                $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
             }
 
             $generalDiscounts = $generalDiscountsQuery->get();
@@ -1605,6 +1821,15 @@ class PackagesController extends Controller
                 $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
                     $query->whereIn('role_id', $userRoleIds);
                 });
+            }
+
+            // Apply membership-based discount filtering
+            if ($patientActiveMembership && !empty($membershipDiscountIds)) {
+                // Patient has active membership - show only discounts linked to their membership type
+                $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+            } elseif (!empty($allMembershipLinkedDiscountIds)) {
+                // Patient has no membership - exclude discounts linked to any membership type
+                $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
             }
 
             $generalDiscounts = $generalDiscountsQuery->get();
@@ -1799,6 +2024,27 @@ class PackagesController extends Controller
         $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
 
+        // Check if patient has an active membership
+        $patientActiveMembership = null;
+        $membershipDiscountIds = [];
+        
+        // Always get all discount IDs that are linked to ANY membership type (to exclude them for non-members)
+        $allMembershipLinkedDiscountIds = MembershipTypeHasDiscount::pluck('discount_id')->unique()->toArray();
+        
+        if ($request->patient_id) {
+            $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
+                ->where('active', 1)
+                ->whereDate('end_date', '>=', $today)
+                ->first();
+            
+            if ($patientActiveMembership) {
+                // Get discount IDs linked to this patient's membership type
+                $membershipDiscountIds = MembershipTypeHasDiscount::where('membership_type_id', $patientActiveMembership->membership_type_id)
+                    ->pluck('discount_id')
+                    ->toArray();
+            }
+        }
+
         $service = Services::find($request->service_id);
         
         if (!$service) {
@@ -1823,6 +2069,15 @@ class PackagesController extends Controller
             $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
                 $query->whereIn('role_id', $userRoleIds);
             });
+        }
+
+        // Apply membership-based discount filtering
+        if ($patientActiveMembership && !empty($membershipDiscountIds)) {
+            // Patient has active membership - show only discounts linked to their membership type
+            $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+        } elseif (!empty($allMembershipLinkedDiscountIds)) {
+            // Patient has no membership - exclude discounts linked to any membership type
+            $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
         }
 
         $generalDiscounts = $generalDiscountsQuery->get();
@@ -2348,6 +2603,11 @@ class PackagesController extends Controller
                 $packageAdvance->account_id = Auth::user()->account_id;
                 $packageAdvance->created_by = Auth::id();
                 $packageAdvance->save();
+                
+                // Update plan_name if it's empty
+                if (empty($package->plan_name) || $package->plan_name === '-') {
+                    $this->updatePlanNameForPackage($package);
+                }
             }
             
             return ApiHelper::apiResponse($this->success, 'Bundle plan updated successfully', true);
@@ -2356,6 +2616,54 @@ class PackagesController extends Controller
             \Log::error('Update Bundle Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, 'Failed to update bundle plan: ' . $e->getMessage(), false);
         }
+    }
+    
+    /**
+     * Update plan name for a package based on its bundles/memberships
+     */
+    protected function updatePlanNameForPackage(Packages $package): void
+    {
+        if ($package->plan_type === 'membership') {
+            // For membership plans, get name from membership_types table
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (!empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+            }
+            return;
+        }
+
+        // Get total count of bundles for this package
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+        
+        // Get the first two bundles for this package with their names
+        $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
+            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            ->orderBy('package_bundles.id', 'asc')
+            ->limit(2)
+            ->pluck('bundles.name')
+            ->toArray();
+
+        if (empty($packageBundles)) {
+            return;
+        }
+
+        // Generate plan_name: single bundle name or two bundle names comma separated
+        $planName = implode(', ', $packageBundles);
+        
+        // For plan type (not bundle): add '...' if more than 2 services
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        // Update only plan_name
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
     }
 
     /**

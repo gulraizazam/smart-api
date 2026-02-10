@@ -7,8 +7,11 @@
                 <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_add_plan">
                     <i class="la la-plus"></i> Add Procedures
                 </a>
-                <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-primary btn-sm ml-2" data-toggle="modal" data-target="#modal_add_bundle">
+                <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-success btn-sm ml-2" data-toggle="modal" data-target="#modal_add_bundle">
                     <i class="la la-plus"></i> Add Bundle
+                </a>
+                <a href="javascript:void(0);" onclick="createMembershipForPatient({{ $patient->id }});" class="btn btn-warning btn-sm ml-2" data-toggle="modal" data-target="#modal_add_membership">
+                    <i class="la la-plus"></i> Add Membership
                 </a>
             @endcan
         </div>

@@ -110,6 +110,9 @@
                                         <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createBundle('{{ route('admin.packages.create') }}');" data-toggle="modal" data-target="#modal_add_bundle">
                                             <i class="la la-plus"></i> Add Bundle
                                         </button>
+                                        <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createMembershipForPatient({{ request('id') }});" data-toggle="modal" data-target="#modal_add_membership">
+                                            <i class="la la-plus"></i> Add Membership
+                                        </button>
                                     @endif
                                 </div>
                                 <div class="card-toolbar submit-btn toolbar-finance-form d-none">

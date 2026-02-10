@@ -255,14 +255,24 @@ function getServiceDiscountBundle(element) {
                 'patient_id': patient_id
             },
             success: function (response) {
-                if (response.status) {
-                    // Set the price
-                    $("#net_amount_bundle").val((response.data.net_amount).toFixed(2));
+                if (response.data && response.data.net_amount !== undefined) {
+                    var netAmount = parseFloat(response.data.net_amount).toFixed(2);
+                    $("#net_amount_bundle").val(netAmount);
                     $("#net_amount_bundle").prop("disabled", true);
+                    // Update Total and Cash Received Remain fields
+                    $("#package_total_bundle").val(netAmount);
+                    $("#grand_total_bundle").val(netAmount);
                 } else {
-                    // Set the price even if no discounts
-                    $("#net_amount_bundle").val((response.data.net_amount).toFixed(2));
-                    $("#net_amount_bundle").prop("disabled", true);
+                    // Fallback: get price from the selected option text (format: "Name - Rs. XXXXX")
+                    var selectedText = element.find('option:selected').text();
+                    var priceMatch = selectedText.match(/Rs\.\s*([\d,]+(?:\.\d+)?)/);
+                    if (priceMatch) {
+                        var price = priceMatch[1].replace(/,/g, '');
+                        $("#net_amount_bundle").val(parseFloat(price).toFixed(2));
+                        $("#net_amount_bundle").prop("disabled", true);
+                        $("#package_total_bundle").val(parseFloat(price).toFixed(2));
+                        $("#grand_total_bundle").val(parseFloat(price).toFixed(2));
+                    }
                 }
 
                 // Fetch sold by users
@@ -285,8 +295,12 @@ function getServiceDiscountBundle(element) {
                 if (response.data && response.data.bundles) {
                     let selectedBundle = response.data.bundles.find(b => b.id == bundle_id);
                     if (selectedBundle) {
-                        $("#net_amount_bundle").val(parseFloat(selectedBundle.price).toFixed(2));
+                        var netAmount = parseFloat(selectedBundle.price).toFixed(2);
+                        $("#net_amount_bundle").val(netAmount);
                         $("#net_amount_bundle").prop("disabled", true);
+                        // Update Total and Cash Received Remain fields
+                        $("#package_total_bundle").val(netAmount);
+                        $("#grand_total_bundle").val(netAmount);
                     }
                 }
                 // Fetch sold by users
@@ -488,15 +502,16 @@ $(document).ready(function() {
 
     // Handle payment mode change
     $('#payment_mode_id_bundle').on('change', function () {
+        var packageTotal = $('#package_total_bundle').val() || '0';
         if ($(this).val()) {
             $('#cash_amount_bundle').prop('disabled', false);
             $('#cash_amount_bundle').val('');
-            $("#grand_total_bundle").val('');
+            // Keep grand_total as package_total until cash amount is entered
+            $("#grand_total_bundle").val(packageTotal);
         } else {
             $('#cash_amount_bundle').val('');
             $('#cash_amount_bundle').prop('disabled', true);
             // Set grand_total to package_total when no payment
-            var packageTotal = $('#package_total_bundle').val() || '0';
             $("#grand_total_bundle").val(packageTotal);
         }
     });
@@ -756,14 +771,13 @@ $(document).ready(function() {
                         let bundlesData = servicesData.bundlesData;
                         let packageServicesData = servicesData.packageServicesData;
 
-                        // Calculate total
+                        // Calculate total - use the tax_including_price from response (don't add to existing)
                         let totalAmount = bundlesData.tax_including_price.toLocaleString();
-                        let grandTotal = totalAmount.replace(/,/g, '');
+                        let grandTotal = parseFloat(bundlesData.tax_including_price).toFixed(2);
                         
-                        // Update package total
-                        let currentTotal = parseFloat($('#package_total_bundle').val() || 0);
-                        let newTotal = currentTotal + parseFloat(bundlesData.tax_including_price);
-                        $("#package_total_bundle").val(newTotal.toFixed(2));
+                        // Update package total with the actual total from response (not adding)
+                        $("#package_total_bundle").val(grandTotal);
+                        $("#grand_total_bundle").val(grandTotal);
 
                         // Add row to table
                         // bundlesData.id now contains the original bundle_id from bundles table (not package_bundles.id)

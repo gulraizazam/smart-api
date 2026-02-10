@@ -71,4 +71,14 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_add_membership" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="memberships_add">
+
+            @include('admin.packages.create-membership', ['isPatientCard' => true])
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
 </div>
