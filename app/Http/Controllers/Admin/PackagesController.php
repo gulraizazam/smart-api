@@ -1756,8 +1756,13 @@ class PackagesController extends Controller
 
             // Apply membership-based discount filtering
             if ($patientActiveMembership && !empty($membershipDiscountIds)) {
-                // Patient has active membership - show only discounts linked to their membership type
-                $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+                // Patient has active membership - show:
+                // 1. Discounts linked to their membership type
+                // 2. Regular discounts NOT linked to any membership type
+                $generalDiscountsQuery->where(function($query) use ($membershipDiscountIds, $allMembershipLinkedDiscountIds) {
+                    $query->whereIn('id', $membershipDiscountIds)
+                          ->orWhereNotIn('id', $allMembershipLinkedDiscountIds);
+                });
             } elseif (!empty($allMembershipLinkedDiscountIds)) {
                 // Patient has no membership - exclude discounts linked to any membership type
                 $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
@@ -1825,8 +1830,13 @@ class PackagesController extends Controller
 
             // Apply membership-based discount filtering
             if ($patientActiveMembership && !empty($membershipDiscountIds)) {
-                // Patient has active membership - show only discounts linked to their membership type
-                $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+                // Patient has active membership - show:
+                // 1. Discounts linked to their membership type
+                // 2. Regular discounts NOT linked to any membership type
+                $generalDiscountsQuery->where(function($query) use ($membershipDiscountIds, $allMembershipLinkedDiscountIds) {
+                    $query->whereIn('id', $membershipDiscountIds)
+                          ->orWhereNotIn('id', $allMembershipLinkedDiscountIds);
+                });
             } elseif (!empty($allMembershipLinkedDiscountIds)) {
                 // Patient has no membership - exclude discounts linked to any membership type
                 $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
@@ -2073,8 +2083,13 @@ class PackagesController extends Controller
 
         // Apply membership-based discount filtering
         if ($patientActiveMembership && !empty($membershipDiscountIds)) {
-            // Patient has active membership - show only discounts linked to their membership type
-            $generalDiscountsQuery->whereIn('id', $membershipDiscountIds);
+            // Patient has active membership - show:
+            // 1. Discounts linked to their membership type
+            // 2. Regular discounts NOT linked to any membership type
+            $generalDiscountsQuery->where(function($query) use ($membershipDiscountIds, $allMembershipLinkedDiscountIds) {
+                $query->whereIn('id', $membershipDiscountIds)
+                      ->orWhereNotIn('id', $allMembershipLinkedDiscountIds);
+            });
         } elseif (!empty($allMembershipLinkedDiscountIds)) {
             // Patient has no membership - exclude discounts linked to any membership type
             $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
