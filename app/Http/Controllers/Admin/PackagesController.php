@@ -61,7 +61,6 @@ use App\Exceptions\PlanException;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\MembershipType;
-use App\Models\MembershipTypeHasDiscount;
 use App\Models\RoleHasUsers;
 use App\Models\Leads;
 use App\Services\MetaConversionApiService;
@@ -1728,10 +1727,7 @@ class PackagesController extends Controller
 
         // Check if patient has an active membership
         $patientActiveMembership = null;
-        $membershipDiscountIds = [];
-        
-        // Always get all discount IDs that are linked to ANY membership type (to exclude them for non-members)
-        $allMembershipLinkedDiscountIds = MembershipTypeHasDiscount::pluck('discount_id')->unique()->toArray();
+        $patientMembershipTypeId = null;
         
         if ($request->patient_id) {
             $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
@@ -1740,10 +1736,7 @@ class PackagesController extends Controller
                 ->first();
             
             if ($patientActiveMembership) {
-                // Get discount IDs linked to this patient's membership type
-                $membershipDiscountIds = MembershipTypeHasDiscount::where('membership_type_id', $patientActiveMembership->membership_type_id)
-                    ->pluck('discount_id')
-                    ->toArray();
+                $patientMembershipTypeId = $patientActiveMembership->membership_type_id;
             }
         }
 
@@ -1775,18 +1768,18 @@ class PackagesController extends Controller
                 });
             }
 
-            // Apply membership-based discount filtering
-            if ($patientActiveMembership && !empty($membershipDiscountIds)) {
+            // Apply membership-based discount filtering using customer_type_id column
+            if ($patientActiveMembership && $patientMembershipTypeId) {
                 // Patient has active membership - show:
-                // 1. Discounts linked to their membership type
-                // 2. Regular discounts NOT linked to any membership type
-                $generalDiscountsQuery->where(function($query) use ($membershipDiscountIds, $allMembershipLinkedDiscountIds) {
-                    $query->whereIn('id', $membershipDiscountIds)
-                          ->orWhereNotIn('id', $allMembershipLinkedDiscountIds);
+                // 1. Discounts where customer_type_id matches patient's membership_type_id
+                // 2. Regular discounts with no customer_type_id (null)
+                $generalDiscountsQuery->where(function($query) use ($patientMembershipTypeId) {
+                    $query->where('customer_type_id', $patientMembershipTypeId)
+                          ->orWhereNull('customer_type_id');
                 });
-            } elseif (!empty($allMembershipLinkedDiscountIds)) {
-                // Patient has no membership - exclude discounts linked to any membership type
-                $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
+            } else {
+                // Patient has no membership - only show discounts with no customer_type_id
+                $generalDiscountsQuery->whereNull('customer_type_id');
             }
 
             $generalDiscounts = $generalDiscountsQuery->get();
@@ -2057,10 +2050,7 @@ class PackagesController extends Controller
 
         // Check if patient has an active membership
         $patientActiveMembership = null;
-        $membershipDiscountIds = [];
-        
-        // Always get all discount IDs that are linked to ANY membership type (to exclude them for non-members)
-        $allMembershipLinkedDiscountIds = MembershipTypeHasDiscount::pluck('discount_id')->unique()->toArray();
+        $patientMembershipTypeId = null;
         
         if ($request->patient_id) {
             $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
@@ -2069,10 +2059,7 @@ class PackagesController extends Controller
                 ->first();
             
             if ($patientActiveMembership) {
-                // Get discount IDs linked to this patient's membership type
-                $membershipDiscountIds = MembershipTypeHasDiscount::where('membership_type_id', $patientActiveMembership->membership_type_id)
-                    ->pluck('discount_id')
-                    ->toArray();
+                $patientMembershipTypeId = $patientActiveMembership->membership_type_id;
             }
         }
 
@@ -2102,18 +2089,18 @@ class PackagesController extends Controller
             });
         }
 
-        // Apply membership-based discount filtering
-        if ($patientActiveMembership && !empty($membershipDiscountIds)) {
+        // Apply membership-based discount filtering using customer_type_id column
+        if ($patientActiveMembership && $patientMembershipTypeId) {
             // Patient has active membership - show:
-            // 1. Discounts linked to their membership type
-            // 2. Regular discounts NOT linked to any membership type
-            $generalDiscountsQuery->where(function($query) use ($membershipDiscountIds, $allMembershipLinkedDiscountIds) {
-                $query->whereIn('id', $membershipDiscountIds)
-                      ->orWhereNotIn('id', $allMembershipLinkedDiscountIds);
+            // 1. Discounts where customer_type_id matches patient's membership_type_id
+            // 2. Regular discounts with no customer_type_id (null)
+            $generalDiscountsQuery->where(function($query) use ($patientMembershipTypeId) {
+                $query->where('customer_type_id', $patientMembershipTypeId)
+                      ->orWhereNull('customer_type_id');
             });
-        } elseif (!empty($allMembershipLinkedDiscountIds)) {
-            // Patient has no membership - exclude discounts linked to any membership type
-            $generalDiscountsQuery->whereNotIn('id', $allMembershipLinkedDiscountIds);
+        } else {
+            // Patient has no membership - only show discounts with no customer_type_id
+            $generalDiscountsQuery->whereNull('customer_type_id');
         }
 
         $generalDiscounts = $generalDiscountsQuery->get();
