@@ -425,22 +425,26 @@ function getAppointmentsBundle(patient) {
 function setAppointmentsBundle(response) {
     try {
         let appointments = response.data.appointments;
+        let latestConsultationId = response.data.latest_consultation_id;
         let appointment_options = '<option value="">Select Appointment</option>';
         let membership = response.data.membership;
         let appointmentKeys = [];
 
         // Check if appointments object has any keys
         if (appointments && Object.keys(appointments).length > 0) {
-            Object.values(appointments).forEach(function (value) {
-                appointment_options += '<option value="' + value.id + '">' + value.name + '</option>';
-                appointmentKeys.push(value.id);
+            Object.entries(appointments).forEach(function ([id, value]) {
+                appointment_options += '<option value="' + id + '">' + value.name + '</option>';
+                appointmentKeys.push(id);
             });
         }
         
         $("#add_appointment_id_bundle").html(appointment_options);
         
-        // Auto-select if only one appointment exists
-        if (appointmentKeys.length === 1) {
+        // Pre-select the latest consultation
+        if (latestConsultationId) {
+            $("#add_appointment_id_bundle").val(latestConsultationId).trigger('change');
+        } else if (appointmentKeys.length === 1) {
+            // Fallback: Auto-select if only one appointment exists
             $("#add_appointment_id_bundle").val(appointmentKeys[0]).trigger('change');
         }
         
