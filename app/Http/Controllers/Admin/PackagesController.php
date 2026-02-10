@@ -378,6 +378,11 @@ class PackagesController extends Controller
                 return ApiHelper::apiResponse($this->error, 'Package not found', false);
             }
 
+            // Check if service is already consumed
+            $isConsumed = PackageService::where('package_id', $packageId)
+                ->where('is_consumed', 1)
+                ->exists();
+
             // If payment mode and cash amount provided, create payment entry
             if ($paymentModeId && $cashAmount > 0) {
                 $packageAdvanceData = [
@@ -397,8 +402,8 @@ class PackagesController extends Controller
 
                 PackageAdvances::createRecord($packageAdvanceData, $package);
 
-                // If remaining is 0 or less, mark as consumed and update membership
-                if ($grandTotal <= 0) {
+                // If remaining is 0 or less AND service is not already consumed, mark as consumed and update membership
+                if ($grandTotal <= 0 && !$isConsumed) {
                     // Get package bundles to find membership info
                     $packageBundle = PackageBundles::where('package_id', $packageId)
                         ->whereNotNull('membership_code_id')
