@@ -2974,12 +2974,13 @@ jQuery(document).ready(function () {
             return false;
         }
 
-        if (total <= 0) {
+        // Check if there are any services (not total amount, as services can have 0 amount with 100% discount)
+        if (formData.package_bundles.length <= 0) {
             toastr.error("Please add atleast one service");
             return false;
         }
 
-        if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
+        if (random_id && (patient_id > 0) && total !== '' && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total !== '' && location_id) {
             showSpinner("-edit-save");
             $.ajax({
                 type: 'get',
