@@ -225,6 +225,8 @@ function loadDataTable(page_id, loadScript = true) {
                         // Also load bundle JS files
                         $.getScript(asset_url + "assets/js/pages/admin_settings/create-bundle.js");
                         $.getScript(asset_url + "assets/js/pages/admin_settings/edit-bundle.js");
+                        // Also load membership JS file
+                        $.getScript(asset_url + "assets/js/pages/admin_settings/create-membership.js");
                         
                         setTimeout(function () {
                             let className = "." + page_id;

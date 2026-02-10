@@ -109,9 +109,10 @@ class MembershipsController extends Controller
         if (!Gate::allows('memberships_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $membershipType = MembershipType::where([
-            ['active', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        // Only fetch parent membership types (not renewals)
+        $membershipType = MembershipType::parentsOnly()
+            ->where('active', 1)
+            ->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'membershipType' => $membershipType,
 
@@ -240,7 +241,8 @@ class MembershipsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $membership = Membership::find($id);
-        $membershipType = MembershipType::where(['active' => 1])->pluck('name', 'id');
+        // Only fetch parent membership types (not renewals)
+        $membershipType = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'membership' => $membership,
             'membershipType' => $membershipType

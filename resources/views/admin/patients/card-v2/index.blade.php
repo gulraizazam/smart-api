@@ -214,9 +214,11 @@
         </script>
         {{-- Use the SAME JS files as main plans module --}}
         <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/patients/plan-form.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-membership.js') }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
     @endif
     

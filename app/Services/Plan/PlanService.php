@@ -1436,18 +1436,35 @@ class PlanService
 
             // Store package bundles/memberships and services
             if (($data['plan_type'] ?? 'plan') === 'membership') {
-                $this->storeMembershipData($package, $data);
+                // Calculate if membership is fully paid (remaining <= 0)
+                $total = floatval(str_replace(',', '', $data['total'] ?? 0));
+                $cashAmount = floatval($data['cash_amount'] ?? 0);
+                $remaining = $total - $cashAmount;
+                $isFullyPaid = $remaining <= 0;
+                
+                $this->storeMembershipData($package, $data, $isFullyPaid);
+                
+                // Generate and update plan_name from first two services
+                $this->updatePlanName($package);
+                
+                // Handle payment only if cash amount provided AND fully paid
+                if (!empty($data['cash_amount']) && $data['cash_amount'] != '0' && $isFullyPaid) {
+                    $this->handlePackagePayment($package, $data, $appointmentId);
+                } elseif (!empty($data['cash_amount']) && $data['cash_amount'] != '0' && !$isFullyPaid) {
+                    // For partial payment, only create the 'in' payment entry (no 'out' entries)
+                    $this->handlePartialMembershipPayment($package, $data, $appointmentId);
+                }
             } else {
                 // Store package bundles and services (optimized with bulk operations)
                 $this->storePackageBundlesOptimized($package, $data);
-            }
+                
+                // Generate and update plan_name from first two services
+                $this->updatePlanName($package);
 
-            // Generate and update plan_name from first two services
-            $this->updatePlanName($package);
-
-            // Handle payment if cash amount provided
-            if (!empty($data['cash_amount']) && $data['cash_amount'] != '0') {
-                $this->handlePackagePayment($package, $data, $appointmentId);
+                // Handle payment if cash amount provided
+                if (!empty($data['cash_amount']) && $data['cash_amount'] != '0') {
+                    $this->handlePackagePayment($package, $data, $appointmentId);
+                }
             }
 
             DB::commit();
@@ -1531,9 +1548,13 @@ class PlanService
 
     /**
      * Store membership data in package_bundles and package_services
-     * Also updates the memberships table with patient and date info
+     * Also updates the memberships table with patient and date info (only if fully paid)
+     * 
+     * @param Packages $package
+     * @param array $data
+     * @param bool $isFullyPaid - If true, set is_consumed=1 and update membership. If false, only save records.
      */
-    protected function storeMembershipData(Packages $package, array $data): void
+    protected function storeMembershipData(Packages $package, array $data, bool $isFullyPaid = true): void
     {
         if (empty($data['package_memberships'])) {
             return;
@@ -1566,15 +1587,15 @@ class PlanService
             $packageBundle = PackageBundles::create($packageBundleData);
 
             // Create package_services record to store sold_by, is_consumed, consumed_at
-            // For memberships, is_consumed=1 and consumed_at matches the payment out entry timestamp
+            // Only set is_consumed=1 if fully paid, otherwise leave as 0
             $soldBy = $membership['sold_by'] ?? $data['sold_by'] ?? null;
-            $consumedAt = Filters::getCurrentTimeStamp();
+            $consumedAt = $isFullyPaid ? Filters::getCurrentTimeStamp() : null;
             $packageServiceData = [
                 'random_id' => $package->random_id,
                 'package_id' => $package->id,
                 'package_bundle_id' => $packageBundle->id,
                 'service_id' => null, // Memberships don't have a service_id
-                'is_consumed' => 1,
+                'is_consumed' => $isFullyPaid ? 1 : 0,
                 'consumed_at' => $consumedAt,
                 'price' => str_replace(',', '', $membership['RegularPrice']),
                 'orignal_price' => str_replace(',', '', $membership['RegularPrice']),
@@ -1588,25 +1609,27 @@ class PlanService
             ];
             PackageService::create($packageServiceData);
 
-            // Update the memberships table with patient and date information
-            $membershipCodeId = $membership['membershipCodeId'] ?? null;
-            if ($membershipCodeId) {
-                $membershipRecord = Membership::find($membershipCodeId);
-                if ($membershipRecord) {
-                    // Get membership type to determine period (in days)
-                    $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
-                    $durationDays = $membershipType->period ?? 365; // Default 365 days (1 year) if not set
-                    
-                    $startDate = now()->toDateString();
-                    $endDate = now()->addDays($durationDays)->toDateString();
-                    
-                    $membershipRecord->update([
-                        'patient_id' => $data['patient_id'],
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
-                        'assigned_at' => now()->toDateString(),
-                        'updated_by' => Auth::id(),
-                    ]);
+            // Only update the memberships table if fully paid
+            if ($isFullyPaid) {
+                $membershipCodeId = $membership['membershipCodeId'] ?? null;
+                if ($membershipCodeId) {
+                    $membershipRecord = Membership::find($membershipCodeId);
+                    if ($membershipRecord) {
+                        // Get membership type to determine period (in days)
+                        $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
+                        $durationDays = $membershipType->period ?? 365; // Default 365 days (1 year) if not set
+                        
+                        $startDate = now()->toDateString();
+                        $endDate = now()->addDays($durationDays)->toDateString();
+                        
+                        $membershipRecord->update([
+                            'patient_id' => $data['patient_id'],
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'assigned_at' => now()->toDateString(),
+                            'updated_by' => Auth::id(),
+                        ]);
+                    }
                 }
             }
         }
@@ -1985,6 +2008,81 @@ class PlanService
     }
 
     /**
+     * Handle partial membership payment - only creates 'in' payment entry, no 'out' entries
+     * Used when remaining amount > 0 (not fully paid)
+     */
+    protected function handlePartialMembershipPayment(Packages $package, array $data, int $appointmentId): void
+    {
+        // Create package advance record (only 'in' entry)
+        $packageAdvanceData = [
+            'cash_flow' => 'in',
+            'cash_amount' => $data['cash_amount'],
+            'account_id' => Auth::user()->account_id,
+            'patient_id' => $data['patient_id'],
+            'payment_mode_id' => $data['payment_mode_id'],
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+            'package_id' => $package->id,
+            'location_id' => $data['location_id'],
+            'created_at' => Filters::getCurrentTimeStamp(),
+            'updated_at' => Filters::getCurrentTimeStamp(),
+        ];
+
+        $packageAdvance = PackageAdvances::createRecord($packageAdvanceData, $package);
+
+        // No 'out' entries for partial payment - membership is not consumed yet
+
+        // Create plan invoice
+        $invoiceNumber = PlanInvoice::generateInvoiceNumber($data['patient_id'], $package->id);
+        $planInvoiceData = [
+            'invoice_number' => $invoiceNumber,
+            'total_price' => $data['cash_amount'],
+            'account_id' => Auth::user()->account_id,
+            'patient_id' => $data['patient_id'],
+            'created_by' => Auth::user()->id,
+            'location_id' => $data['location_id'],
+            'payment_mode_id' => $data['payment_mode_id'],
+            'active' => 1,
+            'package_id' => $package->id,
+            'invoice_type' => 'exempt',
+        ];
+        PlanInvoice::create($planInvoiceData);
+
+        // Log activity
+        $patient = User::find($data['patient_id']);
+        $locationWithCity = Locations::with('city')->find($data['location_id']);
+        $locationName = $locationWithCity 
+            ? $locationWithCity->name . ($locationWithCity->city ? ' ' . $locationWithCity->city->name : '')
+            : '';
+
+        $creatorName = Auth::user()->name ?? 'System';
+        $description = '<span class="highlight">' . $creatorName . '</span> received partial payment Rs. <span class="highlight-green">' . number_format($data['cash_amount']) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> ';
+
+        Activity::create([
+            'action' => 'received',
+            'activity_type' => 'payment_received',
+            'description' => $description,
+            'patient' => $patient->name,
+            'patient_id' => $patient->id,
+            'appointment_type' => 'Plan',
+            'created_by' => Auth::user()->id,
+            'account_id' => Auth::user()->account_id,
+            'planId' => $package->id,
+            'amount' => $data['cash_amount'],
+            'location' => $locationName,
+            'centre_id' => $data['location_id'],
+            'created_at' => Filters::getCurrentTimeStamp(),
+            'updated_at' => Filters::getCurrentTimeStamp(),
+        ]);
+
+        // Send SMS
+        Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdvance);
+
+        // Mark appointment as converted
+        $this->markAppointmentAsConvertedOptimized($appointmentId, $package->id, $data['cash_amount']);
+    }
+
+    /**
      * Mark appointment as converted (optimized with reduced queries)
      */
     protected function markAppointmentAsConvertedOptimized(int $appointmentId, int $packageId, float $paymentAmount): void
@@ -2294,10 +2392,25 @@ class PlanService
 
     /**
      * Get membership display string
+     * Returns the latest active membership, or latest membership if no active one exists
      */
     protected function getMembershipDisplay(int $patientId): string
     {
-        $membership = Membership::with('membershiptype')->where('patient_id', $patientId)->first();
+        // First try to get the latest active membership
+        $membership = Membership::with('membershiptype')
+            ->where('patient_id', $patientId)
+            ->where('active', 1)
+            ->where('end_date', '>=', now()->format('Y-m-d'))
+            ->orderBy('created_at', 'desc')
+            ->first();
+        
+        // If no active membership, get the latest membership regardless of status
+        if (!$membership) {
+            $membership = Membership::with('membershiptype')
+                ->where('patient_id', $patientId)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
         
         if (!$membership) {
             return 'No Membership';
@@ -2377,14 +2490,16 @@ class PlanService
             // Store package bundles and services (optimized)
             if ($hasNewServices) {
                 $this->storePackageBundlesOptimized($package, $data);
-                
-                // Update plan_name only when new services are added
-                $this->updatePlanName($package);
             }
 
             // Handle payment if provided
             if ($hasPayment) {
                 $this->handlePackagePayment($package, $data, $appointmentId);
+            }
+
+            // Always update plan_name when updating (whether adding services or just payment)
+            if ($hasNewServices || $hasPayment) {
+                $this->updatePlanName($package);
             }
 
             DB::commit();

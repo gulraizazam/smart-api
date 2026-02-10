@@ -67,7 +67,7 @@ class DiscountsController extends Controller
         try {
             $roles = Role::pluck('name', 'id')->toArray();
             $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-            $customerTypes = MembershipType::where('active', 1)->pluck('name', 'id')->toArray();
+            $customerTypes = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id')->toArray();
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'discount_types' => config('constants.discount_types'),
                 'discount_groups' => config('constants.discount_groups'),
@@ -549,7 +549,7 @@ class DiscountsController extends Controller
                 $base_discount_services = BaseDiscountService::where(['discount_id' => $id])->get();
                 $get_discount_services = GetDiscountService::where(['discount_id' => $id])->get();
                 $roles = Role::pluck('name', 'id')->toArray();
-                $customerTypes = MembershipType::where('active', 1)->pluck('name', 'id')->toArray();
+                $customerTypes = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id')->toArray();
 
                 // 🔹 Get selected role ids for this discount
                 $selected_role_ids = $discount->roles()->pluck('role_id')->toArray();

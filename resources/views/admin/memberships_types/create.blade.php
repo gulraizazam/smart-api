@@ -33,12 +33,24 @@
                             <input type="text" id="add_membership_name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0"> Parent Membership (for Renewals)</label>
+                            <select id="add_parent_id" name="parent_id" class="form-control form-control-lg form-control-solid mb-2 select2">
+                                <option value="">None (Main Membership)</option>
+                                @php
+                                    $parentMemberships = \App\Models\MembershipType::whereNull('parent_id')->where('active', 1)->get();
+                                @endphp
+                                @foreach($parentMemberships as $membership)
+                                    <option value="{{ $membership->id }}">{{ $membership->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Leave empty for main membership, select parent for renewal</small>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Period (Days) <span class="text text-danger">*</span></label>
                             <input type="number" id="add_membership_period" name="period" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                    </div>
-                    <div class="row">
-
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> Price <span class="text text-danger">*</span></label>
                             <input type="number" id="add_membership_amount" name="amount" class="form-control form-control-lg form-control-solid mb-2">

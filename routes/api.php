@@ -437,6 +437,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getmembershipinfo', [PackagesController::class, 'getmembershipinfo'])->name('packages.getmembershipinfo');
     Route::get('packages/searchmembershipcodes', [PackagesController::class, 'searchMembershipCodes'])->name('packages.searchmembershipcodes');
     Route::post('packages/savemembership_service', [PackagesController::class, 'savemembership_service'])->name('packages.savemembership_service');
+    Route::post('packages/update_membership_plan', [PackagesController::class, 'updateMembershipPlan'])->name('packages.update_membership_plan');
 
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 
@@ -846,9 +847,10 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     /*Route start for plans in appointment module*/
     Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
     /*Route end for plans in appointment module*/
-    Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
+    Route::get('membershiptypes/getactivetypes', [MembershipTypesController::class, 'getActiveTypes'])->name('membershiptypes.getactivetypes');
     Route::post('membershiptypes/datatable', [MembershipTypesController::class, 'datatable'])->name('membershiptypes.datatable');
     Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
+    Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
