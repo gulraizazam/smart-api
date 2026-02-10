@@ -423,14 +423,21 @@ function setEditData(response) {
 
         // Populate customer types dropdown
         let customerTypes = response.data.customer_types;
-        let customerTypeOptions = '<option value="">All</option>';
-        if (customerTypes) {
+        let allPatientsSelected = !discount.customer_type_id ? 'selected' : '';
+        let customerTypeOptions = `<option value="" ${allPatientsSelected}>All Patients</option>`;
+        if (customerTypes && Object.keys(customerTypes).length > 0) {
             Object.entries(customerTypes).forEach(([id, name]) => {
                 let selected = discount.customer_type_id == id ? 'selected' : '';
                 customerTypeOptions += `<option value="${id}" ${selected}>${name}</option>`;
             });
         }
-        $("#edit_customer_type").html(customerTypeOptions).trigger("change");
+        $("#edit_customer_type").html(customerTypeOptions);
+        // Set the selected value
+        if (discount.customer_type_id) {
+            $("#edit_customer_type").val(discount.customer_type_id);
+        } else {
+            $("#edit_customer_type").val("");
+        }
 
         $("#edit_active").prop("checked", discount.active);
         let roles = response.data.roles;
@@ -574,7 +581,7 @@ function createDiscount($route) {
             
             // Populate customer types dropdown
             let customerTypes = response.data.customer_types;
-            let customerTypeOptions = '<option value="">All</option>';
+            let customerTypeOptions = '<option value="" selected>All Patients</option>';
             if (customerTypes) {
                 Object.entries(customerTypes).forEach(([id, name]) => {
                     customerTypeOptions += `<option value="${id}">${name}</option>`;

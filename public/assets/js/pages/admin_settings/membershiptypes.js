@@ -103,8 +103,6 @@ function editRow(url) {
 function setEditData(response) {
     let membershipType = response.data.membershipType;
     let parentMemberships = response.data.parentMemberships;
-    let activeDiscounts = response.data.activeDiscounts;
-    let assignedDiscountIds = response.data.assignedDiscountIds;
     
     $("#modal_edit_membershiptypes_form").attr("action", route('admin.membershiptypes.update', { id: membershipType.id }));
 
@@ -121,26 +119,6 @@ function setEditData(response) {
         });
     }
     $("#edit_parent_id").html(parentOptions);
-
-    // Populate discounts dropdown
-    let discountOptions = '';
-    if (activeDiscounts && activeDiscounts.length > 0) {
-        activeDiscounts.forEach(function(discount) {
-            let selected = assignedDiscountIds.includes(discount.id) ? 'selected' : '';
-            discountOptions += '<option value="' + discount.id + '" ' + selected + '>' + discount.name + '</option>';
-        });
-    }
-    $("#edit_discount_ids").html(discountOptions);
-    
-    // Reinitialize select2 for the discounts dropdown
-    if ($("#edit_discount_ids").hasClass("select2-hidden-accessible")) {
-        $("#edit_discount_ids").select2('destroy');
-    }
-    $("#edit_discount_ids").select2({
-        placeholder: "Select discounts",
-        allowClear: true,
-        dropdownParent: $("#modal_edit_membershiptypes")
-    });
 }
 function applyFilters(datatable) {
 

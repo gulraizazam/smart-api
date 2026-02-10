@@ -52,14 +52,6 @@
                             <input type="number" id="edit_membership_amount" name="amount" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
-                    <div class="row mt-3">
-                        <div class="fv-row col-md-12">
-                            <label class="fw-bold fs-6 mb-2 pl-0">Assigned Discounts</label>
-                            <select id="edit_discount_ids" name="discount_ids[]" class="form-control form-control-lg form-control-solid mb-2 select2" multiple="multiple">
-                            </select>
-                            <small class="text-muted">Select discounts that will be exclusive to this membership type</small>
-                        </div>
-                    </div>
                 </div>
 
             </div>
