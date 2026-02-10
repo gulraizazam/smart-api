@@ -1279,16 +1279,32 @@ class PackagesController extends Controller
                 $net_amount = ($service_data->price) - ($discount_price);
             }
             
+        } else if ($discount_data->type == 'Percentage' && $discount_data->discount_type == 'voucher') {
+            // For percentage vouchers, skip limit check
+            $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+            if ($discountValue) {
+                $discount_price = $discountValue->amount;
+                $discount_price_in_percentage = ($discount_price / 100) * $service_data->price;
+                $net_amount = ($service_data->price) - ($discount_price_in_percentage);
+                if ($net_amount < 0) {
+                    $net_amount = 0;
+                }
+            } else {
+                $discount_price = 0;
+                $net_amount = $service_data->price;
+            }
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
                 $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
-                if ($discount_price_in_percentage > $discount_data->amount) {
+                // Skip limit check for vouchers
+                if ($discount_data->discount_type != 'voucher' && $discount_price_in_percentage > $discount_data->amount) {
                     return false;
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
             } else {
-                if ($request->discount_value > $discount_data->amount) {
+                // Skip limit check for vouchers
+                if ($discount_data->discount_type != 'voucher' && $request->discount_value > $discount_data->amount) {
                     return false;
                 }
                 $discount_price = $request->discount_value;
@@ -1300,7 +1316,7 @@ class PackagesController extends Controller
         if ($status == true) {
 
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
-                'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
+                'net_amount' => $net_amount < 0 ? 0 : $net_amount,
             ]);
         }
 
@@ -2400,18 +2416,34 @@ class PackagesController extends Controller
                 $discount_price = 0;
                 $net_amount = ($service_data->price) - ($discount_price);
             }
+        } else if ($effective_type == 'Percentage' && $discount_data->discount_type == 'voucher') {
+            // For percentage vouchers, skip limit check
+            $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+            if ($discountValue) {
+                $discount_price = $discountValue->amount;
+                $discount_price_in_percentage = ($discount_price / 100) * $service_data->price;
+                $net_amount = ($service_data->price) - ($discount_price_in_percentage);
+                if ($net_amount < 0) {
+                    $net_amount = 0;
+                }
+            } else {
+                $discount_price = 0;
+                $net_amount = $service_data->price;
+            }
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
                 if ($service_data->price > 0) {
                     $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
-                    if ($discount_price_in_percentage > $effective_amount) {
+                    // Skip limit check for vouchers
+                    if ($discount_data->discount_type != 'voucher' && $discount_price_in_percentage > $effective_amount) {
                         $status = false;
                     }
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
             } else {
-                if ($request->discount_value > $effective_amount) {
+                // Skip limit check for vouchers
+                if ($discount_data->discount_type != 'voucher' && $request->discount_value > $effective_amount) {
                     $status = false;
                 }
                 $discount_price = $request->discount_value;
@@ -2422,7 +2454,7 @@ class PackagesController extends Controller
 
         if ($status == true) {
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
-                'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
+                'net_amount' => $net_amount < 0 ? 0 : $net_amount,
             ]);
         }
 
