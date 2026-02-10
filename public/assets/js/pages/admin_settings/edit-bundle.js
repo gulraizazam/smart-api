@@ -429,10 +429,7 @@ $(document).on('click', '#EditBundleFinal', function(e) {
         return false;
     }
 
-    if (total <= 0) {
-        toastr.error("Please add atleast one service");
-        return false;
-    }
+  
 
     if (random_id && (patient_id > 0) && total && (status == 1 ? payment_mode_id : true) && cash_amount >= 0 && grand_total && location_id) {
         $(this).attr('disabled', true);
