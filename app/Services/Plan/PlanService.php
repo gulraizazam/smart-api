@@ -782,8 +782,8 @@ class PlanService
                 ->where('slug', 'consultancy')
                 ->first();
 
-            // Get only the latest appointment with optimized query
-            $appointment = DB::table('appointments')
+            // Get all consultations for the patient at this location (ordered by latest first)
+            $appointments = DB::table('appointments')
                 ->join('services', 'appointments.service_id', '=', 'services.id')
                 ->join('users', 'appointments.doctor_id', '=', 'users.id')
                 ->where('appointments.patient_id', $patientId)
@@ -801,11 +801,11 @@ class PlanService
                     'services.name as service_name',
                     'users.name as doctor_name'
                 )
-                ->first(); // Get only the latest one
+                ->get(); // Get all consultations
 
             // Format appointments array
             $appointmentArray = [];
-            if ($appointment) {
+            foreach ($appointments as $appointment) {
                 $appointmentDateTime = $appointment->scheduled_date . ' ' . $appointment->scheduled_time;
                 $appointmentArray[$appointment->id] = [
                     'id' => $appointment->id . '.A',
@@ -895,11 +895,15 @@ class PlanService
                 }
             }
 
+            // Get the latest consultation ID (first one since ordered by date desc)
+            $latestConsultationId = $appointments->first()?->id;
+
             return [
                 'appointments' => $appointmentArray,
                 'membership' => $membershipTypeName,
                 'users' => $usersToShow,
-                'selected_doctor_id' => $selectedUserId
+                'selected_doctor_id' => $selectedUserId,
+                'latest_consultation_id' => $latestConsultationId
             ];
 
         } catch (\Exception $e) {
