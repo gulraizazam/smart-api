@@ -1391,15 +1391,21 @@ function setAppointments(response) {
     try {
 
         let appointments = response.data.appointments;
+        let latestConsultationId = response.data.latest_consultation_id;
         let appointment_options = '<option value=""> Select Appointment </option>';
 
-        if (appointments.length) {
+        if (Object.keys(appointments).length) {
 
-            Object.values(appointments).forEach(function (value) {
-                appointment_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
+            Object.entries(appointments).forEach(function ([id, value]) {
+                appointment_options += '<option value="' + id + '"> ' + value.name + ' </option>';
             });
 
             $("#add_appointment_id").html(appointment_options);
+            
+            // Pre-select the latest consultation
+            if (latestConsultationId) {
+                $("#add_appointment_id").val(latestConsultationId);
+            }
 
         }
 

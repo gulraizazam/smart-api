@@ -490,13 +490,8 @@ function keyfunction_grandtotal_membership() {
     var cash_amount = parseFloat($('#cash_amount_membership').val()) || 0;
     var total = parseFloat($('#package_total_membership').val()) || 0;
 
-    // Calculate remaining = Total - Cash Amount
+    // Calculate remaining = Total - Cash Amount (negative means overpayment)
     var remaining = total - cash_amount;
-    
-    // Ensure remaining is not negative
-    if (remaining < 0) {
-        remaining = 0;
-    }
     
     $("#grand_total_membership").val(remaining.toFixed(2));
 }
@@ -1203,9 +1198,7 @@ function setEditMembershipData(response) {
             // Use the initial balance (current remaining), not the total price
             var initialBalance = parseFloat($('#edit_membership_grand_total').data('initial-balance')) || 0;
             var remaining = initialBalance - cashAmount;
-            if (remaining < 0) {
-                remaining = 0;
-            }
+            // Allow negative values to show overpayment
             $('#edit_membership_grand_total').val(remaining.toFixed(2));
         });
         
