@@ -115,7 +115,7 @@
                         </div>
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode</label>
-                            <select id="edit_membership_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <select id="edit_membership_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0" name="payment_mode_id">
                                 <option value="">Select Payment Mode</option>
                             </select>
                         </div>
