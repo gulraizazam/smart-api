@@ -2502,7 +2502,8 @@ class PlanService
             }
 
             // Always update plan_name when updating (whether adding services or just payment)
-            if ($hasNewServices || $hasPayment) {
+            // Also update if plan_name is null (for legacy plans)
+            if ($hasNewServices || $hasPayment || empty($package->plan_name)) {
                 $this->updatePlanName($package);
             }
 

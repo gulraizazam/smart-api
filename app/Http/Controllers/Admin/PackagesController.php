@@ -1377,8 +1377,8 @@ class PackagesController extends Controller
             $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
-                    $record = Packages::find($packageService->package_id);
-                    $record->update(['total_price' => $total, 'updated_at' => Filters::getCurrentTimeStamp()]);
+                    // Update only total_price without touching updated_at
+                    Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
                 }
             }
 

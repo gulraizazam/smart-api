@@ -122,8 +122,11 @@ var planeEditValidation = function () {
 }();
 
 $(document).ready(function () {
-    // Load filter options from optimized API
-    loadFilterOptions();
+    // getUserCentre is called from setFilters/createPlan to populate location dropdown
+    // Call it on page load as well to populate the filter dropdown
+    if (typeof getUserCentre === 'function') {
+        getUserCentre();
+    }
     
     patient_search_createpalan();
     planeEditValidation.init();
@@ -1240,28 +1243,6 @@ function resetCustomFilters() {
     $('.select2').val(null).trigger('change');
 }
 
-// Load filter options from optimized API
-function loadFilterOptions() {
-    $.ajax({
-        url: route('admin.plans.optimized.global.lookup'),
-        type: 'GET',
-        success: function(response) {
-            if (response.status && response.data) {
-                // Populate location filter
-                let locationOptions = '<option value="">All</option>';
-                if (response.data.locations) {
-                    Object.entries(response.data.locations).forEach(function(value) {
-                        locationOptions += '<option value="' + value[0] + '">' + value[1] + '</option>';
-                    });
-                }
-                $('#search_location_id').html(locationOptions);
-            }
-        },
-        error: function(xhr) {
-            console.error('Failed to load filter options:', xhr);
-        }
-    });
-}
 
 function setFilters(filter_values, active_filters) {
 
