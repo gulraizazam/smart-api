@@ -354,20 +354,15 @@ class ApplicationUserController extends Controller
     /**
      * Get user centers
      */
-    public function getUserCenters()
+   public function getUserCenters()
     {
         try {
-            $userCentres = \App\Helpers\ACL::getUserCentres();
-            
-            if (!empty($userCentres)) {
-                $locations = \App\Models\Locations::whereIn('id', $userCentres)
-                    ->where('active', 1)
-                    ->orderBy('name')
-                    ->pluck('name', 'id')
-                    ->toArray();
-                
-                return ApiHelper::apiResponse($this->success, 'Centers found', true, [
-                    'centers' => $locations,
+            $planService = app(\App\Services\Plan\PlanService::class);
+            $result = $planService->getUserDefaultCenter();
+
+            if ($result['status']) {
+                return ApiHelper::apiResponse($this->success, 'Center found', true, [
+                    'center' => $result['center'],
                 ]);
             }
 
