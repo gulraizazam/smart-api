@@ -77,7 +77,7 @@
         <script>
             var changePages = 100;
         </script>
-        <script src="{{asset('assets/js/pages/admin_settings/business-closures.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/business-closures.js')}}?v={{ time() }}"></script>
     @endpush
 
 @endsection
