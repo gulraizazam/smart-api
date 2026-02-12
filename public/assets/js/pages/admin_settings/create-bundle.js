@@ -785,9 +785,15 @@ $(document).ready(function() {
 
                         // Add row to table
                         // bundlesData.id now contains the original bundle_id from bundles table (not package_bundles.id)
+                        // Count child services to determine if toggle should be shown
+                        let childServiceCount = packageServicesData.length;
+                        let serviceNameCell = childServiceCount > 1 
+                            ? "<a href='javascript:void(0)' onClick='toggle(" + bundlesData.id + ")'>" + servicesData.service_name + "</a>"
+                            : servicesData.service_name;
+                        
                         $('#bundle_services').append(
                             "<tr id='table_bundle' class='HR_" + random_id + " HR_" + bundlesData.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + bundlesData.id + ")'>" + servicesData.service_name + "</a></td>" +
+                            "<td>" + serviceNameCell + "</td>" +
                             "<td>" + servicesData.service_price.toLocaleString() + "</td>" +
                             "<td>" + bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + bundlesData.tax_price + "</td>" +
@@ -800,23 +806,25 @@ $(document).ready(function() {
                             "</tr>"
                         );
 
-                        // Add child services
-                        jQuery.each(packageServicesData, function (i, packageService) {
-                            let consume = packageService.is_consumed == '0' ? 'No' : 'Yes';
-                            $('#bundle_services').append(
-                                "<tr class='inner_records_hr HR_" + bundlesData.id + " " + bundlesData.id + "'>" +
-                                "<td></td>" +
-                                "<td>" + packageService.name + "</td>" +
-                                "<td>Amount: " + packageService.tax_exclusive_price.toLocaleString() + "</td>" +
-                                "<td>Tax: " + packageService.tax_price + "</td>" +
-                                "<td>Total Amount: " + packageService.tax_including_price.toLocaleString() + "</td>" +
-                                "<td></td>" +
-                                "</tr>"
-                            );
-                        });
+                        // Add child services only if more than 1 child service
+                        if (childServiceCount > 1) {
+                            jQuery.each(packageServicesData, function (i, packageService) {
+                                let actualPrice = packageService.actual_price ? parseFloat(packageService.actual_price).toFixed(2) : '-';
+                                $('#bundle_services').append(
+                                    "<tr class='inner_records_hr HR_" + bundlesData.id + " " + bundlesData.id + "' style='display: none; background-color: #f9f9f9;'>" +
+                                    "<td>" + packageService.name + "</td>" +
+                                    "<td>" + actualPrice + "</td>" +
+                                    "<td>" + packageService.tax_exclusive_price.toLocaleString() + "</td>" +
+                                    "<td>" + packageService.tax_price + "</td>" +
+                                    "<td>" + packageService.tax_including_price.toLocaleString() + "</td>" +
+                                    "<td></td>" +
+                                    "</tr>"
+                                );
+                            });
 
-                        // Toggle to show child services
-                        toggle(bundlesData.id);
+                            // Toggle to show child services
+                            toggle(bundlesData.id);
+                        }
 
                         // Clear form fields
                         $('#add_service_id_bundle').val(null).trigger('change');

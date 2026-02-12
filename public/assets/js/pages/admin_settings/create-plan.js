@@ -681,12 +681,23 @@ function setEditData(response) {
                 // }
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
+                // Count child services for this bundle
+                let childServiceCount = Object.values(packageservices).filter(function (ps) {
+                    return ps.package_bundle_id == packagebundle.id;
+                }).length;
+
                 // Handle both bundle and membership types
+                // Only add toggle link if bundle has more than 1 child service
+                // Single services also get blue color styling to match bundle names
                 let bundleName = '-';
                 if (packagebundle.bundle && packagebundle.bundle.name) {
-                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                    if (childServiceCount > 1) {
+                        bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                    } else {
+                        bundleName = '<span style="color: #009ef7;">' + packagebundle.bundle.name + '</span>';
+                    }
                 } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
-                    bundleName = packagebundle.membership_type.name;
+                    bundleName = '<span style="color: #009ef7;">' + packagebundle.membership_type.name + '</span>';
                 }
                 service_options += '<td>' + bundleName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
@@ -736,12 +747,52 @@ function setEditData(response) {
                         }
                     }
                 });
-                service_options += '<td>' + isConsumed + '</td>';
-                service_options += '<td>' + consumedAt + '</td>';
+                // For bundles (more than 1 child service), hide Consumed and Consumed At columns
+                // as they are shown in the child service rows
+                if (childServiceCount > 1) {
+                    service_options += '<td>-</td>';
+                    service_options += '<td>-</td>';
+                } else {
+                    service_options += '<td>' + isConsumed + '</td>';
+                    service_options += '<td>' + consumedAt + '</td>';
+                }
                 service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
 
                 service_options += del_icon;
                 service_options += '</tr>';
+
+                // Add child service rows for bundles (toggle functionality) - only if more than 1 child service
+                if (childServiceCount > 1) {
+                    Object.values(packageservices).forEach(function (packageservice) {
+                        if (packageservice.package_bundle_id == packagebundle.id) {
+                            let consume = packageservice.is_consumed == '0' ? 'No' : 'Yes';
+                            let psConsumedAt = 'N/A';
+                            if (packageservice.consumed_at) {
+                                let date = new Date(packageservice.consumed_at);
+                                let day = String(date.getDate()).padStart(2, '0');
+                                let month = String(date.getMonth() + 1).padStart(2, '0');
+                                let year = String(date.getFullYear()).slice(-2);
+                                let hours = String(date.getHours()).padStart(2, '0');
+                                let minutes = String(date.getMinutes()).padStart(2, '0');
+                                psConsumedAt = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                            }
+                            let originalPrice = packageservice.original_price ? parseFloat(packageservice.original_price).toFixed(2) : '-';
+                            service_options += '<tr class="' + packagebundle.id + '" style="display: none; background-color: #f9f9f9;">';
+                            service_options += '<td>' + packageservice.service.name + '</td>';
+                            service_options += '<td>' + originalPrice + '</td>';
+                            service_options += '<td>-</td>';
+                            service_options += '<td>-</td>';
+                            service_options += '<td>' + packageservice.tax_exclusive_price + '</td>';
+                            service_options += '<td>' + packageservice.tax_price + '</td>';
+                            service_options += '<td>' + packageservice.tax_including_price + '</td>';
+                            service_options += '<td>' + consume + '</td>';
+                            service_options += '<td>' + psConsumedAt + '</td>';
+                            service_options += '<td>' + (packageservice.sold_by ? packageservice.sold_by.name : 'N/A') + '</td>';
+                            service_options += '<td></td>';
+                            service_options += '</tr>';
+                        }
+                    });
+                }
             });
         }
 
@@ -1114,7 +1165,7 @@ function displayData(response) {
                 if (isBundle) {
                     // For bundles: show aggregated consumed status, expandable rows will show details
                     let anyConsumed = bundleServices.some(ps => ps.is_consumed == '1');
-                    service_options += '<td>' + (anyConsumed ? 'Partial' : 'No') + '</td>';
+                    service_options += '<td>' + (anyConsumed ? '-' : 'No') + '</td>';
                     service_options += '<td>-</td>';
                 } else {
                     // For plans (single service): show consumed status directly

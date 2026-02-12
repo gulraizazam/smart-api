@@ -102,7 +102,18 @@ function setEditBundleData(response) {
                 }
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                
+                // Count child services for this bundle
+                let childServiceCount = Object.values(packageservices).filter(function (ps) {
+                    return ps.package_bundle_id == packagebundle.id;
+                }).length;
+
+                // Only add toggle link if bundle has more than 1 child service
+                let bundleName = packagebundle.bundle.name;
+                if (childServiceCount > 1) {
+                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                }
+                service_options += '<td>' + bundleName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
@@ -121,23 +132,34 @@ function setEditBundleData(response) {
                 service_options += del_icon;
                 service_options += '</tr>';
 
-                Object.values(packageservices).forEach(function (packageservice) {
-                    let consume = 'No';
-                    if (packageservice.package_bundle_id == packagebundle.id) {
-                        if (packageservice.is_consumed == '0') {
-                            consume = 'No';
-                        } else {
-                            consume = 'Yes';
+                // Add child service rows only if more than 1 child service
+                if (childServiceCount > 1) {
+                    Object.values(packageservices).forEach(function (packageservice) {
+                        if (packageservice.package_bundle_id == packagebundle.id) {
+                            let consume = packageservice.is_consumed == '0' ? 'No' : 'Yes';
+                            let psConsumedAt = 'N/A';
+                            if (packageservice.consumed_at) {
+                                let date = new Date(packageservice.consumed_at);
+                                let day = String(date.getDate()).padStart(2, '0');
+                                let month = String(date.getMonth() + 1).padStart(2, '0');
+                                let year = String(date.getFullYear()).slice(-2);
+                                let hours = String(date.getHours()).padStart(2, '0');
+                                let minutes = String(date.getMinutes()).padStart(2, '0');
+                                psConsumedAt = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                            }
+                            let actualPrice = packageservice.actual_price ? parseFloat(packageservice.actual_price).toFixed(2) : '-';
+                            service_options += '<tr class="' + packagebundle.id + '" style="display: none; background-color: #f9f9f9;">';
+                            service_options += '<td>' + packageservice.service.name + '</td>';
+                            service_options += '<td>' + actualPrice + '</td>';
+                            service_options += '<td>' + packageservice.tax_exclusive_price + '</td>';
+                            service_options += '<td>' + packageservice.tax_price + '</td>';
+                            service_options += '<td>' + packageservice.tax_including_price + '</td>';
+                            service_options += '<td>' + (packageservice.sold_by ? packageservice.sold_by.name : 'N/A') + '</td>';
+                            service_options += '<td></td>';
+                            service_options += '</tr>';
                         }
-                        service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
-                        service_options += '<td></td>';
-                        service_options += '<td>' + packageservice.service.name + '</td>';
-                        service_options += '<td colspan="2">Amount : ' + packageservice.tax_exclusive_price + '</td>';
-                        service_options += '<td colspan="2">Tax:' + packageservice.tax_price + ' | Total Amount:' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td>Is Consumed:' + consume + ' | Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
-                        service_options += '</tr>';
-                    }
-                });
+                    });
+                }
             });
         }
 
