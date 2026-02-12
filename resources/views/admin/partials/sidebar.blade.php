@@ -433,12 +433,38 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage'))
-                <li class="menu-item {{ activeMenu('admin.resourcerotas.index') }} {{ activeMenu('admin.resourcerotas.calender-view') }}" aria-haspopup="true">
-                    <a href="{{ route('admin.resourcerotas.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon"><i class="font-icon la la-cog"></i></span>
-                        <span class="menu-text">Rota Management</span>
+                @if (Gate::allows('resourcerotas_manage') || Gate::allows('business_closures_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.resourcerotas.index', 'admin.resourcerotas.calender-view', 'admin.business-closures.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon"><i class="font-icon la la-calendar-alt"></i></span>
+                        <span class="menu-text">Schedule</span>
+                        <i class="menu-arrow"></i>
                     </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            @if (Gate::allows('resourcerotas_manage'))
+                            <li class="menu-item {{ activeMenu('admin.resourcerotas.index') }} {{ activeMenu('admin.resourcerotas.calender-view') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.resourcerotas.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Scheduling Shifts</span>
+                                </a>
+                            </li>
+                            @endif
+                            @if (Gate::allows('business_closures_manage'))
+                            <li class="menu-item {{ activeMenu('admin.business-closures.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.business-closures.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Business Closed Periods</span>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </div>
                 </li>
                 @endif
 
