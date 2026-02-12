@@ -807,6 +807,11 @@ class ResourceRotasController extends Controller
         return view('admin.resourcerotas.schedule-calendar');
     }
 
+    public function repeatingShifts()
+    {
+        return view('admin.resourcerotas.repeating-shifts');
+    }
+
     /**
      * update information of Resource days in resource has rotas days
      *

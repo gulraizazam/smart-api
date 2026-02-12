@@ -126,6 +126,157 @@
         </div>
     </div>
 
+    <!-- Add Shift Modal -->
+    <div class="modal fade" id="modal_add_shift" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title font-weight-bold" id="add_shift_title">Add Shift</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body pt-2">
+                    <p class="text-muted mb-4">You are editing this day's shifts only. To set repeating shifts, go to <a href="javascript:void(0);" class="text-primary" onclick="$('#modal_add_shift').modal('hide'); handleShiftAction('repeating-shifts');">scheduled shifts</a>.</p>
+                    
+                    <form id="form_add_shift">
+                        <input type="hidden" id="shift_resource_id" name="resource_id">
+                        <input type="hidden" id="shift_date" name="date">
+                        <input type="hidden" id="shift_location_id" name="location_id">
+                        
+                        <div id="shift_rows_container">
+                            <div class="shift-row mb-3" data-row="0">
+                                <div class="row align-items-end">
+                                    <div class="col-md-5">
+                                        <label class="mb-2">Start time</label>
+                                        <select class="form-control shift-start-time" name="shifts[0][start_time]">
+                                            <!-- Time options will be populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="mb-2">End time</label>
+                                        <select class="form-control shift-end-time" name="shifts[0][end_time]">
+                                            <!-- Time options will be populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <button type="button" class="btn btn-icon btn-light-danger btn-sm remove-shift-row" style="display: none;">
+                                            <i class="la la-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn_add_shift_row">
+                                <i class="la la-plus-circle mr-1"></i> Add shift
+                            </button>
+                            <span class="text-muted" id="total_shift_duration">Total shift duration: 0h</span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <div class="d-flex justify-content-between w-100">
+                        <button type="button" class="btn btn-icon btn-outline-danger rounded-circle" id="btn_delete_all_shifts" title="Delete all shifts">
+                            <i class="la la-trash"></i>
+                        </button>
+                        <div>
+                            <button type="button" class="btn btn-light mr-2" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-dark" id="btn_save_shift">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Time Off Modal -->
+    <div class="modal fade" id="modal_add_time_off" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0 d-flex justify-content-between align-items-start">
+                    <h4 class="modal-title font-weight-bold">Add time off</h4>
+                    <button type="button" class="btn btn-icon btn-hover-light-primary" data-dismiss="modal" aria-label="Close" style="width: 35px; height: 35px; background-color: #F3F6F9; border-radius: 6px;">
+                        <i class="la la-times" style="font-size: 20px; color: #7E8299;"></i>
+                    </button>
+                </div>
+                <div class="modal-body pt-3">
+                    <form id="form_add_time_off">
+                        <input type="hidden" id="time_off_location_id" name="location_id">
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="mb-2 font-weight-bold">Team member</label>
+                                <select class="form-control" id="time_off_resource_id" name="resource_id">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="mb-2 font-weight-bold">Type</label>
+                                <select class="form-control" id="time_off_type" name="type">
+                                    <option value="annual_leave">Annual leave</option>
+                                    <option value="sick_leave">Sick leave</option>
+                                    <option value="personal_leave">Personal leave</option>
+                                    <option value="unpaid_leave">Unpaid leave</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-5">
+                                <label class="mb-2 font-weight-bold">Start date</label>
+                                <input type="text" class="form-control datepicker" id="time_off_start_date" name="start_date" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="mb-2 font-weight-bold">Start time</label>
+                                <select class="form-control" id="time_off_start_time" name="start_time">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="mb-2 font-weight-bold">End time</label>
+                                <select class="form-control" id="time_off_end_time" name="end_time">
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="d-flex align-items-center cursor-pointer">
+                                <span class="time-off-checkbox mr-3">
+                                    <input type="checkbox" id="time_off_repeat" name="repeat">
+                                    <span class="checkbox-box"></span>
+                                </span>
+                                <span class="font-weight-bold" style="font-size: 15px;">Repeat</span>
+                            </label>
+                        </div>
+                        
+                        <div class="row mb-4" id="repeat_until_row" style="display: none;">
+                            <div class="col-md-5">
+                                <label class="mb-2 font-weight-bold">Repeat until</label>
+                                <input type="text" class="form-control datepicker" id="time_off_repeat_until" name="repeat_until" readonly>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="font-weight-bold mb-0">Description</label>
+                                <span class="text-muted" id="description_counter">0/100</span>
+                            </div>
+                            <textarea class="form-control" id="time_off_description" name="description" rows="3" maxlength="100" placeholder="Add description or note (optional)"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light px-6" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-dark px-6" id="btn_save_time_off">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('css')
     <style>
         .schedule-calendar {
@@ -189,6 +340,16 @@
         }
         .shift-cell {
             padding: 8px 4px !important;
+            height: 80px;
+            vertical-align: middle;
+        }
+        .shift-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 60px;
         }
         .shift-badge {
             display: inline-block;
@@ -199,6 +360,14 @@
             background-color: #E1F0FF;
             color: #3699FF;
         }
+        .shift-badge.clickable {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .shift-badge.clickable:hover {
+            box-shadow: 0 2px 8px rgba(54, 153, 255, 0.3);
+            transform: translateY(-1px);
+        }
         .shift-badge.not-working {
             background-color: #F3F6F9;
             color: #B5B5C3;
@@ -206,6 +375,124 @@
         .shift-badge.weekend {
             background-color: #FFF4DE;
             color: #FFA800;
+        }
+        .shift-badge.weekend.clickable:hover {
+            box-shadow: 0 2px 8px rgba(255, 168, 0, 0.3);
+        }
+        .shift-edit-dropdown {
+            min-width: 180px;
+        }
+        .shift-dropdown-item.text-danger {
+            color: #F64E60 !important;
+        }
+        .shift-dropdown-item.text-danger:hover {
+            background-color: #FFF5F8 !important;
+        }
+        .time-off-checkbox {
+            position: relative;
+            display: inline-block;
+        }
+        .time-off-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        .time-off-checkbox .checkbox-box {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            background-color: #fff;
+            border: 2px solid #E4E6EF;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .time-off-checkbox input:checked ~ .checkbox-box {
+            background-color: #3699FF;
+            border-color: #3699FF;
+        }
+        .time-off-checkbox input:checked ~ .checkbox-box:after {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 3px;
+            width: 6px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .cursor-pointer {
+            cursor: pointer;
+        }
+        .shift-add-btn {
+            visibility: hidden;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #E1E9FF;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .shift-add-btn i {
+            color: #3699FF;
+            font-size: 14px;
+        }
+        .shift-add-btn:hover {
+            background-color: #3699FF;
+        }
+        .shift-add-btn:hover i {
+            color: #fff;
+        }
+        .shift-cell:hover .shift-add-btn {
+            visibility: visible;
+        }
+        .shift-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+            padding: 8px 0;
+            margin-top: 5px;
+            white-space: nowrap;
+        }
+        .shift-dropdown.show {
+            display: block;
+        }
+        .shift-dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            color: #3F4254;
+            transition: background-color 0.2s;
+        }
+        .shift-dropdown-item:hover {
+            background-color: #F3F6F9;
+        }
+        .shift-dropdown-item i {
+            margin-right: 8px;
+            color: #7E8299;
+            width: 16px;
+        }
+        .shift-container {
+            position: relative;
         }
         .avatar-color-1 { background-color: #F64E60; }
         .avatar-color-2 { background-color: #3699FF; }

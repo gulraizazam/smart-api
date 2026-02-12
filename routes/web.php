@@ -325,6 +325,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::resource('resourcerotas', ResourceRotasController::class)->only('index')->middleware('permission:resourcerotas_manage');
         Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
         Route::get('resourcerotas/schedule', [ResourceRotasController::class, 'scheduleCalendar'])->name('resourcerotas.schedule')->middleware('permission:resourcerotas_manage');
+        Route::get('resourcerotas/repeating-shifts', [ResourceRotasController::class, 'repeatingShifts'])->name('resourcerotas.repeating-shifts')->middleware('permission:resourcerotas_manage');
 
         //Business Closures Management
         Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index')->middleware('permission:business_closures_manage');
