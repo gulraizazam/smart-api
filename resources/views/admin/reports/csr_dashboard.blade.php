@@ -314,9 +314,9 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive">
                                 <table class="table summary-table table-sm">
-                                    <thead style="position: sticky; top: 0; z-index: 1;">
+                                    <thead>
                                         <tr>
                                             <th class="pl-3" style="font-size: 0.9rem;">Branch</th>
                                             @foreach($dateRange as $dateKey => $dateInfo)
@@ -352,7 +352,7 @@
                                         </tr>
                                         @endforelse
                                     </tbody>
-                                    <tfoot style="position: sticky; bottom: 0; z-index: 1;">
+                                    <tfoot>
                                         <tr class="total-row">
                                             <td class="pl-3" style="font-size: 0.95rem;"><strong>TOTAL</strong></td>
                                             @foreach($dateRange as $dateKey => $dateInfo)
@@ -380,14 +380,15 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
-                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-responsive">
                                 <table class="table summary-table table-sm">
-                                    <thead style="position: sticky; top: 0; z-index: 1;">
+                                    <thead>
                                         <tr>
                                             <th class="pl-3" style="font-size: 0.9rem;">CSR Name</th>
                                             <th class="text-center" style="font-size: 0.85rem; padding: 0.5rem 0.25rem; background: #E8F4FD; color: #3699FF;">Target</th>
                                             <th class="text-center sub-header new-header" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">New</th>
-                                            <th class="text-center sub-header resch-header pr-3" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">Resch.</th>
+                                            <th class="text-center sub-header resch-header" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">Resch.</th>
+                                            <th class="text-center pr-3" style="font-size: 0.85rem; padding: 0.5rem 0.25rem; background: #F3F6F9; color: #7E8299; font-weight: 600;">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -410,38 +411,51 @@
                                                     {{ $newCount }}
                                                 </span>
                                             </td>
-                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
                                                 @php $reschCount = $stats['rescheduled'][$todayKey]; @endphp
                                                 <span class="count-pill resch-count {{ $reschCount > 0 ? 'has-value' : 'zero' }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
                                                     {{ $reschCount }}
                                                 </span>
                                             </td>
+                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
+                                                @php $totalCount = $newCount + $reschCount; @endphp
+                                                <span class="count-pill {{ $totalCount >= $csrTarget ? 'has-value' : ($totalCount > 0 ? 'has-value' : 'zero') }}" style="min-width: 32px; height: 26px; font-size: 0.9rem; background: {{ $totalCount >= $csrTarget ? '#C9F7F5' : '#F3F6F9' }}; color: {{ $totalCount >= $csrTarget ? '#1BC5BD' : '#7E8299' }};">
+                                                    {{ $totalCount }}
+                                                </span>
+                                            </td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="3" class="text-center py-4 text-muted">
+                                            <td colspan="5" class="text-center py-4 text-muted">
                                                 No CSR data found
                                             </td>
                                         </tr>
                                         @endforelse
                                     </tbody>
                                     @if(count($csrStats) > 0)
-                                    <tfoot style="position: sticky; bottom: 0; z-index: 1;">
+                                    <tfoot>
                                         <tr class="total-row">
                                             <td class="pl-3" style="font-size: 0.95rem;"><strong>TOTAL</strong></td>
                                             @php
                                                 $totalNewToday = 0;
                                                 $totalReschToday = 0;
+                                                $totalTarget = count($csrStats) * $csrTarget;
                                                 foreach($csrStats as $stats) {
                                                     $totalNewToday += $stats['new_created'][$todayKey];
                                                     $totalReschToday += $stats['rescheduled'][$todayKey];
                                                 }
                                             @endphp
                                             <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                <span style="font-size: 1rem; color: #3699FF; font-weight: 700;">{{ $totalTarget }}</span>
+                                            </td>
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
                                                 <span class="total-cell new-total" style="font-size: 1rem;">{{ $totalNewToday }}</span>
                                             </td>
-                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
                                                 <span class="total-cell resch-total" style="font-size: 1rem;">{{ $totalReschToday }}</span>
+                                            </td>
+                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
+                                                <span style="font-size: 1rem; color: #7E8299; font-weight: 700;">{{ $totalNewToday + $totalReschToday }}</span>
                                             </td>
                                         </tr>
                                     </tfoot>
