@@ -11,8 +11,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label>Locations <span class="text-muted">(Leave empty for all locations)</span></label>
-                        <select class="form-control select2" id="add_location_ids" name="location_ids[]" multiple="multiple" data-placeholder="All Locations">
+                        <label>Locations <span class="text-danger">*</span></label>
+                        <select class="form-control select2" id="add_location_ids" name="location_ids[]" multiple="multiple" data-placeholder="Select Locations" required>
                         </select>
                     </div>
                 </div>

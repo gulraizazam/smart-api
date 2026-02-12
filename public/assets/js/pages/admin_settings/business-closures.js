@@ -203,13 +203,13 @@ function initDatepickers() {
 
 function initSelect2() {
     $('#add_location_ids').select2({
-        placeholder: 'All Locations',
+        placeholder: 'Select Locations',
         allowClear: true,
         dropdownParent: $('#modal_add_business_closure'),
     });
 
     $('#edit_location_ids').select2({
-        placeholder: 'All Locations',
+        placeholder: 'Select Locations',
         allowClear: true,
         dropdownParent: $('#modal_edit_business_closure'),
     });
@@ -226,7 +226,7 @@ function initFormHandlers() {
         btn.find('.indicator-progress').show();
 
         var formData = {
-            location_ids: $('#add_location_ids').val() || ['all'],
+            location_ids: $('#add_location_ids').val(),
             start_date: $('#add_start_date').val(),
             end_date: $('#add_end_date').val(),
             description: $('#add_description').val(),
@@ -285,7 +285,7 @@ function initFormHandlers() {
 
         var formData = {
             _method: 'PUT',
-            location_ids: $('#edit_location_ids').val() || ['all'],
+            location_ids: $('#edit_location_ids').val(),
             start_date: $('#edit_start_date').val(),
             end_date: $('#edit_end_date').val(),
             description: $('#edit_description').val(),

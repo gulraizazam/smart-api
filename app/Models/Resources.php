@@ -419,6 +419,11 @@ class Resources extends BaseModal
         return $this->hasOne("\App\Models\ResourceHasRota", 'resource_id');
     }
 
+    public function resourceRota()
+    {
+        return $this->hasMany("\App\Models\ResourceHasRota", 'resource_id');
+    }
+
     public function rotas()
     {
         return $this->hasManyThrough('\App\Models\ResourceHasRotaDays', '\App\Models\ResourceHasRota', 'resource_id', 'resource_has_rota_id', 'id', 'id');

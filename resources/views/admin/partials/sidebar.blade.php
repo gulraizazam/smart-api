@@ -444,8 +444,8 @@
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
                             @if (Gate::allows('resourcerotas_manage'))
-                            <li class="menu-item {{ activeMenu('admin.resourcerotas.index') }} {{ activeMenu('admin.resourcerotas.calender-view') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.resourcerotas.index') }}" class="menu-link">
+                            <li class="menu-item {{ activeMenu('admin.resourcerotas.schedule') }} {{ activeMenu('admin.resourcerotas.index') }} {{ activeMenu('admin.resourcerotas.calender-view') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.resourcerotas.schedule') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
                                     </i>
