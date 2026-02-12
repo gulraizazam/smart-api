@@ -385,6 +385,7 @@
                                     <thead style="position: sticky; top: 0; z-index: 1;">
                                         <tr>
                                             <th class="pl-3" style="font-size: 0.9rem;">CSR Name</th>
+                                            <th class="text-center" style="font-size: 0.85rem; padding: 0.5rem 0.25rem; background: #E8F4FD; color: #3699FF;">Target</th>
                                             <th class="text-center sub-header new-header" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">New</th>
                                             <th class="text-center sub-header resch-header pr-3" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">Resch.</th>
                                         </tr>
@@ -399,8 +400,14 @@
                                                 </div>
                                             </td>
                                             <td class="text-center" style="padding: 0.5rem 0.25rem;">
-                                                <span class="count-pill new-count {{ $stats['new_created'][$todayKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
-                                                    {{ $stats['new_created'][$todayKey] }}
+                                                <span class="count-pill" style="min-width: 32px; height: 26px; font-size: 0.9rem; background: #E8F4FD; color: #3699FF;">
+                                                    {{ $csrTarget }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                @php $newCount = $stats['new_created'][$todayKey]; @endphp
+                                                <span class="count-pill new-count {{ $newCount >= $csrTarget ? 'has-value' : ($newCount > 0 ? 'has-value' : 'zero') }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
+                                                    {{ $newCount }}
                                                 </span>
                                             </td>
                                             <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">

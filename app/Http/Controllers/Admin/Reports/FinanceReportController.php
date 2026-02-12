@@ -22,6 +22,7 @@ use App\Models\Regions;
 use App\Models\Resources;
 use App\Models\RoleHasUsers;
 use App\Models\Services;
+use App\Models\Settings;
 use App\Models\User;
 use App\Reports\Finanaces;
 use Barryvdh\DomPDF\Facade as PDF;
@@ -3649,13 +3650,18 @@ public static function revenueByGenderAndService($request)
             return strcasecmp($a['name'], $b['name']);
         });
 
+        // Get CSR daily target from settings
+        $csrTargetSetting = Settings::getBySlug('sys-csr-target', Auth::user()->account_id);
+        $csrTarget = $csrTargetSetting ? (int) $csrTargetSetting->data : 10;
+
         return view('admin.reports.csr_dashboard', compact(
             'locationStats',
             'dateRange',
             'totalAppointments',
             'totalByDate',
             'csrStats',
-            'today'
+            'today',
+            'csrTarget'
         ));
     }
 }
