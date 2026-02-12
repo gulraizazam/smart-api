@@ -1,159 +1,148 @@
 "use strict";
 
-var KTDatatable = null;
-var permissions = {
-    create: true,
-    edit: true,
-    delete: true
-};
+// Define table_url and table_columns for the global datatable initialization (row-details.js)
+var table_url = route('admin.business-closures.datatable');
 
-$(document).ready(function () {
-    initDatatable();
-    initDatepickers();
-    initSelect2();
-    initFormHandlers();
-});
-
-function initDatatable() {
-    KTDatatable = $('#kt_datatable').KTDatatable({
-        data: {
-            type: 'remote',
-            source: {
-                read: {
-                    url: route('admin.business-closures.datatable'),
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    map: function (raw) {
-                        var dataSet = raw;
-                        if (typeof raw.data !== 'undefined') {
-                            dataSet = raw.data;
-                        }
-                        return dataSet;
-                    },
-                },
-            },
-            pageSize: 10,
-            serverPaging: true,
-            serverFiltering: true,
-            serverSorting: false,
-            saveState: {
-                cookie: false,
-                webstorage: false,
-            },
-        },
-        layout: {
-            scroll: false,
-            footer: false,
-        },
+var table_columns = [
+    {
+        field: 'id',
+        title: '#',
         sortable: false,
-        pagination: true,
-        toolbar: {
-            items: {
-                pagination: {
-                    pageSizeSelect: [10, 20, 30, 50, 100],
-                },
-            },
+        width: 40,
+        type: 'number',
+        textAlign: 'center',
+    },
+    {
+        field: 'locations',
+        title: 'Locations',
+        sortable: false,
+        width: 200,
+    },
+    {
+        field: 'start_date',
+        title: 'Start Date',
+        sortable: false,
+        width: 120,
+    },
+    {
+        field: 'end_date',
+        title: 'End Date',
+        sortable: false,
+        width: 120,
+    },
+    {
+        field: 'description',
+        title: 'Description',
+        sortable: false,
+        width: 200,
+    },
+    {
+        field: 'created_by',
+        title: 'Created By',
+        sortable: false,
+        width: 120,
+    },
+    {
+        field: 'created_at',
+        title: 'Created At',
+        sortable: false,
+        width: 150,
+    },
+    {
+        field: 'Actions',
+        title: 'Actions',
+        sortable: false,
+        width: 100,
+        overflow: 'visible',
+        autoHide: false,
+        template: function (row) {
+            return getActions(row);
         },
-        search: {
-            input: $('#kt_datatable_search_query'),
-            key: 'generalSearch'
-        },
-        columns: [
-            {
-                field: 'id',
-                title: '#',
-                sortable: false,
-                width: 40,
-                type: 'number',
-                textAlign: 'center',
-            },
-            {
-                field: 'locations',
-                title: 'Locations',
-                sortable: false,
-                width: 200,
-            },
-            {
-                field: 'start_date',
-                title: 'Start Date',
-                sortable: false,
-                width: 120,
-            },
-            {
-                field: 'end_date',
-                title: 'End Date',
-                sortable: false,
-                width: 120,
-            },
-            {
-                field: 'description',
-                title: 'Description',
-                sortable: false,
-                width: 200,
-            },
-            {
-                field: 'created_by',
-                title: 'Created By',
-                sortable: false,
-                width: 120,
-            },
-            {
-                field: 'created_at',
-                title: 'Created At',
-                sortable: false,
-                width: 150,
-            },
-            {
-                field: 'Actions',
-                title: 'Actions',
-                sortable: false,
-                width: 100,
-                overflow: 'visible',
-                autoHide: false,
-                template: function (row) {
-                    var dropdownItems = '';
-                    
-                    if (permissions.edit) {
-                        dropdownItems += '<a class="dropdown-item" href="javascript:void(0);" onclick="editClosure(' + row.id + ');">' +
-                            '<i class="la la-edit mr-2"></i> Edit' +
-                            '</a>';
-                    }
-                    
-                    if (permissions.delete) {
-                        dropdownItems += '<a class="dropdown-item text-danger" href="javascript:void(0);" onclick="deleteClosure(' + row.id + ');">' +
-                            '<i class="la la-trash mr-2"></i> Delete' +
-                            '</a>';
-                    }
-                    
-                    if (!dropdownItems) {
-                        return '-';
-                    }
-                    
-                    return '<div class="dropdown dropdown-inline">' +
-                        '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon" data-toggle="dropdown">' +
-                        '<i class="la la-ellipsis-v"></i>' +
-                        '</a>' +
-                        '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">' +
-                        dropdownItems +
-                        '</div>' +
-                        '</div>';
-                },
+    }
+];
+
+function getActions(row) {
+    if (typeof row.id === 'undefined') {
+        return '-';
+    }
+    
+    var dropdownItems = '';
+    
+    if (permissions.edit) {
+        dropdownItems += '<li class="navi-item"><a href="javascript:void(0);" onclick="editClosure(' + row.id + ');" class="navi-link"><span class="navi-icon"><i class="la la-edit"></i></span><span class="navi-text">Edit</span></a></li>';
+    }
+    
+    if (permissions.delete) {
+        dropdownItems += '<li class="navi-item"><a href="javascript:void(0);" onclick="deleteClosure(' + row.id + ');" class="navi-link"><span class="navi-icon"><i class="la la-trash"></i></span><span class="navi-text">Delete</span></a></li>';
+    }
+    
+    if (!dropdownItems) {
+        return '-';
+    }
+    
+    return '<div class="dropdown dropdown-inline action-dots">' +
+        '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">' +
+        '<i class="ki ki-bold-more-hor"></i>' +
+        '</a>' +
+        '<div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">' +
+        '<ul class="navi flex-column navi-hover py-2">' +
+        '<li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">Choose an action:</li>' +
+        dropdownItems +
+        '</ul>' +
+        '</div>' +
+        '</div>';
+}
+
+var filtersInitialized = false;
+
+// Called by row-details.js after datatable loads
+function setFilters(filter_values, active_filters) {
+    try {
+        // Only populate locations once
+        if (!filtersInitialized && filter_values && filter_values.locations) {
+            var locations = filter_values.locations;
+            var $locationFilter = $("#search_location_id");
+            
+            // Destroy Select2 if it exists
+            if ($locationFilter.hasClass('select2-hidden-accessible')) {
+                $locationFilter.select2('destroy');
             }
-        ],
-    });
-
-    KTDatatable.on('datatable-on-ajax-done', function (event, data) {
-        if (data.permissions) {
-            permissions = data.permissions;
+            
+            // Clear and rebuild options - add "All" option first for "no filter"
+            $locationFilter.empty();
+            $locationFilter.append('<option value="">All</option>');
+            
+            if (locations && locations.length > 0) {
+                for (var i = 0; i < locations.length; i++) {
+                    // Skip if location name is "All Centres" or similar to avoid duplicate "All"
+                    if (locations[i].name.toLowerCase().indexOf('all') === 0) {
+                        continue;
+                    }
+                    $locationFilter.append('<option value="' + locations[i].id + '">' + locations[i].name + '</option>');
+                }
+            }
+            
+            filtersInitialized = true;
         }
-        if (data.filter_values) {
-            setFilters(data.filter_values, data.active_filters);
+        
+        // Set active filter values (always update these)
+        if (active_filters && active_filters.location_id) {
+            $("#search_location_id").val(active_filters.location_id);
         }
-    });
+        if (active_filters && active_filters.start_date) {
+            $('#search_start_date').val(active_filters.start_date);
+        }
+        if (active_filters && active_filters.end_date) {
+            $('#search_end_date').val(active_filters.end_date);
+        }
+        
+    } catch (error) {
+        console.error('Error setting filters:', error);
+    }
+}
 
-    // Search button
+// Called by row-details.js for filter application
+function applyFilters(datatable) {
     $('#kt_search').on('click', function () {
         var filters = {
             location_id: $('#search_location_id').val(),
@@ -161,12 +150,14 @@ function initDatatable() {
             end_date: $('#search_end_date').val(),
             filter: 'filter',
         };
-        KTDatatable.search(filters, 'search');
+        datatable.search(filters, 'search');
     });
+}
 
-    // Reset button
+// Called by row-details.js for filter reset
+function resetAllFilters(datatable) {
     $('#kt_reset').on('click', function () {
-        $('#search_location_id').val('').trigger('change');
+        $('#search_location_id').val('');
         $('#search_start_date').val('');
         $('#search_end_date').val('');
         
@@ -176,49 +167,15 @@ function initDatatable() {
             end_date: '',
             filter: 'filter_cancel',
         };
-        KTDatatable.search(filters, 'search');
-    });
-
-    // Bulk delete
-    $('#delete-table-rows').on('click', function () {
-        var ids = [];
-        $('.kt-checkbox--solid input:checked').each(function () {
-            ids.push($(this).val());
-        });
-        
-        if (ids.length > 0) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete them!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    var filters = {
-                        delete: ids.join(','),
-                    };
-                    KTDatatable.search(filters, 'search');
-                }
-            });
-        }
-    });
-
-    // Checkbox selection handling
-    KTDatatable.on('datatable-on-check datatable-on-uncheck', function (e) {
-        var checkedNodes = KTDatatable.rows('.datatable-row-active').nodes();
-        var count = $(checkedNodes).length;
-        
-        if (count > 0) {
-            $('.delete-records').removeClass('d-none');
-            $('.checkbox-count').text(count);
-        } else {
-            $('.delete-records').addClass('d-none');
-        }
+        datatable.search(filters, 'search');
     });
 }
+
+$(document).ready(function () {
+    initDatepickers();
+    initSelect2();
+    initFormHandlers();
+});
 
 function initDatepickers() {
     // Filter datepickers
@@ -256,11 +213,6 @@ function initSelect2() {
         allowClear: true,
         dropdownParent: $('#modal_edit_business_closure'),
     });
-
-    $('#search_location_id').select2({
-        placeholder: 'All',
-        allowClear: true,
-    });
 }
 
 function initFormHandlers() {
@@ -296,7 +248,7 @@ function initFormHandlers() {
                     toastr.success(response.message);
                     $('#modal_add_business_closure').modal('hide');
                     resetAddForm();
-                    KTDatatable.reload();
+                    datatable.reload();
                 } else {
                     toastr.error(response.message);
                 }
@@ -354,7 +306,7 @@ function initFormHandlers() {
                 if (response.status) {
                     toastr.success(response.message);
                     $('#modal_edit_business_closure').modal('hide');
-                    KTDatatable.reload();
+                    datatable.reload();
                 } else {
                     toastr.error(response.message);
                 }
@@ -452,7 +404,7 @@ function deleteClosure(id) {
                 success: function (response) {
                     if (response.status) {
                         toastr.success(response.message);
-                        KTDatatable.reload();
+                        datatable.reload();
                     } else {
                         toastr.error(response.message);
                     }
@@ -470,9 +422,9 @@ function populateLocations(selector, locations) {
     $select.empty();
     
     if (locations && locations.length > 0) {
-        locations.forEach(function (location) {
-            $select.append(new Option(location.name, location.id, false, false));
-        });
+        for (var i = 0; i < locations.length; i++) {
+            $select.append(new Option(locations[i].name, locations[i].id, false, false));
+        }
     }
     
     $select.trigger('change');
@@ -483,35 +435,4 @@ function resetAddForm() {
     $('#add_end_date').val('');
     $('#add_description').val('');
     $('#add_location_ids').val(null).trigger('change');
-}
-
-function setFilters(filter_values, active_filters) {
-    try {
-        var locations = filter_values.locations;
-        
-        // Populate location filter
-        var $locationFilter = $('#search_location_id');
-        $locationFilter.empty();
-        $locationFilter.append(new Option('All', '', true, true));
-        
-        if (locations && locations.length > 0) {
-            locations.forEach(function (location) {
-                var selected = active_filters && active_filters.location_id == location.id;
-                $locationFilter.append(new Option(location.name, location.id, selected, selected));
-            });
-        }
-        
-        // Set active filter values
-        if (active_filters) {
-            if (active_filters.start_date) {
-                $('#search_start_date').val(active_filters.start_date);
-            }
-            if (active_filters.end_date) {
-                $('#search_end_date').val(active_filters.end_date);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error setting filters:', error);
-    }
 }

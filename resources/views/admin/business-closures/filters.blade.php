@@ -2,8 +2,7 @@
     <div class="row align-items-end">
         <div class="col-md-3 my-2">
             <label class="mb-2">Location:</label>
-            <select class="form-control datatable-input" id="search_location_id" data-col-index="1">
-                <option value="">Select</option>
+            <select class="form-control" id="search_location_id">
             </select>
         </div>
         <div class="col-md-3 my-2">

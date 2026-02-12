@@ -25,7 +25,7 @@ class BusinessClosureService
         $accountId = Auth::user()->account_id;
         $applyFilter = checkFilters($filters, self::$filterName);
 
-        $where = $this->buildWhereConditions($filters, $applyFilter, $userId);
+        $whereConditions = $this->buildWhereConditions($filters, $applyFilter, $userId);
         
         // Handle sorting from filters array
         $orderBy = 'created_at';
@@ -37,7 +37,18 @@ class BusinessClosureService
 
         $query = BusinessClosure::with(['locations', 'creator'])
             ->where('account_id', $accountId)
-            ->when(!empty($where), fn($q) => $q->where($where));
+            ->when(!empty($whereConditions['where']), fn($q) => $q->where($whereConditions['where']));
+
+        // Apply location filter through relationship
+        if (!empty($whereConditions['location_id'])) {
+            $locationId = $whereConditions['location_id'];
+            $query->where(function ($q) use ($locationId) {
+                // Match closures that have this specific location OR closures that apply to all locations (no locations assigned)
+                $q->whereHas('locations', function ($subQ) use ($locationId) {
+                    $subQ->where('location_id', $locationId);
+                })->orWhereDoesntHave('locations');
+            });
+        }
 
         $totalRecords = $query->count();
 
@@ -55,8 +66,10 @@ class BusinessClosureService
     protected function buildWhereConditions(array $filters, bool $applyFilter, int $userId): array
     {
         $where = [];
+        $locationId = null;
 
         if (hasFilter($filters, 'location_id')) {
+            $locationId = $filters['location_id'];
             Filters::put($userId, self::$filterName, 'location_id', $filters['location_id']);
         } else {
             if ($applyFilter) {
@@ -82,7 +95,10 @@ class BusinessClosureService
             }
         }
 
-        return $where;
+        return [
+            'where' => $where,
+            'location_id' => $locationId,
+        ];
     }
 
     /**
