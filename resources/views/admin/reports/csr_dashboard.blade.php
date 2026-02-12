@@ -2,103 +2,238 @@
 @section('title', 'CSR Dashboard')
 @section('content')
 <style>
+    .csr-dashboard-wrapper {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+        min-height: 100vh;
+        padding-bottom: 80px;
+    }
     .csr-stat-card {
-        border-radius: 8px;
+        border-radius: 12px;
         transition: all 0.3s ease;
         border: none;
-        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
     }
     .csr-stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 25px 0 rgba(0, 0, 0, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
     }
     .csr-stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 2.8rem;
+        font-weight: 800;
         line-height: 1;
+        background: linear-gradient(135deg, #3699FF 0%, #1BC5BD 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
     .csr-stat-label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #7e8299;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .date-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        position: relative;
+    }
+    .date-card.today-card {
+        background: linear-gradient(135deg, #1BC5BD 0%, #0BB783 100%);
+    }
+    .date-card.today-card .date-label,
+    .date-card.today-card .date-count,
+    .date-card.today-card .date-sublabel {
+        color: white !important;
+    }
+    .date-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #7e8299;
+    }
+    .date-count {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #3f4254;
+    }
+    .date-sublabel {
+        font-size: 0.8rem;
+        color: #b5b5c3;
         font-weight: 500;
     }
-    .date-badge {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.85rem;
+    .dashboard-table {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
     }
-    .date-badge.today {
-        background: linear-gradient(135deg, #1BC5BD 0%, #0BB783 100%);
+    .dashboard-table .card-header {
+        background: linear-gradient(135deg, #3699FF 0%, #2d7fd3 100%);
+        border: none;
+        padding: 1rem 1.5rem;
+    }
+    .dashboard-table .card-header .card-label {
         color: white;
+        font-weight: 700;
     }
-    .date-badge.future {
-        background: #f3f6f9;
+    .dashboard-table .card-header .card-icon i {
+        color: rgba(255,255,255,0.8);
+    }
+    .summary-table {
+        margin: 0;
+    }
+    .summary-table thead th {
+        background: #f8fafc;
+        font-weight: 700;
         color: #3f4254;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1rem 0.75rem;
+        border-bottom: 2px solid #ebedf3;
     }
-    .location-card {
-        border-left: 4px solid #3699FF;
-        margin-bottom: 1rem;
+    .summary-table tbody td {
+        vertical-align: middle;
+        padding: 0.875rem 0.75rem;
+        border-bottom: 1px solid #f3f6f9;
     }
-    .location-card .card-header {
-        background: #f8f9fa;
-        border-bottom: 1px solid #ebedf3;
-        cursor: pointer;
+    .summary-table tbody tr:hover {
+        background: #f8fafc;
     }
-    .location-card .card-header:hover {
-        background: #f1f3f6;
-    }
-    .appointment-row {
-        border-bottom: 1px solid #ebedf3;
-        padding: 0.75rem 0;
-    }
-    .appointment-row:last-child {
+    .summary-table tbody tr:last-child td {
         border-bottom: none;
     }
-    .appointment-time {
-        font-weight: 600;
-        color: #3699FF;
-    }
-    .summary-table th {
-        background: #f3f6f9;
+    .branch-name {
         font-weight: 600;
         color: #3f4254;
+        font-size: 0.9rem;
     }
-    .summary-table td {
-        vertical-align: middle;
+    .csr-name {
+        font-weight: 600;
+        color: #3f4254;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
     }
-    .count-badge {
+    .csr-name .csr-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #3699FF 0%, #1BC5BD 100%);
+        color: white;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-right: 10px;
+        flex-shrink: 0;
     }
-    .count-badge.has-appointments {
-        background: #C9F7F5;
+    .count-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 38px;
+        height: 28px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .count-pill.new-count {
+        background: #E8FFF3;
         color: #1BC5BD;
     }
-    .count-badge.no-appointments {
+    .count-pill.new-count.has-value {
+        background: linear-gradient(135deg, #1BC5BD 0%, #0BB783 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(27, 197, 189, 0.3);
+    }
+    .count-pill.resch-count {
+        background: #FFF8DD;
+        color: #FFA800;
+    }
+    .count-pill.resch-count.has-value {
+        background: linear-gradient(135deg, #FFA800 0%, #FF8A00 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(255, 168, 0, 0.3);
+    }
+    .count-pill.zero {
         background: #f3f6f9;
         color: #b5b5c3;
     }
+    .total-cell {
+        font-weight: 800;
+        font-size: 1rem;
+    }
+    .total-cell.new-total {
+        color: #1BC5BD;
+    }
+    .total-cell.resch-total {
+        color: #FFA800;
+    }
     .total-row {
-        background: #f8f9fa;
-        font-weight: 600;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    }
+    .total-row td {
+        font-weight: 700;
+        padding: 1rem 0.75rem !important;
+        border-top: 2px solid #ebedf3;
+    }
+    .date-header-group {
+        text-align: center;
+        border-bottom: none !important;
+    }
+    .date-header-group .date-text {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #3f4254;
+    }
+    .date-header-group.today-header .date-text {
+        color: #1BC5BD;
+    }
+    .sub-header {
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 0.75rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .sub-header.new-header {
+        color: #1BC5BD !important;
+        background: #E8FFF3 !important;
+    }
+    .sub-header.resch-header {
+        color: #FFA800 !important;
+        background: #FFF8DD !important;
     }
     .refresh-btn {
         position: fixed;
         bottom: 30px;
         right: 30px;
         z-index: 100;
-        width: 50px;
-        height: 50px;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
-        box-shadow: 0 5px 20px rgba(54, 153, 255, 0.4);
+        background: linear-gradient(135deg, #3699FF 0%, #2d7fd3 100%);
+        box-shadow: 0 6px 25px rgba(54, 153, 255, 0.4);
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .refresh-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 30px rgba(54, 153, 255, 0.5);
+    }
+    .section-divider {
+        height: 4px;
+        background: linear-gradient(90deg, #3699FF 0%, #1BC5BD 50%, #FFA800 100%);
+        border-radius: 2px;
+        margin: 2rem 0;
+        opacity: 0.3;
     }
 </style>
 
@@ -147,210 +282,166 @@
             <div class="row mb-6">
                 @foreach($dateRange as $dateKey => $dateInfo)
                 <div class="col">
-                    <div class="card csr-stat-card h-100">
+                    <div class="card date-card h-100 {{ $dateInfo['is_today'] ? 'today-card' : '' }}">
                         <div class="card-body text-center py-4">
-                            <span class="date-badge {{ $dateInfo['is_today'] ? 'today' : 'future' }} mb-3">
-                                {{ $dateInfo['is_today'] ? 'TODAY' : $dateInfo['display'] }}
-                            </span>
-                            <div class="csr-stat-number {{ $totalByDate[$dateKey] > 0 ? 'text-success' : 'text-muted' }}">
+                            <div class="date-label mb-2">
+                                {{ $dateInfo['is_today'] ? '📅 TODAY' : $dateInfo['display'] }}
+                            </div>
+                            <div class="date-count">
                                 {{ $totalByDate[$dateKey] }}
                             </div>
-                            <div class="csr-stat-label">Consultations</div>
+                            <div class="date-sublabel">Consultations</div>
                         </div>
                     </div>
                 </div>
                 @endforeach
             </div>
 
-            <!-- Summary Table -->
-            <div class="card card-custom mb-6">
-                <div class="card-header py-3">
-                    <div class="card-title">
-                        <span class="card-icon">
-                            <i class="la la-building text-primary icon-lg"></i>
-                        </span>
-                        <h3 class="card-label">Branch-wise Summary</h3>
+            <!-- Two Column Layout for Tables -->
+            @php
+                $todayKey = $today->format('Y-m-d');
+            @endphp
+            <div class="row">
+                <!-- Branch-wise Summary Table -->
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card dashboard-table h-100">
+                        <div class="card-header py-2">
+                            <div class="card-title">
+                                <span class="card-icon">
+                                    <i class="la la-building icon-lg"></i>
+                                </span>
+                                <h3 class="card-label" style="font-size: 1rem;">Branch-wise Summary</h3>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table summary-table table-sm">
+                                    <thead style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th class="pl-3" style="font-size: 0.75rem;">Branch</th>
+                                            @foreach($dateRange as $dateKey => $dateInfo)
+                                            <th class="text-center {{ $dateInfo['is_today'] ? 'today-header' : '' }}" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">
+                                                @if($dateInfo['is_today'])
+                                                    <span style="color: #1BC5BD;">Today</span>
+                                                @else
+                                                    {{ \Carbon\Carbon::parse($dateKey)->format('D') }}
+                                                @endif
+                                            </th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($locationStats as $locationId => $stats)
+                                        <tr>
+                                            <td class="pl-3" style="font-size: 0.8rem; padding: 0.4rem 0.5rem;">
+                                                <span class="branch-name">{{ $stats['name'] }}</span>
+                                            </td>
+                                            @foreach($dateRange as $dateKey => $dateInfo)
+                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
+                                                <span class="count-pill new-count {{ $stats['dates'][$dateKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                                    {{ $stats['dates'][$dateKey] }}
+                                                </span>
+                                            </td>
+                                            @endforeach
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="{{ count($dateRange) + 1 }}" class="text-center py-4 text-muted">
+                                                No branches found
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                    <tfoot style="position: sticky; bottom: 0; z-index: 1;">
+                                        <tr class="total-row">
+                                            <td class="pl-3" style="font-size: 0.8rem;"><strong>TOTAL</strong></td>
+                                            @foreach($dateRange as $dateKey => $dateInfo)
+                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
+                                                <span class="total-cell new-total" style="font-size: 0.85rem;">{{ $totalByDate[$dateKey] }}</span>
+                                            </td>
+                                            @endforeach
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-head-custom table-vertical-center summary-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="pl-6">Branch</th>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <th class="text-center">
-                                        @if($dateInfo['is_today'])
-                                            <span class="text-success font-weight-bolder">Today</span>
-                                        @else
-                                            {{ $dateInfo['display'] }}
-                                        @endif
-                                    </th>
-                                    @endforeach
-                                    <th class="text-center pr-6">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($locationStats as $locationId => $stats)
-                                <tr>
-                                    <td class="pl-6">
-                                        <span class="font-weight-bold">{{ $stats['name'] }}</span>
-                                    </td>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <td class="text-center">
-                                        <span class="count-badge {{ $stats['dates'][$dateKey] > 0 ? 'has-appointments' : 'no-appointments' }}">
-                                            {{ $stats['dates'][$dateKey] }}
-                                        </span>
-                                    </td>
-                                    @endforeach
-                                    <td class="text-center pr-6">
-                                        <span class="font-weight-bolder text-primary">{{ $stats['total'] }}</span>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="{{ count($dateRange) + 2 }}" class="text-center py-6 text-muted">
-                                        No branches found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot>
-                                <tr class="total-row">
-                                    <td class="pl-6 font-weight-bolder">TOTAL</td>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <td class="text-center">
-                                        <span class="font-weight-bolder text-primary">{{ $totalByDate[$dateKey] }}</span>
-                                    </td>
-                                    @endforeach
-                                    <td class="text-center pr-6">
-                                        <span class="font-weight-bolder text-success" style="font-size: 1.1rem;">{{ $totalAppointments }}</span>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
-            <!-- CSR-wise Consultation Stats -->
-            <div class="card card-custom">
-                <div class="card-header py-3">
-                    <div class="card-title">
-                        <span class="card-icon">
-                            <i class="la la-user-tie text-primary icon-lg"></i>
-                        </span>
-                        <h3 class="card-label">CSR-wise Consultations</h3>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-head-custom table-vertical-center summary-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="pl-6" rowspan="2" style="vertical-align: middle;">CSR Name</th>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <th class="text-center" colspan="2" style="border-bottom: none;">
-                                        @if($dateInfo['is_today'])
-                                            <span class="text-success font-weight-bolder">Today</span>
-                                        @else
-                                            {{ $dateInfo['display'] }}
-                                        @endif
-                                    </th>
-                                    @endforeach
-                                    <th class="text-center pr-6" colspan="2" style="border-bottom: none;">Total</th>
-                                </tr>
-                                <tr>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <th class="text-center" style="font-size: 0.75rem; padding-top: 0;">
-                                        <span class="text-success">New</span>
-                                    </th>
-                                    <th class="text-center" style="font-size: 0.75rem; padding-top: 0;">
-                                        <span class="text-warning">Resch.</span>
-                                    </th>
-                                    @endforeach
-                                    <th class="text-center" style="font-size: 0.75rem; padding-top: 0;">
-                                        <span class="text-success">New</span>
-                                    </th>
-                                    <th class="text-center pr-6" style="font-size: 0.75rem; padding-top: 0;">
-                                        <span class="text-warning">Resch.</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($csrStats as $csrId => $stats)
-                                <tr>
-                                    <td class="pl-6">
-                                        <span class="font-weight-bold">{{ $stats['name'] }}</span>
-                                    </td>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    <td class="text-center">
-                                        <span class="count-badge {{ $stats['new_created'][$dateKey] > 0 ? 'has-appointments' : 'no-appointments' }}">
-                                            {{ $stats['new_created'][$dateKey] }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        @php
-                                            $reschCount = $stats['rescheduled'][$dateKey];
-                                        @endphp
-                                        <span class="count-badge {{ $reschCount > 0 ? 'has-appointments' : 'no-appointments' }}" style="{{ $reschCount > 0 ? 'background: #FFF4DE; color: #FFA800;' : '' }}">
-                                            {{ $reschCount }}
-                                        </span>
-                                    </td>
-                                    @endforeach
-                                    <td class="text-center">
-                                        <span class="font-weight-bolder text-success">{{ $stats['total_new'] }}</span>
-                                    </td>
-                                    <td class="text-center pr-6">
-                                        <span class="font-weight-bolder text-warning">{{ $stats['total_rescheduled'] }}</span>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="{{ (count($dateRange) * 2) + 3 }}" class="text-center py-6 text-muted">
-                                        No CSR data found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                            @if(count($csrStats) > 0)
-                            <tfoot>
-                                <tr class="total-row">
-                                    <td class="pl-6 font-weight-bolder">TOTAL</td>
-                                    @foreach($dateRange as $dateKey => $dateInfo)
-                                    @php
-                                        $totalNewByDate = 0;
-                                        $totalReschByDate = 0;
-                                        foreach($csrStats as $stats) {
-                                            $totalNewByDate += $stats['new_created'][$dateKey];
-                                            $totalReschByDate += $stats['rescheduled'][$dateKey];
-                                        }
-                                    @endphp
-                                    <td class="text-center">
-                                        <span class="font-weight-bolder text-success">{{ $totalNewByDate }}</span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="font-weight-bolder text-warning">{{ $totalReschByDate }}</span>
-                                    </td>
-                                    @endforeach
-                                    @php
-                                        $grandTotalNew = 0;
-                                        $grandTotalResch = 0;
-                                        foreach($csrStats as $stats) {
-                                            $grandTotalNew += $stats['total_new'];
-                                            $grandTotalResch += $stats['total_rescheduled'];
-                                        }
-                                    @endphp
-                                    <td class="text-center">
-                                        <span class="font-weight-bolder text-success" style="font-size: 1.1rem;">{{ $grandTotalNew }}</span>
-                                    </td>
-                                    <td class="text-center pr-6">
-                                        <span class="font-weight-bolder text-warning" style="font-size: 1.1rem;">{{ $grandTotalResch }}</span>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                            @endif
-                        </table>
+                <!-- CSR-wise Consultation Stats - Today Only -->
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card dashboard-table h-100">
+                        <div class="card-header py-2" style="background: linear-gradient(135deg, #1BC5BD 0%, #0BB783 100%);">
+                            <div class="card-title">
+                                <span class="card-icon">
+                                    <i class="la la-user-tie icon-lg"></i>
+                                </span>
+                                <h3 class="card-label" style="font-size: 1rem;">CSR-wise (Today)</h3>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table summary-table table-sm">
+                                    <thead style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th class="pl-3" style="font-size: 0.75rem;">CSR Name</th>
+                                            <th class="text-center sub-header new-header" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">New</th>
+                                            <th class="text-center sub-header resch-header pr-3" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">Resch.</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($csrStats as $csrId => $stats)
+                                        <tr>
+                                            <td class="pl-3" style="padding: 0.4rem 0.5rem;">
+                                                <div class="csr-name" style="font-size: 0.8rem;">
+                                                    <span class="csr-avatar" style="width: 24px; height: 24px; font-size: 0.65rem; margin-right: 6px;">{{ strtoupper(substr($stats['name'], 0, 2)) }}</span>
+                                                    {{ $stats['name'] }}
+                                                </div>
+                                            </td>
+                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
+                                                <span class="count-pill new-count {{ $stats['new_created'][$todayKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                                    {{ $stats['new_created'][$todayKey] }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center pr-3" style="padding: 0.4rem 0.25rem;">
+                                                @php $reschCount = $stats['rescheduled'][$todayKey]; @endphp
+                                                <span class="count-pill resch-count {{ $reschCount > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                                    {{ $reschCount }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">
+                                                No CSR data found
+                                            </td>
+                                        </tr>
+                                        @endforelse
+                                    </tbody>
+                                    @if(count($csrStats) > 0)
+                                    <tfoot style="position: sticky; bottom: 0; z-index: 1;">
+                                        <tr class="total-row">
+                                            <td class="pl-3" style="font-size: 0.8rem;"><strong>TOTAL</strong></td>
+                                            @php
+                                                $totalNewToday = 0;
+                                                $totalReschToday = 0;
+                                                foreach($csrStats as $stats) {
+                                                    $totalNewToday += $stats['new_created'][$todayKey];
+                                                    $totalReschToday += $stats['rescheduled'][$todayKey];
+                                                }
+                                            @endphp
+                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
+                                                <span class="total-cell new-total" style="font-size: 0.9rem;">{{ $totalNewToday }}</span>
+                                            </td>
+                                            <td class="text-center pr-3" style="padding: 0.4rem 0.25rem;">
+                                                <span class="total-cell resch-total" style="font-size: 0.9rem;">{{ $totalReschToday }}</span>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                    @endif
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
