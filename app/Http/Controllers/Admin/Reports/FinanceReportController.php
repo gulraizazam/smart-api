@@ -3504,10 +3504,7 @@ public static function revenueByGenderAndService($request)
      */
     public function csrDashboard()
     {
-        if (!Gate::allows('appointment_reports_manage')) {
-            return abort(401);
-        }
-
+       
         $today = Carbon::today();
         $endDate = Carbon::today()->addDays(4); // Today + 4 days = 5 days total
 
