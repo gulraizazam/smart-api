@@ -629,6 +629,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
          Route::post('reports/incentive_report', [FinanceReportController::class, 'loadIncentiveReport'])->name('reports.incentive_report');
          Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
          Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');
+         
+         // CSR Dashboard - Consultations scheduled in next 5 days
+         Route::get('reports/csr-dashboard', [FinanceReportController::class, 'csrDashboard'])->name('reports.csr_dashboard')->middleware('permission:csr_dashboard_report');
 
          //////Dashboard Stats - Now handled by API routes in api.php //////
         // Kept routes that are still needed (not migrated to API or used elsewhere)
