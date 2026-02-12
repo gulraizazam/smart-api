@@ -318,9 +318,9 @@
                                 <table class="table summary-table table-sm">
                                     <thead style="position: sticky; top: 0; z-index: 1;">
                                         <tr>
-                                            <th class="pl-3" style="font-size: 0.75rem;">Branch</th>
+                                            <th class="pl-3" style="font-size: 0.9rem;">Branch</th>
                                             @foreach($dateRange as $dateKey => $dateInfo)
-                                            <th class="text-center {{ $dateInfo['is_today'] ? 'today-header' : '' }}" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">
+                                            <th class="text-center {{ $dateInfo['is_today'] ? 'today-header' : '' }}" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">
                                                 @if($dateInfo['is_today'])
                                                     <span style="color: #1BC5BD;">Today</span>
                                                 @else
@@ -333,12 +333,12 @@
                                     <tbody>
                                         @forelse($locationStats as $locationId => $stats)
                                         <tr>
-                                            <td class="pl-3" style="font-size: 0.8rem; padding: 0.4rem 0.5rem;">
+                                            <td class="pl-3" style="font-size: 0.95rem; padding: 0.5rem 0.5rem;">
                                                 <span class="branch-name">{{ $stats['name'] }}</span>
                                             </td>
                                             @foreach($dateRange as $dateKey => $dateInfo)
-                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
-                                                <span class="count-pill new-count {{ $stats['dates'][$dateKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                <span class="count-pill new-count {{ $stats['dates'][$dateKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
                                                     {{ $stats['dates'][$dateKey] }}
                                                 </span>
                                             </td>
@@ -354,10 +354,10 @@
                                     </tbody>
                                     <tfoot style="position: sticky; bottom: 0; z-index: 1;">
                                         <tr class="total-row">
-                                            <td class="pl-3" style="font-size: 0.8rem;"><strong>TOTAL</strong></td>
+                                            <td class="pl-3" style="font-size: 0.95rem;"><strong>TOTAL</strong></td>
                                             @foreach($dateRange as $dateKey => $dateInfo)
-                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
-                                                <span class="total-cell new-total" style="font-size: 0.85rem;">{{ $totalByDate[$dateKey] }}</span>
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                <span class="total-cell new-total" style="font-size: 1rem;">{{ $totalByDate[$dateKey] }}</span>
                                             </td>
                                             @endforeach
                                         </tr>
@@ -384,28 +384,28 @@
                                 <table class="table summary-table table-sm">
                                     <thead style="position: sticky; top: 0; z-index: 1;">
                                         <tr>
-                                            <th class="pl-3" style="font-size: 0.75rem;">CSR Name</th>
-                                            <th class="text-center sub-header new-header" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">New</th>
-                                            <th class="text-center sub-header resch-header pr-3" style="font-size: 0.7rem; padding: 0.5rem 0.25rem;">Resch.</th>
+                                            <th class="pl-3" style="font-size: 0.9rem;">CSR Name</th>
+                                            <th class="text-center sub-header new-header" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">New</th>
+                                            <th class="text-center sub-header resch-header pr-3" style="font-size: 0.85rem; padding: 0.5rem 0.25rem;">Resch.</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse($csrStats as $csrId => $stats)
                                         <tr>
-                                            <td class="pl-3" style="padding: 0.4rem 0.5rem;">
-                                                <div class="csr-name" style="font-size: 0.8rem;">
-                                                    <span class="csr-avatar" style="width: 24px; height: 24px; font-size: 0.65rem; margin-right: 6px;">{{ strtoupper(substr($stats['name'], 0, 2)) }}</span>
+                                            <td class="pl-3" style="padding: 0.5rem 0.5rem;">
+                                                <div class="csr-name" style="font-size: 0.95rem;">
+                                                    <span class="csr-avatar" style="width: 28px; height: 28px; font-size: 0.7rem; margin-right: 8px;">{{ strtoupper(substr($stats['name'], 0, 2)) }}</span>
                                                     {{ $stats['name'] }}
                                                 </div>
                                             </td>
-                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
-                                                <span class="count-pill new-count {{ $stats['new_created'][$todayKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                <span class="count-pill new-count {{ $stats['new_created'][$todayKey] > 0 ? 'has-value' : 'zero' }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
                                                     {{ $stats['new_created'][$todayKey] }}
                                                 </span>
                                             </td>
-                                            <td class="text-center pr-3" style="padding: 0.4rem 0.25rem;">
+                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
                                                 @php $reschCount = $stats['rescheduled'][$todayKey]; @endphp
-                                                <span class="count-pill resch-count {{ $reschCount > 0 ? 'has-value' : 'zero' }}" style="min-width: 28px; height: 22px; font-size: 0.75rem;">
+                                                <span class="count-pill resch-count {{ $reschCount > 0 ? 'has-value' : 'zero' }}" style="min-width: 32px; height: 26px; font-size: 0.9rem;">
                                                     {{ $reschCount }}
                                                 </span>
                                             </td>
@@ -421,7 +421,7 @@
                                     @if(count($csrStats) > 0)
                                     <tfoot style="position: sticky; bottom: 0; z-index: 1;">
                                         <tr class="total-row">
-                                            <td class="pl-3" style="font-size: 0.8rem;"><strong>TOTAL</strong></td>
+                                            <td class="pl-3" style="font-size: 0.95rem;"><strong>TOTAL</strong></td>
                                             @php
                                                 $totalNewToday = 0;
                                                 $totalReschToday = 0;
@@ -430,11 +430,11 @@
                                                     $totalReschToday += $stats['rescheduled'][$todayKey];
                                                 }
                                             @endphp
-                                            <td class="text-center" style="padding: 0.4rem 0.25rem;">
-                                                <span class="total-cell new-total" style="font-size: 0.9rem;">{{ $totalNewToday }}</span>
+                                            <td class="text-center" style="padding: 0.5rem 0.25rem;">
+                                                <span class="total-cell new-total" style="font-size: 1rem;">{{ $totalNewToday }}</span>
                                             </td>
-                                            <td class="text-center pr-3" style="padding: 0.4rem 0.25rem;">
-                                                <span class="total-cell resch-total" style="font-size: 0.9rem;">{{ $totalReschToday }}</span>
+                                            <td class="text-center pr-3" style="padding: 0.5rem 0.25rem;">
+                                                <span class="total-cell resch-total" style="font-size: 1rem;">{{ $totalReschToday }}</span>
                                             </td>
                                         </tr>
                                     </tfoot>
