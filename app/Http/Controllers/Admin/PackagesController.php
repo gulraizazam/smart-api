@@ -384,6 +384,9 @@ class PackagesController extends Controller
 
             // If payment mode and cash amount provided, create payment entry
             if ($paymentModeId && $cashAmount > 0) {
+                // Update package's updated_at when payment is added
+                Packages::where('id', $packageId)->update(['updated_at' => Filters::getCurrentTimeStamp()]);
+                
                 $packageAdvanceData = [
                     'cash_flow' => 'in',
                     'cash_amount' => $cashAmount,
@@ -1416,8 +1419,8 @@ class PackagesController extends Controller
 
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
-                    $record = Packages::find($packageService->package_id);
-                    $record->update(['total_price' => $total, 'updated_at' => Filters::getCurrentTimeStamp()]);
+                    // Only update total_price without touching updated_at (deleting service should not update timestamp)
+                    Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
                 }
             }
 
@@ -2600,7 +2603,8 @@ class PackagesController extends Controller
         $grand_total = number_format(round(($total_with_refunded - $package_advances_cash_amount)) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
 
-        $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
+        // Only update total_price without touching updated_at (this is just a calculation, not a real change)
+        Packages::where('id', $package->id)->update(['total_price' => $request->total]);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total,
