@@ -948,6 +948,7 @@ class PlanService
                     ->where('parent_id', '>', 0)
                     ->where('active', 1)
                     ->where('account_id', $accountId)
+                    ->whereNull('deleted_at')
                     ->select('id', 'name', 'parent_id', 'active')
                     ->get();
                 
@@ -959,6 +960,7 @@ class PlanService
             // Get details of assigned services to determine if they are parent or child
             $assignedServices = DB::table('services')
                 ->whereIn('id', $serviceHasLocations)
+                ->whereNull('deleted_at')
                 ->select('id', 'name', 'parent_id', 'active')
                 ->get();
 
@@ -973,6 +975,7 @@ class PlanService
                         ->where('parent_id', $service->id)
                         ->where('active', 1)
                         ->where('account_id', $accountId)
+                        ->whereNull('deleted_at')
                         ->select('id', 'name', 'parent_id', 'active')
                         ->get();
                     
