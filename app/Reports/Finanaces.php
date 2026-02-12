@@ -2812,15 +2812,18 @@ class Finanaces
                 $invoiceCreatedAt = Carbon::parse($invoice->created_at);
                 $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
 
-                // Get package linked to this appointment
-                $package = Packages::where('appointment_id', $appointment->id)->first();
+                // Get all packages linked to this appointment
+                $packages = Packages::where('appointment_id', $appointment->id)->get();
 
-                if (!$package) {
+                if ($packages->isEmpty()) {
                     continue;
                 }
 
-                // Get package bundle IDs
-                $packagebundleIds = PackageBundles::where('package_id', $package->id)->pluck('id');
+                // Collect all package IDs
+                $packageIds = $packages->pluck('id')->toArray();
+
+                // Get package bundle IDs for all packages
+                $packagebundleIds = PackageBundles::whereIn('package_id', $packageIds)->pluck('id');
 
                 // Check if there's at least one service added in package on same day or after invoice creation date
                 $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packagebundleIds)
@@ -2831,8 +2834,8 @@ class Finanaces
                     continue;
                 }
 
-                // Check if there's at least one payment on same day or after invoice creation date
-                $firstPayment = PackageAdvances::where('package_id', $package->id)
+                // Check if there's at least one payment on same day or after invoice creation date (across all packages)
+                $firstPayment = PackageAdvances::whereIn('package_id', $packageIds)
                     ->where('cash_flow', 'in')
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
@@ -2850,8 +2853,8 @@ class Finanaces
                     continue;
                 }
 
-                // Get all payments for conversion spend calculation (from invoice date, within report range)
-                $packagesadvances = PackageAdvances::where('package_id', $package->id)
+                // Get all payments for conversion spend calculation (from invoice date, within report range) across all packages
+                $packagesadvances = PackageAdvances::whereIn('package_id', $packageIds)
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
                     ->whereDate('created_at', '>=', $invoiceDate)
@@ -3041,9 +3044,8 @@ class Finanaces
             ->map(function ($appointments_info) {
                 return $appointments_info->sum('conversion_spend');
             });
-        $avg_C_val = 0;
         if (count($conversionsByPatient) > 0) {
-            $avg_cxlient_value = $avg_C_val / count($conversionsByPatient);
+            $avg_cxlient_value = $conversionsByPatient->sum() / count($conversionsByPatient);
         } else {
             $avg_cxlient_value = 0;
         }
