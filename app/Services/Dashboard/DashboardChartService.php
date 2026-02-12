@@ -282,15 +282,18 @@ class DashboardChartService
 
             $invoiceDate = \Carbon\Carbon::parse($invoice->created_at)->format('Y-m-d');
 
-            // Get package linked to this appointment
-            $package = \App\Models\Packages::where('appointment_id', $appointment->id)->first();
+            // Get all packages linked to this appointment
+            $packages = \App\Models\Packages::where('appointment_id', $appointment->id)->get();
 
-            if (!$package) {
+            if ($packages->isEmpty()) {
                 continue;
             }
 
-            // Get package bundle IDs
-            $packagebundleIds = \App\Models\PackageBundles::where('package_id', $package->id)->pluck('id');
+            // Collect all package IDs
+            $packageIds = $packages->pluck('id')->toArray();
+
+            // Get package bundle IDs for all packages
+            $packagebundleIds = \App\Models\PackageBundles::whereIn('package_id', $packageIds)->pluck('id');
 
             // Check if there's at least one service added in package on same day or after invoice creation date
             $serviceAfterInvoice = \App\Models\PackageService::whereIn('package_bundle_id', $packagebundleIds)
@@ -301,8 +304,8 @@ class DashboardChartService
                 continue;
             }
 
-            // Check if there's at least one payment on same day or after invoice creation date
-            $firstPayment = \App\Models\PackageAdvances::where('package_id', $package->id)
+            // Check if there's at least one payment on same day or after invoice creation date (across all packages)
+            $firstPayment = \App\Models\PackageAdvances::whereIn('package_id', $packageIds)
                 ->where('cash_flow', 'in')
                 ->where('cash_amount', '>', 0)
                 ->whereNull('deleted_at')
@@ -320,8 +323,8 @@ class DashboardChartService
                 continue;
             }
 
-            // Get all payments for conversion spend calculation (from invoice date, within report range)
-            $packagesadvances = \App\Models\PackageAdvances::where('package_id', $package->id)
+            // Get all payments for conversion spend calculation (from invoice date, within report range) across all packages
+            $packagesadvances = \App\Models\PackageAdvances::whereIn('package_id', $packageIds)
                 ->where('cash_amount', '>', 0)
                 ->whereNull('deleted_at')
                 ->whereDate('created_at', '>=', $invoiceDate)
