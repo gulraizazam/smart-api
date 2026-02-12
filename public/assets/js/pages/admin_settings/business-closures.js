@@ -13,6 +13,12 @@ var table_columns = [
         textAlign: 'center',
     },
     {
+        field: 'title',
+        title: 'Title',
+        sortable: false,
+        width: 200,
+    },
+    {
         field: 'locations',
         title: 'Locations',
         sortable: false,
@@ -29,12 +35,6 @@ var table_columns = [
         title: 'End Date',
         sortable: false,
         width: 120,
-    },
-    {
-        field: 'description',
-        title: 'Description',
-        sortable: false,
-        width: 200,
     },
     {
         field: 'created_by',
@@ -226,10 +226,10 @@ function initFormHandlers() {
         btn.find('.indicator-progress').show();
 
         var formData = {
+            title: $('#add_title').val(),
             location_ids: $('#add_location_ids').val(),
             start_date: $('#add_start_date').val(),
             end_date: $('#add_end_date').val(),
-            description: $('#add_description').val(),
         };
 
         $.ajax({
@@ -285,10 +285,10 @@ function initFormHandlers() {
 
         var formData = {
             _method: 'PUT',
+            title: $('#edit_title').val(),
             location_ids: $('#edit_location_ids').val(),
             start_date: $('#edit_start_date').val(),
             end_date: $('#edit_end_date').val(),
-            description: $('#edit_description').val(),
         };
 
         $.ajax({
@@ -367,9 +367,9 @@ function editClosure(id) {
                 populateLocations('#edit_location_ids', response.data.locations);
                 
                 $('#edit_closure_id').val(closure.id);
+                $('#edit_title').val(closure.title || '');
                 $('#edit_start_date').val(closure.start_date.split('T')[0]);
                 $('#edit_end_date').val(closure.end_date.split('T')[0]);
-                $('#edit_description').val(closure.description || '');
                 
                 $('#edit_location_ids').val(locationIds).trigger('change');
                 
@@ -431,8 +431,8 @@ function populateLocations(selector, locations) {
 }
 
 function resetAddForm() {
+    $('#add_title').val('');
     $('#add_start_date').val('');
     $('#add_end_date').val('');
-    $('#add_description').val('');
     $('#add_location_ids').val(null).trigger('change');
 }

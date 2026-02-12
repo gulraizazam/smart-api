@@ -72,7 +72,7 @@ class BusinessClosureController extends Controller
                     'locations' => $locationNames,
                     'start_date' => Carbon::parse($closure->start_date)->format('D M j, Y'),
                     'end_date' => Carbon::parse($closure->end_date)->format('D M j, Y'),
-                    'description' => $closure->description ?? '-',
+                    'title' => $closure->title ?? '-',
                     'created_by' => $closure->creator->name ?? 'N/A',
                     'created_at' => Carbon::parse($closure->created_at)->format('M j, Y h:i A'),
                 ];

@@ -135,6 +135,16 @@ function initEventHandlers() {
         loadSchedule();
     });
     
+    // Global Add dropdown - Time off
+    $('#btn_add_time_off_global').on('click', function () {
+        openTimeOffModalGlobal();
+    });
+    
+    // Global Add dropdown - Business closed period
+    $('#btn_add_business_closed').on('click', function () {
+        window.location.href = route('admin.business-closures.index');
+    });
+    
     // Shift add button click - show dropdown
     $(document).on('click', '.shift-add-btn', function (e) {
         e.stopPropagation();
@@ -149,9 +159,13 @@ function initEventHandlers() {
     });
     
     // Existing shift badge click - show edit dropdown
-    $(document).on('click', '.shift-badge.clickable', function (e) {
+    $(document).on('click', '.shift-badge.clickable:not(.business-closed)', function (e) {
         e.stopPropagation();
+        // Find dropdown within the same wrapper or as sibling
         var $dropdown = $(this).siblings('.shift-edit-dropdown');
+        if ($dropdown.length === 0) {
+            $dropdown = $(this).parent().find('.shift-edit-dropdown');
+        }
         
         // Close all other dropdowns
         $('.shift-dropdown').not($dropdown).removeClass('show');
@@ -165,6 +179,7 @@ function initEventHandlers() {
         e.stopPropagation();
         var action = $(this).data('action');
         var shiftId = $(this).data('shift-id');
+        var timeOffId = $(this).data('time-off-id');
         var $cell = $(this).closest('.shift-cell');
         var resourceId = $cell.data('resource-id');
         var date = $cell.data('date');
@@ -172,13 +187,20 @@ function initEventHandlers() {
         // Close dropdown
         $(this).closest('.shift-dropdown').removeClass('show');
         
-        // Handle action
-        handleShiftAction(action, resourceId, date, shiftId);
+        // Handle action - pass timeOffId for time-off actions
+        handleShiftAction(action, resourceId, date, timeOffId || shiftId);
     });
     
     // Close dropdown when clicking outside
     $(document).on('click', function () {
         $('.shift-dropdown').removeClass('show');
+    });
+    
+    // Business closed badge click - open edit modal
+    $(document).on('click', '.shift-badge.business-closed', function (e) {
+        e.stopPropagation();
+        var closureId = $(this).data('closure-id');
+        openEditClosureModal(closureId);
     });
 }
 
@@ -199,36 +221,145 @@ function handleShiftAction(action, resourceId, date, shiftId) {
         case 'delete-shift':
             deleteShift(resourceId, date, shiftId);
             break;
+        case 'delete-time-off':
+            deleteTimeOff(shiftId); // shiftId contains time_off_id from data attribute
+            break;
     }
 }
 
 function openEditDayModal(resourceId, date, shiftId) {
-    // For now, open the add shift modal in edit mode
-    // TODO: Pre-populate with existing shift data
-    openAddShiftModal(resourceId, date);
-    toastr.info('Edit mode - modify the shift times and save');
+    // Open the add shift modal and pre-populate with existing shifts
+    currentShiftResourceId = resourceId;
+    currentShiftDate = date;
+    
+    // Find resource name
+    var resourceName = 'Resource';
+    $('#schedule_body tr').each(function() {
+        var $cell = $(this).find('.shift-cell[data-resource-id="' + resourceId + '"]').first();
+        if ($cell.length) {
+            resourceName = $(this).find('.team-member-name').text();
+            return false;
+        }
+    });
+    currentShiftResourceName = resourceName;
+    
+    // Format date for title
+    var dateObj = new Date(date);
+    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var formattedDate = dayNames[dateObj.getDay()] + ' ' + dateObj.getDate() + ' ' + monthNames[dateObj.getMonth()];
+    
+    // Set modal title
+    $('#add_shift_title').text(resourceName + "'s shift " + formattedDate);
+    
+    // Set hidden fields
+    $('#shift_resource_id').val(resourceId);
+    $('#shift_date').val(date);
+    $('#shift_location_id').val($('#filter_location_id').val());
+    
+    // Get existing shifts from the calendar data
+    var existingShifts = findAllShifts(resourceId, date, currentScheduleShifts);
+    
+    // Clear existing rows and populate with existing shifts
+    shiftRowCounter = 0;
+    $('#shift_rows_container').html('');
+    
+    if (existingShifts.length > 0) {
+        for (var i = 0; i < existingShifts.length; i++) {
+            addShiftRowWithData(existingShifts[i].start_time, existingShifts[i].end_time);
+        }
+        $('#btn_delete_all_shifts').show();
+    } else {
+        addShiftRow();
+        $('#btn_delete_all_shifts').hide();
+    }
+    
+    updateTotalDuration();
+    
+    // Show modal
+    $('#modal_add_shift').modal('show');
 }
 
 function deleteShift(resourceId, date, shiftId) {
+    if (!shiftId) {
+        toastr.error('Shift ID not found');
+        return;
+    }
+    
     if (!confirm('Are you sure you want to delete this shift?')) {
         return;
     }
     
-    // TODO: Implement delete shift API call
-    console.log('Deleting shift:', {
-        resource_id: resourceId,
-        date: date,
-        shift_id: shiftId
+    $.ajax({
+        url: route('admin.schedule.delete-single-shift'),
+        type: 'POST',
+        data: {
+            shift_id: shiftId
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.status) {
+                toastr.success('Shift deleted successfully');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to delete shift');
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to delete shift');
+            }
+        }
     });
+}
+
+function deleteTimeOff(timeOffId) {
+    if (!timeOffId) {
+        toastr.error('Time off ID not found');
+        return;
+    }
     
-    toastr.success('Shift deleted successfully');
-    loadSchedule();
+    if (!confirm('Are you sure you want to delete this time off?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: route('admin.schedule.delete-time-off'),
+        type: 'POST',
+        data: {
+            time_off_id: timeOffId
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.status) {
+                toastr.success('Time off deleted successfully');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to delete time off');
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to delete time off');
+            }
+        }
+    });
 }
 
 var currentShiftResourceId = null;
 var currentShiftDate = null;
 var currentShiftResourceName = '';
 var shiftRowCounter = 0;
+var currentScheduleShifts = []; // Store shifts data globally for edit functionality
+var currentScheduleTimeOffs = []; // Store time offs data globally
 
 function openRepeatingShiftsPage(resourceId, date) {
     // Find resource name
@@ -286,6 +417,17 @@ function openAddShiftModal(resourceId, date) {
     $('#shift_date').val(date);
     $('#shift_location_id').val($('#filter_location_id').val());
     
+    // Check if shift exists for this resource on this date
+    var $cell = $('.shift-cell[data-resource-id="' + resourceId + '"][data-date="' + date + '"]');
+    var hasExistingShift = $cell.find('.shift-badge:not(.not-working):not(.business-closed)').length > 0;
+    
+    // Show/hide delete button based on whether shift exists
+    if (hasExistingShift) {
+        $('#btn_delete_all_shifts').show();
+    } else {
+        $('#btn_delete_all_shifts').hide();
+    }
+    
     // Reset form
     resetShiftForm();
     
@@ -301,18 +443,26 @@ function resetShiftForm() {
 }
 
 function addShiftRow() {
+    addShiftRowWithData('10:00 AM', '07:00 PM');
+}
+
+function addShiftRowWithData(startTime, endTime) {
+    // Convert 24-hour format to 12-hour if needed
+    startTime = formatTimeTo12Hour(startTime);
+    endTime = formatTimeTo12Hour(endTime);
+    
     var rowHtml = '<div class="shift-row mb-3" data-row="' + shiftRowCounter + '">';
     rowHtml += '<div class="row align-items-end">';
     rowHtml += '<div class="col-md-5">';
     rowHtml += '<label class="mb-2">Start time</label>';
     rowHtml += '<select class="form-control shift-start-time" name="shifts[' + shiftRowCounter + '][start_time]">';
-    rowHtml += getTimeOptions('10:00 AM');
+    rowHtml += getTimeOptions(startTime);
     rowHtml += '</select>';
     rowHtml += '</div>';
     rowHtml += '<div class="col-md-5">';
     rowHtml += '<label class="mb-2">End time</label>';
     rowHtml += '<select class="form-control shift-end-time" name="shifts[' + shiftRowCounter + '][end_time]">';
-    rowHtml += getTimeOptions('07:00 PM');
+    rowHtml += getTimeOptions(endTime);
     rowHtml += '</select>';
     rowHtml += '</div>';
     rowHtml += '<div class="col-md-2 text-center">';
@@ -333,6 +483,24 @@ function addShiftRow() {
     }
     
     updateTotalDuration();
+}
+
+function formatTimeTo12Hour(time) {
+    if (!time) return '10:00 AM';
+    
+    // If already in 12-hour format, return as is
+    if (time.includes('AM') || time.includes('PM')) {
+        return time;
+    }
+    
+    // Convert from 24-hour format (HH:mm)
+    var parts = time.split(':');
+    var hour = parseInt(parts[0], 10);
+    var min = parts[1] ? parts[1].substring(0, 2) : '00';
+    var ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return (hour < 10 ? '0' : '') + hour + ':' + min + ' ' + ampm;
 }
 
 function getTimeOptions(selectedValue) {
@@ -430,14 +598,6 @@ $(document).ready(function() {
     $(document).on('click', '#btn_save_shift', function() {
         saveShift();
     });
-    
-    // Delete all shifts button
-    $(document).on('click', '#btn_delete_all_shifts', function() {
-        if (confirm('Are you sure you want to delete all shifts for this day?')) {
-            // TODO: Implement delete all shifts API call
-            toastr.info('Delete all shifts functionality coming soon');
-        }
-    });
 });
 
 function saveShift() {
@@ -464,21 +624,142 @@ function saveShift() {
         return;
     }
     
-    // TODO: Implement save shift API call
-    console.log('Saving shifts:', {
-        resource_id: currentShiftResourceId,
-        date: currentShiftDate,
-        location_id: $('#shift_location_id').val(),
-        shifts: shifts
-    });
+    // Disable save button to prevent double submission
+    $('#btn_save_shift').prop('disabled', true).text('Saving...');
     
-    toastr.success('Shift saved successfully');
-    $('#modal_add_shift').modal('hide');
-    loadSchedule();
+    $.ajax({
+        url: route('admin.schedule.store-shifts'),
+        type: 'POST',
+        data: {
+            resource_id: currentShiftResourceId,
+            date: currentShiftDate,
+            location_id: $('#shift_location_id').val(),
+            shifts: shifts
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            $('#btn_save_shift').prop('disabled', false).text('Save');
+            if (response.status) {
+                toastr.success('Shift saved successfully');
+                $('#modal_add_shift').modal('hide');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to save shift');
+            }
+        },
+        error: function(xhr) {
+            $('#btn_save_shift').prop('disabled', false).text('Save');
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to save shift');
+            }
+        }
+    });
+}
+
+function deleteAllShifts() {
+    if (!currentShiftResourceId || !currentShiftDate) {
+        toastr.error('Missing shift information');
+        return;
+    }
+    
+    // Show confirmation
+    if (!confirm('Are you sure you want to delete all shifts for this day?')) {
+        return;
+    }
+    
+    $.ajax({
+        url: route('admin.schedule.delete-shifts'),
+        type: 'POST',
+        data: {
+            resource_id: currentShiftResourceId,
+            date: currentShiftDate,
+            location_id: $('#shift_location_id').val()
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.status) {
+                toastr.success('Shifts deleted successfully');
+                $('#modal_add_shift').modal('hide');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to delete shifts');
+            }
+        },
+        error: function(xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to delete shifts');
+            }
+        }
+    });
 }
 
 // Time Off Modal Functions
 var currentTimeOffResources = [];
+
+function openTimeOffModalGlobal() {
+    // Open time off modal without pre-selecting a resource
+    var today = new Date();
+    var todayStr = formatDateForApi(today);
+    
+    // Set location
+    $('#time_off_location_id').val($('#filter_location_id').val());
+    
+    // Populate team member dropdown with current resources
+    var $resourceSelect = $('#time_off_resource_id');
+    $resourceSelect.empty();
+    $resourceSelect.append('<option value="">Select team member</option>');
+    
+    $('#schedule_body tr').each(function() {
+        var $nameCell = $(this).find('.team-member-name');
+        var $shiftCell = $(this).find('.shift-cell').first();
+        if ($nameCell.length && $shiftCell.length) {
+            var resId = $shiftCell.data('resource-id');
+            var resName = $nameCell.text();
+            $resourceSelect.append('<option value="' + resId + '">' + resName + '</option>');
+        }
+    });
+    
+    // Format and set start date to today
+    var formattedDate = formatDateForDisplay(today);
+    $('#time_off_start_date').val(formattedDate);
+    
+    // Initialize datepickers
+    if ($.fn.datepicker) {
+        $('#time_off_start_date').datepicker({
+            format: 'D, dd M yyyy',
+            autoclose: true,
+            todayHighlight: true
+        }).datepicker('setDate', today);
+        
+        $('#time_off_repeat_until').datepicker({
+            format: 'D, dd M yyyy',
+            autoclose: true,
+            todayHighlight: true
+        }).datepicker('setDate', today);
+    }
+    
+    // Populate time dropdowns
+    $('#time_off_start_time').html(getTimeOptions('10:00 AM'));
+    $('#time_off_end_time').html(getTimeOptions('07:00 PM'));
+    
+    // Reset form fields
+    $('#time_off_type').val('annual_leave');
+    $('#time_off_repeat').prop('checked', false);
+    $('#repeat_until_row').hide();
+    $('#time_off_description').val('');
+    $('#description_counter').text('0/100');
+    
+    // Show modal
+    $('#modal_add_time_off').modal('show');
+}
 
 function openTimeOffModal(resourceId, date) {
     // Set location
@@ -561,7 +842,173 @@ $(document).ready(function() {
     $(document).on('click', '#btn_save_time_off', function() {
         saveTimeOff();
     });
+    
+    // Confirm delete closure button
+    $(document).on('click', '#btn_confirm_delete_closure', function() {
+        confirmDeleteClosure();
+    });
+    
+    // Initialize edit closure datepickers
+    if ($.fn.datepicker) {
+        $('#edit_closure_start_date, #edit_closure_end_date').datepicker({
+            format: 'D, dd M yyyy',
+            autoclose: true,
+            todayHighlight: true
+        });
+        
+        // Update duration when dates change
+        $('#edit_closure_start_date, #edit_closure_end_date').on('changeDate', function() {
+            var startDate = $('#edit_closure_start_date').datepicker('getDate');
+            var endDate = $('#edit_closure_end_date').datepicker('getDate');
+            if (startDate && endDate) {
+                var diffTime = Math.abs(endDate - startDate);
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                $('#closure_duration').text(diffDays + ' day' + (diffDays > 1 ? 's' : ''));
+            }
+        });
+    }
 });
+
+// Business Closure Edit Modal Functions
+function openEditClosureModal(closureId) {
+    // Fetch closure data from API
+    $.ajax({
+        url: route('admin.business-closures.edit', { id: closureId }),
+        type: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.status) {
+                var closure = response.data.closure;
+                var locationName = $('#filter_location_id option:selected').text();
+                
+                // Set modal title with location name
+                $('#edit_closure_modal_title').text('Edit closed period for ' + locationName);
+                
+                // Populate form fields
+                $('#edit_closure_id').val(closure.id);
+                $('#edit_closure_title').val(closure.title || '');
+                
+                // Parse and set dates
+                var startDate = new Date(closure.start_date);
+                var endDate = new Date(closure.end_date);
+                
+                $('#edit_closure_start_date').datepicker('setDate', startDate);
+                $('#edit_closure_end_date').datepicker('setDate', endDate);
+                
+                // Calculate duration
+                var diffTime = Math.abs(endDate - startDate);
+                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                $('#closure_duration').text(diffDays + ' day' + (diffDays > 1 ? 's' : ''));
+                
+                // Show modal
+                $('#modal_edit_closure').modal('show');
+            } else {
+                toastr.error(response.message || 'Failed to load closure data');
+            }
+        },
+        error: function () {
+            toastr.error('Failed to load closure data');
+        }
+    });
+}
+
+function saveClosureEdit() {
+    var closureId = $('#edit_closure_id').val();
+    var title = $('#edit_closure_title').val();
+    var startDate = $('#edit_closure_start_date').val();
+    var endDate = $('#edit_closure_end_date').val();
+    
+    if (!title || !startDate || !endDate) {
+        toastr.error('Please fill in all required fields');
+        return;
+    }
+    
+    // Get location IDs - use current filter location
+    var locationId = $('#filter_location_id').val();
+    
+    $.ajax({
+        url: route('admin.business-closures.update', { id: closureId }),
+        type: 'POST',
+        data: {
+            _method: 'PUT',
+            title: title,
+            location_ids: [locationId],
+            start_date: startDate,
+            end_date: endDate
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.status) {
+                toastr.success('Business closure updated successfully');
+                $('#modal_edit_closure').modal('hide');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to update closure');
+            }
+        },
+        error: function (xhr) {
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                var errors = xhr.responseJSON.errors;
+                var errorMsg = '';
+                for (var key in errors) {
+                    errorMsg += errors[key][0] + '<br>';
+                }
+                toastr.error(errorMsg);
+            } else {
+                toastr.error('Failed to update closure');
+            }
+        }
+    });
+}
+
+function deleteClosure() {
+    // Get dates from the datepickers
+    var startDate = $('#edit_closure_start_date').val();
+    var endDate = $('#edit_closure_end_date').val();
+    var duration = $('#closure_duration').text();
+    
+    // Format dates for display
+    var dateDisplay = startDate;
+    if (startDate !== endDate) {
+        dateDisplay = startDate + ' - ' + endDate;
+    }
+    
+    // Populate confirmation modal
+    $('#delete_closure_dates').text(dateDisplay);
+    $('#delete_closure_duration').text(duration);
+    
+    // Show confirmation modal
+    $('#modal_delete_closure_confirm').modal('show');
+}
+
+function confirmDeleteClosure() {
+    var closureId = $('#edit_closure_id').val();
+    
+    $.ajax({
+        url: route('admin.business-closures.destroy', { id: closureId }),
+        type: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.status) {
+                toastr.success('Business closure deleted successfully');
+                $('#modal_delete_closure_confirm').modal('hide');
+                $('#modal_edit_closure').modal('hide');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to delete closure');
+            }
+        },
+        error: function () {
+            toastr.error('Failed to delete closure');
+        }
+    });
+}
 
 function saveTimeOff() {
     var resourceId = $('#time_off_resource_id').val();
@@ -579,22 +1026,45 @@ function saveTimeOff() {
         return;
     }
     
-    // TODO: Implement save time off API call
-    console.log('Saving time off:', {
-        resource_id: resourceId,
-        type: type,
-        start_date: startDate,
-        start_time: startTime,
-        end_time: endTime,
-        repeat: repeat,
-        repeat_until: repeatUntil,
-        description: description,
-        location_id: locationId
-    });
+    // Disable save button
+    $('#btn_save_time_off').prop('disabled', true).text('Saving...');
     
-    toastr.success('Time off saved successfully');
-    $('#modal_add_time_off').modal('hide');
-    loadSchedule();
+    $.ajax({
+        url: route('admin.schedule.store-time-off'),
+        type: 'POST',
+        data: {
+            resource_id: resourceId,
+            type: type,
+            start_date: startDate,
+            start_time: startTime,
+            end_time: endTime,
+            is_repeat: repeat ? 1 : 0,
+            repeat_until: repeatUntil,
+            description: description,
+            location_id: locationId
+        },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            $('#btn_save_time_off').prop('disabled', false).text('Save');
+            if (response.status) {
+                toastr.success('Time off saved successfully');
+                $('#modal_add_time_off').modal('hide');
+                loadSchedule();
+            } else {
+                toastr.error(response.message || 'Failed to save time off');
+            }
+        },
+        error: function(xhr) {
+            $('#btn_save_time_off').prop('disabled', false).text('Save');
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to save time off');
+            }
+        }
+    });
 }
 
 function loadSchedule() {
@@ -632,7 +1102,10 @@ function loadSchedule() {
         },
         success: function (response) {
             if (response.status) {
-                renderSchedule(response.data.resources, response.data.shifts);
+                // Store shifts globally for edit functionality
+                currentScheduleShifts = response.data.shifts || [];
+                currentScheduleTimeOffs = response.data.time_offs || [];
+                renderSchedule(response.data.resources, response.data.shifts, response.data.closures || [], response.data.time_offs || []);
             } else {
                 $('#schedule_body').html(
                     '<tr><td colspan="8" class="text-center py-10 text-muted">' +
@@ -651,7 +1124,10 @@ function loadSchedule() {
     });
 }
 
-function renderSchedule(resources, shifts) {
+function renderSchedule(resources, shifts, closures, timeOffs) {
+    closures = closures || [];
+    timeOffs = timeOffs || [];
+    
     if (!resources || resources.length === 0) {
         $('#schedule_body').html(
             '<tr><td colspan="8" class="text-center py-10 text-muted">' +
@@ -688,25 +1164,54 @@ function renderSchedule(resources, shifts) {
             date.setDate(date.getDate() + day);
             var dateStr = formatDateForApi(date);
             
-            var shift = findShift(resource.id, dateStr, shifts);
+            var dayShifts = findAllShifts(resource.id, dateStr, shifts);
+            var dayTimeOffs = findAllTimeOffs(resource.id, dateStr, timeOffs);
+            var closure = findClosure(dateStr, closures);
             var isWeekend = (day === 5 || day === 6); // Saturday or Sunday
             
             html += '<td class="shift-cell" data-resource-id="' + resource.id + '" data-date="' + dateStr + '">';
             html += '<div class="shift-container">';
-            if (shift && shift.start_time && shift.end_time) {
-                var shiftTime = formatTime(shift.start_time) + ' - ' + formatTime(shift.end_time);
-                var badgeClass = isWeekend ? 'shift-badge weekend clickable' : 'shift-badge clickable';
-                var shiftId = shift.id || 0;
-                html += '<span class="' + badgeClass + '" data-shift-id="' + shiftId + '">' + shiftTime + '</span>';
-                // Dropdown for existing shift (shown when clicking on badge)
-                html += '<div class="shift-dropdown shift-edit-dropdown">';
-                html += '<button type="button" class="shift-dropdown-item" data-action="edit-day" data-shift-id="' + shiftId + '"><i class="la la-edit"></i>Edit this day</button>';
-                html += '<button type="button" class="shift-dropdown-item" data-action="repeating-shifts"><i class="la la-redo-alt"></i>Set repeating shifts</button>';
-                html += '<button type="button" class="shift-dropdown-item" data-action="time-off"><i class="la la-clock"></i>Add time off</button>';
-                html += '<button type="button" class="shift-dropdown-item text-danger" data-action="delete-shift" data-shift-id="' + shiftId + '"><i class="la la-trash"></i>Delete this shift</button>';
-                html += '</div>';
+            
+            // Check if business is closed on this day
+            if (closure) {
+                html += '<span class="shift-badge business-closed clickable" data-closure-id="' + closure.id + '" title="' + (closure.title || 'Business Closed') + '">' + (closure.title || 'Closed') + '</span>';
+            } else if (dayShifts.length > 0 || dayTimeOffs.length > 0) {
+                // Split shifts around time offs and render
+                var displayItems = getDisplayItemsWithTimeOffs(dayShifts, dayTimeOffs);
+                
+                for (var d = 0; d < displayItems.length; d++) {
+                    var item = displayItems[d];
+                    if (item.type === 'time_off') {
+                        // Render time off badge
+                        html += '<div class="shift-badge-wrapper">';
+                        html += '<span class="shift-badge time-off clickable" data-time-off-id="' + item.id + '">';
+                        html += '<strong>' + item.type_label + '</strong><br>';
+                        html += formatTime(item.start_time) + ' - ' + formatTime(item.end_time);
+                        html += '</span>';
+                        html += '<div class="shift-dropdown shift-edit-dropdown">';
+                        html += '<button type="button" class="shift-dropdown-item text-danger" data-action="delete-time-off" data-time-off-id="' + item.id + '"><i class="la la-trash"></i>Delete time off</button>';
+                        html += '</div>';
+                        html += '</div>';
+                    } else {
+                        // Render shift badge
+                        var shiftTime = formatTime(item.start_time) + ' - ' + formatTime(item.end_time);
+                        var badgeClass = isWeekend ? 'shift-badge weekend clickable' : 'shift-badge clickable';
+                        var shiftId = item.id || 0;
+                        html += '<div class="shift-badge-wrapper">';
+                        html += '<span class="' + badgeClass + '" data-shift-id="' + shiftId + '">' + shiftTime + '</span>';
+                        // Individual dropdown for this shift
+                        html += '<div class="shift-dropdown shift-edit-dropdown" data-shift-id="' + shiftId + '">';
+                        html += '<button type="button" class="shift-dropdown-item" data-action="edit-day"><i class="la la-edit"></i>Edit this day</button>';
+                        html += '<button type="button" class="shift-dropdown-item" data-action="repeating-shifts"><i class="la la-redo-alt"></i>Set repeating shifts</button>';
+                        html += '<button type="button" class="shift-dropdown-item" data-action="time-off"><i class="la la-clock"></i>Add time off</button>';
+                        html += '<button type="button" class="shift-dropdown-item text-danger" data-action="delete-shift" data-shift-id="' + shiftId + '"><i class="la la-trash"></i>Delete this shift</button>';
+                        html += '</div>';
+                        html += '</div>';
+                    }
+                }
                 // Dropdown for plus button (shown when clicking on plus)
                 html += '<div class="shift-dropdown shift-add-dropdown">';
+                html += '<button type="button" class="shift-dropdown-item" data-action="add-shift"><i class="la la-plus"></i>Add shift</button>';
                 html += '<button type="button" class="shift-dropdown-item" data-action="repeating-shifts"><i class="la la-redo-alt"></i>Set repeating shifts</button>';
                 html += '<button type="button" class="shift-dropdown-item" data-action="time-off"><i class="la la-clock"></i>Add time off</button>';
                 html += '</div>';
@@ -714,11 +1219,16 @@ function renderSchedule(resources, shifts) {
                 html += '<span class="shift-badge not-working">Not working</span>';
                 // Dropdown for empty cell
                 html += '<div class="shift-dropdown shift-add-dropdown">';
+                html += '<button type="button" class="shift-dropdown-item" data-action="add-shift"><i class="la la-plus"></i>Add shift</button>';
                 html += '<button type="button" class="shift-dropdown-item" data-action="repeating-shifts"><i class="la la-redo-alt"></i>Set repeating shifts</button>';
                 html += '<button type="button" class="shift-dropdown-item" data-action="time-off"><i class="la la-clock"></i>Add time off</button>';
                 html += '</div>';
             }
-            html += '<button type="button" class="shift-add-btn" title="Add shift"><i class="la la-plus"></i></button>';
+            
+            // Don't show add button if business is closed
+            if (!closure) {
+                html += '<button type="button" class="shift-add-btn" title="Add shift"><i class="la la-plus"></i></button>';
+            }
             html += '</div>';
             html += '</td>';
         }
@@ -735,6 +1245,135 @@ function findShift(resourceId, dateStr, shifts) {
     for (var i = 0; i < shifts.length; i++) {
         if (shifts[i].resource_id == resourceId && shifts[i].date === dateStr) {
             return shifts[i];
+        }
+    }
+    return null;
+}
+
+function findAllShifts(resourceId, dateStr, shifts) {
+    if (!shifts) return [];
+    
+    var result = [];
+    for (var i = 0; i < shifts.length; i++) {
+        if (shifts[i].resource_id == resourceId && shifts[i].date === dateStr) {
+            result.push(shifts[i]);
+        }
+    }
+    return result;
+}
+
+function findAllTimeOffs(resourceId, dateStr, timeOffs) {
+    if (!timeOffs) return [];
+    
+    var result = [];
+    for (var i = 0; i < timeOffs.length; i++) {
+        if (timeOffs[i].resource_id == resourceId && timeOffs[i].start_date === dateStr) {
+            result.push(timeOffs[i]);
+        }
+    }
+    return result;
+}
+
+function getDisplayItemsWithTimeOffs(shifts, timeOffs) {
+    var items = [];
+    
+    // Add time offs first (they take priority in display order)
+    for (var i = 0; i < timeOffs.length; i++) {
+        var to = timeOffs[i];
+        items.push({
+            type: 'time_off',
+            id: to.id,
+            start_time: to.start_time,
+            end_time: to.end_time,
+            type_label: to.type_label || 'Time Off',
+            sort_time: timeToMinutes(to.start_time)
+        });
+    }
+    
+    // Process shifts - split them around time offs
+    for (var s = 0; s < shifts.length; s++) {
+        var shift = shifts[s];
+        if (!shift.start_time || !shift.end_time) continue;
+        
+        var shiftStart = timeToMinutes(shift.start_time);
+        var shiftEnd = timeToMinutes(shift.end_time);
+        var segments = [{start: shiftStart, end: shiftEnd, id: shift.id}];
+        
+        // Cut out time off periods from this shift
+        for (var t = 0; t < timeOffs.length; t++) {
+            var to = timeOffs[t];
+            if (!to.start_time || !to.end_time) continue;
+            
+            var toStart = timeToMinutes(to.start_time);
+            var toEnd = timeToMinutes(to.end_time);
+            
+            var newSegments = [];
+            for (var seg = 0; seg < segments.length; seg++) {
+                var segment = segments[seg];
+                
+                // Check if time off overlaps with this segment
+                if (toEnd <= segment.start || toStart >= segment.end) {
+                    // No overlap
+                    newSegments.push(segment);
+                } else {
+                    // There is overlap - split the segment
+                    if (toStart > segment.start) {
+                        // Part before time off
+                        newSegments.push({start: segment.start, end: toStart, id: segment.id});
+                    }
+                    if (toEnd < segment.end) {
+                        // Part after time off
+                        newSegments.push({start: toEnd, end: segment.end, id: segment.id});
+                    }
+                }
+            }
+            segments = newSegments;
+        }
+        
+        // Add remaining shift segments
+        for (var seg = 0; seg < segments.length; seg++) {
+            var segment = segments[seg];
+            if (segment.end > segment.start) {
+                items.push({
+                    type: 'shift',
+                    id: segment.id,
+                    start_time: minutesToTime(segment.start),
+                    end_time: minutesToTime(segment.end),
+                    sort_time: segment.start
+                });
+            }
+        }
+    }
+    
+    // Sort by start time
+    items.sort(function(a, b) {
+        return a.sort_time - b.sort_time;
+    });
+    
+    return items;
+}
+
+function timeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    // Handle HH:mm:ss or HH:mm format
+    var parts = timeStr.split(':');
+    var hours = parseInt(parts[0], 10);
+    var minutes = parseInt(parts[1], 10) || 0;
+    return hours * 60 + minutes;
+}
+
+function minutesToTime(minutes) {
+    var hours = Math.floor(minutes / 60);
+    var mins = minutes % 60;
+    return (hours < 10 ? '0' : '') + hours + ':' + (mins < 10 ? '0' : '') + mins;
+}
+
+function findClosure(dateStr, closures) {
+    if (!closures) return null;
+    
+    for (var i = 0; i < closures.length; i++) {
+        if (closures[i].date === dateStr) {
+            return closures[i];
         }
     }
     return null;

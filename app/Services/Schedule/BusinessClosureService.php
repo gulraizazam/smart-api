@@ -14,7 +14,7 @@ use Carbon\Carbon;
 class BusinessClosureService
 {
     protected static string $filterName = 'business_closures';
-    protected static array $fillable = ['start_date', 'end_date', 'description'];
+    protected static array $fillable = ['title', 'start_date', 'end_date'];
 
     /**
      * Get paginated business closures for datatable
@@ -42,11 +42,19 @@ class BusinessClosureService
         // Apply location filter through relationship
         if (!empty($whereConditions['location_id'])) {
             $locationId = $whereConditions['location_id'];
-            $query->where(function ($q) use ($locationId) {
-                // Match closures that have this specific location OR closures that apply to all locations (no locations assigned)
+            // ID 30 is "All Centres" - a special location that means all locations
+            $allCentresId = 30;
+            $query->where(function ($q) use ($locationId, $allCentresId) {
+                // Match closures that have this specific location
                 $q->whereHas('locations', function ($subQ) use ($locationId) {
-                    $subQ->where('location_id', $locationId);
-                })->orWhereDoesntHave('locations');
+                    $subQ->where('locations.id', $locationId);
+                })
+                // OR closures that have "All Centres" (location_id 30) assigned
+                ->orWhereHas('locations', function ($subQ) use ($allCentresId) {
+                    $subQ->where('locations.id', $allCentresId);
+                })
+                // OR closures that have no locations assigned
+                ->orWhereDoesntHave('locations');
             });
         }
 
@@ -139,9 +147,9 @@ class BusinessClosureService
         try {
             $closure = BusinessClosure::create([
                 'account_id' => $accountId,
+                'title' => $data['title'] ?? null,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'description' => $data['description'] ?? null,
                 'created_by' => $userId,
             ]);
 
@@ -175,9 +183,9 @@ class BusinessClosureService
             $oldData = $closure->toArray();
 
             $closure->update([
+                'title' => $data['title'] ?? null,
                 'start_date' => $data['start_date'],
                 'end_date' => $data['end_date'],
-                'description' => $data['description'] ?? null,
             ]);
 
             if (!empty($data['location_ids']) && !in_array('all', $data['location_ids'])) {

@@ -32,10 +32,19 @@
 
                         <div class="card-toolbar">
                             @if(Gate::allows('resourcerotas_create'))
-                                <a href="javascript:void(0);" onclick="createRota('{{ route('admin.resourcerotas.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_resourcerotas">
-                                    <i class="la la-plus"></i>
-                                    Add Shift
-                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-dark dropdown-toggle" type="button" id="addDropdownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Add
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="addDropdownBtn">
+                                        <a class="dropdown-item" href="javascript:void(0);" id="btn_add_time_off_global">
+                                            <i class="la la-clock mr-2"></i>Time off
+                                        </a>
+                                        <a class="dropdown-item" href="javascript:void(0);" id="btn_add_business_closed">
+                                            <i class="la la-store-slash mr-2"></i>Business closed period
+                                        </a>
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -178,10 +187,10 @@
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <div class="d-flex justify-content-between w-100">
-                        <button type="button" class="btn btn-icon btn-outline-danger rounded-circle" id="btn_delete_all_shifts" title="Delete all shifts">
+                        <button type="button" class="btn btn-icon btn-outline-danger rounded-circle" id="btn_delete_all_shifts" title="Delete all shifts" style="display: none;" onclick="deleteAllShifts()">
                             <i class="la la-trash"></i>
                         </button>
-                        <div>
+                        <div class="ml-auto">
                             <button type="button" class="btn btn-light mr-2" data-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-dark" id="btn_save_shift">Save</button>
                         </div>
@@ -277,6 +286,84 @@
         </div>
     </div>
 
+    <!--begin::Edit Business Closure Modal-->
+    <div class="modal fade" id="modal_edit_closure" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold" id="edit_closure_modal_title">Edit closed period</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="ki ki-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body pt-4">
+                    <input type="hidden" id="edit_closure_id" value="">
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="mb-2 font-weight-bold">Start date</label>
+                            <input type="text" class="form-control" id="edit_closure_start_date" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="mb-2 font-weight-bold">End date</label>
+                            <input type="text" class="form-control" id="edit_closure_end_date" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="mb-2 font-weight-bold">Title</label>
+                            <input type="text" class="form-control" id="edit_closure_title" placeholder="Enter title">
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <div class="d-flex justify-content-between w-100 align-items-center">
+                        <span class="text-muted" id="closure_duration"></span>
+                        <div>
+                            <button type="button" class="btn btn-icon btn-light-danger mr-2" onclick="deleteClosure()" title="Delete">
+                                <i class="la la-trash" style="font-size: 25px;"></i>
+                            </button>
+                            <button type="button" class="btn btn-dark px-6" onclick="saveClosureEdit()">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::Edit Business Closure Modal-->
+
+    <!--begin::Delete Confirmation Modal-->
+    <div class="modal fade" id="modal_delete_closure_confirm" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold">Delete Closed Period</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="ki ki-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body pt-4">
+                    <p class="mb-3">Are you sure you want to delete this closed period?</p>
+                    <div class="bg-light-danger rounded p-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="la la-calendar text-danger mr-2" style="font-size: 18px;"></i>
+                            <span class="font-weight-bold" id="delete_closure_dates"></span>
+                        </div>
+                        <div class="text-muted" style="font-size: 13px;" id="delete_closure_duration"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light px-6" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger px-6" id="btn_confirm_delete_closure">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--end::Delete Confirmation Modal-->
+
     @push('css')
     <style>
         .schedule-calendar {
@@ -340,7 +427,7 @@
         }
         .shift-cell {
             padding: 8px 4px !important;
-            height: 80px;
+            min-height: 80px;
             vertical-align: middle;
         }
         .shift-container {
@@ -348,8 +435,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             min-height: 60px;
+        }
+        .shift-badge-wrapper {
+            position: relative;
         }
         .shift-badge {
             display: inline-block;
@@ -378,6 +468,22 @@
         }
         .shift-badge.weekend.clickable:hover {
             box-shadow: 0 2px 8px rgba(255, 168, 0, 0.3);
+        }
+        .shift-badge.business-closed {
+            background-color: #FFF4DE;
+            color: #FFA800;
+        }
+        .shift-badge.time-off {
+            background-color: #2D3748;
+            color: #FFFFFF;
+            text-align: center;
+            line-height: 1.3;
+            padding: 8px 12px;
+        }
+        .shift-badge.time-off strong {
+            font-size: 11px;
+            display: block;
+            margin-bottom: 2px;
         }
         .shift-edit-dropdown {
             min-width: 180px;

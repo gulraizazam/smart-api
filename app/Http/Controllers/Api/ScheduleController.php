@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Api;
 use App\Helpers\ACL;
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
+use App\Models\BusinessClosure;
 use App\Models\Doctors;
 use App\Models\Locations;
 use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
+use App\Models\ResourceTimeOff;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ScheduleController extends Controller
 {
@@ -61,11 +64,18 @@ class ScheduleController extends Controller
         }
 
         // Get shifts for these resources in the date range
-        $shifts = $this->getShiftsForResources($resources->pluck('id')->toArray(), $locationId, $startDate, $endDate);
+        $resourceIds = $resources->pluck('id')->toArray();
+        $shifts = $this->getShiftsForResources($resourceIds, $locationId, $startDate, $endDate);
+
+        // Get business closures for this location and date range
+        $closures = $this->getBusinessClosures($locationId, $startDate, $endDate);
+        $timeOffs = $this->getTimeOffsForResources($resourceIds, $locationId, $startDate, $endDate);
 
         return ApiHelper::apiResponse(200, 'Shifts retrieved successfully', true, [
             'resources' => $resources,
             'shifts' => $shifts,
+            'closures' => $closures,
+            'time_offs' => $timeOffs,
         ]);
     }
 
@@ -143,6 +153,7 @@ class ScheduleController extends Controller
             $resourceId = $rotaToResource[$rotaDay->resource_has_rota_id] ?? null;
             if ($resourceId) {
                 $shifts[] = [
+                    'id' => $rotaDay->id,
                     'resource_id' => $resourceId,
                     'date' => $rotaDay->date,
                     'start_time' => $rotaDay->start_time,
@@ -154,5 +165,416 @@ class ScheduleController extends Controller
         }
 
         return $shifts;
+    }
+
+    /**
+     * Store or update shifts for a resource on a specific date
+     */
+    public function storeShifts(Request $request): JsonResponse
+    {
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
+        $date = $request->input('date');
+        $shifts = $request->input('shifts', []);
+        $accountId = Auth::user()->account_id;
+
+        if (!$resourceId || !$locationId || !$date) {
+            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+        }
+
+        // Validate shifts - check for overlapping times
+        $overlapError = $this->validateShiftOverlaps($shifts);
+        if ($overlapError) {
+            return ApiHelper::apiResponse(400, $overlapError, false);
+        }
+
+        // Find the active rota for this resource at this location that covers this date
+        $rota = ResourceHasRota::where('resource_id', $resourceId)
+            ->where('location_id', $locationId)
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->whereDate('start', '<=', $date)
+            ->whereDate('end', '>=', $date)
+            ->first();
+
+        // If no rota found with date range, try to find any active rota for this resource/location
+        if (!$rota) {
+            $rota = ResourceHasRota::where('resource_id', $resourceId)
+                ->where('location_id', $locationId)
+                ->where('account_id', $accountId)
+                ->where('active', 1)
+                ->first();
+        }
+
+        if (!$rota) {
+            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+        }
+
+        // Delete existing rota day records for this date
+        ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereDate('date', $date)
+            ->forceDelete();
+
+        // Create new rota day records for each shift
+        $createdShifts = [];
+        foreach ($shifts as $shift) {
+            $startTime = $this->convertTo24Hour($shift['start_time']);
+            $endTime = $this->convertTo24Hour($shift['end_time']);
+
+            $rotaDay = ResourceHasRotaDays::create([
+                'date' => $date,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'start_off' => null,
+                'end_off' => null,
+                'start_timestamp' => Carbon::parse($date . ' ' . $startTime)->format('Y-m-d H:i:s'),
+                'end_timestamp' => Carbon::parse($date . ' ' . $endTime)->format('Y-m-d H:i:s'),
+                'resource_has_rota_id' => $rota->id,
+                'active' => 1,
+            ]);
+
+            $createdShifts[] = $rotaDay;
+        }
+
+        return ApiHelper::apiResponse(200, 'Shifts saved successfully', true, [
+            'shifts' => $createdShifts,
+        ]);
+    }
+
+    /**
+     * Delete all shifts for a resource on a specific date
+     */
+    public function deleteShifts(Request $request): JsonResponse
+    {
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
+        $date = $request->input('date');
+        $accountId = Auth::user()->account_id;
+
+        if (!$resourceId || !$locationId || !$date) {
+            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+        }
+
+        // Find the active rota for this resource at this location that covers this date
+        $rota = ResourceHasRota::where('resource_id', $resourceId)
+            ->where('location_id', $locationId)
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->whereDate('start', '<=', $date)
+            ->whereDate('end', '>=', $date)
+            ->first();
+
+        // If no rota found with date range, try to find any active rota for this resource/location
+        if (!$rota) {
+            $rota = ResourceHasRota::where('resource_id', $resourceId)
+                ->where('location_id', $locationId)
+                ->where('account_id', $accountId)
+                ->where('active', 1)
+                ->first();
+        }
+
+        if (!$rota) {
+            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+        }
+
+        // Delete rota day records for this date
+        $deleted = ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereDate('date', $date)
+            ->forceDelete();
+
+        return ApiHelper::apiResponse(200, 'Shifts deleted successfully', true, [
+            'deleted_count' => $deleted,
+        ]);
+    }
+
+    /**
+     * Delete a single shift by ID
+     */
+    public function deleteSingleShift(Request $request): JsonResponse
+    {
+        $shiftId = $request->input('shift_id');
+
+        if (!$shiftId) {
+            return ApiHelper::apiResponse(400, 'Shift ID is required', false);
+        }
+
+        $shift = ResourceHasRotaDays::find($shiftId);
+
+        if (!$shift) {
+            return ApiHelper::apiResponse(404, 'Shift not found', false);
+        }
+
+        $shift->forceDelete();
+
+        return ApiHelper::apiResponse(200, 'Shift deleted successfully', true);
+    }
+
+    /**
+     * Store time off for a resource
+     */
+    public function storeTimeOff(Request $request): JsonResponse
+    {
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
+        $type = $request->input('type', 'annual_leave');
+        $startDate = $request->input('start_date');
+        $startTime = $request->input('start_time');
+        $endTime = $request->input('end_time');
+        $isRepeat = $request->input('is_repeat', false);
+        $repeatUntil = $request->input('repeat_until');
+        $description = $request->input('description');
+        $accountId = Auth::user()->account_id;
+
+        if (!$resourceId || !$startDate) {
+            return ApiHelper::apiResponse(400, 'Resource and start date are required', false);
+        }
+
+        // Convert times to 24-hour format
+        $startTime24 = $startTime ? Carbon::parse($startTime)->format('H:i:s') : null;
+        $endTime24 = $endTime ? Carbon::parse($endTime)->format('H:i:s') : null;
+
+        // Create time off record
+        $timeOff = ResourceTimeOff::create([
+            'resource_id' => $resourceId,
+            'location_id' => $locationId,
+            'account_id' => $accountId,
+            'type' => $type,
+            'start_date' => $startDate,
+            'start_time' => $startTime24,
+            'end_time' => $endTime24,
+            'is_full_day' => !$startTime && !$endTime,
+            'is_repeat' => $isRepeat ? true : false,
+            'repeat_until' => $isRepeat ? $repeatUntil : null,
+            'description' => $description,
+        ]);
+
+        return ApiHelper::apiResponse(200, 'Time off saved successfully', true, [
+            'time_off' => $timeOff,
+        ]);
+    }
+
+    /**
+     * Get time offs for resources in a date range
+     */
+    public function getTimeOffs(Request $request): JsonResponse
+    {
+        $locationId = $request->input('location_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $accountId = Auth::user()->account_id;
+
+        $timeOffs = ResourceTimeOff::where('account_id', $accountId)
+            ->where('location_id', $locationId)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('start_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('is_repeat', true)
+                            ->where('start_date', '<=', $endDate)
+                            ->where(function ($q2) use ($startDate) {
+                                $q2->whereNull('repeat_until')
+                                    ->orWhere('repeat_until', '>=', $startDate);
+                            });
+                    });
+            })
+            ->get();
+
+        $result = [];
+        foreach ($timeOffs as $timeOff) {
+            $result[] = [
+                'id' => $timeOff->id,
+                'resource_id' => $timeOff->resource_id,
+                'type' => $timeOff->type,
+                'type_label' => $timeOff->type_label,
+                'start_date' => $timeOff->start_date->format('Y-m-d'),
+                'start_time' => $timeOff->start_time,
+                'end_time' => $timeOff->end_time,
+                'is_full_day' => $timeOff->is_full_day,
+                'is_repeat' => $timeOff->is_repeat,
+                'repeat_until' => $timeOff->repeat_until ? $timeOff->repeat_until->format('Y-m-d') : null,
+                'description' => $timeOff->description,
+            ];
+        }
+
+        return ApiHelper::apiResponse(200, 'Time offs retrieved successfully', true, [
+            'time_offs' => $result,
+        ]);
+    }
+
+    /**
+     * Delete a time off record
+     */
+    public function deleteTimeOff(Request $request): JsonResponse
+    {
+        $timeOffId = $request->input('time_off_id');
+
+        if (!$timeOffId) {
+            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+        }
+
+        $timeOff = ResourceTimeOff::find($timeOffId);
+
+        if (!$timeOff) {
+            return ApiHelper::apiResponse(404, 'Time off not found', false);
+        }
+
+        $timeOff->delete();
+
+        return ApiHelper::apiResponse(200, 'Time off deleted successfully', true);
+    }
+
+    /**
+     * Get time offs for resources in a date range (private helper)
+     */
+    private function getTimeOffsForResources(array $resourceIds, int $locationId, string $startDate, string $endDate): array
+    {
+        $accountId = Auth::user()->account_id;
+
+        $timeOffs = ResourceTimeOff::where('account_id', $accountId)
+            ->where('location_id', $locationId)
+            ->whereIn('resource_id', $resourceIds)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('start_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('is_repeat', true)
+                            ->where('start_date', '<=', $endDate)
+                            ->where(function ($q2) use ($startDate) {
+                                $q2->whereNull('repeat_until')
+                                    ->orWhere('repeat_until', '>=', $startDate);
+                            });
+                    });
+            })
+            ->get();
+
+        $result = [];
+        foreach ($timeOffs as $timeOff) {
+            $result[] = [
+                'id' => $timeOff->id,
+                'resource_id' => $timeOff->resource_id,
+                'type' => $timeOff->type,
+                'type_label' => $timeOff->type_label,
+                'start_date' => $timeOff->start_date->format('Y-m-d'),
+                'start_time' => $timeOff->start_time,
+                'end_time' => $timeOff->end_time,
+                'is_full_day' => $timeOff->is_full_day,
+                'is_repeat' => $timeOff->is_repeat,
+                'repeat_until' => $timeOff->repeat_until ? $timeOff->repeat_until->format('Y-m-d') : null,
+                'description' => $timeOff->description,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Validate that shifts don't overlap with each other
+     */
+    private function validateShiftOverlaps(array $shifts): ?string
+    {
+        if (count($shifts) < 2) {
+            return null;
+        }
+
+        // Convert all times to minutes for easier comparison
+        $timeRanges = [];
+        foreach ($shifts as $index => $shift) {
+            $startMinutes = $this->timeToMinutes($shift['start_time']);
+            $endMinutes = $this->timeToMinutes($shift['end_time']);
+
+            // Validate start is before end
+            if ($startMinutes >= $endMinutes) {
+                return 'Shift ' . ($index + 1) . ': Start time must be before end time';
+            }
+
+            $timeRanges[] = [
+                'start' => $startMinutes,
+                'end' => $endMinutes,
+                'index' => $index + 1,
+            ];
+        }
+
+        // Sort by start time
+        usort($timeRanges, function($a, $b) {
+            return $a['start'] - $b['start'];
+        });
+
+        // Check for overlaps
+        for ($i = 0; $i < count($timeRanges) - 1; $i++) {
+            if ($timeRanges[$i]['end'] > $timeRanges[$i + 1]['start']) {
+                return 'Shift ' . $timeRanges[$i]['index'] . ' overlaps with Shift ' . $timeRanges[$i + 1]['index'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert time string (e.g., "10:00 AM") to minutes since midnight
+     */
+    private function timeToMinutes(string $time): int
+    {
+        $parsed = Carbon::parse($time);
+        return $parsed->hour * 60 + $parsed->minute;
+    }
+
+    /**
+     * Convert 12-hour time to 24-hour format
+     */
+    private function convertTo24Hour(string $time): string
+    {
+        return Carbon::parse($time)->format('H:i');
+    }
+
+    /**
+     * Get business closures for a location in a date range
+     */
+    private function getBusinessClosures(int $locationId, string $startDate, string $endDate): array
+    {
+        $accountId = Auth::user()->account_id;
+        $allCentresId = 30; // "All Centres" location ID
+
+        $closures = BusinessClosure::where('account_id', $accountId)
+            ->where(function ($query) use ($startDate, $endDate) {
+                // Closures that overlap with the date range
+                $query->where(function ($q) use ($startDate, $endDate) {
+                    $q->whereDate('start_date', '<=', $endDate)
+                      ->whereDate('end_date', '>=', $startDate);
+                });
+            })
+            ->where(function ($query) use ($locationId, $allCentresId) {
+                // Closures for this specific location OR "All Centres" OR no locations assigned
+                $query->whereHas('locations', function ($subQ) use ($locationId) {
+                    $subQ->where('locations.id', $locationId);
+                })
+                ->orWhereHas('locations', function ($subQ) use ($allCentresId) {
+                    $subQ->where('locations.id', $allCentresId);
+                })
+                ->orWhereDoesntHave('locations');
+            })
+            ->get();
+
+        $result = [];
+        foreach ($closures as $closure) {
+            // Generate dates for each day in the closure period that falls within the requested range
+            $closureStart = Carbon::parse($closure->start_date);
+            $closureEnd = Carbon::parse($closure->end_date);
+            $rangeStart = Carbon::parse($startDate);
+            $rangeEnd = Carbon::parse($endDate);
+
+            // Adjust to the overlapping period
+            $effectiveStart = $closureStart->greaterThan($rangeStart) ? $closureStart : $rangeStart;
+            $effectiveEnd = $closureEnd->lessThan($rangeEnd) ? $closureEnd : $rangeEnd;
+
+            $currentDate = $effectiveStart->copy();
+            while ($currentDate->lessThanOrEqualTo($effectiveEnd)) {
+                $result[] = [
+                    'id' => $closure->id,
+                    'title' => $closure->title,
+                    'date' => $currentDate->format('Y-m-d'),
+                ];
+                $currentDate->addDay();
+            }
+        }
+
+        return $result;
     }
 }

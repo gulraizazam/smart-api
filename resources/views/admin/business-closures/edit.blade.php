@@ -13,6 +13,14 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
+                        <label>Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_title" name="title" placeholder="Enter title" required />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
                         <label>Locations <span class="text-danger">*</span></label>
                         <select class="form-control select2" id="edit_location_ids" name="location_ids[]" multiple="multiple" data-placeholder="Select Locations" required>
                         </select>
@@ -30,14 +38,6 @@
                     <div class="form-group">
                         <label>End Date <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="edit_end_date" name="end_date" placeholder="Select end date" readonly required />
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea class="form-control" id="edit_description" name="description" rows="3" placeholder="Enter description (optional)"></textarea>
                     </div>
                 </div>
             </div>
