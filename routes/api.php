@@ -58,6 +58,7 @@ use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundContro
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\Api\BusinessClosureController;
+use App\Http\Controllers\Api\ScheduleController;
 
 /*
 |-----------------------------------------viewDetail---------------------------------
@@ -385,6 +386,10 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('business-closures/{id}/edit', [BusinessClosureController::class, 'edit'])->name('business-closures.edit');
     Route::put('business-closures/{id}', [BusinessClosureController::class, 'update'])->name('business-closures.update');
     Route::delete('business-closures/{id}', [BusinessClosureController::class, 'destroy'])->name('business-closures.destroy');
+
+    //Schedule Calendar API
+    Route::get('schedule/get-locations', [ScheduleController::class, 'getLocations'])->name('schedule.get-locations');
+    Route::post('schedule/get-shifts', [ScheduleController::class, 'getShifts'])->name('schedule.get-shifts');
 
     //Invoice Management route start
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');

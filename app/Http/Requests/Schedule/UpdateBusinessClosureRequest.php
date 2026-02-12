@@ -20,11 +20,11 @@ class UpdateBusinessClosureRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'location_ids' => 'required|array|min:1',
+            'location_ids.*' => 'required|integer|exists:locations,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'description' => 'nullable|string|max:500',
-            'location_ids' => 'nullable|array',
-            'location_ids.*' => 'nullable',
         ];
     }
 
@@ -34,6 +34,8 @@ class UpdateBusinessClosureRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'location_ids.required' => 'Please select at least one location.',
+            'location_ids.min' => 'Please select at least one location.',
             'start_date.required' => 'Start date is required.',
             'end_date.required' => 'End date is required.',
             'end_date.after_or_equal' => 'End date must be after or equal to start date.',
