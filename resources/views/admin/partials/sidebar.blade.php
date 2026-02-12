@@ -1098,6 +1098,22 @@
                         </ul>
                     </div>
                     @endcan
+                    @can('csr_dashboard_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.csr_dashboard') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.csr_dashboard') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">CSR Dashboard</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                    @endcan
                     @can('non_converted_customers_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
