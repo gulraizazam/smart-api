@@ -325,6 +325,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::resource('resourcerotas', ResourceRotasController::class)->only('index')->middleware('permission:resourcerotas_manage');
         Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
 
+        //Business Closures Management
+        Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index')->middleware('permission:business_closures_manage');
+
         //Invoice Management route start
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
         Route::resource('invoices', InvoicesController::class)->only('index')->middleware('permission:invoices_manage');

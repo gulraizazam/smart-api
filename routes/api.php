@@ -57,6 +57,7 @@ use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\Api\BusinessClosureController;
 
 /*
 |-----------------------------------------viewDetail---------------------------------
@@ -376,6 +377,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('resourcerotas/calender/events/{id}', [ResourceRotasController::class, 'getcalenderinfoevents'])->name('resourcerotas.events');
     Route::post('resourcerotas/store_Calender_edit', [ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
     Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
+
+    //Business Closures Management
+    Route::post('business-closures/datatable', [BusinessClosureController::class, 'datatable'])->name('business-closures.datatable');
+    Route::get('business-closures/create', [BusinessClosureController::class, 'create'])->name('business-closures.create');
+    Route::post('business-closures', [BusinessClosureController::class, 'store'])->name('business-closures.store');
+    Route::get('business-closures/{id}/edit', [BusinessClosureController::class, 'edit'])->name('business-closures.edit');
+    Route::put('business-closures/{id}', [BusinessClosureController::class, 'update'])->name('business-closures.update');
+    Route::delete('business-closures/{id}', [BusinessClosureController::class, 'destroy'])->name('business-closures.destroy');
 
     //Invoice Management route start
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
