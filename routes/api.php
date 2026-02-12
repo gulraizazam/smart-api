@@ -390,6 +390,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Schedule Calendar API
     Route::get('schedule/get-locations', [ScheduleController::class, 'getLocations'])->name('schedule.get-locations');
     Route::post('schedule/get-shifts', [ScheduleController::class, 'getShifts'])->name('schedule.get-shifts');
+    Route::post('schedule/store-shifts', [ScheduleController::class, 'storeShifts'])->name('schedule.store-shifts');
+    Route::post('schedule/delete-shifts', [ScheduleController::class, 'deleteShifts'])->name('schedule.delete-shifts');
+    Route::post('schedule/delete-single-shift', [ScheduleController::class, 'deleteSingleShift'])->name('schedule.delete-single-shift');
+    Route::post('schedule/store-time-off', [ScheduleController::class, 'storeTimeOff'])->name('schedule.store-time-off');
+    Route::post('schedule/get-time-offs', [ScheduleController::class, 'getTimeOffs'])->name('schedule.get-time-offs');
+    Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])->name('schedule.delete-time-off');
 
     //Invoice Management route start
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');

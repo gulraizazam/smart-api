@@ -14,9 +14,9 @@ class BusinessClosure extends Model
 
     protected $fillable = [
         'account_id',
+        'title',
         'start_date',
         'end_date',
-        'description',
         'created_by',
     ];
 
