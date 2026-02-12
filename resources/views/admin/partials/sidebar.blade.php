@@ -1068,6 +1068,14 @@
                                     <span class="menu-text">Appointments Report</span>
                                 </a>
                             </li>
+                            <li class="menu-item {{ activeMenu('admin.reports.csr_dashboard') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.csr_dashboard') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">CSR Dashboard</span>
+                                </a>
+                            </li>
 
                         </ul>
                     </div>
