@@ -4060,6 +4060,14 @@ class AppointmentsController extends Controller
             foreach ($resources as $resource) {
                 $resource_ids[] = $resource['id'];
             }
+            // Get business closures, time offs, and working days
+            $closures = \App\Http\Controllers\Api\AppointmentsController::getBusinessClosures($account_id, $location_id, $start, $end);
+            $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($account_id);
+            $timeOffs = [];
+            if ($doctor_id) {
+                $timeOffs = \App\Http\Controllers\Api\AppointmentsController::getDoctorTimeOffs($account_id, $location_id, $doctor_id, $start, $end);
+            }
+            
             if ($request->doctor_id) {
                 return response()->json([
                     'status' => 1,
@@ -4069,6 +4077,9 @@ class AppointmentsController extends Controller
                     'resource_ids' => $resource_ids,
                     'start_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->min('start_time'))->format('H:i:s'),
                     'end_time' => \Illuminate\Support\Carbon::parse($doctor_rotas->pluck('doctor_rotas')->flatten(1)->max('end_time'))->format('H:i:s'),
+                    'closures' => $closures,
+                    'time_offs' => $timeOffs,
+                    'working_days' => $workingDays,
                 ]);
             } else {
                 return response()->json([
@@ -4079,13 +4090,28 @@ class AppointmentsController extends Controller
                     'resource_ids' => $resource_ids,
                     'start_time' => '10:00',
                     'end_time' => '22:00',
+                    'closures' => $closures,
+                    'time_offs' => $timeOffs,
+                    'working_days' => $workingDays,
                 ]);
             }
 
         } else {
+            // Still return closures, time offs, and working days even when no appointments
+            $closures = \App\Http\Controllers\Api\AppointmentsController::getBusinessClosures($account_id, $location_id, $start, $end);
+            $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($account_id);
+            $timeOffs = [];
+            if ($doctor_id) {
+                $timeOffs = \App\Http\Controllers\Api\AppointmentsController::getDoctorTimeOffs($account_id, $location_id, $doctor_id, $start, $end);
+            }
+            
             return response()->json([
-                'status' => 0,
-                'events' => null,
+                'status' => 1,
+                'events' => [],
+                'rotas' => $doctor_rotas ? $doctor_rotas->toArray() : [],
+                'closures' => $closures,
+                'time_offs' => $timeOffs,
+                'working_days' => $workingDays,
             ]);
         }
     }

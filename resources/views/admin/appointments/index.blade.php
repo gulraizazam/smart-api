@@ -177,10 +177,15 @@
                 pointer-events: none;
             }
             .time-off-block {
-                box-shadow: 0 2px 8px rgba(246, 78, 96, 0.2);
+                box-shadow: 0 2px 8px rgba(94, 98, 120, 0.2);
             }
             .time-off-block:hover {
-                box-shadow: 0 4px 12px rgba(246, 78, 96, 0.3);
+                box-shadow: 0 4px 12px rgba(94, 98, 120, 0.3);
+            }
+            .resource-doctor-slot.non-working-day-slot {
+                background: #E4E6EF !important;
+                cursor: not-allowed;
+                pointer-events: none;
             }
             .resource-calendar-nav {
                 display: flex;

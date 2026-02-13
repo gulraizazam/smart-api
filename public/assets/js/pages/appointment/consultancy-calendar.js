@@ -815,6 +815,44 @@ var CustomResourceCalendar = function() {
         },
 
         renderRotas: function(rotasData, timeOffs, closures, workingDays) {
+            // Working days config
+            var workingDaysConfig = workingDays || {
+                monday: true, tuesday: true, wednesday: true,
+                thursday: true, friday: true, saturday: true, sunday: false
+            };
+            var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            
+            // Check if current day is a non-working day
+            var currentDayOfWeek = currentDate.day();
+            var currentDayName = dayNames[currentDayOfWeek];
+            var isNonWorkingDay = !workingDaysConfig[currentDayName];
+            
+            // Check if current day is a business closure
+            var currentDateStr = currentDate.format('YYYY-MM-DD');
+            var closureDates = {};
+            if (closures && closures.length > 0) {
+                closures.forEach(function(c) {
+                    closureDates[c.date] = c.title || 'Business Closed';
+                });
+            }
+            var isBusinessClosed = closureDates[currentDateStr] ? true : false;
+            
+            // If non-working day or business closed, grey out all slots
+            if (isNonWorkingDay || isBusinessClosed) {
+                var message = isNonWorkingDay ? 'Business Closed' : closureDates[currentDateStr];
+                $('.resource-doctor-slot').addClass('non-working-day-slot');
+                
+                // Add a message overlay to the calendar
+                if (!$('#non-working-day-overlay').length) {
+                    var overlayHtml = '<div id="non-working-day-overlay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,0.9); padding: 20px 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 100; text-align: center;">';
+                    overlayHtml += '<i class="la la-ban" style="font-size: 48px; color: #B5B5C3; margin-bottom: 10px; display: block;"></i>';
+                    overlayHtml += '<span style="color: #5E6278; font-weight: 600; font-size: 16px;">' + message + '</span>';
+                    overlayHtml += '</div>';
+                    $('.resource-calendar-body').css('position', 'relative').append(overlayHtml);
+                }
+                return;
+            }
+            
             if (!rotasData || rotasData.length === 0) {
                 return;
             }
@@ -829,21 +867,6 @@ var CustomResourceCalendar = function() {
                     timeOffsByDoctor[to.doctor_id].push(to);
                 });
             }
-
-            // Build closures lookup by date
-            var closureDates = {};
-            if (closures && closures.length > 0) {
-                closures.forEach(function(c) {
-                    closureDates[c.date] = c.title || 'Business Closed';
-                });
-            }
-
-            // Working days config
-            var workingDaysConfig = workingDays || {
-                monday: true, tuesday: true, wednesday: true,
-                thursday: true, friday: true, saturday: true, sunday: false
-            };
-            var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
             rotasData.forEach(function(rotaGroup) {
                 if (!rotaGroup.doctor_rotas || rotaGroup.doctor_rotas.length === 0) {
@@ -948,8 +971,8 @@ var CustomResourceCalendar = function() {
                 'left': '2px',
                 'right': '2px',
                 'height': blockHeight + 'px',
-                'background': '#FFE2E5',
-                'border-left': '4px solid #F64E60',
+                'background': '#E4E6EF',
+                'border-left': '4px solid #5E6278',
                 'border-radius': '6px',
                 'display': 'flex',
                 'align-items': 'center',
@@ -957,7 +980,7 @@ var CustomResourceCalendar = function() {
                 'z-index': '3',
                 'cursor': 'not-allowed'
             });
-            timeOffBlock.html('<span style="color: #F64E60; font-weight: 500; font-size: 11px;">' + label + '</span>');
+            timeOffBlock.html('<span style="color: #5E6278; font-weight: 500; font-size: 11px;">' + label + '</span>');
             timeOffBlock.attr('title', label + ' (' + startMoment.format('h:mm A') + ' - ' + endMoment.format('h:mm A') + ')');
 
             // Append to first slot
@@ -965,12 +988,13 @@ var CustomResourceCalendar = function() {
             firstSlot.append(timeOffBlock);
 
             // Mark all slots as time-off (for styling/blocking clicks) but without the label
+            // Also add has-rota class since doctor IS scheduled, just unavailable
             var currentSlot = startMoment.clone();
             while (currentSlot.isBefore(endMoment)) {
                 var timeStr = currentSlot.format('H:mm');
                 var slot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + timeStr + '"]');
                 if (slot.length) {
-                    slot.addClass('time-off-slot-no-label');
+                    slot.addClass('time-off-slot-no-label has-rota');
                 }
                 currentSlot.add(15, 'minutes');
             }
@@ -1002,6 +1026,12 @@ var CustomResourceCalendar = function() {
         },
 
         createAppointment: function(doctorId, time, element) {
+            // Check if the slot is a time off slot
+            if ($(element).hasClass('time-off-slot-no-label') || $(element).find('.time-off-block').length > 0) {
+                toastr.error("Doctor is on time off during this slot");
+                return;
+            }
+            
             // Check if the slot has a rota (has-rota class)
             if (!$(element).hasClass('has-rota')) {
                 toastr.error("Doctor rota does not exist for this time slot");
