@@ -282,9 +282,15 @@ class ScheduleController extends Controller
             return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
         }
 
-        // Delete existing rota day records for this date
+        // Delete existing rota day records for this date that don't have appointments
+        $rotaDaysWithAppointments = \DB::table('appointments')
+            ->whereNotNull('resource_has_rota_day_id')
+            ->pluck('resource_has_rota_day_id')
+            ->toArray();
+        
         ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
             ->whereDate('date', $date)
+            ->whereNotIn('id', $rotaDaysWithAppointments)
             ->forceDelete();
 
         // Create new rota day records for each shift
@@ -388,10 +394,18 @@ class ScheduleController extends Controller
             }
         }
 
-        // Delete existing rota days in the date range
+        // Delete existing rota days in the date range that don't have appointments
+        // First, get IDs of rota days that have appointments linked
+        $rotaDaysWithAppointments = \DB::table('appointments')
+            ->whereNotNull('resource_has_rota_day_id')
+            ->pluck('resource_has_rota_day_id')
+            ->toArray();
+        
+        // Delete only rota days without appointments
         ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
             ->whereDate('date', '>=', $startDate->format('Y-m-d'))
             ->whereDate('date', '<=', $endDate->format('Y-m-d'))
+            ->whereNotIn('id', $rotaDaysWithAppointments)
             ->forceDelete();
 
         // Generate shifts for each applicable date
@@ -480,9 +494,15 @@ class ScheduleController extends Controller
             return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
         }
 
-        // Delete rota day records for this date
+        // Delete rota day records for this date that don't have appointments
+        $rotaDaysWithAppointments = \DB::table('appointments')
+            ->whereNotNull('resource_has_rota_day_id')
+            ->pluck('resource_has_rota_day_id')
+            ->toArray();
+        
         $deleted = ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
             ->whereDate('date', $date)
+            ->whereNotIn('id', $rotaDaysWithAppointments)
             ->forceDelete();
 
         return ApiHelper::apiResponse(200, 'Shifts deleted successfully', true, [
@@ -505,6 +525,15 @@ class ScheduleController extends Controller
 
         if (!$shift) {
             return ApiHelper::apiResponse(404, 'Shift not found', false);
+        }
+
+        // Check if this shift has appointments linked
+        $hasAppointments = \DB::table('appointments')
+            ->where('resource_has_rota_day_id', $shiftId)
+            ->exists();
+        
+        if ($hasAppointments) {
+            return ApiHelper::apiResponse(400, 'Cannot delete shift with existing appointments', false);
         }
 
         $shift->forceDelete();
