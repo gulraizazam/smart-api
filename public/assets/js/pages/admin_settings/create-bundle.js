@@ -157,6 +157,17 @@ function setBundleData(response) {
     $("#random_id_bundle").val(random_id);
     $('#cash_amount_bundle').prop('disabled', true);
 
+    // Auto-select location if user has only one location assigned
+    if (locations) {
+        // Filter out "All Cities-All Centres" option
+        var validLocations = Object.entries(locations).filter(function(location) {
+            return location[1] !== 'All Cities-All Centres';
+        });
+        if (validLocations.length === 1) {
+            $("#add_bundle_location_id").val(validLocations[0][0]).trigger('change');
+        }
+    }
+
     getServicesBundle();
 
     getUserCentre();
