@@ -327,8 +327,51 @@ var ConsultancyCalendar = function() {
                     }
                 });
                 if(jQuery('#consultancy_doctor_filter').val() !== ''){
+                    // Get business closures and time offs for filtering
+                    var closureDates = {};
+                    if (response.closures && response.closures.length > 0) {
+                        $.each(response.closures, function(i, closure) {
+                            closureDates[closure.date] = closure.title || 'Business Closed';
+                        });
+                    }
+                    
+                    var timeOffsByDate = {};
+                    if (response.time_offs && response.time_offs.length > 0) {
+                        $.each(response.time_offs, function(i, timeOff) {
+                            if (!timeOffsByDate[timeOff.date]) {
+                                timeOffsByDate[timeOff.date] = [];
+                            }
+                            timeOffsByDate[timeOff.date].push(timeOff);
+                        });
+                    }
+                    
+                    // Get working days config
+                    var workingDays = response.working_days || {
+                        monday: true, tuesday: true, wednesday: true,
+                        thursday: true, friday: true, saturday: true, sunday: false
+                    };
+                    var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    
                     $.each(response.rotas[0].doctor_rotas, function(id, rota) {
                         if (rota.active == '1') {
+                            var rotaDate = rota.date;
+                            var rotaDateObj = new Date(rotaDate);
+                            var dayOfWeek = rotaDateObj.getDay();
+                            var dayName = dayNames[dayOfWeek];
+                            
+                            // Skip if business is closed on this day
+                            if (closureDates[rotaDate]) {
+                                return; // Skip this rota day
+                            }
+                            
+                            // Skip if not a working day
+                            if (!workingDays[dayName]) {
+                                return; // Skip this rota day
+                            }
+                            
+                            // Check for time offs on this date
+                            var dayTimeOffs = timeOffsByDate[rotaDate] || [];
+                            
                             /**
                              * Case 1: All times are added
                              */
@@ -348,13 +391,42 @@ var ConsultancyCalendar = function() {
                                     rendering: 'background'
                                 });
                             } else if (rota.start_time && !rota.start_off) {
-                                events.push({
-                                    id: 'availableForMeeting',
-                                    start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                    resourceId: $('#consultancy_doctor_filter').val(),
-                                    rendering: 'background'
-                                });
+                                // If there are time offs, we need to split the availability
+                                if (dayTimeOffs.length > 0) {
+                                    var segments = splitAvailabilityAroundTimeOffs(rota, dayTimeOffs);
+                                    $.each(segments, function(i, seg) {
+                                        events.push({
+                                            id: 'availableForMeeting',
+                                            start: formatDate(rota.date + " " + seg.start, 'YYYY-MM-DDTHH:mm:ss'),
+                                            end: formatDate(rota.date + " " + seg.end, 'YYYY-MM-DDTHH:mm:ss'),
+                                            resourceId: $('#consultancy_doctor_filter').val(),
+                                            rendering: 'background'
+                                        });
+                                    });
+                                    
+                                    // Add time off events as blocked (red background)
+                                    $.each(dayTimeOffs, function(i, to) {
+                                        if (to.start_time && to.end_time) {
+                                            events.push({
+                                                id: 'timeOff_' + to.id,
+                                                title: to.type_label || 'Time Off',
+                                                start: formatDate(rota.date + " " + to.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                end: formatDate(rota.date + " " + to.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                resourceId: $('#consultancy_doctor_filter').val(),
+                                                rendering: 'background',
+                                                color: '#FFE2E5'
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    events.push({
+                                        id: 'availableForMeeting',
+                                        start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                        end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                        resourceId: $('#consultancy_doctor_filter').val(),
+                                        rendering: 'background'
+                                    });
+                                }
                             }
                         }
                     });
@@ -1381,4 +1453,67 @@ function hoverPopup(info) {
         $(".modal_consultancy_popup").hide();
     }
 
+}
+
+/**
+ * Split availability around time offs
+ * Returns array of available time segments after removing time off periods
+ */
+function splitAvailabilityAroundTimeOffs(rota, timeOffs) {
+    var segments = [{
+        start: rota.start_time,
+        end: rota.end_time
+    }];
+    
+    // Convert time to minutes for easier comparison
+    function timeToMinutes(timeStr) {
+        if (!timeStr) return 0;
+        var parts = timeStr.split(':');
+        return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+    }
+    
+    function minutesToTime(minutes) {
+        var hours = Math.floor(minutes / 60);
+        var mins = minutes % 60;
+        return (hours < 10 ? '0' : '') + hours + ':' + (mins < 10 ? '0' : '') + mins + ':00';
+    }
+    
+    // Process each time off
+    $.each(timeOffs, function(i, to) {
+        if (!to.start_time || !to.end_time) return;
+        
+        var toStart = timeToMinutes(to.start_time);
+        var toEnd = timeToMinutes(to.end_time);
+        
+        var newSegments = [];
+        $.each(segments, function(j, seg) {
+            var segStart = timeToMinutes(seg.start);
+            var segEnd = timeToMinutes(seg.end);
+            
+            // Check if time off overlaps with this segment
+            if (toEnd <= segStart || toStart >= segEnd) {
+                // No overlap
+                newSegments.push(seg);
+            } else {
+                // There is overlap - split the segment
+                if (toStart > segStart) {
+                    // Part before time off
+                    newSegments.push({
+                        start: seg.start,
+                        end: minutesToTime(toStart)
+                    });
+                }
+                if (toEnd < segEnd) {
+                    // Part after time off
+                    newSegments.push({
+                        start: minutesToTime(toEnd),
+                        end: seg.end
+                    });
+                }
+            }
+        });
+        segments = newSegments;
+    });
+    
+    return segments;
 }

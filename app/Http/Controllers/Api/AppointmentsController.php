@@ -251,12 +251,36 @@ class AppointmentsController extends Controller
                 }
             }
 
+            // Get business closures for the date range
+            $closures = $this->getBusinessClosures(
+                $request->location_id,
+                $filters['scheduled_date_from'] ?? $request->start,
+                $filters['scheduled_date_to'] ?? $request->end
+            );
+
+            // Get time offs for the doctor if selected
+            $timeOffs = [];
+            if (!empty($request->doctor_id)) {
+                $timeOffs = $this->getDoctorTimeOffs(
+                    $request->doctor_id,
+                    $request->location_id,
+                    $filters['scheduled_date_from'] ?? $request->start,
+                    $filters['scheduled_date_to'] ?? $request->end
+                );
+            }
+
+            // Get business working days configuration
+            $workingDays = $this->getBusinessWorkingDays();
+
             return response()->json([
                 'status' => 1,
                 'events' => $events,
                 'rotas' => $doctor_rotas ? $doctor_rotas->toArray() : [],
                 'start_time' => $start_time,
                 'end_time' => $end_time,
+                'closures' => $closures,
+                'time_offs' => $timeOffs,
+                'working_days' => $workingDays,
             ]);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
@@ -310,5 +334,143 @@ class AppointmentsController extends Controller
             Log::error('Error fetching appointment statistics: ' . $e->getMessage());
             return ApiHelper::apiException($e);
         }
+    }
+
+    /**
+     * Get business closures for a location in a date range
+     */
+    private function getBusinessClosures($locationId, $startDate, $endDate): array
+    {
+        if (!$locationId || !$startDate || !$endDate) {
+            return [];
+        }
+
+        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
+        $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
+
+        $closures = \App\Models\BusinessClosure::where('account_id', $accountId)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereDate('start_date', '<=', $endDate)
+                      ->whereDate('end_date', '>=', $startDate);
+            })
+            ->where(function ($query) use ($locationId) {
+                $query->whereHas('locations', function ($subQ) use ($locationId) {
+                    $subQ->where('locations.id', $locationId);
+                })
+                ->orWhereDoesntHave('locations');
+            })
+            ->get();
+
+        $result = [];
+        foreach ($closures as $closure) {
+            $closureStart = \Carbon\Carbon::parse($closure->start_date);
+            $closureEnd = \Carbon\Carbon::parse($closure->end_date);
+            $rangeStart = \Carbon\Carbon::parse($startDate);
+            $rangeEnd = \Carbon\Carbon::parse($endDate);
+
+            $effectiveStart = $closureStart->greaterThan($rangeStart) ? $closureStart : $rangeStart;
+            $effectiveEnd = $closureEnd->lessThan($rangeEnd) ? $closureEnd : $rangeEnd;
+
+            $currentDate = $effectiveStart->copy();
+            while ($currentDate->lessThanOrEqualTo($effectiveEnd)) {
+                $result[] = [
+                    'id' => $closure->id,
+                    'title' => $closure->title ?? 'Business Closed',
+                    'date' => $currentDate->format('Y-m-d'),
+                ];
+                $currentDate->addDay();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get time offs for a doctor in a date range
+     */
+    private function getDoctorTimeOffs($doctorId, $locationId, $startDate, $endDate): array
+    {
+        if (!$doctorId || !$startDate || !$endDate) {
+            return [];
+        }
+
+        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
+        $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
+
+        // Get resource ID for this doctor
+        $resource = \App\Models\Resources::where('external_id', $doctorId)
+            ->where('account_id', $accountId)
+            ->first();
+
+        if (!$resource) {
+            return [];
+        }
+
+        $timeOffs = \App\Models\ResourceTimeOff::where('account_id', $accountId)
+            ->where('resource_id', $resource->id)
+            ->where(function ($query) use ($locationId) {
+                $query->where('location_id', $locationId)
+                    ->orWhereNull('location_id');
+            })
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('start_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('is_repeat', true)
+                            ->where('start_date', '<=', $endDate)
+                            ->where(function ($q2) use ($startDate) {
+                                $q2->whereNull('repeat_until')
+                                    ->orWhere('repeat_until', '>=', $startDate);
+                            });
+                    });
+            })
+            ->get();
+
+        $result = [];
+        foreach ($timeOffs as $timeOff) {
+            $result[] = [
+                'id' => $timeOff->id,
+                'resource_id' => $timeOff->resource_id,
+                'type' => $timeOff->type,
+                'type_label' => $timeOff->type_label,
+                'date' => $timeOff->start_date->format('Y-m-d'),
+                'start_time' => $timeOff->start_time,
+                'end_time' => $timeOff->end_time,
+                'is_full_day' => $timeOff->is_full_day,
+                'is_repeat' => $timeOff->is_repeat,
+                'repeat_until' => $timeOff->repeat_until ? $timeOff->repeat_until->format('Y-m-d') : null,
+                'description' => $timeOff->description,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get business working days configuration
+     */
+    private function getBusinessWorkingDays(): array
+    {
+        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        
+        $setting = \App\Models\Settings::where('account_id', $accountId)
+            ->where('slug', 'business_working_days')
+            ->first();
+        
+        if ($setting && $setting->data) {
+            return json_decode($setting->data, true);
+        }
+        
+        // Default: Monday to Saturday are working days
+        return [
+            'monday' => true,
+            'tuesday' => true,
+            'wednesday' => true,
+            'thursday' => true,
+            'friday' => true,
+            'saturday' => true,
+            'sunday' => false,
+        ];
     }
 }
