@@ -678,12 +678,28 @@ var CustomResourceCalendar = function() {
 
                 // Handle single doctor case (arguments is the response directly)
                 // Handle multiple doctors case (arguments is array of responses)
+                var allTimeOffs = [];
+                var allClosures = [];
+                var workingDays = null;
+                
                 if (doctors.length === 1) {
                     var response = arguments[0];
                     if (response.status) {
                         allEvents = allEvents.concat(Object.values(response.events || {}));
                         if (response.rotas && response.rotas.length > 0) {
                             allRotas = allRotas.concat(response.rotas);
+                        }
+                        if (response.time_offs && response.time_offs.length > 0) {
+                            allTimeOffs = allTimeOffs.concat(response.time_offs.map(function(to) {
+                                to.doctor_id = doctors[0].id;
+                                return to;
+                            }));
+                        }
+                        if (response.closures) {
+                            allClosures = response.closures;
+                        }
+                        if (response.working_days) {
+                            workingDays = response.working_days;
                         }
                     }
                 } else {
@@ -695,12 +711,24 @@ var CustomResourceCalendar = function() {
                             if (response.rotas && response.rotas.length > 0) {
                                 allRotas = allRotas.concat(response.rotas);
                             }
+                            if (response.time_offs && response.time_offs.length > 0) {
+                                allTimeOffs = allTimeOffs.concat(response.time_offs.map(function(to) {
+                                    to.doctor_id = doctors[i].id;
+                                    return to;
+                                }));
+                            }
+                            if (response.closures && !allClosures.length) {
+                                allClosures = response.closures;
+                            }
+                            if (response.working_days && !workingDays) {
+                                workingDays = response.working_days;
+                            }
                         }
                     }
                 }
 
                 CustomResourceCalendar.renderAppointments(allEvents);
-                CustomResourceCalendar.renderRotas(allRotas);
+                CustomResourceCalendar.renderRotas(allRotas, allTimeOffs, allClosures, workingDays);
 
                 $('#custom_resource_calendar .appointment-loader-base').hide();
             }).fail(function() {
@@ -786,65 +814,166 @@ var CustomResourceCalendar = function() {
                 .toString(16).slice(1);
         },
 
-        renderRotas: function(rotasData) {
+        renderRotas: function(rotasData, timeOffs, closures, workingDays) {
             if (!rotasData || rotasData.length === 0) {
-               
                 return;
             }
 
-          
+            // Build time offs lookup by doctor_id
+            var timeOffsByDoctor = {};
+            if (timeOffs && timeOffs.length > 0) {
+                timeOffs.forEach(function(to) {
+                    if (!timeOffsByDoctor[to.doctor_id]) {
+                        timeOffsByDoctor[to.doctor_id] = [];
+                    }
+                    timeOffsByDoctor[to.doctor_id].push(to);
+                });
+            }
+
+            // Build closures lookup by date
+            var closureDates = {};
+            if (closures && closures.length > 0) {
+                closures.forEach(function(c) {
+                    closureDates[c.date] = c.title || 'Business Closed';
+                });
+            }
+
+            // Working days config
+            var workingDaysConfig = workingDays || {
+                monday: true, tuesday: true, wednesday: true,
+                thursday: true, friday: true, saturday: true, sunday: false
+            };
+            var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
             rotasData.forEach(function(rotaGroup) {
-                
-
                 if (!rotaGroup.doctor_rotas || rotaGroup.doctor_rotas.length === 0) {
-                   
                     return;
                 }
 
                 // The doctor_id is the external_id field in the rotaGroup
                 var doctorId = rotaGroup.external_id;
-
-                
+                var doctorTimeOffs = timeOffsByDoctor[doctorId] || [];
 
                 rotaGroup.doctor_rotas.forEach(function(rota) {
-                  
-
                     if (rota.active !== '1' && rota.active !== 1) {
-                        
                         return;
                     }
 
                     // Check if rota date matches current date
                     var rotaDate = moment(rota.date, 'YYYY-MM-DD');
                     if (!rotaDate.isSame(currentDate, 'day')) {
-                       
                         return;
                     }
 
-            
+                    // Skip if business is closed
+                    if (closureDates[rota.date]) {
+                        return;
+                    }
+
+                    // Skip if not a working day
+                    var dayOfWeek = rotaDate.day();
+                    var dayName = dayNames[dayOfWeek];
+                    if (!workingDaysConfig[dayName]) {
+                        return;
+                    }
+
+                    // Get time offs for this date
+                    var dayTimeOffs = doctorTimeOffs.filter(function(to) {
+                        return to.date === rota.date;
+                    });
 
                     // Case 1: Has break time (start_off and end_off)
-                    // This means: available from start_time to start_off, then break, then end_off to end_time
                     if (rota.start_time && rota.start_off && rota.end_off && rota.end_time) {
-                       
                         // Morning session: start_time to start_off
-                        CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.start_off);
-
+                        CustomResourceCalendar.markRotaSlotsWithTimeOffs(doctorId, rota.start_time, rota.start_off, dayTimeOffs);
                         // Afternoon session: end_off to end_time
-                        CustomResourceCalendar.markRotaSlots(doctorId, rota.end_off, rota.end_time);
+                        CustomResourceCalendar.markRotaSlotsWithTimeOffs(doctorId, rota.end_off, rota.end_time, dayTimeOffs);
                     }
                     // Case 2: No break time - continuous availability
                     else if (rota.start_time && rota.end_time) {
-                       
-                        CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.end_time);
-                    } else {
-                        console.log('  ❌ Missing start_time or end_time');
+                        CustomResourceCalendar.markRotaSlotsWithTimeOffs(doctorId, rota.start_time, rota.end_time, dayTimeOffs);
                     }
+
+                    // Render time off blocks
+                    dayTimeOffs.forEach(function(to) {
+                        if (to.start_time && to.end_time) {
+                            CustomResourceCalendar.markTimeOffSlots(doctorId, to.start_time, to.end_time, to.type_label || 'Time Off');
+                        }
+                    });
                 });
             });
+        },
 
+        markRotaSlotsWithTimeOffs: function(doctorId, startTime, endTime, timeOffs) {
+            // If no time offs, just mark normally
+            if (!timeOffs || timeOffs.length === 0) {
+                CustomResourceCalendar.markRotaSlots(doctorId, startTime, endTime);
+                return;
+            }
+
+            // Split availability around time offs
+            var segments = splitAvailabilityAroundTimeOffs({start_time: startTime, end_time: endTime}, timeOffs);
+            segments.forEach(function(seg) {
+                CustomResourceCalendar.markRotaSlots(doctorId, seg.start, seg.end);
+            });
+        },
+
+        markTimeOffSlots: function(doctorId, startTime, endTime, label) {
+            var startMoment = moment(startTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
+            var endMoment = moment(endTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
+
+            if (!startMoment.isValid() || !endMoment.isValid()) {
+                return;
+            }
+
+            // Find the first slot to place the time off block
+            var firstTimeStr = startMoment.format('H:mm');
+            var firstSlot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + firstTimeStr + '"]');
             
+            if (!firstSlot.length) {
+                return;
+            }
+
+            // Calculate duration in minutes and height
+            var durationMinutes = endMoment.diff(startMoment, 'minutes');
+            var slotHeight = 60; // Each slot is 60px for 15 minutes
+            var pixelsPerMinute = slotHeight / 15;
+            var blockHeight = durationMinutes * pixelsPerMinute;
+
+            // Create a single time off block
+            var timeOffBlock = $('<div class="time-off-block"></div>');
+            timeOffBlock.css({
+                'position': 'absolute',
+                'top': '0',
+                'left': '2px',
+                'right': '2px',
+                'height': blockHeight + 'px',
+                'background': '#FFE2E5',
+                'border-left': '4px solid #F64E60',
+                'border-radius': '6px',
+                'display': 'flex',
+                'align-items': 'center',
+                'justify-content': 'center',
+                'z-index': '3',
+                'cursor': 'not-allowed'
+            });
+            timeOffBlock.html('<span style="color: #F64E60; font-weight: 500; font-size: 11px;">' + label + '</span>');
+            timeOffBlock.attr('title', label + ' (' + startMoment.format('h:mm A') + ' - ' + endMoment.format('h:mm A') + ')');
+
+            // Append to first slot
+            firstSlot.css('position', 'relative');
+            firstSlot.append(timeOffBlock);
+
+            // Mark all slots as time-off (for styling/blocking clicks) but without the label
+            var currentSlot = startMoment.clone();
+            while (currentSlot.isBefore(endMoment)) {
+                var timeStr = currentSlot.format('H:mm');
+                var slot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + timeStr + '"]');
+                if (slot.length) {
+                    slot.addClass('time-off-slot-no-label');
+                }
+                currentSlot.add(15, 'minutes');
+            }
         },
 
         markRotaSlots: function(doctorId, startTime, endTime) {

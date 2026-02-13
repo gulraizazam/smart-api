@@ -171,6 +171,17 @@
                 background: #fff3cd !important;
                 border: 2px dashed #ffc107 !important;
             }
+            .resource-doctor-slot.time-off-slot-no-label {
+                background: transparent !important;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+            .time-off-block {
+                box-shadow: 0 2px 8px rgba(246, 78, 96, 0.2);
+            }
+            .time-off-block:hover {
+                box-shadow: 0 4px 12px rgba(246, 78, 96, 0.3);
+            }
             .resource-calendar-nav {
                 display: flex;
                 justify-content: space-between;
