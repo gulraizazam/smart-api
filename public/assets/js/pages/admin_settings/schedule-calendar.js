@@ -1236,6 +1236,11 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
                 // Split shifts around time offs and render
                 var displayItems = getDisplayItemsWithTimeOffs(dayShifts, dayTimeOffs);
                 
+                // If no display items after processing, show "Not working"
+                if (displayItems.length === 0) {
+                    html += '<span class="shift-badge not-working">Not working</span>';
+                }
+                
                 for (var d = 0; d < displayItems.length; d++) {
                     var item = displayItems[d];
                     if (item.type === 'time_off') {
