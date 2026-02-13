@@ -41,7 +41,7 @@
                                             <i class="la la-clock mr-2"></i>Time off
                                         </a>
                                         <a class="dropdown-item" href="javascript:void(0);" id="btn_add_business_closed">
-                                            <i class="la la-store-slash mr-2"></i>Business closed period
+                                            <i class="la la-ban mr-2"></i>Business closed period
                                         </a>
                                     </div>
                                 </div>
@@ -470,12 +470,20 @@
             box-shadow: 0 2px 8px rgba(255, 168, 0, 0.3);
         }
         .shift-badge.business-closed {
-            background-color: #FFF4DE;
-            color: #FFA800;
+            background-color: #FFE2E5;
+            color: #F64E60;
+        }
+        .shift-cell.business-closed-day {
+            background-color: #F8F9FC;
+            pointer-events: none;
+        }
+        .shift-cell.business-closed-day .shift-badge.not-working {
+            background-color: #E4E6EF;
+            color: #7E8299;
         }
         .shift-badge.time-off {
-            background-color: #2D3748;
-            color: #FFFFFF;
+            background-color: #E4E6EF;
+            color: #5E6278;
             text-align: center;
             line-height: 1.3;
             padding: 8px 12px;
@@ -484,6 +492,7 @@
             font-size: 11px;
             display: block;
             margin-bottom: 2px;
+            color: #3F4254;
         }
         .shift-edit-dropdown {
             min-width: 180px;

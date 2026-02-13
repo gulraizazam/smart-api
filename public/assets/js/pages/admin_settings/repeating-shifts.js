@@ -292,13 +292,39 @@ function saveRepeatingShifts() {
         scheduleData.days.push(dayData);
     });
     
-    // TODO: Implement API call to save repeating shifts
-    console.log('Saving repeating shifts:', scheduleData);
+    // Disable save button
+    $('#btn_save_repeating_shifts').prop('disabled', true).text('Saving...');
     
-    toastr.success('Repeating shifts saved successfully');
-    
-    // Redirect back to schedule calendar
-    setTimeout(function() {
-        window.location.href = route('admin.resourcerotas.schedule');
-    }, 1000);
+    $.ajax({
+        url: route('admin.schedule.store-repeating-shifts'),
+        type: 'POST',
+        data: scheduleData,
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            $('#btn_save_repeating_shifts').prop('disabled', false).text('Save');
+            if (response.status) {
+                toastr.success('Repeating shifts saved successfully (' + response.data.shifts_created + ' shifts created)');
+                
+                // Redirect back to schedule calendar with location and date preserved
+                setTimeout(function() {
+                    var redirectUrl = route('admin.resourcerotas.schedule') + 
+                        '?location_id=' + locationId + 
+                        '&date=' + selectedDate;
+                    window.location.href = redirectUrl;
+                }, 1500);
+            } else {
+                toastr.error(response.message || 'Failed to save repeating shifts');
+            }
+        },
+        error: function(xhr) {
+            $('#btn_save_repeating_shifts').prop('disabled', false).text('Save');
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error('Failed to save repeating shifts');
+            }
+        }
+    });
 }

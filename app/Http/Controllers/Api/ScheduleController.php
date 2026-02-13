@@ -12,6 +12,7 @@ use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
 use App\Models\ResourceTimeOff;
+use App\Models\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,77 @@ class ScheduleController extends Controller
 
         return ApiHelper::apiResponse(200, 'Locations retrieved successfully', true, [
             'locations' => $locations,
+        ]);
+    }
+
+    /**
+     * Get business working days configuration
+     */
+    public function getBusinessWorkingDays(): JsonResponse
+    {
+        $accountId = Auth::user()->account_id;
+        
+        // Try to get existing setting
+        $setting = Settings::where('account_id', $accountId)
+            ->where('slug', 'business_working_days')
+            ->first();
+        
+        if ($setting && $setting->data) {
+            $workingDays = json_decode($setting->data, true);
+        } else {
+            // Default: Monday to Saturday are working days, Sunday is closed
+            $workingDays = [
+                'monday' => true,
+                'tuesday' => true,
+                'wednesday' => true,
+                'thursday' => true,
+                'friday' => true,
+                'saturday' => true,
+                'sunday' => false,
+            ];
+        }
+        
+        return ApiHelper::apiResponse(200, 'Business working days retrieved', true, [
+            'working_days' => $workingDays,
+        ]);
+    }
+
+    /**
+     * Save business working days configuration
+     */
+    public function saveBusinessWorkingDays(Request $request): JsonResponse
+    {
+        $accountId = Auth::user()->account_id;
+        $workingDays = $request->input('working_days', []);
+        
+        // Validate that we have all days
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $validatedDays = [];
+        foreach ($days as $day) {
+            // Handle string 'true'/'false' values from form data
+            $value = $workingDays[$day] ?? false;
+            if (is_string($value)) {
+                $validatedDays[$day] = $value === 'true' || $value === '1';
+            } else {
+                $validatedDays[$day] = (bool) $value;
+            }
+        }
+        
+        // Update or create setting
+        $setting = Settings::updateOrCreate(
+            [
+                'account_id' => $accountId,
+                'slug' => 'business_working_days',
+            ],
+            [
+                'name' => 'Business Working Days',
+                'data' => json_encode($validatedDays),
+                'active' => 1,
+            ]
+        );
+        
+        return ApiHelper::apiResponse(200, 'Business working days saved successfully', true, [
+            'working_days' => $validatedDays,
         ]);
     }
 
@@ -238,6 +310,137 @@ class ScheduleController extends Controller
 
         return ApiHelper::apiResponse(200, 'Shifts saved successfully', true, [
             'shifts' => $createdShifts,
+        ]);
+    }
+
+    /**
+     * Store repeating shifts for a resource based on weekly schedule
+     */
+    public function storeRepeatingShifts(Request $request): JsonResponse
+    {
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
+        $scheduleType = $request->input('schedule_type', 'every_week');
+        $startDateStr = $request->input('start_date');
+        $endDateStr = $request->input('end_date');
+        $days = $request->input('days', []);
+        $accountId = Auth::user()->account_id;
+
+        if (!$resourceId || !$locationId || !$startDateStr || !$endDateStr) {
+            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+        }
+
+        // Parse dates (format: "February 13, 2026")
+        $startDate = Carbon::parse($startDateStr);
+        $endDate = Carbon::parse($endDateStr);
+
+        if ($endDate->lt($startDate)) {
+            return ApiHelper::apiResponse(400, 'End date must be after start date', false);
+        }
+
+        // Find the active rota for this resource at this location
+        $rota = ResourceHasRota::where('resource_id', $resourceId)
+            ->where('location_id', $locationId)
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->first();
+
+        if (!$rota) {
+            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+        }
+
+        // Map day names to day of week numbers (0 = Sunday, 1 = Monday, etc.)
+        $dayMap = [
+            'sunday' => 0,
+            'monday' => 1,
+            'tuesday' => 2,
+            'wednesday' => 3,
+            'thursday' => 4,
+            'friday' => 5,
+            'saturday' => 6,
+        ];
+
+        // Determine week interval based on schedule type
+        $weekInterval = 1;
+        switch ($scheduleType) {
+            case 'every_2_weeks':
+                $weekInterval = 2;
+                break;
+            case 'every_3_weeks':
+                $weekInterval = 3;
+                break;
+            case 'every_4_weeks':
+                $weekInterval = 4;
+                break;
+        }
+
+        // Build a map of day -> shifts and validate for overlaps
+        $dayShifts = [];
+        foreach ($days as $day) {
+            $dayName = strtolower($day['day']);
+            if (isset($dayMap[$dayName]) && $day['enabled'] && !empty($day['shifts'])) {
+                // Validate shifts for this day - check for duplicates and overlaps
+                $overlapError = $this->validateShiftOverlaps($day['shifts']);
+                if ($overlapError) {
+                    return ApiHelper::apiResponse(400, ucfirst($dayName) . ': ' . $overlapError, false);
+                }
+                $dayShifts[$dayMap[$dayName]] = $day['shifts'];
+            }
+        }
+
+        // Delete existing rota days in the date range
+        ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereDate('date', '>=', $startDate->format('Y-m-d'))
+            ->whereDate('date', '<=', $endDate->format('Y-m-d'))
+            ->forceDelete();
+
+        // Generate shifts for each applicable date
+        $createdCount = 0;
+        $currentDate = $startDate->copy();
+        
+        // Calculate week number relative to start date (0-indexed)
+        // Week 0 = first week, Week 1 = second week, etc.
+        $startOfFirstWeek = $startDate->copy()->startOfWeek(Carbon::MONDAY);
+
+        while ($currentDate->lte($endDate)) {
+            // Calculate which week this date falls into (relative to start)
+            $currentWeekStart = $currentDate->copy()->startOfWeek(Carbon::MONDAY);
+            $weekNumber = $startOfFirstWeek->diffInWeeks($currentWeekStart);
+
+            // Check if this week should have shifts based on interval
+            // Week 0, 4, 8... for every 4 weeks; Week 0, 2, 4... for every 2 weeks
+            if ($weekNumber % $weekInterval === 0) {
+                $dayOfWeek = $currentDate->dayOfWeek;
+                
+                if (isset($dayShifts[$dayOfWeek])) {
+                    foreach ($dayShifts[$dayOfWeek] as $shift) {
+                        $startTime = $this->convertTo24Hour($shift['start_time']);
+                        $endTime = $this->convertTo24Hour($shift['end_time']);
+
+                        ResourceHasRotaDays::create([
+                            'date' => $currentDate->format('Y-m-d'),
+                            'start_time' => $startTime,
+                            'end_time' => $endTime,
+                            'start_off' => null,
+                            'end_off' => null,
+                            'start_timestamp' => Carbon::parse($currentDate->format('Y-m-d') . ' ' . $startTime)->format('Y-m-d H:i:s'),
+                            'end_timestamp' => Carbon::parse($currentDate->format('Y-m-d') . ' ' . $endTime)->format('Y-m-d H:i:s'),
+                            'resource_has_rota_id' => $rota->id,
+                            'active' => 1,
+                        ]);
+
+                        $createdCount++;
+                    }
+                }
+            }
+
+            $currentDate->addDay();
+        }
+
+        return ApiHelper::apiResponse(200, 'Repeating shifts saved successfully', true, [
+            'shifts_created' => $createdCount,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
         ]);
     }
 
