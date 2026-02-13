@@ -159,6 +159,17 @@ function setMembershipData(response) {
     $("#random_id_membership").val(random_id);
     $('#cash_amount_membership').prop('disabled', true);
 
+    // Auto-select location if user has only one location assigned
+    if (locations) {
+        // Filter out "All Cities-All Centres" option
+        var validLocations = Object.entries(locations).filter(function(location) {
+            return location[1] !== 'All Cities-All Centres';
+        });
+        if (validLocations.length === 1) {
+            $("#add_membership_location_id").val(validLocations[0][0]).trigger('change');
+        }
+    }
+
     getServicesMembership();
 
     getUserCentre();
