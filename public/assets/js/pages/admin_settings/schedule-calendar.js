@@ -497,7 +497,45 @@ function resetShiftForm() {
 }
 
 function addShiftRow() {
-    addShiftRowWithData('10:00 AM', '07:00 PM');
+    // Get the last shift's end time to use as start time for new shift
+    var lastEndTime = '10:00 AM';
+    var $lastRow = $('.shift-row').last();
+    if ($lastRow.length > 0) {
+        lastEndTime = $lastRow.find('.shift-end-time').val() || '10:00 AM';
+    }
+    
+    // Calculate end time as 1 hour after start time
+    var endTime = addOneHour(lastEndTime);
+    
+    addShiftRowWithData(lastEndTime, endTime);
+}
+
+function addOneHour(timeStr) {
+    // Parse time string like "07:00 PM"
+    var match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!match) return '08:00 PM';
+    
+    var hours = parseInt(match[1]);
+    var mins = parseInt(match[2]);
+    var ampm = match[3].toUpperCase();
+    
+    // Convert to 24-hour
+    if (ampm === 'PM' && hours !== 12) {
+        hours += 12;
+    } else if (ampm === 'AM' && hours === 12) {
+        hours = 0;
+    }
+    
+    // Add 1 hour
+    hours += 1;
+    if (hours >= 24) hours = 23; // Cap at 11:30 PM
+    
+    // Convert back to 12-hour
+    var newAmpm = hours >= 12 ? 'PM' : 'AM';
+    var newHours = hours % 12;
+    newHours = newHours ? newHours : 12;
+    
+    return (newHours < 10 ? '0' : '') + newHours + ':' + (mins === 0 ? '00' : mins) + ' ' + newAmpm;
 }
 
 function addShiftRowWithData(startTime, endTime) {
