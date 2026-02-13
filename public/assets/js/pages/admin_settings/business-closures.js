@@ -436,3 +436,78 @@ function resetAddForm() {
     $('#add_end_date').val('');
     $('#add_location_ids').val(null).trigger('change');
 }
+
+// Working Days Functions
+function loadWorkingDays() {
+    $.ajax({
+        url: route('admin.schedule.get-business-working-days'),
+        type: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            console.log('Working days response:', response);
+            if (response.status && response.data.working_days) {
+                var days = response.data.working_days;
+                console.log('Setting days:', days);
+                $('#working_monday').prop('checked', days.monday === true);
+                $('#working_tuesday').prop('checked', days.tuesday === true);
+                $('#working_wednesday').prop('checked', days.wednesday === true);
+                $('#working_thursday').prop('checked', days.thursday === true);
+                $('#working_friday').prop('checked', days.friday === true);
+                $('#working_saturday').prop('checked', days.saturday === true);
+                $('#working_sunday').prop('checked', days.sunday === true);
+            }
+        },
+        error: function(xhr) {
+            console.log('Error loading working days:', xhr);
+        }
+    });
+}
+
+function saveWorkingDays() {
+    var workingDays = {
+        monday: $('#working_monday').is(':checked'),
+        tuesday: $('#working_tuesday').is(':checked'),
+        wednesday: $('#working_wednesday').is(':checked'),
+        thursday: $('#working_thursday').is(':checked'),
+        friday: $('#working_friday').is(':checked'),
+        saturday: $('#working_saturday').is(':checked'),
+        sunday: $('#working_sunday').is(':checked')
+    };
+    
+    $('#btn_save_working_days').prop('disabled', true).text('Saving...');
+    
+    $.ajax({
+        url: route('admin.schedule.save-business-working-days'),
+        type: 'POST',
+        data: { working_days: workingDays },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            $('#btn_save_working_days').prop('disabled', false).text('Save');
+            if (response.status) {
+                toastr.success('Working days saved successfully');
+                $('#modal_working_days').modal('hide');
+            } else {
+                toastr.error(response.message || 'Failed to save working days');
+            }
+        },
+        error: function () {
+            $('#btn_save_working_days').prop('disabled', false).text('Save');
+            toastr.error('Failed to save working days');
+        }
+    });
+}
+
+// Open working days modal function
+function openWorkingDaysModal() {
+    loadWorkingDays();
+    $('#modal_working_days').modal('show');
+}
+
+// Save working days button click
+$(document).on('click', '#btn_save_working_days', function () {
+    saveWorkingDays();
+});

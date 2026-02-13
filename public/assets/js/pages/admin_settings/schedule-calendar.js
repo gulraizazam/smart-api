@@ -3,19 +3,66 @@
 var currentWeekStart = null;
 var locations = [];
 var avatarColors = ['avatar-color-1', 'avatar-color-2', 'avatar-color-3', 'avatar-color-4', 'avatar-color-5', 'avatar-color-6'];
+var businessWorkingDays = {
+    monday: true,
+    tuesday: true,
+    wednesday: true,
+    thursday: true,
+    friday: true,
+    saturday: true,
+    sunday: false
+};
 
 $(document).ready(function () {
     initWeekDates();
-    loadLocations();
+    loadBusinessWorkingDays();
     initEventHandlers();
 });
 
+function loadBusinessWorkingDays() {
+    $.ajax({
+        url: route('admin.schedule.get-business-working-days'),
+        type: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.status && response.data.working_days) {
+                businessWorkingDays = response.data.working_days;
+            }
+            // Load locations after working days are loaded
+            loadLocations();
+        },
+        error: function () {
+            // Use defaults and continue
+            loadLocations();
+        }
+    });
+}
+
 function initWeekDates() {
-    // Set current week start to Monday of current week
-    var today = new Date();
-    var dayOfWeek = today.getDay();
-    var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
-    currentWeekStart = new Date(today.setDate(diff));
+    // Check for date parameter in URL
+    var urlParams = new URLSearchParams(window.location.search);
+    var dateParam = urlParams.get('date');
+    
+    var targetDate;
+    if (dateParam) {
+        // Parse the date from URL (format: YYYY-MM-DD)
+        var parts = dateParam.split('-');
+        if (parts.length === 3) {
+            targetDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        } else {
+            targetDate = new Date();
+        }
+    } else {
+        targetDate = new Date();
+    }
+    
+    // Set current week start to Monday of the week containing targetDate
+    var dayOfWeek = targetDate.getDay();
+    var diff = targetDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+    currentWeekStart = new Date(targetDate);
+    currentWeekStart.setDate(diff);
     currentWeekStart.setHours(0, 0, 0, 0);
     
     updateWeekDisplay();
@@ -78,21 +125,28 @@ function populateLocationDropdown(locations) {
     var $select = $('#filter_location_id');
     $select.empty();
     
+    // Check for location_id parameter in URL
+    var urlParams = new URLSearchParams(window.location.search);
+    var urlLocationId = urlParams.get('location_id');
+    
     // Skip "All Centres" option - find first actual branch
-    var firstBranchIndex = 0;
+    var firstBranchId = null;
     for (var i = 0; i < locations.length; i++) {
         if (locations[i].name && locations[i].name.toLowerCase().indexOf('all') === -1) {
-            firstBranchIndex = i;
+            firstBranchId = locations[i].id;
             break;
         }
     }
+    
+    // Determine which location to select
+    var selectedLocationId = urlLocationId ? parseInt(urlLocationId) : firstBranchId;
     
     for (var i = 0; i < locations.length; i++) {
         // Skip "All Centres" or similar options
         if (locations[i].name && locations[i].name.toLowerCase().indexOf('all') !== -1) {
             continue;
         }
-        var selected = i === firstBranchIndex ? 'selected' : '';
+        var selected = locations[i].id === selectedLocationId ? 'selected' : '';
         $select.append('<option value="' + locations[i].id + '" ' + selected + '>' + locations[i].name + '</option>');
     }
     
@@ -1168,12 +1222,15 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
             var dayTimeOffs = findAllTimeOffs(resource.id, dateStr, timeOffs);
             var closure = findClosure(dateStr, closures);
             var isWeekend = (day === 5 || day === 6); // Saturday or Sunday
+            var isBusinessClosed = !isBusinessWorkingDay(day);
             
-            html += '<td class="shift-cell" data-resource-id="' + resource.id + '" data-date="' + dateStr + '">';
+            html += '<td class="shift-cell' + (isBusinessClosed ? ' business-closed-day' : '') + '" data-resource-id="' + resource.id + '" data-date="' + dateStr + '">';
             html += '<div class="shift-container">';
             
-            // Check if business is closed on this day
-            if (closure) {
+            // Check if business is closed on this day (either by closure or non-working day)
+            if (isBusinessClosed) {
+                html += '<span class="shift-badge not-working">Closed</span>';
+            } else if (closure) {
                 html += '<span class="shift-badge business-closed clickable" data-closure-id="' + closure.id + '" title="' + (closure.title || 'Business Closed') + '">' + (closure.title || 'Closed') + '</span>';
             } else if (dayShifts.length > 0 || dayTimeOffs.length > 0) {
                 // Split shifts around time offs and render
@@ -1225,8 +1282,8 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
                 html += '</div>';
             }
             
-            // Don't show add button if business is closed
-            if (!closure) {
+            // Don't show add button if business is closed (either by closure or non-working day)
+            if (!closure && !isBusinessClosed) {
                 html += '<button type="button" class="shift-add-btn" title="Add shift"><i class="la la-plus"></i></button>';
             }
             html += '</div>';
@@ -1237,6 +1294,13 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
     }
     
     $('#schedule_body').html(html);
+}
+
+function isBusinessWorkingDay(dayIndex) {
+    // dayIndex: 0=Monday, 1=Tuesday, ..., 6=Sunday
+    var dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    var dayName = dayNames[dayIndex];
+    return businessWorkingDays[dayName] === true;
 }
 
 function findShift(resourceId, dateStr, shifts) {
@@ -1266,9 +1330,26 @@ function findAllTimeOffs(resourceId, dateStr, timeOffs) {
     if (!timeOffs) return [];
     
     var result = [];
+    var checkDate = new Date(dateStr);
+    
     for (var i = 0; i < timeOffs.length; i++) {
-        if (timeOffs[i].resource_id == resourceId && timeOffs[i].start_date === dateStr) {
-            result.push(timeOffs[i]);
+        var to = timeOffs[i];
+        if (to.resource_id != resourceId) continue;
+        
+        var startDate = new Date(to.start_date);
+        
+        // Check if this time off applies to the given date
+        if (to.is_repeat && to.repeat_until) {
+            // Repeating time off - check if date is within range
+            var repeatUntil = new Date(to.repeat_until);
+            if (checkDate >= startDate && checkDate <= repeatUntil) {
+                result.push(to);
+            }
+        } else {
+            // Non-repeating - exact date match
+            if (to.start_date === dateStr) {
+                result.push(to);
+            }
         }
     }
     return result;
