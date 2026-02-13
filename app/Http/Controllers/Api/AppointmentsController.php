@@ -252,7 +252,8 @@ class AppointmentsController extends Controller
             }
 
             // Get business closures for the date range
-            $closures = $this->getBusinessClosures(
+            $closures = self::getBusinessClosures(
+                $account_id,
                 $request->location_id,
                 $filters['scheduled_date_from'] ?? $request->start,
                 $filters['scheduled_date_to'] ?? $request->end
@@ -261,16 +262,17 @@ class AppointmentsController extends Controller
             // Get time offs for the doctor if selected
             $timeOffs = [];
             if (!empty($request->doctor_id)) {
-                $timeOffs = $this->getDoctorTimeOffs(
-                    $request->doctor_id,
+                $timeOffs = self::getDoctorTimeOffs(
+                    $account_id,
                     $request->location_id,
+                    $request->doctor_id,
                     $filters['scheduled_date_from'] ?? $request->start,
                     $filters['scheduled_date_to'] ?? $request->end
                 );
             }
 
             // Get business working days configuration
-            $workingDays = $this->getBusinessWorkingDays();
+            $workingDays = self::getBusinessWorkingDays($account_id);
 
             return response()->json([
                 'status' => 1,
@@ -339,13 +341,15 @@ class AppointmentsController extends Controller
     /**
      * Get business closures for a location in a date range
      */
-    private function getBusinessClosures($locationId, $startDate, $endDate): array
+    public static function getBusinessClosures($accountId, $locationId, $startDate, $endDate): array
     {
         if (!$locationId || !$startDate || !$endDate) {
             return [];
         }
 
-        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        if (!$accountId) {
+            $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        }
         $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
         $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
 
@@ -389,13 +393,15 @@ class AppointmentsController extends Controller
     /**
      * Get time offs for a doctor in a date range
      */
-    private function getDoctorTimeOffs($doctorId, $locationId, $startDate, $endDate): array
+    public static function getDoctorTimeOffs($accountId, $locationId, $doctorId, $startDate, $endDate): array
     {
         if (!$doctorId || !$startDate || !$endDate) {
             return [];
         }
 
-        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        if (!$accountId) {
+            $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        }
         $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
         $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
 
@@ -454,9 +460,11 @@ class AppointmentsController extends Controller
     /**
      * Get business working days configuration
      */
-    private function getBusinessWorkingDays(): array
+    public static function getBusinessWorkingDays($accountId = null): array
     {
-        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        if (!$accountId) {
+            $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        }
         
         $setting = \App\Models\Settings::where('account_id', $accountId)
             ->where('slug', 'business_working_days')

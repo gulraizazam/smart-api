@@ -36,10 +36,22 @@ class AppointmentCheckesWidget
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
             'location_id' => $request->location_id,
-            'active' => 1
+            'active' => 1,
+            'is_consultancy' => 1
         ])->get();
         foreach ($resource_rota as $resourceroata) {
-            if (($start >= Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
+            // Check if rota has a valid day record for this date (more reliable than checking parent date range)
+            $hasRotaDay = ResourceHasRotaDays::where('resource_has_rota_id', $resourceroata->id)
+                ->whereDate('date', $start)
+                ->where('active', 1)
+                ->exists();
+            
+            if ($hasRotaDay) {
+                $continue_rota[0] = $resourceroata;
+                break;
+            }
+            // Fallback to original date range check
+            elseif (($start >= Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
                 $continue_rota[0] = $resourceroata;
             }
         }
@@ -54,12 +66,13 @@ class AppointmentCheckesWidget
         ]);
         
         if (count($continue_rota) > 0) {
-            $resource_has_rota_days = ResourceHasRotaDays::where([
+            // Get ALL rota days for this date (supports multiple shifts per day)
+            $all_rota_days = ResourceHasRotaDays::where([
                 'resource_has_rota_id' => $continue_rota[0]->id,
-                'date' => $start,
                 'active' => '1',
-            ])->first();
-            if (! $resource_has_rota_days) {
+            ])->whereDate('date', $start)->get();
+            
+            if ($all_rota_days->isEmpty()) {
                 $appointment_status = false;
                 $message = 'Doctor rota is not available.';
                 $status = [
@@ -67,47 +80,71 @@ class AppointmentCheckesWidget
                     'message' => $message,
                 ];
             } else {
-                if ($resource_has_rota_days->start_time) {
-                    // Check if scheduled time is within rota hours
-                    $rota_start = Carbon::parse($resource_has_rota_days->start_time)->format('H:i');
-                    $rota_end = Carbon::parse($resource_has_rota_days->end_time)->format('H:i');
-                    
-                    \Log::info('Rota Time Validation', [
-                        'scheduled_time' => $start_for_break_check,
-                        'rota_start' => $rota_start,
-                        'rota_end' => $rota_end,
-                        'is_before_start' => ($start_for_break_check < $rota_start),
-                        'is_after_end' => ($start_for_break_check >= $rota_end),
-                    ]);
-                    
-                    if ($start_for_break_check < $rota_start || $start_for_break_check >= $rota_end) {
+                // Check if appointment time falls within ANY of the shifts
+                $isWithinAnyShift = false;
+                $matchedRotaDay = null;
+                $allShiftRanges = [];
+                
+                foreach ($all_rota_days as $rota_day) {
+                    if ($rota_day->start_time) {
+                        $rota_start = Carbon::parse($rota_day->start_time)->format('H:i');
+                        $rota_end = Carbon::parse($rota_day->end_time)->format('H:i');
+                        $allShiftRanges[] = "{$rota_start} - {$rota_end}";
+                        
+                        // Check if appointment time is within this shift
+                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end) {
+                            $isWithinAnyShift = true;
+                            $matchedRotaDay = $rota_day;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!$isWithinAnyShift) {
+                    $appointment_status = false;
+                    $message = "Appointment time must be within available shifts: " . implode(', ', $allShiftRanges);
+                    $status = [
+                        'status' => $appointment_status,
+                        'message' => $message,
+                    ];
+                } elseif ($matchedRotaDay && $matchedRotaDay->start_off) {
+                    // Check if appointment is during break time
+                    $start_break = Carbon::parse($matchedRotaDay->start_off)->format('H:i');
+                    $end_break = Carbon::parse($matchedRotaDay->end_off)->format('H:i');
+                    if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
                         $appointment_status = false;
-                        $message = "Appointment time must be between {$rota_start} and {$rota_end}.";
+                        $message = "Appointment can't be created in break time.";
                         $status = [
                             'status' => $appointment_status,
                             'message' => $message,
                         ];
-                    } elseif ($resource_has_rota_days->start_off) {
-                        // Check if appointment is during break time
-                        $start_break = Carbon::parse($resource_has_rota_days->start_off)->format('H:i');
-                        $end_break = Carbon::parse($resource_has_rota_days->end_off)->format('H:i');
-                        if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
+                    }
+                }
+                    
+                // Check if appointment is during time off
+                    if ($appointment_status) {
+                        $timeOff = \App\Models\ResourceTimeOff::where('resource_id', $resource_id->id)
+                            ->where('account_id', $resource_id->account_id)
+                            ->where(function ($query) use ($request) {
+                                $query->where('location_id', $request->location_id)
+                                    ->orWhereNull('location_id');
+                            })
+                            ->whereDate('start_date', $start)
+                            ->where(function ($query) use ($start_for_break_check) {
+                                $query->where('start_time', '<=', $start_for_break_check . ':00')
+                                    ->where('end_time', '>', $start_for_break_check . ':00');
+                            })
+                            ->first();
+                        
+                        if ($timeOff) {
                             $appointment_status = false;
-                            $message = "Appointment can't be created in break time.";
+                            $message = "Doctor is on " . ($timeOff->type_label ?? 'time off') . " during this time.";
                             $status = [
                                 'status' => $appointment_status,
                                 'message' => $message,
                             ];
                         }
                     }
-                } else {
-                    $appointment_status = false;
-                    $message = 'Doctor rota is not available.';
-                    $status = [
-                        'status' => $appointment_status,
-                        'message' => $message,
-                    ];
-                }
             }
         } else {
             $appointment_status = false;
@@ -215,6 +252,31 @@ class AppointmentCheckesWidget
                             if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
                                 $appointment_status = false;
                                 $message = 'Doctor or Machine rota is not available.';
+                                $status = [
+                                    'status' => $appointment_status,
+                                    'message' => $message,
+                                ];
+                            }
+                        }
+                        
+                        // Check if appointment is during time off
+                        if ($appointment_status) {
+                            $timeOff = \App\Models\ResourceTimeOff::where('resource_id', $resource_id_doctor->id)
+                                ->where('account_id', $resource_id_doctor->account_id)
+                                ->where(function ($query) use ($request) {
+                                    $query->where('location_id', $request->location_id)
+                                        ->orWhereNull('location_id');
+                                })
+                                ->whereDate('start_date', $start)
+                                ->where(function ($query) use ($start_for_break_check) {
+                                    $query->where('start_time', '<=', $start_for_break_check . ':00')
+                                        ->where('end_time', '>', $start_for_break_check . ':00');
+                                })
+                                ->first();
+                            
+                            if ($timeOff) {
+                                $appointment_status = false;
+                                $message = "Doctor is on " . ($timeOff->type_label ?? 'time off') . " during this time.";
                                 $status = [
                                     'status' => $appointment_status,
                                     'message' => $message,
