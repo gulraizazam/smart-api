@@ -400,8 +400,10 @@ class AppointmentsController extends Controller
         $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
 
         // Get resource ID for this doctor
+        // external_id is the user_id (doctor_id) in the resources table
         $resource = \App\Models\Resources::where('external_id', $doctorId)
             ->where('account_id', $accountId)
+            ->where('resource_type_id', \Config::get('constants.resource_doctor_type_id', 2))
             ->first();
 
         if (!$resource) {
@@ -415,13 +417,15 @@ class AppointmentsController extends Controller
                     ->orWhereNull('location_id');
             })
             ->where(function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('start_date', [$startDate, $endDate])
+                // Use whereDate for proper date comparison ignoring time component
+                $query->whereDate('start_date', '>=', $startDate)
+                    ->whereDate('start_date', '<=', $endDate)
                     ->orWhere(function ($q) use ($startDate, $endDate) {
                         $q->where('is_repeat', true)
-                            ->where('start_date', '<=', $endDate)
+                            ->whereDate('start_date', '<=', $endDate)
                             ->where(function ($q2) use ($startDate) {
                                 $q2->whereNull('repeat_until')
-                                    ->orWhere('repeat_until', '>=', $startDate);
+                                    ->orWhereDate('repeat_until', '>=', $startDate);
                             });
                     });
             })

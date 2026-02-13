@@ -206,6 +206,17 @@
                 background: #d4f7e3 !important;
                 border: 2px dashed #1BC5BD !important;
             }
+            .resource-doctor-slot.time-off-slot-no-label {
+                background: transparent !important;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+            .time-off-block {
+                box-shadow: 0 2px 8px rgba(246, 78, 96, 0.2);
+            }
+            .time-off-block:hover {
+                box-shadow: 0 4px 12px rgba(246, 78, 96, 0.3);
+            }
             .resource-appointment {
                 cursor: move;
             }
