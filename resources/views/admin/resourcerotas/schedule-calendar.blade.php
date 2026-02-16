@@ -497,6 +497,103 @@
             margin-bottom: 2px;
             color: #3F4254;
         }
+        /* Spanning time off styles - horizontal bar across day columns */
+        .spanning-time-off-row {
+            background-color: transparent;
+        }
+        .spanning-time-off-row .team-member-cell {
+            vertical-align: middle;
+            border-bottom: none !important;
+        }
+        .spanning-time-off-cell {
+            padding: 8px 0 4px 0 !important;
+            position: relative;
+            background-color: transparent;
+            border-bottom: none !important;
+        }
+        .spanning-time-offs-container {
+            position: relative;
+            height: 40px;
+            width: 100%;
+        }
+        .spanning-time-off-bar {
+            position: absolute;
+            top: 0;
+            height: 40px;
+            background-color: #E4E6EF;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #D1D3E0;
+        }
+        .spanning-time-off-bar:hover {
+            background-color: #D1D3E0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .spanning-time-off-label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #3F4254;
+        }
+        .spanning-time-off-time {
+            font-size: 11px;
+            color: #7E8299;
+        }
+        .resource-row.has-spanning-time-off td {
+            border-top: none !important;
+        }
+        .spanning-time-off-wrapper {
+            position: absolute;
+            top: 0;
+            height: 40px;
+        }
+        .spanning-time-off-wrapper .spanning-time-off-bar {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .spanning-time-off-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            z-index: 1000;
+            min-width: 160px;
+            margin-top: 4px;
+        }
+        .spanning-time-off-dropdown.show {
+            display: block;
+        }
+        .spanning-time-off-dropdown .shift-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 13px;
+            color: #3F4254;
+            transition: background-color 0.15s ease;
+        }
+        .spanning-time-off-dropdown .shift-dropdown-item:hover {
+            background-color: #F3F6F9;
+        }
+        .spanning-time-off-dropdown .shift-dropdown-item i {
+            font-size: 16px;
+        }
         .shift-edit-dropdown {
             min-width: 180px;
         }

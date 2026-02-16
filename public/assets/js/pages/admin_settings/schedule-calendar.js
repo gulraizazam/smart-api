@@ -13,6 +13,7 @@ var businessWorkingDays = {
     sunday: false
 };
 var workingDayExceptions = [];
+var currentCalendarResources = []; // Store resources displayed on calendar
 
 $(document).ready(function () {
     initWeekDates();
@@ -260,6 +261,40 @@ function initEventHandlers() {
         var closureId = $(this).data('closure-id');
         openEditClosureModal(closureId);
     });
+    
+    // Spanning time off bar click - show dropdown menu
+    $(document).on('click', '.spanning-time-off-bar', function (e) {
+        e.stopPropagation();
+        // Close all other dropdowns first
+        $('.spanning-time-off-dropdown').removeClass('show');
+        $('.shift-dropdown').removeClass('show');
+        // Toggle this dropdown
+        $(this).siblings('.spanning-time-off-dropdown').toggleClass('show');
+    });
+    
+    // Spanning time off dropdown - Edit time off
+    $(document).on('click', '.spanning-time-off-dropdown [data-action="edit-time-off"]', function (e) {
+        e.stopPropagation();
+        var timeOffId = $(this).data('time-off-id');
+        var resourceId = $(this).data('resource-id');
+        $('.spanning-time-off-dropdown').removeClass('show');
+        openEditTimeOffModal(timeOffId, resourceId);
+    });
+    
+    // Spanning time off dropdown - Delete time off
+    $(document).on('click', '.spanning-time-off-dropdown [data-action="delete-time-off"]', function (e) {
+        e.stopPropagation();
+        var timeOffId = $(this).data('time-off-id');
+        $('.spanning-time-off-dropdown').removeClass('show');
+        if (confirm('Are you sure you want to delete this time off?')) {
+            deleteTimeOff(timeOffId);
+        }
+    });
+    
+    // Close spanning time off dropdown when clicking outside
+    $(document).on('click', function () {
+        $('.spanning-time-off-dropdown').removeClass('show');
+    });
 }
 
 function handleShiftAction(action, resourceId, date, shiftId) {
@@ -278,6 +313,9 @@ function handleShiftAction(action, resourceId, date, shiftId) {
             break;
         case 'delete-shift':
             deleteShift(resourceId, date, shiftId);
+            break;
+        case 'edit-time-off':
+            openEditTimeOffModal(shiftId, resourceId); // shiftId contains time_off_id from data attribute
             break;
         case 'delete-time-off':
             deleteTimeOff(shiftId); // shiftId contains time_off_id from data attribute
@@ -801,6 +839,11 @@ function deleteAllShifts() {
 var currentTimeOffResources = [];
 
 function openTimeOffModalGlobal() {
+    // Reset editing state
+    editingTimeOffId = null;
+    $('#modal_add_time_off .modal-title').text('Add Time Off');
+    $('#btn_save_time_off').text('Save');
+    
     // Open time off modal without pre-selecting a resource
     var today = new Date();
     var todayStr = formatDateForApi(today);
@@ -808,20 +851,15 @@ function openTimeOffModalGlobal() {
     // Set location
     $('#time_off_location_id').val($('#filter_location_id').val());
     
-    // Populate team member dropdown with current resources
+    // Populate team member dropdown with current calendar resources
     var $resourceSelect = $('#time_off_resource_id');
     $resourceSelect.empty();
     $resourceSelect.append('<option value="">Select team member</option>');
     
-    $('#schedule_body tr').each(function() {
-        var $nameCell = $(this).find('.team-member-name');
-        var $shiftCell = $(this).find('.shift-cell').first();
-        if ($nameCell.length && $shiftCell.length) {
-            var resId = $shiftCell.data('resource-id');
-            var resName = $nameCell.text();
-            $resourceSelect.append('<option value="' + resId + '">' + resName + '</option>');
-        }
-    });
+    for (var i = 0; i < currentCalendarResources.length; i++) {
+        var res = currentCalendarResources[i];
+        $resourceSelect.append('<option value="' + res.id + '">' + res.name + '</option>');
+    }
     
     // Format and set start date to today
     var formattedDate = formatDateForDisplay(today);
@@ -858,6 +896,11 @@ function openTimeOffModalGlobal() {
 }
 
 function openTimeOffModal(resourceId, date) {
+    // Reset editing state
+    editingTimeOffId = null;
+    $('#modal_add_time_off .modal-title').text('Add Time Off');
+    $('#btn_save_time_off').text('Save');
+    
     // Set location
     $('#time_off_location_id').val($('#filter_location_id').val());
     
@@ -909,6 +952,126 @@ function openTimeOffModal(resourceId, date) {
     
     // Show modal
     $('#modal_add_time_off').modal('show');
+}
+
+// Edit time off modal - stores the time off ID being edited
+var editingTimeOffId = null;
+
+function openEditTimeOffModal(timeOffId, resourceId) {
+    editingTimeOffId = timeOffId;
+    
+    // Fetch time off details
+    $.ajax({
+        url: route('admin.schedule.get-time-off'),
+        type: 'POST',
+        data: {
+            time_off_id: timeOffId
+        },
+        success: function(response) {
+            if (response.status && response.data && response.data.time_off) {
+                var timeOff = response.data.time_off;
+                
+                // Set location
+                $('#time_off_location_id').val(timeOff.location_id);
+                
+                // Populate team member dropdown with current resources
+                var $resourceSelect = $('#time_off_resource_id');
+                $resourceSelect.empty();
+                
+                $('#schedule_body tr').each(function() {
+                    var $nameCell = $(this).find('.team-member-name');
+                    var $shiftCell = $(this).find('.shift-cell').first();
+                    if ($nameCell.length && $shiftCell.length) {
+                        var resId = $shiftCell.data('resource-id');
+                        var resName = $nameCell.text();
+                        var selected = resId == timeOff.resource_id ? 'selected' : '';
+                        $resourceSelect.append('<option value="' + resId + '" ' + selected + '>' + resName + '</option>');
+                    }
+                });
+                
+                // Set start date
+                var startDate = new Date(timeOff.start_date);
+                var formattedDate = formatDateForDisplay(startDate);
+                $('#time_off_start_date').val(formattedDate);
+                
+                // Initialize datepickers
+                if ($.fn.datepicker) {
+                    $('#time_off_start_date').datepicker({
+                        format: 'D, dd M yyyy',
+                        autoclose: true,
+                        todayHighlight: true
+                    }).datepicker('setDate', startDate);
+                    
+                    // Always initialize repeat_until datepicker with a default date
+                    var repeatUntilDate = timeOff.repeat_until ? new Date(timeOff.repeat_until) : startDate;
+                    $('#time_off_repeat_until').datepicker({
+                        format: 'D, dd M yyyy',
+                        autoclose: true,
+                        todayHighlight: true
+                    }).datepicker('setDate', repeatUntilDate);
+                }
+                
+                // Set time dropdowns
+                var startTimeFormatted = formatTimeFor12Hour(timeOff.start_time);
+                var endTimeFormatted = formatTimeFor12Hour(timeOff.end_time);
+                $('#time_off_start_time').html(getTimeOptions(startTimeFormatted));
+                $('#time_off_end_time').html(getTimeOptions(endTimeFormatted));
+                
+                // Ensure the value is set (in case exact time wasn't in dropdown)
+                $('#time_off_start_time').val(startTimeFormatted);
+                $('#time_off_end_time').val(endTimeFormatted);
+                
+                // If value not found in dropdown, add it as an option
+                if ($('#time_off_start_time').val() !== startTimeFormatted) {
+                    $('#time_off_start_time').prepend('<option value="' + startTimeFormatted + '" selected>' + startTimeFormatted + '</option>');
+                }
+                if ($('#time_off_end_time').val() !== endTimeFormatted) {
+                    $('#time_off_end_time').prepend('<option value="' + endTimeFormatted + '" selected>' + endTimeFormatted + '</option>');
+                }
+                
+                // Set type
+                $('#time_off_type').val(timeOff.type);
+                
+                // Set repeat checkbox
+                if (timeOff.is_repeat) {
+                    $('#time_off_repeat').prop('checked', true);
+                    $('#repeat_until_row').show();
+                } else {
+                    $('#time_off_repeat').prop('checked', false);
+                    $('#repeat_until_row').hide();
+                }
+                
+                // Set description
+                $('#time_off_description').val(timeOff.description || '');
+                $('#description_counter').text((timeOff.description || '').length + '/100');
+                
+                // Update modal title and button
+                $('#modal_add_time_off .modal-title').text('Edit Time Off');
+                $('#btn_save_time_off').text('Update');
+                
+                // Show modal
+                $('#modal_add_time_off').modal('show');
+            } else {
+                toastr.error('Failed to load time off details');
+            }
+        },
+        error: function() {
+            toastr.error('Failed to load time off details');
+        }
+    });
+}
+
+function formatTimeFor12Hour(time24) {
+    if (!time24) return '10:00 AM';
+    var parts = time24.split(':');
+    var hours24 = parseInt(parts[0]);
+    var minutes = parts[1] ? parts[1].substring(0, 2) : '00'; // Take only first 2 chars (remove seconds if present)
+    var ampm = hours24 >= 12 ? 'PM' : 'AM';
+    var hours = hours24 % 12;
+    hours = hours ? hours : 12;
+    // Pad hours with leading zero if needed for single digit
+    var hoursStr = hours < 10 ? '0' + hours : hours.toString();
+    return hoursStr + ':' + minutes + ' ' + ampm;
 }
 
 function formatDateForDisplay(date) {
@@ -1122,31 +1285,47 @@ function saveTimeOff() {
         return;
     }
     
+    // Check if editing or creating
+    var isEditing = editingTimeOffId !== null;
+    var url = isEditing ? route('admin.schedule.update-time-off') : route('admin.schedule.store-time-off');
+    var buttonText = isEditing ? 'Updating...' : 'Saving...';
+    var successMessage = isEditing ? 'Time off updated successfully' : 'Time off saved successfully';
+    
     // Disable save button
-    $('#btn_save_time_off').prop('disabled', true).text('Saving...');
+    $('#btn_save_time_off').prop('disabled', true).text(buttonText);
+    
+    var data = {
+        resource_id: resourceId,
+        type: type,
+        start_date: startDate,
+        start_time: startTime,
+        end_time: endTime,
+        is_repeat: repeat ? 1 : 0,
+        repeat_until: repeatUntil,
+        description: description,
+        location_id: locationId
+    };
+    
+    // Add time_off_id if editing
+    if (isEditing) {
+        data.time_off_id = editingTimeOffId;
+    }
     
     $.ajax({
-        url: route('admin.schedule.store-time-off'),
+        url: url,
         type: 'POST',
-        data: {
-            resource_id: resourceId,
-            type: type,
-            start_date: startDate,
-            start_time: startTime,
-            end_time: endTime,
-            is_repeat: repeat ? 1 : 0,
-            repeat_until: repeatUntil,
-            description: description,
-            location_id: locationId
-        },
+        data: data,
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         success: function(response) {
             $('#btn_save_time_off').prop('disabled', false).text('Save');
             if (response.status) {
-                toastr.success('Time off saved successfully');
+                toastr.success(successMessage);
                 $('#modal_add_time_off').modal('hide');
+                // Reset editing state
+                editingTimeOffId = null;
+                $('#modal_add_time_off .modal-title').text('Add Time Off');
                 loadSchedule();
             } else {
                 toastr.error(response.message || 'Failed to save time off');
@@ -1224,6 +1403,9 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
     closures = closures || [];
     timeOffs = timeOffs || [];
     
+    // Store resources for use in modals
+    currentCalendarResources = resources || [];
+    
     if (!resources || resources.length === 0) {
         $('#schedule_body').html(
             '<tr><td colspan="8" class="text-center py-10 text-muted">' +
@@ -1233,6 +1415,9 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
         return;
     }
     
+    // Get spanning time offs (repeating time offs that span multiple days)
+    var spanningTimeOffs = getSpanningTimeOffs(timeOffs);
+    
     var html = '';
     
     for (var i = 0; i < resources.length; i++) {
@@ -1241,18 +1426,65 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
         var initials = getInitials(resource.name);
         var totalHours = calculateTotalHours(resource.id, shifts);
         
-        html += '<tr>';
+        // Get spanning time offs for this resource
+        var resourceSpanningTimeOffs = spanningTimeOffs.filter(function(to) {
+            return to.resource_id == resource.id;
+        });
         
-        // Team member cell
-        html += '<td class="team-member-cell">';
-        html += '<div class="team-member-info">';
-        html += '<div class="team-member-avatar ' + colorClass + '">' + initials + '</div>';
-        html += '<div class="team-member-details">';
-        html += '<div class="team-member-name">' + resource.name + '</div>';
-        html += '<div class="team-member-hours">' + totalHours + '</div>';
-        html += '</div>';
-        html += '</div>';
-        html += '</td>';
+        var hasSpanningTimeOffs = resourceSpanningTimeOffs.length > 0;
+        
+        // If there are spanning time offs, render them first as a row above shifts
+        if (hasSpanningTimeOffs) {
+            html += '<tr class="spanning-time-off-row">';
+            html += '<td class="team-member-cell" rowspan="2">';
+            html += '<div class="team-member-info">';
+            html += '<div class="team-member-avatar ' + colorClass + '">' + initials + '</div>';
+            html += '<div class="team-member-details">';
+            html += '<div class="team-member-name">' + resource.name + '</div>';
+            html += '<div class="team-member-hours">' + totalHours + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '</td>';
+            html += '<td colspan="7" class="spanning-time-off-cell">';
+            html += '<div class="spanning-time-offs-container">';
+            
+            for (var t = 0; t < resourceSpanningTimeOffs.length; t++) {
+                var spanTo = resourceSpanningTimeOffs[t];
+                var leftPercent = (spanTo.startDayIndex / 7) * 100;
+                var widthPercent = ((spanTo.endDayIndex - spanTo.startDayIndex + 1) / 7) * 100;
+                
+                html += '<div class="spanning-time-off-wrapper" style="left: ' + leftPercent + '%; width: ' + widthPercent + '%;">';
+                html += '<div class="spanning-time-off-bar clickable" data-time-off-id="' + spanTo.id + '" data-resource-id="' + resource.id + '">';
+                html += '<span class="spanning-time-off-label">' + spanTo.type_label + '</span>';
+                html += '<span class="spanning-time-off-time">' + formatTime(spanTo.start_time) + ' - ' + formatTime(spanTo.end_time) + '</span>';
+                html += '</div>';
+                html += '<div class="spanning-time-off-dropdown">';
+                html += '<button type="button" class="shift-dropdown-item" data-action="edit-time-off" data-time-off-id="' + spanTo.id + '" data-resource-id="' + resource.id + '"><i class="la la-edit"></i>Edit time off</button>';
+                html += '<button type="button" class="shift-dropdown-item text-danger" data-action="delete-time-off" data-time-off-id="' + spanTo.id + '"><i class="la la-trash"></i>Delete time off</button>';
+                html += '</div>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '</td>';
+            html += '</tr>';
+            
+            // Start shifts row (team member cell already has rowspan=2)
+            html += '<tr class="resource-row has-spanning-time-off">';
+        } else {
+            html += '<tr class="resource-row">';
+            
+            // Team member cell (no rowspan needed)
+            html += '<td class="team-member-cell">';
+            html += '<div class="team-member-info">';
+            html += '<div class="team-member-avatar ' + colorClass + '">' + initials + '</div>';
+            html += '<div class="team-member-details">';
+            html += '<div class="team-member-name">' + resource.name + '</div>';
+            html += '<div class="team-member-hours">' + totalHours + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '</td>';
+        }
         
         // Day cells
         for (var day = 0; day < 7; day++) {
@@ -1261,7 +1493,12 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
             var dateStr = formatDateForApi(date);
             
             var dayShifts = findAllShifts(resource.id, dateStr, shifts);
-            var dayTimeOffs = findAllTimeOffs(resource.id, dateStr, timeOffs);
+            // Get all time offs for this day (for shift splitting)
+            var allDayTimeOffs = findAllTimeOffs(resource.id, dateStr, timeOffs);
+            // Filter out repeating time offs for display (they will be rendered as spanning bars)
+            var nonRepeatingTimeOffs = allDayTimeOffs.filter(function(to) {
+                return !to.is_repeat || !to.repeat_until;
+            });
             var closure = findClosure(dateStr, closures);
             var isWeekend = (day === 5 || day === 6); // Saturday or Sunday
             var isBusinessClosed = !isBusinessWorkingDay(day, dateStr);
@@ -1274,9 +1511,9 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
                 html += '<span class="shift-badge not-working">Closed</span>';
             } else if (closure) {
                 html += '<span class="shift-badge business-closed clickable" data-closure-id="' + closure.id + '" title="' + (closure.title || 'Business Closed') + '">' + (closure.title || 'Closed') + '</span>';
-            } else if (dayShifts.length > 0 || dayTimeOffs.length > 0) {
-                // Split shifts around time offs and render
-                var displayItems = getDisplayItemsWithTimeOffs(dayShifts, dayTimeOffs);
+            } else if (dayShifts.length > 0 || allDayTimeOffs.length > 0) {
+                // Split shifts around ALL time offs (including repeating ones) but only display non-repeating
+                var displayItems = getDisplayItemsWithTimeOffs(dayShifts, allDayTimeOffs, true);
                 
                 // If no display items after processing, show "Not working"
                 if (displayItems.length === 0) {
@@ -1288,11 +1525,12 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
                     if (item.type === 'time_off') {
                         // Render time off badge
                         html += '<div class="shift-badge-wrapper">';
-                        html += '<span class="shift-badge time-off clickable" data-time-off-id="' + item.id + '">';
+                        html += '<span class="shift-badge time-off clickable" data-time-off-id="' + item.id + '" data-resource-id="' + resource.id + '">';
                         html += '<strong>' + item.type_label + '</strong><br>';
                         html += formatTime(item.start_time) + ' - ' + formatTime(item.end_time);
                         html += '</span>';
                         html += '<div class="shift-dropdown shift-edit-dropdown">';
+                        html += '<button type="button" class="shift-dropdown-item" data-action="edit-time-off" data-time-off-id="' + item.id + '" data-resource-id="' + resource.id + '"><i class="la la-edit"></i>Edit time off</button>';
                         html += '<button type="button" class="shift-dropdown-item text-danger" data-action="delete-time-off" data-time-off-id="' + item.id + '"><i class="la la-trash"></i>Delete time off</button>';
                         html += '</div>';
                         html += '</div>';
@@ -1341,6 +1579,52 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
     }
     
     $('#schedule_body').html(html);
+}
+
+// Get spanning time offs (repeating time offs that span multiple days in current week)
+function getSpanningTimeOffs(timeOffs) {
+    if (!timeOffs || timeOffs.length === 0) return [];
+    
+    var result = [];
+    var weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    for (var i = 0; i < timeOffs.length; i++) {
+        var to = timeOffs[i];
+        
+        // Only process repeating time offs
+        if (!to.is_repeat || !to.repeat_until) continue;
+        
+        var startDate = new Date(to.start_date);
+        var repeatUntil = new Date(to.repeat_until);
+        
+        // Check if this time off overlaps with current week
+        if (repeatUntil < currentWeekStart || startDate > weekEnd) continue;
+        
+        // Calculate which days in the week this time off spans
+        var effectiveStart = startDate < currentWeekStart ? currentWeekStart : startDate;
+        var effectiveEnd = repeatUntil > weekEnd ? weekEnd : repeatUntil;
+        
+        var startDayIndex = Math.floor((effectiveStart - currentWeekStart) / (1000 * 60 * 60 * 24));
+        var endDayIndex = Math.floor((effectiveEnd - currentWeekStart) / (1000 * 60 * 60 * 24));
+        
+        // Clamp to valid range
+        startDayIndex = Math.max(0, Math.min(6, startDayIndex));
+        endDayIndex = Math.max(0, Math.min(6, endDayIndex));
+        
+        result.push({
+            id: to.id,
+            resource_id: to.resource_id,
+            type: to.type,
+            type_label: to.type_label,
+            start_time: to.start_time,
+            end_time: to.end_time,
+            startDayIndex: startDayIndex,
+            endDayIndex: endDayIndex
+        });
+    }
+    
+    return result;
 }
 
 function isBusinessWorkingDay(dayIndex, dateStr) {
@@ -1414,12 +1698,18 @@ function findAllTimeOffs(resourceId, dateStr, timeOffs) {
     return result;
 }
 
-function getDisplayItemsWithTimeOffs(shifts, timeOffs) {
+function getDisplayItemsWithTimeOffs(shifts, timeOffs, skipRepeatingTimeOffs) {
     var items = [];
     
     // Add time offs first (they take priority in display order)
+    // If skipRepeatingTimeOffs is true, don't add repeating time offs to display items
+    // (they will be rendered as spanning bars instead)
     for (var i = 0; i < timeOffs.length; i++) {
         var to = timeOffs[i];
+        // Skip repeating time offs for display if flag is set
+        if (skipRepeatingTimeOffs && to.is_repeat && to.repeat_until) {
+            continue;
+        }
         items.push({
             type: 'time_off',
             id: to.id,
