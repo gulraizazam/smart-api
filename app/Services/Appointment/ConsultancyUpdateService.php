@@ -163,6 +163,7 @@ class ConsultancyUpdateService
 
     /**
      * Validate doctor has rota availability
+     * Uses same logic as Resources::getResourceRotaHasDay() which works for appointment creation
      */
     protected function validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId)
     {
@@ -177,25 +178,57 @@ class ConsultancyUpdateService
             throw AppointmentException::invalidData('Doctor resource not found.');
         }
 
-        // Check if doctor has rota for the scheduled date
-        $rotaDay = ResourceHasRotaDays::getSingleDayRotaWithResourceID(
-            $resource->id,
-            $scheduledDate,
-            Auth::user()->account_id,
-            $locationId
-        );
+        $date = Carbon::parse($scheduledDate)->format('Y-m-d');
 
-        if (empty($rotaDay)) {
-            throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date and location.');
+        // Use same approach as Resources::getResourceRotaHasDay() - directly check rota_days by date
+        // This doesn't rely on start/end columns of resource_has_rota which may be inconsistent
+        $rotaDay = \App\Models\ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota_days.resource_has_rota_id', '=', 'resource_has_rota.id')
+            ->whereDate('resource_has_rota_days.date', $date)
+            ->where('resource_has_rota.resource_id', $resource->id)
+            ->where('resource_has_rota_days.active', 1)
+            ->select('resource_has_rota_days.*')
+            ->first();
+
+        if (!$rotaDay) {
+            throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date.');
         }
 
         // Validate scheduled time is within rota hours
         $scheduledTimeCarbon = Carbon::parse($scheduledTime);
-        $rotaStartTime = Carbon::parse($rotaDay['start_time']);
-        $rotaEndTime = Carbon::parse($rotaDay['end_time']);
+        $rotaStartTime = Carbon::parse($rotaDay->start_time);
+        $rotaEndTime = Carbon::parse($rotaDay->end_time);
 
         if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
-            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours.');
+            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours (' . $rotaStartTime->format('h:i A') . ' - ' . $rotaEndTime->format('h:i A') . ').');
+        }
+
+        // Check for time offs - block scheduling during doctor's time off
+        $timeOffs = \App\Models\ResourceTimeOff::where('resource_id', $resource->id)
+            ->where('account_id', Auth::user()->account_id)
+            ->where('location_id', $locationId)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('start_date', $date)
+                    ->orWhere(function ($q) use ($date) {
+                        // Check repeating time offs
+                        $q->where('is_repeat', 1)
+                            ->whereDate('start_date', '<=', $date)
+                            ->where(function ($rq) use ($date) {
+                                $rq->whereNull('repeat_until')
+                                    ->orWhereDate('repeat_until', '>=', $date);
+                            });
+                    });
+            })
+            ->get();
+
+        $scheduledTimeFormatted = $scheduledTimeCarbon->format('H:i:s');
+
+        foreach ($timeOffs as $timeOff) {
+            $timeOffStart = Carbon::parse($timeOff->start_time)->format('H:i:s');
+            $timeOffEnd = Carbon::parse($timeOff->end_time)->format('H:i:s');
+
+            if ($scheduledTimeFormatted >= $timeOffStart && $scheduledTimeFormatted < $timeOffEnd) {
+                throw AppointmentException::invalidData('Doctor has time off during this time slot (' . Carbon::parse($timeOff->start_time)->format('h:i A') . ' - ' . Carbon::parse($timeOff->end_time)->format('h:i A') . ').');
+            }
         }
     }
 

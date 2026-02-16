@@ -3,15 +3,6 @@ var table_url = route('admin.doctors.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 30,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },
-    {
         field: 'name',
         title: 'Name',
         width: 'auto',
@@ -356,6 +347,10 @@ function setCreateData(response) {
         roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
     })
     $("#add_user_roles").html(roles_options);
+    
+    // Reset checkbox state when opening create modal
+    $('#add_can_perform_consultation_row').hide();
+    $('#add_doctor_can_perform_consultation').prop('checked', false);
 }
 
 function setEditData(response) {
@@ -377,6 +372,10 @@ function setEditData(response) {
     $("#edit_user_gender").val(user.gender);
     $("#edit_user_commission").val(user.commission);
     $('#edit_user_roles').val(user_roles).change();
+    
+    // Toggle checkbox visibility based on role, then set checkbox value
+    toggleConsultationCheckbox('edit');
+    $('#edit_doctor_can_perform_consultation').prop('checked', user.can_perform_consultation == 1);
 
     $("#edit_old_user_phone").val(user.phone);
 
@@ -475,5 +474,37 @@ function hideShowAdvanceFilters(active_filters) {
 
 jQuery(document).ready( function () {
     $("#date_range").val("");
-})
+
+    // Show/hide Can Perform Consultation checkbox based on role selection
+    $(document).on('change', '#add_user_roles', function() {
+        toggleConsultationCheckbox('add');
+    });
+
+    $(document).on('change', '#edit_user_roles', function() {
+        toggleConsultationCheckbox('edit');
+    });
+});
+
+// Toggle Can Perform Consultation checkbox visibility based on role
+function toggleConsultationCheckbox(prefix) {
+    var roleSelect = $('#' + prefix + '_user_roles');
+    var checkboxRow = $('#' + prefix + '_can_perform_consultation_row');
+    
+    // For select2 multiple, check all selected options
+    var hasAestheticDoctor = false;
+    roleSelect.find('option:selected').each(function() {
+        if ($(this).text().toLowerCase().includes('aesthetic doctor')) {
+            hasAestheticDoctor = true;
+            return false; // break loop
+        }
+    });
+    
+    if (hasAestheticDoctor) {
+        checkboxRow.show();
+    } else {
+        checkboxRow.hide();
+        // Uncheck the checkbox when hiding
+        $('#' + prefix + '_doctor_can_perform_consultation').prop('checked', false);
+    }
+}
 

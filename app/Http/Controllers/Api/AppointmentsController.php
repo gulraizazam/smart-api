@@ -195,6 +195,8 @@ class AppointmentsController extends Controller
                 throw AppointmentException::unauthorized();
             }
 
+            $account_id = \Illuminate\Support\Facades\Auth::user()->account_id;
+
             $filters = $request->only([
                 'location_id', 'doctor_id', 'service_id', 'appointment_status_id',
                 'scheduled_date_from', 'scheduled_date_to', 'appointment_type_id',
