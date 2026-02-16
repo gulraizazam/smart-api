@@ -171,6 +171,10 @@ class TreatmentUpdateService
         ])->first();
 
         if (!$resource) {
+            \Log::error('TreatmentUpdateService: Doctor resource not found', [
+                'doctor_id' => $doctorId,
+                'account_id' => Auth::user()->account_id,
+            ]);
             throw AppointmentException::invalidData('Doctor resource not found.');
         }
 
@@ -184,11 +188,26 @@ class TreatmentUpdateService
             ['active', '=', 1],
         ])->get();
 
+        \Log::info('TreatmentUpdateService: Checking rotas', [
+            'resource_id' => $resource->id,
+            'location_id' => $locationId,
+            'date' => $date,
+            'rotas_found' => $resourceRotas->count(),
+        ]);
+
         $activeRota = null;
         foreach ($resourceRotas as $rota) {
             // Use created_at as start date if start column is null (matching existing logic)
             $rotaStart = $rota->start ? Carbon::parse($rota->start)->format('Y-m-d') : Carbon::parse($rota->created_at)->format('Y-m-d');
             $rotaEnd = $rota->end ? Carbon::parse($rota->end)->format('Y-m-d') : null;
+            
+            \Log::info('TreatmentUpdateService: Checking rota range', [
+                'rota_id' => $rota->id,
+                'rota_start' => $rotaStart,
+                'rota_end' => $rotaEnd,
+                'date' => $date,
+                'in_range' => ($date >= $rotaStart && ($rotaEnd === null || $date <= $rotaEnd)),
+            ]);
             
             if ($date >= $rotaStart && ($rotaEnd === null || $date <= $rotaEnd)) {
                 $activeRota = $rota;
@@ -197,6 +216,11 @@ class TreatmentUpdateService
         }
 
         if (!$activeRota) {
+            \Log::error('TreatmentUpdateService: No active rota found', [
+                'resource_id' => $resource->id,
+                'location_id' => $locationId,
+                'date' => $date,
+            ]);
             throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date and location.');
         }
 
@@ -208,6 +232,10 @@ class TreatmentUpdateService
         ])->first();
 
         if (!$rotaDay) {
+            \Log::error('TreatmentUpdateService: No rota day found', [
+                'rota_id' => $activeRota->id,
+                'date' => $date,
+            ]);
             throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date.');
         }
 
@@ -217,6 +245,11 @@ class TreatmentUpdateService
         $rotaEndTime = Carbon::parse($rotaDay->end_time);
 
         if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
+            \Log::error('TreatmentUpdateService: Time outside rota hours', [
+                'scheduled_time' => $scheduledTimeCarbon->format('H:i'),
+                'rota_start' => $rotaStartTime->format('H:i'),
+                'rota_end' => $rotaEndTime->format('H:i'),
+            ]);
             throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours.');
         }
     }
