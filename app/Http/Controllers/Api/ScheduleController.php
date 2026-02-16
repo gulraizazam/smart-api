@@ -161,9 +161,12 @@ class ScheduleController extends Controller
         // Resource type 2 = Doctor, 1 = Machine
         if ($resourceTypeId == 2) {
             // For doctors: Get all active doctors allocated to this location
-            // Get doctor user IDs from doctor_has_locations
+            // Get doctor user IDs from doctor_has_locations where user is also active
             $doctorUserIds = \App\Models\DoctorHasLocations::where('location_id', $locationId)
                 ->where('is_allocated', 1)
+                ->whereHas('user', function ($query) {
+                    $query->where('active', 1);
+                })
                 ->pluck('user_id')
                 ->toArray();
 
