@@ -872,7 +872,7 @@ class TreatmentService
     }
 
     /**
-     * Validate rota and availability for doctor and machine
+     * Validate rota and availability for doctor only (machine rota check removed)
      */
     protected function validateRotaAndAvailability(Request $request, int $resourceId, Services $service, array $appointmentData): array
     {
@@ -892,30 +892,21 @@ class TreatmentService
             $startFormatted = Carbon::parse($start)->format('Y-m-d H:i:s');
         }
 
-        // Check doctor availability
+        // Check doctor availability only (machine rota check removed)
         $doctorAvailable = Resources::checkingDoctorAvailbility($request->doctor_id, $startFormatted, $end);
-        
-        // Check machine/room availability
-        $roomAvailable = Resources::checkingRoomAvailbility($resourceId, $startFormatted, $end);
 
-        if (!$doctorAvailable || !$roomAvailable) {
+        if (!$doctorAvailable) {
             return [
                 'valid' => false,
                 'data' => [],
-                'message' => 'Doctor or machine is not available. Appointment cannot be scheduled.'
+                'message' => 'Doctor is not available. Appointment cannot be scheduled.'
             ];
         }
 
         // Get rota IDs
         $data = [];
-        
-        // Machine rota
-        $machineRota = Resources::getResourceRotaHasDay($request->start, $resourceId);
-        if (isset($machineRota['resource_has_rota_day_id']) && $machineRota['resource_has_rota_day_id']) {
-            $data['resource_has_rota_day_id_for_machine'] = $machineRota['resource_has_rota_day_id'];
-        }
 
-        // Doctor rota
+        // Doctor rota only (machine rota check removed)
         $resourceDoctor = Resources::where('external_id', $request->doctor_id)->first();
         if ($resourceDoctor) {
             $doctorRota = Resources::getResourceRotaHasDay($request->start, $resourceDoctor->id);
@@ -1247,21 +1238,9 @@ class TreatmentService
         $data['reschedule'] = 1;
         $data['resource_has_rota_day_id'] = $doctorRota['resource_has_rota_day_id'];
 
-        // Handle resource/machine
+        // Handle resource/machine (machine rota check removed - only store resource_id)
         if ($request->resourceId && !empty($request->resourceId)) {
             $data['resource_id'] = $request->resourceId;
-
-            // Check room availability
-            $roomAvailable = Resources::checkRoomAvailbility($request);
-            if (!$roomAvailable) {
-                throw new TreatmentException('Machine is not available for this time slot.', 422);
-            }
-
-            // Get rota for machine
-            $machineRota = Resources::getResourceRotaHasDay($request->start, $request->resourceId);
-            if (isset($machineRota['resource_has_rota_day_id']) && $machineRota['resource_has_rota_day_id']) {
-                $data['resource_has_rota_day_id_for_machine'] = $machineRota['resource_has_rota_day_id'];
-            }
         } else {
             // Keep existing resource_id if not provided
             $data['resource_id'] = $appointment->resource_id;

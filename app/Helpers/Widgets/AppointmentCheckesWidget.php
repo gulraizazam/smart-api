@@ -179,20 +179,24 @@ class AppointmentCheckesWidget
             'status' => $appointment_status,
         ];
 
-        $continue_rota_machine = [];
         $continue_rota_doctor = [];
 
         $start = Carbon::parse($request->start)->format('Y-m-d');
         $today = Carbon::now()->toDateString();
 
         $resource_id_doctor = Resources::where('external_id', '=', $request->doctor_id)->first();
+        
+        if (!$resource_id_doctor) {
+            return [
+                'status' => false,
+                'message' => 'Doctor resource not found.',
+            ];
+        }
 
         $resource_rota_doctor = ResourceHasRota::where([
             ['resource_id', '=', $resource_id_doctor->id],
             ['location_id', '=', $request->location_id]
         ])->get();
-
-        $resource_rota_machine = ResourceHasRota::where('resource_id', '=', $request->machine_id)->get();
 
         foreach ($resource_rota_doctor as $resourceroata) {
             if (($start >= Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
@@ -200,16 +204,10 @@ class AppointmentCheckesWidget
             }
         }
 
-        foreach ($resource_rota_machine as $resourceroata_machine) {
-            if (($start >= $resourceroata_machine->start) && ($start <= $resourceroata_machine->end)) {
-                $continue_rota_machine[0] = $resourceroata_machine;
-            }
-        }
         $started_time = \Carbon\Carbon::parse($request->start)->format('Y-m-d H:i:s');
-
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
 
-        if (count($continue_rota_doctor) > 0 && count($continue_rota_machine) > 0) {
+        if (count($continue_rota_doctor) > 0) {
 
             $resource_has_rota_days_doctor = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota_doctor[0]->id],
@@ -219,83 +217,66 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
 
-            $resource_has_rota_days_machine = ResourceHasRotaDays::where([
-                ['resource_has_rota_id', '=', $continue_rota_machine[0]->id],
-                ['date', '=', $start],
-                ['active', '=', '1'],
-                ['resource_has_rota_days.start_timestamp', '<=', $started_time],
-                ['resource_has_rota_days.end_timestamp', '>', $started_time],
-            ])->first();
-
-            if (! $resource_has_rota_days_doctor || ! $resource_has_rota_days_machine) {
+            if (! $resource_has_rota_days_doctor) {
                 $appointment_status = false;
-                $message = 'Doctor or Machine rota is not available.';
+                $message = 'Doctor rota is not available for this time slot.';
                 $status = [
                     'status' => $appointment_status,
                     'message' => $message,
                 ];
             } else {
-                if (! $resource_has_rota_days_doctor->start_time || ! $resource_has_rota_days_machine->start_time) {
+                if (! $resource_has_rota_days_doctor->start_time) {
                     $appointment_status = false;
-                    $message = 'Doctor or Machine rota is not available.';
+                    $message = 'Doctor rota is not available.';
                     $status = [
                         'status' => $appointment_status,
                         'message' => $message,
                     ];
                 } else {
-                    if ($resource_has_rota_days_doctor->start_time) {
-                        if ($resource_has_rota_days_doctor->start_off) {
+                    // Check if appointment is during doctor's break time
+                    if ($resource_has_rota_days_doctor->start_off) {
+                        $start_break = Carbon::parse($resource_has_rota_days_doctor->start_off)->format('H:i');
+                        $end_break = Carbon::parse($resource_has_rota_days_doctor->end_off)->format('H:i');
 
-                            $start_break = Carbon::parse($resource_has_rota_days_doctor->start_off)->format('H:i');
-                            $end_break = Carbon::parse($resource_has_rota_days_doctor->end_off)->format('H:i');
-
-                            if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
-                                $appointment_status = false;
-                                $message = 'Doctor or Machine rota is not available.';
-                                $status = [
-                                    'status' => $appointment_status,
-                                    'message' => $message,
-                                ];
-                            }
+                        if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
+                            $appointment_status = false;
+                            $message = 'Doctor is on break during this time.';
+                            $status = [
+                                'status' => $appointment_status,
+                                'message' => $message,
+                            ];
                         }
+                    }
+                    
+                    // Check if appointment is during time off
+                    if ($appointment_status) {
+                        $timeOff = \App\Models\ResourceTimeOff::where('resource_id', $resource_id_doctor->id)
+                            ->where('account_id', $resource_id_doctor->account_id)
+                            ->where(function ($query) use ($request) {
+                                $query->where('location_id', $request->location_id)
+                                    ->orWhereNull('location_id');
+                            })
+                            ->whereDate('start_date', $start)
+                            ->where(function ($query) use ($start_for_break_check) {
+                                $query->where('start_time', '<=', $start_for_break_check . ':00')
+                                    ->where('end_time', '>', $start_for_break_check . ':00');
+                            })
+                            ->first();
                         
-                        // Check if appointment is during time off
-                        if ($appointment_status) {
-                            $timeOff = \App\Models\ResourceTimeOff::where('resource_id', $resource_id_doctor->id)
-                                ->where('account_id', $resource_id_doctor->account_id)
-                                ->where(function ($query) use ($request) {
-                                    $query->where('location_id', $request->location_id)
-                                        ->orWhereNull('location_id');
-                                })
-                                ->whereDate('start_date', $start)
-                                ->where(function ($query) use ($start_for_break_check) {
-                                    $query->where('start_time', '<=', $start_for_break_check . ':00')
-                                        ->where('end_time', '>', $start_for_break_check . ':00');
-                                })
-                                ->first();
-                            
-                            if ($timeOff) {
-                                $appointment_status = false;
-                                $message = "Doctor is on " . ($timeOff->type_label ?? 'time off') . " during this time.";
-                                $status = [
-                                    'status' => $appointment_status,
-                                    'message' => $message,
-                                ];
-                            }
+                        if ($timeOff) {
+                            $appointment_status = false;
+                            $message = "Doctor is on " . ($timeOff->type_label ?? 'time off') . " during this time.";
+                            $status = [
+                                'status' => $appointment_status,
+                                'message' => $message,
+                            ];
                         }
-                    } else {
-                        $appointment_status = false;
-                        $message = 'Doctor rota is not available.';
-                        $status = [
-                            'status' => $appointment_status,
-                            'message' => $message,
-                        ];
                     }
                 }
             }
         } else {
             $appointment_status = false;
-            $message = 'Doctor or Machine rota is not available.';
+            $message = 'Doctor rota is not defined for this date.';
             $status = [
                 'status' => $appointment_status,
                 'message' => $message,
@@ -326,19 +307,24 @@ class AppointmentCheckesWidget
             'status' => $appointment_status,
         ];
 
-        $continue_rota_machine = [];
         $continue_rota_doctor = [];
 
         $start = Carbon::parse($request->start)->format('Y-m-d');
         $today = Carbon::now()->toDateString();
 
         $resource_id_doctor = Resources::where('external_id', '=', $request->doctor_id)->first();
+        
+        if (!$resource_id_doctor) {
+            return [
+                'status' => false,
+                'message' => 'Doctor resource not found.',
+            ];
+        }
+
         $resource_rota_doctor = ResourceHasRota::where([
             ['resource_id', '=', $resource_id_doctor->id],
             ['location_id', '=', $request->location_id]
         ])->get();
-
-        $resource_rota_machine = ResourceHasRota::where('resource_id', '=', $request->resourceId)->get();
 
         foreach ($resource_rota_doctor as $resourceroata) {
             if (($start >= $resourceroata->start) && ($start <= $resourceroata->end)) {
@@ -346,17 +332,10 @@ class AppointmentCheckesWidget
             }
         }
 
-        foreach ($resource_rota_machine as $resourceroata_machine) {
-            if (($start >= $resourceroata_machine->start) && ($start <= $resourceroata_machine->end)) {
-                $continue_rota_machine[0] = $resourceroata_machine;
-            }
-        }
-
         $started_time = \Carbon\Carbon::parse($request->start)->format('Y-m-d H:i:s');
+        $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
 
-        $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('h:i:A');
-
-        if (count($continue_rota_doctor) > 0 && count($continue_rota_machine) > 0) {
+        if (count($continue_rota_doctor) > 0) {
 
             $resource_has_rota_days_doctor = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota_doctor[0]->id],
@@ -365,53 +344,67 @@ class AppointmentCheckesWidget
                 ['resource_has_rota_days.start_timestamp', '<=', $started_time],
                 ['resource_has_rota_days.end_timestamp', '>', $started_time],
             ])->first();
-            $resource_has_rota_days_machine = ResourceHasRotaDays::where([
-                ['resource_has_rota_id', '=', $continue_rota_doctor[0]->id],
-                ['date', '=', $start],
-                ['active', '=', '1'],
-                ['resource_has_rota_days.start_timestamp', '<=', $started_time],
-                ['resource_has_rota_days.end_timestamp', '>', $started_time],
-            ])->first();
-            if (! $resource_has_rota_days_doctor || ! $resource_has_rota_days_machine) {
+
+            if (! $resource_has_rota_days_doctor) {
                 $appointment_status = false;
-                $message = 'Doctor or Machine rota is not available.';
+                $message = 'Doctor rota is not available for this time slot.';
                 $status = [
                     'status' => $appointment_status,
                     'message' => $message,
                 ];
             } else {
-                if (! $resource_has_rota_days_doctor->start_time || ! $resource_has_rota_days_machine->start_time) {
+                if (! $resource_has_rota_days_doctor->start_time) {
                     $appointment_status = false;
-                    $message = 'Doctor or Machine rota is not available.';
+                    $message = 'Doctor rota is not available.';
                     $status = [
                         'status' => $appointment_status,
                         'message' => $message,
                     ];
                 } else {
-                    if ($resource_has_rota_days_doctor->start_time) {
-                        if ($resource_has_rota_days_doctor->start_off) {
-                            if (($start_for_break_check >= $resource_has_rota_days_doctor->start_off) && ($start_for_break_check <= $resource_has_rota_days_doctor->end_off)) {
-                                $appointment_status = false;
-                                $message = 'Doctor or Machine rota is not available.';
-                                $status = [
-                                    'status' => $appointment_status,
-                                    'message' => $message,
-                                ];
-                            }
+                    // Check if appointment is during doctor's break time
+                    if ($resource_has_rota_days_doctor->start_off) {
+                        $start_break = Carbon::parse($resource_has_rota_days_doctor->start_off)->format('H:i');
+                        $end_break = Carbon::parse($resource_has_rota_days_doctor->end_off)->format('H:i');
+
+                        if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {
+                            $appointment_status = false;
+                            $message = 'Doctor is on break during this time.';
+                            $status = [
+                                'status' => $appointment_status,
+                                'message' => $message,
+                            ];
                         }
-                    } else {
-                        $appointment_status = false;
-                        $message = 'Doctor rota is not available.';
-                        $status = [
-                            'status' => $appointment_status,
-                            'message' => $message,
-                        ];
+                    }
+                    
+                    // Check if appointment is during time off
+                    if ($appointment_status) {
+                        $timeOff = \App\Models\ResourceTimeOff::where('resource_id', $resource_id_doctor->id)
+                            ->where('account_id', $resource_id_doctor->account_id)
+                            ->where(function ($query) use ($request) {
+                                $query->where('location_id', $request->location_id)
+                                    ->orWhereNull('location_id');
+                            })
+                            ->whereDate('start_date', $start)
+                            ->where(function ($query) use ($start_for_break_check) {
+                                $query->where('start_time', '<=', $start_for_break_check . ':00')
+                                    ->where('end_time', '>', $start_for_break_check . ':00');
+                            })
+                            ->first();
+                        
+                        if ($timeOff) {
+                            $appointment_status = false;
+                            $message = "Doctor is on " . ($timeOff->type_label ?? 'time off') . " during this time.";
+                            $status = [
+                                'status' => $appointment_status,
+                                'message' => $message,
+                            ];
+                        }
                     }
                 }
             }
         } else {
             $appointment_status = false;
-            $message = 'Doctor or Machine rota is not available.';
+            $message = 'Doctor rota is not defined for this date.';
             $status = [
                 'status' => $appointment_status,
                 'message' => $message,
