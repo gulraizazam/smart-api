@@ -86,6 +86,15 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row mt-10" id="add_can_perform_consultation_row" style="display: none;">
+                        <div class="fv-row col-md-12">
+                            <label class="form-check form-check-custom form-check-solid">
+                                <input class="form-check-input" type="checkbox" name="can_perform_consultation" id="add_doctor_can_perform_consultation" value="1" />
+                                <span class="form-check-label fw-bold fs-6">Can Perform Consultation</span>
+                            </label>
+                            <small class="text-muted d-block mt-2">Enable this if the doctor (aesthetic) can also perform consultations</small>
+                        </div>
+                    </div>
                 </div>
 
             </div>

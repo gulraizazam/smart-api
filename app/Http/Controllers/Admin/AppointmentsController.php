@@ -2504,28 +2504,7 @@ class AppointmentsController extends Controller
                     }
                     $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
                 } else {
-                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
-                }
-                foreach ($doctors_no_final as $key => $doctor) {
-                    $resource = Resources::where('external_id', '=', $key)->first();
-                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
-                        $doctor_rota = ResourceHasRota::where([
-                            ['resource_id', '=', $resource->id],
-                            ['is_treatment', '=', '1'],
-                        ])->get();
-                        if (count($doctor_rota) == 0) {
-                            unset($doctors[$key]);
-                        }
-                    }
-                    if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
-                        $doctor_rota = ResourceHasRota::where([
-                            ['resource_id', '=', $resource->id],
-                            ['is_consultancy', '=', '1'],
-                        ])->get();
-                        if (count($doctor_rota) == 0) {
-                            unset($doctors[$key]);
-                        }
-                    }
+                    $doctors = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -2547,25 +2526,8 @@ class AppointmentsController extends Controller
                 // Use the proper consultant doctor loader that filters by doctor_has_locations with is_allocated = 1
                 $doctors = LocationsWidget::loadConsultantDoctorByLocation($request->location_id, Auth::User()->account_id);
 
-                // Filter doctors by rota availability for consultancy
-                $doctors_filtered = [];
-                foreach ($doctors as $doctor_id => $doctor_name) {
-                    $resource = Resources::where('external_id', '=', $doctor_id)->first();
-
-                    if ($resource) {
-                        $doctor_rota = ResourceHasRota::where([
-                            ['resource_id', '=', $resource->id],
-                            ['is_consultancy', '=', '1'],
-                        ])->exists();
-
-                        if ($doctor_rota) {
-                            $doctors_filtered[$doctor_id] = $doctor_name;
-                        }
-                    }
-                }
-
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                    'dropdown' => $doctors_filtered,
+                    'dropdown' => $doctors->toArray(),
                 ]);
             }
 

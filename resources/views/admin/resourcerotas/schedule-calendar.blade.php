@@ -58,6 +58,7 @@
                                     <select class="form-control select2" id="filter_location_id">
                                     </select>
                                 </div>
+                                {{-- Resource Type field commented out
                                 <div class="col-md-3">
                                     <label class="mb-2">Resource Type <span class="text-danger">*</span></label>
                                     <select class="form-control" id="filter_resource_type">
@@ -65,8 +66,10 @@
                                         <option value="1">Machine</option>
                                     </select>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="d-flex align-items-center">
+                                --}}
+                                <input type="hidden" id="filter_resource_type" value="2">
+                                <div class="col-md-5">
+                                    <div class="d-flex align-items-center justify-content-center">
                                         <button type="button" class="btn btn-icon btn-light mr-2" id="btn_prev_week">
                                             <i class="la la-angle-left"></i>
                                         </button>
@@ -76,7 +79,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-md-2 text-right">
+                                <div class="col-md-4 text-right">
                                     <button type="button" class="btn btn-light-primary" id="btn_today">Today</button>
                                 </div>
                             </div>

@@ -325,6 +325,7 @@ class DoctorService
         $data['user_type_id'] = Config::get('constants.practitioner_id');
         $data['account_id'] = Auth::user()->account_id;
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
         
         $user = User::create($data);
         AuditTrails::addEventLogger('users', 'create', $data, ['name', 'email', 'password', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
@@ -373,6 +374,7 @@ class DoctorService
         unset($data['old_phone']);
         
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
         
         // Store old data for audit
         $oldData = $user->makeVisible(['password'])->toArray();

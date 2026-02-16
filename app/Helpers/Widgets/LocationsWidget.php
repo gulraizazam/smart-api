@@ -383,10 +383,22 @@ class LocationsWidget
         ->pluck('user_id')
         ->toArray();
 
+    // Include doctors who have Consultant/Lifestyle Consultant role 
+    // OR Aesthetic Doctor role with can_perform_consultation=true
     $filteredDoctors = User::whereIn('id', $doctorIds)
-        ->where('active',1) // or 1 if it's a numeric status
-        ->whereHas('user_roles', function ($query) {
-            $query->whereIn('name', ['Consultant', 'Lifestyle Consultant']);
+        ->where('active', 1)
+        ->where(function ($query) {
+            // Consultants and Lifestyle Consultants
+            $query->whereHas('user_roles', function ($q) {
+                $q->whereIn('name', ['Consultant', 'Lifestyle Consultant']);
+            })
+            // OR Aesthetic Doctors with can_perform_consultation enabled
+            ->orWhere(function ($q) {
+                $q->where('can_perform_consultation', 1)
+                    ->whereHas('user_roles', function ($roleQuery) {
+                        $roleQuery->where('name', 'Aesthetic Doctor');
+                    });
+            });
         })
         ->pluck('name', 'id'); // key = user_id, value = name
 

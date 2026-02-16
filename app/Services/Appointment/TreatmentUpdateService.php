@@ -152,14 +152,25 @@ class TreatmentUpdateService
         $serviceId = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->service_id;
         $this->validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId);
         
-        // Validate doctor has rota availability
-        $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
-        $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
-        $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId);
+        // Only validate rota if schedule or doctor is actually changing
+        $doctorChanging = isset($requestData['doctor_id']) && $requestData['doctor_id'] != $appointment->doctor_id;
+        
+        // Compare dates and times in normalized format to avoid false positives
+        $oldDate = Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+        $newDate = isset($requestData['scheduled_date']) ? Carbon::parse($requestData['scheduled_date'])->format('Y-m-d') : $oldDate;
+        $oldTime = Carbon::parse($appointment->scheduled_time)->format('H:i');
+        $newTime = isset($requestData['scheduled_time']) ? Carbon::parse($requestData['scheduled_time'])->format('H:i') : $oldTime;
+        
+        $scheduleChanging = ($newDate != $oldDate) || ($newTime != $oldTime);
+        
+        if ($doctorChanging || $scheduleChanging) {
+            $this->validateDoctorRota($doctorId, $newDate, $newTime, $locationId);
+        }
     }
 
     /**
      * Validate doctor has rota availability
+     * Uses same logic as Resources::getResourceRotaHasDay() which works for treatment creation
      */
     protected function validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId)
     {
@@ -171,71 +182,21 @@ class TreatmentUpdateService
         ])->first();
 
         if (!$resource) {
-            \Log::error('TreatmentUpdateService: Doctor resource not found', [
-                'doctor_id' => $doctorId,
-                'account_id' => Auth::user()->account_id,
-            ]);
             throw AppointmentException::invalidData('Doctor resource not found.');
         }
 
         $date = Carbon::parse($scheduledDate)->format('Y-m-d');
 
-        // Find active rota for this doctor at this location
-        // Check using created_at as start date (matching AppointmentCheckesWidget logic)
-        $resourceRotas = \App\Models\ResourceHasRota::where([
-            ['resource_id', '=', $resource->id],
-            ['location_id', '=', $locationId],
-            ['active', '=', 1],
-        ])->get();
-
-        \Log::info('TreatmentUpdateService: Checking rotas', [
-            'resource_id' => $resource->id,
-            'location_id' => $locationId,
-            'date' => $date,
-            'rotas_found' => $resourceRotas->count(),
-        ]);
-
-        $activeRota = null;
-        foreach ($resourceRotas as $rota) {
-            // Use created_at as start date if start column is null (matching existing logic)
-            $rotaStart = $rota->start ? Carbon::parse($rota->start)->format('Y-m-d') : Carbon::parse($rota->created_at)->format('Y-m-d');
-            $rotaEnd = $rota->end ? Carbon::parse($rota->end)->format('Y-m-d') : null;
-            
-            \Log::info('TreatmentUpdateService: Checking rota range', [
-                'rota_id' => $rota->id,
-                'rota_start' => $rotaStart,
-                'rota_end' => $rotaEnd,
-                'date' => $date,
-                'in_range' => ($date >= $rotaStart && ($rotaEnd === null || $date <= $rotaEnd)),
-            ]);
-            
-            if ($date >= $rotaStart && ($rotaEnd === null || $date <= $rotaEnd)) {
-                $activeRota = $rota;
-                break;
-            }
-        }
-
-        if (!$activeRota) {
-            \Log::error('TreatmentUpdateService: No active rota found', [
-                'resource_id' => $resource->id,
-                'location_id' => $locationId,
-                'date' => $date,
-            ]);
-            throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date and location.');
-        }
-
-        // Check if there's a rota day record for this specific date
-        $rotaDay = ResourceHasRotaDays::where([
-            ['resource_has_rota_id', '=', $activeRota->id],
-            ['date', '=', $date],
-            ['active', '=', '1'],
-        ])->first();
+        // Use same approach as Resources::getResourceRotaHasDay() - directly check rota_days by date
+        // This doesn't rely on start/end columns of resource_has_rota which may be inconsistent
+        $rotaDay = \App\Models\ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota_days.resource_has_rota_id', '=', 'resource_has_rota.id')
+            ->whereDate('resource_has_rota_days.date', $date)
+            ->where('resource_has_rota.resource_id', $resource->id)
+            ->where('resource_has_rota_days.active', 1)
+            ->select('resource_has_rota_days.*')
+            ->first();
 
         if (!$rotaDay) {
-            \Log::error('TreatmentUpdateService: No rota day found', [
-                'rota_id' => $activeRota->id,
-                'date' => $date,
-            ]);
             throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date.');
         }
 
@@ -245,12 +206,36 @@ class TreatmentUpdateService
         $rotaEndTime = Carbon::parse($rotaDay->end_time);
 
         if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
-            \Log::error('TreatmentUpdateService: Time outside rota hours', [
-                'scheduled_time' => $scheduledTimeCarbon->format('H:i'),
-                'rota_start' => $rotaStartTime->format('H:i'),
-                'rota_end' => $rotaEndTime->format('H:i'),
-            ]);
-            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours.');
+            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours (' . $rotaStartTime->format('h:i A') . ' - ' . $rotaEndTime->format('h:i A') . ').');
+        }
+
+        // Check for time offs - block scheduling during doctor's time off
+        $timeOffs = \App\Models\ResourceTimeOff::where('resource_id', $resource->id)
+            ->where('account_id', Auth::user()->account_id)
+            ->where('location_id', $locationId)
+            ->where(function ($query) use ($date) {
+                $query->whereDate('start_date', $date)
+                    ->orWhere(function ($q) use ($date) {
+                        // Check repeating time offs
+                        $q->where('is_repeat', 1)
+                            ->whereDate('start_date', '<=', $date)
+                            ->where(function ($rq) use ($date) {
+                                $rq->whereNull('repeat_until')
+                                    ->orWhereDate('repeat_until', '>=', $date);
+                            });
+                    });
+            })
+            ->get();
+
+        $scheduledTimeFormatted = $scheduledTimeCarbon->format('H:i:s');
+
+        foreach ($timeOffs as $timeOff) {
+            $timeOffStart = Carbon::parse($timeOff->start_time)->format('H:i:s');
+            $timeOffEnd = Carbon::parse($timeOff->end_time)->format('H:i:s');
+
+            if ($scheduledTimeFormatted >= $timeOffStart && $scheduledTimeFormatted < $timeOffEnd) {
+                throw AppointmentException::invalidData('Doctor has time off during this time slot (' . Carbon::parse($timeOff->start_time)->format('h:i A') . ' - ' . Carbon::parse($timeOff->end_time)->format('h:i A') . ').');
+            }
         }
     }
 
