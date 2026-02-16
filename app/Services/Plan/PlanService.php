@@ -160,7 +160,13 @@ class PlanService
                 // Count package services
                 DB::raw('(SELECT COUNT(*) 
                          FROM package_services 
-                         WHERE package_services.package_id = packages.id) as session_count')
+                         WHERE package_services.package_id = packages.id) as session_count'),
+                // Get latest activity timestamp - MAX of package_advances, package_bundles, package_services only
+                DB::raw('GREATEST(
+                         COALESCE((SELECT MAX(updated_at) FROM package_advances WHERE package_advances.package_id = packages.id AND package_advances.deleted_at IS NULL), "1970-01-01"),
+                         COALESCE((SELECT MAX(updated_at) FROM package_bundles WHERE package_bundles.package_id = packages.id), "1970-01-01"),
+                         COALESCE((SELECT MAX(updated_at) FROM package_services WHERE package_services.package_id = packages.id), "1970-01-01")
+                        ) as latest_advance_updated_at')
             ])
             ->with([
                 'user:id,name,account_id',
@@ -361,7 +367,7 @@ class PlanService
      */
     protected function getOrderParams(array $filters): array
     {
-        $orderBy = 'updated_at';
+        $orderBy = 'latest_advance_updated_at';
         $order = 'DESC';
 
         if (isset($filters['sort']['field']) && isset($filters['sort']['sort'])) {
@@ -375,9 +381,9 @@ class PlanService
         }
 
         // Map sortable fields
-        $allowedFields = ['id', 'package_id', 'created_at', 'updated_at'];
+        $allowedFields = ['id', 'package_id', 'created_at', 'updated_at', 'latest_advance_updated_at'];
         if (!in_array($orderBy, $allowedFields)) {
-            $orderBy = 'updated_at';
+            $orderBy = 'latest_advance_updated_at';
         }
 
         return [$orderBy, $order];
