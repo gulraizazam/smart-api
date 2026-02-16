@@ -174,22 +174,47 @@ class TreatmentUpdateService
             throw AppointmentException::invalidData('Doctor resource not found.');
         }
 
-        // Check if doctor has rota for the scheduled date
-        $rotaDay = ResourceHasRotaDays::getSingleDayRotaWithResourceID(
-            $resource->id,
-            $scheduledDate,
-            Auth::user()->account_id,
-            $locationId
-        );
+        $date = Carbon::parse($scheduledDate)->format('Y-m-d');
 
-        if (empty($rotaDay)) {
+        // Find active rota for this doctor at this location
+        // Check using created_at as start date (matching AppointmentCheckesWidget logic)
+        $resourceRotas = \App\Models\ResourceHasRota::where([
+            ['resource_id', '=', $resource->id],
+            ['location_id', '=', $locationId],
+            ['active', '=', 1],
+        ])->get();
+
+        $activeRota = null;
+        foreach ($resourceRotas as $rota) {
+            // Use created_at as start date if start column is null (matching existing logic)
+            $rotaStart = $rota->start ? Carbon::parse($rota->start)->format('Y-m-d') : Carbon::parse($rota->created_at)->format('Y-m-d');
+            $rotaEnd = $rota->end ? Carbon::parse($rota->end)->format('Y-m-d') : null;
+            
+            if ($date >= $rotaStart && ($rotaEnd === null || $date <= $rotaEnd)) {
+                $activeRota = $rota;
+                break;
+            }
+        }
+
+        if (!$activeRota) {
             throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date and location.');
+        }
+
+        // Check if there's a rota day record for this specific date
+        $rotaDay = ResourceHasRotaDays::where([
+            ['resource_has_rota_id', '=', $activeRota->id],
+            ['date', '=', $date],
+            ['active', '=', '1'],
+        ])->first();
+
+        if (!$rotaDay) {
+            throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date.');
         }
 
         // Validate scheduled time is within rota hours
         $scheduledTimeCarbon = Carbon::parse($scheduledTime);
-        $rotaStartTime = Carbon::parse($rotaDay['start_time']);
-        $rotaEndTime = Carbon::parse($rotaDay['end_time']);
+        $rotaStartTime = Carbon::parse($rotaDay->start_time);
+        $rotaEndTime = Carbon::parse($rotaDay->end_time);
 
         if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
             throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours.');
