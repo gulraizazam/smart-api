@@ -276,6 +276,9 @@ class AppointmentsController extends Controller
             // Get business working days configuration
             $workingDays = self::getBusinessWorkingDays($account_id);
 
+            // Get working day exceptions
+            $workingDayExceptions = self::getWorkingDayExceptions($account_id);
+
             return response()->json([
                 'status' => 1,
                 'events' => $events,
@@ -285,6 +288,7 @@ class AppointmentsController extends Controller
                 'closures' => $closures,
                 'time_offs' => $timeOffs,
                 'working_days' => $workingDays,
+                'working_day_exceptions' => $workingDayExceptions,
             ]);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
@@ -355,15 +359,24 @@ class AppointmentsController extends Controller
         $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
         $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
 
+        // "All Centres" location ID - closures with this location apply to all locations
+        $allCentresId = 30;
+
         $closures = \App\Models\BusinessClosure::where('account_id', $accountId)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereDate('start_date', '<=', $endDate)
                       ->whereDate('end_date', '>=', $startDate);
             })
-            ->where(function ($query) use ($locationId) {
+            ->where(function ($query) use ($locationId, $allCentresId) {
+                // Match closures that have this specific location
                 $query->whereHas('locations', function ($subQ) use ($locationId) {
                     $subQ->where('locations.id', $locationId);
                 })
+                // OR closures that have "All Centres" (location_id 30) assigned
+                ->orWhereHas('locations', function ($subQ) use ($allCentresId) {
+                    $subQ->where('locations.id', $allCentresId);
+                })
+                // OR closures that have no locations assigned (applies to all)
                 ->orWhereDoesntHave('locations');
             })
             ->get();
@@ -486,5 +499,27 @@ class AppointmentsController extends Controller
             'saturday' => true,
             'sunday' => false,
         ];
+    }
+
+    /**
+     * Get working day exceptions for calendar display
+     */
+    public static function getWorkingDayExceptions($accountId = null): array
+    {
+        if (!$accountId) {
+            $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        }
+
+        $exceptions = \App\Models\WorkingDayException::where('account_id', $accountId)
+            ->get()
+            ->map(function ($exc) {
+                return [
+                    'date' => $exc->exception_date->format('Y-m-d'),
+                    'is_working' => $exc->is_working,
+                ];
+            })
+            ->toArray();
+
+        return $exceptions;
     }
 }

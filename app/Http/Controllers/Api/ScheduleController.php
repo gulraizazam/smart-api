@@ -70,8 +70,22 @@ class ScheduleController extends Controller
             ];
         }
         
+        // Get exceptions
+        $exceptions = \App\Models\WorkingDayException::where('account_id', $accountId)
+            ->orderBy('exception_date', 'asc')
+            ->get()
+            ->map(function ($exc) {
+                return [
+                    'id' => $exc->id,
+                    'exception_date' => $exc->exception_date->format('Y-m-d'),
+                    'exception_date_formatted' => $exc->exception_date->format('l, d M Y'),
+                    'is_working' => $exc->is_working,
+                ];
+            });
+
         return ApiHelper::apiResponse(200, 'Business working days retrieved', true, [
             'working_days' => $workingDays,
+            'exceptions' => $exceptions,
         ]);
     }
 
@@ -108,6 +122,24 @@ class ScheduleController extends Controller
                 'active' => 1,
             ]
         );
+
+        // Handle working day exceptions
+        $exceptions = $request->input('exceptions', []);
+        $userId = Auth::user()->id;
+
+        // Delete existing exceptions and recreate
+        \App\Models\WorkingDayException::where('account_id', $accountId)->delete();
+
+        foreach ($exceptions as $exception) {
+            if (!empty($exception['exception_date'])) {
+                \App\Models\WorkingDayException::create([
+                    'account_id' => $accountId,
+                    'exception_date' => $exception['exception_date'],
+                    'is_working' => filter_var($exception['is_working'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                    'created_by' => $userId,
+                ]);
+            }
+        }
         
         return ApiHelper::apiResponse(200, 'Business working days saved successfully', true, [
             'working_days' => $validatedDays,
@@ -284,8 +316,18 @@ class ScheduleController extends Controller
                 ->first();
         }
 
+        // If still no rota found, create a new one for this resource at this location
         if (!$rota) {
-            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+            $rota = ResourceHasRota::create([
+                'resource_id' => $resourceId,
+                'location_id' => $locationId,
+                'account_id' => $accountId,
+                'start' => $date,
+                'end' => Carbon::parse($date)->addYear()->format('Y-m-d'),
+                'is_treatment' => 1,
+                'is_consultancy' => 0,
+                'active' => 1,
+            ]);
         }
 
         // Delete existing rota day records for this date that don't have appointments
@@ -356,8 +398,18 @@ class ScheduleController extends Controller
             ->where('active', 1)
             ->first();
 
+        // If no rota found, create a new one for this resource at this location
         if (!$rota) {
-            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+            $rota = ResourceHasRota::create([
+                'resource_id' => $resourceId,
+                'location_id' => $locationId,
+                'account_id' => $accountId,
+                'start' => $startDate->format('Y-m-d'),
+                'end' => $endDate->format('Y-m-d'),
+                'is_treatment' => 1,
+                'is_consultancy' => 0,
+                'active' => 1,
+            ]);
         }
 
         // Map day names to day of week numbers (0 = Sunday, 1 = Monday, etc.)
@@ -493,8 +545,9 @@ class ScheduleController extends Controller
                 ->first();
         }
 
+        // If no rota found, nothing to delete
         if (!$rota) {
-            return ApiHelper::apiResponse(404, 'No active rota found for this resource at this location', false);
+            return ApiHelper::apiResponse(200, 'No shifts to delete', true);
         }
 
         // Delete rota day records for this date that don't have appointments

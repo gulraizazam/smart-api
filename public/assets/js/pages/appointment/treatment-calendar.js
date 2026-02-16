@@ -952,6 +952,7 @@ var TreatmentResourceCalendar = function() {
                 var allTimeOffs = [];
                 var allClosures = [];
                 var workingDays = null;
+                var workingDayExceptions = [];
 
                 // Handle single doctor case
                 if (doctors.length === 1) {
@@ -980,6 +981,9 @@ var TreatmentResourceCalendar = function() {
                         }
                         if (response.working_days) {
                             workingDays = response.working_days;
+                        }
+                        if (response.working_day_exceptions) {
+                            workingDayExceptions = response.working_day_exceptions;
                         }
                     }
                 } else {
@@ -1012,6 +1016,9 @@ var TreatmentResourceCalendar = function() {
                             if (!workingDays && response.working_days) {
                                 workingDays = response.working_days;
                             }
+                            if (!workingDayExceptions.length && response.working_day_exceptions) {
+                                workingDayExceptions = response.working_day_exceptions;
+                            }
                         }
                     }
                 }
@@ -1032,7 +1039,7 @@ var TreatmentResourceCalendar = function() {
                     toastr.error("Doctor rotas not defined for: " + doctorsWithoutRotas.join(', '));
                 }
 
-                TreatmentResourceCalendar.renderRotas(allRotas, allTimeOffs, allClosures, workingDays);
+                TreatmentResourceCalendar.renderRotas(allRotas, allTimeOffs, allClosures, workingDays, workingDayExceptions);
                 TreatmentResourceCalendar.renderAppointments(allEvents);
                 $('.appointment-loader-base').hide();
                 isLoading = false; // Reset loading flag
@@ -1125,21 +1132,32 @@ var TreatmentResourceCalendar = function() {
                 .toString(16).slice(1);
         },
 
-        renderRotas: function(rotasData, timeOffs, closures, workingDays) {
+        renderRotas: function(rotasData, timeOffs, closures, workingDays, workingDayExceptions) {
             // Working days config
             var workingDaysConfig = workingDays || {
                 monday: true, tuesday: true, wednesday: true,
                 thursday: true, friday: true, saturday: true, sunday: false
             };
             var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            var exceptions = workingDayExceptions || [];
             
-            // Check if current day is a non-working day
+            // Check if current day is a non-working day (considering exceptions)
             var currentDayOfWeek = currentDate.day();
             var currentDayName = dayNames[currentDayOfWeek];
-            var isNonWorkingDay = !workingDaysConfig[currentDayName];
+            var currentDateStr = currentDate.format('YYYY-MM-DD');
+            
+            // Check for exception first
+            var exception = exceptions.find(function(e) { return e.date === currentDateStr; });
+            var isNonWorkingDay;
+            if (exception) {
+                // Exception overrides default working day config
+                isNonWorkingDay = !exception.is_working;
+            } else {
+                // Use default working day config
+                isNonWorkingDay = !workingDaysConfig[currentDayName];
+            }
             
             // Check if current day is a business closure
-            var currentDateStr = currentDate.format('YYYY-MM-DD');
             var closureDates = {};
             if (closures && closures.length > 0) {
                 closures.forEach(function(c) {

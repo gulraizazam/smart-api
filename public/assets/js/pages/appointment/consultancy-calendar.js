@@ -681,6 +681,7 @@ var CustomResourceCalendar = function() {
                 var allTimeOffs = [];
                 var allClosures = [];
                 var workingDays = null;
+                var workingDayExceptions = [];
                 
                 if (doctors.length === 1) {
                     var response = arguments[0];
@@ -700,6 +701,9 @@ var CustomResourceCalendar = function() {
                         }
                         if (response.working_days) {
                             workingDays = response.working_days;
+                        }
+                        if (response.working_day_exceptions) {
+                            workingDayExceptions = response.working_day_exceptions;
                         }
                     }
                 } else {
@@ -723,12 +727,15 @@ var CustomResourceCalendar = function() {
                             if (response.working_days && !workingDays) {
                                 workingDays = response.working_days;
                             }
+                            if (response.working_day_exceptions && !workingDayExceptions.length) {
+                                workingDayExceptions = response.working_day_exceptions;
+                            }
                         }
                     }
                 }
 
                 CustomResourceCalendar.renderAppointments(allEvents);
-                CustomResourceCalendar.renderRotas(allRotas, allTimeOffs, allClosures, workingDays);
+                CustomResourceCalendar.renderRotas(allRotas, allTimeOffs, allClosures, workingDays, workingDayExceptions);
 
                 $('#custom_resource_calendar .appointment-loader-base').hide();
             }).fail(function() {
@@ -814,21 +821,32 @@ var CustomResourceCalendar = function() {
                 .toString(16).slice(1);
         },
 
-        renderRotas: function(rotasData, timeOffs, closures, workingDays) {
+        renderRotas: function(rotasData, timeOffs, closures, workingDays, workingDayExceptions) {
             // Working days config
             var workingDaysConfig = workingDays || {
                 monday: true, tuesday: true, wednesday: true,
                 thursday: true, friday: true, saturday: true, sunday: false
             };
             var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            var exceptions = workingDayExceptions || [];
             
-            // Check if current day is a non-working day
+            // Check if current day is a non-working day (considering exceptions)
             var currentDayOfWeek = currentDate.day();
             var currentDayName = dayNames[currentDayOfWeek];
-            var isNonWorkingDay = !workingDaysConfig[currentDayName];
+            var currentDateStr = currentDate.format('YYYY-MM-DD');
+            
+            // Check for exception first
+            var exception = exceptions.find(function(e) { return e.date === currentDateStr; });
+            var isNonWorkingDay;
+            if (exception) {
+                // Exception overrides default working day config
+                isNonWorkingDay = !exception.is_working;
+            } else {
+                // Use default working day config
+                isNonWorkingDay = !workingDaysConfig[currentDayName];
+            }
             
             // Check if current day is a business closure
-            var currentDateStr = currentDate.format('YYYY-MM-DD');
             var closureDates = {};
             if (closures && closures.length > 0) {
                 closures.forEach(function(c) {

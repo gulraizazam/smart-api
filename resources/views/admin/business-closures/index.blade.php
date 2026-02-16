@@ -31,10 +31,6 @@
                         </div>
 
                         <div class="card-toolbar">
-                            <a href="javascript:void(0);" class="btn btn-light-primary mr-3" onclick="openWorkingDaysModal();">
-                                <i class="la la-calendar-check"></i>
-                                Working Days
-                            </a>
                             @if(Gate::allows('business_closures_create'))
                                 <a href="javascript:void(0);" onclick="openAddModal();" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_business_closure">
                                     <i class="la la-plus"></i>
@@ -74,79 +70,6 @@
     <div class="modal fade" id="modal_edit_business_closure" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             @include('admin.business-closures.edit')
-        </div>
-    </div>
-
-    <!-- Working Days Modal -->
-    <div class="modal fade" id="modal_working_days" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Business Working Days</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <i aria-hidden="true" class="ki ki-close"></i>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p class="text-muted mb-5">Select the days when your business is open. Shifts and time off cannot be scheduled on closed days.</p>
-                    
-                    <div class="working-days-list">
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Monday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_monday" name="working_days[monday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Tuesday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_tuesday" name="working_days[tuesday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Wednesday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_wednesday" name="working_days[wednesday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Thursday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_thursday" name="working_days[thursday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Friday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_friday" name="working_days[friday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3 border-bottom">
-                            <label class="mb-0 font-weight-bold">Saturday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_saturday" name="working_days[saturday]">
-                                <span></span>
-                            </label>
-                        </div>
-                        <div class="form-group d-flex justify-content-between align-items-center py-3">
-                            <label class="mb-0 font-weight-bold">Sunday</label>
-                            <label class="checkbox checkbox-lg checkbox-success">
-                                <input type="checkbox" id="working_sunday" name="working_days[sunday]">
-                                <span></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="btn_save_working_days">Save</button>
-                </div>
-            </div>
         </div>
     </div>
 
