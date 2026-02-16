@@ -397,6 +397,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('schedule/delete-single-shift', [ScheduleController::class, 'deleteSingleShift'])->name('schedule.delete-single-shift');
     Route::post('schedule/store-time-off', [ScheduleController::class, 'storeTimeOff'])->name('schedule.store-time-off');
     Route::post('schedule/get-time-offs', [ScheduleController::class, 'getTimeOffs'])->name('schedule.get-time-offs');
+    Route::post('schedule/get-time-off', [ScheduleController::class, 'getTimeOff'])->name('schedule.get-time-off');
+    Route::post('schedule/update-time-off', [ScheduleController::class, 'updateTimeOff'])->name('schedule.update-time-off');
     Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])->name('schedule.delete-time-off');
     Route::post('schedule/store-repeating-shifts', [ScheduleController::class, 'storeRepeatingShifts'])->name('schedule.store-repeating-shifts');
 

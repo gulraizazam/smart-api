@@ -616,9 +616,27 @@ class ScheduleController extends Controller
             return ApiHelper::apiResponse(400, 'Resource and start date are required', false);
         }
 
+        // Parse dates to Y-m-d format (they may come in display format like "Mon, 16 Feb 2026")
+        $startDateParsed = Carbon::parse($startDate)->format('Y-m-d');
+        $repeatUntilParsed = $repeatUntil ? Carbon::parse($repeatUntil)->format('Y-m-d') : null;
+
         // Convert times to 24-hour format
         $startTime24 = $startTime ? Carbon::parse($startTime)->format('H:i:s') : null;
         $endTime24 = $endTime ? Carbon::parse($endTime)->format('H:i:s') : null;
+
+        // Check for overlapping time offs
+        $overlapCheck = $this->checkTimeOffOverlap(
+            $resourceId,
+            $accountId,
+            $startDateParsed,
+            $isRepeat ? $repeatUntilParsed : $startDateParsed,
+            $startTime24,
+            $endTime24
+        );
+
+        if ($overlapCheck) {
+            return ApiHelper::apiResponse(400, 'This time off overlaps with an existing time off. Please choose a different time.', false);
+        }
 
         // Create time off record
         $timeOff = ResourceTimeOff::create([
@@ -626,12 +644,12 @@ class ScheduleController extends Controller
             'location_id' => $locationId,
             'account_id' => $accountId,
             'type' => $type,
-            'start_date' => $startDate,
+            'start_date' => $startDateParsed,
             'start_time' => $startTime24,
             'end_time' => $endTime24,
             'is_full_day' => !$startTime && !$endTime,
             'is_repeat' => $isRepeat ? true : false,
-            'repeat_until' => $isRepeat ? $repeatUntil : null,
+            'repeat_until' => $isRepeat ? $repeatUntilParsed : null,
             'description' => $description,
         ]);
 
@@ -684,6 +702,104 @@ class ScheduleController extends Controller
 
         return ApiHelper::apiResponse(200, 'Time offs retrieved successfully', true, [
             'time_offs' => $result,
+        ]);
+    }
+
+    /**
+     * Get a single time off record
+     */
+    public function getTimeOff(Request $request): JsonResponse
+    {
+        $timeOffId = $request->input('time_off_id');
+
+        if (!$timeOffId) {
+            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+        }
+
+        $timeOff = ResourceTimeOff::find($timeOffId);
+
+        if (!$timeOff) {
+            return ApiHelper::apiResponse(404, 'Time off not found', false);
+        }
+
+        return ApiHelper::apiResponse(200, 'Time off retrieved successfully', true, [
+            'time_off' => [
+                'id' => $timeOff->id,
+                'resource_id' => $timeOff->resource_id,
+                'location_id' => $timeOff->location_id,
+                'type' => $timeOff->type,
+                'type_label' => $timeOff->type_label,
+                'start_date' => $timeOff->start_date->format('Y-m-d'),
+                'start_time' => $timeOff->start_time,
+                'end_time' => $timeOff->end_time,
+                'is_full_day' => $timeOff->is_full_day,
+                'is_repeat' => $timeOff->is_repeat,
+                'repeat_until' => $timeOff->repeat_until ? $timeOff->repeat_until->format('Y-m-d') : null,
+                'description' => $timeOff->description,
+            ],
+        ]);
+    }
+
+    /**
+     * Update a time off record
+     */
+    public function updateTimeOff(Request $request): JsonResponse
+    {
+        $timeOffId = $request->input('time_off_id');
+
+        if (!$timeOffId) {
+            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+        }
+
+        $timeOff = ResourceTimeOff::find($timeOffId);
+
+        if (!$timeOff) {
+            return ApiHelper::apiResponse(404, 'Time off not found', false);
+        }
+
+        $type = $request->input('type');
+        $startDate = $request->input('start_date');
+        $startTime = $request->input('start_time');
+        $endTime = $request->input('end_time');
+        $isRepeat = $request->input('is_repeat', false);
+        $repeatUntil = $request->input('repeat_until');
+        $description = $request->input('description');
+
+        // Parse dates to Y-m-d format (they may come in display format like "Mon, 16 Feb 2026")
+        $startDateParsed = Carbon::parse($startDate)->format('Y-m-d');
+        $repeatUntilParsed = $repeatUntil ? Carbon::parse($repeatUntil)->format('Y-m-d') : null;
+
+        // Convert times to 24-hour format
+        $startTime24 = $startTime ? Carbon::parse($startTime)->format('H:i:s') : null;
+        $endTime24 = $endTime ? Carbon::parse($endTime)->format('H:i:s') : null;
+
+        // Check for overlapping time offs (exclude current time off)
+        $overlapCheck = $this->checkTimeOffOverlap(
+            $timeOff->resource_id,
+            $timeOff->account_id,
+            $startDateParsed,
+            $isRepeat ? $repeatUntilParsed : $startDateParsed,
+            $startTime24,
+            $endTime24,
+            $timeOffId
+        );
+
+        if ($overlapCheck) {
+            return ApiHelper::apiResponse(400, 'This time off overlaps with an existing time off. Please choose a different time.', false);
+        }
+
+        $timeOff->update([
+            'type' => $type,
+            'start_date' => $startDateParsed,
+            'start_time' => $startTime24,
+            'end_time' => $endTime24,
+            'is_repeat' => $isRepeat ? 1 : 0,
+            'repeat_until' => $isRepeat && $repeatUntilParsed ? $repeatUntilParsed : null,
+            'description' => $description,
+        ]);
+
+        return ApiHelper::apiResponse(200, 'Time off updated successfully', true, [
+            'time_off' => $timeOff,
         ]);
     }
 
@@ -863,5 +979,54 @@ class ScheduleController extends Controller
         }
 
         return $result;
+    }
+
+    /**
+     * Check if a time off overlaps with existing time offs for the same resource
+     */
+    private function checkTimeOffOverlap(
+        int $resourceId,
+        int $accountId,
+        string $startDate,
+        ?string $endDate,
+        ?string $startTime,
+        ?string $endTime,
+        ?int $excludeTimeOffId = null
+    ): bool {
+        $endDate = $endDate ?: $startDate;
+
+        // Get all time offs for this resource that could potentially overlap
+        $query = ResourceTimeOff::where('resource_id', $resourceId)
+            ->where('account_id', $accountId);
+
+        // Exclude the current time off if updating
+        if ($excludeTimeOffId) {
+            $query->where('id', '!=', $excludeTimeOffId);
+        }
+
+        $existingTimeOffs = $query->get();
+
+        foreach ($existingTimeOffs as $existing) {
+            $existingStartDate = $existing->start_date->format('Y-m-d');
+            $existingEndDate = $existing->is_repeat && $existing->repeat_until
+                ? $existing->repeat_until->format('Y-m-d')
+                : $existingStartDate;
+
+            // Check if date ranges overlap
+            if ($startDate <= $existingEndDate && $endDate >= $existingStartDate) {
+                // Date ranges overlap, now check time overlap
+                if ($startTime && $endTime && $existing->start_time && $existing->end_time) {
+                    // Both have times - check if times overlap
+                    if ($startTime < $existing->end_time && $endTime > $existing->start_time) {
+                        return true; // Overlap found
+                    }
+                } else {
+                    // One or both are full day - any date overlap is a conflict
+                    return true;
+                }
+            }
+        }
+
+        return false; // No overlap
     }
 }
