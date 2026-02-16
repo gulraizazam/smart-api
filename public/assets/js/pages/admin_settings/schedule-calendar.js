@@ -12,6 +12,7 @@ var businessWorkingDays = {
     saturday: true,
     sunday: false
 };
+var workingDayExceptions = [];
 
 $(document).ready(function () {
     initWeekDates();
@@ -29,6 +30,9 @@ function loadBusinessWorkingDays() {
         success: function (response) {
             if (response.status && response.data.working_days) {
                 businessWorkingDays = response.data.working_days;
+            }
+            if (response.data.exceptions) {
+                workingDayExceptions = response.data.exceptions;
             }
             // Load locations after working days are loaded
             loadLocations();
@@ -1260,7 +1264,7 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
             var dayTimeOffs = findAllTimeOffs(resource.id, dateStr, timeOffs);
             var closure = findClosure(dateStr, closures);
             var isWeekend = (day === 5 || day === 6); // Saturday or Sunday
-            var isBusinessClosed = !isBusinessWorkingDay(day);
+            var isBusinessClosed = !isBusinessWorkingDay(day, dateStr);
             
             html += '<td class="shift-cell' + (isBusinessClosed ? ' business-closed-day' : '') + '" data-resource-id="' + resource.id + '" data-date="' + dateStr + '">';
             html += '<div class="shift-container">';
@@ -1339,10 +1343,22 @@ function renderSchedule(resources, shifts, closures, timeOffs) {
     $('#schedule_body').html(html);
 }
 
-function isBusinessWorkingDay(dayIndex) {
+function isBusinessWorkingDay(dayIndex, dateStr) {
     // dayIndex: 0=Monday, 1=Tuesday, ..., 6=Sunday
     var dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     var dayName = dayNames[dayIndex];
+    
+    // Check for exception first
+    if (dateStr && workingDayExceptions && workingDayExceptions.length > 0) {
+        var exception = workingDayExceptions.find(function(e) { 
+            return e.exception_date === dateStr || e.date === dateStr; 
+        });
+        if (exception) {
+            return exception.is_working === true;
+        }
+    }
+    
+    // Fall back to default working days config
     return businessWorkingDays[dayName] === true;
 }
 

@@ -186,6 +186,13 @@ class TreatmentUpdateService
         }
 
         $date = Carbon::parse($scheduledDate)->format('Y-m-d');
+        $accountId = Auth::user()->account_id;
+
+        // Check for business closures - prevent scheduling on closed days
+        $this->validateBusinessClosure($accountId, $locationId, $date);
+
+        // Check for non-working days - prevent scheduling on closed working days
+        $this->validateWorkingDay($accountId, $date);
 
         // Use same approach as Resources::getResourceRotaHasDay() - directly check rota_days by date
         // This doesn't rely on start/end columns of resource_has_rota which may be inconsistent
@@ -236,6 +243,54 @@ class TreatmentUpdateService
             if ($scheduledTimeFormatted >= $timeOffStart && $scheduledTimeFormatted < $timeOffEnd) {
                 throw AppointmentException::invalidData('Doctor has time off during this time slot (' . Carbon::parse($timeOff->start_time)->format('h:i A') . ' - ' . Carbon::parse($timeOff->end_time)->format('h:i A') . ').');
             }
+        }
+    }
+
+    /**
+     * Validate business is not closed on the scheduled date
+     */
+    protected function validateBusinessClosure($accountId, $locationId, $date)
+    {
+        // "All Centres" location ID - closures with this location apply to all locations
+        $allCentresId = 30;
+
+        $closure = \App\Models\BusinessClosure::where('account_id', $accountId)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->where(function ($query) use ($locationId, $allCentresId) {
+                // Match closures that have this specific location
+                $query->whereHas('locations', function ($subQ) use ($locationId) {
+                    $subQ->where('locations.id', $locationId);
+                })
+                // OR closures that have "All Centres" assigned
+                ->orWhereHas('locations', function ($subQ) use ($allCentresId) {
+                    $subQ->where('locations.id', $allCentresId);
+                })
+                // OR closures that have no locations assigned (applies to all)
+                ->orWhereDoesntHave('locations');
+            })
+            ->first();
+
+        if ($closure) {
+            throw AppointmentException::invalidData('Cannot schedule appointment on ' . Carbon::parse($date)->format('d M, Y') . '. Business is closed: ' . ($closure->title ?? 'Business Closed'));
+        }
+    }
+
+    /**
+     * Validate the scheduled date is a working day (considering exceptions)
+     */
+    protected function validateWorkingDay($accountId, $date)
+    {
+        $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($accountId);
+        
+        // Check if there's an exception for this specific date
+        $isWorkingDay = \App\Models\WorkingDayException::isWorkingDay($accountId, $date, $workingDays);
+        
+        if (!$isWorkingDay) {
+            $dayOfWeek = Carbon::parse($date)->dayOfWeek;
+            $dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            $dayName = $dayNames[$dayOfWeek];
+            throw AppointmentException::invalidData('Cannot schedule appointment on ' . Carbon::parse($date)->format('l, d M Y') . '. Business is closed on this day.');
         }
     }
 

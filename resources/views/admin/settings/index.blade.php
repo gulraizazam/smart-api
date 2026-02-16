@@ -34,6 +34,13 @@
                             <h3 class="card-label">Global Settings</h3>
                         </div>
 
+                        <div class="card-toolbar">
+                            <a href="javascript:void(0);" class="btn btn-light-primary" onclick="openWorkingDaysModal();">
+                                <i class="la la-calendar-check"></i>
+                                Business Working Days
+                            </a>
+                        </div>
+
                     </div>
 
                     <div class="card-body">
@@ -55,7 +62,104 @@
     <!--end::Content-->
     @include('admin.settings.edit')
 
+    <!-- Working Days Modal -->
+    <div class="modal fade" id="modal_working_days" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Business Working Days</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i aria-hidden="true" class="ki ki-close"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-5">Select the days when your business is open. Shifts and time off cannot be scheduled on closed days.</p>
+                    
+                    <div class="working-days-list d-flex flex-wrap justify-content-between">
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Mon</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_monday" name="working_days[monday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Tue</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_tuesday" name="working_days[tuesday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Wed</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_wednesday" name="working_days[wednesday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Thu</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_thursday" name="working_days[thursday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Fri</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_friday" name="working_days[friday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Sat</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_saturday" name="working_days[saturday]">
+                                <span></span>
+                            </label>
+                        </div>
+                        <div class="text-center px-2 mb-3">
+                            <label class="d-block mb-2 font-weight-bold">Sun</label>
+                            <label class="checkbox checkbox-lg checkbox-success">
+                                <input type="checkbox" id="working_sunday" name="working_days[sunday]">
+                                <span></span>
+                            </label>
+                        </div>
+                    </div>
 
+                    <hr class="my-5">
+
+                    <h6 class="font-weight-bold mb-3">Date Exceptions</h6>
+                    <p class="text-muted mb-4">Add specific dates that should be treated differently from the default schedule above.</p>
+
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" id="exception_date" placeholder="Select date" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-control" id="exception_type">
+                                <option value="1">Make Working Day</option>
+                                <option value="0">Make Non-Working Day</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-light-primary btn-block" id="btn_add_exception">
+                                <i class="la la-plus"></i> Add
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="exceptions_list" class="mt-4">
+                        <!-- Exceptions will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btn_save_working_days">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/settings.js')}}"></script>

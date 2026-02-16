@@ -4025,6 +4025,7 @@ class AppointmentsController extends Controller
             // Get business closures, time offs, and working days
             $closures = \App\Http\Controllers\Api\AppointmentsController::getBusinessClosures($account_id, $location_id, $start, $end);
             $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($account_id);
+            $workingDayExceptions = \App\Http\Controllers\Api\AppointmentsController::getWorkingDayExceptions($account_id);
             $timeOffs = [];
             if ($doctor_id) {
                 $timeOffs = \App\Http\Controllers\Api\AppointmentsController::getDoctorTimeOffs($account_id, $location_id, $doctor_id, $start, $end);
@@ -4042,6 +4043,7 @@ class AppointmentsController extends Controller
                     'closures' => $closures,
                     'time_offs' => $timeOffs,
                     'working_days' => $workingDays,
+                    'working_day_exceptions' => $workingDayExceptions,
                 ]);
             } else {
                 return response()->json([
@@ -4055,6 +4057,7 @@ class AppointmentsController extends Controller
                     'closures' => $closures,
                     'time_offs' => $timeOffs,
                     'working_days' => $workingDays,
+                    'working_day_exceptions' => $workingDayExceptions,
                 ]);
             }
 
@@ -4062,6 +4065,7 @@ class AppointmentsController extends Controller
             // Still return closures, time offs, and working days even when no appointments
             $closures = \App\Http\Controllers\Api\AppointmentsController::getBusinessClosures($account_id, $location_id, $start, $end);
             $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($account_id);
+            $workingDayExceptions = \App\Http\Controllers\Api\AppointmentsController::getWorkingDayExceptions($account_id);
             $timeOffs = [];
             if ($doctor_id) {
                 $timeOffs = \App\Http\Controllers\Api\AppointmentsController::getDoctorTimeOffs($account_id, $location_id, $doctor_id, $start, $end);
@@ -4074,6 +4078,7 @@ class AppointmentsController extends Controller
                 'closures' => $closures,
                 'time_offs' => $timeOffs,
                 'working_days' => $workingDays,
+                'working_day_exceptions' => $workingDayExceptions,
             ]);
         }
     }
@@ -4996,6 +5001,13 @@ class AppointmentsController extends Controller
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
             }
+
+            // Validate business closure, working days, and time offs
+            $scheduleValidation = $this->validateScheduleDate($appointment, $request);
+            if (!$scheduleValidation['status']) {
+                return ApiHelper::apiResponse($this->success, $scheduleValidation['message'], false);
+            }
+
             $rota = $this->checkRota($appointment, $request);
             if ($rota['status']) {
                 $updateData = [
@@ -5095,6 +5107,93 @@ class AppointmentsController extends Controller
         }
 
         return $rota;
+    }
+
+    /**
+     * Validate schedule date for business closures, working days, and time offs
+     */
+    private function validateScheduleDate($appointment, $request)
+    {
+        $accountId = Auth::user()->account_id;
+        $locationId = $request->location_id ?? $appointment->location_id;
+        $doctorId = $request->doctor_id ?? $appointment->doctor_id;
+        $date = Carbon::parse($request->scheduled_date)->format('Y-m-d');
+        $time = Carbon::parse($request->scheduled_time)->format('H:i:s');
+
+        // 1. Check for business closures
+        $allCentresId = 30;
+        $closure = \App\Models\BusinessClosure::where('account_id', $accountId)
+            ->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date)
+            ->where(function ($query) use ($locationId, $allCentresId) {
+                $query->whereHas('locations', function ($subQ) use ($locationId) {
+                    $subQ->where('locations.id', $locationId);
+                })
+                ->orWhereHas('locations', function ($subQ) use ($allCentresId) {
+                    $subQ->where('locations.id', $allCentresId);
+                })
+                ->orWhereDoesntHave('locations');
+            })
+            ->first();
+
+        if ($closure) {
+            return [
+                'status' => false,
+                'message' => 'Cannot schedule appointment on ' . Carbon::parse($date)->format('d M, Y') . '. Business is closed: ' . ($closure->title ?? 'Business Closed')
+            ];
+        }
+
+        // 2. Check for working days (with exceptions)
+        $workingDays = \App\Http\Controllers\Api\AppointmentsController::getBusinessWorkingDays($accountId);
+        $isWorkingDay = \App\Models\WorkingDayException::isWorkingDay($accountId, $date, $workingDays);
+
+        if (!$isWorkingDay) {
+            return [
+                'status' => false,
+                'message' => 'Cannot schedule appointment on ' . Carbon::parse($date)->format('l, d M Y') . '. Business is closed on this day.'
+            ];
+        }
+
+        // 3. Check for doctor time offs
+        if ($doctorId) {
+            $resource = \App\Models\Resources::where([
+                'external_id' => $doctorId,
+                'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
+                'account_id' => $accountId,
+            ])->first();
+
+            if ($resource) {
+                $timeOffs = \App\Models\ResourceTimeOff::where('resource_id', $resource->id)
+                    ->where('account_id', $accountId)
+                    ->where('location_id', $locationId)
+                    ->where(function ($query) use ($date) {
+                        $query->whereDate('start_date', $date)
+                            ->orWhere(function ($q) use ($date) {
+                                $q->where('is_repeat', 1)
+                                    ->whereDate('start_date', '<=', $date)
+                                    ->where(function ($rq) use ($date) {
+                                        $rq->whereNull('repeat_until')
+                                            ->orWhereDate('repeat_until', '>=', $date);
+                                    });
+                            });
+                    })
+                    ->get();
+
+                foreach ($timeOffs as $timeOff) {
+                    $timeOffStart = Carbon::parse($timeOff->start_time)->format('H:i:s');
+                    $timeOffEnd = Carbon::parse($timeOff->end_time)->format('H:i:s');
+
+                    if ($time >= $timeOffStart && $time < $timeOffEnd) {
+                        return [
+                            'status' => false,
+                            'message' => 'Doctor has time off during this time slot (' . Carbon::parse($timeOff->start_time)->format('h:i A') . ' - ' . Carbon::parse($timeOff->end_time)->format('h:i A') . ').'
+                        ];
+                    }
+                }
+            }
+        }
+
+        return ['status' => true, 'message' => ''];
     }
 
     private function SendRescheduleSms($appointmentId, $patient_phone, $log_type, $account_id)

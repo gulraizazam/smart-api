@@ -466,11 +466,11 @@
             color: #B5B5C3;
         }
         .shift-badge.weekend {
-            background-color: #FFF4DE;
-            color: #FFA800;
+            background-color: #E1F0FF;
+            color: #3699FF;
         }
         .shift-badge.weekend.clickable:hover {
-            box-shadow: 0 2px 8px rgba(255, 168, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(54, 153, 255, 0.3);
         }
         .shift-badge.business-closed {
             background-color: #FFE2E5;

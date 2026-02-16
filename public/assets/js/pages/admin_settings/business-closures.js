@@ -438,6 +438,8 @@ function resetAddForm() {
 }
 
 // Working Days Functions
+var workingDayExceptions = [];
+
 function loadWorkingDays() {
     $.ajax({
         url: route('admin.schedule.get-business-working-days'),
@@ -458,11 +460,71 @@ function loadWorkingDays() {
                 $('#working_saturday').prop('checked', days.saturday === true);
                 $('#working_sunday').prop('checked', days.sunday === true);
             }
+            // Load exceptions
+            if (response.data.exceptions) {
+                workingDayExceptions = response.data.exceptions;
+                renderExceptionsList();
+            }
         },
         error: function(xhr) {
             console.log('Error loading working days:', xhr);
         }
     });
+}
+
+function renderExceptionsList() {
+    var html = '';
+    if (workingDayExceptions.length === 0) {
+        html = '<p class="text-muted text-center">No date exceptions added.</p>';
+    } else {
+        workingDayExceptions.forEach(function(exc, index) {
+            var typeLabel = exc.is_working ? '<span class="label label-success label-inline">Working Day</span>' : '<span class="label label-danger label-inline">Non-Working Day</span>';
+            html += '<div class="d-flex justify-content-between align-items-center py-2 border-bottom">';
+            html += '<div><strong>' + exc.exception_date_formatted + '</strong> ' + typeLabel + '</div>';
+            html += '<button type="button" class="btn btn-icon btn-light-danger btn-sm" onclick="removeException(' + index + ')"><i class="la la-trash"></i></button>';
+            html += '</div>';
+        });
+    }
+    $('#exceptions_list').html(html);
+}
+
+function addException() {
+    var date = $('#exception_date').val();
+    var isWorking = $('#exception_type').val() === '1';
+    
+    if (!date) {
+        toastr.warning('Please select a date');
+        return;
+    }
+    
+    // Check if date already exists
+    var exists = workingDayExceptions.some(function(exc) {
+        return exc.exception_date === date;
+    });
+    
+    if (exists) {
+        toastr.warning('This date already has an exception');
+        return;
+    }
+    
+    // Format date for display
+    var dateObj = new Date(date);
+    var options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+    var formattedDate = dateObj.toLocaleDateString('en-GB', options);
+    
+    workingDayExceptions.push({
+        exception_date: date,
+        exception_date_formatted: formattedDate,
+        is_working: isWorking
+    });
+    
+    renderExceptionsList();
+    $('#exception_date').val('');
+}
+
+function removeException(index) {
+    workingDayExceptions.splice(index, 1);
+    renderExceptionsList();
 }
 
 function saveWorkingDays() {
@@ -481,7 +543,10 @@ function saveWorkingDays() {
     $.ajax({
         url: route('admin.schedule.save-business-working-days'),
         type: 'POST',
-        data: { working_days: workingDays },
+        data: { 
+            working_days: workingDays,
+            exceptions: workingDayExceptions
+        },
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
@@ -503,9 +568,26 @@ function saveWorkingDays() {
 
 // Open working days modal function
 function openWorkingDaysModal() {
+    workingDayExceptions = [];
+    renderExceptionsList();
     loadWorkingDays();
     $('#modal_working_days').modal('show');
 }
+
+// Initialize exception date picker
+$(document).ready(function() {
+    $('#exception_date').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true,
+        startDate: new Date()
+    });
+});
+
+// Add exception button click
+$(document).on('click', '#btn_add_exception', function () {
+    addException();
+});
 
 // Save working days button click
 $(document).on('click', '#btn_save_working_days', function () {
