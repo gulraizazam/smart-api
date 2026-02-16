@@ -160,15 +160,18 @@ class ScheduleController extends Controller
 
         // Resource type 2 = Doctor, 1 = Machine
         if ($resourceTypeId == 2) {
-            // For doctors: Get from resources table where they have active rotas for this location
-            // The resources table stores doctors with external_id pointing to user_id
+            // For doctors: Get all active doctors allocated to this location
+            // Get doctor user IDs from doctor_has_locations
+            $doctorUserIds = \App\Models\DoctorHasLocations::where('location_id', $locationId)
+                ->where('is_allocated', 1)
+                ->pluck('user_id')
+                ->toArray();
+
+            // Get resources for these doctors (no rota check - allows creating schedules for new doctors)
             return Resources::where('account_id', $accountId)
                 ->where('resource_type_id', $resourceTypeId)
                 ->where('active', 1)
-                ->whereHas('resourceRota', function ($query) use ($locationId) {
-                    $query->where('location_id', $locationId)
-                        ->where('active', 1);
-                })
+                ->whereIn('external_id', $doctorUserIds)
                 ->orderBy('name', 'asc')
                 ->get(['id', 'name', 'external_id']);
         } else {
