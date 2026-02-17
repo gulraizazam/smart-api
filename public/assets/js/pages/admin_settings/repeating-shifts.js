@@ -63,9 +63,11 @@ function initEventHandlers() {
         if (isChecked) {
             $row.find('.day-shifts-container').removeClass('d-none');
             $row.find('.not-working-label').addClass('d-none');
+            $row.find('.copy-to-all-days').removeClass('d-none');
         } else {
             $row.find('.day-shifts-container').addClass('d-none');
             $row.find('.not-working-label').removeClass('d-none');
+            $row.find('.copy-to-all-days').addClass('d-none');
             $row.find('.day-hours').text('');
         }
         
@@ -199,9 +201,6 @@ function createShiftTimeRow() {
     html += '</button>';
     html += '<button type="button" class="btn-remove-time remove-shift-time" title="Remove">';
     html += '<i class="la la-trash"></i>';
-    html += '</button>';
-    html += '<button type="button" class="btn-copy-all copy-to-all-days ml-2" title="Copy to all days">';
-    html += '<i class="la la-copy"></i> Copy to all';
     html += '</button>';
     html += '</div>';
     return html;
