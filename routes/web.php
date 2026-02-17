@@ -321,9 +321,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Package Advance route start
         Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');
 
-        //Resource Rota Management
-        Route::resource('resourcerotas', ResourceRotasController::class)->only('index')->middleware('permission:resourcerotas_manage');
-        Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
+        //Resource Rota Management (Schedule Calendar)
         Route::get('resourcerotas/schedule', [ResourceRotasController::class, 'scheduleCalendar'])->name('resourcerotas.schedule')->middleware('permission:resourcerotas_manage');
         Route::get('resourcerotas/repeating-shifts', [ResourceRotasController::class, 'repeatingShifts'])->name('resourcerotas.repeating-shifts')->middleware('permission:resourcerotas_manage');
 

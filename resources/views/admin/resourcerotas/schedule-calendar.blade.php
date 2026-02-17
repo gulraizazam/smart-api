@@ -126,17 +126,6 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_resourcerotas" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered rota-form-to" id="resourcerotas_add">
-            @include('admin.resourcerotas.create')
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal_edit_resourcerotas" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered rota-form-to" id="resourcerotas_edit">
-            @include('admin.resourcerotas.edit')
-        </div>
-    </div>
 
     <!-- Add Shift Modal -->
     <div class="modal fade" id="modal_add_shift" tabindex="-1" aria-hidden="true">

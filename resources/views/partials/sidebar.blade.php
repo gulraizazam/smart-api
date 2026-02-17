@@ -354,14 +354,14 @@
             @endif
             @if(Gate::allows('resources_manage'))
             <li class="nav-item start {{ $request->segment(2) == 'resources' ? 'active active-sub' : '' }}">
-                <a href="{{ route('admin.resources.index') }}">
+                <a href="{{ route('admin.resources.schedule') }}">
                     <span class="title">@lang('global.resources.title')</span>
                 </a>
             </li>
             @endif
             @if(Gate::allows('resourcerotas_manage'))
             <li class="nav-item start {{ $request->segment(2) == 'resourcerotas' ? 'active active-sub' : '' }}">
-                <a href="{{ route('admin.resourcerotas.index') }}">
+                <a href="{{ route('admin.resourcerotas.schedule') }}">
                     <span class="title">@lang('global.resourcerotas.title')</span>
                 </a>
             </li>
