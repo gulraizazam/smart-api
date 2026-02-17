@@ -582,16 +582,15 @@ class ScheduleController extends Controller
             return ApiHelper::apiResponse(404, 'Shift not found', false);
         }
 
-        // Check if this shift has appointments linked
-        $hasAppointments = \DB::table('appointments')
-            ->where('resource_has_rota_day_id', $shiftId)
-            ->exists();
-        
-        if ($hasAppointments) {
-            return ApiHelper::apiResponse(400, 'Cannot delete shift with existing appointments', false);
-        }
+        // Use transaction to ensure data integrity
+        \DB::transaction(function () use ($shift, $shiftId) {
+            // Unlink any appointments from this shift (don't delete them, just remove the link)
+            \DB::table('appointments')
+                ->where('resource_has_rota_day_id', $shiftId)
+                ->update(['resource_has_rota_day_id' => null]);
 
-        $shift->forceDelete();
+            $shift->forceDelete();
+        });
 
         return ApiHelper::apiResponse(200, 'Shift deleted successfully', true);
     }
