@@ -458,12 +458,28 @@ var currentScheduleShifts = []; // Store shifts data globally for edit functiona
 var currentScheduleTimeOffs = []; // Store time offs data globally
 
 function openRepeatingShiftsPage(resourceId, date) {
-    // Find resource name
+    // Find resource name and current shift times
     var resourceName = 'Resource';
+    var shiftStartTime = '';
+    var shiftEndTime = '';
+    
     $('#schedule_body tr').each(function() {
-        var $cell = $(this).find('.shift-cell[data-resource-id="' + resourceId + '"]').first();
+        var $cell = $(this).find('.shift-cell[data-resource-id="' + resourceId + '"][data-date="' + date + '"]').first();
         if ($cell.length) {
             resourceName = $(this).find('.team-member-name').text();
+            
+            // Try to get shift times from the first shift badge in this cell
+            var $shiftBadge = $cell.find('.shift-badge.clickable').first();
+            if ($shiftBadge.length) {
+                var shiftText = $shiftBadge.text().trim();
+                // Parse "10:00 AM - 07:00 PM" format
+                var timeParts = shiftText.split(' - ');
+                if (timeParts.length === 2) {
+                    // Convert "10:00 AM" to "10:00am" and "07:00 PM" to "7:00pm"
+                    shiftStartTime = formatTimeForUrl(timeParts[0].trim());
+                    shiftEndTime = formatTimeForUrl(timeParts[1].trim());
+                }
+            }
             return false;
         }
     });
@@ -480,8 +496,35 @@ function openRepeatingShiftsPage(resourceId, date) {
     url += '&location_name=' + encodeURIComponent(locationName);
     url += '&date=' + date;
     
+    // Add shift times if available
+    if (shiftStartTime) {
+        url += '&start_time=' + encodeURIComponent(shiftStartTime);
+    }
+    if (shiftEndTime) {
+        url += '&end_time=' + encodeURIComponent(shiftEndTime);
+    }
+    
     // Navigate to the page
     window.location.href = url;
+}
+
+// Helper function to convert "10:00 AM" or "07:00 PM" to "10:00am" or "7:00pm"
+function formatTimeForUrl(timeStr) {
+    if (!timeStr) return '';
+    
+    // Match pattern like "10:00 AM" or "07:00 PM"
+    var match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (match) {
+        var hour = parseInt(match[1], 10);
+        var minutes = match[2];
+        var ampm = match[3].toLowerCase();
+        
+        // Remove leading zero from hour (07 -> 7)
+        return hour + ':' + minutes + ampm;
+    }
+    
+    // Fallback - just remove spaces and lowercase
+    return timeStr.replace(/\s+/g, '').toLowerCase();
 }
 
 function openAddShiftModal(resourceId, date) {

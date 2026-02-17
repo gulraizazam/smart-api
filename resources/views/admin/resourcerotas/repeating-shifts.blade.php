@@ -457,6 +457,8 @@
         var locationId = {{ request()->get('location_id', 0) }};
         var locationName = '{{ request()->get('location_name', 'Location') }}';
         var selectedDate = '{{ request()->get('date', date('Y-m-d')) }}';
+        var defaultStartTime = '{{ request()->get('start_time', '10:00am') }}';
+        var defaultEndTime = '{{ request()->get('end_time', '7:00pm') }}';
     </script>
     <script src="{{asset('assets/js/pages/admin_settings/repeating-shifts.js')}}?v={{ time() }}"></script>
     @endpush
