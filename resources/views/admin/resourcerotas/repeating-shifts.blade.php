@@ -117,6 +117,9 @@
                                                         <button type="button" class="btn-remove-time remove-shift-time" title="Remove" style="display: none;">
                                                             <i class="la la-trash"></i>
                                                         </button>
+                                                        <button type="button" class="btn-copy-all copy-to-all-days ml-2" title="Copy to all days">
+                                                            <i class="la la-copy"></i> Copy to all
+                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div class="not-working-label {{ $index < 6 ? 'd-none' : '' }}">Not working</div>
@@ -411,6 +414,36 @@
         }
         .cursor-pointer {
             cursor: pointer;
+        }
+
+        /* Copy to All Button */
+        .btn-copy-all {
+            height: 32px;
+            border-radius: 6px;
+            background-color: #E8FFF3;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #50CD89;
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn-copy-all i {
+            color: #50CD89;
+            font-size: 14px;
+            margin-right: 4px;
+        }
+        .btn-copy-all:hover {
+            background-color: #50CD89;
+            color: #ffffff;
+        }
+        .btn-copy-all:hover i {
+            color: #ffffff;
         }
     </style>
     @endpush

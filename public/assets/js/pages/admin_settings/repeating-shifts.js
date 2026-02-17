@@ -117,6 +117,74 @@ function initEventHandlers() {
     $('#btn_save_repeating_shifts').on('click', function() {
         saveRepeatingShifts();
     });
+    
+    // Copy to all days button
+    $(document).on('click', '.copy-to-all-days', function() {
+        copyToAllDays($(this).closest('.day-schedule-row'));
+    });
+}
+
+function copyToAllDays($sourceRow) {
+    // Get all shifts from the source day
+    var shifts = [];
+    $sourceRow.find('.shift-time-row').each(function() {
+        shifts.push({
+            start: $(this).find('.shift-start').val(),
+            end: $(this).find('.shift-end').val()
+        });
+    });
+    
+    if (shifts.length === 0) {
+        toastr.warning('No shifts to copy');
+        return;
+    }
+    
+    // Apply to all other days
+    $('.day-schedule-row').each(function() {
+        var $targetRow = $(this);
+        
+        // Skip the source row
+        if ($targetRow.data('day') === $sourceRow.data('day')) {
+            return;
+        }
+        
+        // Enable the day
+        $targetRow.find('.day-enabled').prop('checked', true);
+        $targetRow.find('.day-shifts-container').removeClass('d-none');
+        $targetRow.find('.not-working-label').addClass('d-none');
+        
+        // Clear existing shifts
+        var $container = $targetRow.find('.day-shifts-container');
+        $container.find('.shift-time-row').not(':first').remove();
+        
+        // Set the first shift
+        var $firstRow = $container.find('.shift-time-row').first();
+        $firstRow.find('.shift-start').val(shifts[0].start);
+        $firstRow.find('.shift-end').val(shifts[0].end);
+        
+        // Add additional shifts if needed
+        for (var i = 1; i < shifts.length; i++) {
+            var newRow = createShiftTimeRow();
+            $container.append(newRow);
+            var $newRow = $container.find('.shift-time-row').last();
+            populateTimeDropdownsForRow($newRow);
+            $newRow.find('.shift-start').val(shifts[i].start);
+            $newRow.find('.shift-end').val(shifts[i].end);
+        }
+        
+        // Show/hide remove buttons
+        if ($container.find('.shift-time-row').length > 1) {
+            $container.find('.remove-shift-time').show();
+        } else {
+            $container.find('.remove-shift-time').hide();
+        }
+        
+        // Update hours for this day
+        updateDayHours($targetRow);
+    });
+    
+    calculateTotalHours();
+    toastr.success('Shifts copied to all days');
 }
 
 function createShiftTimeRow() {
@@ -131,6 +199,9 @@ function createShiftTimeRow() {
     html += '</button>';
     html += '<button type="button" class="btn-remove-time remove-shift-time" title="Remove">';
     html += '<i class="la la-trash"></i>';
+    html += '</button>';
+    html += '<button type="button" class="btn-copy-all copy-to-all-days ml-2" title="Copy to all days">';
+    html += '<i class="la la-copy"></i> Copy to all';
     html += '</button>';
     html += '</div>';
     return html;
