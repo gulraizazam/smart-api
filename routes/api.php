@@ -392,6 +392,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('schedule/update-time-off', [ScheduleController::class, 'updateTimeOff'])->name('schedule.update-time-off');
     Route::post('schedule/delete-time-off', [ScheduleController::class, 'deleteTimeOff'])->name('schedule.delete-time-off');
     Route::post('schedule/store-repeating-shifts', [ScheduleController::class, 'storeRepeatingShifts'])->name('schedule.store-repeating-shifts');
+    Route::post('schedule/bulk-delete-shifts', [ScheduleController::class, 'bulkDeleteShifts'])->name('schedule.bulk-delete-shifts');
 
     //Invoice Management route start
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');

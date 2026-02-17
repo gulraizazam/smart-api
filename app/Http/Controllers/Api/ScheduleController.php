@@ -1036,4 +1036,74 @@ class ScheduleController extends Controller
 
         return false; // No overlap
     }
+
+    /**
+     * Bulk delete shifts for a resource within a date range
+     */
+    public function bulkDeleteShifts(Request $request): JsonResponse
+    {
+        $resourceId = $request->input('resource_id');
+        $locationId = $request->input('location_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $accountId = Auth::user()->account_id;
+
+        if (!$resourceId || !$locationId || !$startDate || !$endDate) {
+            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+        }
+
+        // Parse dates
+        $startDate = Carbon::parse($startDate)->format('Y-m-d');
+        $endDate = Carbon::parse($endDate)->format('Y-m-d');
+
+        if ($endDate < $startDate) {
+            return ApiHelper::apiResponse(400, 'End date must be after start date', false);
+        }
+
+        // Find the active rota for this resource at this location
+        $rota = ResourceHasRota::where('resource_id', $resourceId)
+            ->where('location_id', $locationId)
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->first();
+
+        if (!$rota) {
+            return ApiHelper::apiResponse(404, 'No active schedule found for this resource', false);
+        }
+
+        // Get shift IDs to delete
+        $shiftIds = ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($shiftIds)) {
+            return ApiHelper::apiResponse(404, 'No shifts found in the selected date range', false);
+        }
+
+        // Count appointments linked to these shifts
+        $appointmentCount = \DB::table('appointments')
+            ->whereIn('resource_has_rota_day_id', $shiftIds)
+            ->count();
+
+        // Unlink appointments from these shifts
+        if ($appointmentCount > 0) {
+            \DB::table('appointments')
+                ->whereIn('resource_has_rota_day_id', $shiftIds)
+                ->update(['resource_has_rota_day_id' => null]);
+        }
+
+        // Delete the shifts
+        $deletedCount = ResourceHasRotaDays::whereIn('id', $shiftIds)->forceDelete();
+
+        $message = "Successfully deleted {$deletedCount} shifts";
+        if ($appointmentCount > 0) {
+            $message .= " ({$appointmentCount} appointments were unlinked)";
+        }
+
+        return ApiHelper::apiResponse(200, $message, true, [
+            'deleted_count' => $deletedCount,
+            'unlinked_appointments' => $appointmentCount,
+        ]);
+    }
 }
