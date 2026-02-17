@@ -369,15 +369,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packagesadvances/update_record_final', [PackageAdvancesController::class, 'update_record_final'])->name('packagesadvances.update_record_final');
     Route::resource('packagesadvances', PackageAdvancesController::class)->except('index');
 
-    //Resource Rota Management
-    Route::get('resourcerotas/load_location', [ResourceRotasController::class, 'load_location'])->name('resourcerotas.load_location');
-    Route::get('resourcerotas/load_doctor_and_Machine', [ResourceRotasController::class, 'load_doctor_and_Machine'])->name('resourcerotas.load_doctor_and_Machine');
-    Route::post('resourcerotas/datatable', [ResourceRotasController::class, 'datatable'])->name('resourcerotas.datatable');
-    Route::post('resourcerotas/status', [ResourceRotasController::class, 'status'])->name('resourcerotas.status');
-    Route::get('resourcerotas/calender/{id}', [ResourceRotasController::class, 'getcalenderinfo'])->name('resourcerotas.calender');
-    Route::get('resourcerotas/calender/events/{id}', [ResourceRotasController::class, 'getcalenderinfoevents'])->name('resourcerotas.events');
-    Route::post('resourcerotas/store_Calender_edit', [ResourceRotasController::class, 'store_calender_edit'])->name('resourcerotas.store_Calender_edit');
-    Route::resource('resourcerotas', ResourceRotasController::class)->except('index');
 
     //Business Closures Management
     Route::post('business-closures/datatable', [BusinessClosureController::class, 'datatable'])->name('business-closures.datatable');
