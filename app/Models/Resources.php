@@ -278,7 +278,6 @@ class Resources extends BaseModal
         return self::where($where)->with(["resource_rota", "doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
             $query->where(["resource_has_rota.location_id" => $location_id]);
-            $query->where(["resource_has_rota.is_consultancy" => '1']);
             $query->where(["resource_has_rota.active" => '1']);
         }])->get();
     }
