@@ -101,7 +101,7 @@
                                                 </label>
                                                 <div class="day-hours-label day-hours">{{ $index < 6 ? '9h' : '' }}</div>
                                             </div>
-                                            <div class="col-md-10">
+                                            <div class="col-md-9">
                                                 <div class="day-shifts-container {{ $index >= 6 ? 'd-none' : '' }}">
                                                     <div class="shift-time-row d-flex align-items-center mb-2">
                                                         <select class="form-control time-select shift-start mr-2">
@@ -117,12 +117,14 @@
                                                         <button type="button" class="btn-remove-time remove-shift-time" title="Remove" style="display: none;">
                                                             <i class="la la-trash"></i>
                                                         </button>
-                                                        <button type="button" class="btn-copy-all copy-to-all-days ml-2" title="Copy to all days">
-                                                            <i class="la la-copy"></i> Copy to all
-                                                        </button>
                                                     </div>
                                                 </div>
                                                 <div class="not-working-label {{ $index < 6 ? 'd-none' : '' }}">Not working</div>
+                                            </div>
+                                            <div class="col-md-1 d-flex align-items-start pt-1">
+                                                <button type="button" class="btn-copy-all copy-to-all-days {{ $index >= 6 ? 'd-none' : '' }}" title="Copy to all days">
+                                                    <i class="la la-copy"></i> Copy to all
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
