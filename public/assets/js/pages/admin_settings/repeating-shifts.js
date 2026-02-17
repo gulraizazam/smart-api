@@ -219,8 +219,12 @@ function populateTimeDropdownsForRow($row) {
     var $startSelect = $row.find('.shift-start');
     var $endSelect = $row.find('.shift-end');
     
-    $startSelect.html(getTimeOptions('10:00am'));
-    $endSelect.html(getTimeOptions('7:00pm'));
+    // Use default times from URL parameters, fallback to 10:00am - 7:00pm
+    var startTime = (typeof defaultStartTime !== 'undefined' && defaultStartTime) ? defaultStartTime : '10:00am';
+    var endTime = (typeof defaultEndTime !== 'undefined' && defaultEndTime) ? defaultEndTime : '7:00pm';
+    
+    $startSelect.html(getTimeOptions(startTime));
+    $endSelect.html(getTimeOptions(endTime));
 }
 
 function getTimeOptions(selectedValue) {
