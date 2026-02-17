@@ -102,14 +102,30 @@ class PlanInvoice extends Model
 
     /**
      * Generate invoice number format: patient_id-package_id-sequence
+     * Finds the maximum sequence number from existing invoices and increments it
      */
     public static function generateInvoiceNumber(int $patientId, int $packageId): string
     {
-        $existingCount = self::where('patient_id', $patientId)
+        $prefix = "{$patientId}-{$packageId}-";
+        
+        // Get the maximum sequence number from existing invoices (including soft-deleted)
+        $maxSequence = self::withTrashed()
+            ->where('patient_id', $patientId)
             ->where('package_id', $packageId)
-            ->count();
+            ->where('invoice_number', 'like', $prefix . '%')
+            ->get()
+            ->map(function ($invoice) use ($prefix) {
+                // Extract the sequence number from the invoice_number
+                $invoiceNumber = $invoice->invoice_number;
+                if (strpos($invoiceNumber, $prefix) === 0) {
+                    $sequencePart = substr($invoiceNumber, strlen($prefix));
+                    return (int) $sequencePart;
+                }
+                return 0;
+            })
+            ->max() ?? 0;
 
-        $sequence = str_pad($existingCount + 1, 2, '0', STR_PAD_LEFT);
+        $sequence = str_pad($maxSequence + 1, 2, '0', STR_PAD_LEFT);
         
         return "{$patientId}-{$packageId}-{$sequence}";
     }
