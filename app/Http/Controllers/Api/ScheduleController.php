@@ -330,14 +330,22 @@ class ScheduleController extends Controller
             ]);
         }
 
-        // Delete existing rota day records for this date that don't have appointments
+        // Get existing shift IDs for this date
+        $existingShiftIds = ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
+            ->whereDate('date', $date)
+            ->pluck('id')
+            ->toArray();
+
+        // Unlink any appointments from these shifts (don't delete appointments, just remove the link)
+        if (!empty($existingShiftIds)) {
+            \DB::table('appointments')
+                ->whereIn('resource_has_rota_day_id', $existingShiftIds)
+                ->update(['resource_has_rota_day_id' => null]);
+        }
+
+        // Delete all existing rota day records for this date
         ResourceHasRotaDays::where('resource_has_rota_id', $rota->id)
             ->whereDate('date', $date)
-            ->whereNotExists(function ($query) {
-                $query->select(\DB::raw(1))
-                    ->from('appointments')
-                    ->whereColumn('appointments.resource_has_rota_day_id', 'resource_has_rota_days.id');
-            })
             ->forceDelete();
 
         // Create new rota day records for each shift
