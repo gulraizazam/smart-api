@@ -43,6 +43,10 @@
                                         <a class="dropdown-item" href="javascript:void(0);" id="btn_add_business_closed">
                                             <i class="la la-ban mr-2"></i>Business closed period
                                         </a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-danger" href="javascript:void(0);" id="btn_bulk_delete_shifts">
+                                            <i class="la la-trash mr-2"></i>Delete Shifts
+                                        </a>
                                     </div>
                                 </div>
                             @endif
@@ -126,6 +130,49 @@
     </div>
     <!--end::Content-->
 
+    <!-- Bulk Delete Shifts Modal -->
+    <div class="modal fade" id="modal_bulk_delete_shifts" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title font-weight-bold">Delete Shifts</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <i class="la la-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-4">Select a date range and resource to delete all shifts within that period.</p>
+                    
+                    <form id="form_bulk_delete_shifts">
+                        <div class="form-group">
+                            <label>Resource <span class="text-danger">*</span></label>
+                            <select class="form-control" id="bulk_delete_resource_id" name="resource_id" required>
+                                <option value="">Select Resource</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Start Date <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bulk_delete_start_date" name="start_date" placeholder="Select start date" required readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>End Date <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bulk_delete_end_date" name="end_date" placeholder="Select end date" required readonly>
+                        </div>
+                        <div class="alert alert-warning mb-0" id="bulk_delete_warning" style="display: none;">
+                            <i class="la la-exclamation-triangle mr-2"></i>
+                            <span id="bulk_delete_warning_text"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="btn_confirm_bulk_delete">
+                        <i class="la la-trash"></i> Delete Shifts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Shift Modal -->
     <div class="modal fade" id="modal_add_shift" tabindex="-1" aria-hidden="true">

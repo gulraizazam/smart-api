@@ -162,6 +162,9 @@ function populateLocationDropdown(locations) {
 }
 
 function initEventHandlers() {
+    // Initialize bulk delete shifts
+    initBulkDeleteShifts();
+    
     // Location change
     $('#filter_location_id').on('change', function () {
         loadSchedule();
@@ -1951,4 +1954,119 @@ function formatDateForApi(date) {
 function getMonthName(monthIndex) {
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[monthIndex];
+}
+
+// Bulk Delete Shifts Functions
+function initBulkDeleteShifts() {
+    // Initialize datepickers for bulk delete modal
+    $('#bulk_delete_start_date, #bulk_delete_end_date').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
+    });
+    
+    // Open bulk delete modal
+    $('#btn_bulk_delete_shifts').on('click', function() {
+        var locationId = $('#filter_location_id').val();
+        if (!locationId) {
+            errorMessage('Please select a location first');
+            return;
+        }
+        
+        // Populate resource dropdown with current calendar resources
+        var $resourceSelect = $('#bulk_delete_resource_id');
+        $resourceSelect.empty().append('<option value="">Select Resource</option>');
+        
+        currentCalendarResources.forEach(function(resource) {
+            $resourceSelect.append('<option value="' + resource.id + '">' + resource.name + '</option>');
+        });
+        
+        // Reset form
+        $('#form_bulk_delete_shifts')[0].reset();
+        $('#bulk_delete_warning').hide();
+        
+        $('#modal_bulk_delete_shifts').modal('show');
+    });
+    
+    // Confirm bulk delete
+    $('#btn_confirm_bulk_delete').on('click', function() {
+        var resourceId = $('#bulk_delete_resource_id').val();
+        var startDate = $('#bulk_delete_start_date').val();
+        var endDate = $('#bulk_delete_end_date').val();
+        var locationId = $('#filter_location_id').val();
+        
+        if (!resourceId) {
+            errorMessage('Please select a resource');
+            return;
+        }
+        if (!startDate || !endDate) {
+            errorMessage('Please select both start and end dates');
+            return;
+        }
+        if (endDate < startDate) {
+            errorMessage('End date must be after start date');
+            return;
+        }
+        
+        var resourceName = $('#bulk_delete_resource_id option:selected').text();
+        
+        Swal.fire({
+            title: 'Delete Shifts?',
+            html: 'Are you sure you want to delete all shifts for <strong>' + resourceName + '</strong> from <strong>' + startDate + '</strong> to <strong>' + endDate + '</strong>?<br><br><span class="text-warning">This action cannot be undone.</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#F64E60',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete shifts',
+            cancelButtonText: 'Cancel'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                performBulkDelete(resourceId, locationId, startDate, endDate);
+            }
+        });
+    });
+}
+
+function performBulkDelete(resourceId, locationId, startDate, endDate) {
+    var $btn = $('#btn_confirm_bulk_delete');
+    $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i> Deleting...');
+    
+    $.ajax({
+        url: route('admin.schedule.bulk-delete-shifts'),
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        data: {
+            resource_id: resourceId,
+            location_id: locationId,
+            start_date: startDate,
+            end_date: endDate
+        },
+        success: function(response) {
+            $btn.prop('disabled', false).html('<i class="la la-trash"></i> Delete Shifts');
+            
+            if (response.status) {
+                $('#modal_bulk_delete_shifts').modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Deleted!',
+                    text: response.message,
+                    confirmButtonColor: '#3699FF'
+                });
+                // Reload the calendar
+                loadSchedule();
+            } else {
+                errorMessage(response.message || 'Failed to delete shifts');
+            }
+        },
+        error: function(xhr) {
+            $btn.prop('disabled', false).html('<i class="la la-trash"></i> Delete Shifts');
+            var message = 'An error occurred while deleting shifts';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            errorMessage(message);
+        }
+    });
 }
