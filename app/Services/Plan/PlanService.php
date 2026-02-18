@@ -2896,10 +2896,10 @@ class PlanService
      */
     protected function getMembershipDisplayForPackage(int $patientId): string
     {
-        // Fetch the latest membership (by id DESC) instead of first
+        // Fetch the latest assigned membership (by created_at DESC)
         $checkMembership = Membership::with('membershiptype')
             ->where('patient_id', $patientId)
-            ->orderBy('id', 'desc')
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$checkMembership) {
