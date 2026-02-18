@@ -112,6 +112,17 @@
                 display: flex;
                 flex-direction: column;
             }
+            .resource-doctor-column.no-rota-column {
+                background: #E4E6EF !important;
+            }
+            .resource-doctor-column.no-rota-column .resource-doctor-slot {
+                background: #E4E6EF !important;
+                cursor: not-allowed !important;
+            }
+            .resource-doctor-slot.no-rota-slot {
+                background: #E4E6EF !important;
+                cursor: not-allowed !important;
+            }
             .resource-doctor-slot {
                 height: 60px;
                 min-height: 60px;

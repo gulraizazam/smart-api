@@ -1182,7 +1182,14 @@ var TreatmentResourceCalendar = function() {
                 return;
             }
             
+            // Track which doctors have rotas for today
+            var doctorsWithRotas = {};
+            
             if (!rotasData || rotasData.length === 0) {
+                // No rotas at all - grey out all doctor columns
+                doctors.forEach(function(doctor) {
+                    $('.resource-doctor-column[data-doctor-id="' + doctor.id + '"]').addClass('no-rota-column');
+                });
                 return;
             }
 
@@ -1199,11 +1206,15 @@ var TreatmentResourceCalendar = function() {
 
             rotasData.forEach(function(rotaGroup) {
                 if (!rotaGroup.doctor_rotas || rotaGroup.doctor_rotas.length === 0) {
+                    // Mark this doctor as having no rotas
+                    var noRotaDoctorId = rotaGroup.external_id;
+                    $('.resource-doctor-column[data-doctor-id="' + noRotaDoctorId + '"]').addClass('no-rota-column');
                     return;
                 }
 
                 var doctorId = rotaGroup.external_id;
                 var doctorTimeOffs = timeOffsByDoctor[doctorId] || [];
+                var hasRotaForToday = false;
 
                 rotaGroup.doctor_rotas.forEach(function(rota) {
                     if (rota.active !== '1' && rota.active !== 1) {
@@ -1214,6 +1225,9 @@ var TreatmentResourceCalendar = function() {
                     if (!rotaDate.isSame(currentDate, 'day')) {
                         return;
                     }
+
+                    hasRotaForToday = true;
+                    doctorsWithRotas[doctorId] = true;
 
                     // Get time offs for this date
                     var dayTimeOffs = doctorTimeOffs.filter(function(to) {
@@ -1237,6 +1251,18 @@ var TreatmentResourceCalendar = function() {
                         }
                     });
                 });
+
+                // If doctor has rotas but none for today, grey out their column
+                if (!hasRotaForToday) {
+                    $('.resource-doctor-column[data-doctor-id="' + doctorId + '"]').addClass('no-rota-column');
+                }
+            });
+
+            // After processing all rotas, mark slots without has-rota class as no-rota-slot (grey)
+            $('.resource-doctor-slot').each(function() {
+                if (!$(this).hasClass('has-rota') && !$(this).hasClass('time-off-slot-no-label')) {
+                    $(this).addClass('no-rota-slot');
+                }
             });
         },
 
