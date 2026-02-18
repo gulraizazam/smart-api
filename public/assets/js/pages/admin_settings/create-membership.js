@@ -1155,6 +1155,10 @@ function setEditMembershipData(response) {
         // Populate membership items table with Sold By and Action columns
         let serviceOptions = '';
         let totalAmount = 0;
+        let locationId = data.package ? data.package.location_id : null;
+        
+        // Check if user has plans_edit permission from hidden field
+        let hasEditPermission = $('#edit_membership_has_edit_permission').val() === '1';
         
         if (packagebundles && packagebundles.length) {
             packagebundles.forEach(function(bundle) {
@@ -1185,12 +1189,23 @@ function setEditMembershipData(response) {
                 serviceOptions += '<td>' + number_format(bundle.tax_price, 2) + '</td>';
                 serviceOptions += '<td>' + number_format(bundle.tax_including_price, 2) + '</td>';
                 serviceOptions += '<td>' + soldByText + '</td>';
+                
+                // Add Actions column with pencil icon for editing sold by
+                if (hasEditPermission) {
+                    serviceOptions += '<td class="text-center">';
+                    serviceOptions += '<a href="javascript:void(0);" onclick="editMembershipSoldBy(' + bundle.id + ', ' + locationId + ');" class="btn btn-icon btn-light-primary btn-sm" title="Edit Sold By">';
+                    serviceOptions += '<i class="la la-pencil"></i>';
+                    serviceOptions += '</a>';
+                    serviceOptions += '</td>';
+                }
+                
                 serviceOptions += '</tr>';
                 
                 totalAmount += parseFloat(bundle.tax_including_price) || 0;
             });
         } else {
-            serviceOptions = '<tr><td colspan="6" class="text-center">No record found</td></tr>';
+            let colspan = hasEditPermission ? '7' : '6';
+            serviceOptions = '<tr><td colspan="' + colspan + '" class="text-center">No record found</td></tr>';
         }
         $('#edit_membership_services').html(serviceOptions);
         
@@ -1845,3 +1860,142 @@ function updateEditRemoveButtonsVisibility() {
         $('.edit-remove-document-btn').show();
     }
 }
+
+/*
+ * Function to edit sold_by for membership bundle
+ * Uses the same modal and functionality as plan type
+ */
+var membershipSoldByContext = null;
+
+function editMembershipSoldBy(packageBundleId, locationId) {
+    // Store context for callback
+    membershipSoldByContext = {
+        packageBundleId: packageBundleId,
+        locationId: locationId,
+        packageId: $('#edit_package_id_membership').val()
+    };
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.getsoldbydata'),
+        type: 'GET',
+        data: {
+            package_bundle_id: packageBundleId,
+            location_id: locationId
+        },
+        success: function(response) {
+            if (response.status) {
+                // Store all package service IDs
+                let serviceIds = response.data.package_services.map(service => service.id);
+                $('#package_service_id').val(serviceIds[0] || '');
+                $('#package_service_id').data('service-ids', serviceIds);
+                
+                // Mark that this is from membership edit modal
+                $('#package_service_id').data('from-membership', true);
+                $('#package_service_id').data('membership-package-id', membershipSoldByContext.packageId);
+
+                // Populate dropdown with users
+                let userOptions = '<option value="">Select</option>';
+                Object.entries(response.data.users).forEach(function([id, name]) {
+                    let selected = (parseInt(id) === parseInt(response.data.current_sold_by)) ? 'selected' : '';
+                    userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+                });
+                $('#sold_by_dropdown').html(userOptions);
+
+                // Show modal with proper z-index handling
+                $('#modal_edit_sold_by').modal({
+                    backdrop: 'static',
+                    keyboard: true
+                });
+
+                // Fix z-index for nested modal (membership edit modal is parent)
+                $('#modal_edit_sold_by').on('shown.bs.modal', function () {
+                    $(this).css('z-index', parseInt($('.modal-backdrop').css('z-index')) + 10);
+                });
+
+            } else {
+                toastr.error(response.message || 'Failed to load sold by data');
+            }
+        },
+        error: function(xhr) {
+            toastr.error('Failed to load sold by data');
+        }
+    });
+}
+
+/*
+ * Handle sold by update callback for membership modal
+ * This overrides the default page reload behavior
+ * NOTE: This handler must run BEFORE the one in create-plan.js
+ */
+$(document).on('click.membership', '#update_sold_by_btn', function(e) {
+    // Check if this is from membership edit modal
+    let fromMembership = $('#package_service_id').data('from-membership');
+    let membershipPackageId = $('#package_service_id').data('membership-package-id');
+    
+    if (fromMembership && membershipPackageId) {
+        e.preventDefault();
+        
+        let packageServiceIds = $('#package_service_id').data('service-ids');
+        let soldBy = $('#sold_by_dropdown').val();
+
+        // Validation
+        if (!soldBy) {
+            $('#sold_by_error').html('Please select sold by');
+            return false;
+        }
+
+        $('#sold_by_error').html('');
+        $(this).attr('disabled', true);
+
+        // Prepare data for update
+        let updateData = {
+            sold_by: soldBy
+        };
+
+        // If multiple services, send as array
+        if (packageServiceIds && Array.isArray(packageServiceIds)) {
+            updateData.package_services = packageServiceIds;
+        } else {
+            updateData.package_service_id = $('#package_service_id').val();
+        }
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.packages.updatesoldby'),
+            type: 'POST',
+            data: updateData,
+            success: function(response) {
+                $('#update_sold_by_btn').attr('disabled', false);
+                if (response.status) {
+                    // Close sold by modal
+                    $('#modal_edit_sold_by').modal('hide');
+                    $('#sold_by_error').html('');
+                    $('#package_service_id').val('');
+                    $('#package_service_id').removeData('service-ids');
+                    $('#package_service_id').removeData('from-membership');
+                    $('#package_service_id').removeData('membership-package-id');
+
+                    // Show success message and reload page
+                    toastr.success(response.message || 'Sold by updated successfully');
+
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    toastr.error(response.message || 'Failed to update sold by');
+                }
+            },
+            error: function(xhr) {
+                $('#update_sold_by_btn').attr('disabled', false);
+                toastr.error('Failed to update sold by');
+            }
+        });
+        
+        return false;
+    }
+});
