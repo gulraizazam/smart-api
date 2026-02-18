@@ -102,9 +102,6 @@ function createMembership(url, id) {
         $('#add_sold_by_membership').select2({
             dropdownParent: $('#modal_add_membership')
         });
-        $('#payment_mode_id_membership').select2({
-            dropdownParent: $('#modal_add_membership')
-        });
         // Initialize Code select2 with AJAX search
         initMembershipCodeSelect2();
     }, 100);
