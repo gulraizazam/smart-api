@@ -41,7 +41,7 @@
                             @if(Gate::allows('memberships_create'))
                                 <a href="javascript:void(0);" class="btn btn-success" data-toggle="modal" data-target="#modal_generate_codes">
                                     <i class="la la-layer-group"></i>
-                                    Generate Codes
+                                    Create Bulk Codes
                                 </a>
                             @endif
                             &nbsp;&nbsp;
