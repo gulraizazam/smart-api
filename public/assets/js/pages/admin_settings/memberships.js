@@ -108,10 +108,10 @@ function actions(data) {
                     Choose an action: \
                     </li>';
             
-            // Add view option for student memberships with assigned patients
-            if (data.is_student_membership && data.patient && data.patient !== 'N/A') {
+            // Add view option for all memberships with assigned patients
+            if (data.patient && data.patient !== 'N/A') {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="viewStudentVerification(' + id + ');" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="viewMembershipDetails(' + id + ', ' + data.is_student_membership + ');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye text-primary"></i></span>\
                         <span class="navi-text">View Details</span>\
                     </a>\
@@ -340,8 +340,8 @@ function addValidation(elem) {
     }
 }
 
-// View student verification details
-function viewStudentVerification(membershipId) {
+// View membership details (for both student and non-student memberships)
+function viewMembershipDetails(membershipId, isStudentMembership) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -362,73 +362,98 @@ function viewStudentVerification(membershipId) {
         success: function(response) {
             Swal.close();
             if (response.status) {
-                showStudentVerificationModal(response.data);
+                showMembershipDetailsModal(response.data, isStudentMembership);
             } else {
                 toastr.error(response.message || 'Failed to load details');
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
             Swal.close();
-            toastr.error('Failed to load student verification details');
+            toastr.error('Failed to load membership details');
         }
     });
 }
 
-function showStudentVerificationModal(data) {
+function showMembershipDetailsModal(data, isStudentMembership) {
     let membership = data.membership;
     let patient = data.patient;
     let verification = data.verification;
     let documents = data.documents || [];
     
-    // Build documents HTML
-    let documentsHtml = '';
-    if (documents.length > 0) {
-        documentsHtml = '<div class="row">';
-        documents.forEach(function(doc, index) {
-            let docUrl = '/storage/app/public/' + doc;
-            documentsHtml += `
-                <div class="col-md-6 col-sm-6 mb-3">
-                    <div class="card">
-                        <a href="${docUrl}" target="_blank">
-                            <img src="${docUrl}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Document ${index + 1}">
-                        </a>
-                        <div class="card-body p-2 text-center">
-                            <small class="text-muted">Document ${index + 1}</small>
-                            <br>
-                            <a href="${docUrl}" target="_blank" class="btn btn-sm btn-light-primary mt-1">
-                                <i class="la la-eye"></i> View
+    // Build documents HTML (only for student memberships)
+    let documentsSection = '';
+    if (isStudentMembership) {
+        let documentsHtml = '';
+        if (documents.length > 0) {
+            documentsHtml = '<div class="row">';
+            documents.forEach(function(doc, index) {
+                let docUrl = '/storage/app/public/' + doc;
+                documentsHtml += `
+                    <div class="col-md-6 col-sm-6 mb-3">
+                        <div class="card">
+                            <a href="${docUrl}" target="_blank">
+                                <img src="${docUrl}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Document ${index + 1}">
                             </a>
+                            <div class="card-body p-2 text-center">
+                                <small class="text-muted">Document ${index + 1}</small>
+                                <br>
+                                <a href="${docUrl}" target="_blank" class="btn btn-sm btn-light-primary mt-1">
+                                    <i class="la la-eye"></i> View
+                                </a>
+                            </div>
                         </div>
                     </div>
+                `;
+            });
+            documentsHtml += '</div>';
+        } else {
+            documentsHtml = '<div class="alert alert-light-warning">No documents uploaded</div>';
+        }
+        
+        // Build verification status badge
+        let verificationStatusBadge = '';
+        if (verification) {
+            let statusClass = verification.status === 'approved' ? 'success' : (verification.status === 'rejected' ? 'danger' : 'warning');
+            verificationStatusBadge = `<span class="label label-lg label-light-${statusClass} label-inline">${verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}</span>`;
+        } else {
+            verificationStatusBadge = '<span class="label label-lg label-light-secondary label-inline">No Verification Record</span>';
+        }
+        
+        documentsSection = `
+            <!-- Verification Documents -->
+            <div class="card card-custom gutter-b">
+                <div class="card-header py-3">
+                    <div class="card-title">
+                        <h3 class="card-label"><i class="la la-file-image text-primary"></i> Verification Documents</h3>
+                    </div>
+                    <div class="card-toolbar">
+                        ${verificationStatusBadge}
+                    </div>
                 </div>
-            `;
-        });
-        documentsHtml += '</div>';
-    } else {
-        documentsHtml = '<div class="alert alert-light-warning">No documents uploaded</div>';
-    }
-    
-    // Build verification status badge
-    let verificationStatusBadge = '';
-    if (verification) {
-        let statusClass = verification.status === 'approved' ? 'success' : (verification.status === 'rejected' ? 'danger' : 'warning');
-        verificationStatusBadge = `<span class="label label-lg label-light-${statusClass} label-inline">${verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}</span>`;
-    } else {
-        verificationStatusBadge = '<span class="label label-lg label-light-secondary label-inline">No Verification Record</span>';
+                <div class="card-body">
+                    ${documentsHtml}
+                    ${verification && verification.submitted_at ? '<small class="text-muted">Submitted: ' + verification.submitted_at + '</small>' : ''}
+                </div>
+            </div>
+        `;
     }
     
     // Build membership status badge
-    let membershipStatusClass = membership.status === 'Active' ? 'success' : 'danger';
+    let membershipStatusClass = membership.status === 'Active' ? 'success' : (membership.status === 'Inactive' ? 'warning' : 'danger');
     let membershipStatusBadge = `<span class="label label-lg label-light-${membershipStatusClass} label-inline">${membership.status}</span>`;
     
+    // Modal title based on membership type
+    let modalTitle = isStudentMembership ? 'Student Membership Details' : 'Membership Details';
+    let modalIcon = isStudentMembership ? 'la-user-graduate' : 'la-id-card';
+    
     let modalContent = `
-        <div class="modal fade" id="modal_student_verification" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="modal_membership_details" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="la la-user-graduate text-primary"></i>
-                            Student Membership Details
+                            <i class="la ${modalIcon} text-primary"></i>
+                            ${modalTitle}
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <i aria-hidden="true" class="ki ki-close"></i>
@@ -499,21 +524,7 @@ function showStudentVerificationModal(data) {
                             </div>
                         </div>
                         
-                        <!-- Verification Documents -->
-                        <div class="card card-custom gutter-b">
-                            <div class="card-header py-3">
-                                <div class="card-title">
-                                    <h3 class="card-label"><i class="la la-file-image text-primary"></i> Verification Documents</h3>
-                                </div>
-                                <div class="card-toolbar">
-                                    ${verificationStatusBadge}
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                ${documentsHtml}
-                                ${verification && verification.submitted_at ? '<small class="text-muted">Submitted: ' + verification.submitted_at + '</small>' : ''}
-                            </div>
-                        </div>
+                        ${documentsSection}
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
@@ -524,14 +535,14 @@ function showStudentVerificationModal(data) {
     `;
     
     // Remove existing modal if any
-    $('#modal_student_verification').remove();
+    $('#modal_membership_details').remove();
     
     // Append and show modal
     $('body').append(modalContent);
-    $('#modal_student_verification').modal('show');
+    $('#modal_membership_details').modal('show');
     
     // Clean up on close
-    $('#modal_student_verification').on('hidden.bs.modal', function () {
+    $('#modal_membership_details').on('hidden.bs.modal', function () {
         $(this).remove();
     });
 }
