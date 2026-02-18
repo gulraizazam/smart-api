@@ -54,6 +54,7 @@ class ResourceTimeOff extends Model
     public function getTypeLabelAttribute(): string
     {
         $types = [
+            'time_off' => 'Time Off',
             'annual_leave' => 'Annual Leave',
             'sick_leave' => 'Sick Leave',
             'personal_leave' => 'Personal Leave',

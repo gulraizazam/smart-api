@@ -610,7 +610,7 @@ class ScheduleController extends Controller
     {
         $resourceId = $request->input('resource_id');
         $locationId = $request->input('location_id');
-        $type = $request->input('type', 'annual_leave');
+        $type = $request->input('type', 'time_off');
         $startDate = $request->input('start_date');
         $startTime = $request->input('start_time');
         $endTime = $request->input('end_time');
