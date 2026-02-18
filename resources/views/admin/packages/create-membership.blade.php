@@ -165,7 +165,31 @@
                 </table>
             </div>
 
-            <!-- Student Membership Document Upload Section -->
+            <div class="form-group">
+                <div class="row">
+                    <div class="fv-row col-md-3 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
+                        <input type="text" readonly oninput="phoneField(this)" id="package_total_membership" class="form-control" value="0" name="package_total_membership">
+                    </div>
+                    <div class="fv-row col-md-3 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
+                        <select id="payment_mode_id_membership" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id_membership">
+                            <option value="">Select Payment Mode</option>
+                        </select>
+                    </div>
+                    <div class="fv-row col-md-3 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
+                        <input type="number" id="cash_amount_membership" class="form-control" placeholder="Enter Amount" name="cash_amount_membership" disabled min="0">
+                        <small class="text-danger ml-1 mt-1"><b id="cash_amount_membership_error" class="create-membership-error"></b></small>
+                    </div>
+                    <div class="fv-row col-md-3 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
+                        <input type="text" readonly min="0" name="total_price_membership" value="0" class="form-control" id="grand_total_membership">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Membership Document Upload Section (moved below payment fields) -->
             <div id="student_document_section" class="card card-custom mt-3" style="display: none;">
                 <div class="card-header py-2">
                     <h3 class="card-title fs-6">
@@ -216,30 +240,6 @@
                             Add Document
                         </button>
                         <small class="text-muted ms-2" id="document_count_text">1 of 4</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="row">
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
-                        <input type="text" readonly oninput="phoneField(this)" id="package_total_membership" class="form-control" value="0" name="package_total_membership">
-                    </div>
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                        <select id="payment_mode_id_membership" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id_membership">
-                            <option value="">Select Payment Mode</option>
-                        </select>
-                    </div>
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                        <input type="number" id="cash_amount_membership" class="form-control" placeholder="Enter Amount" name="cash_amount_membership" disabled min="0">
-                        <small class="text-danger ml-1 mt-1"><b id="cash_amount_membership_error" class="create-membership-error"></b></small>
-                    </div>
-                    <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
-                        <input type="text" readonly min="0" name="total_price_membership" value="0" class="form-control" id="grand_total_membership">
                     </div>
                 </div>
             </div>

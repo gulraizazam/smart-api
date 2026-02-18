@@ -1519,6 +1519,16 @@ $(document).on('click', '#add_document_btn', function() {
     updateRemoveButtonsVisibility();
 });
 
+// Close Select2 dropdowns when clicking on student document section
+$(document).on('click', '#student_document_section', function(e) {
+    // Close all Select2 dropdowns in the modal
+    $('#modal_add_membership select').each(function() {
+        if ($(this).data('select2')) {
+            $(this).select2('close');
+        }
+    });
+});
+
 // Remove document upload field
 $(document).on('click', '.remove-document-btn', function() {
     var index = $(this).data('index');
