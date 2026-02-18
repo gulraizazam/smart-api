@@ -822,8 +822,7 @@ class PlanService
                 ];
             }
 
-            // Get membership information - prioritize active (non-expired) memberships first
-            // Order by: active non-expired first, then by end_date descending
+            // Get membership information - always pick the latest assigned active membership
             $membership = DB::table('memberships')
                 ->join('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
                 ->where('memberships.patient_id', $patientId)
@@ -833,7 +832,7 @@ class PlanService
                     'membership_types.name as type_name'
                 )
                 ->orderByRaw("CASE WHEN memberships.end_date >= ? AND memberships.active = 1 THEN 0 ELSE 1 END", [now()->format('Y-m-d')])
-                ->orderBy('memberships.end_date', 'desc')
+                ->orderBy('memberships.created_at', 'desc')
                 ->first();
 
             $membershipTypeName = 'No membership';
