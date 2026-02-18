@@ -189,24 +189,36 @@ class ConsultancyUpdateService
 
         // Use same approach as Resources::getResourceRotaHasDay() - directly check rota_days by date
         // This doesn't rely on start/end columns of resource_has_rota which may be inconsistent
-        $rotaDay = \App\Models\ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota_days.resource_has_rota_id', '=', 'resource_has_rota.id')
+        // Get ALL shifts for the doctor on this date (doctor may have multiple shifts)
+        $rotaDays = \App\Models\ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota_days.resource_has_rota_id', '=', 'resource_has_rota.id')
             ->whereDate('resource_has_rota_days.date', $date)
             ->where('resource_has_rota.resource_id', $resource->id)
             ->where('resource_has_rota_days.active', 1)
             ->select('resource_has_rota_days.*')
-            ->first();
+            ->get();
 
-        if (!$rotaDay) {
+        if ($rotaDays->isEmpty()) {
             throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date.');
         }
 
-        // Validate scheduled time is within rota hours
+        // Validate scheduled time is within ANY of the rota shifts
         $scheduledTimeCarbon = Carbon::parse($scheduledTime);
-        $rotaStartTime = Carbon::parse($rotaDay->start_time);
-        $rotaEndTime = Carbon::parse($rotaDay->end_time);
+        $isWithinAnyShift = false;
+        $allShiftRanges = [];
 
-        if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
-            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours (' . $rotaStartTime->format('h:i A') . ' - ' . $rotaEndTime->format('h:i A') . ').');
+        foreach ($rotaDays as $rotaDay) {
+            $rotaStartTime = Carbon::parse($rotaDay->start_time);
+            $rotaEndTime = Carbon::parse($rotaDay->end_time);
+            $allShiftRanges[] = $rotaStartTime->format('h:i A') . ' - ' . $rotaEndTime->format('h:i A');
+
+            if ($scheduledTimeCarbon->gte($rotaStartTime) && $scheduledTimeCarbon->lte($rotaEndTime)) {
+                $isWithinAnyShift = true;
+                break;
+            }
+        }
+
+        if (!$isWithinAnyShift) {
+            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours (' . implode(', ', $allShiftRanges) . ').');
         }
 
         // Check for time offs - block scheduling during doctor's time off
