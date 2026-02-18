@@ -387,10 +387,10 @@ function showStudentVerificationModal(data) {
         documents.forEach(function(doc, index) {
             let docUrl = '/storage/app/public/' + doc;
             documentsHtml += `
-                <div class="col-md-3 col-sm-6 mb-3">
+                <div class="col-md-6 col-sm-6 mb-3">
                     <div class="card">
                         <a href="${docUrl}" target="_blank">
-                            <img src="${docUrl}" class="card-img-top" style="height: 120px; object-fit: cover;" alt="Document ${index + 1}">
+                            <img src="${docUrl}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Document ${index + 1}">
                         </a>
                         <div class="card-body p-2 text-center">
                             <small class="text-muted">Document ${index + 1}</small>
