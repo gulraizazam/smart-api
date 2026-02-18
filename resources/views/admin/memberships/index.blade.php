@@ -38,15 +38,14 @@
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
                             
-                            @if(Gate::allows('memberships_import'))
-                                <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_memberships" class="btn btn-primary pull-right margin-r-5">
-                                    <i class="fa fa-upload"></i>
-                                    <span class="hidden-xs"> Import </span>
+                            @if(Gate::allows('memberships_create'))
+                                <a href="javascript:void(0);" class="btn btn-success" data-toggle="modal" data-target="#modal_generate_codes">
+                                    <i class="la la-layer-group"></i>
+                                    Generate Codes
                                 </a>
                             @endif
                             &nbsp;&nbsp;
                           
-                            &nbsp;&nbsp;
                             @if(Gate::allows('memberships_create'))
                                 <a href="javascript:void(0);" id="create_memberships" onclick="createMembership('{{ route('admin.memberships.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_memberships">
                                     <i class="la la-plus"></i>
@@ -126,6 +125,14 @@
 
             @include('admin.memberships.import')
 
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_generate_codes" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            @include('admin.memberships_types.generate-codes-modal')
         </div>
         <!--end::Modal dialog-->
     </div>

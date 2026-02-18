@@ -437,7 +437,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::get('packages/getgrandtotal_update', [PackagesController::class, 'getgrandtotal_update'])->name('packages.getgrandtotal_update');
 
-    Route::get('packages/savepackages', [PackagesController::class, 'savepackages'])->name('packages.savepackages');
+    Route::post('packages/savepackages', [PackagesController::class, 'savepackages'])->name('packages.savepackages');
 
     Route::get('packages/updatepackages', [PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
 
@@ -455,6 +455,12 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/searchmembershipcodes', [PackagesController::class, 'searchMembershipCodes'])->name('packages.searchmembershipcodes');
     Route::post('packages/savemembership_service', [PackagesController::class, 'savemembership_service'])->name('packages.savemembership_service');
     Route::post('packages/update_membership_plan', [PackagesController::class, 'updateMembershipPlan'])->name('packages.update_membership_plan');
+
+    // Membership Code Generation Routes
+    Route::post('membership-codes/generate', [\App\Http\Controllers\Api\MembershipCodeController::class, 'generateCodes'])->name('membership-codes.generate');
+    Route::post('membership-codes/preview', [\App\Http\Controllers\Api\MembershipCodeController::class, 'previewCodes'])->name('membership-codes.preview');
+    Route::get('membership-codes/available', [\App\Http\Controllers\Api\MembershipCodeController::class, 'getAvailableCodes'])->name('membership-codes.available');
+    Route::get('membership-codes/search', [\App\Http\Controllers\Api\MembershipCodeController::class, 'searchCodes'])->name('membership-codes.search');
 
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 

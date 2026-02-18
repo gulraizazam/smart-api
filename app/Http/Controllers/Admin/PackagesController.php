@@ -367,6 +367,8 @@ class PackagesController extends Controller
             $paymentModeId = $request->payment_mode_id;
             $cashAmount = floatval($request->cash_amount ?? 0);
             $grandTotal = floatval($request->grand_total ?? 0);
+            $isStudentMembership = $request->is_student_membership === '1';
+            $membershipTypeId = $request->membership_type_id;
 
             if (!$packageId) {
                 return ApiHelper::apiResponse($this->error, 'Package ID is required', false);
@@ -378,13 +380,127 @@ class PackagesController extends Controller
             }
 
             // Check if service is already consumed
-            $isConsumed = PackageService::where('package_id', $packageId)
+            $isAlreadyConsumed = PackageService::where('package_id', $packageId)
                 ->where('is_consumed', 1)
                 ->exists();
 
-            // If payment mode and cash amount provided, create payment entry
+            // Get package bundle info
+            $packageBundle = PackageBundles::where('package_id', $packageId)
+                ->whereNotNull('membership_code_id')
+                ->first();
+
+            // Track changes
+            $paymentAdded = false;
+            $documentsUploaded = false;
+            $membershipConsumed = false;
+            $messages = [];
+
+            // ========================================
+            // STEP 1: Handle document uploads and check student membership
+            // ========================================
+            $hasNewDocuments = false;
+            $hasStudentDocuments = false;
+            
+            // Also check from database if this is a student membership (in case frontend doesn't pass it)
+            $studentVerificationService = app(\App\Services\Membership\StudentVerificationService::class);
+            if (!$isStudentMembership && $packageBundle && $packageBundle->membership_type_id) {
+                $isStudentMembership = $studentVerificationService->isStudentMembership($packageBundle->membership_type_id);
+            }
+            
+            \Log::info('Edit membership - document check', [
+                'is_student_membership_param' => $request->is_student_membership,
+                'is_student_membership' => $isStudentMembership,
+                'has_files' => $request->hasFile('student_documents'),
+                'membership_type_id_from_bundle' => $packageBundle ? $packageBundle->membership_type_id : null
+            ]);
+            
+            if ($isStudentMembership) {
+                // Get existing verification record
+                $existingVerification = \App\Models\StudentVerification::where('package_id', $packageId)->first();
+                $existingDocPaths = $existingVerification ? ($existingVerification->document_paths ?? []) : [];
+                
+                // Handle document removal
+                $documentsToRemove = $request->documents_to_remove ? json_decode($request->documents_to_remove, true) : [];
+                if (!empty($documentsToRemove)) {
+                    foreach ($documentsToRemove as $docPath) {
+                        // Remove from existing paths array
+                        $existingDocPaths = array_filter($existingDocPaths, function($path) use ($docPath) {
+                            return $path !== $docPath;
+                        });
+                        // Delete file from storage
+                        $fullPath = storage_path('app/public/' . $docPath);
+                        if (file_exists($fullPath)) {
+                            unlink($fullPath);
+                        }
+                    }
+                    $existingDocPaths = array_values($existingDocPaths); // Re-index array
+                    $messages[] = count($documentsToRemove) . ' document(s) removed';
+                    
+                    \Log::info('Documents removed', [
+                        'package_id' => $packageId,
+                        'removed_count' => count($documentsToRemove),
+                        'remaining_count' => count($existingDocPaths)
+                    ]);
+                }
+                
+                // Store new documents IMMEDIATELY
+                $documents = $request->file('student_documents', []);
+                $newStoredPaths = $this->storeStudentDocumentsImmediately($documents);
+                $hasNewDocuments = !empty($newStoredPaths);
+                
+                // Merge existing (after removal) with new documents
+                $allDocumentPaths = array_merge($existingDocPaths, $newStoredPaths);
+                
+                \Log::info('Student membership - document processing', [
+                    'existing_after_removal' => count($existingDocPaths),
+                    'new_uploaded' => count($newStoredPaths),
+                    'total_documents' => count($allDocumentPaths)
+                ]);
+                
+                // Update or create verification record
+                if (!empty($allDocumentPaths)) {
+                    $membershipCodeId = $packageBundle ? $packageBundle->membership_code_id : null;
+                    
+                    if ($existingVerification) {
+                        // Update existing record
+                        $existingVerification->update([
+                            'document_paths' => $allDocumentPaths,
+                        ]);
+                    } else {
+                        // Create new record
+                        $studentVerificationService->createVerificationRecord([
+                            'patient_id' => $patientId,
+                            'membership_id' => $membershipCodeId,
+                            'membership_type_id' => $membershipTypeId ?: ($packageBundle ? $packageBundle->membership_type_id : null),
+                            'package_id' => $packageId,
+                            'document_paths' => $allDocumentPaths,
+                        ]);
+                    }
+                    
+                    if ($hasNewDocuments) {
+                        $documentsUploaded = true;
+                        $messages[] = count($newStoredPaths) . ' document(s) uploaded';
+                    }
+                } elseif ($existingVerification && empty($allDocumentPaths)) {
+                    // All documents removed - delete the verification record
+                    $existingVerification->delete();
+                    \Log::info('Verification record deleted - no documents remaining', ['package_id' => $packageId]);
+                }
+                
+                // Check if student membership has documents
+                $hasStudentDocuments = !empty($allDocumentPaths);
+                
+                \Log::info('Student membership - final document status', [
+                    'has_documents' => $hasStudentDocuments,
+                    'document_count' => count($allDocumentPaths)
+                ]);
+            }
+
+            // ========================================
+            // STEP 2: Handle payment (if provided)
+            // ========================================
             if ($paymentModeId && $cashAmount > 0) {
-                // Update package's updated_at when payment is added
+                // Update package's updated_at
                 Packages::where('id', $packageId)->update(['updated_at' => Filters::getCurrentTimeStamp()]);
                 
                 $packageAdvanceData = [
@@ -403,96 +519,148 @@ class PackagesController extends Controller
                 ];
 
                 PackageAdvances::createRecord($packageAdvanceData, $package);
+                $paymentAdded = true;
+                $messages[] = 'Payment recorded';
+                
+                \Log::info('Payment added in edit', [
+                    'package_id' => $packageId,
+                    'cash_amount' => $cashAmount,
+                    'grand_total_after' => $grandTotal
+                ]);
+            }
 
-                // If remaining is 0 or less AND service is not already consumed, mark as consumed and update membership
-                if ($grandTotal <= 0 && !$isConsumed) {
-                    // Get package bundles to find membership info
-                    $packageBundle = PackageBundles::where('package_id', $packageId)
-                        ->whereNotNull('membership_code_id')
-                        ->first();
+            // ========================================
+            // STEP 3: Calculate if fully paid (after this payment)
+            // ========================================
+            $packageTotal = PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
+            $totalCashIn = PackageAdvances::where('package_id', $packageId)
+                ->where('cash_flow', 'in')
+                ->where('is_cancel', 0)
+                ->sum('cash_amount');
+            $isFullyPaid = $totalCashIn >= $packageTotal;
 
-                    if ($packageBundle) {
-                        // Update package_services to mark as consumed
-                        PackageService::where('package_id', $packageId)
-                            ->where('package_bundle_id', $packageBundle->id)
-                            ->update([
-                                'is_consumed' => 1,
-                                'consumed_at' => Filters::getCurrentTimeStamp(),
-                            ]);
+            \Log::info('Edit membership - payment status', [
+                'package_id' => $packageId,
+                'package_total' => $packageTotal,
+                'total_cash_in' => $totalCashIn,
+                'is_fully_paid' => $isFullyPaid,
+                'is_student' => $isStudentMembership,
+                'has_documents' => $hasStudentDocuments,
+                'is_already_consumed' => $isAlreadyConsumed
+            ]);
 
-                        // Update membership record with patient and dates
-                        $membershipCodeId = $packageBundle->membership_code_id;
-                        if ($membershipCodeId) {
-                            $membershipRecord = Membership::find($membershipCodeId);
-                            if ($membershipRecord) {
-                                $membershipType = MembershipType::find($packageBundle->membership_type_id);
-                                $durationDays = $membershipType->period ?? 365;
+            // ========================================
+            // STEP 4: Determine if membership should be consumed
+            // ========================================
+            // For student membership: consume only if fully paid AND has documents
+            // For non-student membership: consume if fully paid
+            $shouldConsume = false;
+            
+            if (!$isAlreadyConsumed && $isFullyPaid) {
+                if ($isStudentMembership) {
+                    $shouldConsume = $hasStudentDocuments;
+                } else {
+                    $shouldConsume = true;
+                }
+            }
 
-                                $startDate = now()->toDateString();
-                                $endDate = now()->addDays($durationDays)->toDateString();
+            // ========================================
+            // STEP 5: Consume membership if conditions met
+            // ========================================
+            if ($shouldConsume && $packageBundle) {
+                // Update package_services to mark as consumed
+                PackageService::where('package_id', $packageId)
+                    ->where('package_bundle_id', $packageBundle->id)
+                    ->update([
+                        'is_consumed' => 1,
+                        'consumed_at' => Filters::getCurrentTimeStamp(),
+                    ]);
 
-                                $membershipRecord->update([
-                                    'patient_id' => $patientId,
-                                    'start_date' => $startDate,
-                                    'end_date' => $endDate,
-                                    'assigned_at' => now()->toDateString(),
-                                    'updated_by' => Auth::id(),
-                                ]);
-                            }
-                        }
+                // Update membership record with patient and dates
+                $membershipCodeId = $packageBundle->membership_code_id;
+                if ($membershipCodeId) {
+                    $membershipRecord = Membership::find($membershipCodeId);
+                    if ($membershipRecord) {
+                        $membershipType = MembershipType::find($packageBundle->membership_type_id);
+                        $durationDays = $membershipType->period ?? 365;
 
-                        // Create 'out' payment entries for settled amount
-                        $taxExclusiveTotal = $packageBundle->tax_exclusive_net_amount;
-                        $taxTotal = $packageBundle->tax_price;
+                        $startDate = now()->toDateString();
+                        $endDate = now()->addDays($durationDays)->toDateString();
 
-                        $settlePaymentMode = PaymentModes::where('name', 'Settle Amount')->first();
-                        $settlePaymentModeId = $settlePaymentMode ? $settlePaymentMode->id : null;
-
-                        // First 'out' entry: Tax exclusive amount
-                        PackageAdvances::create([
-                            'cash_flow' => 'out',
-                            'cash_amount' => $taxExclusiveTotal,
-                            'account_id' => Auth::user()->account_id,
+                        $membershipRecord->update([
                             'patient_id' => $patientId,
-                            'payment_mode_id' => $settlePaymentModeId,
-                            'created_by' => Auth::user()->id,
-                            'updated_by' => Auth::user()->id,
-                            'package_id' => $packageId,
-                            'location_id' => $locationId,
-                            'is_setteled' => 0,
-                            'is_tax' => 0,
-                            'created_at' => Filters::getCurrentTimeStamp(),
-                            'updated_at' => Filters::getCurrentTimeStamp(),
+                            'start_date' => $startDate,
+                            'end_date' => $endDate,
+                            'assigned_at' => now()->toDateString(),
+                            'updated_by' => Auth::id(),
                         ]);
-
-                        // Second 'out' entry: Tax amount
-                        if ($taxTotal > 0) {
-                            PackageAdvances::create([
-                                'cash_flow' => 'out',
-                                'cash_amount' => $taxTotal,
-                                'account_id' => Auth::user()->account_id,
-                                'patient_id' => $patientId,
-                                'payment_mode_id' => $settlePaymentModeId,
-                                'created_by' => Auth::user()->id,
-                                'updated_by' => Auth::user()->id,
-                                'package_id' => $packageId,
-                                'location_id' => $locationId,
-                                'is_setteled' => 0,
-                                'is_tax' => 1,
-                                'created_at' => Filters::getCurrentTimeStamp(),
-                                'updated_at' => Filters::getCurrentTimeStamp(),
-                            ]);
-                        }
+                        
+                        \Log::info('Membership consumed in edit', [
+                            'membership_code_id' => $membershipCodeId,
+                            'patient_id' => $patientId
+                        ]);
                     }
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Payment added successfully', true);
+                // Create 'out' payment entries for settled amount
+                $taxExclusiveTotal = $packageBundle->tax_exclusive_net_amount;
+                $taxTotal = $packageBundle->tax_price;
+
+                $settlePaymentMode = PaymentModes::where('name', 'Settle Amount')->first();
+                $settlePaymentModeId = $settlePaymentMode ? $settlePaymentMode->id : null;
+
+                PackageAdvances::create([
+                    'cash_flow' => 'out',
+                    'cash_amount' => $taxExclusiveTotal,
+                    'account_id' => Auth::user()->account_id,
+                    'patient_id' => $patientId,
+                    'payment_mode_id' => $settlePaymentModeId,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
+                    'package_id' => $packageId,
+                    'location_id' => $locationId,
+                    'is_setteled' => 0,
+                    'is_tax' => 0,
+                    'created_at' => Filters::getCurrentTimeStamp(),
+                    'updated_at' => Filters::getCurrentTimeStamp(),
+                ]);
+
+                if ($taxTotal > 0) {
+                    PackageAdvances::create([
+                        'cash_flow' => 'out',
+                        'cash_amount' => $taxTotal,
+                        'account_id' => Auth::user()->account_id,
+                        'patient_id' => $patientId,
+                        'payment_mode_id' => $settlePaymentModeId,
+                        'created_by' => Auth::user()->id,
+                        'updated_by' => Auth::user()->id,
+                        'package_id' => $packageId,
+                        'location_id' => $locationId,
+                        'is_setteled' => 0,
+                        'is_tax' => 1,
+                        'created_at' => Filters::getCurrentTimeStamp(),
+                        'updated_at' => Filters::getCurrentTimeStamp(),
+                    ]);
+                }
+
+                $membershipConsumed = true;
+                $messages[] = 'Membership activated';
+            }
+
+            // ========================================
+            // STEP 6: Return appropriate response
+            // ========================================
+            if ($paymentAdded || $documentsUploaded || $membershipConsumed) {
+                $message = implode(', ', $messages);
+                return ApiHelper::apiResponse($this->success, $message, true);
             }
 
             return ApiHelper::apiResponse($this->success, 'No changes made', true);
 
         } catch (\Exception $e) {
-            \Log::error('Update Membership Plan Error: ' . $e->getMessage());
+            \Log::error('Update Membership Plan Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return ApiHelper::apiResponse($this->error, 'Failed to update membership: ' . $e->getMessage(), false);
         }
     }
@@ -623,6 +791,7 @@ class PackagesController extends Controller
             if ($membership) {
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'net_amount' => (float) $membership->amount,
+                    'membership_name' => $membership->name,
                 ]);
             }
 
@@ -649,7 +818,8 @@ class PackagesController extends Controller
             }
 
             $query = Membership::where('code', 'like', '%' . $search . '%')
-                ->where('active', 1);
+                ->where('active', 1)
+                ->whereNull('patient_id'); // Exclude codes already assigned/reserved to a patient
 
             // Filter by membership_type_id if provided
             // Also include codes from parent membership type if this is a renewal (child) type
@@ -1463,7 +1633,22 @@ class PackagesController extends Controller
     public function savepackages(Request $request)
     {
         try {
-            $result = $this->planService->savePlanPackage($request->all());
+            // IMPORTANT: Store student documents IMMEDIATELY at the start of the request
+            // before any other processing can consume/delete the temp files
+            $storedDocumentPaths = [];
+            if ($request->hasFile('student_documents')) {
+                $storedDocumentPaths = $this->storeStudentDocumentsImmediately($request->file('student_documents'));
+                \Log::info('Documents stored at controller entry', [
+                    'count' => count($storedDocumentPaths),
+                    'paths' => $storedDocumentPaths
+                ]);
+            }
+            
+            // Pass the full request object and pre-stored document paths
+            $data = $request->all();
+            $data['pre_stored_document_paths'] = $storedDocumentPaths;
+            
+            $result = $this->planService->savePlanPackage($data, $request);
             
             return response()->json($result);
         } catch (PlanException $e) {
@@ -1476,8 +1661,54 @@ class PackagesController extends Controller
             \Log::error('Save Packages Error: ' . $e->getMessage());
             return response()->json([
                 'status' => false,
+                'message' => 'An error occurred while saving the package'
             ]);
         }
+    }
+    
+    /**
+     * Store student documents immediately to prevent temp file loss
+     */
+    private function storeStudentDocumentsImmediately($documents): array
+    {
+        $storedPaths = [];
+        
+        if (empty($documents)) {
+            return $storedPaths;
+        }
+        
+        // Ensure the directory exists
+        $storagePath = storage_path('app/public/student_verifications');
+        if (!file_exists($storagePath)) {
+            mkdir($storagePath, 0755, true);
+        }
+        
+        foreach ($documents as $index => $document) {
+            if ($document instanceof \Illuminate\Http\UploadedFile && $document->isValid()) {
+                try {
+                    $extension = $document->getClientOriginalExtension() ?: 'jpg';
+                    $filename = 'student_doc_' . time() . '_' . $index . '_' . uniqid() . '.' . $extension;
+                    
+                    // Move the file immediately
+                    $document->move($storagePath, $filename);
+                    
+                    $path = 'student_verifications/' . $filename;
+                    $storedPaths[] = $path;
+                    
+                    \Log::info('Document stored immediately', [
+                        'path' => $path,
+                        'original_name' => $document->getClientOriginalName()
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to store document immediately', [
+                        'index' => $index,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
+        
+        return $storedPaths;
     }
 
     /**

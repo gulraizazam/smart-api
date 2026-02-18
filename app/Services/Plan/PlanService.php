@@ -1432,7 +1432,7 @@ class PlanService
      * @return array
      * @throws PlanException
      */
-    public function savePlanPackage(array $data): array
+    public function savePlanPackage(array $data, $request = null): array
     {
         DB::beginTransaction();
         
@@ -1455,17 +1455,113 @@ class PlanService
                 $remaining = $total - $cashAmount;
                 $isFullyPaid = $remaining <= 0;
                 
-                $this->storeMembershipData($package, $data, $isFullyPaid);
+                // Check if this is student membership and handle documents
+                $hasStudentDocuments = false;
+                $isStudentMembership = false;
+                
+                // Decode package_memberships if it's a JSON string (from FormData)
+                $packageMemberships = $data['package_memberships'];
+                if (is_string($packageMemberships)) {
+                    $packageMemberships = json_decode($packageMemberships, true);
+                }
+                
+                \Log::info('Membership data check', [
+                    'has_request' => $request !== null,
+                    'has_package_memberships' => !empty($packageMemberships),
+                    'membership_id_set' => isset($packageMemberships[0]['membershipId']),
+                    'cash_amount' => $data['cash_amount'] ?? 'not set'
+                ]);
+                
+                if ($request && isset($packageMemberships[0]['membershipId'])) {
+                    $membershipTypeId = $packageMemberships[0]['membershipId'];
+                    $studentVerificationService = app(\App\Services\Membership\StudentVerificationService::class);
+                    
+                    $isStudentCheck = $studentVerificationService->isStudentMembership($membershipTypeId);
+                    \Log::info('Checking membership type', [
+                        'membership_type_id' => $membershipTypeId,
+                        'is_student' => $isStudentCheck
+                    ]);
+                    
+                    if ($isStudentCheck) {
+                        $isStudentMembership = true;
+                        
+                        // Use pre-stored document paths from controller (stored at request entry)
+                        $storedDocumentPaths = $data['pre_stored_document_paths'] ?? [];
+                        $hasStudentDocuments = !empty($storedDocumentPaths);
+                        
+                        \Log::info('Student membership detected', [
+                            'is_fully_paid' => $isFullyPaid,
+                            'documents_count' => count($storedDocumentPaths),
+                            'has_valid_documents' => $hasStudentDocuments,
+                            'stored_paths' => $storedDocumentPaths,
+                            'should_consume' => $isFullyPaid && $hasStudentDocuments
+                        ]);
+                        
+                        // Student Membership Logic:
+                        // Case 1: Full payment + Documents = CONSUME membership
+                        // Case 2: Partial payment + Documents = DON'T consume (save records only)
+                        // Case 3: Full payment + NO documents = DON'T consume (save records only)
+                        $shouldConsume = $isFullyPaid && $hasStudentDocuments;
+                        
+                        $this->storeMembershipData($package, $data, $shouldConsume);
+                        
+                        // Create student verification record with already-stored document paths
+                        if ($hasStudentDocuments) {
+                            $membershipCodeId = $packageMemberships[0]['membershipCodeId'] ?? null;
+                            $studentVerificationService->createVerificationRecord([
+                                'patient_id' => $data['patient_id'],
+                                'membership_id' => $membershipCodeId,
+                                'membership_type_id' => $membershipTypeId,
+                                'package_id' => $package->id,
+                                'document_paths' => $storedDocumentPaths,
+                            ]);
+                        }
+                    } else {
+                        // Non-student membership: consume if fully paid, reserve if partial payment
+                        \Log::info('Non-student membership', [
+                            'membership_type_id' => $membershipTypeId,
+                            'is_fully_paid' => $isFullyPaid,
+                            'action' => $isFullyPaid ? 'consume' : 'reserve'
+                        ]);
+                        $this->storeMembershipData($package, $data, $isFullyPaid);
+                    }
+                } else {
+                    // No request object or membership info: consume normally if fully paid
+                    $this->storeMembershipData($package, $data, $isFullyPaid);
+                }
                 
                 // Generate and update plan_name from first two services
                 $this->updatePlanName($package);
                 
-                // Handle payment only if cash amount provided AND fully paid
-                if (!empty($data['cash_amount']) && $data['cash_amount'] != '0' && $isFullyPaid) {
-                    $this->handlePackagePayment($package, $data, $appointmentId);
-                } elseif (!empty($data['cash_amount']) && $data['cash_amount'] != '0' && !$isFullyPaid) {
-                    // For partial payment, only create the 'in' payment entry (no 'out' entries)
-                    $this->handlePartialMembershipPayment($package, $data, $appointmentId);
+                // Handle payment logic
+                if (!empty($data['cash_amount']) && $data['cash_amount'] != '0') {
+                    \Log::info('Processing payment for membership', [
+                        'is_student' => $isStudentMembership,
+                        'is_fully_paid' => $isFullyPaid,
+                        'has_documents' => $hasStudentDocuments,
+                        'cash_amount' => $data['cash_amount']
+                    ]);
+                    
+                    if ($isStudentMembership) {
+                        // Student membership payment logic
+                        if ($isFullyPaid && $hasStudentDocuments) {
+                            // Case 1: Full payment + Documents = Process payment and consume
+                            \Log::info('Case 1: Full payment + Documents - consuming');
+                            $this->handlePackagePayment($package, $data, $appointmentId);
+                        } else {
+                            // Case 2 & 3: Partial payment OR Full payment without documents
+                            // Only record payment (no consumption)
+                            \Log::info('Case 2/3: Recording payment only (no consumption)');
+                            $this->handlePartialMembershipPayment($package, $data, $appointmentId);
+                        }
+                    } else {
+                        // Non-student membership: normal payment handling
+                        if ($isFullyPaid) {
+                            $this->handlePackagePayment($package, $data, $appointmentId);
+                        } else {
+                            $this->handlePartialMembershipPayment($package, $data, $appointmentId);
+                        }
+                    }
                 }
             } else {
                 // Store package bundles and services (optimized with bulk operations)
@@ -1573,9 +1669,19 @@ class PlanService
             return;
         }
 
+        // Decode package_memberships if it's a JSON string (from FormData)
+        $packageMemberships = $data['package_memberships'];
+        if (is_string($packageMemberships)) {
+            $packageMemberships = json_decode($packageMemberships, true);
+        }
+
+        if (empty($packageMemberships) || !is_array($packageMemberships)) {
+            return;
+        }
+
         $locationInfo = Locations::find($data['location_id']);
 
-        foreach ($data['package_memberships'] as $membership) {
+        foreach ($packageMemberships as $membership) {
             $packageBundleData = [
                 'random_id' => $package->random_id,
                 'is_allocate' => 1,
@@ -1622,13 +1728,13 @@ class PlanService
             ];
             PackageService::create($packageServiceData);
 
-            // Only update the memberships table if fully paid
-            if ($isFullyPaid) {
-                $membershipCodeId = $membership['membershipCodeId'] ?? null;
-                if ($membershipCodeId) {
-                    $membershipRecord = Membership::find($membershipCodeId);
-                    if ($membershipRecord) {
-                        // Get membership type to determine period (in days)
+            // Update the memberships table
+            $membershipCodeId = $membership['membershipCodeId'] ?? null;
+            if ($membershipCodeId) {
+                $membershipRecord = Membership::find($membershipCodeId);
+                if ($membershipRecord) {
+                    if ($isFullyPaid) {
+                        // Fully consume: set patient_id, dates, and mark as active
                         $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
                         $durationDays = $membershipType->period ?? 365; // Default 365 days (1 year) if not set
                         
@@ -1641,6 +1747,23 @@ class PlanService
                             'end_date' => $endDate,
                             'assigned_at' => now()->toDateString(),
                             'updated_by' => Auth::id(),
+                        ]);
+                        
+                        \Log::info('Membership fully consumed', [
+                            'membership_code_id' => $membershipCodeId,
+                            'patient_id' => $data['patient_id']
+                        ]);
+                    } else {
+                        // Reserve only: link to patient but don't set dates (not yet active)
+                        // This prevents the code from being used by someone else
+                        $membershipRecord->update([
+                            'patient_id' => $data['patient_id'],
+                            'updated_by' => Auth::id(),
+                        ]);
+                        
+                        \Log::info('Membership code reserved (linked to patient, not yet active)', [
+                            'membership_code_id' => $membershipCodeId,
+                            'patient_id' => $data['patient_id']
                         ]);
                     }
                 }
@@ -2026,6 +2149,12 @@ class PlanService
      */
     protected function handlePartialMembershipPayment(Packages $package, array $data, int $appointmentId): void
     {
+        \Log::info('handlePartialMembershipPayment called', [
+            'package_id' => $package->id,
+            'cash_amount' => $data['cash_amount'],
+            'payment_mode_id' => $data['payment_mode_id'] ?? 'not set'
+        ]);
+        
         // Create package advance record (only 'in' entry)
         $packageAdvanceData = [
             'cash_flow' => 'in',
@@ -2042,6 +2171,10 @@ class PlanService
         ];
 
         $packageAdvance = PackageAdvances::createRecord($packageAdvanceData, $package);
+        
+        \Log::info('Package advance created', [
+            'advance_id' => $packageAdvance->id ?? 'failed'
+        ]);
 
         // No 'out' entries for partial payment - membership is not consumed yet
 
@@ -2374,6 +2507,18 @@ class PlanService
                 $selectedAppointmentId = $package->appointment_id . '.A';
             }
 
+            // Get student verification documents if exists
+            $studentDocuments = [];
+            $studentVerification = \App\Models\StudentVerification::where('package_id', $packageId)->first();
+            if ($studentVerification && !empty($studentVerification->document_paths)) {
+                $studentDocuments = $studentVerification->document_paths;
+            }
+            
+            // Check if membership is consumed/activated
+            $isMembershipConsumed = PackageService::where('package_id', $packageId)
+                ->where('is_consumed', 1)
+                ->exists();
+
             return [
                 'package' => $package,
                 'locations' => $userLocations,
@@ -2393,6 +2538,8 @@ class PlanService
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => $discounts,
                 'membership' => $membershipDisplay,
+                'student_documents' => $studentDocuments,
+                'is_membership_consumed' => $isMembershipConsumed,
             ];
 
         } catch (PlanException $e) {
@@ -2655,6 +2802,20 @@ class PlanService
             // Get membership info
             $membershipDisplay = $this->getMembershipDisplayForPackage($package->patient_id);
 
+            // Get student verification documents if exists
+            $studentDocuments = [];
+            $studentVerification = \App\Models\StudentVerification::where('package_id', $packageId)->first();
+            
+            \Log::info('Fetching student documents for display', [
+                'package_id' => $packageId,
+                'verification_found' => $studentVerification !== null,
+                'document_paths' => $studentVerification ? $studentVerification->document_paths : null
+            ]);
+            
+            if ($studentVerification && !empty($studentVerification->document_paths)) {
+                $studentDocuments = $studentVerification->document_paths;
+            }
+
             return [
                 'package' => $package,
                 'packagebundles' => $packageBundles,
@@ -2665,6 +2826,7 @@ class PlanService
                 'paymentmodes' => $paymentModes,
                 'grand_total' => $grandTotal,
                 'membership' => $membershipDisplay,
+                'student_documents' => $studentDocuments,
             ];
 
         } catch (PlanException $e) {

@@ -164,6 +164,62 @@
                     <tbody id="membership_services"></tbody>
                 </table>
             </div>
+
+            <!-- Student Membership Document Upload Section -->
+            <div id="student_document_section" class="card card-custom mt-3" style="display: none;">
+                <div class="card-header py-2">
+                    <h3 class="card-title fs-6">
+                        <i class="la la-file-image text-primary"></i>
+                        Student Verification Documents
+                    </h3>
+                </div>
+                <div class="card-body py-3">
+                    <div class="alert alert-light-info d-flex align-items-center p-3 mb-3">
+                        <i class="la la-info-circle fs-3 me-2"></i>
+                        <small class="mb-0">Upload student card and ID card images (Max 4 documents, JPG/PNG only)</small>
+                    </div>
+
+                    <div id="document_upload_container">
+                        <!-- Document Upload Item 1 (Default) -->
+                        <div class="document-upload-item mb-2" data-index="0">
+                            <div class="row">
+                                <div class="col-md-10">
+                                    <input type="file" 
+                                           name="student_documents[]" 
+                                           class="form-control form-control-sm student-document-input" 
+                                           accept="image/jpeg,image/png,image/jpg"
+                                           data-index="0">
+                                    <div class="mt-1 document-preview" id="preview_0" style="display: none;">
+                                        <img src="" class="img-thumbnail" style="max-height: 60px;">
+                                        <button type="button" class="btn btn-sm btn-light-danger ms-1 remove-preview" data-index="0">
+                                            <i class="la la-times"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-danger d-block"><b class="document-error" id="document_error_0"></b></small>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                                            data-index="0"
+                                            style="display: none;">
+                                        <i class="la la-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add More Button -->
+                    <div class="text-start mt-2">
+                        <button type="button" id="add_document_btn" class="btn btn-sm btn-light-primary">
+                            <i class="la la-plus"></i>
+                            Add Document
+                        </button>
+                        <small class="text-muted ms-2" id="document_count_text">1 of 4</small>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <div class="row">
                     <div class="fv-row col-md-3 mt-5">
