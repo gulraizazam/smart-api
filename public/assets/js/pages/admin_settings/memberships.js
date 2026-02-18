@@ -448,13 +448,6 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                             <tbody>
                                 ${servicesTableRows}
                             </tbody>
-                            <tfoot class="bg-light">
-                                <tr>
-                                    <td colspan="4" class="text-right"><strong>Total Discount Saved:</strong></td>
-                                    <td class="text-right text-success"><strong>${number_format(serviceUsage.total_discount_saved, 2)}</strong></td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
                 </div>
