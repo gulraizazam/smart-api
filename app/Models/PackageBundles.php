@@ -98,6 +98,14 @@ class PackageBundles extends Model
     }
 
     /*
+     * Get the package (plan) this bundle belongs to
+     */
+    public function package()
+    {
+        return $this->belongsTo('App\Models\Packages', 'package_id');
+    }
+
+    /*
      * Create Record
      *
      * @param $package
