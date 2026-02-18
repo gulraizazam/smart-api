@@ -308,10 +308,13 @@ class TreatmentUpdateService
 
     /**
      * Validate doctor has service allocated at location - FOR TREATMENT ONLY
-     * For treatment: check if the PARENT of service_id is assigned to doctor
+     * Covers three scenarios:
+     * 1) If "all services" is assigned - allow any service
+     * 2) If parent category is assigned - allow all its children
+     * 3) If single service is assigned - allow that specific service
      * @param int $doctorId
      * @param int $locationId
-     * @param int $serviceId - The service_id from request (we need to check its parent)
+     * @param int $serviceId - The service_id from request
      */
     protected function validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId)
     {
@@ -324,7 +327,7 @@ class TreatmentUpdateService
         // Get parent_id of the service_id (if service_id=16, parent is 14)
         $parentServiceId = ($service->parent_id && $service->parent_id != 0) ? $service->parent_id : $serviceId;
         
-        // Check if doctor has "all services" assigned at this location
+        // Scenario 1: Check if doctor has "all services" assigned at this location
         $hasAllServices = \DB::table('doctor_has_locations')
             ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
             ->where('doctor_has_locations.user_id', $doctorId)
@@ -337,7 +340,7 @@ class TreatmentUpdateService
             return;
         }
 
-        // For treatment: check if parent of service_id is assigned
+        // Scenario 2: Check if parent category is assigned
         $hasParentService = \DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
             ->where('location_id', $locationId)
@@ -345,9 +348,23 @@ class TreatmentUpdateService
             ->where('is_allocated', 1)
             ->exists();
         
-        if (!$hasParentService) {
-            throw AppointmentException::invalidData('This doctor does not have the selected service category allocated at this location.');
+        if ($hasParentService) {
+            return;
         }
+
+        // Scenario 3: Check if the specific service itself is assigned
+        $hasSpecificService = \DB::table('doctor_has_locations')
+            ->where('user_id', $doctorId)
+            ->where('location_id', $locationId)
+            ->where('service_id', (int)$serviceId)
+            ->where('is_allocated', 1)
+            ->exists();
+        
+        if ($hasSpecificService) {
+            return;
+        }
+
+        throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
     }
 
     /**
