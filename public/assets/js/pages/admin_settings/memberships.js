@@ -107,6 +107,16 @@ function actions(data) {
                 <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                     Choose an action: \
                     </li>';
+            
+            // Add view option for student memberships with assigned patients
+            if (data.is_student_membership && data.patient && data.patient !== 'N/A') {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="viewStudentVerification(' + id + ');" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-eye text-primary"></i></span>\
+                        <span class="navi-text">View Details</span>\
+                    </a>\
+                </li>';
+            }
            
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
@@ -328,6 +338,202 @@ function addValidation(elem) {
         elem.removeClass("is-invalid");
         $(".lead_file_msg").addClass("d-none");
     }
+}
+
+// View student verification details
+function viewStudentVerification(membershipId) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.memberships.student_verification', { id: membershipId }),
+        type: "GET",
+        cache: false,
+        beforeSend: function() {
+            // Show loading
+            Swal.fire({
+                title: 'Loading...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        },
+        success: function(response) {
+            Swal.close();
+            if (response.status) {
+                showStudentVerificationModal(response.data);
+            } else {
+                toastr.error(response.message || 'Failed to load details');
+            }
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            Swal.close();
+            toastr.error('Failed to load student verification details');
+        }
+    });
+}
+
+function showStudentVerificationModal(data) {
+    let membership = data.membership;
+    let patient = data.patient;
+    let verification = data.verification;
+    let documents = data.documents || [];
+    
+    // Build documents HTML
+    let documentsHtml = '';
+    if (documents.length > 0) {
+        documentsHtml = '<div class="row">';
+        documents.forEach(function(doc, index) {
+            let docUrl = '/storage/' + doc;
+            documentsHtml += `
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card">
+                        <a href="${docUrl}" target="_blank">
+                            <img src="${docUrl}" class="card-img-top" style="height: 120px; object-fit: cover;" alt="Document ${index + 1}">
+                        </a>
+                        <div class="card-body p-2 text-center">
+                            <small class="text-muted">Document ${index + 1}</small>
+                            <br>
+                            <a href="${docUrl}" target="_blank" class="btn btn-sm btn-light-primary mt-1">
+                                <i class="la la-eye"></i> View
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        documentsHtml += '</div>';
+    } else {
+        documentsHtml = '<div class="alert alert-light-warning">No documents uploaded</div>';
+    }
+    
+    // Build verification status badge
+    let verificationStatusBadge = '';
+    if (verification) {
+        let statusClass = verification.status === 'approved' ? 'success' : (verification.status === 'rejected' ? 'danger' : 'warning');
+        verificationStatusBadge = `<span class="label label-lg label-light-${statusClass} label-inline">${verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}</span>`;
+    } else {
+        verificationStatusBadge = '<span class="label label-lg label-light-secondary label-inline">No Verification Record</span>';
+    }
+    
+    // Build membership status badge
+    let membershipStatusClass = membership.status === 'Active' ? 'success' : 'danger';
+    let membershipStatusBadge = `<span class="label label-lg label-light-${membershipStatusClass} label-inline">${membership.status}</span>`;
+    
+    let modalContent = `
+        <div class="modal fade" id="modal_student_verification" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="la la-user-graduate text-primary"></i>
+                            Student Membership Details
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <i aria-hidden="true" class="ki ki-close"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Patient Info -->
+                            <div class="col-md-6">
+                                <div class="card card-custom card-stretch gutter-b">
+                                    <div class="card-header py-3">
+                                        <div class="card-title">
+                                            <h3 class="card-label"><i class="la la-user text-primary"></i> Patient Information</h3>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-3">
+                                        <table class="table table-borderless mb-0">
+                                            <tr>
+                                                <td class="text-muted" width="40%">Name</td>
+                                                <td><strong>${patient.name}</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Patient ID</td>
+                                                <td>${patient.unique_id || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Email</td>
+                                                <td>${patient.email || '-'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Phone</td>
+                                                <td>${patient.phone || '-'}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Membership Info -->
+                            <div class="col-md-6">
+                                <div class="card card-custom card-stretch gutter-b">
+                                    <div class="card-header py-3">
+                                        <div class="card-title">
+                                            <h3 class="card-label"><i class="la la-id-card text-primary"></i> Membership Information</h3>
+                                        </div>
+                                    </div>
+                                    <div class="card-body py-3">
+                                        <table class="table table-borderless mb-0">
+                                            <tr>
+                                                <td class="text-muted" width="40%">Code</td>
+                                                <td><strong>${membership.code}</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Type</td>
+                                                <td>${membership.type}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Status</td>
+                                                <td>${membershipStatusBadge}</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Period</td>
+                                                <td>${membership.start_date || '-'} to ${membership.end_date || '-'}</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Verification Documents -->
+                        <div class="card card-custom gutter-b">
+                            <div class="card-header py-3">
+                                <div class="card-title">
+                                    <h3 class="card-label"><i class="la la-file-image text-primary"></i> Verification Documents</h3>
+                                </div>
+                                <div class="card-toolbar">
+                                    ${verificationStatusBadge}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                ${documentsHtml}
+                                ${verification && verification.submitted_at ? '<small class="text-muted">Submitted: ' + verification.submitted_at + '</small>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    $('#modal_student_verification').remove();
+    
+    // Append and show modal
+    $('body').append(modalContent);
+    $('#modal_student_verification').modal('show');
+    
+    // Clean up on close
+    $('#modal_student_verification').on('hidden.bs.modal', function () {
+        $(this).remove();
+    });
 }
 
 jQuery(document).ready( function () {

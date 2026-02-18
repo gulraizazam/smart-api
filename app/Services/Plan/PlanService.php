@@ -2576,8 +2576,19 @@ class PlanService
             return 'No Membership';
         }
 
-        $status = $membership->end_date < now()->format('Y-m-d') ? 'Expired' :
-            ($membership->active == 1 ? 'Active' : 'Inactive');
+        // Determine status:
+        // - If no start_date or end_date set, it's reserved/inactive (not yet consumed)
+        // - If end_date is in the past, it's expired
+        // - If active = 1 and end_date is in the future, it's active
+        // - Otherwise, it's inactive
+        $status = 'Inactive';
+        if (empty($membership->start_date) || empty($membership->end_date)) {
+            $status = 'Inactive';
+        } elseif ($membership->end_date < now()->format('Y-m-d')) {
+            $status = 'Expired';
+        } elseif ($membership->active == 1) {
+            $status = 'Active';
+        }
 
         $expiryDateFormatted = $membership->end_date ? date('M d, Y', strtotime($membership->end_date)) : '';
 
@@ -2896,8 +2907,19 @@ class PlanService
             return 'No membership';
         }
 
-        $isExpired = $checkMembership->end_date < now()->format('Y-m-d');
-        $status = $isExpired ? ' - Expired' : ($checkMembership->active == 1 ? ' - Active' : ' - Inactive');
+        // Determine status:
+        // - If no start_date or end_date set, it's reserved/inactive (not yet consumed)
+        // - If end_date is in the past, it's expired
+        // - If active = 1 and end_date is in the future, it's active
+        // - Otherwise, it's inactive
+        $status = ' - Inactive';
+        if (empty($checkMembership->start_date) || empty($checkMembership->end_date)) {
+            $status = ' - Inactive';
+        } elseif ($checkMembership->end_date < now()->format('Y-m-d')) {
+            $status = ' - Expired';
+        } elseif ($checkMembership->active == 1) {
+            $status = ' - Active';
+        }
 
         return "{$checkMembership->membershipType->name}{$status}";
     }

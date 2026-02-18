@@ -878,6 +878,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
+    Route::get('memberships/{id}/student-verification', [MembershipsController::class, 'getStudentVerificationDetails'])->name('memberships.student_verification');
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -4023,6 +4023,11 @@ function closeSoldByModal() {
  * Update sold_by on button click
  */
 $(document).on('click', '#update_sold_by_btn', function() {
+    // Skip if this is from membership edit modal (handled in create-membership.js)
+    if ($('#package_service_id').data('from-membership')) {
+        return;
+    }
+    
     let packageServiceIds = $('#package_service_id').data('service-ids');
     let soldBy = $('#sold_by_dropdown').val();
 

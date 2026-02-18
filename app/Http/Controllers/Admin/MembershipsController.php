@@ -69,15 +69,21 @@ class MembershipsController extends Controller
             if ($memberships->count()) {
                 foreach ($memberships as $membership) {
                     $patient = User::whereId($membership->patient_id)->first();
+                    $membershipTypeName = $membership->membershipType->name ?? 'N/A';
+                    $isStudentMembership = stripos($membershipTypeName, 'student') !== false;
+                    
                     $records['data'][] = [
                         'id' => $membership->id,
                         'code' => $membership->code,
                         'active' => $membership->active,
                         'start_date' => $membership->start_date,
                         'end_date' => $membership->end_date,
-                        'membership_type_id' => $membership->membershipType->name ?? 'N/A',
+                        'membership_type_id' => $membershipTypeName,
+                        'membership_type_id_raw' => $membership->membership_type_id,
+                        'is_student_membership' => $isStudentMembership,
                         'patient' => $patient ? $patient->name : 'N/A',
                         'patient_id' => $patient ? $patient->id : 'N/A',
+                        'patient_unique_id' => $patient ? $patient->unique_id : null,
                         'created_at' => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
                 }
@@ -671,5 +677,66 @@ class MembershipsController extends Controller
             new StudentMembershipPatientsExport, 
             'student_membership_patients_' . date('Y-m-d') . '.xlsx'
         );
+    }
+
+    /**
+     * Get student verification details for a membership
+     */
+    public function getStudentVerificationDetails($membershipId)
+    {
+        try {
+            $membership = Membership::with('membershipType')->find($membershipId);
+            
+            if (!$membership) {
+                return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+            }
+
+            $patient = User::find($membership->patient_id);
+            
+            if (!$patient) {
+                return ApiHelper::apiResponse($this->error, 'Patient not found', false);
+            }
+
+            // Get student verification record
+            $studentVerification = \App\Models\StudentVerification::where('membership_id', $membershipId)
+                ->orWhere(function($query) use ($membership) {
+                    $query->where('patient_id', $membership->patient_id)
+                          ->where('membership_type_id', $membership->membership_type_id);
+                })
+                ->first();
+
+            $documents = [];
+            if ($studentVerification && !empty($studentVerification->document_paths)) {
+                $documents = $studentVerification->document_paths;
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Details found', true, [
+                'membership' => [
+                    'id' => $membership->id,
+                    'code' => $membership->code,
+                    'type' => $membership->membershipType->name ?? 'N/A',
+                    'start_date' => $membership->start_date,
+                    'end_date' => $membership->end_date,
+                    'status' => $membership->active ? 'Active' : 'Expired',
+                ],
+                'patient' => [
+                    'id' => $patient->id,
+                    'unique_id' => $patient->unique_id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'phone' => $patient->phone,
+                ],
+                'verification' => $studentVerification ? [
+                    'id' => $studentVerification->id,
+                    'status' => $studentVerification->status,
+                    'submitted_at' => $studentVerification->submitted_at ? $studentVerification->submitted_at->format('M d, Y h:i A') : null,
+                    'reviewed_at' => $studentVerification->reviewed_at ? $studentVerification->reviewed_at->format('M d, Y h:i A') : null,
+                ] : null,
+                'documents' => $documents,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching student verification details: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to fetch details', false);
+        }
     }
 }
