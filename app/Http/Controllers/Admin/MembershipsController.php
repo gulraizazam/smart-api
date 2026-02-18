@@ -721,7 +721,7 @@ class MembershipsController extends Controller
                 ],
                 'patient' => [
                     'id' => $patient->id,
-                    'unique_id' => $patient->unique_id,
+                    'unique_id' => 'C-' . $patient->id,
                     'name' => $patient->name,
                     'email' => $patient->email,
                     'phone' => $patient->phone,
