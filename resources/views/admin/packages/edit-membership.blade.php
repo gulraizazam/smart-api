@@ -130,6 +130,70 @@
                     </div>
                 </div>
                 <hr>
+
+                <!-- Student Document Upload Section (only shown for student memberships) -->
+                <div id="edit_student_document_section" class="card card-custom mt-3" style="display: none;">
+                    <input type="hidden" id="edit_membership_type_id" value="">
+                    <input type="hidden" id="edit_is_student_membership" value="0">
+                    
+                    <div class="card-header py-2">
+                        <h3 class="card-title fs-6">
+                            <i class="la la-file-image text-primary"></i>
+                            Student Verification Documents
+                        </h3>
+                    </div>
+                    <div class="card-body py-3">
+                        <div class="alert alert-light-info d-flex align-items-center p-3 mb-3">
+                            <i class="la la-info-circle fs-3 me-2"></i>
+                            <small class="mb-0">Upload student card and ID card images (Max 4 documents, JPG/PNG only)</small>
+                        </div>
+
+                        <!-- Existing Documents -->
+                        <div id="edit_existing_documents" class="mb-3" style="display: none;">
+                            <label class="fw-bold fs-6 mb-2 text-success">Previously Uploaded Documents</label>
+                            <div id="edit_existing_documents_list" class="d-flex flex-wrap gap-2"></div>
+                            <hr>
+                        </div>
+
+                        <div id="edit_document_upload_container">
+                            <!-- Document Upload Item 1 (Default) -->
+                            <div class="edit-document-upload-item mb-2" data-index="0">
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <input type="file" 
+                                               name="edit_student_documents[]" 
+                                               class="form-control form-control-sm edit-student-document-input" 
+                                               accept="image/jpeg,image/png,image/jpg"
+                                               data-index="0"
+                                               onchange="previewEditDocument(this, 0)">
+                                        <div class="mt-1 edit-document-preview" id="edit_document_preview_0" style="display: none;">
+                                            <img src="" class="img-thumbnail" style="max-height: 60px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                                                data-index="0"
+                                                onclick="removeEditDocumentField(0)"
+                                                style="display: none;">
+                                            <i class="la la-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add More Button -->
+                        <div class="text-start mt-2">
+                            <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-light-primary" onclick="addEditDocumentField()">
+                                <i class="la la-plus"></i>
+                                Add Document
+                            </button>
+                            <small class="text-muted ms-2" id="edit_document_count">1 of 4</small>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
             
             <!--begin::Actions-->

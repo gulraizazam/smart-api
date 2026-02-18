@@ -263,6 +263,7 @@ function getServiceDiscountMembership(element) {
         $("#net_amount_membership").val('');
         $("#add_sold_by_membership").html('<option value="">Select</option>');
         $('#add_membership_code').val(null).trigger('change');
+        toggleStudentDocumentSection('');
         return;
     }
 
@@ -282,8 +283,12 @@ function getServiceDiscountMembership(element) {
             if (response.status && response.data) {
                 $("#net_amount_membership").val((response.data.net_amount).toFixed(2));
                 $("#net_amount_membership").prop("disabled", true);
+                
+                // Toggle student document section based on membership type name
+                toggleStudentDocumentSection(response.data.membership_name || '');
             } else {
                 $("#net_amount_membership").val('');
+                toggleStudentDocumentSection('');
             }
             // Fetch sold by users
             if (location_id) {
@@ -293,6 +298,7 @@ function getServiceDiscountMembership(element) {
         error: function(xhr, status, error) {
             console.error('Error fetching membership info:', error);
             $("#net_amount_membership").val('');
+            toggleStudentDocumentSection('');
         }
     });
 }
@@ -654,6 +660,8 @@ $(document).ready(function() {
             return false;
         }
 
+        // No validation for student documents - they are optional
+        
         var status = 0;
         if (cash_amount > 0) {
             status = 1;
@@ -681,10 +689,41 @@ $(document).ready(function() {
         if (random_id && (patient_id > 0) && total && (status == 1 ? payment_mode_id : true) && cashAmountValid && grand_total && location_id) {
             showSpinner("-save");
 
+            // Create FormData for file upload support
+            var submitData = new FormData();
+            submitData.append('random_id', random_id);
+            submitData.append('patient_id', patient_id);
+            submitData.append('location_id', location_id);
+            submitData.append('total', total);
+            submitData.append('payment_mode_id', payment_mode_id || '');
+            submitData.append('cash_amount', cash_amount || '0');
+            submitData.append('grand_total', grand_total);
+            submitData.append('is_exclusive', '');
+            submitData.append('plan_type', 'membership');
+            submitData.append('appointment_id', appointment_id);
+            submitData.append('package_memberships', JSON.stringify(formData.package_memberships));
+
+            // Add student documents if student membership
+            if (isStudentMembership) {
+                var documentCount = 0;
+                $('.student-document-input').each(function() {
+                    if (this.files && this.files[0]) {
+                        submitData.append('student_documents[]', this.files[0]);
+                        documentCount++;
+                    }
+                });
+                submitData.append('has_student_documents', documentCount > 0 ? '1' : '0');
+            }
+
             $.ajax({
-                type: 'get',
+                type: 'POST',
                 url: route('admin.packages.savepackages'),
-                data: formData,
+                data: submitData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function (response) {
                     if (response.status) {
                         toastr.success("Membership plan successfully created");
@@ -848,10 +887,11 @@ $(document).ready(function() {
                         // Toggle to show child services
                         toggle(membershipsData.id);
 
-                        // Clear form fields
-                        $('#add_service_id_membership').val(null).trigger('change');
+                        // Don't clear membership type field to keep document section visible
+                        // Only clear other fields
                         $('#net_amount_membership').val('');
                         $('#add_sold_by_membership').val(null).trigger('change');
+                        $('#add_membership_code').val(null).trigger('change');
                         
                         // Hide service required validation alert
                         $('#add_service_id_membership_error').html('').hide();
@@ -1080,6 +1120,38 @@ function setEditMembershipData(response) {
         }
         $('#edit_membership_payment_mode_id').html(paymentOptions);
         
+        // Check for student membership and show document section
+        let membershipTypeId = null;
+        let membershipTypeName = null;
+        let existingDocuments = data.student_documents || [];
+        
+        console.log('Full data received:', data);
+        console.log('Package ID being edited:', data.package ? data.package.id : 'unknown');
+        console.log('student_documents from data:', data.student_documents);
+        
+        if (packagebundles && packagebundles.length) {
+            let firstBundle = packagebundles[0];
+            console.log('First bundle:', firstBundle);
+            console.log('Membership type:', firstBundle.membership_type);
+            if (firstBundle.membership_type) {
+                membershipTypeId = firstBundle.membership_type_id;
+                membershipTypeName = firstBundle.membership_type.name;
+            }
+        }
+        
+        let isMembershipConsumed = data.is_membership_consumed || false;
+        
+        console.log('Student membership check:', {
+            membershipTypeId: membershipTypeId,
+            membershipTypeName: membershipTypeName,
+            existingDocuments: existingDocuments,
+            existingDocumentsLength: existingDocuments ? existingDocuments.length : 0,
+            isMembershipConsumed: isMembershipConsumed
+        });
+        
+        // Toggle student document section
+        toggleEditStudentDocumentSection(membershipTypeId, membershipTypeName, existingDocuments, isMembershipConsumed);
+        
         // Populate membership items table with Sold By and Action columns
         let serviceOptions = '';
         let totalAmount = 0;
@@ -1226,6 +1298,16 @@ function setEditMembershipData(response) {
             var paymentModeId = $('#edit_membership_payment_mode_id').val();
             var cashAmount = $('#edit_membership_cash_amount').val() || 0;
             var grandTotal = $('#edit_membership_grand_total').val() || 0;
+            var isStudentMembership = $('#edit_is_student_membership').val() === '1';
+            var membershipTypeId = $('#edit_membership_type_id').val();
+            
+            console.log('Save clicked - values:', {
+                isStudentMembership: isStudentMembership,
+                hiddenFieldValue: $('#edit_is_student_membership').val(),
+                membershipTypeId: membershipTypeId,
+                paymentModeId: paymentModeId,
+                cashAmount: cashAmount
+            });
             
             // Validate required fields
             if (!appointmentId) {
@@ -1241,21 +1323,44 @@ function setEditMembershipData(response) {
             // Disable button and show spinner
             $(this).prop('disabled', true);
             
+            // Use FormData for file upload support
+            var formData = new FormData();
+            formData.append('package_id', packageId);
+            formData.append('patient_id', patientId);
+            formData.append('location_id', locationId);
+            formData.append('appointment_id', appointmentId);
+            formData.append('payment_mode_id', paymentModeId || '');
+            formData.append('cash_amount', cashAmount);
+            formData.append('grand_total', grandTotal);
+            formData.append('is_student_membership', isStudentMembership ? '1' : '0');
+            formData.append('membership_type_id', membershipTypeId || '');
+            
+            // Add student documents if student membership
+            if (isStudentMembership) {
+                var documentCount = 0;
+                $('.edit-student-document-input').each(function() {
+                    if (this.files && this.files[0]) {
+                        formData.append('student_documents[]', this.files[0]);
+                        documentCount++;
+                    }
+                });
+                formData.append('has_student_documents', documentCount > 0 ? '1' : '0');
+                
+                // Add documents to remove
+                if (documentsToRemove && documentsToRemove.length > 0) {
+                    formData.append('documents_to_remove', JSON.stringify(documentsToRemove));
+                }
+            }
+            
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 url: route('admin.packages.update_membership_plan'),
                 type: 'POST',
-                data: {
-                    package_id: packageId,
-                    patient_id: patientId,
-                    location_id: locationId,
-                    appointment_id: appointmentId,
-                    payment_mode_id: paymentModeId,
-                    cash_amount: cashAmount,
-                    grand_total: grandTotal
-                },
+                data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     if (response.status) {
                         toastr.success(response.message || 'Membership updated successfully');
@@ -1293,4 +1398,450 @@ function number_format(number, decimals) {
     }
     if (isNaN(number)) return '0.00';
     return parseFloat(number).toFixed(decimals || 2);
+}
+
+// ============================================
+// Student Membership Document Upload Functions
+// ============================================
+
+var studentDocumentCount = 1;
+var maxDocuments = 4;
+var isStudentMembership = false;
+
+// Show/hide student document section based on membership type
+function toggleStudentDocumentSection(membershipTypeName) {
+    if (membershipTypeName && membershipTypeName.toLowerCase().includes('student')) {
+        $('#student_document_section').slideDown();
+        isStudentMembership = true;
+    } else {
+        $('#student_document_section').slideUp();
+        isStudentMembership = false;
+        resetStudentDocuments();
+    }
+}
+
+// Reset student documents
+function resetStudentDocuments() {
+    studentDocumentCount = 1;
+    $('#document_upload_container').html(`
+        <div class="document-upload-item mb-2" data-index="0">
+            <div class="row">
+                <div class="col-md-10">
+                    <input type="file" 
+                           name="student_documents[]" 
+                           class="form-control form-control-sm student-document-input" 
+                           accept="image/jpeg,image/png,image/jpg"
+                           data-index="0">
+                    <div class="mt-1 document-preview" id="preview_0" style="display: none;">
+                        <img src="" class="img-thumbnail" style="max-height: 60px;">
+                        <button type="button" class="btn btn-sm btn-light-danger ms-1 remove-preview" data-index="0">
+                            <i class="la la-times"></i>
+                        </button>
+                    </div>
+                    <small class="text-danger d-block"><b class="document-error" id="document_error_0"></b></small>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" 
+                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                            data-index="0"
+                            style="display: none;">
+                        <i class="la la-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `);
+    updateDocumentCount();
+    updateAddButtonState();
+}
+
+// Add new document upload field
+$(document).on('click', '#add_document_btn', function() {
+    if (studentDocumentCount >= maxDocuments) {
+        toastr.warning('Maximum ' + maxDocuments + ' documents allowed');
+        return;
+    }
+
+    var newIndex = studentDocumentCount;
+    var newDocumentHtml = `
+        <div class="document-upload-item mb-2" data-index="${newIndex}">
+            <div class="row">
+                <div class="col-md-10">
+                    <input type="file" 
+                           name="student_documents[]" 
+                           class="form-control form-control-sm student-document-input" 
+                           accept="image/jpeg,image/png,image/jpg"
+                           data-index="${newIndex}">
+                    <div class="mt-1 document-preview" id="preview_${newIndex}" style="display: none;">
+                        <img src="" class="img-thumbnail" style="max-height: 60px;">
+                        <button type="button" class="btn btn-sm btn-light-danger ms-1 remove-preview" data-index="${newIndex}">
+                            <i class="la la-times"></i>
+                        </button>
+                    </div>
+                    <small class="text-danger d-block"><b class="document-error" id="document_error_${newIndex}"></b></small>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" 
+                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                            data-index="${newIndex}">
+                        <i class="la la-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    $('#document_upload_container').append(newDocumentHtml);
+    studentDocumentCount++;
+    updateDocumentCount();
+    updateAddButtonState();
+    updateRemoveButtonsVisibility();
+});
+
+// Remove document upload field
+$(document).on('click', '.remove-document-btn', function() {
+    var index = $(this).data('index');
+    $(this).closest('.document-upload-item').remove();
+    studentDocumentCount--;
+    updateDocumentCount();
+    updateAddButtonState();
+    updateRemoveButtonsVisibility();
+});
+
+// Handle file input change - show preview
+$(document).on('change', '.student-document-input', function() {
+    var index = $(this).data('index');
+    var file = this.files[0];
+    
+    // Clear previous error
+    $('#document_error_' + index).text('');
+    
+    if (file) {
+        // Validate file type
+        var validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            $('#document_error_' + index).text('Only JPG, JPEG, and PNG files are allowed');
+            $(this).val('');
+            return;
+        }
+        
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            $('#document_error_' + index).text('File size must be less than 5MB');
+            $(this).val('');
+            return;
+        }
+        
+        // Show preview
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            $('#preview_' + index).find('img').attr('src', e.target.result);
+            $('#preview_' + index).show();
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Remove preview
+$(document).on('click', '.remove-preview', function() {
+    var index = $(this).data('index');
+    $('.student-document-input[data-index="' + index + '"]').val('');
+    $('#preview_' + index).hide();
+    $('#preview_' + index).find('img').attr('src', '');
+});
+
+// Update document count text
+function updateDocumentCount() {
+    $('#document_count_text').text(studentDocumentCount + ' of ' + maxDocuments);
+}
+
+// Update add button state
+function updateAddButtonState() {
+    if (studentDocumentCount >= maxDocuments) {
+        $('#add_document_btn').prop('disabled', true).addClass('disabled');
+    } else {
+        $('#add_document_btn').prop('disabled', false).removeClass('disabled');
+    }
+}
+
+// Update remove buttons visibility
+function updateRemoveButtonsVisibility() {
+    if (studentDocumentCount <= 1) {
+        $('.remove-document-btn').hide();
+    } else {
+        $('.remove-document-btn').show();
+    }
+}
+
+// Note: Document upload is optional for student membership
+// The backend will handle consumption logic based on payment and document status
+
+// Initialize on document ready
+$(document).ready(function() {
+    updateDocumentCount();
+    updateAddButtonState();
+    updateRemoveButtonsVisibility();
+});
+
+// ============================================
+// Edit Membership - Student Document Functions
+// ============================================
+
+var editStudentDocumentCount = 1;
+var editMaxDocuments = 4;
+var editIsStudentMembership = false;
+
+// Show/hide student document section in edit modal
+function toggleEditStudentDocumentSection(membershipTypeId, membershipTypeName, existingDocuments, isMembershipConsumed) {
+    console.log('toggleEditStudentDocumentSection called:', {
+        membershipTypeId: membershipTypeId,
+        membershipTypeName: membershipTypeName,
+        isStudent: membershipTypeName && membershipTypeName.toLowerCase().includes('student'),
+        isMembershipConsumed: isMembershipConsumed
+    });
+    
+    if (membershipTypeName && membershipTypeName.toLowerCase().includes('student')) {
+        $('#edit_student_document_section').slideDown();
+        $('#edit_membership_type_id').val(membershipTypeId);
+        $('#edit_is_student_membership').val('1');
+        editIsStudentMembership = true;
+        
+        console.log('Student membership detected - showing document section');
+        
+        // Show existing documents if any
+        if (existingDocuments && existingDocuments.length > 0) {
+            displayExistingDocuments(existingDocuments, isMembershipConsumed);
+        } else {
+            $('#edit_existing_documents').hide();
+            $('#edit_existing_documents_list').html('');
+        }
+        
+        // Hide upload section if membership is consumed
+        if (isMembershipConsumed) {
+            $('#edit_document_upload_container').hide();
+            $('#edit_add_document_btn').hide();
+            $('#edit_document_count').hide();
+        } else {
+            $('#edit_document_upload_container').show();
+            $('#edit_add_document_btn').show();
+            $('#edit_document_count').show();
+        }
+    } else {
+        $('#edit_student_document_section').slideUp();
+        $('#edit_is_student_membership').val('0');
+        editIsStudentMembership = false;
+        resetEditStudentDocuments();
+        console.log('Non-student membership - hiding document section');
+    }
+}
+
+// Store documents to be removed
+var documentsToRemove = [];
+
+// Display existing uploaded documents
+function displayExistingDocuments(documents, isMembershipConsumed) {
+    documentsToRemove = []; // Reset on load
+    var html = '';
+    documents.forEach(function(doc, index) {
+        var docUrl = '/storage/' + doc;
+        var deleteButton = isMembershipConsumed ? '' : `
+            <button type="button" class="btn btn-light-danger btn-sm py-0 px-1" onclick="markDocumentForRemoval(this, '${doc}')" title="Remove">
+                <i class="la la-trash"></i>
+            </button>
+        `;
+        html += `
+            <div class="existing-doc-item position-relative me-2 mb-2" data-doc-path="${doc}" style="display: inline-block;">
+                <div class="card" style="width: 120px;">
+                    <img src="${docUrl}" class="card-img-top" style="height: 80px; object-fit: cover; cursor: pointer;" 
+                         onclick="viewDocument('${docUrl}')" title="Click to view">
+                    <div class="card-body p-1 text-center">
+                        <small class="text-muted">Doc ${index + 1}</small>
+                        <div class="btn-group btn-group-sm mt-1" role="group">
+                            <button type="button" class="btn btn-light-primary btn-sm py-0 px-1" onclick="viewDocument('${docUrl}')" title="View">
+                                <i class="la la-eye"></i>
+                            </button>
+                            ${deleteButton}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    $('#edit_existing_documents_list').html(html);
+    $('#edit_existing_documents').show();
+}
+
+// View document in new tab/modal
+function viewDocument(url) {
+    window.open(url, '_blank');
+}
+
+// Mark document for removal (will be removed on save)
+function markDocumentForRemoval(btn, docPath) {
+    var docItem = $(btn).closest('.existing-doc-item');
+    
+    if (docItem.hasClass('marked-for-removal')) {
+        // Unmark for removal
+        docItem.removeClass('marked-for-removal');
+        docItem.find('.card').css('opacity', '1');
+        docItem.find('.card-body small').text('Doc ' + (docItem.index() + 1));
+        documentsToRemove = documentsToRemove.filter(function(d) { return d !== docPath; });
+        $(btn).removeClass('btn-success').addClass('btn-light-danger');
+        $(btn).find('i').removeClass('la-undo').addClass('la-trash');
+        $(btn).attr('title', 'Remove');
+    } else {
+        // Mark for removal
+        docItem.addClass('marked-for-removal');
+        docItem.find('.card').css('opacity', '0.5');
+        docItem.find('.card-body small').text('Will be removed');
+        documentsToRemove.push(docPath);
+        $(btn).removeClass('btn-light-danger').addClass('btn-success');
+        $(btn).find('i').removeClass('la-trash').addClass('la-undo');
+        $(btn).attr('title', 'Undo removal');
+    }
+    
+    console.log('Documents to remove:', documentsToRemove);
+}
+
+// Reset edit student documents
+function resetEditStudentDocuments() {
+    editStudentDocumentCount = 1;
+    $('#edit_document_upload_container').html(`
+        <div class="edit-document-upload-item mb-2" data-index="0">
+            <div class="row">
+                <div class="col-md-10">
+                    <input type="file" 
+                           name="edit_student_documents[]" 
+                           class="form-control form-control-sm edit-student-document-input" 
+                           accept="image/jpeg,image/png,image/jpg"
+                           data-index="0"
+                           onchange="previewEditDocument(this, 0)">
+                    <div class="mt-1 edit-document-preview" id="edit_document_preview_0" style="display: none;">
+                        <img src="" class="img-thumbnail" style="max-height: 60px;">
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" 
+                            class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                            data-index="0"
+                            onclick="removeEditDocumentField(0)"
+                            style="display: none;">
+                        <i class="la la-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `);
+    updateEditDocumentCount();
+    updateEditAddButtonState();
+}
+
+// Add new document field in edit modal
+function addEditDocumentField() {
+    if (editStudentDocumentCount >= editMaxDocuments) {
+        toastr.warning('Maximum ' + editMaxDocuments + ' documents allowed');
+        return;
+    }
+
+    var newIndex = editStudentDocumentCount;
+    var newHtml = `
+        <div class="edit-document-upload-item mb-2" data-index="${newIndex}">
+            <div class="row">
+                <div class="col-md-10">
+                    <input type="file" 
+                           name="edit_student_documents[]" 
+                           class="form-control form-control-sm edit-student-document-input" 
+                           accept="image/jpeg,image/png,image/jpg"
+                           data-index="${newIndex}"
+                           onchange="previewEditDocument(this, ${newIndex})">
+                    <div class="mt-1 edit-document-preview" id="edit_document_preview_${newIndex}" style="display: none;">
+                        <img src="" class="img-thumbnail" style="max-height: 60px;">
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" 
+                            class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                            data-index="${newIndex}"
+                            onclick="removeEditDocumentField(${newIndex})">
+                        <i class="la la-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    $('#edit_document_upload_container').append(newHtml);
+    editStudentDocumentCount++;
+    updateEditDocumentCount();
+    updateEditAddButtonState();
+    updateEditRemoveButtonsVisibility();
+}
+
+// Remove document field in edit modal
+function removeEditDocumentField(index) {
+    if (editStudentDocumentCount <= 1) {
+        return;
+    }
+    $(`.edit-document-upload-item[data-index="${index}"]`).remove();
+    editStudentDocumentCount--;
+    updateEditDocumentCount();
+    updateEditAddButtonState();
+    updateEditRemoveButtonsVisibility();
+}
+
+// Preview document in edit modal
+function previewEditDocument(input, index) {
+    var previewContainer = $('#edit_document_preview_' + index);
+    
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        
+        // Validate file type
+        var validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            toastr.error('Please upload only JPG or PNG images');
+            $(input).val('');
+            previewContainer.hide();
+            return;
+        }
+        
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            toastr.error('File size must be less than 5MB');
+            $(input).val('');
+            previewContainer.hide();
+            return;
+        }
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            previewContainer.find('img').attr('src', e.target.result);
+            previewContainer.show();
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewContainer.hide();
+    }
+}
+
+// Update document count display in edit modal
+function updateEditDocumentCount() {
+    $('#edit_document_count').text(editStudentDocumentCount + ' of 4');
+}
+
+// Update add button state in edit modal
+function updateEditAddButtonState() {
+    if (editStudentDocumentCount >= editMaxDocuments) {
+        $('#edit_add_document_btn').prop('disabled', true);
+    } else {
+        $('#edit_add_document_btn').prop('disabled', false);
+    }
+}
+
+// Update remove buttons visibility in edit modal
+function updateEditRemoveButtonsVisibility() {
+    if (editStudentDocumentCount <= 1) {
+        $('.edit-remove-document-btn').hide();
+    } else {
+        $('.edit-remove-document-btn').show();
+    }
 }
