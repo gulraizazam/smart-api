@@ -254,20 +254,10 @@
                         <input type="hidden" id="time_off_location_id" name="location_id">
                         
                         <div class="row mb-4">
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="mb-2 font-weight-bold">Team member</label>
                                 <select class="form-control" id="time_off_resource_id" name="resource_id">
                                     <!-- Options populated by JS -->
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="mb-2 font-weight-bold">Type</label>
-                                <select class="form-control" id="time_off_type" name="type">
-                                    <option value="annual_leave">Annual leave</option>
-                                    <option value="sick_leave">Sick leave</option>
-                                    <option value="personal_leave">Personal leave</option>
-                                    <option value="unpaid_leave">Unpaid leave</option>
-                                    <option value="other">Other</option>
                                 </select>
                             </div>
                         </div>
