@@ -1658,7 +1658,7 @@ function displayExistingDocuments(documents, isMembershipConsumed) {
     documentsToRemove = []; // Reset on load
     var html = '';
     documents.forEach(function(doc, index) {
-        var docUrl = '/storage/' + doc;
+        var docUrl = '/storage/app/public/' + doc;
         var deleteButton = isMembershipConsumed ? '' : `
             <button type="button" class="btn btn-light-danger btn-sm py-0 px-1" onclick="markDocumentForRemoval(this, '${doc}')" title="Remove">
                 <i class="la la-trash"></i>

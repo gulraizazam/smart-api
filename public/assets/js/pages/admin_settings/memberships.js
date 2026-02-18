@@ -385,7 +385,7 @@ function showStudentVerificationModal(data) {
     if (documents.length > 0) {
         documentsHtml = '<div class="row">';
         documents.forEach(function(doc, index) {
-            let docUrl = '/storage/' + doc;
+            let docUrl = '/storage/app/public/' + doc;
             documentsHtml += `
                 <div class="col-md-3 col-sm-6 mb-3">
                     <div class="card">
