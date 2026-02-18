@@ -638,7 +638,9 @@ class ScheduleController extends Controller
             $startDateParsed,
             $isRepeat ? $repeatUntilParsed : $startDateParsed,
             $startTime24,
-            $endTime24
+            $endTime24,
+            null,
+            $locationId
         );
 
         if ($overlapCheck) {
@@ -788,7 +790,8 @@ class ScheduleController extends Controller
             $isRepeat ? $repeatUntilParsed : $startDateParsed,
             $startTime24,
             $endTime24,
-            $timeOffId
+            $timeOffId,
+            $timeOff->location_id
         );
 
         if ($overlapCheck) {
@@ -998,13 +1001,19 @@ class ScheduleController extends Controller
         ?string $endDate,
         ?string $startTime,
         ?string $endTime,
-        ?int $excludeTimeOffId = null
+        ?int $excludeTimeOffId = null,
+        ?int $locationId = null
     ): bool {
         $endDate = $endDate ?: $startDate;
 
         // Get all time offs for this resource that could potentially overlap
         $query = ResourceTimeOff::where('resource_id', $resourceId)
             ->where('account_id', $accountId);
+
+        // Filter by location if provided
+        if ($locationId) {
+            $query->where('location_id', $locationId);
+        }
 
         // Exclude the current time off if updating
         if ($excludeTimeOffId) {
