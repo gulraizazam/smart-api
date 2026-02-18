@@ -710,8 +710,9 @@ class MembershipsController extends Controller
                 $documents = $studentVerification->document_paths;
             }
 
-            // Get services where this membership discount was used
+            // Get services where this membership discount was actually applied (discount > 0)
             $usedServices = \App\Models\PackageBundles::where('membership_code_id', $membershipId)
+                ->where('discount_price', '>', 0)
                 ->with(['bundle', 'package'])
                 ->get();
 
@@ -719,16 +720,21 @@ class MembershipsController extends Controller
             $totalDiscountAmount = 0;
             foreach ($usedServices as $service) {
                 $serviceName = $service->bundle ? $service->bundle->name : 'Unknown Service';
-                $serviceUsage[] = [
-                    'service_name' => $serviceName,
-                    'service_price' => $service->service_price,
-                    'discount_amount' => $service->discount_price,
-                    'discount_type' => $service->discount_type,
-                    'net_amount' => $service->tax_including_price,
-                    'plan_id' => $service->package_id,
-                    'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
-                ];
-                $totalDiscountAmount += ($service->service_price - $service->tax_including_price);
+                $discountSaved = $service->service_price - $service->tax_including_price;
+                
+                // Only include if there was actual discount applied
+                if ($discountSaved > 0) {
+                    $serviceUsage[] = [
+                        'service_name' => $serviceName,
+                        'service_price' => $service->service_price,
+                        'discount_amount' => $service->discount_price,
+                        'discount_type' => $service->discount_type,
+                        'net_amount' => $service->tax_including_price,
+                        'plan_id' => $service->package_id,
+                        'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
+                    ];
+                    $totalDiscountAmount += $discountSaved;
+                }
             }
 
             return ApiHelper::apiResponse($this->success, 'Details found', true, [
