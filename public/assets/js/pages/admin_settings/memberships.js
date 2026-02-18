@@ -441,7 +441,7 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                                     <th>Service Name</th>
                                     <th class="text-right" width="15%">Original Price</th>
                                     <th class="text-right" width="12%">Discount</th>
-                                    <th class="text-right" width="15%">Final Price</th>
+                                    <th class="text-right" width="15%">Discounted Price</th>
                                     <th width="12%">Date</th>
                                 </tr>
                             </thead>
