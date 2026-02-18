@@ -287,11 +287,10 @@ function initEventHandlers() {
     // Spanning time off dropdown - Delete time off
     $(document).on('click', '.spanning-time-off-dropdown [data-action="delete-time-off"]', function (e) {
         e.stopPropagation();
+        e.preventDefault();
         var timeOffId = $(this).data('time-off-id');
         $('.spanning-time-off-dropdown').removeClass('show');
-        if (confirm('Are you sure you want to delete this time off?')) {
-            deleteTimeOff(timeOffId);
-        }
+        deleteTimeOff(timeOffId);
     });
     
     // Close spanning time off dropdown when clicking outside
@@ -416,13 +415,23 @@ function deleteShift(resourceId, date, shiftId) {
     });
 }
 
+var isDeleteTimeOffInProgress = false;
+
 function deleteTimeOff(timeOffId) {
     if (!timeOffId) {
         toastr.error('Time off ID not found');
         return;
     }
     
+    // Prevent multiple delete dialogs
+    if (isDeleteTimeOffInProgress) {
+        return;
+    }
+    
+    isDeleteTimeOffInProgress = true;
+    
     if (!confirm('Are you sure you want to delete this time off?')) {
+        isDeleteTimeOffInProgress = false;
         return;
     }
     
@@ -436,6 +445,7 @@ function deleteTimeOff(timeOffId) {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         success: function(response) {
+            isDeleteTimeOffInProgress = false;
             if (response.status) {
                 toastr.success('Time off deleted successfully');
                 loadSchedule();
@@ -444,6 +454,7 @@ function deleteTimeOff(timeOffId) {
             }
         },
         error: function(xhr) {
+            isDeleteTimeOffInProgress = false;
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 toastr.error(xhr.responseJSON.message);
             } else {
