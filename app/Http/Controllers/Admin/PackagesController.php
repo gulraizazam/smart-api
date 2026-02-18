@@ -1964,11 +1964,11 @@ class PackagesController extends Controller
         $patientMembershipTypeId = null;
         
         if ($request->patient_id) {
-            // Always pick the latest assigned membership
+            // Always pick the latest assigned membership (by assigned_at timestamp)
             $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
                 ->where('active', 1)
                 ->whereDate('end_date', '>=', $today)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('assigned_at', 'desc')
                 ->first();
             
             if ($patientActiveMembership) {
@@ -2289,11 +2289,11 @@ class PackagesController extends Controller
         $patientMembershipTypeId = null;
         
         if ($request->patient_id) {
-            // Always pick the latest assigned membership
+            // Always pick the latest assigned membership (by assigned_at timestamp)
             $patientActiveMembership = Membership::where('patient_id', $request->patient_id)
                 ->where('active', 1)
                 ->whereDate('end_date', '>=', $today)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('assigned_at', 'desc')
                 ->first();
             
             if ($patientActiveMembership) {

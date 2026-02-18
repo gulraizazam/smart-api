@@ -69,12 +69,12 @@ class MembershipService
         $cacheKey = "patient_active_membership_{$patientId}";
         
         return Cache::remember($cacheKey, 300, function () use ($patientId) {
-            // Always pick the latest assigned membership
+            // Always pick the latest assigned membership (by assigned_at timestamp)
             return Membership::with(['membershipType'])
                 ->where('patient_id', $patientId)
                 ->where('active', 1)
                 ->where('end_date', '>=', Carbon::today())
-                ->orderBy('created_at', 'desc')
+                ->orderBy('assigned_at', 'desc')
                 ->first();
         });
     }
