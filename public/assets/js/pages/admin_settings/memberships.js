@@ -379,6 +379,81 @@ function showMembershipDetailsModal(data, isStudentMembership) {
     let patient = data.patient;
     let verification = data.verification;
     let documents = data.documents || [];
+    let serviceUsage = data.service_usage || { total_services: 0, total_discount_saved: 0, services: [] };
+    
+    // Build service usage section
+    let serviceUsageSection = '';
+    if (serviceUsage.services && serviceUsage.services.length > 0) {
+        let servicesTableRows = '';
+        serviceUsage.services.forEach(function(service, index) {
+            servicesTableRows += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${service.service_name}</td>
+                    <td class="text-right">${number_format(service.service_price, 2)}</td>
+                    <td class="text-right">${service.discount_type === 'Percentage' ? service.discount_amount + '%' : number_format(service.discount_amount, 2)}</td>
+                    <td class="text-right">${number_format(service.net_amount, 2)}</td>
+                    <td>${service.plan_date || '-'}</td>
+                </tr>
+            `;
+        });
+        
+        serviceUsageSection = `
+            <!-- Service Usage -->
+            <div class="card card-custom gutter-b">
+                <div class="card-header py-3">
+                    <div class="card-title">
+                        <h3 class="card-label"><i class="la la-list-alt text-primary"></i> Membership Usage</h3>
+                    </div>
+                    <div class="card-toolbar">
+                        <span class="label label-lg label-light-info label-inline">${serviceUsage.total_services} Service(s)</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="5%">#</th>
+                                    <th>Service Name</th>
+                                    <th class="text-right" width="15%">Original Price</th>
+                                    <th class="text-right" width="12%">Discount</th>
+                                    <th class="text-right" width="15%">Final Price</th>
+                                    <th width="12%">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${servicesTableRows}
+                            </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Total Discount Saved:</strong></td>
+                                    <td class="text-right text-success"><strong>${number_format(serviceUsage.total_discount_saved, 2)}</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        serviceUsageSection = `
+            <!-- Service Usage -->
+            <div class="card card-custom gutter-b">
+                <div class="card-header py-3">
+                    <div class="card-title">
+                        <h3 class="card-label"><i class="la la-list-alt text-primary"></i> Membership Usage</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light-info mb-0">
+                        <i class="la la-info-circle"></i> This membership has not been used on any services yet.
+                    </div>
+                </div>
+            </div>
+        `;
+    }
     
     // Build documents HTML (only for student memberships)
     let documentsSection = '';
@@ -523,6 +598,8 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                                 </div>
                             </div>
                         </div>
+                        
+                        ${serviceUsageSection}
                         
                         ${documentsSection}
                     </div>
