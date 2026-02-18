@@ -832,7 +832,7 @@ class PlanService
                     'membership_types.name as type_name'
                 )
                 ->orderByRaw("CASE WHEN memberships.end_date >= ? AND memberships.active = 1 THEN 0 ELSE 1 END", [now()->format('Y-m-d')])
-                ->orderBy('memberships.created_at', 'desc')
+                ->orderBy('memberships.assigned_at', 'desc')
                 ->first();
 
             $membershipTypeName = 'No membership';
@@ -2560,14 +2560,14 @@ class PlanService
             ->where('patient_id', $patientId)
             ->where('active', 1)
             ->where('end_date', '>=', now()->format('Y-m-d'))
-            ->orderBy('created_at', 'desc')
+            ->orderBy('assigned_at', 'desc')
             ->first();
         
         // If no active membership, get the latest membership regardless of status
         if (!$membership) {
             $membership = Membership::with('membershiptype')
                 ->where('patient_id', $patientId)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('assigned_at', 'desc')
                 ->first();
         }
         
@@ -2899,7 +2899,7 @@ class PlanService
         // Fetch the latest assigned membership (by created_at DESC)
         $checkMembership = Membership::with('membershiptype')
             ->where('patient_id', $patientId)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('assigned_at', 'desc')
             ->first();
 
         if (!$checkMembership) {
