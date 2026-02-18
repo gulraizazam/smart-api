@@ -710,6 +710,27 @@ class MembershipsController extends Controller
                 $documents = $studentVerification->document_paths;
             }
 
+            // Get services where this membership discount was used
+            $usedServices = \App\Models\PackageBundles::where('membership_code_id', $membershipId)
+                ->with(['bundle', 'package'])
+                ->get();
+
+            $serviceUsage = [];
+            $totalDiscountAmount = 0;
+            foreach ($usedServices as $service) {
+                $serviceName = $service->bundle ? $service->bundle->name : 'Unknown Service';
+                $serviceUsage[] = [
+                    'service_name' => $serviceName,
+                    'service_price' => $service->service_price,
+                    'discount_amount' => $service->discount_price,
+                    'discount_type' => $service->discount_type,
+                    'net_amount' => $service->tax_including_price,
+                    'plan_id' => $service->package_id,
+                    'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
+                ];
+                $totalDiscountAmount += ($service->service_price - $service->tax_including_price);
+            }
+
             return ApiHelper::apiResponse($this->success, 'Details found', true, [
                 'membership' => [
                     'id' => $membership->id,
@@ -733,6 +754,11 @@ class MembershipsController extends Controller
                     'reviewed_at' => $studentVerification->reviewed_at ? $studentVerification->reviewed_at->format('M d, Y h:i A') : null,
                 ] : null,
                 'documents' => $documents,
+                'service_usage' => [
+                    'total_services' => count($serviceUsage),
+                    'total_discount_saved' => $totalDiscountAmount,
+                    'services' => $serviceUsage,
+                ],
             ]);
         } catch (\Exception $e) {
             \Log::error('Error fetching student verification details: ' . $e->getMessage());

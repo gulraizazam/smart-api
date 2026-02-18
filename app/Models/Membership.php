@@ -36,4 +36,12 @@ class Membership extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get package bundles where this membership discount was applied
+     */
+    public function usedInServices()
+    {
+        return $this->hasMany(PackageBundles::class, 'membership_code_id', 'id');
+    }
 }
