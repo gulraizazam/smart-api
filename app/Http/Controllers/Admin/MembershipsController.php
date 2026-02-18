@@ -710,8 +710,17 @@ class MembershipsController extends Controller
                 $documents = $studentVerification->document_paths;
             }
 
-            // Get services where this membership discount was actually applied (discount > 0)
-            $usedServices = \App\Models\PackageBundles::where('membership_code_id', $membershipId)
+            // Get discount IDs associated with this membership type
+            $membershipTypeDiscountIds = \App\Models\MembershipTypeHasDiscount::where('membership_type_id', $membership->membership_type_id)
+                ->pluck('discount_id')
+                ->toArray();
+
+            // Get services where this membership type's discount was applied
+            // Filter by: patient's packages + discount belongs to this membership type
+            $usedServices = \App\Models\PackageBundles::whereHas('package', function($query) use ($patient) {
+                    $query->where('patient_id', $patient->id);
+                })
+                ->whereIn('discount_id', $membershipTypeDiscountIds)
                 ->where('discount_price', '>', 0)
                 ->with(['bundle', 'package'])
                 ->get();
