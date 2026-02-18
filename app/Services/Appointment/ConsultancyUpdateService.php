@@ -351,7 +351,7 @@ class ConsultancyUpdateService
             }
         }
 
-        throw AppointmentException::invalidData('This doctor does not have the selected service or its parent service allocated at this location.');
+        throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
     }
 
 
