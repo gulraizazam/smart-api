@@ -45,6 +45,12 @@ function createMembership(url, id) {
     hideMessages();
 
     $("#membership_services").html("");
+    
+    // Reset student documents section
+    $('#student_document_section').hide();
+    isStudentMembership = false;
+    resetStudentDocuments();
+    
     $("#modal_add_membership").modal("show");
     
     // Initialize Select2 on membership form dropdowns
