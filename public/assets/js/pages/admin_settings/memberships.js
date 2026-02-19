@@ -264,6 +264,8 @@ function applyFilters(datatable) {
             code: $("#search_code_name").val(),
             membership_type_id: $("#search_membership_type").val(),
             status: $("#search_membership_status").val(),
+            location_id: $("#search_location_id").val(),
+            sold_by: $("#search_sold_by").val(),
             created_at: $("#date_range").val(),
             filter: 'filter',
         }
@@ -280,6 +282,8 @@ function resetAllFilters(datatable) {
             created_by: '',
             created_at: '',
             status: '',
+            location_id: '',
+            sold_by: '',
             filter: 'filter_cancel',
         }
         // Clear patient search fields
@@ -296,20 +300,40 @@ function setFilters(filter_values, active_filters) {
        
         let membershipTypes = filter_values.membershipType;
         let users = filter_values.users;
+        let locations = filter_values.locations;
+        let soldByUsers = filter_values.soldByUsers;
+        
         let user_options = '<option value="">All</option>';
-       
         if (users) {
             Object.entries(users).forEach(function(user) {
-
                 user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
+            });
+        }
+        
+        let location_options = '<option value="">All</option>';
+        if (locations) {
+            Object.entries(locations).forEach(function(location) {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            });
+        }
+        
+        let sold_by_options = '<option value="">All</option>';
+        if (soldByUsers) {
+            Object.entries(soldByUsers).forEach(function(user) {
+                sold_by_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
             });
         }
       
         $("#search_created_by").html(user_options);
+        $("#search_location_id").html(location_options);
+        $("#search_sold_by").html(sold_by_options);
+        
         $("#search_patient_id").val(active_filters.patient_id);
         $("#search_code_name").val(active_filters.code);
         $("#date_range").val(active_filters.created_at);
         $("#search_membership_status").val(active_filters.status);
+        $("#search_location_id").val(active_filters.location_id);
+        $("#search_sold_by").val(active_filters.sold_by);
         $("#search_created_by").val(active_filters.created_by);
         hideShowAdvanceFilters(active_filters);
 

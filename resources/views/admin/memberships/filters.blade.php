@@ -27,7 +27,19 @@
                 <option value="expired">Expired</option>
             </select>
         </div>
-        <div class="col-lg-3 mb-lg-0 mb-2">
+        <div class="col-lg-2 mb-lg-0 mb-2">
+            <label>Location</label>
+            <select class="form-control filter-field select2" id="search_location_id">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div class="col-lg-2 mb-lg-0 mb-2">
+            <label>Sold By</label>
+            <select class="form-control filter-field select2" id="search_sold_by">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div class="col-lg-2 mb-lg-0 mb-2 mt-6">
             @include('admin.partials.filter-buttons')
         </div>
     </div>
