@@ -385,15 +385,25 @@ class Patients extends BaseModal
         }
     }
 
-    // Add membership data to users
+    // Add latest active membership data to users
     foreach ($users as $user) {
-        $membership = Membership::where('patient_id', $user->id)->first(); // Assuming `patient_id` is the foreign key
+        $membership = Membership::where('patient_id', $user->id)
+            ->where('end_date', '>=', now())
+            ->orderBy('end_date', 'desc')
+            ->first();
+        
         if ($membership) {
             $user->membership_code = $membership->code;
-            $user->membership_status = $membership->end_date >= now() ? 'Active' : 'Inactive';
+            $user->membership_status = 'Active';
+            $user->membership_start_date = $membership->start_date;
+            $user->membership_end_date = $membership->end_date;
+            $user->membership_type_id = $membership->membership_type_id;
         } else {
             $user->membership_code = 'N/A';
             $user->membership_status = 'Inactive';
+            $user->membership_start_date = null;
+            $user->membership_end_date = null;
+            $user->membership_type_id = null;
         }
     }
 
