@@ -1443,7 +1443,7 @@ function resetStudentDocuments() {
     studentDocumentCount = 1;
     $('#document_upload_container').html(`
         <div class="document-upload-item mb-2" data-index="0">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1">
                     <input type="file" 
                            name="student_documents[]" 
@@ -1485,7 +1485,7 @@ $(document).on('click', '#add_document_btn', function() {
     var newIndex = studentDocumentCount;
     var newDocumentHtml = `
         <div class="document-upload-item mb-2" data-index="${newIndex}">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1">
                     <input type="file" 
                            name="student_documents[]" 
@@ -1728,7 +1728,7 @@ function resetEditStudentDocuments() {
     editStudentDocumentCount = 1;
     $('#edit_document_upload_container').html(`
         <div class="edit-document-upload-item mb-2" data-index="0">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1">
                     <input type="file" 
                            name="edit_student_documents[]" 
@@ -1768,7 +1768,7 @@ function addEditDocumentField() {
     var newIndex = editStudentDocumentCount;
     var newHtml = `
         <div class="edit-document-upload-item mb-2" data-index="${newIndex}">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-start gap-2">
                 <div class="flex-grow-1">
                     <input type="file" 
                            name="edit_student_documents[]" 
