@@ -287,10 +287,9 @@ function resetAllFilters(datatable) {
             filter: 'filter_cancel',
         }
         // Clear patient search fields
-        $("#search_patient_id").val('');
-        $("#membership_patient_search").val('');
-        $(".membership-suggestion-box").hide();
-        $(".membership-croxcli").hide();
+        $('#membership_patient_search_input').val('');
+        $('#search_patient_id').val('');
+        $('#membership_patient_suggestions').hide();
         datatable.search(filters, 'search');
     });
 }
@@ -323,67 +322,73 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-// Initialize membership patient search (similar to consultation/treatment datatables)
-function initMembershipPatientSearch() {
+// Simple patient search with custom autocomplete (no Select2)
+$(document).ready(function() {
     let debounceTimer;
     
-    $("#membership_patient_search").on("keyup", function() {
+    $('#membership_patient_search_input').on('input', function() {
         let searchVal = $(this).val();
+        let $suggestions = $('#membership_patient_suggestions');
         
-        $(".membership-suggestion-list").html('<li style="padding: 8px 12px;">Searching...</li>');
-        $(".membership-suggestion-box").show();
+        // Clear hidden field when typing
+        $('#search_patient_id').val('');
         
         if (searchVal.length < 2) {
-            $(".membership-suggestion-box").hide();
-            return false;
+            $suggestions.hide();
+            return;
         }
+        
+        $suggestions.html('<div style="padding: 8px 12px; color: #666;">Searching...</div>').show();
         
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(function() {
             $.ajax({
                 type: "GET",
-                url: route('admin.users.getpatient.id'),
+                url: route('admin.users.getpatient.optimized'),
                 dataType: 'json',
                 data: { search: searchVal },
                 success: function(response) {
+                    let patients = response.data.patients || [];
                     let html = '';
-                    $(".membership-suggestion-list").html(html);
-                    let patients = response.data.patients;
+                    
                     if (patients.length) {
                         patients.forEach(function(patient) {
-                            html += '<li style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" onclick="selectMembershipPatient(\'' + patient.name + '\', \'' + patient.id + '\', \'' + patient.unique_id + '\');">' + patient.name + ' - C-' + patient.unique_id + '</li>';
+                            html += '<div class="patient-suggestion-item" data-id="' + patient.id + '" data-name="' + patient.name + '" data-phone="' + patient.phone + '" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;">' + patient.name + ' - ' + patient.phone + '</div>';
                         });
-                        $(".membership-suggestion-list").html(html);
-                        $(".membership-suggestion-box").show();
-                        $(".membership-croxcli").show();
                     } else {
-                        $(".membership-suggestion-list").html('<li style="padding: 8px 12px;">No patients found</li>');
+                        html = '<div style="padding: 8px 12px; color: #999;">No patients found</div>';
                     }
+                    
+                    $suggestions.html(html);
                 }
             });
-        }, 500);
+        }, 300);
     });
     
-    // Clear button click
-    $(".membership-croxcli").on("click", function() {
-        $("#membership_patient_search").val('');
-        $("#search_patient_id").val('');
-        $(".membership-suggestion-box").hide();
-        $(".membership-croxcli").hide();
+    // Handle patient selection
+    $(document).on('click', '.patient-suggestion-item', function() {
+        let id = $(this).data('id');
+        let name = $(this).data('name');
+        let phone = $(this).data('phone');
+        
+        $('#membership_patient_search_input').val(name + ' - ' + phone);
+        $('#search_patient_id').val(id);
+        $('#membership_patient_suggestions').hide();
     });
-}
-
-// Select patient from suggestion list
-function selectMembershipPatient(name, id, uniqueId) {
-    $("#membership_patient_search").val(name + ' - C-' + uniqueId);
-    $("#search_patient_id").val(id);
-    $(".membership-suggestion-box").hide();
-    $(".membership-croxcli").show();
-}
-
-// Initialize on document ready
-$(document).ready(function() {
-    initMembershipPatientSearch();
+    
+    // Hide suggestions when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#membership_patient_search_input, #membership_patient_suggestions').length) {
+            $('#membership_patient_suggestions').hide();
+        }
+    });
+    
+    // Hover effect
+    $(document).on('mouseenter', '.patient-suggestion-item', function() {
+        $(this).css('background-color', '#f5f5f5');
+    }).on('mouseleave', '.patient-suggestion-item', function() {
+        $(this).css('background-color', '#fff');
+    });
 });
 
 function hideShowAdvanceFilters(active_filters) {
