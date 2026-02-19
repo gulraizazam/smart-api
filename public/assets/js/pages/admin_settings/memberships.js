@@ -260,7 +260,7 @@ $("#export-memberships-leads").on("click",function(){
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
-           
+            patient_id: $("#search_patient_id").val(),
             code: $("#search_code_name").val(),
             membership_type_id: $("#membershiptype_id").val(),
            
@@ -278,8 +278,7 @@ function applyFilters(datatable) {
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         let filters = {
-            
-            
+            patient_id: '',
             code: '',
             membership_type_id: '',
             created_by: '',
@@ -287,6 +286,11 @@ function resetAllFilters(datatable) {
             status: '',
             filter: 'filter_cancel',
         }
+        // Clear patient search fields
+        $("#search_patient_id").val('');
+        $("#membership_patient_search").val('');
+        $(".membership-suggestion-box").hide();
+        $(".membership-croxcli").hide();
         datatable.search(filters, 'search');
     });
 }
@@ -307,6 +311,7 @@ function setFilters(filter_values, active_filters) {
         }
       
         $("#search_created_by").html(user_options);
+        $("#search_patient_id").val(active_filters.patient_id);
         $("#search_code_name").val(active_filters.code);
         $("#date_range").val(active_filters.created_at);
         $("#search_membership_status").val(active_filters.status);
@@ -317,6 +322,69 @@ function setFilters(filter_values, active_filters) {
         showException(error);
     }
 }
+
+// Initialize membership patient search (similar to consultation/treatment datatables)
+function initMembershipPatientSearch() {
+    let debounceTimer;
+    
+    $("#membership_patient_search").on("keyup", function() {
+        let searchVal = $(this).val();
+        
+        $(".membership-suggestion-list").html('<li style="padding: 8px 12px;">Searching...</li>');
+        $(".membership-suggestion-box").show();
+        
+        if (searchVal.length < 2) {
+            $(".membership-suggestion-box").hide();
+            return false;
+        }
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+            $.ajax({
+                type: "GET",
+                url: route('admin.users.getpatient.id'),
+                dataType: 'json',
+                data: { search: searchVal },
+                success: function(response) {
+                    let html = '';
+                    $(".membership-suggestion-list").html(html);
+                    let patients = response.data.patients;
+                    if (patients.length) {
+                        patients.forEach(function(patient) {
+                            html += '<li style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;" onclick="selectMembershipPatient(\'' + patient.name + '\', \'' + patient.id + '\', \'' + patient.unique_id + '\');">' + patient.name + ' - C-' + patient.unique_id + '</li>';
+                        });
+                        $(".membership-suggestion-list").html(html);
+                        $(".membership-suggestion-box").show();
+                        $(".membership-croxcli").show();
+                    } else {
+                        $(".membership-suggestion-list").html('<li style="padding: 8px 12px;">No patients found</li>');
+                    }
+                }
+            });
+        }, 500);
+    });
+    
+    // Clear button click
+    $(".membership-croxcli").on("click", function() {
+        $("#membership_patient_search").val('');
+        $("#search_patient_id").val('');
+        $(".membership-suggestion-box").hide();
+        $(".membership-croxcli").hide();
+    });
+}
+
+// Select patient from suggestion list
+function selectMembershipPatient(name, id, uniqueId) {
+    $("#membership_patient_search").val(name + ' - C-' + uniqueId);
+    $("#search_patient_id").val(id);
+    $(".membership-suggestion-box").hide();
+    $(".membership-croxcli").show();
+}
+
+// Initialize on document ready
+$(document).ready(function() {
+    initMembershipPatientSearch();
+});
 
 function hideShowAdvanceFilters(active_filters) {
     if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')

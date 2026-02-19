@@ -362,6 +362,16 @@ class MembershipsController extends Controller
             $query->where($where);
         }
 
+        // Apply patient_id filter (search by unique_id)
+        $patientIdFilter = self::getPatientIdFilter($request, $apply_filter);
+        if ($patientIdFilter !== null) {
+            if (empty($patientIdFilter)) {
+                $query->where('memberships.patient_id', '=', -1); // No matching patients
+            } else {
+                $query->whereIn('memberships.patient_id', $patientIdFilter);
+            }
+        }
+
         if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
             $query->where('memberships.active', 1);
         }
@@ -547,6 +557,35 @@ class MembershipsController extends Controller
 
         return $where;
     }
+
+    /**
+     * Get patient ID filter
+     * Returns null if no filter applied, or the patient ID to filter by
+     */
+    public static function getPatientIdFilter(Request $request, $apply_filter = false)
+    {
+        $filters = getFilters($request->all());
+        $patientId = null;
+
+        if (hasFilter($filters, 'patient_id')) {
+            $patientId = $filters['patient_id'];
+            Filters::put(Auth::User()->id, 'memberships', 'patient_id', $filters['patient_id']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'memberships', 'patient_id');
+            } else {
+                $patientId = Filters::get(Auth::User()->id, 'memberships', 'patient_id');
+            }
+        }
+
+        if (empty($patientId)) {
+            return null; // No filter applied
+        }
+
+        // Return as array for whereIn clause
+        return [$patientId];
+    }
+
     public function exportPdf(Request $request)
 {
     ini_set('memory_limit', '-1');
@@ -603,6 +642,16 @@ class MembershipsController extends Controller
 
         if (count($where)) {
             $query->where($where);
+        }
+
+        // Apply patient_id filter (search by unique_id)
+        $patientIdFilter = self::getPatientIdFilter($request, $apply_filter);
+        if ($patientIdFilter !== null) {
+            if (empty($patientIdFilter)) {
+                $query->where('memberships.patient_id', '=', -1); // No matching patients
+            } else {
+                $query->whereIn('memberships.patient_id', $patientIdFilter);
+            }
         }
 
         if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
