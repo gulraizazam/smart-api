@@ -162,7 +162,7 @@
                         <div id="edit_document_upload_container">
                             <!-- Document Upload Item 1 (Default) -->
                             <div class="edit-document-upload-item mb-2" data-index="0">
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-start gap-2">
                                     <div class="flex-grow-1">
                                         <input type="file" 
                                                name="edit_student_documents[]" 
