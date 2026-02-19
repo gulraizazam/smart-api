@@ -500,49 +500,34 @@ function showMembershipDetailsModal(data, isStudentMembership) {
         
         serviceUsageSection = `
             <!-- Service Usage -->
-            <div class="card card-custom gutter-b">
-                <div class="card-header py-3">
-                    <div class="card-title">
-                        <h3 class="card-label"><i class="la la-list-alt text-primary"></i> Membership Usage</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        <span class="label label-lg label-light-info label-inline">${serviceUsage.total_services} Service(s)</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead class="thead-light">
-                                <tr>
-                                    <th width="20%">Service Name</th>
-                                    <th class="text-right" width="14%">Original Price</th>
-                                    <th class="text-right" width="12%">Discount</th>
-                                    <th class="text-right" width="14%">Discounted Price</th>
-                                    <th width="12%">Date</th>
-                                    <th width="28%">Consumed</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${servicesTableRows}
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="mt-3">
+                <h6 class="mb-2"><i class="la la-list-alt text-primary"></i> Membership Usage <span class="label label-sm label-light-info label-inline ml-2">${serviceUsage.total_services} Service(s)</span></h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Service</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Discount</th>
+                                <th class="text-right">Net</th>
+                                <th>Date</th>
+                                <th>Consumed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${servicesTableRows}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
     } else {
         serviceUsageSection = `
             <!-- Service Usage -->
-            <div class="card card-custom gutter-b">
-                <div class="card-header py-3">
-                    <div class="card-title">
-                        <h3 class="card-label"><i class="la la-list-alt text-primary"></i> Membership Usage</h3>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-light-info mb-0">
-                        <i class="la la-info-circle"></i> This membership has not been used on any services yet.
-                    </div>
+            <div class="mt-3">
+                <h6 class="mb-2"><i class="la la-list-alt text-primary"></i> Membership Usage</h6>
+                <div class="alert alert-light-info py-2 mb-0">
+                    <i class="la la-info-circle"></i> Not used on any services yet.
                 </div>
             </div>
         `;
@@ -557,19 +542,11 @@ function showMembershipDetailsModal(data, isStudentMembership) {
             documents.forEach(function(doc, index) {
                 let docUrl = '/storage/app/public/' + doc;
                 documentsHtml += `
-                    <div class="col-md-6 col-sm-6 mb-3">
-                        <div class="card">
-                            <a href="${docUrl}" target="_blank">
-                                <img src="${docUrl}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Document ${index + 1}">
-                            </a>
-                            <div class="card-body p-2 text-center">
-                                <small class="text-muted">Document ${index + 1}</small>
-                                <br>
-                                <a href="${docUrl}" target="_blank" class="btn btn-sm btn-light-primary mt-1">
-                                    <i class="la la-eye"></i> View
-                                </a>
-                            </div>
-                        </div>
+                    <div class="col-md-3 col-sm-4 col-6 mb-2">
+                        <a href="${docUrl}" target="_blank" class="d-block border rounded p-1 text-center">
+                            <img src="${docUrl}" style="height: 80px; width: 100%; object-fit: cover; border-radius: 4px;" alt="Doc ${index + 1}">
+                            <small class="d-block text-muted mt-1">Doc ${index + 1}</small>
+                        </a>
                     </div>
                 `;
             });
@@ -580,16 +557,10 @@ function showMembershipDetailsModal(data, isStudentMembership) {
         
         documentsSection = `
             <!-- Verification Documents -->
-            <div class="card card-custom gutter-b">
-                <div class="card-header py-3">
-                    <div class="card-title">
-                        <h3 class="card-label"><i class="la la-file-image text-primary"></i> Verification Documents</h3>
-                    </div>
-                </div>
-                <div class="card-body">
-                    ${documentsHtml}
-                    ${verification && verification.submitted_at ? '<small class="text-muted">Submitted: ' + verification.submitted_at + '</small>' : ''}
-                </div>
+            <div class="mt-2">
+                <h6 class="mb-2"><i class="la la-file-image text-primary"></i> Verification Documents</h6>
+                ${documentsHtml}
+                ${verification && verification.submitted_at ? '<small class="text-muted">Submitted: ' + verification.submitted_at + '</small>' : ''}
             </div>
         `;
     }
@@ -604,9 +575,9 @@ function showMembershipDetailsModal(data, isStudentMembership) {
     
     let modalContent = `
         <div class="modal fade" id="modal_membership_details" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header">
+                    <div class="modal-header py-3">
                         <h5 class="modal-title">
                             <i class="la ${modalIcon} text-primary"></i>
                             ${modalTitle}
@@ -615,77 +586,43 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                             <i aria-hidden="true" class="ki ki-close"></i>
                         </button>
                     </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <!-- Patient Info -->
-                            <div class="col-md-6">
-                                <div class="card card-custom card-stretch gutter-b">
-                                    <div class="card-header py-3">
-                                        <div class="card-title">
-                                            <h3 class="card-label"><i class="la la-user text-primary"></i> Patient Information</h3>
-                                        </div>
-                                    </div>
-                                    <div class="card-body py-3">
-                                        <table class="table table-borderless mb-0">
-                                            <tr>
-                                                <td class="text-muted" width="40%">Name</td>
-                                                <td><strong>${patient.name}</strong></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Patient ID</td>
-                                                <td>${patient.unique_id || '-'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Email</td>
-                                                <td>${patient.email || '-'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Phone</td>
-                                                <td>${patient.phone || '-'}</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Membership Info -->
-                            <div class="col-md-6">
-                                <div class="card card-custom card-stretch gutter-b">
-                                    <div class="card-header py-3">
-                                        <div class="card-title">
-                                            <h3 class="card-label"><i class="la la-id-card text-primary"></i> Membership Information</h3>
-                                        </div>
-                                    </div>
-                                    <div class="card-body py-3">
-                                        <table class="table table-borderless mb-0">
-                                            <tr>
-                                                <td class="text-muted" width="40%">Code</td>
-                                                <td><strong>${membership.code}</strong></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Type</td>
-                                                <td>${membership.type}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Status</td>
-                                                <td>${membershipStatusBadge}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-muted">Period</td>
-                                                <td>${membership.start_date || '-'} to ${membership.end_date || '-'}</td>
-                                            </tr>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="modal-body py-3">
+                        <!-- Combined Patient & Membership Info -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm mb-3">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted bg-light" width="20%">Patient</td>
+                                        <td width="30%"><strong>${patient.name}</strong> (C-${patient.unique_id || '-'})</td>
+                                        <td class="text-muted bg-light" width="20%">Code</td>
+                                        <td width="30%"><strong>${membership.code}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted bg-light">Phone</td>
+                                        <td>${patient.phone || '-'}</td>
+                                        <td class="text-muted bg-light">Type</td>
+                                        <td>${membership.type}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted bg-light">Email</td>
+                                        <td>${patient.email || '-'}</td>
+                                        <td class="text-muted bg-light">Status</td>
+                                        <td>${membershipStatusBadge}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted bg-light">Period</td>
+                                        <td colspan="3">${membership.start_date || '-'} to ${membership.end_date || '-'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         
                         ${serviceUsageSection}
                         
                         ${documentsSection}
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
+                    <div class="modal-footer py-2">
+                        <button type="button" class="btn btn-sm btn-light-primary font-weight-bold" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
