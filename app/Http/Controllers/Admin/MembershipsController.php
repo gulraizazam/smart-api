@@ -710,37 +710,55 @@ class MembershipsController extends Controller
                 $documents = $studentVerification->document_paths;
             }
 
-            // Get discount IDs associated with this membership type
-            $membershipTypeDiscountIds = \App\Models\MembershipTypeHasDiscount::where('membership_type_id', $membership->membership_type_id)
-                ->pluck('discount_id')
+            // Get discount IDs that are linked to this membership type via customer_type_id
+            $membershipTypeDiscountIds = \App\Models\Discounts::where('customer_type_id', $membership->membership_type_id)
+                ->pluck('id')
                 ->toArray();
 
             // Get services where this membership type's discount was applied to this patient's packages
-            $usedServices = \App\Models\PackageBundles::whereHas('package', function($query) use ($patient) {
-                    $query->where('patient_id', $patient->id);
-                })
-                ->whereIn('discount_id', $membershipTypeDiscountIds)
-                ->where('discount_price', '>', 0)
-                ->with(['bundle', 'package'])
-                ->get();
+            // Only show services with discounts applied, not the membership purchase itself
+            $usedServices = collect();
+            if (!empty($membershipTypeDiscountIds)) {
+                $usedServices = \App\Models\PackageBundles::whereIn('discount_id', $membershipTypeDiscountIds)
+                    ->whereHas('package', function($q) use ($patient) {
+                        $q->where('patient_id', $patient->id);
+                    })
+                    ->with(['bundle', 'package', 'discount', 'packageservice'])
+                    ->get();
+            }
 
             $serviceUsage = [];
             $totalDiscountAmount = 0;
             foreach ($usedServices as $service) {
-                $serviceName = $service->bundle ? $service->bundle->name : 'Unknown Service';
+                // Determine service name based on type
+                if ($service->bundle) {
+                    $serviceName = $service->bundle->name;
+                } else {
+                    $serviceName = 'Unknown Service';
+                }
+                
                 $discountSaved = $service->service_price - $service->tax_including_price;
                 
-                // Only include if there was actual discount applied
+                // Get consumption info from package_services
+                $packageService = $service->packageservice->first();
+                $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;
+                $consumedAt = $packageService && $packageService->consumed_at 
+                    ? \Carbon\Carbon::parse($packageService->consumed_at)->format('M d, Y') 
+                    : null;
+                
+                $serviceUsage[] = [
+                    'service_name' => $serviceName,
+                    'service_price' => $service->service_price,
+                    'discount_amount' => $service->discount_price ?? 0,
+                    'discount_type' => $service->discount_type,
+                    'net_amount' => $service->tax_including_price,
+                    'plan_id' => $service->package_id,
+                    'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
+                    'is_consumed' => $isConsumed,
+                    'consumed_at' => $consumedAt,
+                ];
+                
                 if ($discountSaved > 0) {
-                    $serviceUsage[] = [
-                        'service_name' => $serviceName,
-                        'service_price' => $service->service_price,
-                        'discount_amount' => $service->discount_price,
-                        'discount_type' => $service->discount_type,
-                        'net_amount' => $service->tax_including_price,
-                        'plan_id' => $service->package_id,
-                        'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
-                    ];
                     $totalDiscountAmount += $discountSaved;
                 }
             }

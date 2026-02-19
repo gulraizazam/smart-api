@@ -409,14 +409,17 @@ function showMembershipDetailsModal(data, isStudentMembership) {
     if (serviceUsage.services && serviceUsage.services.length > 0) {
         let servicesTableRows = '';
         serviceUsage.services.forEach(function(service, index) {
+            let consumedText = service.consumed_at 
+                ? '<span class="label label-success label-inline">Yes</span> <small class="text-muted">at ' + service.consumed_at + '</small>'
+                : '<span class="label label-warning label-inline">No</span>';
             servicesTableRows += `
                 <tr>
-                    <td>${index + 1}</td>
                     <td>${service.service_name}</td>
                     <td class="text-right">${number_format(service.service_price, 2)}</td>
                     <td class="text-right">${service.discount_type === 'Percentage' ? service.discount_amount + '%' : number_format(service.discount_amount, 2)}</td>
                     <td class="text-right">${number_format(service.net_amount, 2)}</td>
                     <td>${service.plan_date || '-'}</td>
+                    <td>${consumedText}</td>
                 </tr>
             `;
         });
@@ -437,12 +440,12 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                         <table class="table table-bordered table-hover">
                             <thead class="thead-light">
                                 <tr>
-                                    <th width="5%">#</th>
-                                    <th>Service Name</th>
-                                    <th class="text-right" width="15%">Original Price</th>
+                                    <th width="20%">Service Name</th>
+                                    <th class="text-right" width="14%">Original Price</th>
                                     <th class="text-right" width="12%">Discount</th>
-                                    <th class="text-right" width="15%">Discounted Price</th>
+                                    <th class="text-right" width="14%">Discounted Price</th>
                                     <th width="12%">Date</th>
+                                    <th width="28%">Consumed</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -501,24 +504,12 @@ function showMembershipDetailsModal(data, isStudentMembership) {
             documentsHtml = '<div class="alert alert-light-warning">No documents uploaded</div>';
         }
         
-        // Build verification status badge
-        let verificationStatusBadge = '';
-        if (verification) {
-            let statusClass = verification.status === 'approved' ? 'success' : (verification.status === 'rejected' ? 'danger' : 'warning');
-            verificationStatusBadge = `<span class="label label-lg label-light-${statusClass} label-inline">${verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}</span>`;
-        } else {
-            verificationStatusBadge = '<span class="label label-lg label-light-secondary label-inline">No Verification Record</span>';
-        }
-        
         documentsSection = `
             <!-- Verification Documents -->
             <div class="card card-custom gutter-b">
                 <div class="card-header py-3">
                     <div class="card-title">
                         <h3 class="card-label"><i class="la la-file-image text-primary"></i> Verification Documents</h3>
-                    </div>
-                    <div class="card-toolbar">
-                        ${verificationStatusBadge}
                     </div>
                 </div>
                 <div class="card-body">
@@ -539,7 +530,7 @@ function showMembershipDetailsModal(data, isStudentMembership) {
     
     let modalContent = `
         <div class="modal fade" id="modal_membership_details" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
