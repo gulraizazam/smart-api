@@ -174,7 +174,7 @@
                                             <img src="" class="img-thumbnail" style="max-height: 60px;">
                                         </div>
                                     </div>
-                                    <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document">
+                                    <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document" style="margin-left: 7px; margin-right: 5px;">
                                         <i class="la la-plus"></i>
                                     </button>
                                     <button type="button" 
@@ -185,7 +185,7 @@
                                             title="Remove">
                                         <i class="la la-trash"></i>
                                     </button>
-                                    <small class="text-muted" id="edit_document_count">1 of 4</small>
+                                    <small class="text-muted" id="edit_document_count" style="margin-left: 3px;">1 of 4</small>
                                 </div>
                             </div>
                         </div>
