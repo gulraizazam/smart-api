@@ -94,6 +94,7 @@ class MembershipsController extends Controller
                     'inactive' => Gate::allows('memberships_inactive'),
                     'create' => Gate::allows('memberships_create'),
                     'sort' => Gate::allows('memberships_sort'),
+                    'view_details' => Gate::allows('memberships_manage'),
                 ];
                 $records['meta'] = [
                     'field' => $orderBy,

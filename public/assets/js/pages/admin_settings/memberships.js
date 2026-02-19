@@ -96,7 +96,7 @@ function actions(data) {
       
         let delete_url = route('admin.memberships.destroy', { id: id });
       
-        if (permissions.create || permissions.edit) {
+        if (permissions.create || permissions.edit || permissions.view_details) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
            
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -108,8 +108,8 @@ function actions(data) {
                     Choose an action: \
                     </li>';
             
-            // Add view option for all memberships with assigned patients
-            if (data.patient && data.patient !== 'N/A') {
+            // Add view option for all memberships with assigned patients (requires view_details permission)
+            if (permissions.view_details && data.patient && data.patient !== 'N/A') {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="viewMembershipDetails(' + id + ', ' + data.is_student_membership + ');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye text-primary"></i></span>\
