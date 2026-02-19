@@ -743,7 +743,7 @@ class MembershipsController extends Controller
                 $packageService = $service->packageservice->first();
                 $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;
                 $consumedAt = $packageService && $packageService->consumed_at 
-                    ? \Carbon\Carbon::parse($packageService->consumed_at)->format('M d, Y') 
+                    ? \Carbon\Carbon::parse($packageService->consumed_at)->format('d/m/y') 
                     : null;
                 
                 $serviceUsage[] = [
