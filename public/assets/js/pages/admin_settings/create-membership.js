@@ -1443,8 +1443,8 @@ function resetStudentDocuments() {
     studentDocumentCount = 1;
     $('#document_upload_container').html(`
         <div class="document-upload-item mb-2" data-index="0">
-            <div class="row">
-                <div class="col-md-10">
+            <div class="d-flex align-items-center gap-2">
+                <div class="flex-grow-1">
                     <input type="file" 
                            name="student_documents[]" 
                            class="form-control form-control-sm student-document-input" 
@@ -1458,14 +1458,16 @@ function resetStudentDocuments() {
                     </div>
                     <small class="text-danger d-block"><b class="document-error" id="document_error_0"></b></small>
                 </div>
-                <div class="col-md-2 text-end">
-                    <button type="button" 
-                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
-                            data-index="0"
-                            style="display: none;">
-                        <i class="la la-trash"></i>
-                    </button>
-                </div>
+                <button type="button" id="add_document_btn" class="btn btn-sm btn-icon btn-primary" title="Add Document" style="margin-left: 7px;margin-right:5px;">
+                    <i class="la la-plus"></i>
+                </button>
+                <button type="button" 
+                        class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                        data-index="0"
+                        style="display: none;">
+                    <i class="la la-trash"></i>
+                </button>
+                <small class="text-muted" id="document_count_text" style="margin-left:3px;">1 of 4</small>
             </div>
         </div>
     `);
@@ -1483,8 +1485,8 @@ $(document).on('click', '#add_document_btn', function() {
     var newIndex = studentDocumentCount;
     var newDocumentHtml = `
         <div class="document-upload-item mb-2" data-index="${newIndex}">
-            <div class="row">
-                <div class="col-md-10">
+            <div class="d-flex align-items-center gap-2">
+                <div class="flex-grow-1">
                     <input type="file" 
                            name="student_documents[]" 
                            class="form-control form-control-sm student-document-input" 
@@ -1498,13 +1500,13 @@ $(document).on('click', '#add_document_btn', function() {
                     </div>
                     <small class="text-danger d-block"><b class="document-error" id="document_error_${newIndex}"></b></small>
                 </div>
-                <div class="col-md-2 text-end">
-                    <button type="button" 
-                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
-                            data-index="${newIndex}">
-                        <i class="la la-trash"></i>
-                    </button>
-                </div>
+                <div style="width: 32px;"></div>
+                <button type="button" 
+                        class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                        data-index="${newIndex}">
+                    <i class="la la-trash"></i>
+                </button>
+                <div style="width: 40px;"></div>
             </div>
         </div>
     `;
@@ -1726,8 +1728,8 @@ function resetEditStudentDocuments() {
     editStudentDocumentCount = 1;
     $('#edit_document_upload_container').html(`
         <div class="edit-document-upload-item mb-2" data-index="0">
-            <div class="row">
-                <div class="col-md-10">
+            <div class="d-flex align-items-center gap-2">
+                <div class="flex-grow-1">
                     <input type="file" 
                            name="edit_student_documents[]" 
                            class="form-control form-control-sm edit-student-document-input" 
@@ -1738,15 +1740,17 @@ function resetEditStudentDocuments() {
                         <img src="" class="img-thumbnail" style="max-height: 60px;">
                     </div>
                 </div>
-                <div class="col-md-2 text-end">
-                    <button type="button" 
-                            class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
-                            data-index="0"
-                            onclick="removeEditDocumentField(0)"
-                            style="display: none;">
-                        <i class="la la-trash"></i>
-                    </button>
-                </div>
+                <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document">
+                    <i class="la la-plus"></i>
+                </button>
+                <button type="button" 
+                        class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                        data-index="0"
+                        onclick="removeEditDocumentField(0)"
+                        style="display: none;">
+                    <i class="la la-trash"></i>
+                </button>
+                <small class="text-muted" id="edit_document_count">1 of 4</small>
             </div>
         </div>
     `);
@@ -1764,8 +1768,8 @@ function addEditDocumentField() {
     var newIndex = editStudentDocumentCount;
     var newHtml = `
         <div class="edit-document-upload-item mb-2" data-index="${newIndex}">
-            <div class="row">
-                <div class="col-md-10">
+            <div class="d-flex align-items-center gap-2">
+                <div class="flex-grow-1">
                     <input type="file" 
                            name="edit_student_documents[]" 
                            class="form-control form-control-sm edit-student-document-input" 
@@ -1776,14 +1780,14 @@ function addEditDocumentField() {
                         <img src="" class="img-thumbnail" style="max-height: 60px;">
                     </div>
                 </div>
-                <div class="col-md-2 text-end">
-                    <button type="button" 
-                            class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
-                            data-index="${newIndex}"
-                            onclick="removeEditDocumentField(${newIndex})">
-                        <i class="la la-trash"></i>
-                    </button>
-                </div>
+                <div style="width: 32px;"></div>
+                <button type="button" 
+                        class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                        data-index="${newIndex}"
+                        onclick="removeEditDocumentField(${newIndex})">
+                    <i class="la la-trash"></i>
+                </button>
+                <div style="width: 40px;"></div>
             </div>
         </div>
     `;

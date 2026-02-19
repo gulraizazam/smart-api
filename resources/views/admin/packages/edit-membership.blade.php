@@ -162,8 +162,8 @@
                         <div id="edit_document_upload_container">
                             <!-- Document Upload Item 1 (Default) -->
                             <div class="edit-document-upload-item mb-2" data-index="0">
-                                <div class="row">
-                                    <div class="col-md-10">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="flex-grow-1">
                                         <input type="file" 
                                                name="edit_student_documents[]" 
                                                class="form-control form-control-sm edit-student-document-input" 
@@ -174,26 +174,20 @@
                                             <img src="" class="img-thumbnail" style="max-height: 60px;">
                                         </div>
                                     </div>
-                                    <div class="col-md-2 text-end">
-                                        <button type="button" 
-                                                class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
-                                                data-index="0"
-                                                onclick="removeEditDocumentField(0)"
-                                                style="display: none;">
-                                            <i class="la la-trash"></i>
-                                        </button>
-                                    </div>
+                                    <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document">
+                                        <i class="la la-plus"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-icon btn-light-danger edit-remove-document-btn" 
+                                            data-index="0"
+                                            onclick="removeEditDocumentField(0)"
+                                            style="display: none;"
+                                            title="Remove">
+                                        <i class="la la-trash"></i>
+                                    </button>
+                                    <small class="text-muted" id="edit_document_count">1 of 4</small>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Add More Button -->
-                        <div class="text-start mt-2">
-                            <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-light-primary" onclick="addEditDocumentField()">
-                                <i class="la la-plus"></i>
-                                Add Document
-                            </button>
-                            <small class="text-muted ms-2" id="edit_document_count">1 of 4</small>
                         </div>
                     </div>
                 </div>
