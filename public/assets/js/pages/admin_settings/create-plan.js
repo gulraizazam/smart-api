@@ -3157,9 +3157,12 @@ jQuery(document).ready(function () {
             showSpinner("-save");
 
             $.ajax({
-                type: 'get',
+                type: 'post',
                 url: route('admin.packages.savepackages'),
                 data: formData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
                 success: function (resposne) {
 
                     if (resposne.status) {
