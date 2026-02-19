@@ -25,21 +25,11 @@ class ScheduleController extends Controller
      */
     public function getLocations(): JsonResponse
     {
-        $userCentres = ACL::getUserCentres();
-        
-        $locationsQuery = Locations::where([
-            ['account_id', '=', Auth::user()->account_id],
-            ['active', '=', '1'],
-        ]);
-
-        if ($userCentres && is_array($userCentres) && count($userCentres) > 0) {
-            $locationsQuery->whereIn('id', $userCentres);
-        }
-
-        $locations = $locationsQuery->orderBy('name', 'asc')->get(['id', 'name']);
+        // Use same method and format as consultancy calendar for consistent ordering
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
         return ApiHelper::apiResponse(200, 'Locations retrieved successfully', true, [
-            'locations' => $locations,
+            'dropdown' => $locations->pluck('name', 'id'),
         ]);
     }
 

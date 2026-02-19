@@ -110,12 +110,12 @@ function loadLocations() {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         success: function (response) {
-            if (response.status && response.data.locations) {
-                locations = response.data.locations;
+            if (response.status && response.data.dropdown) {
+                locations = response.data.dropdown;
                 populateLocationDropdown(locations);
                 
-                // Load schedule after locations are loaded
-                if (locations.length > 0) {
+                // Load schedule - first centre is auto-selected
+                if (Object.keys(locations).length > 0) {
                     loadSchedule();
                 }
             }
@@ -134,29 +134,28 @@ function populateLocationDropdown(locations) {
     var urlParams = new URLSearchParams(window.location.search);
     var urlLocationId = urlParams.get('location_id');
     
-    // Skip "All Centres" option - find first actual branch
-    var firstBranchId = null;
-    for (var i = 0; i < locations.length; i++) {
-        if (locations[i].name && locations[i].name.toLowerCase().indexOf('all') === -1) {
-            firstBranchId = locations[i].id;
-            break;
-        }
-    }
+    // Use Object.entries to iterate - same as consultancy calendar
+    // This maintains consistent ordering (by ID) across both screens
+    var entries = Object.entries(locations);
+    var isFirst = true;
     
-    // Determine which location to select
-    var selectedLocationId = urlLocationId ? parseInt(urlLocationId) : firstBranchId;
-    
-    for (var i = 0; i < locations.length; i++) {
-        // Skip "All Centres" or similar options
-        if (locations[i].name && locations[i].name.toLowerCase().indexOf('all') !== -1) {
-            continue;
+    entries.forEach(function(entry) {
+        var id = entry[0];
+        var name = entry[1];
+        var selected = '';
+        
+        if (urlLocationId) {
+            selected = id === urlLocationId ? 'selected' : '';
+        } else if (isFirst) {
+            selected = 'selected';
+            isFirst = false;
         }
-        var selected = locations[i].id === selectedLocationId ? 'selected' : '';
-        $select.append('<option value="' + locations[i].id + '" ' + selected + '>' + locations[i].name + '</option>');
-    }
+        
+        $select.append('<option value="' + id + '" ' + selected + '>' + name + '</option>');
+    });
     
     $select.select2({
-        placeholder: 'Select Location',
+        placeholder: 'Select a Location',
         allowClear: false
     });
 }
