@@ -6,7 +6,7 @@
             <input type="hidden" id="search_patient_id" class="filter-field" value="">
             <div id="membership_patient_suggestions" class="position-absolute w-100" style="display: none; z-index: 1000; background: #fff; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
         </div>
-        <div class="col mb-lg-0 mb-2" style="flex: 0 0 10%; max-width: 10%;">
+        <div class="col mb-lg-1 mb-0" style="flex: 0 0 13%; max-width: 13%;margin-bottom:0px !important">
             <label>Code:</label>
             <input class="form-control filter-field" id="search_code_name" placeholder="Code">
         </div>
