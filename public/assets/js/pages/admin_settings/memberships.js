@@ -1,17 +1,18 @@
 var table_url = route('admin.memberships.datatable');
 
 var table_columns = [{
-    field: 'code',
-    title: 'Membership Code',
+    field: 'patient_id',
+    title: 'Patient ID',
     sortable: false,
-    width: 110,
+    width: 80,
+    template: function (data) {
+        if (data.patient_unique_id && data.patient_unique_id !== 'N/A') {
+            return 'C-' + data.patient_unique_id;
+        } else {
+            return '-';
+        }
+    }
 }, {
-    field: 'membership_type_id',
-    title: 'Membership Type',
-    sortable: false,
-    width: 110,
-},
-{
     field: 'patient',
     title: 'Patient',
     sortable: false,
@@ -24,17 +25,15 @@ var table_columns = [{
         }
     }
 }, {
-    field: 'patient_id',
-    title: 'Patient ID',
+    field: 'code',
+    title: 'Membership Code',
     sortable: false,
-    width: 80,
-    template: function (data) {
-        if (data.patient_id && data.patient_id !== 'N/A') {
-            return data.patient_id;
-        } else {
-            return '-';
-        }
-    }
+    width: 110,
+}, {
+    field: 'membership_type_id',
+    title: 'Membership Type',
+    sortable: false,
+    width: 110,
 }, {
     field: 'start_date',
     title: 'Start Date',
