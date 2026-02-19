@@ -1671,7 +1671,7 @@ function displayExistingDocuments(documents, isMembershipConsumed) {
         `;
         html += `
             <div class="existing-doc-item position-relative me-2 mb-2" data-doc-path="${doc}" style="display: inline-block;">
-                <div class="card" style="width: 120px;">
+                <div class="card" style="width: 150px;margin-right:10px">
                     <img src="${docUrl}" class="card-img-top" style="height: 80px; object-fit: cover; cursor: pointer;" 
                          onclick="viewDocument('${docUrl}')" title="Click to view">
                     <div class="card-body p-1 text-center">
@@ -1740,7 +1740,7 @@ function resetEditStudentDocuments() {
                         <img src="" class="img-thumbnail" style="max-height: 60px;">
                     </div>
                 </div>
-                <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document">
+                <button type="button" id="edit_add_document_btn" class="btn btn-sm btn-icon btn-primary" onclick="addEditDocumentField()" title="Add Document" style="margin-left: 7px; margin-right: 5px;">
                     <i class="la la-plus"></i>
                 </button>
                 <button type="button" 
@@ -1750,7 +1750,7 @@ function resetEditStudentDocuments() {
                         style="display: none;">
                     <i class="la la-trash"></i>
                 </button>
-                <small class="text-muted" id="edit_document_count">1 of 4</small>
+                <small class="text-muted" id="edit_document_count" style="margin-left: 3px;">1 of 4</small>
             </div>
         </div>
     `);
