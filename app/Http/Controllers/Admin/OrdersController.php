@@ -532,27 +532,44 @@ class OrdersController extends Controller
     {
         $patient_id = $request->input('patient_id');
         if($patient_id){
-            // Query for active membership (adjust as per your table and structure)
-            $membership = DB::table('memberships')->where('patient_id', $patient_id)->first();
+            // Query for latest active membership (end_date >= now, ordered by end_date desc)
+            $membership = DB::table('memberships')
+                ->where('patient_id', $patient_id)
+                ->where('active', 1)
+                ->where('end_date', '>=', now())
+                ->orderBy('end_date', 'desc')
+                ->first();
 
             // Check if membership exists and is active
-            if ($membership && isset($membership->active) && $membership->active == 1) {
+            if ($membership) {
                 return response()->json([
-                    'has_active_membership' => true
+                    'has_active_membership' => true,
+                    'membership_code' => $membership->code,
+                    'membership_status' => 'Active',
+                    'membership_start_date' => $membership->start_date,
+                    'membership_end_date' => $membership->end_date,
+                    'membership_type_id' => $membership->membership_type_id
                 ]);
             }else{
                 return response()->json([
-                    'has_active_membership' => false
+                    'has_active_membership' => false,
+                    'membership_code' => null,
+                    'membership_status' => 'Inactive',
+                    'membership_start_date' => null,
+                    'membership_end_date' => null,
+                    'membership_type_id' => null
                 ]);
             }
         }else{
             return response()->json([
-                'has_active_membership' => false
+                'has_active_membership' => false,
+                'membership_code' => null,
+                'membership_status' => 'Inactive',
+                'membership_start_date' => null,
+                'membership_end_date' => null,
+                'membership_type_id' => null
             ]);
         }
-
-
-
     }
     public function invoicePdf($id, $download = null)
     {
