@@ -262,13 +262,9 @@ function applyFilters(datatable) {
         let filters = {
             patient_id: $("#search_patient_id").val(),
             code: $("#search_code_name").val(),
-            membership_type_id: $("#membershiptype_id").val(),
-           
             membership_type_id: $("#search_membership_type").val(),
-            assigned:$("#search_assigned_status").val(),
-            status:$("#search_membership_status").val(),
+            status: $("#search_membership_status").val(),
             created_at: $("#date_range").val(),
-         
             filter: 'filter',
         }
         datatable.search(filters, 'search');
