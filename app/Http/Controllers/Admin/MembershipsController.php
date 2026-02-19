@@ -505,12 +505,17 @@ class MembershipsController extends Controller
             }
         }
         if (hasFilter($filters, 'status')) {
-            if ($filters['status'] == 1) {
-                // patient_id is not null
-                $where[] = ['memberships.active', '<>', null];
-            } elseif ($filters['status'] == 0) {
-                // patient_id is null
-                $where[] = ['memberships.active', '=', null];
+            $statusFilter = $filters['status'];
+            if ($statusFilter == 'active') {
+                // Active = assigned (patient_id not null) AND not expired (end_date >= today)
+                $where[] = ['memberships.patient_id', '<>', null];
+                $where[] = ['memberships.end_date', '>=', now()->format('Y-m-d')];
+            } elseif ($statusFilter == 'inactive') {
+                // Inactive = not assigned (patient_id is null)
+                $where[] = ['memberships.patient_id', '=', null];
+            } elseif ($statusFilter == 'expired') {
+                // Expired = end_date < today
+                $where[] = ['memberships.end_date', '<', now()->format('Y-m-d')];
             }
             Filters::put(Auth::user()->id, 'memberships', 'status', $filters['status']);
         } else {
@@ -518,11 +523,14 @@ class MembershipsController extends Controller
                 Filters::forget(Auth::user()->id, 'memberships', 'status');
             } else {
                 if (Filters::get(Auth::user()->id, 'memberships', 'status') !== null) {
-                    $assignedFilter = Filters::get(Auth::user()->id, 'memberships', 'status');
-                    if ($assignedFilter == 1) {
-                        $where[] = ['memberships.active', '<>', null];
-                    } elseif ($assignedFilter == 0) {
-                        $where[] = ['memberships.active', '=', null];
+                    $statusFilter = Filters::get(Auth::user()->id, 'memberships', 'status');
+                    if ($statusFilter == 'active') {
+                        $where[] = ['memberships.patient_id', '<>', null];
+                        $where[] = ['memberships.end_date', '>=', now()->format('Y-m-d')];
+                    } elseif ($statusFilter == 'inactive') {
+                        $where[] = ['memberships.patient_id', '=', null];
+                    } elseif ($statusFilter == 'expired') {
+                        $where[] = ['memberships.end_date', '<', now()->format('Y-m-d')];
                     }
                 }
             }
