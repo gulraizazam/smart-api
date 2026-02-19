@@ -6,8 +6,10 @@ var table_columns = [{
     sortable: false,
     width: 80,
     template: function (data) {
-        if (data.patient_unique_id && data.patient_unique_id !== 'N/A') {
+        if (data.patient_unique_id) {
             return 'C-' + data.patient_unique_id;
+        } else if (data.patient_id && data.patient_id !== 'N/A') {
+            return 'C-' + data.patient_id;
         } else {
             return '-';
         }
