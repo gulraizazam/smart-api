@@ -9,7 +9,7 @@
                 <ul class="suggestion-list membership-suggestion-list" style="list-style: none; padding: 0; margin: 0;"></ul>
             </div>
         </div>
-        <div class="col-lg-1 mb-lg-0 mb-2">
+        <div class="col mb-lg-0 mb-2" style="flex: 0 0 10%; max-width: 10%;">
             <label>Code:</label>
             <input class="form-control filter-field" id="search_code_name" placeholder="Code">
         </div>
