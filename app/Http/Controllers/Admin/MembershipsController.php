@@ -12,6 +12,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Membership;
 use App\Models\MembershipType;
 use App\Models\User;
+use App\Models\Locations;
+use App\Helpers\ACL;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Validation\Rule;
@@ -60,11 +62,20 @@ class MembershipsController extends Controller
             $memberships = $this->getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $Users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
             $membershipType = MembershipType::where(['active' => 1])->pluck('name', 'id');
+            $locations = Locations::getActiveSorted(ACL::getUserCentres());
+            // Get active doctors and FDMs for Sold By filter
+            $soldByUsers = User::where('account_id', Auth::User()->account_id)
+                ->where('active', 1)
+                ->whereIn('user_type_id', [config('constants.doctor_user_id'), config('constants.fdm_user_id')])
+                ->orderBy('name')
+                ->pluck('name', 'id');
             $records['active_filters'] = $apply_filter;
             $records['filter_values'] = [
                 'status' => config('constants.status'),
                 'users' => $Users,
-                'membershipType' => $membershipType
+                'membershipType' => $membershipType,
+                'locations' => $locations,
+                'soldByUsers' => $soldByUsers
             ];
             if ($memberships->count()) {
                 foreach ($memberships as $membership) {
@@ -372,6 +383,18 @@ class MembershipsController extends Controller
             }
         }
 
+        // Apply location filter - filter by patient's appointment location
+        $locationFilter = self::getLocationFilter($request, $apply_filter);
+        if ($locationFilter !== null) {
+            if (empty($locationFilter)) {
+                // No patients at this location, return no results
+                $query->where('memberships.patient_id', '=', -1);
+            } else {
+                // Only show assigned memberships where patient has appointments at this location
+                $query->whereIn('memberships.patient_id', $locationFilter);
+            }
+        }
+
         if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
             $query->where('memberships.active', 1);
         }
@@ -535,6 +558,29 @@ class MembershipsController extends Controller
                 }
             }
         }
+        // Location filter is handled separately in getRecords/getTotalRecords
+        if (hasFilter($filters, 'location_id')) {
+            Filters::put(Auth::user()->id, 'memberships', 'location_id', $filters['location_id']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'memberships', 'location_id');
+            }
+        }
+        
+        // Sold By filter - filter by created_by
+        if (hasFilter($filters, 'sold_by')) {
+            $where[] = ['memberships.created_by', '=', $filters['sold_by']];
+            Filters::put(Auth::user()->id, 'memberships', 'sold_by', $filters['sold_by']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'memberships', 'sold_by');
+            } else {
+                if (Filters::get(Auth::user()->id, 'memberships', 'sold_by') !== null) {
+                    $where[] = ['memberships.created_by', '=', Filters::get(Auth::user()->id, 'memberships', 'sold_by')];
+                }
+            }
+        }
+        
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
@@ -592,6 +638,37 @@ class MembershipsController extends Controller
 
         // Return as array for whereIn clause
         return [$patientId];
+    }
+
+    /**
+     * Get location filter - returns patient IDs who have appointments at the selected location
+     * Location filter only works for assigned memberships
+     */
+    public static function getLocationFilter(Request $request, $apply_filter = false)
+    {
+        $filters = getFilters($request->all());
+        $locationId = null;
+
+        if (hasFilter($filters, 'location_id')) {
+            $locationId = $filters['location_id'];
+        } else {
+            if (!$apply_filter) {
+                $locationId = Filters::get(Auth::User()->id, 'memberships', 'location_id');
+            }
+        }
+
+        if (empty($locationId)) {
+            return null; // No filter applied
+        }
+
+        // Get patient IDs who have appointments at this location
+        $patientIds = \App\Models\Appointments::where('location_id', $locationId)
+            ->whereNotNull('patient_id')
+            ->distinct()
+            ->pluck('patient_id')
+            ->toArray();
+        
+        return $patientIds;
     }
 
     public function exportPdf(Request $request)
@@ -659,6 +736,18 @@ class MembershipsController extends Controller
                 $query->where('memberships.patient_id', '=', -1); // No matching patients
             } else {
                 $query->whereIn('memberships.patient_id', $patientIdFilter);
+            }
+        }
+
+        // Apply location filter - filter by patient's appointment location
+        $locationFilter = self::getLocationFilter($request, $apply_filter);
+        if ($locationFilter !== null) {
+            if (empty($locationFilter)) {
+                // No patients at this location, return no results
+                $query->where('memberships.patient_id', '=', -1);
+            } else {
+                // Only show assigned memberships where patient has appointments at this location
+                $query->whereIn('memberships.patient_id', $locationFilter);
             }
         }
 
