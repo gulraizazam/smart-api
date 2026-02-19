@@ -77,6 +77,30 @@
                 .datatable-row:hover .datatable-cell:last-child {
                     background-color: #f3f6f9 !important;
                 }
+
+                /* Service Instructions Modal - Mobile Responsive */
+                #modal_service_instructions .modal-dialog {
+                    margin: 10px;
+                    max-width: calc(100% - 20px);
+                }
+
+                #modal_service_instructions .modal-header h2 {
+                    font-size: 1rem !important;
+                }
+
+                #modal_service_instructions .modal-body {
+                    padding: 10px;
+                }
+
+                #modal_service_instructions #service_instructions_content {
+                    padding: 5px !important;
+                    font-size: 14px;
+                }
+
+                #modal_service_instructions #service_instructions_content img {
+                    max-width: 100% !important;
+                    height: auto !important;
+                }
             }
         </style>
     @endpush
@@ -178,12 +202,12 @@
 
     <div class="modal fade" id="modal_service_instructions" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
             <!--begin::Modal content-->
             <div class="modal-content">
                 <!--begin::Modal header-->
                 <div class="modal-header">
-                    <h2 class="fw-bolder">Service Instructions</h2>
+                    <h2 class="fw-bolder" style="font-size: 1.25rem; word-break: break-word;">Service Instructions</h2>
                     <div class="btn btn-icon btn-sm btn-active-icon-primary" data-dismiss="modal">
                         <span class="svg-icon svg-icon-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -195,8 +219,8 @@
                 </div>
                 <!--end::Modal header-->
                 <!--begin::Modal body-->
-                <div class="modal-body">
-                    <div id="service_instructions_content" style="min-height: 200px;padding:20px">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div id="service_instructions_content" style="min-height: 100px; padding: 10px; word-wrap: break-word; overflow-wrap: break-word;">
                         <!-- Instructions will be loaded here -->
                     </div>
                 </div>
