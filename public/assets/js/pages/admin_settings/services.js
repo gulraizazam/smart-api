@@ -3,14 +3,6 @@ var table_url = route('admin.services.datatable');
 let changePages = 1000;
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 30,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    }, {
         field: 'name',
         title: 'Name',
         sortable: false,
@@ -19,7 +11,8 @@ var table_columns = [
             if (data.parent_id == 0) {
                 return '<b class="text text-dark" style="font-size: 12px;">'+data.name+'</b>';
             }
-            return '<span class="ml-3">'+data.name+'</span>';
+            // Make child service names clickable to show instructions
+            return '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" class="ml-3" style="cursor: pointer; text-decoration: none; color: #3F4254;">'+data.name+'</a>';
         }
     },{
         field: 'duration',
@@ -55,22 +48,24 @@ var table_columns = [
                 return '00.00';
             }
         }
-    },{
-        field: 'complimentory',
-        title: 'Complimentory',
-        sortable: false,
-        width: 120,
-        template: function (data) {
-            if (data.parent_id == 0) {
-                return '-';
-            }
-            if (typeof data.complimentory !== 'undefined') {
-                let status = data.complimentory == 1 ? 'Yes' : 'No';
-                return '<span>'+status+'</span>';
-            }
-            return 'No';
-        }
-    }, {
+    },
+    // {
+    //     field: 'complimentory',
+    //     title: 'Complimentory',
+    //     sortable: false,
+    //     width: 120,
+    //     template: function (data) {
+    //         if (data.parent_id == 0) {
+    //             return '-';
+    //         }
+    //         if (typeof data.complimentory !== 'undefined') {
+    //             let status = data.complimentory == 1 ? 'Yes' : 'No';
+    //             return '<span>'+status+'</span>';
+    //         }
+    //         return 'No';
+    //     }
+    // }, 
+    {
         field: 'status',
         title: 'status',
         width: 60,
@@ -121,7 +116,7 @@ function actions(data) {
             // Add instructions option only for child services
             if (permissions.detail && data.parent_id != 0) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="showInstructions(' + id + ');" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="showInstructions(' + id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-file-text"></i></span>\
                         <span class="navi-text">Instructions</span>\
                     </a>\
@@ -492,7 +487,9 @@ function setCreateData(response) {
     }
 }
 
-function showInstructions(serviceId) {
+function showInstructions(serviceId, serviceName) {
+    // Update modal title with service name
+    $("#modal_service_instructions .modal-header h2").text("Service Instructions - " + serviceName);
     $("#modal_service_instructions").modal("show");
     $("#service_instructions_content").html('<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
 
