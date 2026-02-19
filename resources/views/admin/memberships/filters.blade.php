@@ -2,12 +2,9 @@
     <div class="row mb-6 align-items-end">
         <div class="col-lg-2 mb-lg-0 mb-2 position-relative">
             <label>Patient Search:</label>
-            <input type="text" class="form-control filter-field membership_patient_search" id="membership_patient_search" placeholder="Search by name or ID" autocomplete="off">
-            <input type="hidden" id="search_patient_id" value="">
-            <span class="croxcli membership-croxcli" style="display: none; position: absolute; right: 10px; top: 32px; cursor: pointer;"><i class="la la-times"></i></span>
-            <div class="suggesstion-box membership-suggestion-box" style="display: none; position: absolute; z-index: 1000; background: #fff; border: 1px solid #ddd; width: 100%; max-height: 200px; overflow-y: auto;">
-                <ul class="suggestion-list membership-suggestion-list" style="list-style: none; padding: 0; margin: 0;"></ul>
-            </div>
+            <input type="text" class="form-control" id="membership_patient_search_input" placeholder="Search by name or phone" autocomplete="off">
+            <input type="hidden" id="search_patient_id" class="filter-field" value="">
+            <div id="membership_patient_suggestions" class="position-absolute w-100" style="display: none; z-index: 1000; background: #fff; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></div>
         </div>
         <div class="col mb-lg-0 mb-2" style="flex: 0 0 10%; max-width: 10%;">
             <label>Code:</label>
