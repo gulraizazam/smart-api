@@ -507,9 +507,9 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                         <thead class="thead-light">
                             <tr>
                                 <th>Service</th>
-                                <th class="text-right">Price</th>
+                                <th class="text-right">Regular Price</th>
                                 <th class="text-right">Discount</th>
-                                <th class="text-right">Net</th>
+                                <th class="text-right">Total</th>
                                 <th>Date</th>
                                 <th>Consumed</th>
                             </tr>
@@ -593,7 +593,7 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                                 <tbody>
                                     <tr>
                                         <td class="text-muted bg-light" width="20%">Patient</td>
-                                        <td width="30%"><strong>${patient.name}</strong> (C-${patient.unique_id || '-'})</td>
+                                        <td width="30%"><strong>${patient.name}</strong> (${patient.unique_id || '-'})</td>
                                         <td class="text-muted bg-light" width="20%">Code</td>
                                         <td width="30%"><strong>${membership.code}</strong></td>
                                     </tr>
