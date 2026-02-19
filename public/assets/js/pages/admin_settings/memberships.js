@@ -506,12 +506,12 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                     <table class="table table-bordered table-sm">
                         <thead class="thead-light">
                             <tr>
-                                <th>Service</th>
-                                <th class="text-right">Regular Price</th>
-                                <th class="text-right">Discount</th>
-                                <th class="text-right">Total</th>
-                                <th>Date</th>
-                                <th>Consumed</th>
+                                <th class="text-center">Service</th>
+                                <th class="text-center">Regular Price</th>
+                                <th class="text-center">Discount</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">Date</th>
+                                <th class="text-center">Consumed</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -592,25 +592,25 @@ function showMembershipDetailsModal(data, isStudentMembership) {
                             <table class="table table-bordered table-sm mb-3">
                                 <tbody>
                                     <tr>
-                                        <td class="text-muted bg-light" width="20%">Patient</td>
+                                        <td class="text-dark bg-light" width="20%">Patient</td>
                                         <td width="30%"><strong>${patient.name}</strong> (${patient.unique_id || '-'})</td>
-                                        <td class="text-muted bg-light" width="20%">Code</td>
+                                        <td class="text-dark bg-light" width="20%">Code</td>
                                         <td width="30%"><strong>${membership.code}</strong></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-muted bg-light">Phone</td>
+                                        <td class="text-dark bg-light">Phone</td>
                                         <td>${patient.phone || '-'}</td>
-                                        <td class="text-muted bg-light">Type</td>
+                                        <td class="text-dark bg-light">Type</td>
                                         <td>${membership.type}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-muted bg-light">Email</td>
+                                        <td class="text-dark bg-light">Email</td>
                                         <td>${patient.email || '-'}</td>
-                                        <td class="text-muted bg-light">Status</td>
+                                        <td class="text-dark bg-light">Status</td>
                                         <td>${membershipStatusBadge}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-muted bg-light">Period</td>
+                                        <td class="text-dark bg-light">Period</td>
                                         <td colspan="3">${membership.start_date || '-'} to ${membership.end_date || '-'}</td>
                                     </tr>
                                 </tbody>
