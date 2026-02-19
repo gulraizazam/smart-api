@@ -410,7 +410,7 @@ function showMembershipDetailsModal(data, isStudentMembership) {
         let servicesTableRows = '';
         serviceUsage.services.forEach(function(service, index) {
             let consumedText = service.consumed_at 
-                ? '<span class="label label-success label-inline">Yes</span> <small class="text-muted">at ' + service.consumed_at + '</small>'
+                ? '<span class="label label-success label-inline">Yes</span> <span class="text-dark" style="font-size: 13px;"> at ' + service.consumed_at + '</span>'
                 : '<span class="label label-warning label-inline">No</span>';
             servicesTableRows += `
                 <tr>
