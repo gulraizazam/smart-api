@@ -21,7 +21,7 @@
                 <option value="3">Gold Membership</option>
             </select>
         </div>
-        <div class="col-lg-2 mb-lg-0 mb-2">
+        <div class="col mb-lg-0 mb-2" style="flex: 0 0 12%; max-width: 12%;">
             <label>Assigned Status</label>
             <select class="form-control filter-field select2" id="search_assigned_status">
                 <option value="">Select</option>
