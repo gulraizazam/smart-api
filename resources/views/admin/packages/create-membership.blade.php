@@ -206,8 +206,8 @@
                     <div id="document_upload_container">
                         <!-- Document Upload Item 1 (Default) -->
                         <div class="document-upload-item mb-2" data-index="0">
-                            <div class="row">
-                                <div class="col-md-10">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="flex-grow-1">
                                     <input type="file" 
                                            name="student_documents[]" 
                                            class="form-control form-control-sm student-document-input" 
@@ -221,25 +221,19 @@
                                     </div>
                                     <small class="text-danger d-block"><b class="document-error" id="document_error_0"></b></small>
                                 </div>
-                                <div class="col-md-2 text-end">
-                                    <button type="button" 
-                                            class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
-                                            data-index="0"
-                                            style="display: none;">
-                                        <i class="la la-trash"></i>
-                                    </button>
-                                </div>
+                                <button type="button" id="add_document_btn" class="btn btn-sm btn-icon btn-primary" title="Add Document" style="margin-right: 5px;margin-left: 7px;">
+                                    <i class="la la-plus"></i>
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-sm btn-icon btn-light-danger remove-document-btn" 
+                                        data-index="0"
+                                        style="display: none;"
+                                        title="Remove">
+                                    <i class="la la-trash"></i>
+                                </button>
+                                <small class="text-muted" id="document_count_text" style="margin-left:3px;">1 of 4</small>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Add More Button -->
-                    <div class="text-start mt-2">
-                        <button type="button" id="add_document_btn" class="btn btn-sm btn-light-primary">
-                            <i class="la la-plus"></i>
-                            Add Document
-                        </button>
-                        <small class="text-muted ms-2" id="document_count_text">1 of 4</small>
                     </div>
                 </div>
             </div>
