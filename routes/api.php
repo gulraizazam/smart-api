@@ -19,7 +19,8 @@ use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\ProductsController;
-use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\ServicesController as AdminServicesController;
+use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\VouchersController;
@@ -264,12 +265,24 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('machine_types/status', [MachineTypeController::class, 'status'])->name('machine_types.status');
     // Machine Types Routes End
 
-    // Services
-    Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
-    Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
-    Route::get('services/{id}/duplicate', [ServicesController::class, 'duplicate'])->name('services.duplicate');
-    Route::post('services/duplicate', [ServicesController::class, 'storeDuplicate'])->name('services.duplicate.store');
-    Route::resource('services', ServicesController::class)->except('index');
+    // Services (Optimized - using API Controller with Service Layer)
+    Route::prefix('services')->name('services.')->group(function () {
+        // Static routes first (before dynamic {id} routes)
+        Route::post('datatable', [ServicesController::class, 'datatable'])->name('datatable');
+        Route::post('status', [ServicesController::class, 'status'])->name('status');
+        Route::get('create', [ServicesController::class, 'create'])->name('create');
+        Route::post('/', [ServicesController::class, 'store'])->name('store');
+        Route::post('duplicate', [ServicesController::class, 'storeDuplicate'])->name('duplicate.store');
+        Route::get('sort/get', [ServicesController::class, 'sortOrderGet'])->name('get_sort');
+        Route::post('sort/save', [ServicesController::class, 'sortOrderSave'])->name('sort_save');
+        Route::get('color', [ServicesController::class, 'getColor'])->name('get_color');
+        // Dynamic routes with {id} parameter
+        Route::get('{id}/edit', [ServicesController::class, 'edit'])->name('edit');
+        Route::get('{id}/duplicate', [ServicesController::class, 'duplicate'])->name('duplicate');
+        Route::get('{id}', [ServicesController::class, 'show'])->name('show');
+        Route::put('{id}', [ServicesController::class, 'update'])->name('update');
+        Route::delete('{id}', [ServicesController::class, 'destroy'])->name('destroy');
+    });
 
     // Logs Routes Start
     Route::post('logs/datatable', [LogsController::class, 'datatable'])->name('logs.datatable');
