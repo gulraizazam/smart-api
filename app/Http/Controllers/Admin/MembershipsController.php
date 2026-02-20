@@ -77,7 +77,7 @@ class MembershipsController extends Controller
                 'status' => Filters::get(Auth::user()->id, 'memberships', 'status'),
                 'location_id' => Filters::get(Auth::user()->id, 'memberships', 'location_id'),
                 'sold_by' => Filters::get(Auth::user()->id, 'memberships', 'sold_by'),
-                'created_at' => Filters::get(Auth::user()->id, 'memberships', 'created_at'),
+                'assigned_at' => Filters::get(Auth::user()->id, 'memberships', 'assigned_at'),
                 'created_by' => Filters::get(Auth::user()->id, 'memberships', 'created_by'),
             ];
             $records['active_filters'] = $activeFilters;
@@ -598,30 +598,29 @@ class MembershipsController extends Controller
             }
         }
         
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+        // Assigned At date range filter
+        if (hasFilter($filters, 'assigned_at')) {
+            $date_range = explode(' - ', $filters['assigned_at']);
+            $start_date_time = date('Y-m-d 00:00:00', strtotime($date_range[0]));
             $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
+            $end_date_string->setTime(23, 59, 59);
             $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
-        if (hasFilter($filters, 'created_at')) {
-            $where[] = ['memberships.created_at', '>=', $start_date_time];
-            $where[] = ['memberships.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'memberships', 'created_at', $filters['created_at']);
+            $where[] = ['memberships.assigned_at', '>=', $start_date_time];
+            $where[] = ['memberships.assigned_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, 'memberships', 'assigned_at', $filters['assigned_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'memberships', 'created_at');
+                Filters::forget(Auth::User()->id, 'memberships', 'assigned_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'memberships', 'created_at')) {
-                    $where[] = [
-                        'memberships.created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, 'memberships', 'created_at'),
-                    ];
+                $savedAssignedAt = Filters::get(Auth::User()->id, 'memberships', 'assigned_at');
+                if ($savedAssignedAt) {
+                    $date_range = explode(' - ', $savedAssignedAt);
+                    $start_date_time = date('Y-m-d 00:00:00', strtotime($date_range[0]));
+                    $end_date_string = new DateTime($date_range[1]);
+                    $end_date_string->setTime(23, 59, 59);
+                    $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+                    $where[] = ['memberships.assigned_at', '>=', $start_date_time];
+                    $where[] = ['memberships.assigned_at', '<=', $end_date_time];
                 }
             }
         }
