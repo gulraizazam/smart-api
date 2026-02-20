@@ -3666,6 +3666,9 @@ class AppointmentsController extends Controller
         if ($package_advances->package_id != null) {
             PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(),'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
+            
+            // Update plan_name in packages table
+            $this->updatePlanNameForPackage($package_advances->package_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {
                 $patient = User::whereId($appointmentinfo->patient_id)->first();
@@ -5373,5 +5376,54 @@ class AppointmentsController extends Controller
                 'message' => 'Error fetching WhatsApp data: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Update plan_name in packages table based on consumed services
+     * Generates name from first two bundle names (comma separated)
+     * For plan type: adds '...' if more than 2 bundles
+     */
+    private function updatePlanNameForPackage(int $packageId): void
+    {
+        $package = Packages::find($packageId);
+        if (!$package) {
+            return;
+        }
+
+        if ($package->plan_type === 'membership') {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (!empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+            }
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+        
+        $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
+            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            ->orderBy('package_bundles.id', 'asc')
+            ->limit(2)
+            ->pluck('bundles.name')
+            ->toArray();
+
+        if (empty($packageBundles)) {
+            return;
+        }
+
+        $planName = implode(', ', $packageBundles);
+        
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
     }
 }
