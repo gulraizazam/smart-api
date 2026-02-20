@@ -874,6 +874,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('membershiptypes/datatable', [MembershipTypesController::class, 'datatable'])->name('membershiptypes.datatable');
     Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
     Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
+    Route::get('memberships/getsoldbyusers', [MembershipsController::class, 'getSoldByUsers'])->name('memberships.getsoldbyusers');
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
