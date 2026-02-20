@@ -302,24 +302,27 @@ class OrdersController extends Controller
                             return ApiHelper::apiResponse($this->error, $product_name . ' quantity is out of stock for this inventory batch', false);
                         }
                     } else {
-                        // Legacy: Check total inventory
-                        $totalQuantity = \DB::table('inventories')
+                        // Calculate available using same logic as stock report:
+                        // Available = Total stock additions (IN) - Total sales
+                        $totalAdditions = \DB::table('stocks')
                             ->where('product_id', $product_id)
                             ->where('location_id', $request->location_id)
+                            ->where('stock_type', 'in')
                             ->sum('quantity');
 
-                        $soldQuantity = \DB::table('order_details')
+                        $totalSales = \DB::table('order_details')
                             ->join('orders', 'orders.id', '=', 'order_details.order_id')
                             ->where('order_details.product_id', $product_id)
                             ->where('orders.location_id', $request->location_id)
                             ->sum('order_details.quantity');
 
-                        $availableQuantity = $totalQuantity - $soldQuantity;
+                        $availableQuantity = $totalAdditions - $totalSales;
 
-                        $product_name = Inventory::where('product_id', $product_id)->where('location_id', $request->location_id)->first();
+                        $product = Product::find($product_id);
+                        $product_name = $product ? $product->name : 'Product';
 
                         if ($availableQuantity < $quantity) {
-                            return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
+                            return ApiHelper::apiResponse($this->error, $product_name . ' quantity is out of stock (Available: ' . $availableQuantity . ')', false);
                         }
                     }
                 }
