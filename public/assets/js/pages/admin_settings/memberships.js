@@ -357,8 +357,31 @@ function setFilters(filter_values, active_filters) {
         $("#search_membership_type").val(active_filters.membership_type_id).trigger('change.select2');
         $("#search_membership_status").val(active_filters.status).trigger('change.select2');
         $("#search_location_id").val(active_filters.location_id).trigger('change.select2');
-        $("#search_sold_by").val(active_filters.sold_by).trigger('change.select2');
         $("#search_created_by").val(active_filters.created_by).trigger('change.select2');
+        
+        // If location filter is active, fetch sold_by users for that location then set the value
+        if (active_filters.location_id) {
+            $.ajax({
+                url: '/api/memberships/getsoldbyusers',
+                type: 'GET',
+                data: { location_id: active_filters.location_id },
+                success: function(response) {
+                    let options = '<option value="">All</option>';
+                    if (response.success && response.data && response.data.users) {
+                        Object.entries(response.data.users).forEach(function(user) {
+                            options += '<option value="' + user[0] + '">' + user[1] + '</option>';
+                        });
+                    }
+                    $("#search_sold_by").html(options).val(active_filters.sold_by).trigger('change.select2');
+                },
+                error: function() {
+                    $("#search_sold_by").val(active_filters.sold_by).trigger('change.select2');
+                }
+            });
+        } else {
+            $("#search_sold_by").val(active_filters.sold_by).trigger('change.select2');
+        }
+        
         hideShowAdvanceFilters(active_filters);
 
     } catch (error) {
