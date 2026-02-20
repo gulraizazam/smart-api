@@ -297,34 +297,62 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // Get products with TOTAL available quantity (sum of all inventories)
-            // while still tracking the oldest inventory for FIFO deduction
+            // Calculate available quantity using same logic as stock report:
+            // Available = Total stock additions (IN) - Total sales
             $location_id = $request->from_id;
             
-            $result = DB::table('products')
-                ->join('inventories', 'products.id', '=', 'inventories.product_id')
-                ->where([
-                    ['products.status', '=', '1'],
-                    ['products.account_id', '=', $account_id],
-                    ['inventories.location_id', '=', $location_id],
-                ])
+            // Get distinct products that have inventory at this location
+            $productIds = DB::table('inventories')
+                ->where('location_id', $location_id)
+                ->distinct()
+                ->pluck('product_id');
+            
+            $products = DB::table('products')
+                ->whereIn('products.id', $productIds)
+                ->where('products.status', '1')
+                ->where('products.account_id', $account_id)
                 ->when($request->type == 'order', function ($q) {
-                    return $q->where(['products.product_type' => 'for_sale']);
+                    return $q->where('products.product_type', 'for_sale');
                 })
-                ->groupBy('products.id', 'products.name', 'products.product_type', 'products.sale_price', 'inventories.location_id')
-                ->selectRaw(
-                    'MIN(inventories.id) as inventory_id,
-                    products.id,
-                    products.name,
-                    products.product_type,
-                    COALESCE(MAX(inventories.sale_price), products.sale_price) as sale_price,
-                    inventories.location_id,
-                    SUM(inventories.quantity) as available_quantity,
-                    MIN(inventories.created_at) as inventory_date'
-                )
-                ->havingRaw('SUM(inventories.quantity) > 0')
                 ->orderBy('products.name', 'asc')
                 ->get();
+            
+            // Calculate available quantity for each product using stock report logic
+            $result = $products->map(function ($product) use ($location_id) {
+                // Total stock additions (IN) for this product at this location
+                $totalAdditions = DB::table('stocks')
+                    ->where('product_id', $product->id)
+                    ->where('location_id', $location_id)
+                    ->where('stock_type', 'in')
+                    ->sum('quantity');
+                
+                // Total sales for this product at this location
+                $totalSales = DB::table('order_details')
+                    ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                    ->where('order_details.product_id', $product->id)
+                    ->where('orders.location_id', $location_id)
+                    ->sum('order_details.quantity');
+                
+                // Get oldest inventory for FIFO
+                $inventory = DB::table('inventories')
+                    ->where('product_id', $product->id)
+                    ->where('location_id', $location_id)
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+                
+                return (object)[
+                    'inventory_id' => $inventory ? $inventory->id : null,
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'product_type' => $product->product_type,
+                    'sale_price' => $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price,
+                    'location_id' => $location_id,
+                    'available_quantity' => $totalAdditions - $totalSales,
+                    'inventory_date' => $inventory ? $inventory->created_at : null,
+                ];
+            })->filter(function ($product) {
+                return $product->available_quantity > 0;
+            })->values();
         
             return $result;
         } else if (isset($request->product_id)) {
