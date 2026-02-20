@@ -297,17 +297,12 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // FIFO: Get only the oldest inventory entry per product with quantity > 0
-            // This ensures we sell oldest stock first
+            // Get products with TOTAL available quantity (sum of all inventories)
+            // while still tracking the oldest inventory for FIFO deduction
             $location_id = $request->from_id;
             
-            $result = Inventory::join('products', 'products.id', '=', 'inventories.product_id')
-                ->whereRaw('inventories.id = (
-                    SELECT MIN(inv.id) FROM inventories inv 
-                    WHERE inv.product_id = inventories.product_id 
-                    AND inv.location_id = ? 
-                    AND inv.quantity > 0
-                )', [$location_id])
+            $result = DB::table('products')
+                ->join('inventories', 'products.id', '=', 'inventories.product_id')
                 ->where([
                     ['products.status', '=', '1'],
                     ['products.account_id', '=', $account_id],
@@ -316,16 +311,18 @@ class Product extends BaseModal
                 ->when($request->type == 'order', function ($q) {
                     return $q->where(['products.product_type' => 'for_sale']);
                 })
+                ->groupBy('products.id', 'products.name', 'products.product_type', 'products.sale_price', 'inventories.location_id')
                 ->selectRaw(
-                    'inventories.id as inventory_id,
+                    'MIN(inventories.id) as inventory_id,
                     products.id,
                     products.name,
                     products.product_type,
-                    COALESCE(inventories.sale_price, products.sale_price) as sale_price,
+                    COALESCE(MAX(inventories.sale_price), products.sale_price) as sale_price,
                     inventories.location_id,
-                    inventories.quantity as available_quantity,
-                    inventories.created_at as inventory_date'
+                    SUM(inventories.quantity) as available_quantity,
+                    MIN(inventories.created_at) as inventory_date'
                 )
+                ->havingRaw('SUM(inventories.quantity) > 0')
                 ->orderBy('products.name', 'asc')
                 ->get();
         
