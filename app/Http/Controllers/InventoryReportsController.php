@@ -66,8 +66,26 @@ class InventoryReportsController extends Controller
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationIds, $startDate, $endDate) {
                 
-                // Current inventory quantity is the source of truth (already reflects all deductions)
-                $currentInventoryQty = $product->inventories->whereIn('location_id', $locationIds)->sum('quantity');
+                // Opening Stock = Closing Stock of previous period
+                // Closing Stock = All additions before start date - All sales before start date
+                
+                // Total stock additions (IN) before start date
+                $additionsBeforeStart = Stock::where('product_id', $product->id)
+                    ->where('stock_type', 'in')
+                    ->whereIn('location_id', $locationIds)
+                    ->where('created_at', '<', $startDate)
+                    ->sum('quantity');
+                
+                // Total sales before start date
+                $salesBeforeStart = OrderDetail::where('product_id', $product->id)
+                    ->whereHas('order', function ($query) use ($locationIds, $startDate) {
+                        $query->where('created_at', '<', $startDate)
+                            ->whereIn('location_id', $locationIds);
+                    })
+                    ->sum('quantity');
+                
+                // Opening Stock = Additions before - Sales before
+                $openingStock = $additionsBeforeStart - $salesBeforeStart;
                 
                 // Addition in range = stock IN records within date range
                 $additionInRange = Stock::where('product_id', $product->id)
@@ -84,32 +102,11 @@ class InventoryReportsController extends Controller
                     })
                     ->sum('quantity');
                 
-                // Additions AFTER the date range
-                $additionsAfter = Stock::where('product_id', $product->id)
-                    ->where('stock_type', 'in')
-                    ->whereIn('location_id', $locationIds)
-                    ->where('created_at', '>', $endDate)
-                    ->sum('quantity');
-                
-                // Sales AFTER the date range
-                $salesAfter = OrderDetail::where('product_id', $product->id)
-                    ->whereHas('order', function ($query) use ($locationIds, $endDate) {
-                        $query->where('created_at', '>', $endDate)
-                            ->whereIn('location_id', $locationIds);
-                    })
-                    ->sum('quantity');
-                
-                // Remaining stock at END of date range (working backwards from current)
-                // Current = Remaining + Additions_after - Sales_after
-                // Therefore: Remaining = Current - Additions_after + Sales_after
-                $remainingStock = $currentInventoryQty - $additionsAfter + $salesAfter;
-                
-                // Opening stock (working backwards)
-                // Remaining = Opening + Additions_in_range - Sales_in_range
-                // Therefore: Opening = Remaining - Additions_in_range + Sales_in_range
-                $openingStock = $remainingStock - $additionInRange + $soldInRange;
-                
+                // Total Stock = Opening + Additions in range
                 $totalStock = $openingStock + $additionInRange;
+                
+                // Remaining (Closing) = Total Stock - Sold in range
+                $remainingStock = $totalStock - $soldInRange;
                 
                 return [
                     'product_name' => $product->name,
