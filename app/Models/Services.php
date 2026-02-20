@@ -601,6 +601,7 @@ class Services extends BaseModal
      *
      * @param  (int)  $id
      * @return (boolean)
+     * @deprecated Use ServiceService::checkDependencies() instead
      */
     public static function isChildExists($id, $account_id)
     {
@@ -615,7 +616,7 @@ class Services extends BaseModal
             Appointments::where(['service_id' => $id])->count() ||
             StaffTargetServices::where(['service_id' => $id])->count()
         ) {
-            return false;
+            return true;
         }
 
         return false;
