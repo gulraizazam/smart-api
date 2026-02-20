@@ -11,8 +11,13 @@ var table_columns = [
             if (data.parent_id == 0) {
                 return '<b class="text text-dark" style="font-size: 12px;">'+data.name+'</b>';
             }
-            // Make child service names clickable to show instructions
-            return '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" class="ml-3" style="cursor: pointer; text-decoration: none; color: #3F4254;">'+data.name+'</a>';
+            // Child service with clickable name and instruction icon
+            return '<span class="ml-3">' +
+                '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; text-decoration: none; color: #3F4254;">'+data.name+'</a>' +
+                '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; margin-left: 8px;">' +
+                    '<i class="la la-file-text text-primary" style="font-size: 16px;"></i>' +
+                '</a>' +
+            '</span>';
         }
     },{
         field: 'duration',
@@ -72,7 +77,7 @@ var table_columns = [
         sortable: false,
         template: function (data) {
             let status_url = route('admin.services.status');
-            return statuses(data, status_url);
+            return serviceStatuses(data, status_url);
         }
     }, {
         field: 'actions',
@@ -485,6 +490,119 @@ function setCreateData(response) {
     } catch (error) {
         showException(error);
     }
+}
+
+// Custom status function for services - shows warning when deactivating parent with children
+function serviceStatuses(data, status_url) {
+    let id = data.id;
+    let active = data.active;
+    let isParent = data.parent_id == 0;
+    let status = '';
+
+    if (active) {
+        if (permissions.active || permissions.inactive) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateServiceStatus(`'+ status_url + '`, `' + id + '`, $(this), ' + isParent + ');" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        } else {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+    } else {
+        status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateServiceStatus(`'+ status_url + '`, `' + id + '`, $(this), ' + isParent + ');" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+    }
+
+    return status;
+}
+
+function updateServiceStatus(route, id, $this, isParent) {
+    let isDeactivating = !$this.is(":checked");
+    let title = 'Are you sure you want to change?';
+    let text = '';
+    let icon = 'info';
+
+    // Show warning when deactivating or activating a parent service
+    if (isParent) {
+        if (isDeactivating) {
+            title = 'Deactivate Parent Service?';
+            text = 'All child services under this parent will also be deactivated.';
+            icon = 'warning';
+        } else {
+            title = 'Activate Parent Service?';
+            text = 'All child services under this parent will also be activated.';
+            icon = 'info';
+        }
+    }
+
+    swal.fire({
+        title: title,
+        text: text,
+        type: 'danger',
+        icon: icon,
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, change!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route,
+                data: { id: id, status: $this.is(":checked") ? '1' : '0' },
+                type: "POST",
+                cache: false,
+                success: function (response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                        // Reload datatable to reflect child status changes
+                        if (isParent) {
+                            datatable.reload();
+                        }
+                    } else {
+                        toastr.error(response.message);
+                        // Revert checkbox state
+                        if ($this.is(":checked")) {
+                            $this.prop("checked", false);
+                        } else {
+                            $this.prop("checked", true);
+                        }
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                    // Revert checkbox state on error
+                    if ($this.is(":checked")) {
+                        $this.prop("checked", false);
+                    } else {
+                        $this.prop("checked", true);
+                    }
+                }
+            });
+        } else {
+            // User cancelled - revert checkbox state
+            if ($this.is(":checked")) {
+                $this.prop("checked", false);
+            } else {
+                $this.prop("checked", true);
+            }
+        }
+    });
 }
 
 function showInstructions(serviceId, serviceName) {

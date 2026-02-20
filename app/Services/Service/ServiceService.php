@@ -158,11 +158,14 @@ class ServiceService
     public function getFormData(int $accountId, ?int $serviceId = null): array
     {
         $service = null;
-        $selectTaxTreatmentType = 1;
+        $selectTaxTreatmentType = ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE; // Default: Is Inclusive
 
         if ($serviceId) {
             $service = Services::findOrFail($serviceId);
-            $selectTaxTreatmentType = $service->tax_treatment_type_id ?: 1;
+            // If existing service has "Both" (ID 1), default to "Is Inclusive" (ID 3)
+            $selectTaxTreatmentType = ($service->tax_treatment_type_id && $service->tax_treatment_type_id != 1) 
+                ? $service->tax_treatment_type_id 
+                : ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE;
         } else {
             $service = new \stdClass();
             $service->duration = null;
@@ -339,33 +342,14 @@ class ServiceService
             throw ServiceException::notFound($id);
         }
 
-        // Check if parent has active children
+        // If this is a parent service, deactivate all children as well
         if ($service->parent_id == 0) {
-            $hasActiveChildren = Services::where('parent_id', $id)
-                ->where('active', 1)
-                ->exists();
-
-            if ($hasActiveChildren) {
-                throw ServiceException::hasActiveChildren($id);
-            }
+            Services::where('parent_id', $id)->update(['active' => 0]);
         }
 
         return DB::transaction(function () use ($service, $id, $accountId) {
-            if ($service->end_node) {
-                $service->update(['active' => 0]);
-            } else {
-                // Deactivate all children using NodesTree
-                $parentGroups = new NodesTree();
-                $parentGroups->current_id = -1;
-                $parentGroups->build($id, $accountId);
-                $parentGroups->toList($parentGroups, -1);
-
-                $serviceIds = array_column($parentGroups->nodeList, 'id');
-
-                if (count($serviceIds)) {
-                    Services::whereIn('id', $serviceIds)->update(['active' => 0]);
-                }
-            }
+            // Deactivate the service itself
+            $service->update(['active' => 0]);
 
             // Log audit trail
             AuditTrails::inactiveEventLogger(self::$table, 'inactive', self::$fillable, $id);
@@ -515,7 +499,7 @@ class ServiceService
             'type' => 'single',
             'total_services' => 1,
             'account_id' => 1,
-            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? 1,
+            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
         ]);
 
         BundleHasServices::create([
@@ -569,7 +553,7 @@ class ServiceService
             'name' => $service->name,
             'price' => $service->price,
             'services_price' => $service->price,
-            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? 1,
+            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
         ]);
 
         // Update bundle has services
