@@ -266,7 +266,7 @@ function applyFilters(datatable) {
             status: $("#search_membership_status").val(),
             location_id: $("#search_location_id").val(),
             sold_by: $("#search_sold_by").val(),
-            created_at: $("#date_range").val(),
+            assigned_at: $("#search_assigned_at").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -280,16 +280,18 @@ function resetAllFilters(datatable) {
             code: '',
             membership_type_id: '',
             created_by: '',
-            created_at: '',
             status: '',
             location_id: '',
             sold_by: '',
+            assigned_at: '',
             filter: 'filter_cancel',
         }
         // Clear patient search fields
         $('#membership_patient_search_input').val('');
         $('#search_patient_id').val('');
         $('#membership_patient_suggestions').hide();
+        // Clear date range picker
+        $('#search_assigned_at').val('');
         datatable.search(filters, 'search');
     });
 }
@@ -351,9 +353,34 @@ function setFilters(filter_values, active_filters) {
             });
         });
         
+        // Initialize daterangepicker for assigned_at filter
+        $('#search_assigned_at').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: 'Clear',
+                format: 'YYYY-MM-DD'
+            },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        });
+        
+        $('#search_assigned_at').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        });
+        
+        $('#search_assigned_at').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+        
         $("#search_patient_id").val(active_filters.patient_id);
         $("#search_code_name").val(active_filters.code);
-        $("#date_range").val(active_filters.created_at);
+        $("#search_assigned_at").val(active_filters.assigned_at);
         $("#search_membership_type").val(active_filters.membership_type_id).trigger('change.select2');
         $("#search_membership_status").val(active_filters.status).trigger('change.select2');
         $("#search_location_id").val(active_filters.location_id).trigger('change.select2');
@@ -459,15 +486,10 @@ $(document).ready(function() {
 });
 
 function hideShowAdvanceFilters(active_filters) {
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
-        || (typeof active_filters.lead_status_id !== 'undefined' && active_filters.lead_status_id != '')
-        || (typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
-        || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '')
-        || (typeof active_filters.created_by !== 'undefined' && active_filters.created_by != '')
-    ) {
-        $(".advance-filters").show();
-        $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+    // Show advance filters if assigned_at filter is active
+    if ((typeof active_filters.assigned_at !== 'undefined' && active_filters.assigned_at != '')) {
+        $(".membership-advance-filters").show();
+        $(".membership-advance-arrow").removeClass("fa-caret-right").addClass("fa-caret-down");
     }
 }
 
