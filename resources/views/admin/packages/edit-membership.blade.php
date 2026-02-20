@@ -33,6 +33,7 @@
             <input type="hidden" name="patient_id" id="edit_patient_id_membership">
             <input type="hidden" name="location_id" id="edit_location_id_membership">
             <input type="hidden" id="edit_membership_has_edit_permission" value="{{ Gate::allows('plans_edit') ? '1' : '0' }}">
+            <input type="hidden" id="edit_membership_has_edit_sold_by_permission" value="{{ Gate::allows('plans_edit_sold_by') ? '1' : '0' }}">
             
             <div class="d-flex flex-column scroll-y me-n7 pe-7">
                 <!-- Patient and Location Info (Read-only) -->

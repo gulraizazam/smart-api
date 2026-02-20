@@ -1162,6 +1162,8 @@ function setEditMembershipData(response) {
         
         // Check if user has plans_edit permission from hidden field
         let hasEditPermission = $('#edit_membership_has_edit_permission').val() === '1';
+        // Check if user has plans_edit_sold_by permission for pencil icon
+        let hasEditSoldByPermission = $('#edit_membership_has_edit_sold_by_permission').val() === '1';
         
         if (packagebundles && packagebundles.length) {
             packagebundles.forEach(function(bundle) {
@@ -1193,12 +1195,16 @@ function setEditMembershipData(response) {
                 serviceOptions += '<td>' + number_format(bundle.tax_including_price, 2) + '</td>';
                 serviceOptions += '<td>' + soldByText + '</td>';
                 
-                // Add Actions column with pencil icon for editing sold by
+                // Add Actions column with pencil icon for editing sold by (requires plans_edit_sold_by permission)
                 if (hasEditPermission) {
                     serviceOptions += '<td class="text-center">';
-                    serviceOptions += '<a href="javascript:void(0);" onclick="editMembershipSoldBy(' + bundle.id + ', ' + locationId + ');" class="btn btn-icon btn-light-primary btn-sm" title="Edit Sold By">';
-                    serviceOptions += '<i class="la la-pencil"></i>';
-                    serviceOptions += '</a>';
+                    if (hasEditSoldByPermission) {
+                        serviceOptions += '<a href="javascript:void(0);" onclick="editMembershipSoldBy(' + bundle.id + ', ' + locationId + ');" class="btn btn-icon btn-light-primary btn-sm" title="Edit Sold By">';
+                        serviceOptions += '<i class="la la-pencil"></i>';
+                        serviceOptions += '</a>';
+                    } else {
+                        serviceOptions += '-';
+                    }
                     serviceOptions += '</td>';
                 }
                 
