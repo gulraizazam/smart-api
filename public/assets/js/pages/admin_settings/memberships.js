@@ -328,13 +328,37 @@ function setFilters(filter_values, active_filters) {
         $("#search_location_id").html(location_options);
         $("#search_sold_by").html(sold_by_options);
         
+        // When location changes, update sold_by dropdown (use select2:select event)
+        $("#search_location_id").off('select2:select select2:clear').on('select2:select select2:clear', function(e) {
+            let locationId = $(this).val() || '';
+            // Fetch sold by users for this location
+            $.ajax({
+                url: '/api/memberships/getsoldbyusers',
+                type: 'GET',
+                data: { location_id: locationId },
+                success: function(response) {
+                    let options = '<option value="">All</option>';
+                    if (response.success && response.data && response.data.users) {
+                        Object.entries(response.data.users).forEach(function(user) {
+                            options += '<option value="' + user[0] + '">' + user[1] + '</option>';
+                        });
+                    }
+                    $("#search_sold_by").html(options).val('').trigger('change.select2');
+                },
+                error: function() {
+                    $("#search_sold_by").html('<option value="">All</option>').val('').trigger('change.select2');
+                }
+            });
+        });
+        
         $("#search_patient_id").val(active_filters.patient_id);
         $("#search_code_name").val(active_filters.code);
         $("#date_range").val(active_filters.created_at);
-        $("#search_membership_status").val(active_filters.status);
-        $("#search_location_id").val(active_filters.location_id);
-        $("#search_sold_by").val(active_filters.sold_by);
-        $("#search_created_by").val(active_filters.created_by);
+        $("#search_membership_type").val(active_filters.membership_type_id).trigger('change.select2');
+        $("#search_membership_status").val(active_filters.status).trigger('change.select2');
+        $("#search_location_id").val(active_filters.location_id).trigger('change.select2');
+        $("#search_sold_by").val(active_filters.sold_by).trigger('change.select2');
+        $("#search_created_by").val(active_filters.created_by).trigger('change.select2');
         hideShowAdvanceFilters(active_filters);
 
     } catch (error) {

@@ -69,7 +69,18 @@ class MembershipsController extends Controller
                 ->whereIn('user_type_id', [config('constants.doctor_user_id'), config('constants.fdm_user_id')])
                 ->orderBy('name')
                 ->pluck('name', 'id');
-            $records['active_filters'] = $apply_filter;
+            // Get active filter values from Filters helper
+            $activeFilters = [
+                'patient_id' => Filters::get(Auth::user()->id, 'memberships', 'patient_id'),
+                'code' => Filters::get(Auth::user()->id, 'memberships', 'code'),
+                'membership_type_id' => Filters::get(Auth::user()->id, 'memberships', 'membership_type_id'),
+                'status' => Filters::get(Auth::user()->id, 'memberships', 'status'),
+                'location_id' => Filters::get(Auth::user()->id, 'memberships', 'location_id'),
+                'sold_by' => Filters::get(Auth::user()->id, 'memberships', 'sold_by'),
+                'created_at' => Filters::get(Auth::user()->id, 'memberships', 'created_at'),
+                'created_by' => Filters::get(Auth::user()->id, 'memberships', 'created_by'),
+            ];
+            $records['active_filters'] = $activeFilters;
             $records['filter_values'] = [
                 'status' => config('constants.status'),
                 'users' => $Users,
@@ -395,6 +406,17 @@ class MembershipsController extends Controller
             }
         }
 
+        // Apply sold_by filter - filter by package_services.sold_by
+        $soldByFilter = self::getSoldByFilter($request, $apply_filter);
+        if ($soldByFilter !== null) {
+            if (empty($soldByFilter)) {
+                // No memberships with this sold_by, return no results
+                $query->where('memberships.id', '=', -1);
+            } else {
+                $query->whereIn('memberships.id', $soldByFilter);
+            }
+        }
+
         if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
             $query->where('memberships.active', 1);
         }
@@ -567,17 +589,12 @@ class MembershipsController extends Controller
             }
         }
         
-        // Sold By filter - filter by created_by
+        // Sold By filter is handled separately in getRecords/getTotalRecords (filters by package_services.sold_by)
         if (hasFilter($filters, 'sold_by')) {
-            $where[] = ['memberships.created_by', '=', $filters['sold_by']];
             Filters::put(Auth::user()->id, 'memberships', 'sold_by', $filters['sold_by']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'memberships', 'sold_by');
-            } else {
-                if (Filters::get(Auth::user()->id, 'memberships', 'sold_by') !== null) {
-                    $where[] = ['memberships.created_by', '=', Filters::get(Auth::user()->id, 'memberships', 'sold_by')];
-                }
             }
         }
         
@@ -671,6 +688,103 @@ class MembershipsController extends Controller
         return $patientIds;
     }
 
+    /**
+     * Get sold by filter - returns membership IDs that have package_services with the specified sold_by user
+     * Relationship: memberships.id -> package_bundles.membership_code_id -> package_services.sold_by
+     */
+    public static function getSoldByFilter(Request $request, $apply_filter = false)
+    {
+        $filters = getFilters($request->all());
+        $soldBy = null;
+
+        if (hasFilter($filters, 'sold_by')) {
+            $soldBy = $filters['sold_by'];
+        } else {
+            if (!$apply_filter) {
+                $soldBy = Filters::get(Auth::User()->id, 'memberships', 'sold_by');
+            }
+        }
+
+        if (empty($soldBy)) {
+            return null; // No filter applied
+        }
+
+        // Get membership IDs through package_bundles -> package_services relationship
+        $membershipIds = \Illuminate\Support\Facades\DB::table('memberships')
+            ->join('package_bundles', 'memberships.id', '=', 'package_bundles.membership_code_id')
+            ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
+            ->where('package_services.sold_by', $soldBy)
+            ->distinct()
+            ->pluck('memberships.id')
+            ->toArray();
+        
+        return $membershipIds;
+    }
+
+    /**
+     * Get sold by users (doctors and FDMs) for a specific location
+     */
+    public function getSoldByUsers(Request $request)
+    {
+        try {
+            $locationId = $request->location_id;
+            
+            if (empty($locationId)) {
+                // Return all active doctors and FDMs if no location specified
+                $users = User::where('account_id', Auth::User()->account_id)
+                    ->where('active', 1)
+                    ->whereIn('user_type_id', [config('constants.doctor_user_id'), config('constants.fdm_user_id')])
+                    ->orderBy('name')
+                    ->pluck('name', 'id');
+                    
+                return response()->json([
+                    'success' => true,
+                    'data' => ['users' => $users]
+                ]);
+            }
+            
+            // Get doctors allocated to this location
+            $doctorIds = \App\Models\DoctorHasLocations::where('location_id', $locationId)
+                ->where('is_allocated', 1)
+                ->pluck('user_id')
+                ->toArray();
+            
+            // Get FDM users from this location
+            $locationUserIds = \App\Models\UserHasLocations::where('location_id', $locationId)
+                ->pluck('user_id')
+                ->toArray();
+            
+            // Get FDM role
+            $fdmRole = \Illuminate\Support\Facades\DB::table('roles')->where('name', 'FDM')->first();
+            $fdmUserIds = [];
+            if ($fdmRole) {
+                $roleHasUsers = \App\Models\RoleHasUsers::where('role_id', $fdmRole->id)
+                    ->pluck('user_id')
+                    ->toArray();
+                // Get users who are both FDM and belong to this location
+                $fdmUserIds = array_intersect($locationUserIds, $roleHasUsers);
+            }
+            
+            // Merge doctor and FDM user IDs
+            $allUserIds = array_unique(array_merge($doctorIds, $fdmUserIds));
+            
+            $users = User::whereIn('id', $allUserIds)
+                ->where('active', 1)
+                ->orderBy('name')
+                ->pluck('name', 'id');
+            
+            return response()->json([
+                'success' => true,
+                'data' => ['users' => $users]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function exportPdf(Request $request)
 {
     ini_set('memory_limit', '-1');
@@ -748,6 +862,17 @@ class MembershipsController extends Controller
             } else {
                 // Only show assigned memberships where patient has appointments at this location
                 $query->whereIn('memberships.patient_id', $locationFilter);
+            }
+        }
+
+        // Apply sold_by filter - filter by package_services.sold_by
+        $soldByFilter = self::getSoldByFilter($request, $apply_filter);
+        if ($soldByFilter !== null) {
+            if (empty($soldByFilter)) {
+                // No memberships with this sold_by, return no results
+                $query->where('memberships.id', '=', -1);
+            } else {
+                $query->whereIn('memberships.id', $soldByFilter);
             }
         }
 
