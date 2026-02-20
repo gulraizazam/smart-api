@@ -34,12 +34,17 @@ class ServiceHelper
     }
 
     /**
-     * Get tax treatment types (cached)
+     * Default tax treatment type ID (3 = Is Inclusive)
+     */
+    public const DEFAULT_TAX_TREATMENT_TYPE = 3;
+
+    /**
+     * Get tax treatment types (cached) - excludes "Both" option (ID 1)
      */
     public static function getTaxTreatmentTypes(): array
     {
-        return Cache::remember('tax_treatment_types', self::CACHE_TTL, function () {
-            return TaxTreatmentType::get(['id', 'name'])->toArray();
+        return Cache::remember('tax_treatment_types_filtered', self::CACHE_TTL, function () {
+            return TaxTreatmentType::where('id', '!=', 1)->get(['id', 'name'])->toArray();
         });
     }
 
@@ -70,6 +75,8 @@ class ServiceHelper
         Cache::forget("services_parent_list_{$accountId}");
         Cache::forget("services_list_{$accountId}");
         Cache::forget("services_tree_{$accountId}");
+        Cache::forget("tax_treatment_types");
+        Cache::forget("tax_treatment_types_filtered");
     }
 
     /**
@@ -107,6 +114,10 @@ class ServiceHelper
         $data['price'] = $data['price'] ?? 0.0;
         $data['end_node'] = isset($data['end_node']) && $data['end_node'] ? 1 : 0;
         $data['complimentory'] = isset($data['complimentory']) && $data['complimentory'] ? 1 : 0;
+        // Default to Is Inclusive if not set or if Both (ID 1) was selected
+        $data['tax_treatment_type_id'] = (isset($data['tax_treatment_type_id']) && $data['tax_treatment_type_id'] != 1) 
+            ? $data['tax_treatment_type_id'] 
+            : self::DEFAULT_TAX_TREATMENT_TYPE;
 
         return $data;
     }

@@ -27,7 +27,7 @@ class StoreServiceRequest extends FormRequest
             'price' => 'nullable|numeric|min:0',
             'color' => 'nullable|string|max:20',
             'description' => 'nullable|string',
-            'tax_treatment_type_id' => 'nullable|integer|exists:tax_treatment_types,id',
+            'tax_treatment_type_id' => 'nullable|integer|exists:tax_treatment_type,id',
             'end_node' => 'nullable|boolean',
             'complimentory' => 'nullable|boolean',
         ];
