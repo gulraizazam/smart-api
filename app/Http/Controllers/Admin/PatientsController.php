@@ -592,9 +592,7 @@ class PatientsController extends Controller
 
         $apply_filter = checkFilters($filters, $filename);
 
-        if (!Gate::allows('users_manage')) {
-            return abort(401);
-        }
+        
         $records = [];
         $records['data'] = [];
         // Get Total Records
