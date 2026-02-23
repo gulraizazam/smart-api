@@ -71,12 +71,12 @@ function actions(data) {
                         </a>\
                     </li>';
                          if (permissions.add_stock) {
-                            actions += '<li class="navi-item">\
-                                                <a href="'+ inventories_url + '" class="navi-link">\
-                                                <span class="navi-icon"><i class="la la-archway"></i></span>\
-                                                <span class="navi-text">Inventories</span>\
-                                            </a>\
-                                         </li>';
+                            // actions += '<li class="navi-item">\
+                            //                     <a href="'+ inventories_url + '" class="navi-link">\
+                            //                     <span class="navi-icon"><i class="la la-archway"></i></span>\
+                            //                     <span class="navi-text">Inventories</span>\
+                            //                 </a>\
+                            //              </li>';
                         }
                         
                         // if (permissions.sale_price) {
