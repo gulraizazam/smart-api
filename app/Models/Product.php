@@ -319,15 +319,13 @@ class Product extends BaseModal
             $result = collect();
             
             foreach ($products as $product) {
-                // Calculate available quantity using same logic as inventory report
-                // Total stock additions (IN) for this product at this location
+                // Calculate available quantity: stocks(IN) - order_details(sales)
                 $totalAdditions = DB::table('stocks')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
                     ->where('stock_type', 'in')
                     ->sum('quantity');
                 
-                // Total sales for this product at this location
                 $totalSales = DB::table('order_details')
                     ->join('orders', 'orders.id', '=', 'order_details.order_id')
                     ->where('order_details.product_id', $product->id)
@@ -340,57 +338,25 @@ class Product extends BaseModal
                     continue;
                 }
                 
-                // Get all inventories for this product at this location (for different prices)
-                $inventories = DB::table('inventories')
+                // Get first inventory for price (ignore inventory quantity)
+                $inventory = DB::table('inventories')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                    ->orderBy('created_at', 'desc')
+                    ->first();
                 
-                // Group inventories by sale_price
-                $priceGroups = $inventories->groupBy('sale_price');
+                $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
                 
-                if ($priceGroups->count() <= 1) {
-                    // Single price - return one entry with total available
-                    $inventory = $inventories->first();
-                    $salePrice = $inventory->sale_price ?? $product->sale_price;
-                    
-                    $result->push((object)[
-                        'inventory_id' => $inventory->id,
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'product_type' => $product->product_type,
-                        'sale_price' => $salePrice,
-                        'location_id' => $location_id,
-                        'available_quantity' => $totalAvailable,
-                        'inventory_date' => $inventory->created_at,
-                    ]);
-                } else {
-                    // Multiple prices - show separate entries per price
-                    // Distribute available quantity based on inventory quantities (FIFO)
-                    $remainingQty = $totalAvailable;
-                    
-                    foreach ($inventories as $inventory) {
-                        if ($remainingQty <= 0) break;
-                        
-                        $salePrice = $inventory->sale_price ?? $product->sale_price;
-                        $inventoryQty = min($inventory->quantity, $remainingQty);
-                        
-                        if ($inventoryQty > 0) {
-                            $result->push((object)[
-                                'inventory_id' => $inventory->id,
-                                'id' => $product->id,
-                                'name' => $product->name . ' (Rs. ' . number_format($salePrice, 0) . ')',
-                                'product_type' => $product->product_type,
-                                'sale_price' => $salePrice,
-                                'location_id' => $location_id,
-                                'available_quantity' => $inventoryQty,
-                                'inventory_date' => $inventory->created_at,
-                            ]);
-                            $remainingQty -= $inventoryQty;
-                        }
-                    }
-                }
+                $result->push((object)[
+                    'inventory_id' => $inventory ? $inventory->id : null,
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'product_type' => $product->product_type,
+                    'sale_price' => $salePrice,
+                    'location_id' => $location_id,
+                    'available_quantity' => $totalAvailable,
+                    'inventory_date' => $inventory ? $inventory->created_at : null,
+                ]);
             }
         
             return $result->values();
