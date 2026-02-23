@@ -6,13 +6,13 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 230,
+        width:350,
         template: function (data) {
             if (data.parent_id == 0) {
-                return '<b class="text text-dark" style="font-size: 12px;">'+data.name+'</b>';
+                return '<b class="text text-dark" style="font-size: 12px; white-space: nowrap;">'+data.name+'</b>';
             }
             // Child service with clickable name and instruction icon
-            return '<span class="ml-3">' +
+            return '<span class="ml-3" style="white-space: nowrap;">' +
                 '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; text-decoration: none; color: #3F4254;">'+data.name+'</a>' +
                 '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; margin-left: 8px;">' +
                     '<i class="la la-file-text text-primary" style="font-size: 16px;"></i>' +
