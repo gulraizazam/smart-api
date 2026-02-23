@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class Bundles extends BaseModal
 {
@@ -922,18 +921,22 @@ class Bundles extends BaseModal
      * Check if child records exist
      *
      * @param  (int)  $id
+     * @param  (int)  $account_id
      * @return (boolean)
      */
     public static function isChildExists($id, $account_id)
     {
-        //        if (
-        //            Cities::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-        //            Locations::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-        //            Leads::where(['bundle_id' => $id, 'account_id' => $account_id])->count() ||
-        //            Appointments::where(['bundle_id' => $id, 'account_id' => $account_id])->count()
-        //        ) {
-        //            return true;
-        //        }
+        // Check if bundle is used in any package bundles (plans)
+        if (PackageBundles::where('bundle_id', $id)->exists()) {
+            return true;
+        }
+
+        // Check if bundle is used in any appointments
+        if (Appointments::where('bundle_id', $id)
+            ->where('account_id', $account_id)
+            ->exists()) {
+            return true;
+        }
 
         return false;
     }
