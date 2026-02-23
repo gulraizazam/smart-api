@@ -1527,4 +1527,160 @@ foreach ($servicesByPackage as $packageId => $services) {
             throw new \Exception('Excel generation failed: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Display the Doctor Revenue Report page
+     */
+    public function doctorRevenueReport()
+    {
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+
+        return view('admin.reports.doctor_revenue', get_defined_vars());
+    }
+
+    /**
+     * Load Doctor Revenue Report data
+     * Flow: package_advances (cash_flow='in', cash_amount > 0) -> packages -> appointments -> doctors
+     * Date filter applied to package_advances.created_at
+     */
+    public function loadDoctorRevenueReport(Request $request)
+    {
+        $request->validate([
+            'centre_id' => 'required|integer|exists:locations,id',
+        ]);
+
+        $locationId = $request->centre_id;
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+
+        // Get all doctors assigned to this location
+        $doctorUserIds = User::whereHas('roles', function($query) {
+            $query->whereIn('name', ['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant']);
+        })->where('active', 1)->pluck('id');
+
+        $doctorIds = DB::table('doctor_has_locations')
+            ->where('location_id', $locationId)
+            ->whereIn('user_id', $doctorUserIds)
+            ->distinct()
+            ->pluck('user_id');
+
+        if ($doctorIds->isEmpty()) {
+            return response()->json([
+                'status' => 200,
+                'message' => 'No doctors found for the selected location.',
+                'data' => [],
+            ]);
+        }
+
+        // Get revenue from package_advances where cash_flow='in' and cash_amount > 0
+        // Link: package_advances -> packages -> appointments -> doctor_id
+        $revenueData = DB::table('package_advances')
+            ->join('packages', 'package_advances.package_id', '=', 'packages.id')
+            ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+            ->where('package_advances.cash_flow', 'in')
+            ->where('package_advances.cash_amount', '>', 0)
+            ->where('packages.location_id', $locationId)
+            ->whereIn('appointments.doctor_id', $doctorIds)
+            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+            ->whereNull('package_advances.deleted_at')
+            ->groupBy('appointments.doctor_id')
+            ->select(
+                'appointments.doctor_id',
+                DB::raw('SUM(package_advances.cash_amount) as total_revenue'),
+                DB::raw('COUNT(DISTINCT package_advances.id) as payment_count'),
+                DB::raw('COUNT(DISTINCT packages.id) as package_count')
+            )
+            ->get()
+            ->keyBy('doctor_id');
+
+        // Get doctor names
+        $doctors = User::whereIn('id', $doctorIds)
+            ->select('id', 'name')
+            ->get()
+            ->keyBy('id');
+
+        // Prepare report data
+        $reportData = collect();
+        foreach ($doctorIds as $doctorId) {
+            $doctor = $doctors->get($doctorId);
+            $revenue = $revenueData->get($doctorId);
+            
+            if ($doctor) {
+                $reportData->push((object)[
+                    'doctor_id' => $doctorId,
+                    'doctor_name' => $doctor->name,
+                    'total_revenue' => $revenue->total_revenue ?? 0,
+                    'payment_count' => $revenue->payment_count ?? 0,
+                    'package_count' => $revenue->package_count ?? 0,
+                ]);
+            }
+        }
+
+        // Sort by revenue descending
+        $reportData = $reportData->sortByDesc('total_revenue')->values();
+
+        // Store filters in session for detail view
+        session(['doctor_revenue_filters' => [
+            'location_id' => $locationId,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'doctor_ids' => $doctorIds->toArray()
+        ]]);
+
+        return view('admin.reports.doctorRevenueReport', compact('reportData'));
+    }
+
+    /**
+     * Doctor Revenue Detail - shows individual payments for a specific doctor
+     */
+    public function doctorRevenueDetail($doctorId)
+    {
+        $filters = session('doctor_revenue_filters');
+
+        if (!$filters) {
+            return redirect()->back()->with('error', 'Session expired. Please reload the report.');
+        }
+
+        // Get doctor name
+        $doctor = User::find($doctorId);
+        $doctorName = $doctor->name ?? 'Unknown Doctor';
+
+        // Get all payments for this doctor in the period
+        $payments = DB::table('package_advances')
+            ->join('packages', 'package_advances.package_id', '=', 'packages.id')
+            ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+            ->join('users as patients', 'packages.patient_id', '=', 'patients.id')
+            ->leftJoin('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id')
+            ->where('package_advances.cash_flow', 'in')
+            ->where('package_advances.cash_amount', '>', 0)
+            ->where('packages.location_id', $filters['location_id'])
+            ->where('appointments.doctor_id', $doctorId)
+            ->whereBetween('package_advances.created_at', [$filters['start_date'], $filters['end_date']])
+            ->whereNull('package_advances.deleted_at')
+            ->select(
+                'package_advances.id',
+                'package_advances.cash_amount',
+                'package_advances.created_at',
+                'packages.id as package_id',
+                'packages.name as package_name',
+                'patients.id as patient_id',
+                'patients.name as patient_name',
+                'payment_modes.name as payment_mode'
+            )
+            ->orderBy('package_advances.created_at', 'desc')
+            ->get();
+
+        $totalRevenue = $payments->sum('cash_amount');
+        $totalPayments = $payments->count();
+        $uniquePackages = $payments->pluck('package_id')->unique()->count();
+
+        return view('admin.reports.doctorRevenueDetail', compact(
+            'payments',
+            'doctorName',
+            'totalRevenue',
+            'totalPayments',
+            'uniquePackages'
+        ));
+    }
 }
