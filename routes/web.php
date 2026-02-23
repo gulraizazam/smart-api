@@ -14,7 +14,7 @@ use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
-use App\Http\Controllers\Admin\BundlesController;
+use App\Http\Controllers\Admin\BundlesController as AdminBundlesController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -312,7 +312,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Discount route end
 
         //Packages route Start
-        Route::get('bundles', [BundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages_manage');
+        Route::get('bundles', [AdminBundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages_manage');
         //Packages route end
 
         //Centre Target

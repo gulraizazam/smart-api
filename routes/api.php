@@ -11,7 +11,8 @@ use App\Http\Controllers\Api\PlansController as ApiPlansController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
-use App\Http\Controllers\Admin\BundlesController;
+use App\Http\Controllers\Admin\BundlesController as AdminBundlesController;
+use App\Http\Controllers\Api\BundlesController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\RegionsController;
@@ -356,13 +357,20 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::resource('voucherTypes', VouchersController::class)->except('index');
 
-    //Packages Route start
-    Route::post('bundles/datatable', [BundlesController::class, 'datatable'])->name('bundles.datatable');
-    Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
-    Route::get('bundles/detail/{id}', [BundlesController::class, 'detail'])->name('bundles.detail');
-    Route::resource('bundles', BundlesController::class)->except(['index', 'create', 'show']);
-    Route::get('bundles/editconf/{id}', [BundlesController::class, 'editconf'])->name('bundles.editconf');
-    //Packages Route End
+    //Bundles Route start (API Controller)
+    Route::prefix('bundles')->name('bundles.')->group(function () {
+        Route::post('datatable', [BundlesController::class, 'datatable'])->name('datatable');
+        Route::post('status', [BundlesController::class, 'status'])->name('status');
+        Route::get('detail/{id}', [BundlesController::class, 'detail'])->name('detail');
+        Route::get('{id}/edit', [BundlesController::class, 'edit'])->name('edit');
+        Route::get('editconf/{id}', [BundlesController::class, 'editConfigurable'])->name('editconf');
+        Route::post('/', [BundlesController::class, 'store'])->name('store');
+        Route::post('configurable', [BundlesController::class, 'storeConfigurable'])->name('store.configurable');
+        Route::put('{id}', [BundlesController::class, 'update'])->name('update');
+        Route::put('configurable/{id}', [BundlesController::class, 'updateConfigurable'])->name('update.configurable');
+        Route::delete('{id}', [BundlesController::class, 'destroy'])->name('destroy');
+    });
+    //Bundles Route End
 
     //Centre Target
     Route::post('centre_targets/load-centres', [CentreTargetsController::class, 'leadtargetcentre'])->name('centre_targets.load_target_centre');
