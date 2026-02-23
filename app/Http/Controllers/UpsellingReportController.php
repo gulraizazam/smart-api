@@ -1575,21 +1575,42 @@ foreach ($servicesByPackage as $packageId => $services) {
 
         // Get revenue from package_advances where cash_flow='in' and cash_amount > 0
         // Link: package_advances -> packages -> appointments -> doctor_id
+        // Matching the same filters as Account Sales Report (collectionbyservice)
         $revenueData = DB::table('package_advances')
             ->join('packages', 'package_advances.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->where('package_advances.cash_flow', 'in')
-            ->where('package_advances.cash_amount', '>', 0)
-            ->where('packages.location_id', $locationId)
+            ->where('package_advances.cash_amount', '!=', 0)
+            ->where('package_advances.is_adjustment', 0)
+            ->where('package_advances.is_tax', 0)
+            ->where('package_advances.is_cancel', 0)
+            ->where('package_advances.location_id', $locationId)
             ->whereIn('appointments.doctor_id', $doctorIds)
             ->whereBetween('package_advances.created_at', [$startDate, $endDate])
             ->whereNull('package_advances.deleted_at')
             ->groupBy('appointments.doctor_id')
             ->select(
                 'appointments.doctor_id',
-                DB::raw('SUM(package_advances.cash_amount) as total_revenue'),
-                DB::raw('COUNT(DISTINCT package_advances.id) as payment_count'),
-                DB::raw('COUNT(DISTINCT packages.id) as package_count')
+                DB::raw('SUM(package_advances.cash_amount) as total_revenue')
+            )
+            ->get()
+            ->keyBy('doctor_id');
+        
+        // Get refunds (cash_flow='out' with is_refund=1) to subtract from revenue
+        $refundData = DB::table('package_advances')
+            ->join('packages', 'package_advances.package_id', '=', 'packages.id')
+            ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+            ->where('package_advances.cash_flow', 'out')
+            ->where('package_advances.is_refund', 1)
+            ->where('package_advances.is_tax', 0)
+            ->where('package_advances.location_id', $locationId)
+            ->whereIn('appointments.doctor_id', $doctorIds)
+            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+            ->whereNull('package_advances.deleted_at')
+            ->groupBy('appointments.doctor_id')
+            ->select(
+                'appointments.doctor_id',
+                DB::raw('SUM(package_advances.cash_amount) as total_refund')
             )
             ->get()
             ->keyBy('doctor_id');
@@ -1600,19 +1621,20 @@ foreach ($servicesByPackage as $packageId => $services) {
             ->get()
             ->keyBy('id');
 
-        // Prepare report data
+        // Prepare report data (revenue - refunds)
         $reportData = collect();
         foreach ($doctorIds as $doctorId) {
             $doctor = $doctors->get($doctorId);
             $revenue = $revenueData->get($doctorId);
+            $refund = $refundData->get($doctorId);
             
-            if ($doctor) {
+            $totalRevenue = ($revenue->total_revenue ?? 0) - ($refund->total_refund ?? 0);
+            
+            if ($doctor && $totalRevenue != 0) {
                 $reportData->push((object)[
                     'doctor_id' => $doctorId,
                     'doctor_name' => $doctor->name,
-                    'total_revenue' => $revenue->total_revenue ?? 0,
-                    'payment_count' => $revenue->payment_count ?? 0,
-                    'package_count' => $revenue->package_count ?? 0,
+                    'total_revenue' => $totalRevenue,
                 ]);
             }
         }
@@ -1646,15 +1668,18 @@ foreach ($servicesByPackage as $packageId => $services) {
         $doctor = User::find($doctorId);
         $doctorName = $doctor->name ?? 'Unknown Doctor';
 
-        // Get all payments for this doctor in the period
+        // Get all payments for this doctor in the period (matching Account Sales Report filters)
         $payments = DB::table('package_advances')
             ->join('packages', 'package_advances.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->join('users as patients', 'packages.patient_id', '=', 'patients.id')
             ->leftJoin('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id')
             ->where('package_advances.cash_flow', 'in')
-            ->where('package_advances.cash_amount', '>', 0)
-            ->where('packages.location_id', $filters['location_id'])
+            ->where('package_advances.cash_amount', '!=', 0)
+            ->where('package_advances.is_adjustment', 0)
+            ->where('package_advances.is_tax', 0)
+            ->where('package_advances.is_cancel', 0)
+            ->where('package_advances.location_id', $filters['location_id'])
             ->where('appointments.doctor_id', $doctorId)
             ->whereBetween('package_advances.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNull('package_advances.deleted_at')
@@ -1662,6 +1687,7 @@ foreach ($servicesByPackage as $packageId => $services) {
                 'package_advances.id',
                 'package_advances.cash_amount',
                 'package_advances.created_at',
+                'package_advances.cash_flow',
                 'packages.id as package_id',
                 'packages.name as package_name',
                 'patients.id as patient_id',
@@ -1670,16 +1696,48 @@ foreach ($servicesByPackage as $packageId => $services) {
             )
             ->orderBy('package_advances.created_at', 'desc')
             ->get();
+        
+        // Get refunds for this doctor
+        $refunds = DB::table('package_advances')
+            ->join('packages', 'package_advances.package_id', '=', 'packages.id')
+            ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+            ->join('users as patients', 'packages.patient_id', '=', 'patients.id')
+            ->leftJoin('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id')
+            ->where('package_advances.cash_flow', 'out')
+            ->where('package_advances.is_refund', 1)
+            ->where('package_advances.is_tax', 0)
+            ->where('package_advances.location_id', $filters['location_id'])
+            ->where('appointments.doctor_id', $doctorId)
+            ->whereBetween('package_advances.created_at', [$filters['start_date'], $filters['end_date']])
+            ->whereNull('package_advances.deleted_at')
+            ->select(
+                'package_advances.id',
+                'package_advances.cash_amount',
+                'package_advances.created_at',
+                'package_advances.cash_flow',
+                'packages.id as package_id',
+                'packages.name as package_name',
+                'patients.id as patient_id',
+                'patients.name as patient_name',
+                'payment_modes.name as payment_mode'
+            )
+            ->orderBy('package_advances.created_at', 'desc')
+            ->get();
+        
+        // Merge payments and refunds
+        $allTransactions = $payments->merge($refunds)->sortByDesc('created_at')->values();
 
-        $totalRevenue = $payments->sum('cash_amount');
+        $totalRevenue = $payments->sum('cash_amount') - $refunds->sum('cash_amount');
         $totalPayments = $payments->count();
+        $totalRefunds = $refunds->sum('cash_amount');
         $uniquePackages = $payments->pluck('package_id')->unique()->count();
 
         return view('admin.reports.doctorRevenueDetail', compact(
-            'payments',
+            'allTransactions',
             'doctorName',
             'totalRevenue',
             'totalPayments',
+            'totalRefunds',
             'uniquePackages'
         ));
     }
