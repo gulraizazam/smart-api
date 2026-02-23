@@ -46,83 +46,68 @@ class InventoryReportsController extends Controller
 
         $doctorId = $request->input('doctor_id');
         if ($request->report_type == "stock_report") {
-            // Load products with their inventories, orders, and order details
+            // Get location IDs for filtering
+            $locationIds = $locationId ? [$locationId] : ACL::getUserCentres();
+            
+            // Load products with their inventories at specified locations
             $products = Product::with([
-                'inventories' => function ($query) use ($locationId) {
-                    if ($locationId) {
-                        $query->where('location_id', $locationId);
-                    } else {
-                        $query->whereIn('location_id', ACL::getUserCentres());
-                    }
-                },
-                'orderDetails' => function ($query) use ($endDate) {
-                    if ($endDate) {
-                        $query->whereHas('order', function ($orderQuery) use ($endDate) {
-                            $orderQuery->whereDate('created_at', '<=', $endDate);
-                        });
-                    }
-                },
-                'orderDetails.order.centre'
-            ])
-            ->whereHas('inventories.product', function ($query) use ($brandId) {
-                if ($brandId) {
-                    $query->where('brand_id', $brandId);
+                'inventories' => function ($query) use ($locationIds) {
+                    $query->whereIn('location_id', $locationIds);
                 }
+            ])
+            ->whereHas('inventories', function ($query) use ($locationIds, $brandId) {
+                $query->whereIn('location_id', $locationIds);
+            })
+            ->when($brandId, function ($query) use ($brandId) {
+                $query->where('brand_id', $brandId);
             })
             ->get();
+            
             // Process the product data for the report
-            $report = $products->map(function ($product) use ($locationId, $startDate, $endDate) {
-
-                // Opening Stock = Sum of all stock IN before date range - orders before date range
-                $stockInBefore = Stock::where('product_id', $product->id)
+            $report = $products->map(function ($product) use ($locationIds, $startDate, $endDate) {
+                
+                // Opening Stock = Closing Stock of previous period
+                // Closing Stock = All additions before start date - All sales before start date
+                
+                // Total stock additions (IN) before start date
+                $additionsBeforeStart = Stock::where('product_id', $product->id)
                     ->where('stock_type', 'in')
+                    ->whereIn('location_id', $locationIds)
                     ->where('created_at', '<', $startDate)
-                    ->when($locationId, function ($query) use ($locationId) {
-                        $query->where('location_id', $locationId);
-                    }, function ($query) {
-                        $query->whereIn('location_id', ACL::getUserCentres());
+                    ->sum('quantity');
+                
+                // Total sales before start date
+                $salesBeforeStart = OrderDetail::where('product_id', $product->id)
+                    ->whereHas('order', function ($query) use ($locationIds, $startDate) {
+                        $query->where('created_at', '<', $startDate)
+                            ->whereIn('location_id', $locationIds);
                     })
                     ->sum('quantity');
-
-                $soldBefore = OrderDetail::where('product_id', $product->id)
-                    ->whereHas('order', function ($query) use ($locationId, $startDate) {
-                        $query->where('created_at', '<', $startDate);
-                        if ($locationId) {
-                            $query->where('location_id', $locationId);
-                        } else {
-                            $query->whereIn('location_id', ACL::getUserCentres());
-                        }
-                    })
-                    ->sum('quantity');
-
-                $openingStock = $stockInBefore - $soldBefore;
-
-                // Addition in range = stock IN records created within the date range
+                
+                // Opening Stock = Additions before - Sales before
+                $openingStock = $additionsBeforeStart - $salesBeforeStart;
+                
+                // Addition in range = stock IN records within date range
                 $additionInRange = Stock::where('product_id', $product->id)
                     ->where('stock_type', 'in')
+                    ->whereIn('location_id', $locationIds)
                     ->whereBetween('created_at', [$startDate, $endDate])
-                    ->when($locationId, function ($query) use ($locationId) {
-                        $query->where('location_id', $locationId);
-                    }, function ($query) {
-                        $query->whereIn('location_id', ACL::getUserCentres());
-                    })
                     ->sum('quantity');
-
+                
                 // Sold in the current range
                 $soldInRange = OrderDetail::where('product_id', $product->id)
-                    ->whereHas('order', function ($query) use ($locationId, $startDate, $endDate) {
-                        $query->whereBetween('created_at', [$startDate, $endDate]);
-                        if ($locationId) {
-                            $query->where('location_id', $locationId);
-                        } else {
-                            $query->whereIn('location_id', ACL::getUserCentres());
-                        }
+                    ->whereHas('order', function ($query) use ($locationIds, $startDate, $endDate) {
+                        $query->whereBetween('created_at', [$startDate, $endDate])
+                            ->whereIn('location_id', $locationIds);
                     })
                     ->sum('quantity');
-
+                
+                // Total Stock = Opening + Additions in range
                 $totalStock = $openingStock + $additionInRange;
+                
+                // Remaining (Closing) = Total Stock - Sold in range
                 $remainingStock = $totalStock - $soldInRange;
-
+                
                 return [
                     'product_name' => $product->name,
                     'opening_stock' => $openingStock,
@@ -132,9 +117,6 @@ class InventoryReportsController extends Controller
                     'remaining_stock' => $remainingStock,
                 ];
             });
-
-
-
 
             return view('admin.reports.inventoryReport', compact('report'));
         }
