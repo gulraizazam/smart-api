@@ -97,25 +97,39 @@
                                     <th>Patient Name</th>
                                     <th>Package ID</th>
                                     <th>Payment Mode</th>
+                                    <th>Type</th>
                                     <th>Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($payments as $payment)
-                                    <tr>
-                                        <td>{{ \Carbon\Carbon::parse($payment->created_at)->format('d M Y H:i') }}</td>
+                                @forelse($allTransactions as $transaction)
+                                    <tr class="{{ $transaction->cash_flow == 'out' ? 'table-danger' : '' }}">
+                                        <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d M Y H:i') }}</td>
                                         <td>
-                                            <a href="{{ route('admin.patients.show', $payment->patient_id) }}" target="_blank">
-                                                {{ $payment->patient_name }}
+                                            <a href="{{ route('admin.patients.show', $transaction->patient_id) }}" target="_blank">
+                                                {{ $transaction->patient_name }}
                                             </a>
                                         </td>
-                                        <td>{{ $payment->package_name }}</td>
-                                        <td>{{ $payment->payment_mode ?? 'N/A' }}</td>
-                                        <td>{{ number_format($payment->cash_amount, 2) }}</td>
+                                        <td>{{ $transaction->package_name }}</td>
+                                        <td>{{ $transaction->payment_mode ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($transaction->cash_flow == 'in')
+                                                <span class="badge badge-success">Payment</span>
+                                            @else
+                                                <span class="badge badge-danger">Refund</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($transaction->cash_flow == 'out')
+                                                <span class="text-danger">-{{ number_format($transaction->cash_amount, 2) }}</span>
+                                            @else
+                                                {{ number_format($transaction->cash_amount, 2) }}
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">No payments found.</td>
+                                        <td colspan="6" class="text-center">No transactions found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
