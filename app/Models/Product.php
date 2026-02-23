@@ -297,61 +297,56 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // Calculate available quantity using same logic as stock report:
-            // Available = Total stock additions (IN) - Total sales
+            // Return each inventory as separate entry with its own price and quantity
             $location_id = $request->from_id;
             
-            // Get distinct products that have inventory at this location
-            $productIds = DB::table('inventories')
-                ->where('location_id', $location_id)
-                ->distinct()
-                ->pluck('product_id');
-            
-            $products = DB::table('products')
-                ->whereIn('products.id', $productIds)
+            // Get all inventories at this location with product details
+            $inventories = DB::table('inventories')
+                ->join('products', 'products.id', '=', 'inventories.product_id')
+                ->where('inventories.location_id', $location_id)
                 ->where('products.status', '1')
                 ->where('products.account_id', $account_id)
                 ->when($request->type == 'order', function ($q) {
                     return $q->where('products.product_type', 'for_sale');
                 })
+                ->select(
+                    'inventories.id as inventory_id',
+                    'inventories.quantity as inventory_quantity',
+                    'inventories.sale_price as inventory_sale_price',
+                    'inventories.created_at as inventory_date',
+                    'products.id',
+                    'products.name',
+                    'products.product_type',
+                    'products.sale_price as product_sale_price'
+                )
                 ->orderBy('products.name', 'asc')
+                ->orderBy('inventories.created_at', 'asc')
                 ->get();
             
-            // Calculate available quantity for each product using stock report logic
-            $result = $products->map(function ($product) use ($location_id) {
-                // Total stock additions (IN) for this product at this location
-                $totalAdditions = DB::table('stocks')
-                    ->where('product_id', $product->id)
-                    ->where('location_id', $location_id)
-                    ->where('stock_type', 'in')
-                    ->sum('quantity');
-                
-                // Total sales for this product at this location
+            // Calculate available quantity for each inventory
+            $result = $inventories->map(function ($inventory) use ($location_id) {
+                // Get total sales for this specific inventory
                 $totalSales = DB::table('order_details')
                     ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                    ->where('order_details.product_id', $product->id)
+                    ->where('order_details.inventory_id', $inventory->inventory_id)
                     ->where('orders.location_id', $location_id)
                     ->sum('order_details.quantity');
                 
-                // Get oldest inventory for FIFO
-                $inventory = DB::table('inventories')
-                    ->where('product_id', $product->id)
-                    ->where('location_id', $location_id)
-                    ->orderBy('created_at', 'asc')
-                    ->first();
+                $availableQuantity = $inventory->inventory_quantity - $totalSales;
+                $salePrice = $inventory->inventory_sale_price ?? $inventory->product_sale_price;
                 
                 return (object)[
-                    'inventory_id' => $inventory ? $inventory->id : null,
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'product_type' => $product->product_type,
-                    'sale_price' => $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price,
+                    'inventory_id' => $inventory->inventory_id,
+                    'id' => $inventory->id,
+                    'name' => $inventory->name . ' (Rs. ' . number_format($salePrice, 0) . ')',
+                    'product_type' => $inventory->product_type,
+                    'sale_price' => $salePrice,
                     'location_id' => $location_id,
-                    'available_quantity' => $totalAdditions - $totalSales,
-                    'inventory_date' => $inventory ? $inventory->created_at : null,
+                    'available_quantity' => $availableQuantity,
+                    'inventory_date' => $inventory->inventory_date,
                 ];
-            })->filter(function ($product) {
-                return $product->available_quantity > 0;
+            })->filter(function ($item) {
+                return $item->available_quantity > 0;
             })->values();
         
             return $result;
