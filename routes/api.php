@@ -332,6 +332,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('discounts/locations/{id}', [DiscountsController::class, 'displayDlocation'])->name('discounts.location_manage');
     Route::get('discounts/getDservice', [DiscountsController::class, 'getDservices'])->name('discounts.get_Dservice');
     Route::get('getDiscountServices', [DiscountsController::class, 'getDiscountServices'])->name('discounts.getDiscountServices');
+    Route::get('discounts/services-for-configurable', [DiscountsController::class, 'getServicesForConfigurable'])->name('discounts.servicesForConfigurable');
+    Route::post('discounts/allocate-configurable', [DiscountsController::class, 'allocateConfigurable'])->name('discounts.allocateConfigurable');
     Route::post('discounts/saveDervice', [DiscountsController::class, 'saveDservices'])->name('discounts.save_Dervice');
     Route::post('discounts/deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
     Route::post('discounts/deleteDserviceGroup', [DiscountsController::class, 'deleteDserviceGroup'])->name('discounts.delete_service_group');

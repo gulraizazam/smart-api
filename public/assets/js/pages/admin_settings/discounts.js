@@ -145,6 +145,23 @@ function setAllocateData(response) {
         let discount = response.data.discount;
         let locations = response.data.location;
         let discount_locations = response.data.discount_has_location;
+        let isConfigurable = discount.type === 'Configurable';
+
+        // Store discount type in hidden field
+        $("#discount_type_hidden").val(discount.type);
+
+        // Toggle UI based on discount type
+        if (isConfigurable) {
+            $(".configurable-info-row").show();
+            $(".service-field-row").hide();
+            $(".regular-allocation-row").hide();
+            $(".configurable-add-btn").show();
+        } else {
+            $(".configurable-info-row").hide();
+            $(".service-field-row").show();
+            $(".regular-allocation-row").show();
+            $(".configurable-add-btn").hide();
+        }
 
         let location_options = '<option value="">Select Centre</option>';
         let location_services = '';
@@ -825,5 +842,361 @@ $(document).on("keyup", ".add_configurable_amount", function () {
         }
     
 
-})
+});
+
+// ============================================
+// CONFIGURABLE DISCOUNT FUNCTIONALITY
+// ============================================
+
+var confGetServiceRowIndex = 1;
+var confServicesOptions = '';
+
+// Create Configurable Discount - Load services
+function createConfigurableDiscount() {
+    // Reset form
+    $('#modal_add_configurable_discount_form')[0].reset();
+    $('#conf_get_services_container').html('');
+    confGetServiceRowIndex = 1;
+    
+    // Load services
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: '/api/discounts/services-for-configurable',
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (!response.status || !response.data || !response.data.services) {
+                toastr.error('Failed to load services');
+                console.error('Services response:', response);
+                return;
+            }
+            
+            let services = response.data.services;
+            let service_options = '<option value="">Select Service</option>';
+            
+            // Handle both array and object formats
+            let servicesArray = Array.isArray(services) ? services : Object.values(services);
+            
+            servicesArray.forEach(function(value) {
+                // Skip null values and "All Services"
+                if (!value || value.name === 'All Services' || value.slug === 'all') {
+                    return;
+                }
+                
+                // Parent service (disabled, acts as category header)
+                service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                
+                // Child services (selectable)
+                if (value.children && value.children.length > 0) {
+                    value.children.forEach(function (child) {
+                        if (child && child.id) {
+                            service_options += '<option value="' + child.id + '">&nbsp;&nbsp;&nbsp;' + child.name + '</option>';
+                        }
+                    });
+                }
+            });
+            
+            confServicesOptions = service_options;
+            $("#conf_base_service").html(service_options);
+            
+            // Add first GET row
+            addConfGetServiceRow(0);
+            
+            reInitSelect2(".select2", "");
+            initDatepickers();
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+// Add GET service row
+function addConfGetServiceRow(index) {
+    let rowHtml = `
+        <div class="get-service-row mb-3" data-index="${index}">
+            <div class="row align-items-center">
+                <div class="col-md-1">
+                    ${index === 0 ? 
+                        '<button type="button" class="btn btn-sm btn-primary add-get-service-row" title="Add More"><i class="la la-plus p-0 m-0"></i></button>' : 
+                        '<button type="button" class="btn btn-sm btn-danger remove-get-service-row" title="Remove"><i class="la la-minus p-0 m-0"></i></button>'
+                    }
+                </div>
+                <div class="col-md-2">
+                    <label class="fw-bold fs-6 mb-2">Sessions <span class="text text-danger">*</span></label>
+                    <select class="form-control form-control-solid" name="sessions[${index}]">
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-center pt-8">
+                    <span class="fw-bold">of</span>
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold fs-6 mb-2">Service <span class="text text-danger">*</span></label>
+                    <select class="form-control form-control-solid conf-get-service" name="services_name[${index}]">
+                        ${confServicesOptions}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold fs-6 mb-2">Discount Type <span class="text text-danger">*</span></label>
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input disc-type-radio" type="radio" name="disc_type[${index}]" value="complimentory" id="complimentory_${index}">
+                            <label class="form-check-label" for="complimentory_${index}">Free</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input disc-type-radio" type="radio" name="disc_type[${index}]" value="custom" id="custom_${index}">
+                            <label class="form-check-label" for="custom_${index}">% Off</label>
+                        </div>
+                        <input type="number" class="form-control form-control-sm conf-percentage-input d-none" name="configurable_amount[${index}]" placeholder="%" min="1" max="99" style="width: 70px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#conf_get_services_container').append(rowHtml);
+}
+
+// Add GET service row for edit modal
+function addEditConfGetServiceRow(index, data = null) {
+    let rowHtml = `
+        <div class="get-service-row mb-3" data-index="${index}">
+            <div class="row align-items-center">
+                <div class="col-md-1">
+                    ${index === 0 ? 
+                        '<button type="button" class="btn btn-sm btn-primary add-edit-get-service-row" title="Add More"><i class="la la-plus p-0 m-0"></i></button>' : 
+                        '<button type="button" class="btn btn-sm btn-danger remove-edit-get-service-row" title="Remove"><i class="la la-minus p-0 m-0"></i></button>'
+                    }
+                </div>
+                <div class="col-md-2">
+                    <label class="fw-bold fs-6 mb-2">Sessions <span class="text text-danger">*</span></label>
+                    <select class="form-control form-control-solid" name="edit_sessions[${index}]">
+                        <option value="">Select</option>
+                        <option value="1" ${data && data.sessions == 1 ? 'selected' : ''}>1</option>
+                        <option value="2" ${data && data.sessions == 2 ? 'selected' : ''}>2</option>
+                        <option value="3" ${data && data.sessions == 3 ? 'selected' : ''}>3</option>
+                        <option value="4" ${data && data.sessions == 4 ? 'selected' : ''}>4</option>
+                        <option value="5" ${data && data.sessions == 5 ? 'selected' : ''}>5</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-center pt-8">
+                    <span class="fw-bold">of</span>
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold fs-6 mb-2">Service <span class="text text-danger">*</span></label>
+                    <select class="form-control form-control-solid edit-conf-get-service" name="edit_services_name[${index}]">
+                        ${confServicesOptions}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="fw-bold fs-6 mb-2">Discount Type <span class="text text-danger">*</span></label>
+                    <div class="d-flex align-items-center mt-2">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input edit-disc-type-radio" type="radio" name="edit_disc_type[${index}]" value="complimentory" id="edit_complimentory_${index}" ${data && data.discount_type == 'complimentory' ? 'checked' : ''}>
+                            <label class="form-check-label" for="edit_complimentory_${index}">Free</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input edit-disc-type-radio" type="radio" name="edit_disc_type[${index}]" value="custom" id="edit_custom_${index}" ${data && data.discount_type == 'custom' ? 'checked' : ''}>
+                            <label class="form-check-label" for="edit_custom_${index}">% Off</label>
+                        </div>
+                        <input type="number" class="form-control form-control-sm edit-conf-percentage-input ${data && data.discount_type == 'custom' ? '' : 'd-none'}" name="configurable_amount[${index}]" placeholder="%" min="1" max="99" style="width: 70px;" value="${data && data.discount_amount ? data.discount_amount : ''}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('#edit_conf_get_services_container').append(rowHtml);
+    
+    // Set service value after appending
+    if (data && data.service_id) {
+        $(`#edit_conf_get_services_container .get-service-row[data-index="${index}"] select[name="edit_services_name[${index}]"]`).val(data.service_id);
+    }
+}
+
+// Event: Add GET service row (Create modal)
+$(document).on('click', '.add-get-service-row', function() {
+    addConfGetServiceRow(confGetServiceRowIndex);
+    confGetServiceRowIndex++;
+});
+
+// Event: Remove GET service row (Create modal)
+$(document).on('click', '.remove-get-service-row', function() {
+    $(this).closest('.get-service-row').remove();
+});
+
+// Event: Add GET service row (Edit modal)
+$(document).on('click', '.add-edit-get-service-row', function() {
+    addEditConfGetServiceRow(confGetServiceRowIndex);
+    confGetServiceRowIndex++;
+});
+
+// Event: Remove GET service row (Edit modal)
+$(document).on('click', '.remove-edit-get-service-row', function() {
+    $(this).closest('.get-service-row').remove();
+});
+
+// Event: Toggle percentage input visibility (Create modal)
+$(document).on('change', '.disc-type-radio', function() {
+    let row = $(this).closest('.get-service-row');
+    let percentageInput = row.find('.conf-percentage-input');
+    
+    if ($(this).val() === 'custom') {
+        percentageInput.removeClass('d-none').prop('required', true);
+    } else {
+        percentageInput.addClass('d-none').prop('required', false).val('');
+    }
+});
+
+// Event: Toggle percentage input visibility (Edit modal)
+$(document).on('change', '.edit-disc-type-radio', function() {
+    let row = $(this).closest('.get-service-row');
+    let percentageInput = row.find('.edit-conf-percentage-input');
+    
+    if ($(this).val() === 'custom') {
+        percentageInput.removeClass('d-none').prop('required', true);
+    } else {
+        percentageInput.addClass('d-none').prop('required', false).val('');
+    }
+});
+
+// Edit Configurable Discount
+function editConfigurableDiscount(url) {
+    $("#modal_edit_configurable_discount").modal("show");
+    $('#edit_conf_get_services_container').html('');
+    confGetServiceRowIndex = 0;
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            let discount = response.data.discount;
+            let services = response.data.services || {};
+            let base_discount_services = response.data.base_discount_services;
+            let get_discount_services = response.data.get_discount_services;
+            
+            // Build service options
+            let service_options = '<option value="">Select Service</option>';
+            let servicesArray = Array.isArray(services) ? services : Object.values(services);
+            
+            servicesArray.forEach(function(value) {
+                // Skip null values and "All Services"
+                if (!value || value.name === 'All Services' || value.slug === 'all') {
+                    return;
+                }
+                
+                // Parent service (disabled, acts as category header)
+                service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                
+                // Child services (selectable)
+                if (value.children && value.children.length > 0) {
+                    value.children.forEach(function (child) {
+                        if (child && child.id) {
+                            service_options += '<option value="' + child.id + '">&nbsp;&nbsp;&nbsp;' + child.name + '</option>';
+                        }
+                    });
+                }
+            });
+            confServicesOptions = service_options;
+            
+            // Set form action
+            $("#modal_edit_configurable_discount_form").attr("action", route('admin.discounts.update', {id: discount.id}));
+            
+            // Set basic fields
+            $("#edit_conf_discount_name").val(discount.name);
+            $("#edit_conf_start").val(discount.start);
+            $("#edit_conf_end").val(discount.end);
+            $("#edit_conf_active").prop("checked", discount.active == 1);
+            
+            // Set BUY section
+            if (base_discount_services && base_discount_services.length > 0) {
+                $("#edit_conf_sessions_buy").val(base_discount_services.length);
+                $("#edit_conf_base_service").html(service_options);
+                $("#edit_conf_base_service").val(base_discount_services[0].service_id);
+            }
+            
+            // Set GET section - Group by service_id and discount_type
+            let groupedServices = {};
+            if (get_discount_services && get_discount_services.length > 0) {
+                get_discount_services.forEach(function(service) {
+                    let key = service.service_id + '_' + service.discount_type;
+                    if (!groupedServices[key]) {
+                        groupedServices[key] = {
+                            service_id: service.service_id,
+                            discount_type: service.discount_type,
+                            discount_amount: service.discount_amount,
+                            sessions: 0
+                        };
+                    }
+                    groupedServices[key].sessions++;
+                });
+                
+                Object.values(groupedServices).forEach(function(service, index) {
+                    addEditConfGetServiceRow(index, service);
+                    confGetServiceRowIndex++;
+                });
+            } else {
+                addEditConfGetServiceRow(0);
+                confGetServiceRowIndex = 1;
+            }
+            
+            reInitSelect2(".select2", "");
+            initDatepickers();
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+// Initialize datepickers
+function initDatepickers() {
+    $('.current-datepicker').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true
+    });
+}
+
+// Override editRow to handle configurable discounts
+var originalEditRow = typeof editRow === 'function' ? editRow : null;
+function editRow(url) {
+    // First fetch to check if it's configurable
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            let discount = response.data.discount;
+            
+            if (discount.type === 'Configurable') {
+                // Use configurable edit modal
+                editConfigurableDiscount(url);
+            } else {
+                // Use regular edit modal
+                $("#modal_edit_discounts").modal("show");
+                setEditData(response);
+                reInitSelect2(".select2", "");
+            }
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
 

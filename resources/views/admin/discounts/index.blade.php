@@ -48,9 +48,13 @@
                             @if(Gate::allows('discounts_create'))
                                 <a href="javascript:void(0);" onclick="createDiscount('{{ route('admin.discounts.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_discounts">
                                     <i class="la la-plus"></i>
-                                    Add New
+                                    Add Discount
                                 </a>
-                        @endif
+                                <a href="javascript:void(0);" onclick="createConfigurableDiscount();" class="btn btn-primary ml-3" data-toggle="modal" data-target="#modal_add_configurable_discount">
+                                    <i class="la la-plus"></i>
+                                    Add Configurable Discount
+                                </a>
+                            @endif
 
                         <!--end::Button-->
                         </div>
@@ -105,6 +109,25 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_add_configurable_discount" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup mediam-modal" id="configurable_discount_add">
+
+            @include('admin.discounts.configurable')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_configurable_discount" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup mediam-modal" id="configurable_discount_edit">
+
+            @include('admin.discounts.edit-configurable')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/discounts.js')}}"></script>
