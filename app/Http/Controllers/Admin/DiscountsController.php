@@ -739,6 +739,101 @@ class DiscountsController extends Controller
     }
 
     /**
+     * Get services for configurable discount creation/editing
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getServicesForConfigurable()
+    {
+        if (!Gate::allows('discounts_create') && !Gate::allows('discounts_edit')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        try {
+            $services = ServiceWidget::generateServiceArrayDiscount(null, Auth::User()->account_id);
+            return ApiHelper::apiResponse($this->success, 'Services loaded', true, [
+                'services' => $services,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Allocate configurable discount to a centre
+     * For configurable discounts, we only need to specify the centre - services are already defined in the discount
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function allocateConfigurable(Request $request)
+    {
+        if (!Gate::allows('discounts_allocate')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'discount_id' => 'required|exists:discounts,id',
+                'location_id' => 'required|exists:locations,id',
+            ]);
+
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            }
+
+            $discount = Discounts::find($request->discount_id);
+            
+            // Verify this is a configurable discount
+            if ($discount->type !== 'Configurable') {
+                return ApiHelper::apiResponse($this->success, 'This method is only for configurable discounts.', false);
+            }
+
+            $location = Locations::find($request->location_id);
+
+            // Check if already allocated to this centre
+            $existingAllocation = DiscountHasLocations::where([
+                'discount_id' => $request->discount_id,
+                'location_id' => $request->location_id,
+            ])->first();
+
+            if ($existingAllocation) {
+                return ApiHelper::apiResponse($this->success, 'This discount is already allocated to this centre.', false);
+            }
+
+            // Get the base service from the configurable discount
+            $baseService = BaseDiscountService::where('discount_id', $request->discount_id)->first();
+            $serviceId = $baseService ? $baseService->service_id : null;
+
+            // If no base service found, use "All Services"
+            if (!$serviceId) {
+                $allServices = Services::where('slug', 'all')->first();
+                $serviceId = $allServices ? $allServices->id : null;
+            }
+
+            // Create allocation record
+            $record = DiscountHasLocations::create([
+                'discount_id' => $request->discount_id,
+                'location_id' => $request->location_id,
+                'service_id' => $serviceId,
+                'type' => null, // Not applicable for configurable
+                'amount' => null, // Not applicable for configurable
+                'slug' => 'configurable',
+            ]);
+
+            return ApiHelper::apiResponse($this->success, 'Discount allocated to centre successfully.', true, [
+                'record' => [
+                    'id' => $record->id,
+                    'location_name' => $location->city->name . ' - ' . $location->name,
+                    'service_name' => 'All Services (Configurable)',
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
      * save services against location id.
      */
     public function saveDservices(Request $request)

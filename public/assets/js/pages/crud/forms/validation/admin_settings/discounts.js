@@ -166,20 +166,29 @@ var AllocateValidation = function () {
         let form = document.getElementById(modal_id);
 
         // Handle submit manually to avoid submitButton plugin blocking re-submission
-        $(form).on('submit', function(e) {
+        $(form).off('submit').on('submit', function(e) {
             e.preventDefault();
+
+            // Check if this is a configurable discount
+            let discountType = $("#discount_type_hidden").val();
+            let isConfigurable = discountType === 'Configurable';
 
             // Manual validation
             let location_id = $("#locations").val();
-            let service_ids = $("#services").val();
-            let allocation_type = $("#allocation_type").val();
-            let allocation_amount = $("#allocation_amount").val();
-
             let errors = [];
+            
             if (!location_id) errors.push('The centre field is required');
-            if (!service_ids || service_ids.length === 0) errors.push('The service field is required');
-            if (!allocation_type) errors.push('The type field is required');
-            if (!allocation_amount) errors.push('The amount field is required');
+            
+            // For regular discounts, validate services and allocation fields
+            if (!isConfigurable) {
+                let service_ids = $("#services").val();
+                let allocation_type = $("#allocation_type").val();
+                let allocation_amount = $("#allocation_amount").val();
+                
+                if (!service_ids || service_ids.length === 0) errors.push('The service field is required');
+                if (!allocation_type) errors.push('The type field is required');
+                if (!allocation_amount) errors.push('The amount field is required');
+            }
 
             if (errors.length > 0) {
                 toastr.error(errors[0]);
@@ -187,13 +196,170 @@ var AllocateValidation = function () {
                 return;
             }
 
-            submitData(function (response) {
+            // Use different submit function based on discount type
+            if (isConfigurable) {
+                submitConfigurableAllocation(function (response) {
+                    if (response.status == true) {
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                });
+            } else {
+                submitData(function (response) {
+                    if (response.status == true) {
+                        toastr.success(response.message);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                });
+            }
+        });
+    }
+
+    return {
+        init: function() {
+            validation();
+        }
+    };
+}();
+
+// Configurable Discount Add Validation
+var ConfigurableAddValidation = function () {
+    var validation = function () {
+        let modal_id = 'modal_add_configurable_discount_form';
+        let form = document.getElementById(modal_id);
+        
+        if (!form) return;
+
+        $(form).off('submit').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Manual validation
+            let errors = [];
+            let name = $('#conf_discount_name').val();
+            let sessions_buy = $('[name="sessions_buy"]').val();
+            let base_service = $('#conf_base_service').val();
+            let start = $('#conf_start').val();
+            let end = $('#conf_end').val();
+            
+            if (!name) errors.push('Discount name is required');
+            if (!sessions_buy) errors.push('BUY sessions count is required');
+            if (!base_service) errors.push('BUY service is required');
+            if (!start) errors.push('Valid From date is required');
+            if (!end) errors.push('Valid To date is required');
+            
+            // Validate GET services
+            let getRows = $('#conf_get_services_container .get-service-row');
+            if (getRows.length === 0) {
+                errors.push('At least one GET service is required');
+            } else {
+                getRows.each(function(index) {
+                    let sessions = $(this).find('[name^="sessions["]').val();
+                    let service = $(this).find('[name^="services_name["]').val();
+                    let discType = $(this).find('[name^="disc_type["]:checked').val();
+                    
+                    if (!sessions) errors.push('GET row ' + (index + 1) + ': Sessions is required');
+                    if (!service) errors.push('GET row ' + (index + 1) + ': Service is required');
+                    if (!discType) errors.push('GET row ' + (index + 1) + ': Discount type is required');
+                    
+                    if (discType === 'custom') {
+                        let amount = $(this).find('[name^="configurable_amount["]').val();
+                        if (!amount || amount <= 0 || amount > 99) {
+                            errors.push('GET row ' + (index + 1) + ': Percentage must be between 1 and 99');
+                        }
+                    }
+                });
+            }
+            
+            if (errors.length > 0) {
+                toastr.error(errors[0]);
+                return;
+            }
+            
+            // Submit form
+            submitForm($(form).attr('action'), 'POST', $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitTable();
                 } else {
                     toastr.error(response.message);
                 }
-            });
+            }, form);
+        });
+    }
+
+    return {
+        init: function() {
+            validation();
+        }
+    };
+}();
+
+// Configurable Discount Edit Validation
+var ConfigurableEditValidation = function () {
+    var validation = function () {
+        let modal_id = 'modal_edit_configurable_discount_form';
+        let form = document.getElementById(modal_id);
+        
+        if (!form) return;
+
+        $(form).off('submit').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Manual validation
+            let errors = [];
+            let name = $('#edit_conf_discount_name').val();
+            let sessions_buy = $('#edit_conf_sessions_buy').val();
+            let base_service = $('#edit_conf_base_service').val();
+            let start = $('#edit_conf_start').val();
+            let end = $('#edit_conf_end').val();
+            
+            if (!name) errors.push('Discount name is required');
+            if (!sessions_buy) errors.push('BUY sessions count is required');
+            if (!base_service) errors.push('BUY service is required');
+            if (!start) errors.push('Valid From date is required');
+            if (!end) errors.push('Valid To date is required');
+            
+            // Validate GET services
+            let getRows = $('#edit_conf_get_services_container .get-service-row');
+            if (getRows.length === 0) {
+                errors.push('At least one GET service is required');
+            } else {
+                getRows.each(function(index) {
+                    let sessions = $(this).find('[name^="edit_sessions["]').val();
+                    let service = $(this).find('[name^="edit_services_name["]').val();
+                    let discType = $(this).find('[name^="edit_disc_type["]:checked').val();
+                    
+                    if (!sessions) errors.push('GET row ' + (index + 1) + ': Sessions is required');
+                    if (!service) errors.push('GET row ' + (index + 1) + ': Service is required');
+                    if (!discType) errors.push('GET row ' + (index + 1) + ': Discount type is required');
+                    
+                    if (discType === 'custom') {
+                        let amount = $(this).find('[name^="configurable_amount["]').val();
+                        if (!amount || amount <= 0 || amount > 99) {
+                            errors.push('GET row ' + (index + 1) + ': Percentage must be between 1 and 99');
+                        }
+                    }
+                });
+            }
+            
+            if (errors.length > 0) {
+                toastr.error(errors[0]);
+                return;
+            }
+            
+            // Submit form
+            submitForm($(form).attr('action'), 'POST', $(form).serialize(), function (response) {
+                if (response.status == true) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
         });
     }
 
@@ -208,7 +374,78 @@ jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
     AllocateValidation.init();
+    ConfigurableAddValidation.init();
+    ConfigurableEditValidation.init();
 });
+
+// Submit allocation for configurable discounts (centre only)
+function submitConfigurableAllocation(callback) {
+    let location_id = $("#locations").val();
+    let discount_id = $("#discount_id").val();
+
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: '/api/discounts/allocate-configurable',
+        type: "POST",
+        data: {
+            discount_id: discount_id,
+            location_id: location_id
+        },
+        cache: false,
+        timeout: 30000,
+        success: function (response) {
+            if (response.status == true) {
+                var data = response.data;
+                
+                // Add row to table showing the allocation
+                if (data.record) {
+                    $('#allocate_services').append(serviceLocationGrouped(
+                        [data.record.id], 
+                        data.record.location_name, 
+                        'All Services (Configurable)',
+                        '-',
+                        '-',
+                        'configurable'
+                    ));
+                }
+                
+                // Reset location dropdown
+                $("#locations").val('').trigger('change');
+                
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinnerRestForm();
+            } else {
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinnerRestForm();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            let errorMsg = 'Unknown error';
+            if (xhr.status == '401') {
+                errorMsg = 'You are not authorized to access this resource';
+            } else if (xhr.status == 500) {
+                errorMsg = 'Server error (500). Check server logs.';
+            } else {
+                errorMsg = 'Error ' + xhr.status + ': ' + thrownError;
+            }
+
+            callback({
+                'status': 0,
+                'message': errorMsg,
+            });
+            hideSpinnerRestForm();
+        }
+    });
+}
 
 function submitData(callback) {
 

@@ -24,8 +24,19 @@
         <!--begin::Form-->
         <form id="modal_allocate_discounts_form" method="post" action="">
             <input type="hidden" name="id" id="discount_id">
+            <input type="hidden" name="discount_type" id="discount_type_hidden">
 
             <div class="form-group">
+                <!-- Info message for configurable discounts -->
+                <div class="row mb-4 configurable-info-row" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <i class="la la-info-circle"></i> 
+                            <strong>Configurable Discount:</strong> Services and discount amounts are already defined in this discount. You only need to select which centre(s) this discount applies to.
+                        </div>
+                    </div>
+                </div>
+
                 <!-- First row: Centre and Service -->
                 <div class="row mb-4">
                     <div class="fv-row col-md-6">
@@ -35,15 +46,23 @@
                         </select>
                     </div>
 
-                    <div class="fv-row col-md-6">
+                    <div class="fv-row col-md-6 service-field-row">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span></label>
                         <select id="services" class="form-control form-control-solid select2" name="service_id[]" multiple="multiple">
                         </select>
                     </div>
+
+                    <!-- Add button for configurable discounts (shown inline with centre) -->
+                    <div class="fv-row col-md-6 configurable-add-btn" style="display: none;">
+                        <label class="required fw-bold fs-6 mb-2 pl-0" style="visibility:hidden;">Add</label>
+                        <button type="submit" class="btn btn-primary spinner-button" style="height: 38px; width: 100%;">
+                            <i class="la la-plus"></i> Allocate to Centre
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Second row: Type, Amount, Slug and Add button -->
-                <div class="row align-items-end">
+                <!-- Second row: Type, Amount, Slug and Add button (hidden for configurable) -->
+                <div class="row align-items-end regular-allocation-row">
                     <div class="fv-row col-md-3">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
                         <select id="allocation_type" class="form-control form-control-solid select2" name="allocation_type">
