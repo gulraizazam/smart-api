@@ -1554,10 +1554,10 @@ foreach ($servicesByPackage as $packageId => $services) {
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-        // Get all doctors assigned to this location
+        // Get all doctors assigned to this location (including inactive)
         $doctorUserIds = User::whereHas('roles', function($query) {
             $query->whereIn('name', ['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant']);
-        })->where('active', 1)->pluck('id');
+        })->pluck('id');
 
         $doctorIds = DB::table('doctor_has_locations')
             ->where('location_id', $locationId)
