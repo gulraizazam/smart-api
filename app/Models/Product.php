@@ -297,59 +297,103 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // Return each inventory as separate entry with its own price and quantity
+            // Use same calculation logic as inventory report (stocks table)
             $location_id = $request->from_id;
             
-            // Get all inventories at this location with product details
-            $inventories = DB::table('inventories')
-                ->join('products', 'products.id', '=', 'inventories.product_id')
-                ->where('inventories.location_id', $location_id)
+            // Get products that have inventory at this location
+            $productIds = DB::table('inventories')
+                ->where('location_id', $location_id)
+                ->distinct()
+                ->pluck('product_id');
+            
+            $products = DB::table('products')
+                ->whereIn('products.id', $productIds)
                 ->where('products.status', '1')
                 ->where('products.account_id', $account_id)
                 ->when($request->type == 'order', function ($q) {
                     return $q->where('products.product_type', 'for_sale');
                 })
-                ->select(
-                    'inventories.id as inventory_id',
-                    'inventories.quantity as inventory_quantity',
-                    'inventories.sale_price as inventory_sale_price',
-                    'inventories.created_at as inventory_date',
-                    'products.id',
-                    'products.name',
-                    'products.product_type',
-                    'products.sale_price as product_sale_price'
-                )
                 ->orderBy('products.name', 'asc')
-                ->orderBy('inventories.created_at', 'asc')
                 ->get();
             
-            // Calculate available quantity for each inventory
-            $result = $inventories->map(function ($inventory) use ($location_id) {
-                // Get total sales for this specific inventory
+            $result = collect();
+            
+            foreach ($products as $product) {
+                // Calculate available quantity using same logic as inventory report
+                // Total stock additions (IN) for this product at this location
+                $totalAdditions = DB::table('stocks')
+                    ->where('product_id', $product->id)
+                    ->where('location_id', $location_id)
+                    ->where('stock_type', 'in')
+                    ->sum('quantity');
+                
+                // Total sales for this product at this location
                 $totalSales = DB::table('order_details')
                     ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                    ->where('order_details.inventory_id', $inventory->inventory_id)
+                    ->where('order_details.product_id', $product->id)
                     ->where('orders.location_id', $location_id)
                     ->sum('order_details.quantity');
                 
-                $availableQuantity = $inventory->inventory_quantity - $totalSales;
-                $salePrice = $inventory->inventory_sale_price ?? $inventory->product_sale_price;
+                $totalAvailable = $totalAdditions - $totalSales;
                 
-                return (object)[
-                    'inventory_id' => $inventory->inventory_id,
-                    'id' => $inventory->id,
-                    'name' => $inventory->name . ' (Rs. ' . number_format($salePrice, 0) . ')',
-                    'product_type' => $inventory->product_type,
-                    'sale_price' => $salePrice,
-                    'location_id' => $location_id,
-                    'available_quantity' => $availableQuantity,
-                    'inventory_date' => $inventory->inventory_date,
-                ];
-            })->filter(function ($item) {
-                return $item->available_quantity > 0;
-            })->values();
+                if ($totalAvailable <= 0) {
+                    continue;
+                }
+                
+                // Get all inventories for this product at this location (for different prices)
+                $inventories = DB::table('inventories')
+                    ->where('product_id', $product->id)
+                    ->where('location_id', $location_id)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                // Group inventories by sale_price
+                $priceGroups = $inventories->groupBy('sale_price');
+                
+                if ($priceGroups->count() <= 1) {
+                    // Single price - return one entry with total available
+                    $inventory = $inventories->first();
+                    $salePrice = $inventory->sale_price ?? $product->sale_price;
+                    
+                    $result->push((object)[
+                        'inventory_id' => $inventory->id,
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'product_type' => $product->product_type,
+                        'sale_price' => $salePrice,
+                        'location_id' => $location_id,
+                        'available_quantity' => $totalAvailable,
+                        'inventory_date' => $inventory->created_at,
+                    ]);
+                } else {
+                    // Multiple prices - show separate entries per price
+                    // Distribute available quantity based on inventory quantities (FIFO)
+                    $remainingQty = $totalAvailable;
+                    
+                    foreach ($inventories as $inventory) {
+                        if ($remainingQty <= 0) break;
+                        
+                        $salePrice = $inventory->sale_price ?? $product->sale_price;
+                        $inventoryQty = min($inventory->quantity, $remainingQty);
+                        
+                        if ($inventoryQty > 0) {
+                            $result->push((object)[
+                                'inventory_id' => $inventory->id,
+                                'id' => $product->id,
+                                'name' => $product->name . ' (Rs. ' . number_format($salePrice, 0) . ')',
+                                'product_type' => $product->product_type,
+                                'sale_price' => $salePrice,
+                                'location_id' => $location_id,
+                                'available_quantity' => $inventoryQty,
+                                'inventory_date' => $inventory->created_at,
+                            ]);
+                            $remainingQty -= $inventoryQty;
+                        }
+                    }
+                }
+            }
         
-            return $result;
+            return $result->values();
         } else if (isset($request->product_id)) {
             return self::join('inventories','products.id','inventories.product_id')->where([
                 ['products.status', '=', '1'],
