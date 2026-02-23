@@ -425,25 +425,25 @@ class Product extends BaseModal
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
 
-    // /**
-    //  * active Record
-    //  *
-    //  * @param id
-    //  * @return (mixed)
-    //  */
-    // public static function activeRecord($id, $status = 1)
-    // {
-    //     $product = self::getData($id);
+    /**
+     * active Record
+     *
+     * @param id
+     * @return (mixed)
+     */
+    public static function activeRecord($id, $status = 1)
+    {
+        $product = self::getData($id);
 
-    //     if (!$product) {
+        if (!$product) {
 
-    //         return false;
-    //     }
+            return false;
+        }
 
-    //     $record = $product->update(['status' => $status]);
+        $record = $product->update(['status' => $status]);
 
-    //     return $record;
-    // }
+        return $record;
+    }
 
     // public function children()
     // {
