@@ -487,6 +487,24 @@ function setCreateData(response) {
             }
         });
 
+        // Reset form fields to default state
+        $("#add_parent_service").val(0);
+        $("#add_service_name").val('');
+        $("#add_duration").val('');
+        $("#service_color").val('#000000');
+        $("input[name='price']").val('');
+        $("#add_description").val('');
+        // Reset Trix editor content
+        let trixEditor = document.querySelector("trix-editor[input='add_description']");
+        if (trixEditor && trixEditor.editor) {
+            trixEditor.editor.loadHTML('');
+        }
+        $("#endnode").prop("checked", false);
+        $("input[name='complimentory']").prop("checked", false);
+        
+        // Hide child service fields (show only parent service fields by default)
+        $('.servicefield').hide();
+
     } catch (error) {
         showException(error);
     }
