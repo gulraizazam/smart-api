@@ -297,11 +297,10 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // Calculate available quantity using same logic as stock report:
-            // Available = Total stock additions (IN) - Total sales
+            // Use same calculation logic as inventory report (stocks table)
             $location_id = $request->from_id;
             
-            // Get distinct products that have inventory at this location
+            // Get products that have inventory at this location
             $productIds = DB::table('inventories')
                 ->where('location_id', $location_id)
                 ->distinct()
@@ -317,44 +316,50 @@ class Product extends BaseModal
                 ->orderBy('products.name', 'asc')
                 ->get();
             
-            // Calculate available quantity for each product using stock report logic
-            $result = $products->map(function ($product) use ($location_id) {
-                // Total stock additions (IN) for this product at this location
+            $result = collect();
+            
+            foreach ($products as $product) {
+                // Calculate available quantity: stocks(IN) - order_details(sales)
                 $totalAdditions = DB::table('stocks')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
                     ->where('stock_type', 'in')
                     ->sum('quantity');
                 
-                // Total sales for this product at this location
                 $totalSales = DB::table('order_details')
                     ->join('orders', 'orders.id', '=', 'order_details.order_id')
                     ->where('order_details.product_id', $product->id)
                     ->where('orders.location_id', $location_id)
                     ->sum('order_details.quantity');
                 
-                // Get oldest inventory for FIFO
+                $totalAvailable = $totalAdditions - $totalSales;
+                
+                if ($totalAvailable <= 0) {
+                    continue;
+                }
+                
+                // Get first inventory for price (ignore inventory quantity)
                 $inventory = DB::table('inventories')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
-                    ->orderBy('created_at', 'asc')
+                    ->orderBy('created_at', 'desc')
                     ->first();
                 
-                return (object)[
+                $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
+                
+                $result->push((object)[
                     'inventory_id' => $inventory ? $inventory->id : null,
                     'id' => $product->id,
                     'name' => $product->name,
                     'product_type' => $product->product_type,
-                    'sale_price' => $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price,
+                    'sale_price' => $salePrice,
                     'location_id' => $location_id,
-                    'available_quantity' => $totalAdditions - $totalSales,
+                    'available_quantity' => $totalAvailable,
                     'inventory_date' => $inventory ? $inventory->created_at : null,
-                ];
-            })->filter(function ($product) {
-                return $product->available_quantity > 0;
-            })->values();
+                ]);
+            }
         
-            return $result;
+            return $result->values();
         } else if (isset($request->product_id)) {
             return self::join('inventories','products.id','inventories.product_id')->where([
                 ['products.status', '=', '1'],
@@ -425,25 +430,25 @@ class Product extends BaseModal
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
 
-    // /**
-    //  * active Record
-    //  *
-    //  * @param id
-    //  * @return (mixed)
-    //  */
-    // public static function activeRecord($id, $status = 1)
-    // {
-    //     $product = self::getData($id);
+    /**
+     * active Record
+     *
+     * @param id
+     * @return (mixed)
+     */
+    public static function activeRecord($id, $status = 1)
+    {
+        $product = self::getData($id);
 
-    //     if (!$product) {
+        if (!$product) {
 
-    //         return false;
-    //     }
+            return false;
+        }
 
-    //     $record = $product->update(['status' => $status]);
+        $record = $product->update(['status' => $status]);
 
-    //     return $record;
-    // }
+        return $record;
+    }
 
     // public function children()
     // {
