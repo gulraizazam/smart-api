@@ -408,33 +408,11 @@ $(document).on('click', '#EditBundleFinal', function(e) {
         'cash_amount': cash_amount,
         'grand_total': grand_total,
         'is_exclusive': null,
-        'appointment_id': appointment_id,
-        package_bundles: []
+        'appointment_id': appointment_id
+        // NOTE: Do NOT send package_bundles for bundle plans.
+        // Bundle services are already saved to DB immediately via the Add button (savebundle_service).
+        // The Save button only handles payment and appointment updates.
     };
-
-    // Collect bundle services from table
-    $('#edit_bundle_plan_services tr').each(function() {
-        var classes = $(this).attr('class');
-        // Check if row has HR_ class (bundle service row)
-        if (classes && classes.includes('HR_') && !$(this).hasClass('inner_records_hr') && $(this).css('display') !== 'none') {
-            var bundleId = classes.match(/HR_(\d+)/)?.[1];
-            if (bundleId) {
-                var soldByValue = $(this).find('.package_bundles_sold_by').val() || 'N/A';
-                formData['package_bundles'].push({
-                    serviceName: $(this).find('td:first-child a').text(),
-                    RegularPrice: $(this).find('td:nth-child(2)').text(),
-                    DiscountName: '-',
-                    Type: '-',
-                    DiscountValue: '0',
-                    Amount: $(this).find('td:nth-child(3)').text(),
-                    Tax: $(this).find('td:nth-child(4)').text(),
-                    Total: $(this).find('td:nth-child(5)').text(),
-                    bundleId: bundleId,
-                    sold_by: soldByValue
-                });
-            }
-        }
-    });
 
     var status = 0;
     if (cash_amount > 0) {
