@@ -5491,6 +5491,11 @@ class AppointmentsController extends Controller
             return;
         }
 
+        // Only update plan_name if it's currently empty
+        if (!empty($package->plan_name)) {
+            return;
+        }
+
         if ($package->plan_type === 'membership') {
             $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
                 ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
