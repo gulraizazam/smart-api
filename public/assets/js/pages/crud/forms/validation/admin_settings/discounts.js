@@ -4,63 +4,75 @@ var AddValidation = function () {
     var validation = function () {
         let modal_id = 'modal_add_discounts_form';
         let form = document.getElementById(modal_id);
-        let validate = FormValidation.formValidation(
-            form,
-            {
-                fields: {
-                    name: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The name field is required'
+        
+        // Use manual validation to handle both simple and configurable discounts
+        $(form).off('submit').on('submit', function(e) {
+            e.preventDefault();
+            
+            let discountType = $('#add_discount_type').val();
+            let errors = [];
+            
+            // Common validations
+            let name = $('#add_name').val();
+            let start = $('#add_start').val();
+            let end = $('#add_end').val();
+            
+            if (!name) errors.push('Discount name is required');
+            if (!start) errors.push('Valid From date is required');
+            if (!end) errors.push('Valid To date is required');
+            
+            // Common field validations (for both types)
+            let discountApplicable = $('#add_amount_types').val();
+            if (!discountApplicable) errors.push('Discount Applicable On is required');
+            
+            if (discountType === 'Configurable') {
+                // Configurable discount validations
+                let sessionsBuy = $('#add_sessions_buy').val();
+                let buyMode = $('input[name="buy_mode"]:checked').val() || 'service';
+                
+                if (!sessionsBuy) errors.push('BUY sessions count is required');
+                
+                if (buyMode === 'category') {
+                    let categories = $('#add_base_category').val();
+                    if (!categories || categories.length === 0) errors.push('At least one BUY category is required');
+                } else {
+                    let baseService = $('#add_base_service').val();
+                    if (!baseService) errors.push('BUY service is required');
+                }
+                
+                // Validate GET services
+                let getRows = $('#add_get_services_container .get-service-row');
+                if (getRows.length === 0) {
+                    errors.push('At least one GET service is required');
+                } else {
+                    getRows.each(function(index) {
+                        let sessions = $(this).find('[name^="sessions["]').val();
+                        let isSameService = $(this).find('.same-service-check').is(':checked');
+                        let service = $(this).find('[name^="services_name["]').val();
+                        let discType = $(this).find('[name^="disc_type["]:checked').val();
+                        
+                        if (!sessions) errors.push('GET row ' + (index + 1) + ': Sessions is required');
+                        if (!isSameService && !service) errors.push('GET row ' + (index + 1) + ': Service is required');
+                        if (!discType) errors.push('GET row ' + (index + 1) + ': Discount type is required');
+                        
+                        if (discType === 'custom') {
+                            let amount = $(this).find('[name^="configurable_amount["]').val();
+                            if (!amount || amount <= 0 || amount > 99) {
+                                errors.push('GET row ' + (index + 1) + ': Percentage must be between 1 and 99');
                             }
                         }
-                    },
-                    type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount type field is required'
-                            }
-                        }
-                    },
-                    // amount: {
-                    //     validators: {
-                    //         notEmpty: {
-                    //             message: 'The amount field is required'
-                    //         }
-                    //     }
-                    // },
-
-                    start: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The start field is required'
-                            }
-                        }
-                    },
-
-                    end: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The end field is required'
-                            }
-                        }
-                    },
-                },
-
-                plugins: {
-                    trigger: new FormValidation.plugins.Trigger(),
-                    // Bootstrap Framework Integration
-                    bootstrap: new FormValidation.plugins.Bootstrap(),
-                    // Validate fields when clicking the Submit button
-                    submitButton: new FormValidation.plugins.SubmitButton(),
+                    });
                 }
             }
-        );
-        validate.on('core.form.invalid', function (e) {
-           select2Validation();
-        });
-        validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+            
+            if (errors.length > 0) {
+                toastr.error(errors[0]);
+                select2Validation();
+                return;
+            }
+            
+            // Submit form
+            submitForm($(form).attr('action'), 'POST', $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
@@ -84,63 +96,75 @@ var EditValidation = function () {
     var validation = function () {
         let modal_id = 'modal_edit_discounts_form';
         let form = document.getElementById(modal_id);
-        let validate = FormValidation.formValidation(
-            form,
-            {
-                fields: {
-                    name: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The name field is required'
+        
+        // Use manual validation to handle both simple and configurable discounts
+        $(form).off('submit').on('submit', function(e) {
+            e.preventDefault();
+            
+            let discountType = $('#edit_discount_type_hidden').val();
+            let errors = [];
+            
+            // Common validations
+            let name = $('#edit_name').val();
+            let start = $('#edit_start').val();
+            let end = $('#edit_end').val();
+            
+            if (!name) errors.push('Discount name is required');
+            if (!start) errors.push('Valid From date is required');
+            if (!end) errors.push('Valid To date is required');
+            
+            // Common field validations (for both types)
+            let discountApplicable = $('#edit_amount_types').val();
+            if (!discountApplicable) errors.push('Discount Applicable On is required');
+            
+            if (discountType === 'Configurable') {
+                // Configurable discount validations
+                let sessionsBuy = $('#edit_sessions_buy').val();
+                let editBuyMode = $('input[name="edit_buy_mode"]:checked').val() || 'service';
+                
+                if (!sessionsBuy) errors.push('BUY sessions count is required');
+                
+                if (editBuyMode === 'category') {
+                    let categories = $('#edit_base_category').val();
+                    if (!categories || categories.length === 0) errors.push('At least one BUY category is required');
+                } else {
+                    let baseService = $('#edit_base_service').val();
+                    if (!baseService) errors.push('BUY service is required');
+                }
+                
+                // Validate GET services
+                let getRows = $('#edit_get_services_container .get-service-row');
+                if (getRows.length === 0) {
+                    errors.push('At least one GET service is required');
+                } else {
+                    getRows.each(function(index) {
+                        let sessions = $(this).find('[name^="edit_sessions["]').val();
+                        let isSameService = $(this).find('.same-service-check').is(':checked');
+                        let service = $(this).find('[name^="edit_services_name["]').val();
+                        let discType = $(this).find('[name^="edit_disc_type["]:checked').val();
+                        
+                        if (!sessions) errors.push('GET row ' + (index + 1) + ': Sessions is required');
+                        if (!isSameService && !service) errors.push('GET row ' + (index + 1) + ': Service is required');
+                        if (!discType) errors.push('GET row ' + (index + 1) + ': Discount type is required');
+                        
+                        if (discType === 'custom') {
+                            let amount = $(this).find('[name^="configurable_amount["]').val();
+                            if (!amount || amount <= 0 || amount > 99) {
+                                errors.push('GET row ' + (index + 1) + ': Percentage must be between 1 and 99');
                             }
                         }
-                    },
-                    type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount type field is required'
-                            }
-                        }
-                    },
-                    amount: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount field is required'
-                            }
-                        }
-                    },
-
-                    start: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The start field is required'
-                            }
-                        }
-                    },
-
-                    end: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The end field is required'
-                            }
-                        }
-                    },
-                },
-
-                plugins: {
-                    trigger: new FormValidation.plugins.Trigger(),
-                    // Bootstrap Framework Integration
-                    bootstrap: new FormValidation.plugins.Bootstrap(),
-                    // Validate fields when clicking the Submit button
-                    submitButton: new FormValidation.plugins.SubmitButton(),
+                    });
                 }
             }
-        );
-        validate.on('core.form.invalid', function (e) {
-           select2Validation();
-        });
-        validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+            
+            if (errors.length > 0) {
+                toastr.error(errors[0]);
+                select2Validation();
+                return;
+            }
+            
+            // Submit form
+            submitForm($(form).attr('action'), 'POST', $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
@@ -405,7 +429,7 @@ function submitConfigurableAllocation(callback) {
                     $('#allocate_services').append(serviceLocationGrouped(
                         [data.record.id], 
                         data.record.location_name, 
-                        'All Services (Configurable)',
+                        data.record.service_name,
                         '-',
                         '-',
                         'configurable'

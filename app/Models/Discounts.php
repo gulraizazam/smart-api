@@ -88,49 +88,95 @@ class Discounts extends BaseModal
                 'end' => $data['end'],
                 'active' => $data['active'] ?? 0,
                 'account_id' => $data['account_id'],
+                'customer_type_id' => $data['customer_type_id'] ?? null,
             ]);
 
-            // Get base service info
-            $base_service = Services::find($data['base_service']);
+            $buyMode = $data['buy_mode'] ?? 'service'; // 'service' or 'category'
             $sessionCount = (int) $data['sessions_buy'];
 
-            // Create base discount service records (BUY section)
-            for ($i = 0; $i < $sessionCount; $i++) {
-                BaseDiscountService::create([
-                    'discount_id' => $discount->id,
-                    'service_id' => $data['base_service'],
-                    'service_price' => $base_service->price,
-                    'sessions' => $sessionCount,
-                    'bundle_id' => null, // No longer dependent on bundles
-                ]);
+            if ($buyMode === 'category') {
+                // Category mode: base_service contains array of category IDs
+                $categoryIds = is_array($data['base_service']) ? $data['base_service'] : [$data['base_service']];
+                foreach ($categoryIds as $categoryId) {
+                    $category = Services::find($categoryId);
+                    if (!$category) continue;
+                    for ($i = 0; $i < $sessionCount; $i++) {
+                        BaseDiscountService::create([
+                            'discount_id' => $discount->id,
+                            'service_id' => $categoryId,
+                            'service_price' => 0,
+                            'sessions' => $sessionCount,
+                            'is_category' => 1,
+                            'bundle_id' => null,
+                        ]);
+                    }
+                }
+            } else {
+                // Service mode: single service (existing behavior)
+                $base_service = Services::find($data['base_service']);
+                for ($i = 0; $i < $sessionCount; $i++) {
+                    BaseDiscountService::create([
+                        'discount_id' => $discount->id,
+                        'service_id' => $data['base_service'],
+                        'service_price' => $base_service->price,
+                        'sessions' => $sessionCount,
+                        'is_category' => 0,
+                        'bundle_id' => null,
+                    ]);
+                }
             }
+
+            // Determine the first base_service id for GET records
+            $firstBaseServiceId = is_array($data['base_service']) ? $data['base_service'][0] : $data['base_service'];
 
             // Process GET services
             $sessions = $data['sessions'] ?? [];
             foreach ($sessions as $key => $sessionValue) {
-                if (empty($sessionValue) || empty($data['services_name'][$key])) {
-                    continue;
-                }
+                if (empty($sessionValue)) continue;
 
-                $service = Services::find($data['services_name'][$key]);
-                if (!$service) continue;
-
+                $isSameService = isset($data['same_service'][$key]) && $data['same_service'][$key] == '1';
                 $discountType = $data['disc_type'][$key] ?? 'complimentory';
                 $discountAmount = isset($data['configurable_amount'][$key]) ? (float) $data['configurable_amount'][$key] : 0;
 
-                // Create GET discount service records
-                for ($i = 0; $i < (int) $sessionValue; $i++) {
-                    GetDiscountService::create([
-                        'discount_id' => $discount->id,
-                        'service_id' => $data['services_name'][$key],
-                        'service_price' => $service->price,
-                        'base_service_id' => $data['base_service'],
-                        'sessions' => 1,
-                        'discount_type' => $discountType,
-                        'discount_amount' => $discountAmount,
-                        'bundle_id' => null, // No longer dependent on bundles
-                    ]);
+                if ($isSameService) {
+                    // Same service: service_id=0 (placeholder), same_service=1
+                    for ($i = 0; $i < (int) $sessionValue; $i++) {
+                        GetDiscountService::create([
+                            'discount_id' => $discount->id,
+                            'service_id' => $firstBaseServiceId,
+                            'same_service' => 1,
+                            'service_price' => 0,
+                            'base_service_id' => $firstBaseServiceId,
+                            'sessions' => 1,
+                            'discount_type' => $discountType,
+                            'discount_amount' => $discountAmount,
+                            'bundle_id' => null,
+                        ]);
+                    }
+                } else {
+                    if (empty($data['services_name'][$key])) continue;
+                    $service = Services::find($data['services_name'][$key]);
+                    if (!$service) continue;
+
+                    for ($i = 0; $i < (int) $sessionValue; $i++) {
+                        GetDiscountService::create([
+                            'discount_id' => $discount->id,
+                            'service_id' => $data['services_name'][$key],
+                            'same_service' => 0,
+                            'service_price' => $service->price,
+                            'base_service_id' => $firstBaseServiceId,
+                            'sessions' => 1,
+                            'discount_type' => $discountType,
+                            'discount_amount' => $discountAmount,
+                            'bundle_id' => null,
+                        ]);
+                    }
                 }
+            }
+
+            // Sync roles if provided
+            if (isset($data['roles'])) {
+                $discount->roles()->sync($data['roles']);
             }
 
             AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $discount);
@@ -151,53 +197,100 @@ class Discounts extends BaseModal
                 'start' => $data['start'],
                 'end' => $data['end'],
                 'active' => $data['active'] ?? 0,
+                'customer_type_id' => $data['customer_type_id'] ?? null,
             ]);
 
-            // Update base service records (BUY section)
-            $baseService = Services::findOrFail($data['edit_base_service']);
+            // Rebuild base service records (BUY section)
             BaseDiscountService::where('discount_id', $id)->delete();
             
+            $buyMode = $data['edit_buy_mode'] ?? 'service';
             $sessionCount = (int) $data['edit_sessions_buy'];
-            for ($i = 0; $i < $sessionCount; $i++) {
-                BaseDiscountService::create([
-                    'discount_id' => $id,
-                    'service_id' => $data['edit_base_service'],
-                    'service_price' => $baseService->price,
-                    'sessions' => $sessionCount,
-                    'bundle_id' => null, // No longer dependent on bundles
-                ]);
-            }
 
-            // Update GET service records
-            $sessions = $data['edit_sessions'] ?? [];
-            GetDiscountService::where('discount_id', $id)->delete();
-
-            foreach ($sessions as $key => $sessionValue) {
-                if (empty($sessionValue) || empty($data['edit_services_name'][$key])) {
-                    continue;
+            if ($buyMode === 'category') {
+                $categoryIds = is_array($data['edit_base_service']) ? $data['edit_base_service'] : [$data['edit_base_service']];
+                foreach ($categoryIds as $categoryId) {
+                    $category = Services::find($categoryId);
+                    if (!$category) continue;
+                    for ($i = 0; $i < $sessionCount; $i++) {
+                        BaseDiscountService::create([
+                            'discount_id' => $id,
+                            'service_id' => $categoryId,
+                            'service_price' => 0,
+                            'sessions' => $sessionCount,
+                            'is_category' => 1,
+                            'bundle_id' => null,
+                        ]);
+                    }
                 }
-
-                $service = Services::find($data['edit_services_name'][$key]);
-                if (!$service) continue;
-
-                $discountType = $data['edit_disc_type'][$key] ?? 'complimentory';
-                $discountAmount = isset($data['configurable_amount'][$key]) ? (float) $data['configurable_amount'][$key] : 0;
-
-                for ($i = 0; $i < (int) $sessionValue; $i++) {
-                    GetDiscountService::create([
+            } else {
+                $baseService = Services::findOrFail($data['edit_base_service']);
+                for ($i = 0; $i < $sessionCount; $i++) {
+                    BaseDiscountService::create([
                         'discount_id' => $id,
-                        'service_id' => $data['edit_services_name'][$key],
-                        'service_price' => $service->price,
-                        'base_service_id' => $data['edit_base_service'],
-                        'sessions' => 1,
-                        'discount_type' => $discountType,
-                        'discount_amount' => $discountAmount,
-                        'bundle_id' => null, // No longer dependent on bundles
+                        'service_id' => $data['edit_base_service'],
+                        'service_price' => $baseService->price,
+                        'sessions' => $sessionCount,
+                        'is_category' => 0,
+                        'bundle_id' => null,
                     ]);
                 }
             }
 
+            $firstBaseServiceId = is_array($data['edit_base_service']) ? $data['edit_base_service'][0] : $data['edit_base_service'];
+
+            // Rebuild GET service records
+            $sessions = $data['edit_sessions'] ?? [];
+            GetDiscountService::where('discount_id', $id)->delete();
+
+            foreach ($sessions as $key => $sessionValue) {
+                if (empty($sessionValue)) continue;
+
+                $isSameService = isset($data['edit_same_service'][$key]) && $data['edit_same_service'][$key] == '1';
+                $discountType = $data['edit_disc_type'][$key] ?? 'complimentory';
+                $discountAmount = isset($data['configurable_amount'][$key]) ? (float) $data['configurable_amount'][$key] : 0;
+
+                if ($isSameService) {
+                    for ($i = 0; $i < (int) $sessionValue; $i++) {
+                        GetDiscountService::create([
+                            'discount_id' => $id,
+                            'service_id' => $firstBaseServiceId,
+                            'same_service' => 1,
+                            'service_price' => 0,
+                            'base_service_id' => $firstBaseServiceId,
+                            'sessions' => 1,
+                            'discount_type' => $discountType,
+                            'discount_amount' => $discountAmount,
+                            'bundle_id' => null,
+                        ]);
+                    }
+                } else {
+                    if (empty($data['edit_services_name'][$key])) continue;
+                    $service = Services::find($data['edit_services_name'][$key]);
+                    if (!$service) continue;
+
+                    for ($i = 0; $i < (int) $sessionValue; $i++) {
+                        GetDiscountService::create([
+                            'discount_id' => $id,
+                            'service_id' => $data['edit_services_name'][$key],
+                            'same_service' => 0,
+                            'service_price' => $service->price,
+                            'base_service_id' => $firstBaseServiceId,
+                            'sessions' => 1,
+                            'discount_type' => $discountType,
+                            'discount_amount' => $discountAmount,
+                            'bundle_id' => null,
+                        ]);
+                    }
+                }
+            }
+
             $discount = Discounts::find($id);
+            
+            // Sync roles if provided
+            if (isset($data['roles'])) {
+                $discount->roles()->sync($data['roles']);
+            }
+            
             AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $discount->toArray(), $id);
 
             return $discount;

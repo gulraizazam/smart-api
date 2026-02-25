@@ -1,3 +1,57 @@
+/**
+ * Check if a package service is locked from consumption.
+ * Returns a lock reason string if locked, or null if consumable.
+ *
+ * Rules:
+ * 1. Ordering: Within a config_group, lower consumption_order services must be consumed first
+ *    — SKIPPED if plan is fully paid (payments >= total plan value)
+ * 2. Payment: Total plan payments must cover total consumed + this service price
+ *    (free services skip the payment check but still require ordering when not fully paid)
+ *
+ * consumption_order: 0=normal, 1=BUY, 2=discounted GET, 3=free GET
+ */
+function checkConsumptionLock(packageservice, totalPlanPayments, totalConsumedValue, configGroupServices, isPlanFullyPaid) {
+    var consumptionOrder = parseInt(packageservice.consumption_order) || 0;
+    var configGroupId = packageservice.config_group_id || null;
+    var servicePrice = parseFloat(packageservice.tax_including_price) || 0;
+
+    // Normal services (consumption_order = 0) only check payment coverage
+    if (consumptionOrder === 0) {
+        if (servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
+            var shortfall = Math.ceil((totalConsumedValue + servicePrice) - totalPlanPayments);
+            return 'Insufficient payment. Collect Rs. ' + shortfall.toLocaleString() + ' first.';
+        }
+        return null;
+    }
+
+    // Ordering check: ALWAYS enforce within configurable discount groups
+    // BUY sessions must be consumed before GET sessions, regardless of payment status
+    if (configGroupId && configGroupServices[configGroupId]) {
+        var siblings = configGroupServices[configGroupId];
+        for (var i = 0; i < siblings.length; i++) {
+            var sibling = siblings[i];
+            if (sibling.id == packageservice.id) continue;
+            var siblingOrder = parseInt(sibling.consumption_order) || 0;
+            if (siblingOrder < consumptionOrder && sibling.is_consumed == '0') {
+                if (siblingOrder === 1) {
+                    return 'Consume paid sessions first before discounted/free sessions.';
+                } else if (siblingOrder === 2) {
+                    return 'Consume discounted sessions first before free sessions.';
+                }
+                return 'Consume higher-priority sessions first.';
+            }
+        }
+    }
+
+    // Payment coverage check (skip for free services)
+    if (servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
+        var shortfall = Math.ceil((totalConsumedValue + servicePrice) - totalPlanPayments);
+        return 'Insufficient payment. Collect Rs. ' + shortfall.toLocaleString() + ' first.';
+    }
+
+    return null;
+}
+
 $(document).ready(function () {
 
     customDatePicker();
@@ -399,6 +453,13 @@ $(document).ready(function () {
 
                     if (resposne.status == '1') {
                         $('#table_1').find('tbody').html('');
+
+                        // Store payment/consumption data for lock checks
+                        var totalPlanPayments = parseFloat(resposne.total_plan_payments) || 0;
+                        var totalConsumedValue = parseFloat(resposne.total_consumed_value) || 0;
+                        var isPlanFullyPaid = resposne.is_plan_fully_paid || false;
+                        var configGroupServices = resposne.config_group_services || {};
+
                         jQuery.each(resposne.packagebundles, function (i, packagebundles) {
 
                             if (packagebundles.discount_id == null) {
@@ -418,14 +479,22 @@ $(document).ready(function () {
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
                                 if (packageservices.package_bundle_id == packagebundles.id) {
+                                    var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
 
                                     if (packageservices.is_consumed == '0') {
                                         var consume = 'NO';
-                                        var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
+                                        // Check consumption lock for configurable discount services
+                                        var lockReason = checkConsumptionLock(packageservices, totalPlanPayments, totalConsumedValue, configGroupServices, isPlanFullyPaid);
+
+                                        if (lockReason) {
+                                            // Locked: show disabled checkbox with lock icon and tooltip
+                                            $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "' style='opacity: 0.6;'><td><span class='consumption-locked' title='" + lockReason + "' style='cursor: help; color: #e74c3c;'>&#128274;</span></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'><span style='color: #e74c3c; font-size: 11px;'>" + lockReason + "</span></td></tr>");
+                                        } else {
+                                            // Unlocked: show checkbox
+                                            $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + " data-price='" + packageservices.tax_including_price + "'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
+                                        }
                                     } else {
                                         var consume = 'YES';
-                                        var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
                                         $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
                                     }
                                 }
@@ -541,8 +610,10 @@ $(document).ready(function () {
                                         window.open(route('admin.invoices.invoice_pdf', [invoice_id, 'print']), '_blank');
                                     } else {
                                         if (resposne.data.setteled == 1) {
-
                                             $('#setteledMessage').show();
+                                        } else if (resposne.data.consumption_locked == 1) {
+                                            toastr.error(resposne.message || 'This service is locked from consumption.');
+                                            $('#treatment_savepackageinformation').attr("disabled", false);
                                         } else {
                                             $('#wrongMessage').show();
                                             toastr.error(" Something Went Wrong!")

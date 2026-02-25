@@ -156,7 +156,11 @@ class DiscountsController extends Controller
         $sessions = $request->input('sessions');
         foreach ($sessions as $key => $value) {
             $rules["sessions.{$key}"] = 'required';
-            $rules["services_name.{$key}"] = 'required';
+            // services_name is not required when same_service is checked for this row
+            $sameService = $request->input("same_service.{$key}");
+            if (!$sameService) {
+                $rules["services_name.{$key}"] = 'required';
+            }
             $rules["disc_type.{$key}"] = 'required';
         }
 
@@ -552,7 +556,7 @@ class DiscountsController extends Controller
                 $customerTypes = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id')->toArray();
 
                 // 🔹 Get selected role ids for this discount
-                $selected_role_ids = $discount->roles()->pluck('role_id')->toArray();
+                $selected_role_ids = $discount->roles()->pluck('roles.id')->toArray();
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'discount' => $Discount ?? $discount,
                     'locations' => $locations,
@@ -689,11 +693,34 @@ class DiscountsController extends Controller
 
             $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
 
-            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
+            $responseData = [
                 'discount' => $discount,
                 'location' => $location,
                 'discount_has_location' => $discount_has_location,
-            ]);
+            ];
+
+            // For configurable discounts, include the defined services
+            // Count records per service since each session is stored as a separate record
+            if ($discount->type === 'Configurable') {
+                $baseServices = BaseDiscountService::join('services', 'services.id', 'base_discount_services.service_id')
+                    ->where('discount_id', $id)
+                    ->select('services.id', 'services.name', 'base_discount_services.is_category', \DB::raw('COUNT(*) as sessions'))
+                    ->groupBy('services.id', 'services.name', 'base_discount_services.is_category')
+                    ->get();
+                
+                $getServices = GetDiscountService::join('services', 'services.id', 'get_discount_services.service_id')
+                    ->where('discount_id', $id)
+                    ->select('services.id', 'services.name', 'get_discount_services.discount_type', 'get_discount_services.discount_amount', 'get_discount_services.same_service', \DB::raw('COUNT(*) as sessions'))
+                    ->groupBy('services.id', 'services.name', 'get_discount_services.discount_type', 'get_discount_services.discount_amount', 'get_discount_services.same_service')
+                    ->get();
+
+                $responseData['configurable_services'] = [
+                    'base_services' => $baseServices,
+                    'get_services' => $getServices,
+                ];
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, $responseData);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -820,11 +847,38 @@ class DiscountsController extends Controller
                 'slug' => 'configurable',
             ]);
 
+            // Build services display string for configurable discount
+            // Count records per service since each session is stored as a separate record
+            $baseServices = BaseDiscountService::join('services', 'services.id', 'base_discount_services.service_id')
+                ->where('discount_id', $request->discount_id)
+                ->select('services.name', 'base_discount_services.service_id', \DB::raw('COUNT(*) as session_count'))
+                ->groupBy('services.name', 'base_discount_services.service_id')
+                ->get();
+            
+            $getServices = GetDiscountService::join('services', 'services.id', 'get_discount_services.service_id')
+                ->where('discount_id', $request->discount_id)
+                ->select('services.name', 'get_discount_services.service_id', 'get_discount_services.discount_type', 'get_discount_services.discount_amount', \DB::raw('COUNT(*) as session_count'))
+                ->groupBy('services.name', 'get_discount_services.service_id', 'get_discount_services.discount_type', 'get_discount_services.discount_amount')
+                ->get();
+
+            $buyParts = [];
+            foreach ($baseServices as $svc) {
+                $buyParts[] = 'Buy ' . $svc->session_count . ' ' . $svc->name;
+            }
+            
+            $getParts = [];
+            foreach ($getServices as $svc) {
+                $discountText = $svc->discount_type === 'complimentory' ? 'Free' : $svc->discount_amount . '% Off';
+                $getParts[] = 'Get ' . $svc->session_count . ' ' . $svc->name . ' (' . $discountText . ')';
+            }
+            
+            $servicesDisplay = implode(', ', $buyParts) . ' → ' . implode(', ', $getParts);
+
             return ApiHelper::apiResponse($this->success, 'Discount allocated to centre successfully.', true, [
                 'record' => [
                     'id' => $record->id,
                     'location_name' => $location->city->name . ' - ' . $location->name,
-                    'service_name' => 'All Services (Configurable)',
+                    'service_name' => $servicesDisplay,
                 ]
             ]);
 

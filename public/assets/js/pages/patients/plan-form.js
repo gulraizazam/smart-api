@@ -1825,12 +1825,13 @@ function deletePlaneHistory(url, package_advance_id) {
 
 function addServiceDiscount($this, type = 'add_') {
 
-
     var service_id = $this.val();
     var location_id = $('#add_location_id').val();
     var patient_id = $('#add_patient_id').val();
 
-    $("#" + type + "discount_id").val('0').trigger('change');
+    $("#" + type + "discount_id").val('').trigger('change');
+    $('#configurable_preview').remove();
+    $('#net_amount_1').val('');
 
     if (service_id && patient_id) {
 
@@ -1840,41 +1841,30 @@ function addServiceDiscount($this, type = 'add_') {
 
         $.ajax({
             type: 'get',
-            url: route('admin.packages.getserviceinfo'),
+            url: route('admin.plans.getserviceinfo_for_plan'),
             data: {
-                'bundle_id': service_id, //Basically it is bundle id
+                'service_id': service_id,
                 'location_id': location_id,
                 'patient_id': patient_id
             },
-            success: function (resposne) {
+            success: function (response) {
 
-                if (resposne.status) {
-
-                    let discounts = resposne.data.discounts;
-
-                    let options = '<option value="" >Select Discount</option>';
-
+                if (response.data && response.data.discounts) {
+                    let discounts = response.data.discounts;
+                    let options = '<option value="">Select Discount</option>';
                     jQuery.each(discounts, function (i, discount) {
                         options += '<option value="' + discount.id + '">' + discount.name + '</option>';
                     });
-
                     $("#add_discount_id").html(options);
-
-                    $("#net_amount_1").val(resposne.data.net_amount);
-                    $("#net_amount_1").prop("disabled", true);
-
                 } else {
-
-                    let options = '<option value="" >Select Discount</option>';
-
-                    $("#add_discount_id").html(options);
-
-                    $("#net_amount_1").val(resposne.data.net_amount);
-                    $("#net_amount_1").prop("disabled", true);
-                    $("#add_discount_value").val(0).change();
-                    $("#add_discount_type").val('').change();
-
+                    $("#add_discount_id").html('<option value="">Select Discount</option>');
                 }
+
+                var net = (response.data && response.data.net_amount) ? response.data.net_amount : '';
+                $("#net_amount_1").val(net);
+                $("#net_amount_1").prop("disabled", true);
+                $("#add_discount_value").val(0).change();
+                $("#add_discount_type").val('').change();
             },
         });
     }
@@ -2391,6 +2381,82 @@ function deletePlanAction(id) {
     });
 }
 
+// Delete all rows in a configurable discount group
+function deleteConfigurablePlanRows(btn) {
+    var configRowIds = JSON.parse($(btn).attr('data-config-rows'));
+    
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        text: 'This will delete all services in this configurable discount group.',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            var package_total = $('#add_package_total').val();
+            // Delete each row via AJAX
+            configRowIds.forEach(function(id) {
+                $.ajax({
+                    type: 'post',
+                    url: route('admin.packages.deletepackages_service'),
+                    data: {
+                        '_token': $('input[name=_token]').val(),
+                        'id': id,
+                        'package_total': package_total
+                    },
+                    success: function (response) {},
+                    error: function (response) {}
+                });
+            });
+            
+            // Remove all rows from the table
+            var firstId = configRowIds[0];
+            $('.configurable-group-' + firstId).remove();
+            
+            // Check if any rows remain
+            var remainingRows = $('#plan_services tbody tr[id="table_1"]').length;
+            var total = 0;
+            
+            if (remainingRows > 0) {
+                // Recalculate totals from remaining rows
+                $('.package_bundles').each(function() {
+                    var row = $(this).closest('tr');
+                    var rowTotal = parseFloat(row.find('td:eq(7)').text().replace(/,/g, '')) || 0;
+                    total += rowTotal;
+                });
+            }
+            
+            // Set total (will be 0 if no rows remain)
+            $('#add_package_total').val(total.toFixed(2));
+            
+            // Update grand total
+            if (remainingRows === 0) {
+                // No rows remain - reset everything to 0
+                $("#add_total_price").val('0');
+                $("#add_cash_amount").val('');
+                $("#add_location_id").prop("disabled", false);
+            } else {
+                var cash_amount = $('#add_cash_amount').val() || 0;
+                $.ajax({
+                    type: 'get',
+                    url: route('admin.packages.getgrandtotal'),
+                    data: { 'cash_amount': cash_amount, 'total': total },
+                    success: function (grandTotalResponse) {
+                        if (grandTotalResponse.status && grandTotalResponse.data) {
+                            $("#add_total_price").val(grandTotalResponse.data.grand_total);
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+
 /*Delete The record*/
 function deletePlanRow(id = '') {
 
@@ -2594,6 +2660,60 @@ jQuery(document).ready(function () {
         keyfunction_grandtotal();
     });
 
+    // Handle discount selection change - fetch discount info and show configurable preview
+    $(document).on('change', '#add_discount_id', function () {
+        var discount_id = $(this).val();
+        var service_id  = $('#add_service_id').val();
+        var location_id = $('#add_location_id').val();
+        var patient_id  = $('#add_patient_id').val();
+
+        $('#configurable_preview').remove();
+
+        if (!discount_id || !service_id) {
+            return;
+        }
+
+        $.ajax({
+            type: 'get',
+            url: route('admin.plans.getdiscountinfo_for_plan'),
+            data: {
+                'discount_id': discount_id,
+                'service_id':  service_id,
+                'location_id': location_id,
+                'patient_id':  patient_id
+            },
+            success: function (response) {
+                if (!response.status || !response.data) return;
+
+                if (response.data.is_configurable) {
+                    // Show configurable preview table
+                    var rows = response.data.preview_rows;
+                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                    html += '<strong>Configurable Discount Preview:</strong>';
+                    html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
+                    html += '<thead><tr style="color: white;"><th style="color: white;">Service</th><th style="color: white;">Regular Price</th><th style="color: white;">Discount</th><th style="color: white;">Net Amount</th></tr></thead><tbody>';
+                    jQuery.each(rows, function (i, row) {
+                        var badge = row.row_type === 'buy'
+                            ? '<span class="badge badge-primary">BUY</span>'
+                            : '<span class="badge badge-success">GET</span>';
+                        html += '<tr>';
+                        html += '<td style="color: white !important;">' + badge + ' ' + row.service_name + '</td>';
+                        html += '<td style="color: white !important;">' + parseFloat(row.service_price).toLocaleString() + '</td>';
+                        html += '<td style="color: white !important;">' + row.discount_type + '</td>';
+                        html += '<td style="color: white !important;">' + parseFloat(row.net_amount).toLocaleString() + '</td>';
+                        html += '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                    $('#net_amount_1').closest('.fv-row').after(html);
+                    // Set net_amount to total of all rows for grand total calculation
+                    $('#net_amount_1').val(response.data.total_net_amount);
+                } else {
+                    $('#net_amount_1').val(response.data.net_amount);
+                }
+            }
+        });
+    });
+
     /*save data for both predefined discounts and keyup trigger*/
     $("#AddPackage").click(function () {
 
@@ -2601,7 +2721,7 @@ jQuery(document).ready(function () {
 
         $(this).attr("disabled", true);
         var random_id = $('#random_id_1').val();
-        var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
+        var service_id = $('#add_service_id').val();
         var discount_id = $('#add_discount_id').val();
         var net_amount = $('#net_amount_1').val();
         var discount_type = $('#add_discount_type').val();
@@ -2613,12 +2733,19 @@ jQuery(document).ready(function () {
         var location_id = $('#add_location_id').val();
         var user_id = $('#add_patient_id').val();
         var sold_by = $('#add_sold_by').val();
-        
-        if (service_id && net_amount && location_id && user_id && sold_by) {
+
+        // Check if a configurable discount is selected
+        var selected_discount_option = $('#add_discount_id option:selected');
+        var is_configurable = ($('#configurable_preview').length > 0);
+
+        // For configurable discounts, net_amount validation is different (can be 0 for complimentary)
+        var has_valid_fields = service_id && location_id && user_id && sold_by && (net_amount !== '' || is_configurable);
+
+        if (has_valid_fields) {
 
             showSpinner("-add");
 
-            if (discount_slug == 'custom') {
+            if (!is_configurable && discount_slug == 'custom') {
                 if (discount_price == '') {
                     hideSpinner("-add");
                     $('#inputfieldMessage').show();
@@ -2636,17 +2763,17 @@ jQuery(document).ready(function () {
             }
 
             var formData = {
-                'random_id': random_id,
-                'bundle_id': service_id, //Basicailly it is bundle id
-                'discount_id': discount_id,
-                'net_amount': net_amount,
+                'random_id':     random_id,
+                'service_id':    service_id,
+                'discount_id':   discount_id,
+                'net_amount':    net_amount,
                 'discount_type': discount_type,
-                'discount_price': discount_price,
+                'discount_price':discount_price,
                 'package_total': package_total,
-                'is_exclusive': is_exclusive,
-                'location_id': location_id,
-                'user_id': user_id,
-                'sold_by': sold_by,
+                'is_exclusive':  is_exclusive,
+                'location_id':   location_id,
+                'user_id':       user_id,
+                'sold_by':       sold_by,
                 'package_bundles[]': []
             };
 
@@ -2656,52 +2783,103 @@ jQuery(document).ready(function () {
 
             $.ajax({
                 type: 'get',
-                url: route('admin.plans.savepackages_service'),
+                url: route('admin.plans.savepackages_service_for_plan'),
                 data: formData,
                 success: function (resposne) {
-                 
-                    let consume = 'NO';
+
                     if (resposne.status) {
-
-                        $("#add_package_total").val(resposne?.data?.myarray?.total ?? 0);
                         $('.not_found').remove();
-                        $('#plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.myarray.record.id + ")'>" + resposne.data.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_percenatage + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
-                            "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ")'>" + trashBtn() + "</button>" +
-                            "</td>" +
-                            "</tr>");
 
-                        jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
-                            if (record_detail.is_consumed == '0') {
-                                consume = 'NO';
-                            } else {
-                                consume = 'YES';
-                            }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Tax Amt. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
-                        });
+                        if (resposne.data.is_configurable) {
+                            // Multiple rows for configurable discount
+                            var rows = resposne.data.rows;
+                            var grand_total = resposne.data.grand_total;
+                            // Store all row IDs for grouped deletion
+                            var configRowIds = rows.map(function(r) { return r.record.id; });
 
-                        // Call getgrandtotal API after adding service
+                            jQuery.each(rows, function (i, row) {
+                                var consume = 'NO';
+                                // Only show delete button on first row (base service)
+                                var deleteBtn = '';
+                                if (i === 0) {
+                                    deleteBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' data-config-rows='" + JSON.stringify(configRowIds) + "' onClick='deleteConfigurablePlanRows(this)'>" + trashBtn() + "</button>";
+                                }
+                                $('#plan_services').append(
+                                    "<tr id='table_1' class='HR_" + random_id + " HR_" + row.record.id + " configurable-group-" + configRowIds[0] + "'>" +
+                                    "<td><a href='javascript:void(0)' onClick='toggle(" + row.record.id + ")'>" + row.service_name + "</a></td>" +
+                                    "<td>" + parseFloat(row.service_price).toLocaleString() + "</td>" +
+                                    "<td>" + row.discount_name + "</td>" +
+                                    "<td>" + row.discount_type + "</td>" +
+                                    "<td>" + row.discount_price + "</td>" +
+                                    "<td>" + parseFloat(row.record.tax_exclusive_net_amount).toLocaleString() + "</td>" +
+                                    "<td>" + row.record.tax_percenatage + "</td>" +
+                                    "<td>" + parseFloat(row.record.tax_including_price).toLocaleString() + "</td>" +
+                                    "<td>" +
+                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + row.record.id + "' />" +
+                                    deleteBtn +
+                                    "</td>" +
+                                    "</tr>"
+                                );
+                                jQuery.each(row.record_detail, function (j, rd) {
+                                    consume = rd.is_consumed == '0' ? 'NO' : 'YES';
+                                    $('#plan_services').append(
+                                        "<tr class='inner_records_hr HR_" + row.record.id + " " + row.record.id + " configurable-group-" + configRowIds[0] + "'>" +
+                                        "<td></td><td>" + rd.name + "</td>" +
+                                        "<td>Amount : " + parseFloat(rd.tax_exclusive_price).toLocaleString() + "</td>" +
+                                        "<td>Tax % : " + rd.tax_percenatage + "</td>" +
+                                        "<td>Tax Amt. : " + parseFloat(rd.tax_including_price).toLocaleString() + "</td>" +
+                                        "<td colspan='4'>Is Consume : " + consume + "</td></tr>"
+                                    );
+                                });
+                            });
+
+                            $("#add_package_total").val(grand_total);
+
+                        } else {
+                            // Single row for simple discount
+                            var myarray = resposne.data.myarray;
+                            var consume = 'NO';
+
+                            $("#add_package_total").val(myarray.total ?? 0);
+
+                            $('#plan_services').append(
+                                "<tr id='table_1' class='HR_" + random_id + " HR_" + myarray.record.id + "'>" +
+                                "<td><a href='javascript:void(0)' onClick='toggle(" + myarray.record.id + ")'>" + myarray.service_name + "</a></td>" +
+                                "<td>" + parseFloat(myarray.service_price).toLocaleString() + "</td>" +
+                                "<td>" + myarray.discount_name + "</td>" +
+                                "<td>" + myarray.discount_type + "</td>" +
+                                "<td>" + myarray.discount_price + "</td>" +
+                                "<td>" + parseFloat(myarray.record.tax_exclusive_net_amount).toLocaleString() + "</td>" +
+                                "<td>" + myarray.record.tax_percenatage + "</td>" +
+                                "<td>" + parseFloat(myarray.record.tax_including_price).toLocaleString() + "</td>" +
+                                "<td>" +
+                                "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + myarray.record.id + "' />" +
+                                "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + myarray.record.id + ")'>" + trashBtn() + "</button>" +
+                                "</td>" +
+                                "</tr>"
+                            );
+
+                            jQuery.each(myarray.record_detail, function (i, record_detail) {
+                                consume = record_detail.is_consumed == '0' ? 'NO' : 'YES';
+                                $('#plan_services').append(
+                                    "<tr class='inner_records_hr HR_" + myarray.record.id + " " + myarray.record.id + "'>" +
+                                    "<td></td><td>" + record_detail.name + "</td>" +
+                                    "<td>Amount : " + parseFloat(record_detail.tax_exclusive_price).toLocaleString() + "</td>" +
+                                    "<td>Tax % : " + record_detail.tax_percenatage + "</td>" +
+                                    "<td>Tax Amt. : " + parseFloat(record_detail.tax_including_price).toLocaleString() + "</td>" +
+                                    "<td colspan='4'>Is Consume : " + consume + "</td></tr>"
+                                );
+                            });
+                        }
+
+                        // Update grand total
                         var cash_amount = $('#add_cash_amount').val() || 0;
                         var total = $("#add_package_total").val() || 0;
-                        
                         $.ajax({
                             type: 'get',
                             url: route('admin.packages.getgrandtotal'),
-                            data: {
-                                'cash_amount': cash_amount,
-                                'total': total
-                            },
-                            success: function(grandTotalResponse) {
+                            data: { 'cash_amount': cash_amount, 'total': total },
+                            success: function (grandTotalResponse) {
                                 if (grandTotalResponse.status && grandTotalResponse.data) {
                                     $("#add_total_price").val(grandTotalResponse.data.grand_total);
                                 }
@@ -2709,27 +2887,29 @@ jQuery(document).ready(function () {
                         });
 
                         var rows = $('#plan_services tbody tr').length;
-
                         if (rows >= 3) {
                             $("#add_location_id").prop("disabled", true);
                         }
-                        
-                        // Reset form fields after successful addition
+
+                        // Reset form fields
                         $('#add_service_id').val(null).trigger('change');
                         $('#add_discount_id').val(null).trigger('change');
                         $('#add_discount_type').val(null).trigger('change');
                         $('#add_discount_value').val('');
                         $('#net_amount_1').val('');
                         $('#add_sold_by').val(null).trigger('change');
+                        $('#configurable_preview').remove();
 
                     } else {
-                        $('#AlreadyExitMessage').show();
+                        toastr.error(resposne.message || 'Failed to add service.');
                     }
 
+                    $("#AddPackage").attr("disabled", false);
                     hideSpinner("-add");
                 },
                 error: function () {
                     hideSpinner("-add");
+                    $("#AddPackage").attr("disabled", false);
                 }
             });
         } else {

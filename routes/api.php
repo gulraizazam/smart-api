@@ -491,6 +491,11 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::get('packages/getservice_for_discount_zero', [PackagesController::class, 'getservices_for_zero'])->name('packages.getserviceinfo_discount_zero');
 
+    Route::get('packages/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('packages.getserviceinfo_for_plan');
+    Route::get('packages/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('packages.getdiscountinfo_for_plan');
+    Route::get('packages/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('packages.getdiscountinfocustom_for_plan');
+    Route::get('packages/savepackages_service_for_plan', [PackagesController::class, 'savepackages_service_for_plan'])->name('packages.savepackages_service_for_plan');
+
     /*Routes for editing the cash in treatment plan*/
     Route::get('packages/edit_cash/{id}/{package_id}', [PackagesController::class, 'editpackageadvancescashindex'])->name('packages.edit_cash');
 
@@ -688,6 +693,11 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('plans/savepackages', [PackagesController::class, 'savepackages'])->name('plans.savepackages');
 
     Route::get('plans/getdiscountinfo_custom', [PackagesController::class, 'getdiscountinfocustom'])->name('plans.getdiscountinfo_custom');
+
+    Route::get('plans/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('plans.getserviceinfo_for_plan');
+    Route::get('plans/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('plans.getdiscountinfo_for_plan');
+    Route::get('plans/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('plans.getdiscountinfocustom_for_plan');
+    Route::get('plans/savepackages_service_for_plan', [PackagesController::class, 'savepackages_service_for_plan'])->name('plans.savepackages_service_for_plan');
 
     Route::get('plans/getgrandtotal', [PackagesController::class, 'getgrandtotal'])->name('plans.getgrandtotal');
 

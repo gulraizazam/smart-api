@@ -3212,27 +3212,76 @@ class AppointmentsController extends Controller
             ]);
         }
 
-        // Get package bundles - only if we have bundle IDs
-        $packagebundles = [];
+        // Get package bundles — two paths:
+        // 1. Bundle-type: bundle_id is a real bundles.id (JOIN works)
+        // 2. Plan-type: bundle_id stores service_id (JOIN fails, use LEFT JOIN with service name)
+        $bundleTypeBundles = collect();
         if (!empty($bundleIds)) {
-            $packagebundles = PackageBundles::join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            $bundleTypeBundles = PackageBundles::join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
                 ->where('package_bundles.package_id', '=', $package->id)
                 ->whereIn('package_bundles.bundle_id', $bundleIds)
                 ->select('package_bundles.*', 'package_bundles.discount_name as discountname', 'bundles.name as bundlename')
                 ->get();
         }
 
-        // Get package services
+        // Plan-type bundles: bundle_id = service_id, get service name instead
+        $bundleTypeBundleIds = $bundleTypeBundles->pluck('id')->toArray();
+        $planTypeBundles = PackageBundles::leftJoin('services', 'package_bundles.bundle_id', '=', 'services.id')
+            ->where('package_bundles.package_id', '=', $package->id)
+            ->whereNotIn('package_bundles.id', $bundleTypeBundleIds)
+            ->whereHas('packageservice', function ($q) use ($serviceId) {
+                $q->where('service_id', $serviceId);
+            })
+            ->select('package_bundles.*', 'package_bundles.discount_name as discountname', 'services.name as bundlename')
+            ->get();
+
+        $packagebundles = $bundleTypeBundles->merge($planTypeBundles);
+
+        // Get package services with config_group_id from package_bundles
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
+            ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
             ->where('package_services.package_id', '=', $package->id)
             ->where('package_services.service_id', '=', $serviceId)
-            ->select('package_services.*', 'services.name as servicename')
+            ->select('package_services.*', 'services.name as servicename', 'package_bundles.config_group_id')
             ->get();
+
+        // Calculate total payments for this plan (for consumption lock checks)
+        $totalPlanPayments = PackageAdvances::where('package_id', $package->id)
+            ->where('cash_flow', 'in')
+            ->sum('cash_amount');
+
+        // Calculate total already consumed value
+        $totalConsumedValue = PackageService::where('package_id', $package->id)
+            ->where('is_consumed', 1)
+            ->sum('tax_including_price');
+
+        // Get all package services in same config groups for ordering checks
+        $configGroupIds = $packageservices->pluck('config_group_id')->filter()->unique()->values();
+        $configGroupServices = [];
+        if ($configGroupIds->isNotEmpty()) {
+            $configGroupServices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
+                ->leftJoin('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->where('package_services.package_id', '=', $package->id)
+                ->whereIn('package_bundles.config_group_id', $configGroupIds)
+                ->select('package_services.id', 'package_services.is_consumed', 'package_services.consumption_order', 'package_services.tax_including_price', 'package_bundles.config_group_id', 'services.name as servicename')
+                ->get()
+                ->groupBy('config_group_id')
+                ->toArray();
+        }
+
+        // Check if plan is fully paid (total payments >= total plan value)
+        $totalPlanValue = PackageService::where('package_id', $package->id)
+            ->sum('tax_including_price');
+        $isPlanFullyPaid = ($totalPlanPayments >= $totalPlanValue);
 
         return response()->json([
             'status' => true,
             'packagebundles' => $packagebundles,
             'packageservices' => $packageservices,
+            'total_plan_payments' => (float) $totalPlanPayments,
+            'total_consumed_value' => (float) $totalConsumedValue,
+            'is_plan_fully_paid' => $isPlanFullyPaid,
+            'config_group_services' => $configGroupServices,
         ]);
     }
     /*
@@ -3460,6 +3509,58 @@ class AppointmentsController extends Controller
         if($check_is_setteled){
             return ApiHelper::apiResponse($this->success, 'This plan is settled out and cannot consume any further treatments.', false,['setteled'=>1]);
         }
+
+        // ============================================
+        // CONSUMPTION LOCK: Server-side validation
+        // ============================================
+        if ($request->package_service_id && $request->package_id) {
+            $packageService = PackageService::find($request->package_service_id);
+
+            // Calculate plan-level payment totals once (used by both checks)
+            $totalPlanPayments = PackageAdvances::where('package_id', $request->package_id)
+                ->where('cash_flow', 'in')
+                ->sum('cash_amount');
+
+            $totalPlanValue = PackageService::where('package_id', $request->package_id)
+                ->sum('tax_including_price');
+
+            $isPlanFullyPaid = ($totalPlanPayments >= $totalPlanValue);
+
+            // Ordering check: ALWAYS enforce within configurable discount groups (config_group_id exists)
+            // Only skip ordering for non-configurable services when plan is fully paid
+            if ($packageService && $packageService->consumption_order > 0) {
+                $packageBundle = PackageBundles::find($packageService->package_bundle_id);
+                $configGroupId = $packageBundle ? $packageBundle->config_group_id : null;
+
+                if ($configGroupId) {
+                    $hasUnconsumedPrior = PackageService::join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                        ->where('package_services.package_id', $request->package_id)
+                        ->where('package_bundles.config_group_id', $configGroupId)
+                        ->where('package_services.is_consumed', 0)
+                        ->where('package_services.consumption_order', '<', $packageService->consumption_order)
+                        ->where('package_services.id', '!=', $packageService->id)
+                        ->exists();
+
+                    if ($hasUnconsumedPrior) {
+                        return ApiHelper::apiResponse($this->success, 'Cannot consume this service yet. Please consume the paid sessions first before discounted/free sessions.', false, ['consumption_locked' => 1]);
+                    }
+                }
+            }
+
+            // Payment coverage check (for any service with price > 0)
+            if ($packageService && $packageService->tax_including_price > 0) {
+                $totalConsumedValue = PackageService::where('package_id', $request->package_id)
+                    ->where('is_consumed', 1)
+                    ->sum('tax_including_price');
+
+                if ($totalPlanPayments < ($totalConsumedValue + $packageService->tax_including_price)) {
+                    $shortfall = ceil(($totalConsumedValue + $packageService->tax_including_price) - $totalPlanPayments);
+                    return ApiHelper::apiResponse($this->success, 'Insufficient payment on this plan. Please collect Rs. ' . number_format($shortfall) . ' before consuming this service.', false, ['consumption_locked' => 1]);
+                }
+            }
+        }
+        // ============================================
+
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
