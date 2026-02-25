@@ -3671,11 +3671,24 @@ jQuery(document).ready(function () {
             package_bundles: []
         };
 
-        // Collect structured data from non-consumed rows only (consumed rows are preserved in DB)
+        // Build set of config_group_ids that have any consumed row — entire group is protected
+        var consumedConfigGroups = {};
+        $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
+            var consumedText = $.trim($(this).find('td:nth-child(8)').text());
+            if (consumedText === 'Yes') {
+                var cgId = $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '';
+                if (cgId) consumedConfigGroups[cgId] = true;
+            }
+        });
+
+        // Collect structured data — skip consumed rows AND unconsumed siblings in consumed config groups
         $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
             // Skip consumed rows — they are already preserved in DB and should not be recreated
             var consumedText = $.trim($(this).find('td:nth-child(8)').text());
             if (consumedText === 'Yes') return true; // continue to next row
+            // Skip unconsumed siblings of consumed config groups — entire group is preserved in DB
+            var cgId = $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '';
+            if (cgId && consumedConfigGroups[cgId]) return true;
             formData['package_bundles'].push({
                 serviceName: $(this).find('td:first-child a').text(),
                 RegularPrice: $(this).find('td:nth-child(2)').text(),

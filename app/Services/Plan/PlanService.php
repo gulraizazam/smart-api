@@ -2827,54 +2827,76 @@ class PlanService
                 
                 // Get bundle IDs that have consumed services (these must NOT be recreated)
                 $bundlesWithConsumed = [];
+                $protectedBundleIds = []; // Bundles to preserve (consumed + their config group siblings)
                 if (!empty($existingBundleIds)) {
                     $bundlesWithConsumed = PackageService::whereIn('package_bundle_id', $existingBundleIds)
                         ->where('is_consumed', '1')
                         ->pluck('package_bundle_id')
                         ->toArray();
                     
-                    // Only delete non-consumed package services
+                    // Find config_group_ids that contain consumed bundles
+                    // ALL bundles in these groups must be protected (consumed + unconsumed siblings)
+                    $protectedBundleIds = $bundlesWithConsumed;
+                    if (!empty($bundlesWithConsumed)) {
+                        $consumedConfigGroupIds = PackageBundles::whereIn('id', $bundlesWithConsumed)
+                            ->whereNotNull('config_group_id')
+                            ->where('config_group_id', '!=', '')
+                            ->pluck('config_group_id')
+                            ->unique()
+                            ->toArray();
+                        
+                        if (!empty($consumedConfigGroupIds)) {
+                            $siblingBundleIds = PackageBundles::where('package_id', $package->id)
+                                ->whereIn('config_group_id', $consumedConfigGroupIds)
+                                ->pluck('id')
+                                ->toArray();
+                            $protectedBundleIds = array_unique(array_merge($protectedBundleIds, $siblingBundleIds));
+                        }
+                    }
+                    
+                    // Only delete non-consumed package services that are NOT in protected bundles
                     PackageService::whereIn('package_bundle_id', $existingBundleIds)
                         ->where('package_id', $package->id)
+                        ->whereNotIn('package_bundle_id', $protectedBundleIds)
                         ->where(function($q) {
                             $q->where('is_consumed', '!=', '1')->orWhereNull('is_consumed');
                         })
                         ->delete();
                     
-                    // Delete package bundles that have no remaining consumed services
+                    // Delete package bundles that are not protected
                     PackageBundles::where('package_id', $package->id)
-                        ->whereNotIn('id', $bundlesWithConsumed)
+                        ->whereNotIn('id', $protectedBundleIds)
                         ->delete();
                 }
                 
-                // Filter out consumed rows from data before recreating
-                // Consumed bundles are already preserved in DB — don't duplicate them
-                if (!empty($bundlesWithConsumed)) {
-                    // Batch-fetch consumed bundle records to avoid N+1
-                    $consumedBundles = PackageBundles::whereIn('id', $bundlesWithConsumed)->get();
+                // Filter out rows from data that are already preserved in DB (consumed + config group siblings)
+                // This prevents duplicate creation of protected bundles
+                if (!empty($protectedBundleIds)) {
+                    // Batch-fetch all protected bundle records
+                    $protectedBundles = PackageBundles::whereIn('id', $protectedBundleIds)->get();
                     
-                    // Build a count map of consumed bundles by (bundle_id, discount_id)
-                    // This handles the case where same service+discount has multiple consumed rows
-                    $consumedCountMap = [];
-                    foreach ($consumedBundles as $cb) {
-                        $bundleId = (string) ($cb->bundle_id ?? '');
-                        $discountId = (string) ($cb->discount_id ?? '');
+                    // Build a count map of protected bundles by (bundle_id, discount_id, config_group_id)
+                    $protectedCountMap = [];
+                    foreach ($protectedBundles as $pb) {
+                        $bundleId = (string) ($pb->bundle_id ?? '');
+                        $discountId = (string) ($pb->discount_id ?? '');
                         if ($discountId === '0') $discountId = '';
-                        $key = $bundleId . '_' . $discountId;
-                        $consumedCountMap[$key] = ($consumedCountMap[$key] ?? 0) + 1;
+                        $configGroupId = (string) ($pb->config_group_id ?? '');
+                        $key = $bundleId . '_' . $discountId . '_' . $configGroupId;
+                        $protectedCountMap[$key] = ($protectedCountMap[$key] ?? 0) + 1;
                     }
                     
-                    // Skip DOM rows that match consumed bundle records
+                    // Skip DOM rows that match protected bundle records
                     $filteredBundles = [];
                     foreach ($data['package_bundles'] as $pb) {
                         $bundleId = (string) ($pb['bundleId'] ?? '');
                         $discountId = (string) ($pb['DiscountId'] ?? '');
-                        // Normalize empty/null discount IDs
                         if ($discountId === '0') $discountId = '';
-                        $key = $bundleId . '_' . $discountId;
-                        if (isset($consumedCountMap[$key]) && $consumedCountMap[$key] > 0) {
-                            $consumedCountMap[$key]--;
-                            continue; // Skip — this row is already consumed in DB
+                        $configGroupId = (string) ($pb['config_group_id'] ?? '');
+                        $key = $bundleId . '_' . $discountId . '_' . $configGroupId;
+                        if (isset($protectedCountMap[$key]) && $protectedCountMap[$key] > 0) {
+                            $protectedCountMap[$key]--;
+                            continue; // Skip — this row is already preserved in DB
                         }
                         $filteredBundles[] = $pb;
                     }
