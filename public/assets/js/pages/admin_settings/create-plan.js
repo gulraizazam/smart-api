@@ -3783,6 +3783,7 @@ jQuery(document).ready(function () {
             $("#discount_value_1").attr('disabled', true);
             $('#net_amount_1').val('');
             $('#add_sold_by').val(null).trigger('change');
+            $('#configurable_preview').remove();
             
             // Load appointments for selected patient
             getAppointments(patientId);
@@ -3805,6 +3806,7 @@ jQuery(document).ready(function () {
         $("#discount_value_1").attr('disabled', true);
         $('#net_amount_1').val('');
         $('#add_sold_by').val(null).trigger('change');
+        $('#configurable_preview').remove();
     });
 
     $('.index_search_patient').keyup(function () {
