@@ -1538,6 +1538,24 @@ class PackagesController extends Controller
             ['package_bundle_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
+
+        // Also check if any sibling in the same config_group has consumed services
+        if (!$status) {
+            $packageBundle = PackageBundles::find($request->id);
+            if ($packageBundle && $packageBundle->config_group_id) {
+                $siblingBundleIds = PackageBundles::where('package_id', $packageBundle->package_id)
+                    ->where('config_group_id', $packageBundle->config_group_id)
+                    ->where('id', '!=', $packageBundle->id)
+                    ->pluck('id');
+
+                if ($siblingBundleIds->isNotEmpty()) {
+                    $status = PackageService::whereIn('package_bundle_id', $siblingBundleIds)
+                        ->where('is_consumed', '1')
+                        ->first();
+                }
+            }
+        }
+
         if ($status) {
 
             return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
@@ -1595,6 +1613,24 @@ class PackagesController extends Controller
             ['base_service_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
+
+        // Also check if any sibling in the same config_group has consumed services
+        if (!$status) {
+            $packageBundle = PackageBundles::where('base_service_id', $request->id)->first();
+            if ($packageBundle && $packageBundle->config_group_id) {
+                $siblingBundleIds = PackageBundles::where('package_id', $packageBundle->package_id)
+                    ->where('config_group_id', $packageBundle->config_group_id)
+                    ->where('base_service_id', '!=', $request->id)
+                    ->pluck('id');
+
+                if ($siblingBundleIds->isNotEmpty()) {
+                    $status = PackageService::whereIn('package_bundle_id', $siblingBundleIds)
+                        ->where('is_consumed', '1')
+                        ->first();
+                }
+            }
+        }
+
         if ($status) {
 
             return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
