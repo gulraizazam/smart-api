@@ -3871,55 +3871,87 @@ function deleteConfigurablePlanRowsEdit(btn) {
         if (result.value) {
             // If existing DB rows, delete via AJAX
             if (configRowIds && configRowIds.length) {
-                configRowIds.forEach(function(id) {
-                    $.ajax({
-                        type: 'post',
-                        url: route('admin.plans.deletepackages_service'),
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        data: {
-                            'id': id,
-                            'random_id': $('#edit_random_id_1').val(),
-                            'package_total': $('#edit_package_total_1').val(),
-                        },
-                        success: function (response) {},
-                        error: function (response) {}
-                    });
-                });
+                // Send first request to check if deletion is allowed (config group sibling check)
                 var firstId = configRowIds[0];
-                var rowsToRemove = $('.configurable-group-' + firstId).length;
-                $('.configurable-group-' + firstId).remove();
+                $.ajax({
+                    type: 'post',
+                    url: route('admin.plans.deletepackages_service'),
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        'id': firstId,
+                        'random_id': $('#edit_random_id_1').val(),
+                        'package_total': $('#edit_package_total_1').val(),
+                    },
+                    success: function (response) {
+                        if (!response.status) {
+                            if (response.data && response.data.del == 1) {
+                                toastr.error('Cannot delete this group. A service in this configurable discount group has already been consumed.');
+                            } else {
+                                toastr.error('Something went wrong while deleting the service.');
+                            }
+                            return;
+                        }
+                        // First row deleted successfully, delete remaining rows
+                        for (var i = 1; i < configRowIds.length; i++) {
+                            $.ajax({
+                                type: 'post',
+                                url: route('admin.plans.deletepackages_service'),
+                                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                                data: {
+                                    'id': configRowIds[i],
+                                    'random_id': $('#edit_random_id_1').val(),
+                                    'package_total': $('#edit_package_total_1').val(),
+                                },
+                                success: function () {},
+                                error: function () {}
+                            });
+                        }
+                        // Only remove DOM rows after backend confirms deletion is allowed
+                        var rowsToRemove = $('.configurable-group-' + firstId).length;
+                        $('.configurable-group-' + firstId).remove();
+                        deleteConfigGroupUpdateTotals(rowsToRemove);
+                    },
+                    error: function () {
+                        toastr.error('Something went wrong while deleting the service.');
+                    }
+                });
+                return; // Exit early — DOM update happens inside the AJAX callback
             } else if (configGroup) {
                 // Newly added rows - just remove from DOM
                 var rowsToRemove = $('.configurable-group-' + configGroup).length;
                 $('.configurable-group-' + configGroup).remove();
+                deleteConfigGroupUpdateTotals(rowsToRemove);
             }
-            
-            // Remove corresponding entries from edit_amountArray
-            for (var i = 0; i < rowsToRemove; i++) {
-                if (edit_amountArray.length > 0) {
-                    edit_amountArray.pop();
-                }
-            }
-            
-            // Recalculate totals from remaining rows
-            var sum = 0;
-            $('#edit_plan_services tr[id="table_1"]').each(function() {
-                var rowTotal = parseFloat($(this).find('td:eq(6)').text().replace(/,/g, '')) || 0;
-                sum += rowTotal;
-            });
-            
-            if (sum === 0) {
-                edit_amountArray = [];
-            }
-            
-            jQuery('.modal.show #edit_package_total_1').val(sum.toFixed(2));
-            jQuery('.modal.show #edit_grand_total_1').val(sum.toFixed(2));
-            jQuery('.modal.show #edit_payment_mode_id').val('').change();
-            jQuery('.modal.show #edit_cash_amount_1').val('');
         }
     });
+}
+
+// Helper: recalculate totals after config group rows are removed from DOM
+function deleteConfigGroupUpdateTotals(rowsToRemove) {
+    // Remove corresponding entries from edit_amountArray
+    for (var i = 0; i < rowsToRemove; i++) {
+        if (edit_amountArray.length > 0) {
+            edit_amountArray.pop();
+        }
+    }
+    
+    // Recalculate totals from remaining rows
+    var sum = 0;
+    $('#edit_plan_services tr[id="table_1"]').each(function() {
+        var rowTotal = parseFloat($(this).find('td:eq(6)').text().replace(/,/g, '')) || 0;
+        sum += rowTotal;
+    });
+    
+    if (sum === 0) {
+        edit_amountArray = [];
+    }
+    
+    jQuery('.modal.show #edit_package_total_1').val(sum.toFixed(2));
+    jQuery('.modal.show #edit_grand_total_1').val(sum.toFixed(2));
+    jQuery('.modal.show #edit_payment_mode_id').val('').change();
+    jQuery('.modal.show #edit_cash_amount_1').val('');
 }
 
 // Delete a single plan service row (Create Plan - DOM only, no DB)
