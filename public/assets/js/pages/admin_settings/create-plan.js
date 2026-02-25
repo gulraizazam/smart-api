@@ -3773,6 +3773,16 @@ jQuery(document).ready(function () {
             $("#add_appointment_id").empty();
             $('#add_appointment_id').append('<option value="">Select Appointment</option>');
             $('#add_appointment_id').val(null).trigger('change');
+
+            // Reset service, discount, price and sold by fields
+            $('#add_service_id').val(null).trigger('change');
+            $("#add_discount_id").html('<option value="">Select Discount/Voucher Type</option>');
+            $("#add_discount_type").val('').change();
+            $("#add_discount_type").attr('disabled', true);
+            $('#discount_value_1').val('');
+            $("#discount_value_1").attr('disabled', true);
+            $('#net_amount_1').val('');
+            $('#add_sold_by').val(null).trigger('change');
             
             // Load appointments for selected patient
             getAppointments(patientId);
@@ -3785,6 +3795,16 @@ jQuery(document).ready(function () {
         $('#add_appointment_id').append('<option value="">Select Appointment</option>');
         $('#add_appointment_id').val(null).trigger('change');
         $('#patient_membership').val('No data');
+
+        // Reset service, discount, price and sold by fields
+        $('#add_service_id').val(null).trigger('change');
+        $("#add_discount_id").html('<option value="">Select Discount/Voucher Type</option>');
+        $("#add_discount_type").val('').change();
+        $("#add_discount_type").attr('disabled', true);
+        $('#discount_value_1').val('');
+        $("#discount_value_1").attr('disabled', true);
+        $('#net_amount_1').val('');
+        $('#add_sold_by').val(null).trigger('change');
     });
 
     $('.index_search_patient').keyup(function () {
