@@ -2819,90 +2819,18 @@ class PlanService
                 ]);
             }
 
-            // Store package bundles and services (optimized)
-            // For edit plan: delete existing non-consumed records first, then recreate from DOM data
+            // Additive insert: only add NEW services — never delete existing ones.
+            // Once any service is consumed, the plan is locked for new service additions.
             if ($hasNewServices) {
-                // Get existing package bundle IDs for this package
-                $existingBundleIds = PackageBundles::where('package_id', $package->id)->pluck('id')->toArray();
-                
-                // Get bundle IDs that have consumed services (these must NOT be recreated)
-                $bundlesWithConsumed = [];
-                $protectedBundleIds = []; // Bundles to preserve (consumed + their config group siblings)
-                if (!empty($existingBundleIds)) {
-                    $bundlesWithConsumed = PackageService::whereIn('package_bundle_id', $existingBundleIds)
-                        ->where('is_consumed', '1')
-                        ->pluck('package_bundle_id')
-                        ->toArray();
-                    
-                    // Find config_group_ids that contain consumed bundles
-                    // ALL bundles in these groups must be protected (consumed + unconsumed siblings)
-                    $protectedBundleIds = $bundlesWithConsumed;
-                    if (!empty($bundlesWithConsumed)) {
-                        $consumedConfigGroupIds = PackageBundles::whereIn('id', $bundlesWithConsumed)
-                            ->whereNotNull('config_group_id')
-                            ->where('config_group_id', '!=', '')
-                            ->pluck('config_group_id')
-                            ->unique()
-                            ->toArray();
-                        
-                        if (!empty($consumedConfigGroupIds)) {
-                            $siblingBundleIds = PackageBundles::where('package_id', $package->id)
-                                ->whereIn('config_group_id', $consumedConfigGroupIds)
-                                ->pluck('id')
-                                ->toArray();
-                            $protectedBundleIds = array_unique(array_merge($protectedBundleIds, $siblingBundleIds));
-                        }
-                    }
-                    
-                    // Only delete non-consumed package services that are NOT in protected bundles
-                    PackageService::whereIn('package_bundle_id', $existingBundleIds)
-                        ->where('package_id', $package->id)
-                        ->whereNotIn('package_bundle_id', $protectedBundleIds)
-                        ->where(function($q) {
-                            $q->where('is_consumed', '!=', '1')->orWhereNull('is_consumed');
-                        })
-                        ->delete();
-                    
-                    // Delete package bundles that are not protected
-                    PackageBundles::where('package_id', $package->id)
-                        ->whereNotIn('id', $protectedBundleIds)
-                        ->delete();
+                // Check if plan has any consumed services — if so, block new service additions
+                $hasConsumedServices = PackageService::where('package_id', $package->id)
+                    ->where('is_consumed', '1')
+                    ->exists();
+
+                if ($hasConsumedServices) {
+                    throw new PlanException('Cannot add new services to this plan. Some services have already been consumed. Please create a new plan for additional services.', 400);
                 }
-                
-                // Filter out rows from data that are already preserved in DB (consumed + config group siblings)
-                // This prevents duplicate creation of protected bundles
-                if (!empty($protectedBundleIds)) {
-                    // Batch-fetch all protected bundle records
-                    $protectedBundles = PackageBundles::whereIn('id', $protectedBundleIds)->get();
-                    
-                    // Build a count map of protected bundles by (bundle_id, discount_id, config_group_id)
-                    $protectedCountMap = [];
-                    foreach ($protectedBundles as $pb) {
-                        $bundleId = (string) ($pb->bundle_id ?? '');
-                        $discountId = (string) ($pb->discount_id ?? '');
-                        if ($discountId === '0') $discountId = '';
-                        $configGroupId = (string) ($pb->config_group_id ?? '');
-                        $key = $bundleId . '_' . $discountId . '_' . $configGroupId;
-                        $protectedCountMap[$key] = ($protectedCountMap[$key] ?? 0) + 1;
-                    }
-                    
-                    // Skip DOM rows that match protected bundle records
-                    $filteredBundles = [];
-                    foreach ($data['package_bundles'] as $pb) {
-                        $bundleId = (string) ($pb['bundleId'] ?? '');
-                        $discountId = (string) ($pb['DiscountId'] ?? '');
-                        if ($discountId === '0') $discountId = '';
-                        $configGroupId = (string) ($pb['config_group_id'] ?? '');
-                        $key = $bundleId . '_' . $discountId . '_' . $configGroupId;
-                        if (isset($protectedCountMap[$key]) && $protectedCountMap[$key] > 0) {
-                            $protectedCountMap[$key]--;
-                            continue; // Skip — this row is already preserved in DB
-                        }
-                        $filteredBundles[] = $pb;
-                    }
-                    $data['package_bundles'] = $filteredBundles;
-                }
-                
+
                 $this->storePackageBundlesOptimized($package, $data);
             }
 

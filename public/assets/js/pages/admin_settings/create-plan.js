@@ -551,6 +551,7 @@ function editRow(url) {
     total_amountArray = [];
     edit_amountArray = [];
     ExistingTotal = 0;
+    window.editPlanLocked = false;
     $('.error-msg').html('');
     $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     $("#edit_discount_id").html('<option value="">Select Discount/Voucher</option>');
@@ -730,6 +731,17 @@ function setEditData(response) {
 
         let service_options = noRecordFoundTable(10);
 
+        // Detect if any service in this plan has been consumed
+        var planHasConsumedServices = false;
+        if (packageservices && Object.keys(packageservices).length) {
+            Object.values(packageservices).forEach(function (ps) {
+                if (ps.is_consumed == '1') {
+                    planHasConsumedServices = true;
+                }
+            });
+        }
+        window.editPlanLocked = planHasConsumedServices;
+
         if (packagebundles.length) {
             service_options = '';
             
@@ -812,7 +824,7 @@ function setEditData(response) {
                     }
                 }
 
-                service_options += '<tr id="table_1" class="HR_' + packagebundle.id + (isConfigurableDiscount ? ' configurable-group-' + configGroups[groupKey][0] : '') + '">';
+                service_options += '<tr id="table_1" data-existing="1" class="HR_' + packagebundle.id + (isConfigurableDiscount ? ' configurable-group-' + configGroups[groupKey][0] : '') + '">';
                 // Count child services for this bundle
                 let childServiceCount = Object.values(packageservices).filter(function (ps) {
                     return ps.package_bundle_id == packagebundle.id;
@@ -1015,6 +1027,26 @@ function setEditData(response) {
         $("#edit_grand_total_1").val(grand_total);
         ExistingTotal = parseFloat(total_price) || 0;
         $('#edit_cash_amount_1').prop('disabled', true);
+
+        // Lock service additions/deletions if any service has been consumed
+        if (window.editPlanLocked) {
+            // Disable the Add button and service input fields
+            $('#EditPackage').attr('disabled', true).css('opacity', '0.5');
+            $('#edit_service_id').prop('disabled', true);
+            $('#edit_discount_id').prop('disabled', true);
+            $('#edit_discount_type').prop('disabled', true);
+            $('#edit_discount_value_1').prop('disabled', true);
+            $('#edit_net_amount_1').prop('disabled', true);
+            $('#edit_sold_by').prop('disabled', true);
+            // Hide all delete buttons in the services table
+            $('#edit_plan_services').find('button').hide();
+            // Show info message
+            toastr.info('This plan has consumed services. You can only add payments. To add new services, please create a new plan.');
+        } else {
+            // Ensure Add button is enabled
+            $('#EditPackage').attr('disabled', false).css('opacity', '1');
+            $('#edit_service_id').prop('disabled', false);
+        }
 
     } catch (error) {
         showException(error);
@@ -3470,6 +3502,12 @@ jQuery(document).ready(function () {
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
 
+        // Safety check: block adding services if plan is locked (consumed services exist)
+        if (window.editPlanLocked) {
+            toastr.error('Cannot add new services. Some services have already been consumed. Please create a new plan.');
+            return false;
+        }
+
         $('.error-msg').html('');
         if (!$('#edit_appointment_id').val()) {
             $('#edit_appointment_id_error').html('Please select appointment');
@@ -3671,24 +3709,11 @@ jQuery(document).ready(function () {
             package_bundles: []
         };
 
-        // Build set of config_group_ids that have any consumed row — entire group is protected
-        var consumedConfigGroups = {};
+        // Only collect NEWLY ADDED rows (not existing DB rows)
+        // Existing DB rows have data-existing="1", new rows added via Add button do not
         $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
-            var consumedText = $.trim($(this).find('td:nth-child(8)').text());
-            if (consumedText === 'Yes') {
-                var cgId = $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '';
-                if (cgId) consumedConfigGroups[cgId] = true;
-            }
-        });
-
-        // Collect structured data — skip consumed rows AND unconsumed siblings in consumed config groups
-        $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
-            // Skip consumed rows — they are already preserved in DB and should not be recreated
-            var consumedText = $.trim($(this).find('td:nth-child(8)').text());
-            if (consumedText === 'Yes') return true; // continue to next row
-            // Skip unconsumed siblings of consumed config groups — entire group is preserved in DB
-            var cgId = $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '';
-            if (cgId && consumedConfigGroups[cgId]) return true;
+            // Skip existing DB rows — they are already in the database
+            if ($(this).data('existing')) return true;
             formData['package_bundles'].push({
                 serviceName: $(this).find('td:first-child a').text(),
                 RegularPrice: $(this).find('td:nth-child(2)').text(),
@@ -4088,6 +4113,7 @@ function resetVoucherEdit(event) {
     // Clear client-side state
     window.editPlanServiceInfo = null;
     window.editPlanDiscountInfo = null;
+    window.editPlanLocked = false;
     edit_amountArray = [];
     
     $('#modal_edit_plan').modal('hide');

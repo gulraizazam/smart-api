@@ -1533,28 +1533,22 @@ class PackagesController extends Controller
      */
     public function deletepackagesservice(Request $request)
     {
+        // Block deletion if ANY service in the entire plan has been consumed
+        $packageBundle = PackageBundles::find($request->id);
+        if ($packageBundle && $packageBundle->package_id) {
+            $planHasConsumed = PackageService::where('package_id', $packageBundle->package_id)
+                ->where('is_consumed', '1')
+                ->exists();
+
+            if ($planHasConsumed) {
+                return ApiHelper::apiResponse($this->success, 'Cannot delete services from this plan. Some services have already been consumed.', false, ['del' => 1]);
+            }
+        }
 
         $status = PackageService::where([
             ['package_bundle_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
-
-        // Also check if any sibling in the same config_group has consumed services
-        if (!$status) {
-            $packageBundle = PackageBundles::find($request->id);
-            if ($packageBundle && $packageBundle->config_group_id) {
-                $siblingBundleIds = PackageBundles::where('package_id', $packageBundle->package_id)
-                    ->where('config_group_id', $packageBundle->config_group_id)
-                    ->where('id', '!=', $packageBundle->id)
-                    ->pluck('id');
-
-                if ($siblingBundleIds->isNotEmpty()) {
-                    $status = PackageService::whereIn('package_bundle_id', $siblingBundleIds)
-                        ->where('is_consumed', '1')
-                        ->first();
-                }
-            }
-        }
 
         if ($status) {
 
@@ -1608,28 +1602,22 @@ class PackagesController extends Controller
     }
     public function deleteconfpackagesservice(Request $request)
     {
+        // Block deletion if ANY service in the entire plan has been consumed
+        $packageBundle = PackageBundles::where('base_service_id', $request->id)->first();
+        if ($packageBundle && $packageBundle->package_id) {
+            $planHasConsumed = PackageService::where('package_id', $packageBundle->package_id)
+                ->where('is_consumed', '1')
+                ->exists();
+
+            if ($planHasConsumed) {
+                return ApiHelper::apiResponse($this->success, 'Cannot delete services from this plan. Some services have already been consumed.', false, ['del' => 1]);
+            }
+        }
 
         $status = PackageService::where([
             ['base_service_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
-
-        // Also check if any sibling in the same config_group has consumed services
-        if (!$status) {
-            $packageBundle = PackageBundles::where('base_service_id', $request->id)->first();
-            if ($packageBundle && $packageBundle->config_group_id) {
-                $siblingBundleIds = PackageBundles::where('package_id', $packageBundle->package_id)
-                    ->where('config_group_id', $packageBundle->config_group_id)
-                    ->where('base_service_id', '!=', $request->id)
-                    ->pluck('id');
-
-                if ($siblingBundleIds->isNotEmpty()) {
-                    $status = PackageService::whereIn('package_bundle_id', $siblingBundleIds)
-                        ->where('is_consumed', '1')
-                        ->first();
-                }
-            }
-        }
 
         if ($status) {
 

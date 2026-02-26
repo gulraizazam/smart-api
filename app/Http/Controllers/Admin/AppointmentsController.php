@@ -3526,9 +3526,9 @@ class AppointmentsController extends Controller
 
             $isPlanFullyPaid = ($totalPlanPayments >= $totalPlanValue);
 
-            // Ordering check: ALWAYS enforce within configurable discount groups (config_group_id exists)
-            // Only skip ordering for non-configurable services when plan is fully paid
-            if ($packageService && $packageService->consumption_order > 0) {
+            // Ordering check: enforce BUY-before-GET within configurable discount groups
+            // Skip ordering if the plan is fully paid (safe because plan is locked after first consumption)
+            if (!$isPlanFullyPaid && $packageService && $packageService->consumption_order > 0) {
                 $packageBundle = PackageBundles::find($packageService->package_bundle_id);
                 $configGroupId = $packageBundle ? $packageBundle->config_group_id : null;
 

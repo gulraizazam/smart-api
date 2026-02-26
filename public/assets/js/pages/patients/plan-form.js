@@ -1560,14 +1560,25 @@ function setEditData(response) {
         }
         $("#edit_payment_mode_id").html(payment_options);
 
+        // Detect if any service in this plan has been consumed
+        var planHasConsumedServices = false;
+        if (packageservices && Object.keys(packageservices).length) {
+            Object.values(packageservices).forEach(function (ps) {
+                if (ps.is_consumed == '1') {
+                    planHasConsumedServices = true;
+                }
+            });
+        }
+        window.editPlanLocked = planHasConsumedServices;
+
         // Services table
         let service_options = noRecordFoundTable(10);
 
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
-                // Delete button
-                let del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                // Delete button - hide if plan is locked
+                let del_icon = planHasConsumedServices ? "<td></td>" : "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
                 service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
@@ -1698,6 +1709,21 @@ function setEditData(response) {
         }
 
         $("#edit_location_id").html(location_options);
+
+        // Lock service additions/deletions if any service has been consumed
+        if (window.editPlanLocked) {
+            $('#EditPackage').attr('disabled', true).css('opacity', '0.5');
+            $('#edit_service_id').prop('disabled', true);
+            $('#edit_discount_id').prop('disabled', true);
+            $('#edit_discount_type').prop('disabled', true);
+            $('#edit_discount_value_1').prop('disabled', true);
+            $('#edit_net_amount_1').prop('disabled', true);
+            $('#edit_sold_by').prop('disabled', true);
+            toastr.info('This plan has consumed services. You can only add payments. To add new services, please create a new plan.');
+        } else {
+            $('#EditPackage').attr('disabled', false).css('opacity', '1');
+            $('#edit_service_id').prop('disabled', false);
+        }
 
     } catch (error) {
         showException(error);
@@ -2996,6 +3022,12 @@ jQuery(document).ready(function () {
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
 
+        // Safety check: block adding services if plan is locked (consumed services exist)
+        if (window.editPlanLocked) {
+            toastr.error('Cannot add new services. Some services have already been consumed. Please create a new plan.');
+            return false;
+        }
+
         hideMessages();
 
         $(this).attr("disabled", true);
@@ -3132,7 +3164,10 @@ jQuery(document).ready(function () {
             package_bundles: []
         };
 
+        // Only collect NEWLY ADDED rows (not existing DB rows)
         $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
+            // Skip existing DB rows — they are already in the database
+            if ($(this).data('existing')) return true;
             formData['package_bundles'].push({
                 serviceName: $(this).find('td:first-child a').text(),
                 RegularPrice: $(this).find('td:nth-child(2)').text(),
