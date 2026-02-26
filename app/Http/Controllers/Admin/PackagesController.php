@@ -1533,122 +1533,111 @@ class PackagesController extends Controller
      */
     public function deletepackagesservice(Request $request)
     {
-        // Block deletion if ANY service in the entire plan has been consumed
         $packageBundle = PackageBundles::find($request->id);
-        if ($packageBundle && $packageBundle->package_id) {
-            $planHasConsumed = PackageService::where('package_id', $packageBundle->package_id)
-                ->where('is_consumed', '1')
-                ->exists();
 
-            if ($planHasConsumed) {
-                return ApiHelper::apiResponse($this->success, 'Cannot delete services from this plan. Some services have already been consumed.', false, ['del' => 1]);
-            }
-        }
-
+        // Block deletion if this bundle's own services are consumed
         $status = PackageService::where([
             ['package_bundle_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
 
         if ($status) {
-
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
-        } else {
-
-            $packageService = PackageBundles::find($request->id);
-            $findPackage = Packages::find($packageService->package_id);
-            if ($findPackage) {
-                $packageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->where('main_service_id',$packageService->bundle_id)->first();
-                if($packageVoucher){
-                   
-                    $packageVoucherAmount = $packageVoucher->amount;
-                    $findUserVoucher = UserVouchers::where('voucher_id',$packageVoucher->voucher_id)->where('user_id',$findPackage->patient_id)->first();
-                    if($findUserVoucher){
-                        $findUserVoucher->update(['amount' => $findUserVoucher->amount + $packageVoucherAmount]);
-                    }
-                    $packageVoucher->delete();
-                }
-
-            }
-            
-            if ($request->package_total == '') {
-                $request->merge(['package_total' => 0]);
-            }
-            $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
-
-            $total = number_format(round(($package_total - $packageService->tax_including_price)));
-
-            PackageService::where('package_bundle_id', '=', $request->id)->delete();
-
-            PackageBundles::find($request->id)->forcedelete();
-            // $checkPackageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->first();
-            // if($checkPackageVoucher){
-            //     $checkPackageVoucher->delete();
-            // }
-            $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
-            if ($request->update_status == 1) {
-                if ($packageService->package_id) {
-                    // Update only total_price without touching updated_at
-                    Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'total' => $total,
-                'id' => $request->id,
-                'old_total' => $old_total
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consumed service.', false, ['del' => 1]);
         }
+
+        // If this bundle belongs to a config group, block if ANY service in the group is consumed
+        if ($packageBundle && $packageBundle->config_group_id) {
+            $groupHasConsumed = PackageService::join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->where('package_bundles.config_group_id', $packageBundle->config_group_id)
+                ->where('package_services.is_consumed', '1')
+                ->exists();
+
+            if ($groupHasConsumed) {
+                return ApiHelper::apiResponse($this->success, 'Cannot delete. A service in this configurable discount group has been consumed.', false, ['del' => 1]);
+            }
+        }
+
+        // All checks passed — proceed with deletion
+        $packageService = PackageBundles::find($request->id);
+        $findPackage = Packages::find($packageService->package_id);
+        if ($findPackage) {
+            $packageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->where('main_service_id',$packageService->bundle_id)->first();
+            if($packageVoucher){
+               
+                $packageVoucherAmount = $packageVoucher->amount;
+                $findUserVoucher = UserVouchers::where('voucher_id',$packageVoucher->voucher_id)->where('user_id',$findPackage->patient_id)->first();
+                if($findUserVoucher){
+                    $findUserVoucher->update(['amount' => $findUserVoucher->amount + $packageVoucherAmount]);
+                }
+                $packageVoucher->delete();
+            }
+
+        }
+        
+        if ($request->package_total == '') {
+            $request->merge(['package_total' => 0]);
+        }
+        $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+
+        $total = number_format(round(($package_total - $packageService->tax_including_price)));
+
+        PackageService::where('package_bundle_id', '=', $request->id)->delete();
+
+        PackageBundles::find($request->id)->forcedelete();
+        // $checkPackageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->first();
+        // if($checkPackageVoucher){
+        //     $checkPackageVoucher->delete();
+        // }
+        $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
+        if ($request->update_status == 1) {
+            if ($packageService->package_id) {
+                // Update only total_price without touching updated_at
+                Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
+            }
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'total' => $total,
+            'id' => $request->id,
+            'old_total' => $old_total
+        ]);
     }
     public function deleteconfpackagesservice(Request $request)
     {
-        // Block deletion if ANY service in the entire plan has been consumed
-        $packageBundle = PackageBundles::where('base_service_id', $request->id)->first();
-        if ($packageBundle && $packageBundle->package_id) {
-            $planHasConsumed = PackageService::where('package_id', $packageBundle->package_id)
-                ->where('is_consumed', '1')
-                ->exists();
-
-            if ($planHasConsumed) {
-                return ApiHelper::apiResponse($this->success, 'Cannot delete services from this plan. Some services have already been consumed.', false, ['del' => 1]);
-            }
-        }
-
-        $status = PackageService::where([
+        // Block if ANY service in the config group is consumed (atomic group deletion)
+        $hasConsumedInGroup = PackageService::where([
             ['base_service_id', '=', $request->id],
             ['is_consumed', '=', '1'],
-        ])->first();
+        ])->exists();
 
-        if ($status) {
-
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
-        } else {
-
-            $packageService = PackageBundles::where('base_service_id', $request->id)->first();
-
-            if ($request->package_total == '') {
-                $request->merge(['package_total' => 0]);
-            }
-            $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
-
-            $total = $package_total - $packageService->tax_including_price;
-
-            PackageService::where('base_service_id', '=', $request->id)->delete();
-
-            PackageBundles::where('base_service_id', $request->id)->forcedelete();
-
-            if ($request->update_status == 1) {
-                if ($packageService->package_id) {
-                    // Only update total_price without touching updated_at (deleting service should not update timestamp)
-                    Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'total' => $total,
-                'id' => $request->id,
-            ]);
+        if ($hasConsumedInGroup) {
+            return ApiHelper::apiResponse($this->success, 'Cannot delete. A service in this configurable discount group has been consumed.', false, ['del' => 1]);
         }
+
+        $packageService = PackageBundles::where('base_service_id', $request->id)->first();
+
+        if ($request->package_total == '') {
+            $request->merge(['package_total' => 0]);
+        }
+        $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+
+        $total = $package_total - $packageService->tax_including_price;
+
+        PackageService::where('base_service_id', '=', $request->id)->delete();
+
+        PackageBundles::where('base_service_id', $request->id)->forcedelete();
+
+        if ($request->update_status == 1) {
+            if ($packageService->package_id) {
+                // Only update total_price without touching updated_at (deleting service should not update timestamp)
+                Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
+            }
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'total' => $total,
+            'id' => $request->id,
+        ]);
     }
     /**
      * delete serive from packages
