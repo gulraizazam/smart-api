@@ -289,6 +289,9 @@ function editPlanRow(url) {
     if ($("#update_plane_form").length) {
         $("#update_plane_form")[0].reset();
     }
+    $('#edit_cash_amount_1').val(0);
+    $('#edit_cash_amount_1').prop('disabled', true);
+    $('#edit_payment_mode_id').val('');
 
     $("#modal_edit_plan").modal("show");
     $.ajax({
@@ -1476,7 +1479,9 @@ function setEditData(response) {
         $("#edit_random_id_1").val(package?.random_id);
         $("#edit_package_total_1").val(total_price ? total_price.toFixed(2) : '0.00');
         $("#edit_grand_total_1").val(grand_total);
+        $('#edit_cash_amount_1').val(0);
         $('#edit_cash_amount_1').prop('disabled', true);
+        $('#edit_payment_mode_id').val('');
 
         let history_options = noRecordFoundTable(5);
 
