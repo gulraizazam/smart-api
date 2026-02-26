@@ -24,9 +24,9 @@ function checkConsumptionLock(packageservice, totalPlanPayments, totalConsumedVa
         return null;
     }
 
-    // Ordering check: ALWAYS enforce within configurable discount groups
-    // BUY sessions must be consumed before GET sessions, regardless of payment status
-    if (configGroupId && configGroupServices[configGroupId]) {
+    // Ordering check: enforce BUY-before-GET within configurable discount groups
+    // Skip ordering if plan is fully paid (matches backend saveinvoice logic)
+    if (!isPlanFullyPaid && configGroupId && configGroupServices[configGroupId]) {
         var siblings = configGroupServices[configGroupId];
         for (var i = 0; i < siblings.length; i++) {
             var sibling = siblings[i];
