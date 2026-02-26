@@ -1102,7 +1102,9 @@ function setEditData(response) {
         $("#edit_package_total_1").val(total_price.toFixed(2));
         $("#edit_grand_total_1").val(grand_total);
         ExistingTotal = parseFloat(total_price) || 0;
+        $('#edit_cash_amount_1').val(0);
         $('#edit_cash_amount_1').prop('disabled', true);
+        $('#edit_payment_mode_id').val('');
 
         // Lock Add button only if a config group has out-of-order consumption
         if (window.editPlanLocked) {
