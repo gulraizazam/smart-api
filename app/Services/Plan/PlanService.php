@@ -2820,15 +2820,26 @@ class PlanService
             }
 
             // Additive insert: only add NEW services — never delete existing ones.
-            // Once any service is consumed, the plan is locked for new service additions.
             if ($hasNewServices) {
-                // Check if plan has any consumed services — if so, block new service additions
-                $hasConsumedServices = PackageService::where('package_id', $package->id)
-                    ->where('is_consumed', '1')
+                // Block adding if any config group has out-of-order consumption
+                // (a higher consumption_order service is consumed while a lower one is not)
+                $hasOutOfOrderConsumption = PackageService::where('package_services.package_id', $package->id)
+                    ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                    ->whereNotNull('package_bundles.config_group_id')
+                    ->where('package_services.is_consumed', '1')
+                    ->whereExists(function ($query) use ($package) {
+                        $query->select(\DB::raw(1))
+                            ->from('package_services as ps2')
+                            ->join('package_bundles as pb2', 'ps2.package_bundle_id', '=', 'pb2.id')
+                            ->whereColumn('pb2.config_group_id', 'package_bundles.config_group_id')
+                            ->where('ps2.package_id', $package->id)
+                            ->where('ps2.is_consumed', '0')
+                            ->whereColumn('ps2.consumption_order', '<', 'package_services.consumption_order');
+                    })
                     ->exists();
 
-                if ($hasConsumedServices) {
-                    throw new PlanException('Cannot add new services to this plan. Some services have already been consumed. Please create a new plan for additional services.', 400);
+                if ($hasOutOfOrderConsumption) {
+                    throw new PlanException('Cannot add new services. A configurable discount group has out-of-order consumption. Please consume the BUY services first or create a new plan.', 400);
                 }
 
                 $this->storePackageBundlesOptimized($package, $data);

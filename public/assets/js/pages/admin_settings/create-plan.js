@@ -731,16 +731,82 @@ function setEditData(response) {
 
         let service_options = noRecordFoundTable(10);
 
-        // Detect if any service in this plan has been consumed
-        var planHasConsumedServices = false;
+        // Detect out-of-order config group consumption (GET consumed before BUY)
+        // This is the ONLY condition that locks the Add button
+        window.editPlanLocked = false;
+        // Build a map: config_group_id -> [{consumption_order, is_consumed}, ...]
+        var configGroupConsumption = {};
         if (packageservices && Object.keys(packageservices).length) {
             Object.values(packageservices).forEach(function (ps) {
-                if (ps.is_consumed == '1') {
-                    planHasConsumedServices = true;
+                if (ps.package_bundle_id) {
+                    // Find the bundle for this service to get config_group_id
+                    var pb = null;
+                    Object.values(packagebundles).forEach(function (b) {
+                        if (b.id == ps.package_bundle_id) pb = b;
+                    });
+                    if (pb && pb.config_group_id) {
+                        if (!configGroupConsumption[pb.config_group_id]) {
+                            configGroupConsumption[pb.config_group_id] = [];
+                        }
+                        configGroupConsumption[pb.config_group_id].push({
+                            consumption_order: parseInt(ps.consumption_order) || 0,
+                            is_consumed: ps.is_consumed == '1'
+                        });
+                    }
                 }
             });
         }
-        window.editPlanLocked = planHasConsumedServices;
+        // Check each config group for out-of-order consumption
+        Object.keys(configGroupConsumption).forEach(function (groupId) {
+            var services = configGroupConsumption[groupId];
+            var hasConsumedHigherOrder = false;
+            var maxConsumedOrder = -1;
+            var minUnconsumedOrder = Infinity;
+            services.forEach(function (s) {
+                if (s.is_consumed && s.consumption_order > maxConsumedOrder) {
+                    maxConsumedOrder = s.consumption_order;
+                }
+                if (!s.is_consumed && s.consumption_order < minUnconsumedOrder) {
+                    minUnconsumedOrder = s.consumption_order;
+                }
+            });
+            // Out-of-order: a consumed service has higher order than an unconsumed one
+            if (maxConsumedOrder > minUnconsumedOrder) {
+                window.editPlanLocked = true;
+            }
+        });
+        // Also build a set of bundle IDs that belong to consumed config groups (for delete button hiding)
+        var consumedConfigGroupBundleIds = {};
+        if (packageservices && Object.keys(packageservices).length) {
+            // First find config groups that have any consumed service
+            var consumedConfigGroups = {};
+            Object.values(packageservices).forEach(function (ps) {
+                if (ps.is_consumed == '1' && ps.package_bundle_id) {
+                    var pb = null;
+                    Object.values(packagebundles).forEach(function (b) {
+                        if (b.id == ps.package_bundle_id) pb = b;
+                    });
+                    if (pb && pb.config_group_id) {
+                        consumedConfigGroups[pb.config_group_id] = true;
+                    }
+                }
+            });
+            // Then mark all bundles in those groups
+            Object.values(packagebundles).forEach(function (pb) {
+                if (pb.config_group_id && consumedConfigGroups[pb.config_group_id]) {
+                    consumedConfigGroupBundleIds[pb.id] = true;
+                }
+            });
+        }
+        // Build set of individually consumed bundle IDs
+        var consumedBundleIds = {};
+        if (packageservices && Object.keys(packageservices).length) {
+            Object.values(packageservices).forEach(function (ps) {
+                if (ps.is_consumed == '1') {
+                    consumedBundleIds[ps.package_bundle_id] = true;
+                }
+            });
+        }
 
         if (packagebundles.length) {
             service_options = '';
@@ -805,9 +871,19 @@ function setEditData(response) {
                 var isBaseService = isConfigurableDiscount && configGroups[groupKey][0] === packagebundle.id;
                 var configRowIds = isConfigurableDiscount ? configGroups[groupKey] : null;
                 
+                // Per-row delete visibility: hide if consumed or belongs to consumed config group
+                var hideDelete = consumedBundleIds[packagebundle.id] || consumedConfigGroupBundleIds[packagebundle.id];
+                
                 if (isConfigurableDiscount && !isBaseService) {
                     // Non-base service row in configurable group - no buttons
                     del_icon = "";
+                } else if (hideDelete) {
+                    // Consumed service or consumed config group member — no delete, only edit sold-by if permitted
+                    if (permissions.plans_edit_sold_by) {
+                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + (configRowIds ? ", " + JSON.stringify(configRowIds) : "") + ")'>" + editIcon + "</button>";
+                    } else {
+                        del_icon = "";
+                    }
                 } else if (isConfigurableDiscount && isBaseService) {
                     // Base service row - show delete button that deletes all rows in the group
                     if (permissions.plans_edit_sold_by) {
@@ -1028,9 +1104,8 @@ function setEditData(response) {
         ExistingTotal = parseFloat(total_price) || 0;
         $('#edit_cash_amount_1').prop('disabled', true);
 
-        // Lock service additions/deletions if any service has been consumed
+        // Lock Add button only if a config group has out-of-order consumption
         if (window.editPlanLocked) {
-            // Disable the Add button and service input fields
             $('#EditPackage').attr('disabled', true).css('opacity', '0.5');
             $('#edit_service_id').prop('disabled', true);
             $('#edit_discount_id').prop('disabled', true);
@@ -1038,12 +1113,8 @@ function setEditData(response) {
             $('#edit_discount_value_1').prop('disabled', true);
             $('#edit_net_amount_1').prop('disabled', true);
             $('#edit_sold_by').prop('disabled', true);
-            // Hide all delete buttons in the services table
-            $('#edit_plan_services').find('button').hide();
-            // Show info message
-            toastr.info('This plan has consumed services. You can only add payments. To add new services, please create a new plan.');
+            toastr.info('This plan has a configurable discount with out-of-order consumption. Please consume the BUY services first or create a new plan to add services.');
         } else {
-            // Ensure Add button is enabled
             $('#EditPackage').attr('disabled', false).css('opacity', '1');
             $('#edit_service_id').prop('disabled', false);
         }
@@ -3502,9 +3573,9 @@ jQuery(document).ready(function () {
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
 
-        // Safety check: block adding services if plan is locked (consumed services exist)
+        // Safety check: block adding if config group has out-of-order consumption
         if (window.editPlanLocked) {
-            toastr.error('Cannot add new services. Some services have already been consumed. Please create a new plan.');
+            toastr.error('Cannot add new services. A configurable discount group has out-of-order consumption. Please consume the BUY services first or create a new plan.');
             return false;
         }
 
