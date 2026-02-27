@@ -30,8 +30,8 @@ class MigratePackageAdvancesToPlanInvoices extends Command
      */
     public function handle()
     {
-        $fromDate = $this->option('from') ?? '2023-01-01';
-        $toDate = $this->option('to') ?? '2023-12-31';
+        $fromDate = $this->option('from') ?? '2024-01-01';
+        $toDate = $this->option('to') ?? '2024-12-31';
         $isDryRun = $this->option('dry-run');
 
         $this->info("===========================================");
