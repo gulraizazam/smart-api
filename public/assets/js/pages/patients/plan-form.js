@@ -1644,7 +1644,22 @@ function setEditData(response) {
                 let del_icon = hideDelete ? "<td></td>" : "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                // Resolve name using source_type
+                let sourceType = packagebundle.source_type || '';
+                let bundleNameText = '-';
+                if (sourceType === 'service' && packagebundle.service && packagebundle.service.name) {
+                    bundleNameText = packagebundle.service.name;
+                } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
+                    bundleNameText = packagebundle.bundle.name;
+                } else if (sourceType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
+                    bundleNameText = packagebundle.membership_type.name;
+                } else if (packagebundle.bundle && packagebundle.bundle.name) {
+                    bundleNameText = packagebundle.bundle.name;
+                } else if (packagebundle.service && packagebundle.service.name) {
+                    bundleNameText = packagebundle.service.name;
+                }
+
+                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + bundleNameText + '</a></td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
                 if (packagebundle.discount_id == null) {
