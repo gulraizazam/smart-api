@@ -1388,10 +1388,19 @@ function displayData(response) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
-                // Handle both bundle and membership types
+                // Resolve name using source_type
+                let sourceType2 = packagebundle.source_type || '';
                 let itemName = '-';
-                if (packagebundle.bundle && packagebundle.bundle.name) {
+                if (sourceType2 === 'service' && packagebundle.service && packagebundle.service.name) {
+                    itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.service.name + '</a>';
+                } else if (sourceType2 === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
                     itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                } else if (sourceType2 === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
+                    itemName = packagebundle.membership_type.name;
+                } else if (packagebundle.bundle && packagebundle.bundle.name) {
+                    itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                } else if (packagebundle.service && packagebundle.service.name) {
+                    itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.service.name + '</a>';
                 } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
                     itemName = packagebundle.membership_type.name;
                 }
