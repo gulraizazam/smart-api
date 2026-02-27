@@ -906,15 +906,16 @@ function setEditData(response) {
                     return ps.package_bundle_id == packagebundle.id;
                 }).length;
 
-                // Resolve service/bundle name - use <a> tag for consistent DOM structure with Save button
-                let planType = package.plan_type || 'plan';
+                // Resolve service/bundle name using source_type (per-row discriminator)
+                // source_type: 'service' = bundle_id holds services.id, 'bundle' = bundle_id holds bundles.id, 'membership' = uses membership_type_id
+                let sourceType = packagebundle.source_type || '';
                 let bundleNameText = '-';
                 
-                if (planType === 'plan' && packagebundle.service && packagebundle.service.name) {
+                if (sourceType === 'service' && packagebundle.service && packagebundle.service.name) {
                     bundleNameText = packagebundle.service.name;
-                } else if (planType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
+                } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
                     bundleNameText = packagebundle.bundle.name;
-                } else if (planType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
+                } else if (sourceType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
                     bundleNameText = packagebundle.membership_type.name;
                 } else if (packagebundle.service && packagebundle.service.name) {
                     bundleNameText = packagebundle.service.name;
@@ -925,7 +926,7 @@ function setEditData(response) {
                 }
                 
                 // Use <a> tag so Save button can find service name via td:first-child a
-                if (planType === 'bundle' && childServiceCount > 1) {
+                if (sourceType === 'bundle' && childServiceCount > 1) {
                     service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + bundleNameText + '</a></td>';
                 } else {
                     service_options += '<td><a href="javascript:void(0)" style="color: #009ef7;">' + bundleNameText + '</a></td>';
