@@ -108,21 +108,10 @@ function setEditBundleData(response) {
                     return ps.package_bundle_id == packagebundle.id;
                 }).length;
 
-                // Resolve name using source_type
-                let sourceType = packagebundle.source_type || '';
-                let bundleName = '-';
-                if (sourceType === 'service' && packagebundle.service && packagebundle.service.name) {
-                    bundleName = packagebundle.service.name;
-                } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
-                    bundleName = packagebundle.bundle.name;
-                } else if (packagebundle.bundle && packagebundle.bundle.name) {
-                    bundleName = packagebundle.bundle.name;
-                } else if (packagebundle.service && packagebundle.service.name) {
-                    bundleName = packagebundle.service.name;
-                }
                 // Only add toggle link if bundle has more than 1 child service
+                let bundleName = packagebundle.bundle.name;
                 if (childServiceCount > 1) {
-                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + bundleName + '</a>';
+                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
                 }
                 service_options += '<td>' + bundleName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
