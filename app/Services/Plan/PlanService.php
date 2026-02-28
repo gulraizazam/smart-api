@@ -2944,10 +2944,14 @@ class PlanService
             $packageBundles->each(function ($pb) {
                 if ($pb->source_type === 'service' && $pb->service) {
                     $pb->setRelation('bundle', $pb->service);
-                } elseif (!$pb->source_type && !$pb->bundle && $pb->service) {
-                    // Fallback for rows where source_type was not backfilled:
-                    // if no bundle matched but a service did, use the service
-                    $pb->setRelation('bundle', $pb->service);
+                } elseif (!$pb->source_type && $pb->service && !$pb->membership_type_id) {
+                    // Fallback for rows where source_type is NULL:
+                    // Check if child package_services has exactly 1 row with service_id == bundle_id
+                    // If so, bundle_id actually holds a service_id
+                    $children = $pb->packageservice;
+                    if ($children && $children->count() === 1 && $children->first()->service_id == $pb->bundle_id) {
+                        $pb->setRelation('bundle', $pb->service);
+                    }
                 }
             });
 
