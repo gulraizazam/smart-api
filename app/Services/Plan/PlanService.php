@@ -2942,6 +2942,14 @@ class PlanService
                 ->where('package_id', $packageId)
                 ->get();
 
+            // Normalize bundle relationship based on source_type so frontend
+            // can always use packagebundle.bundle.name regardless of source_type
+            $packageBundles->each(function ($pb) {
+                if ($pb->source_type === 'service' && $pb->service) {
+                    $pb->setRelation('bundle', $pb->service);
+                }
+            });
+
             // Fetch package services with relationships
             $packageServices = PackageService::with('service', 'soldBy')
                 ->where('package_id', $packageId)
