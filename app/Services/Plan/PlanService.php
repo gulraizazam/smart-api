@@ -2944,6 +2944,10 @@ class PlanService
             $packageBundles->each(function ($pb) {
                 if ($pb->source_type === 'service' && $pb->service) {
                     $pb->setRelation('bundle', $pb->service);
+                } elseif (!$pb->source_type && !$pb->bundle && $pb->service) {
+                    // Fallback for rows where source_type was not backfilled:
+                    // if no bundle matched but a service did, use the service
+                    $pb->setRelation('bundle', $pb->service);
                 }
             });
 
