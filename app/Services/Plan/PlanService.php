@@ -2850,11 +2850,8 @@ class PlanService
                 $this->handlePackagePayment($package, $data, $appointmentId);
             }
 
-            // Always update plan_name when updating (whether adding services or just payment)
-            // Also update if plan_name is null (for legacy plans)
-            if ($hasNewServices || $hasPayment || empty($package->plan_name)) {
-                $this->updatePlanName($package);
-            }
+            // Always update plan_name on every update
+            $this->updatePlanName($package);
 
             DB::commit();
 
