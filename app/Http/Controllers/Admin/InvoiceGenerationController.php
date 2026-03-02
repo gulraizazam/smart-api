@@ -264,7 +264,7 @@ class InvoiceGenerationController extends Controller
         } else {
             $serviceLabel = 'Treatment';
             $serviceName = 'Treatment';
-            $taxPercent = $location->tax_percentage ?? 15;
+            $taxPercent = 13;
             $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
             $totalAmount = $invoice['amount'] + $taxAmount;
         }
