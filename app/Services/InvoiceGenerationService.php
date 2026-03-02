@@ -26,6 +26,7 @@ class InvoiceGenerationService
     protected $workingDays = [];
     protected $usedInvoiceNumbers = [];
     protected $dailyRevenue = [];
+    protected $dailyBudgetUsed = [];
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -79,6 +80,9 @@ class InvoiceGenerationService
 
         // Step 7: Distribute exempt percentages using smart algorithm
         $distribution = $this->distributeExemptPercentages($categorizedPatients, $pool, $feasibility);
+
+        // Initialize daily budget tracker (shared across exempt + taxable)
+        $this->dailyBudgetUsed = []; // Initialize dailyBudgetUsed before invoice generation
 
         // Step 8: Generate exempt invoices (returns ['invoices' => [...], 'unplaced_exempt' => [...]])
         $exemptResult = $this->generateInvoices($distribution, 'exempt');
@@ -235,17 +239,37 @@ class InvoiceGenerationService
             }
         }
 
-        // If remainder >= 500, add as a separate remainder invoice
-        if ($remaining >= 500) {
-            $amounts[] = round($remaining, 2);
-            $remaining = 0;
-        }
-
+        // Remainder is NOT added as an exempt invoice — it goes to taxable
         return [
             'amounts' => $amounts,
             'total' => array_sum($amounts),
             'remainder' => round($remaining, 2),
         ];
+    }
+
+    /**
+     * Get remaining daily budget for a given date.
+     * Daily budget = that day's pool revenue. Invoices placed on that day consume from this budget.
+     */
+    protected function getDailyBudgetRemaining(string $dateStr): float
+    {
+        $dayRevenue = 0;
+        if (isset($this->dailyRevenue[$dateStr])) {
+            $dayRevenue = $this->dailyRevenue[$dateStr]['amount'];
+        }
+        $used = $this->dailyBudgetUsed[$dateStr] ?? 0;
+        return max(0, $dayRevenue - $used);
+    }
+
+    /**
+     * Consume daily budget for a given date.
+     */
+    protected function consumeDailyBudget(string $dateStr, float $amount): void
+    {
+        if (!isset($this->dailyBudgetUsed[$dateStr])) {
+            $this->dailyBudgetUsed[$dateStr] = 0;
+        }
+        $this->dailyBudgetUsed[$dateStr] += $amount;
     }
 
     /**
@@ -761,20 +785,29 @@ class InvoiceGenerationService
             $invoiceIndex = 0;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
+                $dateStr = $date->format('Y-m-d');
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                    $amount = $invoiceAmounts[$invoiceIndex];
+
+                    // Check daily budget — skip this day if budget exhausted
+                    if ($this->getDailyBudgetRemaining($dateStr) < $amount) {
+                        break; // move to next day
+                    }
+
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
-                        'invoice_date' => $date->format('Y-m-d'),
-                        'amount' => $invoiceAmounts[$invoiceIndex],
+                        'invoice_date' => $dateStr,
+                        'amount' => $amount,
                         'type' => $type,
                     ];
                     
+                    $this->consumeDailyBudget($dateStr, $amount);
                     $invoiceIndex++;
                 }
             }
@@ -876,19 +909,28 @@ class InvoiceGenerationService
             $invoiceIndex = 0;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
+                $dateStr = $date->format('Y-m-d');
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
+                    $amount = $invoiceAmounts[$invoiceIndex];
+
+                    // Check daily budget — skip this day if budget exhausted
+                    if ($this->getDailyBudgetRemaining($dateStr) < $amount) {
+                        break; // move to next day
+                    }
+
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
-                        'invoice_date' => $date->format('Y-m-d'),
-                        'amount' => $invoiceAmounts[$invoiceIndex],
+                        'invoice_date' => $dateStr,
+                        'amount' => $amount,
                         'type' => 'taxable',
                     ];
+                    $this->consumeDailyBudget($dateStr, $amount);
                     $invoiceIndex++;
                 }
             }
