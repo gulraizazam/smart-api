@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Locations;
+use App\Models\User;
 use App\Services\InvoiceGenerationService;
+use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use ZipStream\ZipStream;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -138,6 +143,144 @@ class InvoiceGenerationController extends Controller
                 'message' => 'Error generating Excel: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Download all invoices (exempt + taxable) as a streamed ZIP of PDFs.
+     * Uses ZipStream to avoid writing anything to disk.
+     * Processes invoices in chunks to handle 1000+ invoices without memory issues.
+     */
+    public function downloadInvoicesZip(Request $request)
+    {
+        $validated = $request->validate([
+            'date_range' => 'required|string',
+            'location_ids' => 'required|array',
+            'location_ids.*' => 'integer',
+            'bank_taxable' => 'required|numeric|min:0|max:100',
+            'cash_percent' => 'required|numeric|min:0|max:100',
+            'consultation_amount' => 'required|numeric|min:0',
+        ]);
+
+        // Parse date range
+        $dates = $this->parseDateRange($validated['date_range']);
+
+        $params = [
+            'date_from' => $dates['from'],
+            'date_to' => $dates['to'],
+            'location_ids' => $validated['location_ids'],
+            'bank_taxable' => $validated['bank_taxable'],
+            'cash_percent' => $validated['cash_percent'],
+            'consultation_amount' => $validated['consultation_amount'],
+        ];
+
+        // Increase limits for large invoice sets
+        set_time_limit(600);
+        ini_set('memory_limit', '512M');
+
+        try {
+            $result = $this->invoiceService->generateExemptInvoices($params);
+
+            // Get location info (use first selected location)
+            $location = Locations::find($validated['location_ids'][0]);
+
+            // Pre-fetch all patient names in one query
+            $allPatientIds = array_unique(array_merge(
+                array_column($result['exempt_invoices'], 'patient_id'),
+                array_column($result['taxable_invoices'], 'patient_id')
+            ));
+            $patientNames = [];
+            foreach (array_chunk($allPatientIds, 500) as $chunk) {
+                $rows = DB::table('users')->whereIn('id', $chunk)->pluck('name', 'id');
+                foreach ($rows as $id => $name) {
+                    $patientNames[$id] = ucfirst($name);
+                }
+            }
+
+            // Stream ZIP directly to browser — ZipStream v3 handles headers
+            $filename = 'invoices_' . $dates['from'] . '_to_' . $dates['to'] . '.zip';
+
+            $zip = new ZipStream(
+                outputName: $filename,
+                sendHttpHeaders: true,
+            );
+
+            $chunkSize = 50;
+
+            // Process exempt invoices in chunks
+            $exemptChunks = array_chunk($result['exempt_invoices'], $chunkSize);
+            foreach ($exemptChunks as $chunk) {
+                foreach ($chunk as $invoice) {
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'exempt');
+                    $pdfName = 'exempt/INV-' . $invoice['invoice_number'] . '.pdf';
+                    $zip->addFile(fileName: $pdfName, data: $pdfContent);
+                    unset($pdfContent);
+                }
+                // Force garbage collection after each chunk
+                gc_collect_cycles();
+            }
+
+            // Process taxable invoices in chunks
+            $taxableChunks = array_chunk($result['taxable_invoices'], $chunkSize);
+            foreach ($taxableChunks as $chunk) {
+                foreach ($chunk as $invoice) {
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'taxable');
+                    $pdfName = 'taxable/INV-' . $invoice['invoice_number'] . '.pdf';
+                    $zip->addFile(fileName: $pdfName, data: $pdfContent);
+                    unset($pdfContent);
+                }
+                gc_collect_cycles();
+            }
+
+            $zip->finish();
+            exit;
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating invoices ZIP: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate a single invoice PDF and return its content as a string.
+     *
+     * @param array $invoice Invoice data array
+     * @param \App\Models\Locations $location Location model
+     * @param array $patientNames Pre-fetched patient names keyed by ID
+     * @param string $type 'exempt' or 'taxable'
+     * @return string PDF content
+     */
+    protected function generateInvoicePdf(array $invoice, $location, array $patientNames, string $type): string
+    {
+        $patientName = $patientNames[$invoice['patient_id']] ?? 'Patient C-' . $invoice['patient_id'];
+
+        if ($type === 'exempt') {
+            $serviceLabel = 'Consultancy';
+            $serviceName = 'Consultancy';
+            $taxPercent = 0;
+            $taxAmount = 0;
+            $totalAmount = $invoice['amount'];
+        } else {
+            $serviceLabel = 'Treatment';
+            $serviceName = 'Treatment';
+            $taxPercent = $location->tax_percentage ?? 15;
+            $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
+            $totalAmount = $invoice['amount'] + $taxAmount;
+        }
+
+        $pdf = PDF::loadView('admin.reports.taxcalculationreport.invoice-pdf', [
+            'invoice' => $invoice,
+            'location' => $location,
+            'patient_name' => $patientName,
+            'service_label' => $serviceLabel,
+            'service_name' => $serviceName,
+            'tax_percent' => $taxPercent,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+        ]);
+
+        return $pdf->output();
     }
 
     /**

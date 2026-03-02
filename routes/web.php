@@ -188,6 +188,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
             
             // Export exempt invoices to Excel
             Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
+            
+            // Download all invoices as ZIP of PDFs
+            Route::post('/download-invoices-zip', [InvoiceGenerationController::class, 'downloadInvoicesZip'])->name('download-invoices-zip');
         });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
