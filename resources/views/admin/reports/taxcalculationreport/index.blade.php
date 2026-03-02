@@ -166,6 +166,9 @@
                                             <a href="javascript:void(0);" onclick="exportExcel();" id="export_excel" class="btn btn-primary ml-2" style="display:none;">
                                                 <i class="fa fa-file-excel"></i> Download Excel
                                             </a>
+                                            <a href="javascript:void(0);" onclick="downloadInvoicesZip();" id="download_invoices" class="btn btn-info ml-2" style="display:none;">
+                                                <i class="fa fa-file-archive"></i> Download Invoices
+                                            </a>
                                             <a href="javascript:void(0);" onclick="resetPage();" id="reset_button" class="btn btn-secondary ml-2">
                                                 <i class="fa fa-redo"></i> Reset
                                             </a>
@@ -182,6 +185,15 @@
                                         <input type="hidden" name="bank_taxable" id="export_bank_taxable">
                                         <input type="hidden" name="cash_percent" id="export_cash_percent">
                                         <input type="hidden" name="consultation_amount" id="export_consultation_amount">
+                                    </form>
+
+                                    <!-- Hidden form for Invoices ZIP download -->
+                                    <form method="POST" action="{{ route('admin.invoices.download-invoices-zip') }}" id="download-invoices-form">
+                                        @csrf
+                                        <input type="hidden" name="date_range" id="zip_date_range">
+                                        <input type="hidden" name="bank_taxable" id="zip_bank_taxable">
+                                        <input type="hidden" name="cash_percent" id="zip_cash_percent">
+                                        <input type="hidden" name="consultation_amount" id="zip_consultation_amount">
                                     </form>
                                 </div>
                             </div>
@@ -283,9 +295,11 @@
                         calculationData = response.data;
                         renderResults(response.data);
                         $('#export_excel').show();
+                        $('#download_invoices').show();
                     } else {
                         $('#content').html('<div class="alert alert-danger">' + response.message + '</div>');
                         $('#export_excel').hide();
+                        $('#download_invoices').hide();
                     }
                     hideSpinner();
                 },
@@ -293,8 +307,39 @@
                     hideSpinner();
                     $('#content').html('<div class="alert alert-danger">Error: ' + (xhr.responseJSON?.message || 'Unknown error') + '</div>');
                     $('#export_excel').hide();
+                    $('#download_invoices').hide();
                 }
             });
+        }
+
+        function downloadInvoicesZip() {
+            // Clear previous location inputs
+            $('#download-invoices-form input[name="location_ids[]"]').remove();
+            
+            // Set form values
+            $('#zip_date_range').val($('#date_range').val());
+            $('#zip_bank_taxable').val($('#bank_taxable').val());
+            $('#zip_cash_percent').val($('#cash_percent').val());
+            $('#zip_consultation_amount').val($('#consultation_amount').val());
+            
+            // Add location IDs
+            var locationIds = $('#location_id').val();
+            locationIds.forEach(function(id) {
+                $('#download-invoices-form').append('<input type="hidden" name="location_ids[]" value="' + id + '">');
+            });
+            
+            // Show loader with custom message
+            $('.loader-text').text('Generating invoice PDFs... This may take a few minutes.');
+            showSpinner();
+            
+            // Submit form (will download as file, then hide spinner)
+            $('#download-invoices-form').submit();
+            
+            // Hide spinner after a delay (form submit won't trigger AJAX callbacks)
+            setTimeout(function() {
+                hideSpinner();
+                $('.loader-text').text('Calculating tax report...');
+            }, 5000);
         }
 
         function exportExcel() {
