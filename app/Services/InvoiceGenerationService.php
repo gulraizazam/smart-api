@@ -20,6 +20,7 @@ class InvoiceGenerationService
     protected $cashPercent;
     protected $consultationAmount;
     protected $maxExemptPerPatient;
+    protected $unplacedExemptPerPatient = [];
     protected $workingDays = [];
     protected $usedInvoiceNumbers = [];
     protected $dailyRevenue = [];
@@ -65,10 +66,11 @@ class InvoiceGenerationService
         // Step 7: Distribute exempt percentages using smart algorithm
         $distribution = $this->distributeExemptPercentages($categorizedPatients, $pool, $feasibility);
 
-        // Step 8: Generate exempt invoices
-        $exemptInvoices = $this->generateInvoices($distribution, 'exempt');
+        // Step 8: Generate exempt invoices (returns ['invoices' => [...], 'unplaced_exempt' => [...]])
+        $exemptResult = $this->generateInvoices($distribution, 'exempt');
+        $exemptInvoices = $exemptResult['invoices'];
 
-        // Step 9: Generate taxable invoices
+        // Step 9: Generate taxable invoices (includes unplaced exempt amounts)
         $taxableInvoices = $this->generateTaxableInvoices($distribution);
 
         // Step 10: Calculate final summary
@@ -668,6 +670,7 @@ class InvoiceGenerationService
     protected function generateInvoices(array $distribution, string $type = 'exempt'): array
     {
         $invoices = [];
+        $this->unplacedExemptPerPatient = [];
         // Get month from date range (use start date)
         $month = $this->dateFrom->format('m');
 
@@ -677,7 +680,6 @@ class InvoiceGenerationService
             
             // Calculate number of invoices (each invoice = consultation_amount)
             $numInvoices = floor($exemptAmount / $this->consultationAmount);
-            $remainder = $exemptAmount - ($numInvoices * $this->consultationAmount);
 
             if ($numInvoices == 0) {
                 continue;
@@ -705,14 +707,9 @@ class InvoiceGenerationService
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
-                    // Generate unique random number (1-999) for each invoice
-                    $randomNum = rand(1, 999);
-                    
-                    // Format: patientID-planID-month-random
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
                     $invoices[] = [
-                        
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
@@ -724,6 +721,12 @@ class InvoiceGenerationService
                     $invoiceIndex++;
                 }
             }
+
+            // Track unplaced exempt invoices — these will be added to taxable
+            $unplacedCount = $numInvoices - $invoiceIndex;
+            if ($unplacedCount > 0) {
+                $this->unplacedExemptPerPatient[$patientId] = $unplacedCount * $this->consultationAmount;
+            }
         }
 
         // Sort invoices by date (ascending)
@@ -731,13 +734,16 @@ class InvoiceGenerationService
             return strcmp($a['invoice_date'], $b['invoice_date']);
         });
 
-        return $invoices;
+        return [
+            'invoices' => $invoices,
+            'unplaced_exempt' => $this->unplacedExemptPerPatient,
+        ];
     }
 
     /**
      * Generate taxable invoices for each patient
      */
-   protected function generateTaxableInvoices(array $distribution): array
+    protected function generateTaxableInvoices(array $distribution): array
     {
         $invoices = [];
         // Get month from date range (use start date)
@@ -746,9 +752,14 @@ class InvoiceGenerationService
         foreach ($distribution as $patient) {
             $taxableAmount = $patient['taxable_amount'];
             $patientId = $patient['patient_id'];
+
+            // Add any unplaced exempt amount (invoices that couldn't be placed due to date capacity)
+            if (isset($this->unplacedExemptPerPatient[$patientId])) {
+                $taxableAmount += $this->unplacedExemptPerPatient[$patientId];
+            }
             
-            // Skip if taxable amount is less than minimum (100)
-            if ($taxableAmount < 100) {
+            // Skip only if taxable amount is zero or negligible (< 1)
+            if ($taxableAmount < 1) {
                 continue;
             }
 
@@ -762,7 +773,7 @@ class InvoiceGenerationService
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
                 ->value('package_id');
 
-           // If no plan_id found, use 0 as default
+            // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
             // Generate invoice amounts
@@ -771,7 +782,7 @@ class InvoiceGenerationService
             
             // If taxable amount is less than 1000, create single invoice with full amount
             if ($taxableAmount < 1000) {
-                $invoiceAmounts[] = $taxableAmount;
+                $invoiceAmounts[] = round($taxableAmount, 2);
             } else {
                 // For amounts >= 1000, generate random invoices between 1000-10000
                 $remainingAmount = $taxableAmount;
@@ -786,17 +797,16 @@ class InvoiceGenerationService
                         $amount = $remainingAmount;
                     }
                     
-                    $invoiceAmounts[] = $amount;
+                    $invoiceAmounts[] = round($amount, 2);
                     $remainingAmount -= $amount;
                 }
             }
             
             // If there's still a small remainder, add it to the last invoice
             if ($remainingAmount > 0 && count($invoiceAmounts) > 0) {
-                $invoiceAmounts[count($invoiceAmounts) - 1] += $remainingAmount;
+                $invoiceAmounts[count($invoiceAmounts) - 1] += round($remainingAmount, 2);
             } elseif ($remainingAmount > 0) {
-                // If no invoices yet, create one with the full amount
-                $invoiceAmounts[] = $taxableAmount;
+                $invoiceAmounts[] = round($remainingAmount, 2);
             }
 
             // Get available dates for this patient (with 2-day gap for taxable)
@@ -808,10 +818,6 @@ class InvoiceGenerationService
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
-                    // Generate unique random number (1-999) for each invoice
-                    $randomNum = rand(1, 999);
-                    
-                    // Format: patientID-planID-month-random
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
                     $invoices[] = [
@@ -834,6 +840,7 @@ class InvoiceGenerationService
 
         return $invoices;
     }
+
     protected function generateUniqueInvoiceNumber(int $patientId, int $planId, string $month): string
     {
         // Build a prefix key for this patient-plan-month combo
