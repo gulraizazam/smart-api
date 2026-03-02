@@ -38,7 +38,7 @@ class InvoiceGenerationController extends Controller
             'location_ids.*' => 'integer',
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|min:0',
+            'consultation_amount' => 'required|numeric|in:1500,3000',
         ]);
 
         // Parse date range
@@ -81,7 +81,7 @@ class InvoiceGenerationController extends Controller
             'location_ids.*' => 'integer',
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|min:0',
+            'consultation_amount' => 'required|numeric|in:1500,3000',
         ]);
 
         // Parse date range
@@ -158,7 +158,7 @@ class InvoiceGenerationController extends Controller
             'location_ids.*' => 'integer',
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|min:0',
+            'consultation_amount' => 'required|numeric|in:1500,3000',
         ]);
 
         // Parse date range

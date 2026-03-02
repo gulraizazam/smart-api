@@ -153,7 +153,7 @@
 
                                         <div class="form-group col-md-2 sn-select">
                                             {!! Form::label('consultation_amount', 'Invoice Amount*', ['class' => 'control-label']) !!}
-                                            {!! Form::number('consultation_amount', 1500, ['id' => 'consultation_amount', 'class' => 'form-control', 'step' => '0.01']) !!}
+                                            {!! Form::select('consultation_amount', [1500 => '1,500', 3000 => '3,000'], 1500, ['id' => 'consultation_amount', 'class' => 'form-control']) !!}
                                             <small class="text-muted">Fixed exempt invoice amount</small>
                                         </div>
                                     </div>
