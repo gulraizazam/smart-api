@@ -878,8 +878,16 @@ function setEditData(response) {
                     // Non-base service row in configurable group - no buttons
                     del_icon = "";
                 } else if (hideDelete) {
-                    // Consumed service or consumed config group member — no delete, only edit sold-by if permitted
-                    if (permissions.plans_edit_sold_by) {
+                    // Consumed service or consumed config group member
+                    if (package.plan_type === 'plan' && !isConfigurableDiscount) {
+                        // Plan type 'plan' with no configurable discount: show edit + delete even if consumed
+                        if (permissions.plans_edit_sold_by) {
+                            del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ")'>" + editIcon + "</button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
+                        } else {
+                            del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
+                        }
+                    } else if (permissions.plans_edit_sold_by) {
+                        // Other types: no delete, only edit sold-by if permitted
                         del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + (configRowIds ? ", " + JSON.stringify(configRowIds) : "") + ")'>" + editIcon + "</button>";
                     } else {
                         del_icon = "";
