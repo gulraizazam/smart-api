@@ -156,6 +156,12 @@
                                             {!! Form::select('consultation_amount', [1500 => '1,500', 2000 => '2,000 - 3,000'], 1500, ['id' => 'consultation_amount', 'class' => 'form-control']) !!}
                                             <small class="text-muted">Exempt invoice amount (range = mixed)</small>
                                         </div>
+
+                                        <div class="form-group col-md-2 sn-select">
+                                            {!! Form::label('tax_percent', 'Tax %*', ['class' => 'control-label']) !!}
+                                            {!! Form::number('tax_percent', 13, ['id' => 'tax_percent', 'class' => 'form-control', 'step' => '0.01', 'min' => '0', 'max' => '100']) !!}
+                                            <small class="text-muted">Applied on taxable invoices</small>
+                                        </div>
                                     </div>
 
                                     <div class="row mt-3">
@@ -185,6 +191,7 @@
                                         <input type="hidden" name="bank_taxable" id="export_bank_taxable">
                                         <input type="hidden" name="cash_percent" id="export_cash_percent">
                                         <input type="hidden" name="consultation_amount" id="export_consultation_amount">
+                                        <input type="hidden" name="tax_percent" id="export_tax_percent">
                                     </form>
 
                                     <!-- Hidden form for Invoices ZIP download -->
@@ -194,6 +201,7 @@
                                         <input type="hidden" name="bank_taxable" id="zip_bank_taxable">
                                         <input type="hidden" name="cash_percent" id="zip_cash_percent">
                                         <input type="hidden" name="consultation_amount" id="zip_consultation_amount">
+                                        <input type="hidden" name="tax_percent" id="zip_tax_percent">
                                     </form>
                                 </div>
                             </div>
@@ -289,6 +297,7 @@
                     bank_taxable: $('#bank_taxable').val() || 30,
                     cash_percent: $('#cash_percent').val() || 5,
                     consultation_amount: $('#consultation_amount').val() || 1500,
+                    tax_percent: $('#tax_percent').val() || 13,
                 },
                 success: function(response) {
                     if (response.success) {
@@ -321,6 +330,7 @@
             $('#zip_bank_taxable').val($('#bank_taxable').val());
             $('#zip_cash_percent').val($('#cash_percent').val());
             $('#zip_consultation_amount').val($('#consultation_amount').val());
+            $('#zip_tax_percent').val($('#tax_percent').val());
             
             // Add location IDs
             var locationIds = $('#location_id').val();
@@ -351,6 +361,7 @@
             $('#export_bank_taxable').val($('#bank_taxable').val());
             $('#export_cash_percent').val($('#cash_percent').val());
             $('#export_consultation_amount').val($('#consultation_amount').val());
+            $('#export_tax_percent').val($('#tax_percent').val());
             
             // Add location IDs
             var locationIds = $('#location_id').val();

@@ -28,6 +28,7 @@ class InvoiceGenerationService
     protected $dailyRevenue = [];
     protected $dailyBudgetUsed = [];
     protected $patientDailyInvoiceCount = [];
+    protected $taxPercent;
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -41,6 +42,7 @@ class InvoiceGenerationService
         $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
         $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
         $this->consultationAmount = $params['consultation_amount']; // e.g., 1500 or 2000
+        $this->taxPercent = $params['tax_percent'] ?? 13;
         $this->usedInvoiceNumbers = [];
 
         // Set up denomination mode
@@ -104,6 +106,7 @@ class InvoiceGenerationService
                 'bank_taxable_percent' => $this->bankTaxablePercent,
                 'cash_percent' => $this->cashPercent,
                 'consultation_amount' => $this->consultationAmount,
+                'tax_percent' => $this->taxPercent,
             ],
             'capacity' => [
                 'working_days' => count($this->workingDays),
