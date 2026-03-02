@@ -106,6 +106,10 @@
             <th>{{ $service_label }}\Service</th>
             <th>Service Price</th>
             <th>Subtotal</th>
+            @if($tax_percent > 0)
+            <th>Tax %</th>
+            <th>Tax</th>
+            @endif
             <th>Total</th>
         </tr>
         <tr>
@@ -113,6 +117,10 @@
             <td>{{ $service_name }}</td>
             <td>{{ number_format($invoice['amount']) }}</td>
             <td>{{ number_format($invoice['amount']) }}</td>
+            @if($tax_percent > 0)
+            <td>{{ $tax_percent }}%</td>
+            <td>{{ number_format($tax_amount) }}</td>
+            @endif
             <td>{{ number_format($total_amount) }}</td>
         </tr>
     </table>
