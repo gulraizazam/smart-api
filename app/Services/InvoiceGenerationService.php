@@ -29,6 +29,7 @@ class InvoiceGenerationService
     protected $dailyBudgetUsed = [];
     protected $patientDailyInvoiceCount = [];
     protected $taxPercent;
+    protected $maxInvoicesPerDay;
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -43,6 +44,7 @@ class InvoiceGenerationService
         $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
         $this->consultationAmount = $params['consultation_amount']; // e.g., 1500 or 2000
         $this->taxPercent = $params['tax_percent'] ?? 13;
+        $this->maxInvoicesPerDay = $params['max_invoices_per_day'] ?? 2;
         $this->usedInvoiceNumbers = [];
 
         // Set up denomination mode
@@ -60,11 +62,12 @@ class InvoiceGenerationService
         // Step 1b: Calculate daily revenue and filter working days to revenue-active days only
         $this->calculateDailyRevenue();
 
-        // Step 1c: Calculate max capacity based on revenue-active days
+        // Step 1c: Calculate max capacity (for display only, no cap enforced)
         $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
-        // Use smallest denomination for max capacity calculation
         $smallestDenom = min($this->consultationAmounts);
-        $this->maxExemptPerPatient = $maxInvoicesPerPatient * $smallestDenom;
+        $displayMaxExemptPerPatient = $maxInvoicesPerPatient * $smallestDenom;
+        // No cap on exempt per patient — unlimited by design
+        $this->maxExemptPerPatient = PHP_INT_MAX;
 
         // Step 2: Get payment totals
         $totals = $this->getPaymentTotals();
@@ -107,12 +110,13 @@ class InvoiceGenerationService
                 'cash_percent' => $this->cashPercent,
                 'consultation_amount' => $this->consultationAmount,
                 'tax_percent' => $this->taxPercent,
+                'max_invoices_per_day' => $this->maxInvoicesPerDay,
             ],
             'capacity' => [
                 'working_days' => count($this->workingDays),
                 'invoice_days_per_patient' => floor(count($this->workingDays) / 2), // with 1-day gap
                 'max_invoices_per_patient' => $maxInvoicesPerPatient,
-                'max_exempt_per_patient' => $this->maxExemptPerPatient,
+                'max_exempt_per_patient' => $displayMaxExemptPerPatient,
             ],
             'totals' => $totals,
             'pool' => array_merge($pool, ['actual_taxable_invoiced' => $summary['total_taxable_invoiced']]),
@@ -259,8 +263,7 @@ class InvoiceGenerationService
         // With 1-day gap, usable days = floor(working_days / 2)
         $usableInvoiceDays = floor($totalWorkingDays / 2);
         
-        // Max invoices per day: 1500 -> 3/day, mixed (2000-3000) -> 2/day
-        $invoicesPerDay = $this->isMixedMode ? 2 : 3;
+        $invoicesPerDay = $this->maxInvoicesPerDay;
         
         return $usableInvoiceDays * $invoicesPerDay;
     }
@@ -328,7 +331,7 @@ class InvoiceGenerationService
      */
     protected function findBestDateForInvoice(string $preferredDateStr, float $amount, int $patientId): string
     {
-        $maxPerDay = $this->isMixedMode ? 2 : 3;
+        $maxPerDay = $this->maxInvoicesPerDay;
 
         // Try preferred date first — check both budget AND per-patient-per-day cap
         if ($this->getDailyBudgetRemaining($preferredDateStr) >= $amount
@@ -1158,7 +1161,7 @@ class InvoiceGenerationService
             return $dates;
         }
 
-        $maxPerDay = $this->isMixedMode ? 2 : 3;
+        $maxPerDay = $this->maxInvoicesPerDay;
 
         // Build weighted capacity per working day index
         $dayCapacity = [];

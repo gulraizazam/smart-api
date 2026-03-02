@@ -162,6 +162,12 @@
                                             {!! Form::number('tax_percent', 13, ['id' => 'tax_percent', 'class' => 'form-control', 'step' => '0.01', 'min' => '0', 'max' => '100']) !!}
                                             <small class="text-muted">Applied on taxable invoices</small>
                                         </div>
+
+                                        <div class="form-group col-md-2 sn-select">
+                                            {!! Form::label('max_invoices_per_day', 'Max Inv/Day/Patient*', ['class' => 'control-label']) !!}
+                                            {!! Form::number('max_invoices_per_day', 2, ['id' => 'max_invoices_per_day', 'class' => 'form-control', 'step' => '1', 'min' => '1', 'max' => '10']) !!}
+                                            <small class="text-muted">Per patient per day limit</small>
+                                        </div>
                                     </div>
 
                                     <div class="row mt-3">
@@ -192,6 +198,7 @@
                                         <input type="hidden" name="cash_percent" id="export_cash_percent">
                                         <input type="hidden" name="consultation_amount" id="export_consultation_amount">
                                         <input type="hidden" name="tax_percent" id="export_tax_percent">
+                                        <input type="hidden" name="max_invoices_per_day" id="export_max_invoices_per_day">
                                     </form>
 
                                     <!-- Hidden form for Invoices ZIP download -->
@@ -202,6 +209,7 @@
                                         <input type="hidden" name="cash_percent" id="zip_cash_percent">
                                         <input type="hidden" name="consultation_amount" id="zip_consultation_amount">
                                         <input type="hidden" name="tax_percent" id="zip_tax_percent">
+                                        <input type="hidden" name="max_invoices_per_day" id="zip_max_invoices_per_day">
                                     </form>
                                 </div>
                             </div>
@@ -298,6 +306,7 @@
                     cash_percent: $('#cash_percent').val() || 5,
                     consultation_amount: $('#consultation_amount').val() || 1500,
                     tax_percent: $('#tax_percent').val() || 13,
+                    max_invoices_per_day: $('#max_invoices_per_day').val() || 2,
                 },
                 success: function(response) {
                     if (response.success) {
@@ -331,6 +340,7 @@
             $('#zip_cash_percent').val($('#cash_percent').val());
             $('#zip_consultation_amount').val($('#consultation_amount').val());
             $('#zip_tax_percent').val($('#tax_percent').val());
+            $('#zip_max_invoices_per_day').val($('#max_invoices_per_day').val());
             
             // Add location IDs
             var locationIds = $('#location_id').val();
@@ -362,6 +372,7 @@
             $('#export_cash_percent').val($('#cash_percent').val());
             $('#export_consultation_amount').val($('#consultation_amount').val());
             $('#export_tax_percent').val($('#tax_percent').val());
+            $('#export_max_invoices_per_day').val($('#max_invoices_per_day').val());
             
             // Add location IDs
             var locationIds = $('#location_id').val();
