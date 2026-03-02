@@ -979,6 +979,117 @@ class InvoiceGenerationService
         ];
     }
 
+    /**
+     * Generate taxable invoices for each patient
+     */
+    protected function generateTaxableInvoices(array $distribution): array
+    {
+        $invoices = [];
+        $month = $this->dateFrom->format('m');
+
+        foreach ($distribution as $patient) {
+            $patientId = $patient['patient_id'];
+            $taxableAmount = $patient['taxable_amount'];
+
+            // Add unplaced exempt amounts to taxable
+            if (isset($this->unplacedExemptPerPatient[$patientId])) {
+                $taxableAmount += $this->unplacedExemptPerPatient[$patientId];
+            }
+
+            if ($taxableAmount < 1) {
+                continue;
+            }
+
+            $planId = DB::table('package_advances')
+                ->where('patient_id', $patientId)
+                ->where('cash_flow', 'in')
+                ->where('is_cancel', 0)
+                ->whereIn('location_id', $this->locationIds)
+                ->whereNull('deleted_at')
+                ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+                ->whereNotNull('package_id')
+                ->value('package_id');
+
+            $planId = $planId ?? 0;
+
+            $invoiceAmounts = [];
+            $remainingAmount = $taxableAmount;
+
+            if ($taxableAmount < 1000) {
+                $invoiceAmounts[] = round($taxableAmount, 2);
+            } else {
+                // For amounts >= 1000, generate random invoices between 1000-10000
+                while ($remainingAmount >= 1000) {
+                    $maxAmount = min(10000, $remainingAmount);
+                    $amount = rand(1000, (int)$maxAmount);
+
+                    // If this would leave less than 1000, add it to this invoice
+                    if ($remainingAmount - $amount < 1000) {
+                        $amount = $remainingAmount;
+                    }
+
+                    $invoiceAmounts[] = round($amount, 2);
+                    $remainingAmount -= $amount;
+                }
+            }
+
+            // If there's still a small remainder, add it to the last invoice
+            if ($remainingAmount > 0 && count($invoiceAmounts) > 0) {
+                $invoiceAmounts[count($invoiceAmounts) - 1] += round($remainingAmount, 2);
+            } elseif ($remainingAmount > 0) {
+                $invoiceAmounts[] = round($remainingAmount, 2);
+            }
+
+            // Get available dates for this patient (with 2-day gap for taxable)
+            $patientDates = $this->getTaxableInvoiceDates(count($invoiceAmounts));
+
+            $invoiceIndex = 0;
+            foreach ($patientDates as $dateInfo) {
+                $date = $dateInfo['date'];
+                $preferredDateStr = $date->format('Y-m-d');
+                $invoicesOnThisDay = $dateInfo['count'];
+
+                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
+                    $amount = $invoiceAmounts[$invoiceIndex];
+
+                    // Soft cap with spillover + per-patient-per-day cap
+                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount, $patientId);
+
+                    $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
+
+                    $invoices[] = [
+                        'invoice_number' => $invoiceNumber,
+                        'patient_id' => $patientId,
+                        'plan_id' => $planId,
+                        'invoice_date' => $actualDateStr,
+                        'amount' => $amount,
+                        'type' => 'taxable',
+                    ];
+                    $this->consumeDailyBudget($actualDateStr, $amount);
+                    $this->trackPatientDayInvoice($patientId, $actualDateStr);
+                    $invoiceIndex++;
+                }
+            }
+
+            // Safety net: if some taxable invoices couldn't be placed, merge into last placed invoice
+            if ($invoiceIndex < count($invoiceAmounts) && $invoiceIndex > 0) {
+                $unplacedSum = 0;
+                for ($u = $invoiceIndex; $u < count($invoiceAmounts); $u++) {
+                    $unplacedSum += $invoiceAmounts[$u];
+                }
+                $lastIdx = count($invoices) - 1;
+                $invoices[$lastIdx]['amount'] += $unplacedSum;
+            }
+        }
+
+        // Sort invoices by date (ascending)
+        usort($invoices, function ($a, $b) {
+            return strcmp($a['invoice_date'], $b['invoice_date']);
+        });
+
+        return $invoices;
+    }
+
     protected function generateUniqueInvoiceNumber(int $patientId, int $planId, string $month): string
     {
         $prefix = sprintf('%d-%d-%s', $patientId, $planId, $month);
