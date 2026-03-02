@@ -224,14 +224,25 @@ class InvoiceGenerationController extends Controller
                 return strcmp($a['_type'], $b['_type']);
             });
 
+            // Build sequential filenames: YYYYMMDD0001.pdf per date
+            $dateSequence = [];
+            foreach ($allInvoices as &$inv) {
+                $dateKey = str_replace('-', '', $inv['invoice_date']); // e.g. 20230711
+                if (!isset($dateSequence[$dateKey])) {
+                    $dateSequence[$dateKey] = 0;
+                }
+                $dateSequence[$dateKey]++;
+                $inv['_pdf_name'] = $dateKey . str_pad($dateSequence[$dateKey], 4, '0', STR_PAD_LEFT) . '.pdf';
+            }
+            unset($inv);
+
             // Process all invoices in chunks (single folder, no subfolders)
             $allChunks = array_chunk($allInvoices, $chunkSize);
             foreach ($allChunks as $chunk) {
                 foreach ($chunk as $invoice) {
                     $type = $invoice['_type'];
                     $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, $type, $dates['to']);
-                    $pdfName = 'INV-' . $invoice['invoice_number'] . '.pdf';
-                    $zip->addFile(fileName: $pdfName, data: $pdfContent);
+                    $zip->addFile(fileName: $invoice['_pdf_name'], data: $pdfContent);
                     unset($pdfContent);
                 }
                 gc_collect_cycles();
