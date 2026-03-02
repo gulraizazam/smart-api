@@ -1283,10 +1283,24 @@ class Finanaces
         $end_date = null;
     }
     
-    if (isset($data['region_id'])) {
-        $location_information = Locations::generalrevenuegetActiveSorted(ACL::getUserCentres(), $data['region_id']);
+    // Filter by selected locations first, then by region if provided
+    $userCentres = ACL::getUserCentres();
+    
+    if (!empty($data['location_id']) && is_array($data['location_id'])) {
+        // Filter user centres to only selected locations
+        $selectedLocations = array_intersect($data['location_id'], is_array($userCentres) ? $userCentres : [$userCentres]);
+        if (empty($selectedLocations)) {
+            $selectedLocations = $data['location_id'];
+        }
+        if (isset($data['region_id']) && $data['region_id']) {
+            $location_information = Locations::generalrevenuegetActiveSorted($selectedLocations, $data['region_id']);
+        } else {
+            $location_information = Locations::getActiveSorted($selectedLocations);
+        }
+    } elseif (isset($data['region_id']) && $data['region_id']) {
+        $location_information = Locations::generalrevenuegetActiveSorted($userCentres, $data['region_id']);
     } else {
-        $location_information = Locations::getActiveSorted(ACL::getUserCentres());
+        $location_information = Locations::getActiveSorted($userCentres);
     }
 
     $report_data = [];

@@ -287,7 +287,7 @@
                                             {!! Form::hidden('patient_id', null, ['id' => 'patient_id-report']) !!}
                                             {!! Form::hidden('appointment_type_id', null, ['id' => 'appointment_type_id-report']) !!}
                                             {!! Form::hidden('city_id', null, ['id' => 'city_id-report']) !!}
-                                            {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
+                                            <span id="location_id_report_container"></span>
                                             {!! Form::hidden('location_id_com', null, ['id' => 'location_id_com-report']) !!}
                                             {!! Form::hidden('region_id', null, ['id' => 'region_id-report']) !!}
                                             {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}
@@ -465,7 +465,14 @@
                 $('#doctor_id-report').val($('#doctor_id').val());
                 $('#city_id-report').val($('#city_id').val());
                 $('#region_id-report').val($('#region_id').val());
-                $('#location_id-report').val($('#location_id').val());
+                // Dynamically add multiple hidden fields for location_id array
+                $('#location_id_report_container').empty();
+                var selectedLocations = $('#location_id').val();
+                if (selectedLocations && selectedLocations.length) {
+                    $.each(selectedLocations, function(i, val) {
+                        $('#location_id_report_container').append('<input type="hidden" name="location_id[]" value="' + val + '">');
+                    });
+                }
                 $('#service_id-report').val($('#service_id').val());
                 $('#appointment_status_id-report').val($('#appointment_status_id').val());
                 $('#appointment_type_id-report').val($('#appointment_type_id').val());
@@ -512,7 +519,7 @@
                     $("#patient_id_E").hide();
                     $("#appointment_type_id_E").hide();
                     $("#location_id_D").hide();
-                    $("#location_id_E").hide();
+                    $("#location_id_E").show();
                     $("#user_id_E").hide();
                     $("#service_id_E").hide();
                     $("#region_id_E").show();
