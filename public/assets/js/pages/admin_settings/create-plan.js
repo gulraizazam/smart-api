@@ -831,11 +831,13 @@ function setEditData(response) {
             
             // Fallback for legacy data without config_group_id:
             // Group consecutive rows with same discount_id that have no config_group_id
+            // Only group rows where the discount is actually Configurable type
             if (!hasAnyConfigGroupId) {
                 var legacyGroupCounter = 0;
                 var prevDiscountId = null;
                 Object.values(packagebundles).forEach(function (pb) {
-                    if (pb.discount_id && !pb.config_group_id) {
+                    var isConfigType = pb.discount_type === 'Configurable' || (pb.discount && pb.discount.type === 'Configurable');
+                    if (pb.discount_id && !pb.config_group_id && isConfigType) {
                         if (pb.discount_id != prevDiscountId) {
                             legacyGroupCounter++;
                             prevDiscountId = pb.discount_id;
@@ -877,35 +879,24 @@ function setEditData(response) {
                 if (isConfigurableDiscount && !isBaseService) {
                     // Non-base service row in configurable group - no buttons
                     del_icon = "";
-                } else if (hideDelete) {
-                    // Consumed service or consumed config group member
-                    if (package.plan_type === 'plan' && !isConfigurableDiscount) {
-                        // Plan type 'plan' with no configurable discount: show edit + delete even if consumed
-                        if (permissions.plans_edit_sold_by) {
-                            del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ")'>" + editIcon + "</button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
-                        } else {
-                            del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
-                        }
-                    } else if (permissions.plans_edit_sold_by) {
-                        // Other types: no delete, only edit sold-by if permitted
-                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + (configRowIds ? ", " + JSON.stringify(configRowIds) : "") + ")'>" + editIcon + "</button>";
-                    } else {
-                        del_icon = "";
-                    }
-                } else if (isConfigurableDiscount && isBaseService) {
-                    // Base service row - show delete button that deletes all rows in the group
-                    if (permissions.plans_edit_sold_by) {
-                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ", " + JSON.stringify(configRowIds) + ")'>" + editIcon + "</button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' data-config-rows='" + JSON.stringify(configRowIds) + "' onClick='deleteConfigurablePlanRowsEdit(this)'>" + trashBtn() + "</button>";
-                    } else {
-                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' data-config-rows='" + JSON.stringify(configRowIds) + "' onClick='deleteConfigurablePlanRowsEdit(this)'>" + trashBtn() + "</button>";
-                    }
                 } else {
-                    // Regular discount or no discount - show normal delete button
+                    // Build edit button (permission-based, shown on every service row)
+                    var editBtn = "";
                     if (permissions.plans_edit_sold_by) {
-                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ")'>" + editIcon + "</button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
-                    } else {
-                        del_icon = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
+                        editBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + (configRowIds ? ", " + JSON.stringify(configRowIds) : "") + ")'>" + editIcon + "</button>";
                     }
+
+                    // Build delete button (hidden for consumed rows)
+                    var deleteBtn = "";
+                    if (!hideDelete) {
+                        if (isConfigurableDiscount && isBaseService) {
+                            deleteBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' data-config-rows='" + JSON.stringify(configRowIds) + "' onClick='deleteConfigurablePlanRowsEdit(this)'>" + trashBtn() + "</button>";
+                        } else {
+                            deleteBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button>";
+                        }
+                    }
+
+                    del_icon = editBtn + deleteBtn;
                 }
 
                 service_options += '<tr id="table_1" data-existing="1" class="HR_' + packagebundle.id + (isConfigurableDiscount ? ' configurable-group-' + configGroups[groupKey][0] : '') + '">';
