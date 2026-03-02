@@ -89,6 +89,7 @@
                     <th>Cash </th>
                     <th>Card </th>
                     <th>Bank/Wire Transfer</th>
+                    <th>Card + Bank</th>
                     <th>Refund/Out</th>
                     <th>Collection By Gender (Male)</th>
                     <th>Collection By Gender (Female)</th>
@@ -103,6 +104,7 @@
                                 <td>{{number_format($reportRow['revenue_cash_in'],2)}}</td>
                                 <td>{{number_format($reportRow['revenue_card_in'],2)}}</td>
                                 <td>{{number_format($reportRow['revenue_bank_in'],2)}}</td>
+                                <td>{{number_format($reportRow['revenue_card_in'] + $reportRow['revenue_bank_in'],2)}}</td>
                                 <td>{{number_format($reportRow['refund_out'],2)}}</td>
                                 <td>{{number_format($reportRow['male_revenue'],2)}}</td>
                                 <td>{{number_format($reportRow['female_revenue'],2)}}</td>
@@ -115,6 +117,7 @@
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_cash_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_card_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_bank_in,2)}}</td>
+                            <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_card_in + $total_revenue_bank_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_refund,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_male_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_female_in,2)}}</td>
@@ -141,6 +144,10 @@
                     <tr>
                         <th>Bank/Wire Transfer</th>
                         <td>{{number_format($total_revenue_bank_in,2)}}</td>
+                    </tr>
+                    <tr>
+                        <th>Card + Bank</th>
+                        <td>{{number_format($total_revenue_card_in + $total_revenue_bank_in,2)}}</td>
                     </tr>
                     <tr>
                         <th>Total Revenue</th>

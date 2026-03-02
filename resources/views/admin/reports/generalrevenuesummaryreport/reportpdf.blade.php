@@ -92,6 +92,7 @@
             <th>Cash </th>
             <th>Card </th>
             <th>Bank/Wire Transfer</th>
+            <th>Card + Bank</th>
             <th>Refund/Out</th>
             <th>In Hand</th>
         </tr>
@@ -104,6 +105,7 @@
                     <td>{{number_format($reportRow['revenue_cash_in'],2)}}</td>
                     <td>{{number_format($reportRow['revenue_card_in'],2)}}</td>
                     <td>{{number_format($reportRow['revenue_bank_in'],2)}}</td>
+                    <td>{{number_format($reportRow['revenue_card_in'] + $reportRow['revenue_bank_in'],2)}}</td>
                     <td>{{number_format($reportRow['refund_out'],2)}}</td>
                     <td>{{number_format($reportRow['in_hand'],2)}}</td>
                 </tr>
@@ -115,6 +117,7 @@
                 <td style="font-weight: bold">{{number_format($total_revenue_cash_in,2)}}</td>
                 <td style="font-weight: bold">{{number_format($total_revenue_card_in,2)}}</td>
                 <td style="font-weight: bold">{{number_format($total_revenue_bank_in,2)}}</td>
+                <td style="font-weight: bold">{{number_format($total_revenue_card_in + $total_revenue_bank_in,2)}}</td>
                 <td style="font-weight: bold">{{number_format($total_refund,2)}}</td>
                 <td style="font-weight: bold">{{number_format(($total_revenue_cash_in+$total_revenue_card_in+$total_revenue_bank_in)-$total_refund,2)}}</td>
             </tr>
@@ -141,6 +144,10 @@
     <tr>
         <td>Bank/Wire Transfer</td>
         <td>{{number_format($total_revenue_bank_in,2)}}</td>
+    </tr>
+    <tr>
+        <td>Card + Bank</td>
+        <td>{{number_format($total_revenue_card_in + $total_revenue_bank_in,2)}}</td>
     </tr>
     <tr>
         <td>Total Revenue</td>
