@@ -158,6 +158,39 @@ class InvoiceGenerationService
             ->groupBy(DB::raw('DATE(created_at)'), 'payment_mode_id')
             ->get();
 
+        // Query daily refunds by payment mode
+        $dailyRefunds = DB::table('package_advances')
+            ->select(
+                DB::raw('DATE(created_at) as payment_date'),
+                'payment_mode_id',
+                DB::raw('SUM(cash_amount) as daily_total')
+            )
+            ->where('cash_flow', 'out')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereIn('location_id', $this->locationIds)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+            ->groupBy(DB::raw('DATE(created_at)'), 'payment_mode_id')
+            ->get();
+
+        // Build daily refund map
+        $dailyRefundMap = [];
+        foreach ($dailyRefunds as $row) {
+            $date = $row->payment_date;
+            if (!isset($dailyRefundMap[$date])) {
+                $dailyRefundMap[$date] = ['bank' => 0, 'card' => 0, 'cash' => 0];
+            }
+            if ($row->payment_mode_id == self::PAYMENT_MODE_BANK) {
+                $dailyRefundMap[$date]['bank'] = (float) $row->daily_total;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CARD) {
+                $dailyRefundMap[$date]['card'] = (float) $row->daily_total;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CASH) {
+                $dailyRefundMap[$date]['cash'] = (float) $row->daily_total;
+            }
+        }
+
         // Build daily revenue map: date => pool amount (bank + card + cash%)
         $dailyMap = [];
         foreach ($dailyPayments as $row) {
@@ -174,7 +207,16 @@ class InvoiceGenerationService
             }
         }
 
-        // Calculate pool revenue per day and total
+        // Subtract daily refunds from gross daily amounts
+        foreach ($dailyRefundMap as $date => $refunds) {
+            if (isset($dailyMap[$date])) {
+                $dailyMap[$date]['bank'] = max(0, $dailyMap[$date]['bank'] - $refunds['bank']);
+                $dailyMap[$date]['card'] = max(0, $dailyMap[$date]['card'] - $refunds['card']);
+                $dailyMap[$date]['cash'] = max(0, $dailyMap[$date]['cash'] - $refunds['cash']);
+            }
+        }
+
+        // Calculate net pool revenue per day and total
         $this->dailyRevenue = [];
         $totalDailyPool = 0;
         foreach ($dailyMap as $date => $amounts) {
@@ -405,6 +447,9 @@ class InvoiceGenerationService
             'refunds' => [
                 'total' => $totalRefunds,
                 'count' => $totalRefundCount,
+                'bank' => $refundBank,
+                'card' => $refundCard,
+                'cash' => $refundCash,
             ],
             'bank_plus_card' => $bankTotal + $cardTotal,
             'grand_total' => $grandTotal,
@@ -412,17 +457,22 @@ class InvoiceGenerationService
     }
 
     /**
-     * Calculate the pool (Bank + Card + Cash%)
+     * Calculate the pool (Bank + Card + Cash%) using net amounts (gross - refunds)
      */
     protected function calculatePool(array $totals): array
     {
-        $cashToUse = $totals['cash']['total'] * ($this->cashPercent / 100);
-        $poolTotal = $totals['bank']['total'] + $totals['card']['total'] + $cashToUse;
+        // Use net amounts (gross - refunds) for pool calculation
+        $netBank = $totals['bank']['total'] - ($totals['refunds']['bank'] ?? 0);
+        $netCard = $totals['card']['total'] - ($totals['refunds']['card'] ?? 0);
+        $netCash = $totals['cash']['total'] - ($totals['refunds']['cash'] ?? 0);
+
+        $cashToUse = $netCash * ($this->cashPercent / 100);
+        $poolTotal = $netBank + $netCard + $cashToUse;
 
         $exemptPercent = 100 - $this->bankTaxablePercent;
 
         // Calculate exempt and taxable separately for Bank+Card and Cash
-        $bankCardTotal = $totals['bank']['total'] + $totals['card']['total'];
+        $bankCardTotal = $netBank + $netCard;
         $bankCardExempt = $bankCardTotal * ($exemptPercent / 100);
         $bankCardTaxable = $bankCardTotal * ($this->bankTaxablePercent / 100);
         
@@ -480,6 +530,39 @@ class InvoiceGenerationService
             ->groupBy('patient_id', 'payment_mode_id')
             ->get();
 
+        // Query patient-level refunds
+        $patientRefunds = DB::table('package_advances')
+            ->select(
+                'patient_id',
+                'payment_mode_id',
+                DB::raw('SUM(cash_amount) as total_amount')
+            )
+            ->where('cash_flow', 'out')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereIn('location_id', $this->locationIds)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+            ->groupBy('patient_id', 'payment_mode_id')
+            ->get();
+
+        // Build refund map: patient_id => [bank => x, card => y, cash => z]
+        $refundMap = [];
+        foreach ($patientRefunds as $refund) {
+            $pid = $refund->patient_id;
+            if (!isset($refundMap[$pid])) {
+                $refundMap[$pid] = ['bank' => 0, 'card' => 0, 'cash' => 0];
+            }
+            if ($refund->payment_mode_id == self::PAYMENT_MODE_BANK) {
+                $refundMap[$pid]['bank'] = (float) $refund->total_amount;
+            } elseif ($refund->payment_mode_id == self::PAYMENT_MODE_CARD) {
+                $refundMap[$pid]['card'] = (float) $refund->total_amount;
+            } elseif ($refund->payment_mode_id == self::PAYMENT_MODE_CASH) {
+                $refundMap[$pid]['cash'] = (float) $refund->total_amount;
+            }
+        }
+
         // Organize by patient
         $patients = [];
         foreach ($patientPayments as $payment) {
@@ -503,7 +586,17 @@ class InvoiceGenerationService
             }
         }
 
-        // Calculate pool share for each patient
+        // Subtract patient-level refunds to get net amounts
+        foreach ($patients as $patientId => &$data) {
+            if (isset($refundMap[$patientId])) {
+                $data['bank_paid'] = max(0, $data['bank_paid'] - $refundMap[$patientId]['bank']);
+                $data['card_paid'] = max(0, $data['card_paid'] - $refundMap[$patientId]['card']);
+                $data['cash_paid'] = max(0, $data['cash_paid'] - $refundMap[$patientId]['cash']);
+            }
+        }
+        unset($data);
+
+        // Calculate pool share for each patient (now using net amounts)
         foreach ($patients as $patientId => &$data) {
             $cashUsed = $data['cash_paid'] * ($this->cashPercent / 100);
             $poolShare = $data['bank_paid'] + $data['card_paid'] + $cashUsed;
@@ -512,6 +605,7 @@ class InvoiceGenerationService
             $data['pool_share'] = $poolShare;
             $data['pool_percent'] = $pool['total'] > 0 ? ($poolShare / $pool['total']) * 100 : 0;
         }
+        unset($data);
 
         // Sort by pool_share descending
         uasort($patients, function ($a, $b) {
