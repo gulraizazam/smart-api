@@ -62,12 +62,11 @@ class InvoiceGenerationService
         // Step 1b: Calculate daily revenue and filter working days to revenue-active days only
         $this->calculateDailyRevenue();
 
-        // Step 1c: Calculate max capacity (for display only, no cap enforced)
+        // Step 1c: Calculate max capacity based on revenue-active days
         $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
+        // Use smallest denomination for max capacity calculation
         $smallestDenom = min($this->consultationAmounts);
-        $displayMaxExemptPerPatient = $maxInvoicesPerPatient * $smallestDenom;
-        // No cap on exempt per patient — unlimited by design
-        $this->maxExemptPerPatient = PHP_INT_MAX;
+        $this->maxExemptPerPatient = $maxInvoicesPerPatient * $smallestDenom;
 
         // Step 2: Get payment totals
         $totals = $this->getPaymentTotals();
@@ -116,7 +115,7 @@ class InvoiceGenerationService
                 'working_days' => count($this->workingDays),
                 'invoice_days_per_patient' => floor(count($this->workingDays) / 2), // with 1-day gap
                 'max_invoices_per_patient' => $maxInvoicesPerPatient,
-                'max_exempt_per_patient' => $displayMaxExemptPerPatient,
+                'max_exempt_per_patient' => $this->maxExemptPerPatient,
             ],
             'totals' => $totals,
             'pool' => array_merge($pool, ['actual_taxable_invoiced' => $summary['total_taxable_invoiced']]),
