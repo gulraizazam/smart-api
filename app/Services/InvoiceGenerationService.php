@@ -22,6 +22,7 @@ class InvoiceGenerationService
     protected $maxExemptPerPatient;
     protected $workingDays = [];
     protected $usedInvoiceNumbers = [];
+    protected $dailyRevenue = [];
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -36,8 +37,13 @@ class InvoiceGenerationService
         $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
         $this->consultationAmount = $params['consultation_amount']; // e.g., 1500
         $this->usedInvoiceNumbers = [];
-        // Step 1: Calculate working days and max capacity
+        // Step 1: Calculate working days
         $this->calculateWorkingDays();
+
+        // Step 1b: Calculate daily revenue and filter working days to revenue-active days only
+        $this->calculateDailyRevenue();
+
+        // Step 1c: Calculate max capacity based on revenue-active days
         $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
         $this->maxExemptPerPatient = $maxInvoicesPerPatient * $this->consultationAmount;
 
@@ -107,6 +113,70 @@ class InvoiceGenerationService
                 $this->workingDays[] = $current->copy();
             }
             $current->addDay();
+        }
+    }
+
+    /**
+     * Calculate daily revenue (bank + card + cash%) and filter working days to revenue-active days only.
+     * Also stores revenue weight per day for proportional invoice distribution.
+     */
+    protected function calculateDailyRevenue(): void
+    {
+        // Query daily revenue by payment mode from plan_invoices
+        $dailyPayments = DB::table('plan_invoices')
+            ->select(
+                DB::raw('DATE(created_at) as payment_date'),
+                'payment_mode_id',
+                DB::raw('SUM(total_price) as daily_total')
+            )
+            ->where('total_price', '>', 0)
+            ->whereIn('location_id', $this->locationIds)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+            ->groupBy(DB::raw('DATE(created_at)'), 'payment_mode_id')
+            ->get();
+
+        // Build daily revenue map: date => pool amount (bank + card + cash%)
+        $dailyMap = [];
+        foreach ($dailyPayments as $row) {
+            $date = $row->payment_date;
+            if (!isset($dailyMap[$date])) {
+                $dailyMap[$date] = ['bank' => 0, 'card' => 0, 'cash' => 0];
+            }
+            if ($row->payment_mode_id == self::PAYMENT_MODE_BANK) {
+                $dailyMap[$date]['bank'] = (float) $row->daily_total;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CARD) {
+                $dailyMap[$date]['card'] = (float) $row->daily_total;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CASH) {
+                $dailyMap[$date]['cash'] = (float) $row->daily_total;
+            }
+        }
+
+        // Calculate pool revenue per day and total
+        $this->dailyRevenue = [];
+        $totalDailyPool = 0;
+        foreach ($dailyMap as $date => $amounts) {
+            $dayPool = $amounts['bank'] + $amounts['card'] + ($amounts['cash'] * ($this->cashPercent / 100));
+            if ($dayPool > 0) {
+                $this->dailyRevenue[$date] = $dayPool;
+                $totalDailyPool += $dayPool;
+            }
+        }
+
+        // Filter workingDays to only include days with revenue
+        $revenueDates = array_keys($this->dailyRevenue);
+        $this->workingDays = array_values(array_filter($this->workingDays, function ($day) use ($revenueDates) {
+            return in_array($day->format('Y-m-d'), $revenueDates);
+        }));
+
+        // Calculate weight (proportion) for each revenue day
+        if ($totalDailyPool > 0) {
+            foreach ($this->dailyRevenue as $date => $amount) {
+                $this->dailyRevenue[$date] = [
+                    'amount' => $amount,
+                    'weight' => $amount / $totalDailyPool,
+                ];
+            }
         }
     }
 
@@ -685,6 +755,7 @@ class InvoiceGenerationService
 
             // Generate invoice amounts
             $invoiceAmounts = [];
+            $remainingAmount = 0;
             
             // If taxable amount is less than 1000, create single invoice with full amount
             if ($taxableAmount < 1000) {
@@ -752,28 +823,20 @@ class InvoiceGenerationService
         return $invoices;
     }
     protected function generateUniqueInvoiceNumber(int $patientId, int $planId, string $month): string
-{
-    $maxAttempts = 100; // Prevent infinite loop
-    $attempts = 0;
-    
-    do {
-        $randomNum = rand(1, 999);
-        $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
-        $attempts++;
-        
-        if ($attempts >= $maxAttempts) {
-            // Fallback: use timestamp-based unique number
-            $randomNum = (int) (microtime(true) * 1000) % 999 + 1;
-            $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
-            break;
+    {
+        // Build a prefix key for this patient-plan-month combo
+        $prefix = sprintf('%d-%d-%s', $patientId, $planId, $month);
+
+        // Sequential counter per prefix — no collisions, no retries
+        if (!isset($this->usedInvoiceNumbers[$prefix])) {
+            $this->usedInvoiceNumbers[$prefix] = 0;
         }
-    } while (in_array($invoiceNumber, $this->usedInvoiceNumbers));
-    
-    // Mark this number as used
-    $this->usedInvoiceNumbers[] = $invoiceNumber;
-    
-    return $invoiceNumber;
-}
+        $this->usedInvoiceNumbers[$prefix]++;
+
+        $invoiceNumber = sprintf('%s-%d', $prefix, $this->usedInvoiceNumbers[$prefix]);
+
+        return $invoiceNumber;
+    }
     /**
      * Convert number to alphabetic format (1=A, 2=B... 26=Z, 27=AA, 28=AB...)
      */
@@ -791,161 +854,179 @@ class InvoiceGenerationService
     }
 
     /**
-     * Get invoice dates for a patient with 1-day gap rule
+     * Get invoice dates for a patient using revenue-weighted distribution.
+     * Days with higher revenue get proportionally more invoices.
+     * Maintains 1-day minimum gap between invoice days for the same patient.
      */
     protected function getPatientInvoiceDates(int $numInvoices): array
     {
-        $dates = [];
-        $totalWorkingDays = count($this->workingDays);
-        
-        if ($numInvoices == 0 || $totalWorkingDays == 0) {
-            return $dates;
-        }
-
-        // Determine strategy based on invoice count
-        if ($numInvoices > 20) {
-            // High count: Aggressive - 3 per day, 1-day gap
-            $invoicesPerDay = 3;
-            $dayGap = 2; // Index increment (1-day gap)
-        } elseif ($numInvoices >= 10) {
-            // Medium count: Moderate - 2 per day, 2-3 day gap
-            $invoicesPerDay = 2;
-            $dayGap = 3; // Index increment (2-day gap)
-        } else {
-            // Low count: Conservative - spread across month
-            $invoicesPerDay = 1;
-            // Calculate spacing to spread across the month
-            $dayGap = max(2, floor($totalWorkingDays / $numInvoices));
-        }
-
-        $invoicesRemaining = $numInvoices;
-        $workingDayIndex = 0;
-
-        // First pass: distribute with calculated strategy
-        while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-            $invoicesOnThisDay = min($invoicesPerDay, $invoicesRemaining);
-            
-            $dates[] = [
-                'date' => $this->workingDays[$workingDayIndex],
-                'count' => $invoicesOnThisDay,
-            ];
-            
-            $invoicesRemaining -= $invoicesOnThisDay;
-            $workingDayIndex += $dayGap;
-        }
-
-        // Second pass: if still have invoices, fill in gaps with minimum spacing
-        if ($invoicesRemaining > 0) {
-            $workingDayIndex = 1; // Start from first skipped day
-            while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-                // Check if this day is already used
-                $dayAlreadyUsed = false;
-                foreach ($dates as $existingDate) {
-                    if ($existingDate['date']->format('Y-m-d') === $this->workingDays[$workingDayIndex]->format('Y-m-d')) {
-                        $dayAlreadyUsed = true;
-                        break;
-                    }
-                }
-                
-                if (!$dayAlreadyUsed) {
-                    $invoicesOnThisDay = min(3, $invoicesRemaining); // Don't exceed 3 per day
-                    
-                    $dates[] = [
-                        'date' => $this->workingDays[$workingDayIndex],
-                        'count' => $invoicesOnThisDay,
-                    ];
-                    
-                    $invoicesRemaining -= $invoicesOnThisDay;
-                }
-                
-                $workingDayIndex++;
-            }
-        }
-
-        // Sort dates chronologically
-        usort($dates, function ($a, $b) {
-            return $a['date'] <=> $b['date'];
-        });
-
-        return $dates;
+        return $this->getRevenueWeightedDates($numInvoices, 1);
     }
 
     /**
-     * Get invoice dates for taxable invoices with 2-day minimum gap
+     * Get invoice dates for taxable invoices using revenue-weighted distribution.
+     * Maintains 2-day minimum gap between invoice days for the same patient.
      */
     protected function getTaxableInvoiceDates(int $numInvoices): array
     {
+        return $this->getRevenueWeightedDates($numInvoices, 2);
+    }
+
+    /**
+     * Core revenue-weighted date distribution algorithm.
+     * Distributes $numInvoices across working days proportionally to daily revenue,
+     * while maintaining a minimum gap of $minGapDays between invoice days per patient.
+     *
+     * @param int $numInvoices Total invoices to distribute
+     * @param int $minGapDays Minimum gap in working days between invoice days (1 for exempt, 2 for taxable)
+     * @return array Array of ['date' => Carbon, 'count' => int]
+     */
+    protected function getRevenueWeightedDates(int $numInvoices, int $minGapDays): array
+    {
         $dates = [];
         $totalWorkingDays = count($this->workingDays);
-        
+
         if ($numInvoices == 0 || $totalWorkingDays == 0) {
             return $dates;
         }
 
-        // Determine strategy based on invoice count - with 2-day minimum gap
-        if ($numInvoices > 20) {
-            // High count: Aggressive - 3 per day, 2-day gap
-            $invoicesPerDay = 3;
-            $dayGap = 3; // Index increment (2-day gap)
-        } elseif ($numInvoices >= 10) {
-            // Medium count: Moderate - 2 per day, 3-4 day gap
-            $invoicesPerDay = 2;
-            $dayGap = 4; // Index increment (3-day gap)
-        } else {
-            // Low count: Conservative - spread across month
-            $invoicesPerDay = 1;
-            // Calculate spacing to spread across the month (minimum 3 for 2-day gap)
-            $dayGap = max(3, floor($totalWorkingDays / $numInvoices));
-        }
+        $maxPerDay = $this->consultationAmount >= 3000 ? 2 : 3;
 
-        $invoicesRemaining = $numInvoices;
-        $workingDayIndex = 0;
-
-        // First pass: distribute with calculated strategy
-        while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-            $invoicesOnThisDay = min($invoicesPerDay, $invoicesRemaining);
-            
-            $dates[] = [
-                'date' => $this->workingDays[$workingDayIndex],
-                'count' => $invoicesOnThisDay,
+        // Build weighted capacity per working day index
+        $dayCapacity = [];
+        $totalWeight = 0;
+        foreach ($this->workingDays as $i => $day) {
+            $dateStr = $day->format('Y-m-d');
+            $weight = 0;
+            if (isset($this->dailyRevenue[$dateStr])) {
+                $weight = $this->dailyRevenue[$dateStr]['weight'];
+            }
+            $dayCapacity[$i] = [
+                'date' => $day,
+                'weight' => $weight,
+                'allocated' => 0,
             ];
-            
-            $invoicesRemaining -= $invoicesOnThisDay;
-            $workingDayIndex += $dayGap;
+            $totalWeight += $weight;
         }
 
-        // Second pass: if still have invoices, fill in gaps with minimum 2-day spacing
+        // If no revenue weights available, fall back to equal distribution
+        if ($totalWeight == 0) {
+            foreach ($dayCapacity as $i => &$dc) {
+                $dc['weight'] = 1.0 / $totalWorkingDays;
+            }
+            unset($dc);
+        }
+
+        // Step 1: Calculate proportional allocation per day (floored)
+        $invoicesRemaining = $numInvoices;
+        foreach ($dayCapacity as $i => &$dc) {
+            $raw = $numInvoices * $dc['weight'];
+            // Round down to nearest multiple that respects maxPerDay
+            $dc['allocated'] = min($maxPerDay, (int) floor($raw));
+            $invoicesRemaining -= $dc['allocated'];
+        }
+        unset($dc);
+
+        // Step 2: Distribute remaining invoices to days with highest fractional remainder
         if ($invoicesRemaining > 0) {
-            $workingDayIndex = 2; // Start from 2 days after first (2-day gap)
-            while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-                // Check if this day is already used
-                $dayAlreadyUsed = false;
-                foreach ($dates as $existingDate) {
-                    if ($existingDate['date']->format('Y-m-d') === $this->workingDays[$workingDayIndex]->format('Y-m-d')) {
-                        $dayAlreadyUsed = true;
-                        break;
-                    }
+            // Calculate fractional remainders
+            $remainders = [];
+            foreach ($dayCapacity as $i => $dc) {
+                $raw = $numInvoices * $dc['weight'];
+                $fractional = $raw - $dc['allocated'];
+                if ($dc['allocated'] < $maxPerDay) {
+                    $remainders[$i] = $fractional;
                 }
-                
-                if (!$dayAlreadyUsed) {
-                    $invoicesOnThisDay = min(3, $invoicesRemaining); // Don't exceed 3 per day
-                    
-                    $dates[] = [
-                        'date' => $this->workingDays[$workingDayIndex],
-                        'count' => $invoicesOnThisDay,
-                    ];
-                    
-                    $invoicesRemaining -= $invoicesOnThisDay;
-                }
-                
-                $workingDayIndex++;
+            }
+            arsort($remainders);
+
+            foreach ($remainders as $i => $frac) {
+                if ($invoicesRemaining <= 0) break;
+                $canAdd = min($invoicesRemaining, $maxPerDay - $dayCapacity[$i]['allocated']);
+                $dayCapacity[$i]['allocated'] += $canAdd;
+                $invoicesRemaining -= $canAdd;
             }
         }
 
-        // Sort dates chronologically
-        usort($dates, function ($a, $b) {
-            return $a['date'] <=> $b['date'];
-        });
+        // Step 3: If still remaining (very high invoice count), fill any day up to maxPerDay
+        if ($invoicesRemaining > 0) {
+            foreach ($dayCapacity as $i => &$dc) {
+                if ($invoicesRemaining <= 0) break;
+                $canAdd = $maxPerDay - $dc['allocated'];
+                if ($canAdd > 0) {
+                    $add = min($invoicesRemaining, $canAdd);
+                    $dc['allocated'] += $add;
+                    $invoicesRemaining -= $add;
+                }
+            }
+            unset($dc);
+        }
+
+        // Step 4: Enforce minimum gap rule per patient
+        // Pick days with allocations, then thin out days that are too close
+        $selectedDays = [];
+        foreach ($dayCapacity as $i => $dc) {
+            if ($dc['allocated'] > 0) {
+                $selectedDays[$i] = $dc;
+            }
+        }
+
+        // Sort by index (chronological)
+        ksort($selectedDays);
+
+        // Enforce gap: if two selected days are within minGapDays, remove the one with lower weight
+        $finalDays = [];
+        $lastSelectedIndex = -999;
+        foreach ($selectedDays as $i => $dc) {
+            if (($i - $lastSelectedIndex) > $minGapDays) {
+                // Gap is satisfied
+                $finalDays[$i] = $dc;
+                $lastSelectedIndex = $i;
+            } else {
+                // Too close — redistribute these invoices to nearby valid days later
+                $invoicesRemaining += $dc['allocated'];
+            }
+        }
+
+        // Redistribute gap-displaced invoices to valid days
+        if ($invoicesRemaining > 0) {
+            foreach ($dayCapacity as $i => $dc) {
+                if ($invoicesRemaining <= 0) break;
+                if (isset($finalDays[$i])) continue; // Already selected
+
+                // Check gap against all selected days
+                $gapOk = true;
+                foreach (array_keys($finalDays) as $si) {
+                    if (abs($i - $si) <= $minGapDays) {
+                        $gapOk = false;
+                        break;
+                    }
+                }
+
+                if ($gapOk && $dc['weight'] > 0) {
+                    $add = min($invoicesRemaining, $maxPerDay);
+                    $finalDays[$i] = [
+                        'date' => $dc['date'],
+                        'weight' => $dc['weight'],
+                        'allocated' => $add,
+                    ];
+                    $invoicesRemaining -= $add;
+                    // Re-sort to maintain order for gap checks
+                    ksort($finalDays);
+                }
+            }
+        }
+
+        // Step 5: Build output array
+        ksort($finalDays);
+        foreach ($finalDays as $i => $dc) {
+            if ($dc['allocated'] > 0) {
+                $dates[] = [
+                    'date' => $dc['date'],
+                    'count' => $dc['allocated'],
+                ];
+            }
+        }
 
         return $dates;
     }
