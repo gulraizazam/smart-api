@@ -19,6 +19,8 @@ class InvoiceGenerationService
     protected $bankTaxablePercent;
     protected $cashPercent;
     protected $consultationAmount;
+    protected $consultationAmounts = [];
+    protected $isMixedMode = false;
     protected $maxExemptPerPatient;
     protected $unplacedExemptPerPatient = [];
     protected $workingDays = [];
@@ -36,8 +38,18 @@ class InvoiceGenerationService
         $this->locationIds = $params['location_ids'];
         $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
         $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
-        $this->consultationAmount = $params['consultation_amount']; // e.g., 1500
+        $this->consultationAmount = $params['consultation_amount']; // e.g., 1500 or 2000
         $this->usedInvoiceNumbers = [];
+
+        // Set up denomination mode
+        if ($this->consultationAmount == 2000) {
+            $this->isMixedMode = true;
+            $this->consultationAmounts = [3000, 2500, 2000]; // largest first for greedy fitting
+        } else {
+            $this->isMixedMode = false;
+            $this->consultationAmounts = [$this->consultationAmount]; // fixed 1500
+        }
+
         // Step 1: Calculate working days
         $this->calculateWorkingDays();
 
@@ -46,7 +58,9 @@ class InvoiceGenerationService
 
         // Step 1c: Calculate max capacity based on revenue-active days
         $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
-        $this->maxExemptPerPatient = $maxInvoicesPerPatient * $this->consultationAmount;
+        // Use smallest denomination for max capacity calculation
+        $smallestDenom = min($this->consultationAmounts);
+        $this->maxExemptPerPatient = $maxInvoicesPerPatient * $smallestDenom;
 
         // Step 2: Get payment totals
         $totals = $this->getPaymentTotals();
@@ -194,10 +208,8 @@ class InvoiceGenerationService
         // With 1-day gap, usable days = floor(working_days / 2)
         $usableInvoiceDays = floor($totalWorkingDays / 2);
         
-        // Max invoices per day depends on consultation amount
-        // 1500 -> 3 per day (e.g. 13 days * 3 = 39)
-        // 3000 -> 2 per day (e.g. 13 days * 2 = 26)
-        $invoicesPerDay = $this->consultationAmount >= 3000 ? 2 : 3;
+        // Max invoices per day: 1500 -> 3/day, mixed (2000-3000) -> 2/day
+        $invoicesPerDay = $this->isMixedMode ? 2 : 3;
         
         return $usableInvoiceDays * $invoicesPerDay;
     }
@@ -510,9 +522,9 @@ class InvoiceGenerationService
         // Step 1: Allocate capped patients (give them max exempt, rounded to multiples of consultation_amount)
         $cappedExempt = 0;
         foreach ($categorized['capped'] as $patient) {
-            // Round down to multiples of consultation_amount
-            $numInvoices = floor($this->maxExemptPerPatient / $this->consultationAmount);
-            $exemptAmount = $numInvoices * $this->consultationAmount;
+            // Use greedy fitting to maximize exempt amount up to cap
+            $fit = $this->fitDenominations(min($this->maxExemptPerPatient, $patient['pool_share']));
+            $exemptAmount = $fit['total'];
             $taxableAmount = $patient['pool_share'] - $exemptAmount;
             $exemptPercent = ($exemptAmount / $patient['pool_share']) * 100;
 
@@ -530,15 +542,17 @@ class InvoiceGenerationService
         // Step 2: Allocate small patients (give them 100% exempt intent)
         $smallExempt = 0;
         foreach ($categorized['small'] as $patient) {
-            // Calculate how many invoices can be created (each = consultation_amount)
-            $numInvoices = floor($patient['pool_share'] / $this->consultationAmount);
-            $exemptAmount = $numInvoices * $this->consultationAmount;
+            // Use greedy fitting on full pool_share
+            $fit = $this->fitDenominations($patient['pool_share']);
+            $exemptAmount = $fit['total'];
             $taxableAmount = $patient['pool_share'] - $exemptAmount;
 
-            // If taxable remainder is less than 1000, move last exempt invoice to taxable
-            if ($taxableAmount > 0 && $taxableAmount < 1000 && $numInvoices > 0) {
-                $exemptAmount -= $this->consultationAmount;
-                $taxableAmount += $this->consultationAmount;
+            // If taxable remainder is less than 1000 and there are exempt invoices,
+            // move the smallest exempt invoice to taxable
+            $smallestDenom = min($this->consultationAmounts);
+            if ($taxableAmount > 0 && $taxableAmount < 1000 && $exemptAmount >= $smallestDenom) {
+                $exemptAmount -= $smallestDenom;
+                $taxableAmount += $smallestDenom;
             }
 
             $distribution[] = [
@@ -564,9 +578,9 @@ class InvoiceGenerationService
         foreach ($categorized['medium'] as $patient) {
             $rawExemptAmount = $patient['pool_share'] * ($mediumPercent / 100);
 
-            // Round down to multiples of consultation_amount
-            $numInvoices = floor($rawExemptAmount / $this->consultationAmount);
-            $exemptAmount = $numInvoices * $this->consultationAmount;
+            // Use greedy fitting on the raw exempt target
+            $fit = $this->fitDenominations($rawExemptAmount);
+            $exemptAmount = $fit['total'];
             $taxableAmount = $patient['pool_share'] - $exemptAmount;
 
             $distribution[] = [
@@ -585,9 +599,10 @@ class InvoiceGenerationService
             return $b['pool_share'] <=> $a['pool_share'];
         });
 
-        // Patients with exempt < consultation_amount get 0 exempt, full pool_share as taxable
+        // Patients with exempt < smallest denomination get 0 exempt, full pool_share as taxable
+        $smallestDenom = min($this->consultationAmounts);
         foreach ($distribution as &$patient) {
-            if ($patient['exempt_amount'] < $this->consultationAmount) {
+            if ($patient['exempt_amount'] < $smallestDenom) {
                 $patient['exempt_amount'] = 0;
                 $patient['exempt_percent'] = 0;
                 $patient['taxable_amount'] = $patient['pool_share'];
@@ -600,12 +615,13 @@ class InvoiceGenerationService
         $totalExempt = array_sum(array_column($distribution, 'exempt_amount'));
         $diff = $totalExempt - $targetExempt;
 
+        $adjustDenom = min($this->consultationAmounts);
         if ($diff > 0) {
             // Overshot: remove exempt invoices one at a time from patients
             // Priority: medium (smallest first) -> small (smallest first) -> capped (smallest first)
             $adjustIndices = [];
             foreach ($distribution as $i => $p) {
-                if ($p['exempt_amount'] >= $this->consultationAmount) {
+                if ($p['exempt_amount'] >= $adjustDenom) {
                     $adjustIndices[] = $i;
                 }
             }
@@ -619,11 +635,11 @@ class InvoiceGenerationService
             });
 
             foreach ($adjustIndices as $i) {
-                if ($diff < $this->consultationAmount) break;
-                while ($distribution[$i]['exempt_amount'] >= $this->consultationAmount && $diff >= $this->consultationAmount) {
-                    $distribution[$i]['exempt_amount'] -= $this->consultationAmount;
-                    $distribution[$i]['taxable_amount'] += $this->consultationAmount;
-                    $diff -= $this->consultationAmount;
+                if ($diff < $adjustDenom) break;
+                while ($distribution[$i]['exempt_amount'] >= $adjustDenom && $diff >= $adjustDenom) {
+                    $distribution[$i]['exempt_amount'] -= $adjustDenom;
+                    $distribution[$i]['taxable_amount'] += $adjustDenom;
+                    $diff -= $adjustDenom;
                 }
             }
         } elseif ($diff < 0) {
@@ -640,15 +656,15 @@ class InvoiceGenerationService
             });
 
             foreach ($mediumIndices as $i) {
-                if ($deficit < $this->consultationAmount) break;
+                if ($deficit < $adjustDenom) break;
                 $maxExempt = min(
-                    floor($distribution[$i]['pool_share'] / $this->consultationAmount) * $this->consultationAmount,
+                    $this->fitDenominations($distribution[$i]['pool_share'])['total'],
                     $this->maxExemptPerPatient
                 );
-                while ($distribution[$i]['exempt_amount'] < $maxExempt && $deficit >= $this->consultationAmount) {
-                    $distribution[$i]['exempt_amount'] += $this->consultationAmount;
-                    $distribution[$i]['taxable_amount'] -= $this->consultationAmount;
-                    $deficit -= $this->consultationAmount;
+                while ($distribution[$i]['exempt_amount'] < $maxExempt && $deficit >= $adjustDenom) {
+                    $distribution[$i]['exempt_amount'] += $adjustDenom;
+                    $distribution[$i]['taxable_amount'] -= $adjustDenom;
+                    $deficit -= $adjustDenom;
                 }
             }
         }
@@ -677,15 +693,21 @@ class InvoiceGenerationService
         foreach ($distribution as $patient) {
             $exemptAmount = $patient['exempt_amount'];
             $patientId = $patient['patient_id'];
-            
-            // Calculate number of invoices (each invoice = consultation_amount)
-            $numInvoices = floor($exemptAmount / $this->consultationAmount);
+
+            if ($exemptAmount < min($this->consultationAmounts)) {
+                continue;
+            }
+
+            // Use greedy fitting to get the list of invoice amounts
+            $fit = $this->fitDenominations($exemptAmount);
+            $invoiceAmounts = $fit['amounts'];
+            $numInvoices = count($invoiceAmounts);
 
             if ($numInvoices == 0) {
                 continue;
             }
 
-            // Get patient's plan_id from package_advances table
+            // Get patient's plan_id from package_advances table (prefer non-null package_id)
             $planId = DB::table('package_advances')
                 ->where('patient_id', $patientId)
                 ->where('cash_flow', 'in')
@@ -693,9 +715,10 @@ class InvoiceGenerationService
                 ->whereIn('location_id', $this->locationIds)
                 ->whereNull('deleted_at')
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+                ->whereNotNull('package_id')
                 ->value('package_id');
 
-            // If no plan_id found, use 0 as default
+            // If no non-null plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
             // Get available dates for this patient (with 1-day gap)
@@ -714,7 +737,7 @@ class InvoiceGenerationService
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
                         'invoice_date' => $date->format('Y-m-d'),
-                        'amount' => $this->consultationAmount,
+                        'amount' => $invoiceAmounts[$invoiceIndex],
                         'type' => $type,
                     ];
                     
@@ -722,10 +745,13 @@ class InvoiceGenerationService
                 }
             }
 
-            // Track unplaced exempt invoices — these will be added to taxable
-            $unplacedCount = $numInvoices - $invoiceIndex;
-            if ($unplacedCount > 0) {
-                $this->unplacedExemptPerPatient[$patientId] = $unplacedCount * $this->consultationAmount;
+            // Track unplaced exempt invoices — their amount will be added to taxable
+            if ($invoiceIndex < $numInvoices) {
+                $unplacedAmount = 0;
+                for ($u = $invoiceIndex; $u < $numInvoices; $u++) {
+                    $unplacedAmount += $invoiceAmounts[$u];
+                }
+                $this->unplacedExemptPerPatient[$patientId] = $unplacedAmount;
             }
         }
 
@@ -763,7 +789,7 @@ class InvoiceGenerationService
                 continue;
             }
 
-            // Get patient's plan_id from package_advances table
+            // Get patient's plan_id from package_advances table (prefer non-null package_id)
             $planId = DB::table('package_advances')
                 ->where('patient_id', $patientId)
                 ->where('cash_flow', 'in')
@@ -771,9 +797,10 @@ class InvoiceGenerationService
                 ->whereIn('location_id', $this->locationIds)
                 ->whereNull('deleted_at')
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+                ->whereNotNull('package_id')
                 ->value('package_id');
 
-            // If no plan_id found, use 0 as default
+            // If no non-null plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
             // Generate invoice amounts
@@ -830,6 +857,17 @@ class InvoiceGenerationService
                     ];
                     $invoiceIndex++;
                 }
+            }
+
+            // Safety net: if some taxable invoices couldn't be placed, merge into last placed invoice
+            if ($invoiceIndex < count($invoiceAmounts) && $invoiceIndex > 0) {
+                $unplacedSum = 0;
+                for ($u = $invoiceIndex; $u < count($invoiceAmounts); $u++) {
+                    $unplacedSum += $invoiceAmounts[$u];
+                }
+                // Add to the last placed invoice's amount
+                $lastIdx = count($invoices) - 1;
+                $invoices[$lastIdx]['amount'] += $unplacedSum;
             }
         }
 
@@ -909,7 +947,7 @@ class InvoiceGenerationService
             return $dates;
         }
 
-        $maxPerDay = $this->consultationAmount >= 3000 ? 2 : 3;
+        $maxPerDay = $this->isMixedMode ? 2 : 3;
 
         // Build weighted capacity per working day index
         $dayCapacity = [];
