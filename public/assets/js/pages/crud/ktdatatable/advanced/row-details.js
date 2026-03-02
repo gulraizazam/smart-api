@@ -94,7 +94,9 @@ var KTDatatable = function() {
 		});
 
         datatable.on('datatable-on-ajax-fail',function (event,error){
-            toastr.error(error.responseJSON.message);
+            if (error && error.responseJSON && error.responseJSON.message) {
+                toastr.error(error.responseJSON.message);
+            }
         });
 
 		$('#delete-table-rows').on('click', function() {
@@ -206,7 +208,9 @@ var KTPatientDatatable = function() {
         });
 
         patientDatatable[table_class].on('datatable-on-ajax-fail',function (event,error){
-            toastr.error(error.responseJSON.message);
+            if (error && error.responseJSON && error.responseJSON.message) {
+                toastr.error(error.responseJSON.message);
+            }
         });
 
         $('#delete-table-rows').on('click', function() {
