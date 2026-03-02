@@ -39,6 +39,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // Parse date range
@@ -51,6 +52,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => $validated['bank_taxable'],
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
+            'tax_percent' => $validated['tax_percent'] ?? 13,
         ];
 
         try {
@@ -82,6 +84,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // Parse date range
@@ -94,6 +97,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => $validated['bank_taxable'],
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
+            'tax_percent' => $validated['tax_percent'] ?? 13,
         ];
 
         try {
@@ -159,6 +163,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => 'required|numeric|min:0|max:100',
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         // Parse date range
@@ -171,6 +176,7 @@ class InvoiceGenerationController extends Controller
             'bank_taxable' => $validated['bank_taxable'],
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
+            'tax_percent' => $validated['tax_percent'] ?? 13,
         ];
 
         // Increase limits for large invoice sets
@@ -241,7 +247,7 @@ class InvoiceGenerationController extends Controller
             foreach ($allChunks as $chunk) {
                 foreach ($chunk as $invoice) {
                     $type = $invoice['_type'];
-                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, $type, $dates['to']);
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, $type, $dates['to'], $params['tax_percent']);
                     $zip->addFile(fileName: $invoice['_pdf_name'], data: $pdfContent);
                     unset($pdfContent);
                 }
@@ -267,9 +273,10 @@ class InvoiceGenerationController extends Controller
      * @param array $patientNames Pre-fetched patient names keyed by ID
      * @param string $type 'exempt' or 'taxable'
      * @param string $dateTo End date of the report range (Y-m-d)
+     * @param float $userTaxPercent
      * @return string PDF content
      */
-    protected function generateInvoicePdf(array $invoice, $location, array $patientNames, string $type, string $dateTo): string
+    protected function generateInvoicePdf(array $invoice, $location, array $patientNames, string $type, string $dateTo, float $userTaxPercent = 13): string
     {
         $patientName = $patientNames[$invoice['patient_id']] ?? 'Patient C-' . $invoice['patient_id'];
 
@@ -282,7 +289,7 @@ class InvoiceGenerationController extends Controller
         } else {
             $serviceLabel = 'Aesthetic Procedure';
             $serviceName = 'Aesthetic Procedure';
-            $taxPercent = ($dateTo <= '2024-12-31') ? 13 : ($location->tax_percentage ?? 15);
+            $taxPercent = $userTaxPercent;
             $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
             $totalAmount = $invoice['amount'] + $taxAmount;
         }
