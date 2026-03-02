@@ -19860,7 +19860,8 @@ $.fn.timepicker.defaults = $.extend(true, {}, $.fn.timepicker.defaults, {
                 var currentMonth = calendar[1][1].month();
                 var currentYear = calendar[1][1].year();
                 var maxYear = (maxDate && maxDate.year()) || (this.maxYear);
-                var minYear = (minDate && minDate.year()) || (this.minYear);
+                var dropdownMinDate = this.minDate || minDate;
+                var minYear = (dropdownMinDate && dropdownMinDate.year()) || (this.minYear);
                 var inMinYear = currentYear == minYear;
                 var inMaxYear = currentYear == maxYear;
 
