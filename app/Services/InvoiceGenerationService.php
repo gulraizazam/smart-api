@@ -162,23 +162,81 @@ class InvoiceGenerationService
             }
         }
 
+        // Calculate refunds from package_advances in the same date range and locations
+        $refundResults = DB::table('package_advances')
+            ->select(
+                'payment_mode_id',
+                DB::raw('SUM(cash_amount) as total_amount'),
+                DB::raw('COUNT(*) as record_count')
+            )
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('cash_amount', '>', 0)
+            ->whereIn('location_id', $this->locationIds)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+            ->groupBy('payment_mode_id')
+            ->get();
+
+        $refundBank = 0;
+        $refundCard = 0;
+        $refundCash = 0;
+        $refundBankCount = 0;
+        $refundCardCount = 0;
+        $refundCashCount = 0;
+
+        foreach ($refundResults as $row) {
+            if ($row->payment_mode_id == self::PAYMENT_MODE_BANK) {
+                $refundBank = (float) $row->total_amount;
+                $refundBankCount = (int) $row->record_count;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CARD) {
+                $refundCard = (float) $row->total_amount;
+                $refundCardCount = (int) $row->record_count;
+            } elseif ($row->payment_mode_id == self::PAYMENT_MODE_CASH) {
+                $refundCash = (float) $row->total_amount;
+                $refundCashCount = (int) $row->record_count;
+            }
+        }
+
+        $totalRefunds = $refundBank + $refundCard + $refundCash;
+
+        // Net totals after subtracting refunds
+        $netBank = $bankTotal - $refundBank;
+        $netCard = $cardTotal - $refundCard;
+        $netCash = $cashTotal - $refundCash;
+
         return [
             'bank' => [
-                'total' => $bankTotal,
+                'total' => $netBank,
                 'count' => $bankCount,
             ],
             'card' => [
-                'total' => $cardTotal,
+                'total' => $netCard,
                 'count' => $cardCount,
             ],
             'cash' => [
-                'total' => $cashTotal,
+                'total' => $netCash,
                 'count' => $cashCount,
                 'percent_used' => $this->cashPercent,
-                'amount_used' => $cashTotal * ($this->cashPercent / 100),
+                'amount_used' => $netCash * ($this->cashPercent / 100),
             ],
-            'bank_plus_card' => $bankTotal + $cardTotal,
-            'grand_total' => $bankTotal + $cardTotal + $cashTotal,
+            'refunds' => [
+                'bank' => $refundBank,
+                'card' => $refundCard,
+                'cash' => $refundCash,
+                'total' => $totalRefunds,
+                'bank_count' => $refundBankCount,
+                'card_count' => $refundCardCount,
+                'cash_count' => $refundCashCount,
+            ],
+            'gross' => [
+                'bank' => $bankTotal,
+                'card' => $cardTotal,
+                'cash' => $cashTotal,
+                'total' => $bankTotal + $cardTotal + $cashTotal,
+            ],
+            'bank_plus_card' => $netBank + $netCard,
+            'grand_total' => $netBank + $netCard + $netCash,
         ];
     }
 

@@ -357,11 +357,15 @@
             // Totals
             html += '<div class="col-md-6"><div class="summary-card">';
             html += '<h5><i class="fa fa-money-bill"></i> Payment Totals</h5>';
-            html += '<div class="summary-item"><span>Bank Total:</span><span>' + formatNumber(data.totals.bank.total) + ' (' + data.totals.bank.count + ' records)</span></div>';
-            html += '<div class="summary-item"><span>Card Total:</span><span>' + formatNumber(data.totals.card.total) + ' (' + data.totals.card.count + ' records)</span></div>';
-            html += '<div class="summary-item"><span>Cash Total:</span><span>' + formatNumber(data.totals.cash.total) + ' (' + data.totals.cash.count + ' records)</span></div>';
+            html += '<div class="summary-item"><span>Bank Total:</span><span>' + formatNumber(data.totals.gross.bank) + ' (' + data.totals.bank.count + ' records)</span></div>';
+            html += '<div class="summary-item"><span>Card Total:</span><span>' + formatNumber(data.totals.gross.card) + ' (' + data.totals.card.count + ' records)</span></div>';
+            html += '<div class="summary-item"><span>Cash Total:</span><span>' + formatNumber(data.totals.gross.cash) + ' (' + data.totals.cash.count + ' records)</span></div>';
+            html += '<div class="summary-item" style="background:#fff3f3;"><span><strong>Refunds:</strong></span><span style="color:#c53030;">-' + formatNumber(data.totals.refunds.total) + ' (' + (data.totals.refunds.bank_count + data.totals.refunds.card_count + data.totals.refunds.cash_count) + ' records)</span></div>';
+            html += '<div class="summary-item"><span>Net Bank:</span><span>' + formatNumber(data.totals.bank.total) + '</span></div>';
+            html += '<div class="summary-item"><span>Net Card:</span><span>' + formatNumber(data.totals.card.total) + '</span></div>';
+            html += '<div class="summary-item"><span>Net Cash:</span><span>' + formatNumber(data.totals.cash.total) + '</span></div>';
             html += '<div class="summary-item"><span>Cash Used (' + data.totals.cash.percent_used + '%):</span><span>' + formatNumber(data.totals.cash.amount_used) + '</span></div>';
-            html += '<div class="summary-item total"><span>Grand Total:</span><span>' + formatNumber(data.totals.grand_total) + '</span></div>';
+            html += '<div class="summary-item total"><span>Grand Total (Net):</span><span>' + formatNumber(data.totals.grand_total) + '</span></div>';
             html += '</div></div>';
 
             // Pool
