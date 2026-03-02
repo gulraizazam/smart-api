@@ -2166,11 +2166,7 @@ class PlanService
                 ->toArray();
         }
 
-        if (empty($names)) {
-            return;
-        }
-
-        $planName = implode(', ', $names);
+        $planName = !empty($names) ? implode(', ', $names) : '-';
         
         if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
             $planName .= '...';
