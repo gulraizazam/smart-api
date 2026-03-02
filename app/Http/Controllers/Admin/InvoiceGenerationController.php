@@ -257,14 +257,14 @@ class InvoiceGenerationController extends Controller
         $patientName = $patientNames[$invoice['patient_id']] ?? 'Patient C-' . $invoice['patient_id'];
 
         if ($type === 'exempt') {
-            $serviceLabel = 'Consultancy';
-            $serviceName = 'Consultancy';
+            $serviceLabel = 'Medical Consultation';
+            $serviceName = 'Medical Consultation';
             $taxPercent = 0;
             $taxAmount = 0;
             $totalAmount = $invoice['amount'];
         } else {
-            $serviceLabel = 'Treatment';
-            $serviceName = 'Treatment';
+            $serviceLabel = 'Aesthetic Procedure';
+            $serviceName = 'Aesthetic Procedure';
             $taxPercent = ($dateTo <= '2024-12-31') ? 13 : ($location->tax_percentage ?? 15);
             $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
             $totalAmount = $invoice['amount'] + $taxAmount;
