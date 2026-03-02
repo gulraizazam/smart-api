@@ -215,6 +215,40 @@ class InvoiceGenerationService
     }
 
     /**
+     * Greedy coin-fitting: find the best combination of denominations to reach target amount.
+     * Returns array of individual invoice amounts.
+     * If remainder >= 500, adds it as a separate remainder invoice.
+     */
+    protected function fitDenominations(float $targetAmount): array
+    {
+        $amounts = [];
+        $remaining = $targetAmount;
+        $denoms = $this->consultationAmounts; // already sorted largest first
+
+        while ($remaining >= min($denoms)) {
+            foreach ($denoms as $denom) {
+                if ($remaining >= $denom) {
+                    $amounts[] = $denom;
+                    $remaining -= $denom;
+                    break; // restart from largest
+                }
+            }
+        }
+
+        // If remainder >= 500, add as a separate remainder invoice
+        if ($remaining >= 500) {
+            $amounts[] = round($remaining, 2);
+            $remaining = 0;
+        }
+
+        return [
+            'amounts' => $amounts,
+            'total' => array_sum($amounts),
+            'remainder' => round($remaining, 2),
+        ];
+    }
+
+    /**
      * Get total payments by payment method
      */
     protected function getPaymentTotals(): array
