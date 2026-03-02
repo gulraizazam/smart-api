@@ -206,25 +206,31 @@ class InvoiceGenerationController extends Controller
 
             $chunkSize = 50;
 
-            // Process exempt invoices in chunks
-            $exemptChunks = array_chunk($result['exempt_invoices'], $chunkSize);
-            foreach ($exemptChunks as $chunk) {
-                foreach ($chunk as $invoice) {
-                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'exempt', $dates['to']);
-                    $pdfName = 'exempt/INV-' . $invoice['invoice_number'] . '.pdf';
-                    $zip->addFile(fileName: $pdfName, data: $pdfContent);
-                    unset($pdfContent);
-                }
-                // Force garbage collection after each chunk
-                gc_collect_cycles();
+            // Merge all invoices into one list with their type
+            $allInvoices = [];
+            foreach ($result['exempt_invoices'] as $inv) {
+                $inv['_type'] = 'exempt';
+                $allInvoices[] = $inv;
+            }
+            foreach ($result['taxable_invoices'] as $inv) {
+                $inv['_type'] = 'taxable';
+                $allInvoices[] = $inv;
             }
 
-            // Process taxable invoices in chunks
-            $taxableChunks = array_chunk($result['taxable_invoices'], $chunkSize);
-            foreach ($taxableChunks as $chunk) {
+            // Sort by date ascending, then by type (exempt first)
+            usort($allInvoices, function ($a, $b) {
+                $dateCmp = strcmp($a['invoice_date'], $b['invoice_date']);
+                if ($dateCmp !== 0) return $dateCmp;
+                return strcmp($a['_type'], $b['_type']);
+            });
+
+            // Process all invoices in chunks (single folder, no subfolders)
+            $allChunks = array_chunk($allInvoices, $chunkSize);
+            foreach ($allChunks as $chunk) {
                 foreach ($chunk as $invoice) {
-                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'taxable', $dates['to']);
-                    $pdfName = 'taxable/INV-' . $invoice['invoice_number'] . '.pdf';
+                    $type = $invoice['_type'];
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, $type, $dates['to']);
+                    $pdfName = 'INV-' . $invoice['invoice_number'] . '.pdf';
                     $zip->addFile(fileName: $pdfName, data: $pdfContent);
                     unset($pdfContent);
                 }
