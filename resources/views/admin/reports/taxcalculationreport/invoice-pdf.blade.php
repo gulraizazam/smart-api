@@ -124,5 +124,7 @@
             <td>{{ number_format($total_amount) }}</td>
         </tr>
     </table>
+
+    <p style="text-align:center; font-size:12px; margin-top:20px; font-style:italic;">Thank you for your business with Cutera Aesthetics.</p>
 </body>
 </html>
