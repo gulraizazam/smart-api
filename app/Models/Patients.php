@@ -74,7 +74,7 @@ class Patients extends BaseModal
      */
     public function membership(): HasOne
     {
-        return $this->hasOne(Membership::class, 'patient_id');
+        return $this->hasOne(Membership::class, 'patient_id')->orderByDesc('active')->orderByDesc('id');
     }
 
     /**

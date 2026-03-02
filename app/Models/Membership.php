@@ -16,6 +16,11 @@ class Membership extends Model
     protected $fillable = ['code', 'membership_type_id', 'start_date', 'end_date', 'patient_id', 'created_by', 'updated_by', 'deleted_by', 'active', 'assigned_at', 'is_referral', 'parent_membership_code'];
     protected $table = 'memberships';
 
+    protected $casts = [
+        'active' => 'integer',
+        'is_referral' => 'integer',
+    ];
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

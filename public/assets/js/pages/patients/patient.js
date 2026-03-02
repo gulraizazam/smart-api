@@ -30,7 +30,7 @@ var table_columns = [
                 return 'No Membership';
             }
             // If membership is not active, show No Membership
-            if (data.membership.active !== 1) {
+            if (data.membership.active != 1) {
                 return 'No Membership';
             }
             var prefix = data.membership.is_referral == 1 ? 'Ref: ' : '';
