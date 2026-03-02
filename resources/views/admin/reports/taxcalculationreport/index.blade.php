@@ -153,8 +153,8 @@
 
                                         <div class="form-group col-md-2 sn-select">
                                             {!! Form::label('consultation_amount', 'Invoice Amount*', ['class' => 'control-label']) !!}
-                                            {!! Form::select('consultation_amount', [1500 => '1,500', 3000 => '3,000'], 1500, ['id' => 'consultation_amount', 'class' => 'form-control']) !!}
-                                            <small class="text-muted">Fixed exempt invoice amount</small>
+                                            {!! Form::select('consultation_amount', [1500 => '1,500', 2000 => '2,000 - 3,000'], 1500, ['id' => 'consultation_amount', 'class' => 'form-control']) !!}
+                                            <small class="text-muted">Exempt invoice amount (range = mixed)</small>
                                         </div>
                                     </div>
 
