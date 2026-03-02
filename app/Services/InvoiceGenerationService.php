@@ -122,14 +122,16 @@ class InvoiceGenerationService
      */
     protected function calculateDailyRevenue(): void
     {
-        // Query daily revenue by payment mode from plan_invoices
-        $dailyPayments = DB::table('plan_invoices')
+        // Query daily revenue by payment mode from package_advances (incoming payments only)
+        $dailyPayments = DB::table('package_advances')
             ->select(
                 DB::raw('DATE(created_at) as payment_date'),
                 'payment_mode_id',
-                DB::raw('SUM(total_price) as daily_total')
+                DB::raw('SUM(cash_amount) as daily_total')
             )
-            ->where('total_price', '>', 0)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_cancel', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -203,13 +205,16 @@ class InvoiceGenerationService
      */
     protected function getPaymentTotals(): array
     {
-        $results = DB::table('plan_invoices')
+        // Get incoming payments from package_advances
+        $results = DB::table('package_advances')
             ->select(
                 'payment_mode_id',
-                DB::raw('SUM(total_price) as total_amount'),
+                DB::raw('SUM(cash_amount) as total_amount'),
                 DB::raw('COUNT(*) as record_count')
             )
-            ->where('total_price', '>', 0)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_cancel', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -236,7 +241,7 @@ class InvoiceGenerationService
             }
         }
 
-        // Calculate refunds from package_advances in the same date range and locations
+        // Calculate refunds from package_advances (outgoing refund payments)
         $refundResults = DB::table('package_advances')
             ->select(
                 'payment_mode_id',
@@ -244,8 +249,9 @@ class InvoiceGenerationService
                 DB::raw('COUNT(*) as record_count')
             )
             ->where('cash_flow', 'out')
-            ->where('is_refund', 1)
             ->where('cash_amount', '>', 0)
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -356,14 +362,16 @@ class InvoiceGenerationService
      */
     protected function getPatientPayments(array $totals, array $pool): array
     {
-        $patientPayments = DB::table('plan_invoices')
+        $patientPayments = DB::table('package_advances')
             ->select(
                 'patient_id',
                 'payment_mode_id',
-                DB::raw('SUM(total_price) as total_amount'),
+                DB::raw('SUM(cash_amount) as total_amount'),
                 DB::raw('COUNT(*) as payment_count')
             )
-            ->where('total_price', '>', 0)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_cancel', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -675,9 +683,11 @@ class InvoiceGenerationService
                 continue;
             }
 
-            // Get patient's plan_id from plan_invoices table
-            $planId = DB::table('plan_invoices')
+            // Get patient's plan_id from package_advances table
+            $planId = DB::table('package_advances')
                 ->where('patient_id', $patientId)
+                ->where('cash_flow', 'in')
+                ->where('is_cancel', 0)
                 ->whereIn('location_id', $this->locationIds)
                 ->whereNull('deleted_at')
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -742,9 +752,11 @@ class InvoiceGenerationService
                 continue;
             }
 
-            // Get patient's plan_id from plan_invoices table
-            $planId = DB::table('plan_invoices')
+            // Get patient's plan_id from package_advances table
+            $planId = DB::table('package_advances')
                 ->where('patient_id', $patientId)
+                ->where('cash_flow', 'in')
+                ->where('is_cancel', 0)
                 ->whereIn('location_id', $this->locationIds)
                 ->whereNull('deleted_at')
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
