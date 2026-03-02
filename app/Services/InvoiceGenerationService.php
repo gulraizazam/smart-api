@@ -199,44 +199,33 @@ class InvoiceGenerationService
         }
 
         $totalRefunds = $refundBank + $refundCard + $refundCash;
+        $totalRefundCount = $refundBankCount + $refundCardCount + $refundCashCount;
 
-        // Net totals after subtracting refunds
-        $netBank = $bankTotal - $refundBank;
-        $netCard = $cardTotal - $refundCard;
-        $netCash = $cashTotal - $refundCash;
+        // Grand total = gross payments minus total refunds
+        $grossTotal = $bankTotal + $cardTotal + $cashTotal;
+        $grandTotal = $grossTotal - $totalRefunds;
 
         return [
             'bank' => [
-                'total' => $netBank,
+                'total' => $bankTotal,
                 'count' => $bankCount,
             ],
             'card' => [
-                'total' => $netCard,
+                'total' => $cardTotal,
                 'count' => $cardCount,
             ],
             'cash' => [
-                'total' => $netCash,
+                'total' => $cashTotal,
                 'count' => $cashCount,
                 'percent_used' => $this->cashPercent,
-                'amount_used' => $netCash * ($this->cashPercent / 100),
+                'amount_used' => $cashTotal * ($this->cashPercent / 100),
             ],
             'refunds' => [
-                'bank' => $refundBank,
-                'card' => $refundCard,
-                'cash' => $refundCash,
                 'total' => $totalRefunds,
-                'bank_count' => $refundBankCount,
-                'card_count' => $refundCardCount,
-                'cash_count' => $refundCashCount,
+                'count' => $totalRefundCount,
             ],
-            'gross' => [
-                'bank' => $bankTotal,
-                'card' => $cardTotal,
-                'cash' => $cashTotal,
-                'total' => $bankTotal + $cardTotal + $cashTotal,
-            ],
-            'bank_plus_card' => $netBank + $netCard,
-            'grand_total' => $netBank + $netCard + $netCash,
+            'bank_plus_card' => $bankTotal + $cardTotal,
+            'grand_total' => $grandTotal,
         ];
     }
 
