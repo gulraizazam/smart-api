@@ -27,6 +27,7 @@ class InvoiceGenerationService
     protected $usedInvoiceNumbers = [];
     protected $dailyRevenue = [];
     protected $dailyBudgetUsed = [];
+    protected $patientDailyInvoiceCount = [];
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -81,8 +82,9 @@ class InvoiceGenerationService
         // Step 7: Distribute exempt percentages using smart algorithm
         $distribution = $this->distributeExemptPercentages($categorizedPatients, $pool, $feasibility);
 
-        // Initialize daily budget tracker (shared across exempt + taxable)
-        $this->dailyBudgetUsed = []; // Initialize dailyBudgetUsed before invoice generation
+        // Initialize daily budget tracker and per-patient-per-day counter (shared across exempt + taxable)
+        $this->dailyBudgetUsed = [];
+        $this->patientDailyInvoiceCount = [];
 
         // Step 8: Generate exempt invoices (returns ['invoices' => [...], 'unplaced_exempt' => [...]])
         $exemptResult = $this->generateInvoices($distribution, 'exempt');
@@ -321,19 +323,26 @@ class InvoiceGenerationService
      * 3. If ALL days are over budget, use the day with the most remaining budget (least over).
      * Returns the date string to use.
      */
-    protected function findBestDateForInvoice(string $preferredDateStr, float $amount): string
+    protected function findBestDateForInvoice(string $preferredDateStr, float $amount, int $patientId): string
     {
-        // Try preferred date first
-        if ($this->getDailyBudgetRemaining($preferredDateStr) >= $amount) {
+        $maxPerDay = $this->isMixedMode ? 2 : 3;
+
+        // Try preferred date first — check both budget AND per-patient-per-day cap
+        if ($this->getDailyBudgetRemaining($preferredDateStr) >= $amount
+            && $this->getPatientDayCount($patientId, $preferredDateStr) < $maxPerDay) {
             return $preferredDateStr;
         }
 
-        // Spillover: find the working day with most remaining budget
+        // Spillover: find the working day with most remaining budget that also respects per-patient cap
         $bestDate = $preferredDateStr;
-        $bestRemaining = $this->getDailyBudgetRemaining($preferredDateStr);
+        $bestRemaining = -1;
 
         foreach ($this->workingDays as $day) {
             $dateStr = $day->format('Y-m-d');
+            // Skip days where this patient already has maxPerDay invoices
+            if ($this->getPatientDayCount($patientId, $dateStr) >= $maxPerDay) {
+                continue;
+            }
             $remaining = $this->getDailyBudgetRemaining($dateStr);
             if ($remaining > $bestRemaining) {
                 $bestRemaining = $remaining;
@@ -342,6 +351,28 @@ class InvoiceGenerationService
         }
 
         return $bestDate;
+    }
+
+    /**
+     * Get how many invoices a patient already has on a given day.
+     */
+    protected function getPatientDayCount(int $patientId, string $dateStr): int
+    {
+        return $this->patientDailyInvoiceCount[$patientId][$dateStr] ?? 0;
+    }
+
+    /**
+     * Track that a patient got an invoice on a given day.
+     */
+    protected function trackPatientDayInvoice(int $patientId, string $dateStr): void
+    {
+        if (!isset($this->patientDailyInvoiceCount[$patientId])) {
+            $this->patientDailyInvoiceCount[$patientId] = [];
+        }
+        if (!isset($this->patientDailyInvoiceCount[$patientId][$dateStr])) {
+            $this->patientDailyInvoiceCount[$patientId][$dateStr] = 0;
+        }
+        $this->patientDailyInvoiceCount[$patientId][$dateStr]++;
     }
 
     /**
@@ -869,7 +900,6 @@ class InvoiceGenerationService
     {
         $invoices = [];
         $this->unplacedExemptPerPatient = [];
-        // Get month from date range (use start date)
         $month = $this->dateFrom->format('m');
 
         foreach ($distribution as $patient) {
@@ -880,7 +910,6 @@ class InvoiceGenerationService
                 continue;
             }
 
-            // Use greedy fitting to get the list of invoice amounts
             $fit = $this->fitDenominations($exemptAmount);
             $invoiceAmounts = $fit['amounts'];
             $numInvoices = count($invoiceAmounts);
@@ -889,7 +918,6 @@ class InvoiceGenerationService
                 continue;
             }
 
-            // Get patient's plan_id from package_advances table (prefer non-null package_id)
             $planId = DB::table('package_advances')
                 ->where('patient_id', $patientId)
                 ->where('cash_flow', 'in')
@@ -900,10 +928,8 @@ class InvoiceGenerationService
                 ->whereNotNull('package_id')
                 ->value('package_id');
 
-            // If no non-null plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
-            // Get available dates for this patient (with 1-day gap)
             $patientDates = $this->getPatientInvoiceDates($numInvoices);
 
             $invoiceIndex = 0;
@@ -915,11 +941,9 @@ class InvoiceGenerationService
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
                     $amount = $invoiceAmounts[$invoiceIndex];
 
-                    // Soft cap with spillover: use preferred date if budget allows, otherwise spill to best available day
-                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount);
-
+                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount, $patientId);
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
-    
+
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
@@ -928,8 +952,9 @@ class InvoiceGenerationService
                         'amount' => $amount,
                         'type' => $type,
                     ];
-                    
+
                     $this->consumeDailyBudget($actualDateStr, $amount);
+                    $this->trackPatientDayInvoice($patientId, $actualDateStr);
                     $invoiceIndex++;
                 }
             }
@@ -944,7 +969,6 @@ class InvoiceGenerationService
             }
         }
 
-        // Sort invoices by date (ascending)
         usort($invoices, function ($a, $b) {
             return strcmp($a['invoice_date'], $b['invoice_date']);
         });
@@ -955,154 +979,31 @@ class InvoiceGenerationService
         ];
     }
 
-    /**
-     * Generate taxable invoices for each patient
-     */
-    protected function generateTaxableInvoices(array $distribution): array
-    {
-        $invoices = [];
-        // Get month from date range (use start date)
-        $month = $this->dateFrom->format('m');
-
-        foreach ($distribution as $patient) {
-            $taxableAmount = $patient['taxable_amount'];
-            $patientId = $patient['patient_id'];
-
-            // Add any unplaced exempt amount (invoices that couldn't be placed due to date capacity)
-            if (isset($this->unplacedExemptPerPatient[$patientId])) {
-                $taxableAmount += $this->unplacedExemptPerPatient[$patientId];
-            }
-            
-            // Skip only if taxable amount is zero or negligible (< 1)
-            if ($taxableAmount < 1) {
-                continue;
-            }
-
-            // Get patient's plan_id from package_advances table (prefer non-null package_id)
-            $planId = DB::table('package_advances')
-                ->where('patient_id', $patientId)
-                ->where('cash_flow', 'in')
-                ->where('is_cancel', 0)
-                ->whereIn('location_id', $this->locationIds)
-                ->whereNull('deleted_at')
-                ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
-                ->whereNotNull('package_id')
-                ->value('package_id');
-
-            // If no non-null plan_id found, use 0 as default
-            $planId = $planId ?? 0;
-
-            // Generate invoice amounts
-            $invoiceAmounts = [];
-            $remainingAmount = 0;
-            
-            // If taxable amount is less than 1000, create single invoice with full amount
-            if ($taxableAmount < 1000) {
-                $invoiceAmounts[] = round($taxableAmount, 2);
-            } else {
-                // For amounts >= 1000, generate random invoices between 1000-10000
-                $remainingAmount = $taxableAmount;
-                
-                while ($remainingAmount >= 1000) {
-                    // Random amount between 1000 and min(10000, remainingAmount)
-                    $maxAmount = min(10000, $remainingAmount);
-                    $amount = rand(1000, (int)$maxAmount);
-                    
-                    // If this would leave less than 1000, add it to this invoice
-                    if ($remainingAmount - $amount < 1000) {
-                        $amount = $remainingAmount;
-                    }
-                    
-                    $invoiceAmounts[] = round($amount, 2);
-                    $remainingAmount -= $amount;
-                }
-            }
-            
-            // If there's still a small remainder, add it to the last invoice
-            if ($remainingAmount > 0 && count($invoiceAmounts) > 0) {
-                $invoiceAmounts[count($invoiceAmounts) - 1] += round($remainingAmount, 2);
-            } elseif ($remainingAmount > 0) {
-                $invoiceAmounts[] = round($remainingAmount, 2);
-            }
-
-            // Get available dates for this patient (with 2-day gap for taxable)
-            $patientDates = $this->getTaxableInvoiceDates(count($invoiceAmounts));
-
-            $invoiceIndex = 0;
-            foreach ($patientDates as $dateInfo) {
-                $date = $dateInfo['date'];
-                $preferredDateStr = $date->format('Y-m-d');
-                $invoicesOnThisDay = $dateInfo['count'];
-
-                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
-                    $amount = $invoiceAmounts[$invoiceIndex];
-
-                    // Soft cap with spillover: use preferred date if budget allows, otherwise spill to best available day
-                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount);
-
-                    $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
-    
-                    $invoices[] = [
-                        'invoice_number' => $invoiceNumber,
-                        'patient_id' => $patientId,
-                        'plan_id' => $planId,
-                        'invoice_date' => $actualDateStr,
-                        'amount' => $amount,
-                        'type' => 'taxable',
-                    ];
-                    $this->consumeDailyBudget($actualDateStr, $amount);
-                    $invoiceIndex++;
-                }
-            }
-
-            // Safety net: if some taxable invoices couldn't be placed, merge into last placed invoice
-            if ($invoiceIndex < count($invoiceAmounts) && $invoiceIndex > 0) {
-                $unplacedSum = 0;
-                for ($u = $invoiceIndex; $u < count($invoiceAmounts); $u++) {
-                    $unplacedSum += $invoiceAmounts[$u];
-                }
-                // Add to the last placed invoice's amount
-                $lastIdx = count($invoices) - 1;
-                $invoices[$lastIdx]['amount'] += $unplacedSum;
-            }
-        }
-
-        // Sort invoices by date (ascending)
-        usort($invoices, function ($a, $b) {
-            return strcmp($a['invoice_date'], $b['invoice_date']);
-        });
-
-        return $invoices;
-    }
-
     protected function generateUniqueInvoiceNumber(int $patientId, int $planId, string $month): string
     {
-        // Build a prefix key for this patient-plan-month combo
         $prefix = sprintf('%d-%d-%s', $patientId, $planId, $month);
 
-        // Sequential counter per prefix — no collisions, no retries
         if (!isset($this->usedInvoiceNumbers[$prefix])) {
             $this->usedInvoiceNumbers[$prefix] = 0;
         }
         $this->usedInvoiceNumbers[$prefix]++;
 
-        $invoiceNumber = sprintf('%s-%d', $prefix, $this->usedInvoiceNumbers[$prefix]);
-
-        return $invoiceNumber;
+        return sprintf('%s-%d', $prefix, $this->usedInvoiceNumbers[$prefix]);
     }
+
     /**
      * Convert number to alphabetic format (1=A, 2=B... 26=Z, 27=AA, 28=AB...)
      */
     protected function numberToAlpha(int $number): string
     {
         $alpha = '';
-        
+
         while ($number > 0) {
-            $number--; // Adjust for 0-based indexing
+            $number--;
             $alpha = chr(65 + ($number % 26)) . $alpha;
             $number = intdiv($number, 26);
         }
-        
+
         return $alpha;
     }
 
