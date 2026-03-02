@@ -423,37 +423,40 @@ class InvoiceGenerationService
             $targetExempt = $feasibility['max_possible_exempt'];
         }
 
-        // Step 1: Allocate capped patients (give them max: 58,500)
+        // Step 1: Allocate capped patients (give them max exempt, rounded to multiples of consultation_amount)
         $cappedExempt = 0;
         foreach ($categorized['capped'] as $patient) {
-            $exemptAmount = $this->maxExemptPerPatient;
+            // Round down to multiples of consultation_amount
+            $numInvoices = floor($this->maxExemptPerPatient / $this->consultationAmount);
+            $exemptAmount = $numInvoices * $this->consultationAmount;
+            $taxableAmount = $patient['pool_share'] - $exemptAmount;
             $exemptPercent = ($exemptAmount / $patient['pool_share']) * 100;
-            
+
             $distribution[] = [
                 'patient_id' => $patient['patient_id'],
                 'pool_share' => $patient['pool_share'],
                 'category' => 'capped',
                 'exempt_percent' => round($exemptPercent, 2),
                 'exempt_amount' => $exemptAmount,
-                'taxable_amount' => $patient['pool_share'] - $exemptAmount,
+                'taxable_amount' => $taxableAmount,
             ];
             $cappedExempt += $exemptAmount;
         }
 
-       // Step 2: Allocate small patients (give them 100% exempt intent)
+        // Step 2: Allocate small patients (give them 100% exempt intent)
         $smallExempt = 0;
         foreach ($categorized['small'] as $patient) {
             // Calculate how many invoices can be created (each = consultation_amount)
             $numInvoices = floor($patient['pool_share'] / $this->consultationAmount);
             $exemptAmount = $numInvoices * $this->consultationAmount;
             $taxableAmount = $patient['pool_share'] - $exemptAmount;
-            
+
             // If taxable remainder is less than 1000, move last exempt invoice to taxable
             if ($taxableAmount > 0 && $taxableAmount < 1000 && $numInvoices > 0) {
                 $exemptAmount -= $this->consultationAmount;
                 $taxableAmount += $this->consultationAmount;
             }
-            
+
             $distribution[] = [
                 'patient_id' => $patient['patient_id'],
                 'pool_share' => $patient['pool_share'],
@@ -475,15 +478,20 @@ class InvoiceGenerationService
 
         $mediumExempt = 0;
         foreach ($categorized['medium'] as $patient) {
-            $exemptAmount = $patient['pool_share'] * ($mediumPercent / 100);
-            
+            $rawExemptAmount = $patient['pool_share'] * ($mediumPercent / 100);
+
+            // Round down to multiples of consultation_amount
+            $numInvoices = floor($rawExemptAmount / $this->consultationAmount);
+            $exemptAmount = $numInvoices * $this->consultationAmount;
+            $taxableAmount = $patient['pool_share'] - $exemptAmount;
+
             $distribution[] = [
                 'patient_id' => $patient['patient_id'],
                 'pool_share' => $patient['pool_share'],
                 'category' => 'medium',
                 'exempt_percent' => round($mediumPercent, 2),
-                'exempt_amount' => round($exemptAmount, 2),
-                'taxable_amount' => round($patient['pool_share'] - $exemptAmount, 2),
+                'exempt_amount' => $exemptAmount,
+                'taxable_amount' => $taxableAmount,
             ];
             $mediumExempt += $exemptAmount;
         }
@@ -493,13 +501,17 @@ class InvoiceGenerationService
             return $b['pool_share'] <=> $a['pool_share'];
         });
 
-        // Filter out patients whose exempt amount is less than consultation amount
-        $distribution = array_filter($distribution, function ($patient) {
-            return $patient['exempt_amount'] >= $this->consultationAmount;
-        });
+        // Patients with exempt < consultation_amount get 0 exempt, full pool_share as taxable
+        foreach ($distribution as &$patient) {
+            if ($patient['exempt_amount'] < $this->consultationAmount) {
+                $patient['exempt_amount'] = 0;
+                $patient['exempt_percent'] = 0;
+                $patient['taxable_amount'] = $patient['pool_share'];
+            }
+        }
+        unset($patient);
 
-        // Re-index array after filtering
-        return array_values($distribution);
+        return $distribution;
     }
 
     /**
