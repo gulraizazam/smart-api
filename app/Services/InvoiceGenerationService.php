@@ -120,8 +120,12 @@ class InvoiceGenerationService
         // With 1-day gap, usable days = floor(working_days / 2)
         $usableInvoiceDays = floor($totalWorkingDays / 2);
         
-        // Max 3 invoices per day
-        return $usableInvoiceDays * 3;
+        // Max invoices per day depends on consultation amount
+        // 1500 -> 3 per day (e.g. 13 days * 3 = 39)
+        // 3000 -> 2 per day (e.g. 13 days * 2 = 26)
+        $invoicesPerDay = $this->consultationAmount >= 3000 ? 2 : 3;
+        
+        return $usableInvoiceDays * $invoicesPerDay;
     }
 
     /**
