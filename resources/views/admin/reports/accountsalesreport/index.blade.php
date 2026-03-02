@@ -338,12 +338,15 @@
                 if ($('#date_range').data('daterangepicker')) {
                     $('#date_range').data('daterangepicker').remove();
                 }
+                var minYearVal = parseInt(moment().format('YYYY')) - 10;
+                var maxYearVal = parseInt(moment().format('YYYY'));
+
                 $('#date_range').daterangepicker({
                     showDropdowns: true,
                     linkedCalendars: false,
                     minDate: moment().subtract(10, 'years').startOf('year'),
-                    minYear: parseInt(moment().format('YYYY')) - 10,
-                    maxYear: parseInt(moment().format('YYYY')),
+                    minYear: minYearVal,
+                    maxYear: maxYearVal,
                     locale: {
                     },
                     ranges   : {
@@ -359,6 +362,28 @@
                     startDate: moment().startOf('month'),
                     endDate  :  moment().endOf('month')
                 });
+
+                function fixYearDropdowns() {
+                    var picker = $('#date_range').data('daterangepicker');
+                    if (!picker) return;
+                    picker.container.find('.yearselect').each(function() {
+                        var $sel = $(this);
+                        var currentVal = parseInt($sel.val());
+                        var existingYears = [];
+                        $sel.find('option').each(function() { existingYears.push(parseInt($(this).val())); });
+                        if (existingYears.length >= (maxYearVal - minYearVal + 1)) return;
+                        $sel.empty();
+                        for (var y = minYearVal; y <= maxYearVal; y++) {
+                            $sel.append('<option value="' + y + '"' + (y === currentVal ? ' selected' : '') + '>' + y + '</option>');
+                        }
+                    });
+                }
+
+                var pickerContainer = $('#date_range').data('daterangepicker').container[0];
+                var observer = new MutationObserver(function() { fixYearDropdowns(); });
+                observer.observe(pickerContainer, { childList: true, subtree: true });
+
+                $('#date_range').on('show.daterangepicker', function() { fixYearDropdowns(); });
             });
             $('#date_range_fdm').daterangepicker({
                 locale: {
