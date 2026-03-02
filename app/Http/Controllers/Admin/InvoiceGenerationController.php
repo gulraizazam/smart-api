@@ -40,6 +40,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
             'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
         ]);
 
         // Parse date range
@@ -53,6 +54,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
             'tax_percent' => $validated['tax_percent'] ?? 13,
+            'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
         try {
@@ -85,6 +87,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
             'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
         ]);
 
         // Parse date range
@@ -98,6 +101,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
             'tax_percent' => $validated['tax_percent'] ?? 13,
+            'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
         try {
@@ -164,6 +168,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => 'required|numeric|min:0|max:100',
             'consultation_amount' => 'required|numeric|in:1500,2000',
             'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
         ]);
 
         // Parse date range
@@ -177,6 +182,7 @@ class InvoiceGenerationController extends Controller
             'cash_percent' => $validated['cash_percent'],
             'consultation_amount' => $validated['consultation_amount'],
             'tax_percent' => $validated['tax_percent'] ?? 13,
+            'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
         // Increase limits for large invoice sets
