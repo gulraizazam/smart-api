@@ -3431,10 +3431,8 @@ class PackagesController extends Controller
                 $packageAdvance->created_by = Auth::id();
                 $packageAdvance->save();
                 
-                // Update plan_name if it's empty
-                if (empty($package->plan_name) || $package->plan_name === '-') {
-                    $this->updatePlanNameForPackage($package);
-                }
+                // Always regenerate plan_name from services/bundles
+                $this->updatePlanNameForPackage($package);
             }
             
             return ApiHelper::apiResponse($this->success, 'Bundle plan updated successfully', true);
@@ -3469,22 +3467,26 @@ class PackagesController extends Controller
         // Get total count of bundles for this package
         $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
         
-        // Get the first two bundles for this package with their names
-        $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
-            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-            ->orderBy('package_bundles.id', 'asc')
-            ->limit(2)
-            ->pluck('bundles.name')
-            ->toArray();
-
-        if (empty($packageBundles)) {
-            return;
+        // For plan type 'plan': bundle_id contains service_id, join with services table
+        // For plan type 'bundle': bundle_id contains bundle_id, join with bundles table
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
         }
 
-        // Generate plan_name: single bundle name or two bundle names comma separated
-        $planName = implode(', ', $packageBundles);
+        $planName = !empty($names) ? implode(', ', $names) : '-';
         
-        // For plan type (not bundle): add '...' if more than 2 services
         if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
             $planName .= '...';
         }
