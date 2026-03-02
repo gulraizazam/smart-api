@@ -521,18 +521,24 @@ class InvoiceGenerationService
         $diff = $totalExempt - $targetExempt;
 
         if ($diff > 0) {
-            // Overshot: remove exempt invoices one at a time from medium patients (smallest pool_share first)
-            $mediumIndices = [];
+            // Overshot: remove exempt invoices one at a time from patients
+            // Priority: medium (smallest first) -> small (smallest first) -> capped (smallest first)
+            $adjustIndices = [];
             foreach ($distribution as $i => $p) {
-                if ($p['category'] === 'medium' && $p['exempt_amount'] >= $this->consultationAmount) {
-                    $mediumIndices[] = $i;
+                if ($p['exempt_amount'] >= $this->consultationAmount) {
+                    $adjustIndices[] = $i;
                 }
             }
-            usort($mediumIndices, function ($a, $b) use ($distribution) {
+            // Sort by category priority (medium first, then small, then capped), then by pool_share ascending
+            $categoryOrder = ['medium' => 0, 'small' => 1, 'capped' => 2];
+            usort($adjustIndices, function ($a, $b) use ($distribution, $categoryOrder) {
+                $catA = $categoryOrder[$distribution[$a]['category']] ?? 3;
+                $catB = $categoryOrder[$distribution[$b]['category']] ?? 3;
+                if ($catA !== $catB) return $catA <=> $catB;
                 return $distribution[$a]['pool_share'] <=> $distribution[$b]['pool_share'];
             });
 
-            foreach ($mediumIndices as $i) {
+            foreach ($adjustIndices as $i) {
                 if ($diff < $this->consultationAmount) break;
                 while ($distribution[$i]['exempt_amount'] >= $this->consultationAmount && $diff >= $this->consultationAmount) {
                     $distribution[$i]['exempt_amount'] -= $this->consultationAmount;
