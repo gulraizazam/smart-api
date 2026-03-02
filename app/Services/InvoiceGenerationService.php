@@ -791,11 +791,6 @@ class InvoiceGenerationService
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
                     $amount = $invoiceAmounts[$invoiceIndex];
 
-                    // Check daily budget — skip this day if budget exhausted
-                    if ($this->getDailyBudgetRemaining($dateStr) < $amount) {
-                        break; // move to next day
-                    }
-
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
                     $invoices[] = [
@@ -914,11 +909,6 @@ class InvoiceGenerationService
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
                     $amount = $invoiceAmounts[$invoiceIndex];
-
-                    // Check daily budget — skip this day if budget exhausted
-                    if ($this->getDailyBudgetRemaining($dateStr) < $amount) {
-                        break; // move to next day
-                    }
 
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
