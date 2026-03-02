@@ -515,6 +515,66 @@ class InvoiceGenerationService
         }
         unset($patient);
 
+        // Fine-tuning step: adjust individual medium patients one invoice at a time
+        // to get total exempt as close to target as possible
+        $totalExempt = array_sum(array_column($distribution, 'exempt_amount'));
+        $diff = $totalExempt - $targetExempt;
+
+        if ($diff > 0) {
+            // Overshot: remove exempt invoices one at a time from medium patients (smallest pool_share first)
+            $mediumIndices = [];
+            foreach ($distribution as $i => $p) {
+                if ($p['category'] === 'medium' && $p['exempt_amount'] >= $this->consultationAmount) {
+                    $mediumIndices[] = $i;
+                }
+            }
+            usort($mediumIndices, function ($a, $b) use ($distribution) {
+                return $distribution[$a]['pool_share'] <=> $distribution[$b]['pool_share'];
+            });
+
+            foreach ($mediumIndices as $i) {
+                if ($diff < $this->consultationAmount) break;
+                while ($distribution[$i]['exempt_amount'] >= $this->consultationAmount && $diff >= $this->consultationAmount) {
+                    $distribution[$i]['exempt_amount'] -= $this->consultationAmount;
+                    $distribution[$i]['taxable_amount'] += $this->consultationAmount;
+                    $diff -= $this->consultationAmount;
+                }
+            }
+        } elseif ($diff < 0) {
+            // Undershot: add exempt invoices one at a time to medium patients (largest pool_share first)
+            $deficit = abs($diff);
+            $mediumIndices = [];
+            foreach ($distribution as $i => $p) {
+                if ($p['category'] === 'medium') {
+                    $mediumIndices[] = $i;
+                }
+            }
+            usort($mediumIndices, function ($a, $b) use ($distribution) {
+                return $distribution[$b]['pool_share'] <=> $distribution[$a]['pool_share'];
+            });
+
+            foreach ($mediumIndices as $i) {
+                if ($deficit < $this->consultationAmount) break;
+                $maxExempt = min(
+                    floor($distribution[$i]['pool_share'] / $this->consultationAmount) * $this->consultationAmount,
+                    $this->maxExemptPerPatient
+                );
+                while ($distribution[$i]['exempt_amount'] < $maxExempt && $deficit >= $this->consultationAmount) {
+                    $distribution[$i]['exempt_amount'] += $this->consultationAmount;
+                    $distribution[$i]['taxable_amount'] -= $this->consultationAmount;
+                    $deficit -= $this->consultationAmount;
+                }
+            }
+        }
+
+        // Recalculate exempt_percent after fine-tuning
+        foreach ($distribution as &$patient) {
+            if ($patient['pool_share'] > 0) {
+                $patient['exempt_percent'] = round(($patient['exempt_amount'] / $patient['pool_share']) * 100, 2);
+            }
+        }
+        unset($patient);
+
         return $distribution;
     }
 
