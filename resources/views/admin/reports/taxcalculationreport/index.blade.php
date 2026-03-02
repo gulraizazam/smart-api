@@ -5,6 +5,24 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     @push('css')
         <style>
+            .daterangepicker .drp-calendar th.month .monthselect,
+            .daterangepicker .drp-calendar th.month .yearselect {
+                background: #fff !important;
+                border: 1px solid #ccc !important;
+                border-radius: 4px;
+                padding: 2px 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                appearance: auto !important;
+                -webkit-appearance: menulist !important;
+                -moz-appearance: menulist !important;
+            }
+            .daterangepicker .drp-calendar th.month .yearselect:hover,
+            .daterangepicker .drp-calendar th.month .monthselect:hover {
+                border-color: #4e9fe5 !important;
+                background: #f0f7ff !important;
+            }
             .table-wrapper { overflow-x: scroll; }
             .sn-report-head { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 8px 15px 10px; background-color: #02203d; color: #fff; }
             .shdoc-header { background: rgba(54, 65, 80, 1) !important; color: #fff !important; font-weight: bold !important; }
@@ -194,14 +212,24 @@
             $('#load_report').prop('disabled', false);
         }
 
-        $('#date_range').daterangepicker({
-            ranges: {
-                'Today': [moment(), moment()],
-                'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-            },
-            startDate: moment().subtract(1, 'month').startOf('month'),
-            endDate: moment().subtract(1, 'month').endOf('month')
+        $(document).ready(function() {
+            if ($('#date_range').data('daterangepicker')) {
+                $('#date_range').data('daterangepicker').remove();
+            }
+            $('#date_range').daterangepicker({
+                showDropdowns: true,
+                linkedCalendars: false,
+                minDate: moment().subtract(10, 'years').startOf('year'),
+                minYear: parseInt(moment().format('YYYY')) - 10,
+                maxYear: parseInt(moment().format('YYYY')),
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                },
+                startDate: moment().subtract(1, 'month').startOf('month'),
+                endDate: moment().subtract(1, 'month').endOf('month')
+            });
         });
 
         function loadReport() {
