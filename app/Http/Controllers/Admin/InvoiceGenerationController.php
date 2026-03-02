@@ -210,7 +210,7 @@ class InvoiceGenerationController extends Controller
             $exemptChunks = array_chunk($result['exempt_invoices'], $chunkSize);
             foreach ($exemptChunks as $chunk) {
                 foreach ($chunk as $invoice) {
-                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'exempt');
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'exempt', $dates['to']);
                     $pdfName = 'exempt/INV-' . $invoice['invoice_number'] . '.pdf';
                     $zip->addFile(fileName: $pdfName, data: $pdfContent);
                     unset($pdfContent);
@@ -223,7 +223,7 @@ class InvoiceGenerationController extends Controller
             $taxableChunks = array_chunk($result['taxable_invoices'], $chunkSize);
             foreach ($taxableChunks as $chunk) {
                 foreach ($chunk as $invoice) {
-                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'taxable');
+                    $pdfContent = $this->generateInvoicePdf($invoice, $location, $patientNames, 'taxable', $dates['to']);
                     $pdfName = 'taxable/INV-' . $invoice['invoice_number'] . '.pdf';
                     $zip->addFile(fileName: $pdfName, data: $pdfContent);
                     unset($pdfContent);
@@ -249,9 +249,10 @@ class InvoiceGenerationController extends Controller
      * @param \App\Models\Locations $location Location model
      * @param array $patientNames Pre-fetched patient names keyed by ID
      * @param string $type 'exempt' or 'taxable'
+     * @param string $dateTo End date of the report range (Y-m-d)
      * @return string PDF content
      */
-    protected function generateInvoicePdf(array $invoice, $location, array $patientNames, string $type): string
+    protected function generateInvoicePdf(array $invoice, $location, array $patientNames, string $type, string $dateTo): string
     {
         $patientName = $patientNames[$invoice['patient_id']] ?? 'Patient C-' . $invoice['patient_id'];
 
@@ -264,7 +265,7 @@ class InvoiceGenerationController extends Controller
         } else {
             $serviceLabel = 'Treatment';
             $serviceName = 'Treatment';
-            $taxPercent = 13;
+            $taxPercent = ($dateTo <= '2024-12-31') ? 13 : ($location->tax_percentage ?? 15);
             $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
             $totalAmount = $invoice['amount'] + $taxAmount;
         }
