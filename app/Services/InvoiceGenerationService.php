@@ -273,6 +273,36 @@ class InvoiceGenerationService
     }
 
     /**
+     * Find the best date to place an invoice using soft cap with spillover.
+     * 1. If the assigned date has enough budget, use it.
+     * 2. Otherwise, find the working day with the most remaining budget.
+     * 3. If ALL days are over budget, use the day with the most remaining budget (least over).
+     * Returns the date string to use.
+     */
+    protected function findBestDateForInvoice(string $preferredDateStr, float $amount): string
+    {
+        // Try preferred date first
+        if ($this->getDailyBudgetRemaining($preferredDateStr) >= $amount) {
+            return $preferredDateStr;
+        }
+
+        // Spillover: find the working day with most remaining budget
+        $bestDate = $preferredDateStr;
+        $bestRemaining = $this->getDailyBudgetRemaining($preferredDateStr);
+
+        foreach ($this->workingDays as $day) {
+            $dateStr = $day->format('Y-m-d');
+            $remaining = $this->getDailyBudgetRemaining($dateStr);
+            if ($remaining > $bestRemaining) {
+                $bestRemaining = $remaining;
+                $bestDate = $dateStr;
+            }
+        }
+
+        return $bestDate;
+    }
+
+    /**
      * Get total payments by payment method
      */
     protected function getPaymentTotals(): array
@@ -785,11 +815,14 @@ class InvoiceGenerationService
             $invoiceIndex = 0;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
-                $dateStr = $date->format('Y-m-d');
+                $preferredDateStr = $date->format('Y-m-d');
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
                     $amount = $invoiceAmounts[$invoiceIndex];
+
+                    // Soft cap with spillover: use preferred date if budget allows, otherwise spill to best available day
+                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount);
 
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
@@ -797,12 +830,12 @@ class InvoiceGenerationService
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
-                        'invoice_date' => $dateStr,
+                        'invoice_date' => $actualDateStr,
                         'amount' => $amount,
                         'type' => $type,
                     ];
                     
-                    $this->consumeDailyBudget($dateStr, $amount);
+                    $this->consumeDailyBudget($actualDateStr, $amount);
                     $invoiceIndex++;
                 }
             }
@@ -904,11 +937,14 @@ class InvoiceGenerationService
             $invoiceIndex = 0;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
-                $dateStr = $date->format('Y-m-d');
+                $preferredDateStr = $date->format('Y-m-d');
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
                     $amount = $invoiceAmounts[$invoiceIndex];
+
+                    // Soft cap with spillover: use preferred date if budget allows, otherwise spill to best available day
+                    $actualDateStr = $this->findBestDateForInvoice($preferredDateStr, $amount);
 
                     $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
     
@@ -916,11 +952,11 @@ class InvoiceGenerationService
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
-                        'invoice_date' => $dateStr,
+                        'invoice_date' => $actualDateStr,
                         'amount' => $amount,
                         'type' => 'taxable',
                     ];
-                    $this->consumeDailyBudget($dateStr, $amount);
+                    $this->consumeDailyBudget($actualDateStr, $amount);
                     $invoiceIndex++;
                 }
             }
