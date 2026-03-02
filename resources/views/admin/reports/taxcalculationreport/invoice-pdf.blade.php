@@ -103,10 +103,10 @@
     <table class="table">
         <tr>
             <th>#</th>
-            <th>{{ $service_label }}\Service</th>
+            <th>Service</th>
             <th>Service Price</th>
             <th>Subtotal</th>
-            @if($tax_percent > 0)
+            @if($tax_percent > 0) 
             <th>Tax %</th>
             <th>Tax</th>
             @endif
