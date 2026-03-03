@@ -91,8 +91,11 @@ class AppointmentCheckesWidget
                         $rota_end = Carbon::parse($rota_day->end_time)->format('H:i');
                         $allShiftRanges[] = "{$rota_start} - {$rota_end}";
                         
+                        // Handle midnight end time: treat 00:00 as 24:00 for comparison
+                        $rota_end_compare = ($rota_end === '00:00') ? '24:00' : $rota_end;
+                        
                         // Check if appointment time is within this shift
-                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end) {
+                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end_compare) {
                             $isWithinAnyShift = true;
                             $matchedRotaDay = $rota_day;
                             break;
@@ -234,8 +237,11 @@ class AppointmentCheckesWidget
                         $rota_end = Carbon::parse($rota_day->end_time)->format('H:i');
                         $allShiftRanges[] = "{$rota_start} - {$rota_end}";
                         
+                        // Handle midnight end time: treat 00:00 as 24:00 for comparison
+                        $rota_end_compare = ($rota_end === '00:00') ? '24:00' : $rota_end;
+                        
                         // Check if appointment time is within this shift
-                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end) {
+                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end_compare) {
                             $isWithinAnyShift = true;
                             $matchedRotaDay = $rota_day;
                             break;
@@ -378,8 +384,11 @@ class AppointmentCheckesWidget
                         $rota_end = Carbon::parse($rota_day->end_time)->format('H:i');
                         $allShiftRanges[] = "{$rota_start} - {$rota_end}";
                         
+                        // Handle midnight end time: treat 00:00 as 24:00 for comparison
+                        $rota_end_compare = ($rota_end === '00:00') ? '24:00' : $rota_end;
+                        
                         // Check if appointment time is within this shift
-                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end) {
+                        if ($start_for_break_check >= $rota_start && $start_for_break_check < $rota_end_compare) {
                             $isWithinAnyShift = true;
                             $matchedRotaDay = $rota_day;
                             break;

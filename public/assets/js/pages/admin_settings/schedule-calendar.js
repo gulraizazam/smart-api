@@ -1784,6 +1784,8 @@ function getDisplayItemsWithTimeOffs(shifts, timeOffs, skipRepeatingTimeOffs) {
         
         var shiftStart = timeToMinutes(shift.start_time);
         var shiftEnd = timeToMinutes(shift.end_time);
+        // Treat midnight (00:00) end time as end of day (1440)
+        if (shiftEnd === 0) shiftEnd = 1440;
         var segments = [{start: shiftStart, end: shiftEnd, id: shift.id}];
         
         // Cut out time off periods from this shift
@@ -1850,6 +1852,8 @@ function timeToMinutes(timeStr) {
 }
 
 function minutesToTime(minutes) {
+    // Treat 1440 (end of day) as midnight 00:00
+    if (minutes >= 1440) minutes = minutes - 1440;
     var hours = Math.floor(minutes / 60);
     var mins = minutes % 60;
     return (hours < 10 ? '0' : '') + hours + ':' + (mins < 10 ? '0' : '') + mins;
@@ -1877,9 +1881,9 @@ function calculateTotalHours(resourceId, shifts) {
             var end = parseTime(shifts[i].end_time);
             if (start && end) {
                 var diff = (end.getTime() - start.getTime()) / (1000 * 60);
-                if (diff > 0) {
-                    totalMinutes += diff;
-                }
+                // Handle midnight end time: if diff is negative, shift crosses midnight
+                if (diff <= 0) diff += 24 * 60;
+                totalMinutes += diff;
             }
         }
     }

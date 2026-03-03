@@ -68,7 +68,8 @@ var TreatmentCalendar = function() {
                             cache: false,
                             success: async function (response) {
                                 minxTime = response.min_time || response.start_time;
-                                maxTime = response.end_time;
+                                // Handle midnight end time: 00:00 means end of day
+                                maxTime = (response.end_time === '00:00:00' || response.end_time === '00:00') ? '24:00:00' : response.end_time;
                                 await TreatmentCalendar.loadTreatmentEvents(response, callback);
                                 TreatmentCalendar.showOnlyAvailableSlotsTreatment(minxTime, maxTime);
                                 $('.appointment-loader-base').hide();
@@ -231,6 +232,14 @@ var TreatmentCalendar = function() {
                             /**
                              * Case 1: All times are added
                              */
+                            // Helper: get FullCalendar end datetime, handling midnight as next day
+                            function getTreatmentEndDateTime(date, endTime) {
+                                if (endTime === '00:00' || endTime === '00:00:00') {
+                                    return moment(date, 'YYYY-MM-DD').add(1, 'day').format('YYYY-MM-DDTHH:mm:ss');
+                                }
+                                return formatDate(date + " " + endTime, 'YYYY-MM-DDTHH:mm:ss');
+                            }
+
                             if (rota.start_time && rota.start_off) {
                                 events.push({
                                     id: 'availableForMeeting',
@@ -242,7 +251,7 @@ var TreatmentCalendar = function() {
                                 events.push({
                                     id: 'availableForMeeting',
                                     start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: getTreatmentEndDateTime(rota.date, rota.end_time),
                                     resourceIds: response.resource_ids,
                                     rendering: 'background'
                                 });
@@ -250,7 +259,7 @@ var TreatmentCalendar = function() {
                                 events.push({
                                     id: 'availableForMeeting',
                                     start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: getTreatmentEndDateTime(rota.date, rota.end_time),
                                     resourceIds: response.resource_ids,
                                     rendering: 'background'
                                 });
@@ -1284,6 +1293,11 @@ var TreatmentResourceCalendar = function() {
             var startMoment = moment(startTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
             var endMoment = moment(endTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
 
+            // Handle midnight end time: treat as end of day
+            if (endTime === '00:00' || endTime === '00:00:00') {
+                endMoment = moment('23:59', 'HH:mm');
+            }
+
             if (!startMoment.isValid() || !endMoment.isValid()) {
                 return;
             }
@@ -1342,6 +1356,11 @@ var TreatmentResourceCalendar = function() {
         markRotaSlots: function(doctorId, startTime, endTime) {
             var startMoment = moment(startTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
             var endMoment = moment(endTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
+
+            // Handle midnight end time: treat as end of day
+            if (endTime === '00:00' || endTime === '00:00:00') {
+                endMoment = moment('23:59', 'HH:mm');
+            }
 
             var slots = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"]');
 
@@ -1829,9 +1848,19 @@ if (typeof splitAvailabilityAroundTimeOffs === 'undefined') {
             var toStart = moment(timeOff.start_time, 'HH:mm:ss');
             var toEnd = moment(timeOff.end_time, 'HH:mm:ss');
 
+            // Handle midnight end time: treat as end of day
+            if (timeOff.end_time === '00:00' || timeOff.end_time === '00:00:00') {
+                toEnd = moment('23:59', 'HH:mm');
+            }
+
             segments.forEach(function(seg) {
                 var segStart = moment(seg.start, ['HH:mm:ss', 'HH:mm', 'h:mm A']);
                 var segEnd = moment(seg.end, ['HH:mm:ss', 'HH:mm', 'h:mm A']);
+
+                // Handle midnight end time for segment
+                if (seg.end === '00:00' || seg.end === '00:00:00') {
+                    segEnd = moment('23:59', 'HH:mm');
+                }
 
                 // Time off is completely outside this segment
                 if (toEnd.isSameOrBefore(segStart) || toStart.isSameOrAfter(segEnd)) {
