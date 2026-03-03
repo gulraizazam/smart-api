@@ -820,12 +820,13 @@ function saveShift() {
     $.ajax({
         url: route('admin.schedule.store-shifts'),
         type: 'POST',
-        data: {
+        data: JSON.stringify({
             resource_id: currentShiftResourceId,
             date: currentShiftDate,
             location_id: $('#shift_location_id').val(),
             shifts: shifts
-        },
+        }),
+        contentType: 'application/json',
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
