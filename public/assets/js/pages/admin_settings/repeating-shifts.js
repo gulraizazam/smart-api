@@ -372,7 +372,8 @@ function saveRepeatingShifts() {
     $.ajax({
         url: route('admin.schedule.store-repeating-shifts'),
         type: 'POST',
-        data: scheduleData,
+        data: JSON.stringify(scheduleData),
+        contentType: 'application/json',
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
