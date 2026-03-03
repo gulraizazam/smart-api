@@ -883,6 +883,11 @@ class ScheduleController extends Controller
             $startMinutes = $this->timeToMinutes($shift['start_time']);
             $endMinutes = $this->timeToMinutes($shift['end_time']);
 
+            // Treat 12:00am (midnight) end time as end of day (1440) instead of start of day (0)
+            if ($endMinutes === 0) {
+                $endMinutes = 1440;
+            }
+
             // Validate start is before end
             if ($startMinutes >= $endMinutes) {
                 return 'Shift ' . ($index + 1) . ': Start time must be before end time';
