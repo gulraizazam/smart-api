@@ -344,6 +344,11 @@ class ScheduleController extends Controller
             $startTime = $this->convertTo24Hour($shift['start_time']);
             $endTime = $this->convertTo24Hour($shift['end_time']);
 
+            // Handle midnight end time: 00:00 means end of day, so end_timestamp should be next day
+            $endTimestamp = $endTime === '00:00'
+                ? Carbon::parse($date)->addDay()->startOfDay()->format('Y-m-d H:i:s')
+                : Carbon::parse($date . ' ' . $endTime)->format('Y-m-d H:i:s');
+
             $rotaDay = ResourceHasRotaDays::create([
                 'date' => $date,
                 'start_time' => $startTime,
@@ -351,7 +356,7 @@ class ScheduleController extends Controller
                 'start_off' => null,
                 'end_off' => null,
                 'start_timestamp' => Carbon::parse($date . ' ' . $startTime)->format('Y-m-d H:i:s'),
-                'end_timestamp' => Carbon::parse($date . ' ' . $endTime)->format('Y-m-d H:i:s'),
+                'end_timestamp' => $endTimestamp,
                 'resource_has_rota_id' => $rota->id,
                 'active' => 1,
             ]);
@@ -484,14 +489,20 @@ class ScheduleController extends Controller
                         $startTime = $this->convertTo24Hour($shift['start_time']);
                         $endTime = $this->convertTo24Hour($shift['end_time']);
 
+                        // Handle midnight end time: 00:00 means end of day, so end_timestamp should be next day
+                        $dateStr = $currentDate->format('Y-m-d');
+                        $endTimestamp = $endTime === '00:00'
+                            ? Carbon::parse($dateStr)->addDay()->startOfDay()->format('Y-m-d H:i:s')
+                            : Carbon::parse($dateStr . ' ' . $endTime)->format('Y-m-d H:i:s');
+
                         ResourceHasRotaDays::create([
-                            'date' => $currentDate->format('Y-m-d'),
+                            'date' => $dateStr,
                             'start_time' => $startTime,
                             'end_time' => $endTime,
                             'start_off' => null,
                             'end_off' => null,
-                            'start_timestamp' => Carbon::parse($currentDate->format('Y-m-d') . ' ' . $startTime)->format('Y-m-d H:i:s'),
-                            'end_timestamp' => Carbon::parse($currentDate->format('Y-m-d') . ' ' . $endTime)->format('Y-m-d H:i:s'),
+                            'start_timestamp' => Carbon::parse($dateStr . ' ' . $startTime)->format('Y-m-d H:i:s'),
+                            'end_timestamp' => $endTimestamp,
                             'resource_has_rota_id' => $rota->id,
                             'active' => 1,
                         ]);
