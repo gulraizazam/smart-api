@@ -123,7 +123,8 @@ var ConsultancyCalendar = function() {
                             cache: false,
                             success: async function (response) {
                                 minxTime = response.start_time;
-                                maxTime = response.end_time;
+                                // Handle midnight end time: 00:00 means end of day
+                                maxTime = (response.end_time === '00:00:00' || response.end_time === '00:00') ? '24:00:00' : response.end_time;
                                 await ConsultancyCalendar.loadEvents(response, callback);
                                 ConsultancyCalendar.showOnlyAvailableSlots(minxTime, maxTime);
                                 $('.appointment-loader-base').hide();
@@ -375,6 +376,14 @@ var ConsultancyCalendar = function() {
                             /**
                              * Case 1: All times are added
                              */
+                            // Helper: get FullCalendar end datetime, handling midnight as next day
+                            function getEndDateTime(date, endTime) {
+                                if (endTime === '00:00' || endTime === '00:00:00') {
+                                    return moment(date, 'YYYY-MM-DD').add(1, 'day').format('YYYY-MM-DDTHH:mm:ss');
+                                }
+                                return formatDate(date + " " + endTime, 'YYYY-MM-DDTHH:mm:ss');
+                            }
+
                             if (rota.start_time && rota.start_off) {
                                 events.push({
                                     id: 'availableForMeeting',
@@ -386,7 +395,7 @@ var ConsultancyCalendar = function() {
                                 events.push({
                                     id: 'availableForMeeting',
                                     start: formatDate(rota.date + " " + rota.end_off, 'YYYY-MM-DDTHH:mm:ss'),
-                                    end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                    end: getEndDateTime(rota.date, rota.end_time),
                                     resourceId: $('#consultancy_doctor_filter').val(),
                                     rendering: 'background'
                                 });
@@ -398,7 +407,7 @@ var ConsultancyCalendar = function() {
                                         events.push({
                                             id: 'availableForMeeting',
                                             start: formatDate(rota.date + " " + seg.start, 'YYYY-MM-DDTHH:mm:ss'),
-                                            end: formatDate(rota.date + " " + seg.end, 'YYYY-MM-DDTHH:mm:ss'),
+                                            end: getEndDateTime(rota.date, seg.end),
                                             resourceId: $('#consultancy_doctor_filter').val(),
                                             rendering: 'background'
                                         });
@@ -411,7 +420,7 @@ var ConsultancyCalendar = function() {
                                                 id: 'timeOff_' + to.id,
                                                 title: to.type_label || 'Time Off',
                                                 start: formatDate(rota.date + " " + to.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                                end: formatDate(rota.date + " " + to.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                                end: getEndDateTime(rota.date, to.end_time),
                                                 resourceId: $('#consultancy_doctor_filter').val(),
                                                 rendering: 'background',
                                                 color: '#FFE2E5'
@@ -422,7 +431,7 @@ var ConsultancyCalendar = function() {
                                     events.push({
                                         id: 'availableForMeeting',
                                         start: formatDate(rota.date + " " + rota.start_time, 'YYYY-MM-DDTHH:mm:ss'),
-                                        end: formatDate(rota.date + " " + rota.end_time, 'YYYY-MM-DDTHH:mm:ss'),
+                                        end: getEndDateTime(rota.date, rota.end_time),
                                         resourceId: $('#consultancy_doctor_filter').val(),
                                         rendering: 'background'
                                     });
@@ -989,6 +998,11 @@ var CustomResourceCalendar = function() {
             var startMoment = moment(startTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
             var endMoment = moment(endTime, ['HH:mm:ss', 'HH:mm', 'h:mm A', 'hh:mm A']);
 
+            // Handle midnight end time: treat as end of day
+            if (endTime === '00:00' || endTime === '00:00:00') {
+                endMoment = moment('23:59', 'HH:mm');
+            }
+
             if (!startMoment.isValid() || !endMoment.isValid()) {
                 return;
             }
@@ -1049,10 +1063,12 @@ var CustomResourceCalendar = function() {
             var startMoment = moment(startTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
             var endMoment = moment(endTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
 
-          
+            // Handle midnight end time: treat as end of day
+            if (endTime === '00:00' || endTime === '00:00:00') {
+                endMoment = moment('23:59', 'HH:mm');
+            }
 
             var slots = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"]');
-          
 
             var markedCount = 0;
             slots.each(function() {
@@ -1672,10 +1688,13 @@ function splitAvailabilityAroundTimeOffs(rota, timeOffs) {
     function timeToMinutes(timeStr) {
         if (!timeStr) return 0;
         var parts = timeStr.split(':');
-        return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+        var mins = parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+        return mins;
     }
     
     function minutesToTime(minutes) {
+        // Treat 1440 (end of day) as midnight 00:00
+        if (minutes >= 1440) minutes = minutes - 1440;
         var hours = Math.floor(minutes / 60);
         var mins = minutes % 60;
         return (hours < 10 ? '0' : '') + hours + ':' + (mins < 10 ? '0' : '') + mins + ':00';
@@ -1687,11 +1706,15 @@ function splitAvailabilityAroundTimeOffs(rota, timeOffs) {
         
         var toStart = timeToMinutes(to.start_time);
         var toEnd = timeToMinutes(to.end_time);
+        // Treat midnight (00:00) end time as end of day (1440)
+        if (toEnd === 0) toEnd = 1440;
         
         var newSegments = [];
         $.each(segments, function(j, seg) {
             var segStart = timeToMinutes(seg.start);
             var segEnd = timeToMinutes(seg.end);
+            // Treat midnight (00:00) end time as end of day (1440)
+            if (segEnd === 0) segEnd = 1440;
             
             // Check if time off overlaps with this segment
             if (toEnd <= segStart || toStart >= segEnd) {
