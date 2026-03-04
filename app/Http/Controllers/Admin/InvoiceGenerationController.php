@@ -307,12 +307,11 @@ class InvoiceGenerationController extends Controller
         } else {
             $serviceName = 'Aesthetic Procedure';
             $taxPercent = $userTaxPercent;
-            // Service price is inclusive of tax, so extract tax from the inclusive amount
-            $taxAmount = round($invoice['amount'] * $taxPercent / (100 + $taxPercent), 2);
-            $totalAmount = $invoice['amount'];
+            $taxAmount = round($invoice['amount'] * $taxPercent / 100, 2);
+            $totalAmount = $invoice['amount'] + $taxAmount;
         }
 
-        $servicePrice = $totalAmount - $taxAmount;
+        $servicePrice = $invoice['amount'];
 
         $pdf = PDF::loadView('admin.reports.taxcalculationreport.invoice-pdf', [
             'invoice' => $invoice,

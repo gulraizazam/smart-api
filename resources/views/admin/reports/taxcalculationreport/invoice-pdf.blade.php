@@ -106,21 +106,17 @@
             <th>Service</th>
             <th>Service Price</th>
             <th>Subtotal</th>
-            @if($tax_percent > 0) 
             <th>Tax %</th>
             <th>Tax</th>
-            @endif
             <th>Total</th>
         </tr>
         <tr>
             <td>1</td>
             <td>{{ $service_name }}</td>
-            <td>{{ number_format($total_amount) }}</td>
             <td>{{ number_format($service_price) }}</td>
-            @if($tax_percent > 0)
+            <td>{{ number_format($service_price) }}</td>
             <td>{{ $tax_percent }}%</td>
             <td>{{ number_format($tax_amount) }}</td>
-            @endif
             <td>{{ number_format($total_amount) }}</td>
         </tr>
     </table>
