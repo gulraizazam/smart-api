@@ -115,8 +115,8 @@
         <tr>
             <td>1</td>
             <td>{{ $service_name }}</td>
-            <td>{{ number_format($invoice['amount']) }}</td>
-            <td>{{ number_format($invoice['amount']) }}</td>
+            <td>{{ number_format($service_price) }}</td>
+            <td>{{ number_format($service_price) }}</td>
             @if($tax_percent > 0)
             <td>{{ $tax_percent }}%</td>
             <td>{{ number_format($tax_amount) }}</td>

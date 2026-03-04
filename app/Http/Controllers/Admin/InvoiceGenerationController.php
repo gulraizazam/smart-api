@@ -287,25 +287,27 @@ class InvoiceGenerationController extends Controller
         $patientName = $patientNames[$invoice['patient_id']] ?? 'Patient C-' . $invoice['patient_id'];
 
         if ($type === 'exempt') {
-            $serviceLabel = 'Medical Consultation';
             $serviceName = 'Medical Consultation';
             $taxPercent = 0;
             $taxAmount = 0;
             $totalAmount = $invoice['amount'];
         } else {
-            $serviceLabel = 'Aesthetic Procedure';
             $serviceName = 'Aesthetic Procedure';
             $taxPercent = $userTaxPercent;
-            $taxAmount = round($invoice['amount'] * ($taxPercent / 100), 2);
-            $totalAmount = $invoice['amount'] + $taxAmount;
+            // Service price is inclusive of tax, so extract tax from the inclusive amount
+            $taxAmount = round($invoice['amount'] * $taxPercent / (100 + $taxPercent), 2);
+            $totalAmount = $invoice['amount'];
         }
+
+        $servicePrice = $totalAmount - $taxAmount;
 
         $pdf = PDF::loadView('admin.reports.taxcalculationreport.invoice-pdf', [
             'invoice' => $invoice,
             'location' => $location,
             'patient_name' => $patientName,
-            'service_label' => $serviceLabel,
+            'service_label' => $serviceName,
             'service_name' => $serviceName,
+            'service_price' => $servicePrice,
             'tax_percent' => $taxPercent,
             'tax_amount' => $taxAmount,
             'total_amount' => $totalAmount,
@@ -438,7 +440,7 @@ class InvoiceGenerationController extends Controller
         $sheet->setCellValue('C' . $row, '(' . $feasibility['max_possible_percent'] . '%)');
         $row++;
         $sheet->setCellValue('A' . $row, 'Target Achievable:');
-        $sheet->setCellValue('B' . $row, $feasibility['is_achievable'] ? 'YES ✓' : 'NO ✗');
+        $sheet->setCellValue('B' . $row, $feasibility['is_achievable'] ? 'YES' : 'NO');
         $sheet->getStyle('B' . $row)->getFont()->setColor(
             new \PhpOffice\PhpSpreadsheet\Style\Color($feasibility['is_achievable'] ? '276749' : 'c53030')
         );
@@ -476,7 +478,7 @@ class InvoiceGenerationController extends Controller
         $sheet->setCellValue('B' . $row, $summary['total_invoices']);
         $row++;
         $sheet->setCellValue('A' . $row, 'Verification Match:');
-        $sheet->setCellValue('B' . $row, $summary['verification']['match'] ? 'YES ✓' : 'NO ✗');
+        $sheet->setCellValue('B' . $row, $summary['verification']['match'] ? 'YES' : 'NO');
 
         // Auto-size columns
         foreach (range('A', 'D') as $col) {
