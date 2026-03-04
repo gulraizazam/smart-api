@@ -518,7 +518,6 @@
                         'admin.resourcerotas.calender-view',
                         'admin.invoices.index',
                         'admin.packages.log',
-                        'admin.nonplansrefunds.index',
                         'admin.custom_form_feedbacks.index',
                         'admin.custom_form_feedbacks.edit',
                         'admin.custom_form_feedbacks.filled_preview',

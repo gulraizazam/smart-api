@@ -62,7 +62,6 @@ use App\Http\Controllers\Admin\MembershipTypesController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Reports\OperationsReportController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
-use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
@@ -348,9 +347,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('packages/getdiscountinfocustom_for_plan', [PackagesController::class, 'getdiscountinfocustom_for_plan'])->name('packages.getdiscountinfocustom_for_plan');
         // Package Route end
 
-        // Non Refunds Route start
-        Route::get('nonplansrefunds/index', [RefundsController::class, 'nonplansindex'])->name('nonplansrefunds.index');
-        //Non Refunds Route end
+        // Non Plans Refunds routes removed — functionality not in use
 
         // Custom User Form Feedbacks Routes
         Route::get('custom_form_feedbacks/{id}/print', [CustomFormFeedbacksController::class, 'filledPrint'])->name('custom_form_feedbacks.filled_print');
@@ -445,10 +442,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('refundpatient/{id}/create', [RefundsController::class, 'create'])->name('refundpatient.create');
         /*Route end for patient refunds*/
 
-        /*Route start for patient non plans refunds*/
-        Route::get('nonplansrefundspatient/{id}', [PatientRefundController::class, 'nonplansrefundsindex'])->name('nonplansrefundpatient.index');
-        Route::post('nonplansrefundspatient/store', [PatientRefundController::class, 'nonplansrefundsstore'])->name('nonplansrefundpatient.store');
-        /*Route end for patient non plans refunds*/
+        // Patient non-plans refunds routes removed — functionality not in use
 
         /*Appointment routes*/
 
