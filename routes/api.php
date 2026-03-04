@@ -56,7 +56,6 @@ use App\Http\Controllers\Admin\MembershipsController;
 use App\Http\Controllers\Admin\MembershipTypesController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
-use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\Api\BusinessClosureController;
@@ -512,10 +511,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('packages/updatesoldby', [PackagesController::class, 'updateSoldBy'])->name('packages.updatesoldby');
     Route::resource('packages', PackagesController::class)->except('index');
 
-    //Non Refunds Route start
-    Route::post('nonplansrefunds/datatable', [RefundsController::class, 'nonplansdatatable'])->name('nonplansrefunds.datatable');
-    Route::get('nonplansrefunds/refund_create/{id}', [RefundsController::class, 'nonplans_refund_create'])->name('nonprefunds.refund_create');
-    Route::post('nonplansrefunds/store', [RefundsController::class, 'nonplans_refund_store'])->name('nonplansrefunds.store');
+    // Non Plans Refunds API routes removed — functionality not in use
 
     // Custom User Form Feedbacks Routes
     Route::post('custom_form_feedbacks/datatable', [CustomFormFeedbacksController::class, 'datatable'])->name('custom_form_feedbacks.datatable');
@@ -737,8 +733,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'patientDatatable'])->name('refundpatient.datatable');
     Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
 
-    Route::post('nonplansrefundspatient/datatable/{id}', [PatientRefundController::class, 'nonplansdatatable'])->name('nonplansrefundpatient.datatable');
-    Route::get('nonplansrefundspatient/refund_create/{id}', [PatientRefundController::class, 'nonplansrefundscreate'])->name('nonplansrefundpatient.refund_create');
+    // Patient non-plans refunds API routes removed — functionality not in use
 
     /*Appointment routes*/
     Route::post('consultancy/datatable', [AppointmentsController::class, 'datatable'])->name('consultancy.datatable');

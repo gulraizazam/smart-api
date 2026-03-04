@@ -215,10 +215,6 @@
                                     @include('admin.patients.card.refunds.index', ['customId' => 'refund-search'])
                                 </div>
 
-                                <div id="no-plan-refund-form" class="content-section d-none">
-                                    @include('admin.patients.card.nonplansrefunds.index', ['customId' => 'no-plan-refund-search'])
-                                </div>
-
                                 <div id="history-form" class="content-section d-none">
                                     @include('admin.patients.card.history.index')
                                 </div>

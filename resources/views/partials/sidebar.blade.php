@@ -64,14 +64,14 @@
             @endcan
 
             @if(Gate::allows('patients_manage'))
-            <li class="nav-item start @if($request->segment(2) == 'patients' || $request->segment(2) == 'nonplansrefundspatient' || $request->segment(2) == 'customformfeedbackspatient' || $request->segment(2) == 'plans' || $request->segment(2) == 'finances' || $request->segment(2) == 'patients' || $request->segment(2) == 'refundpatient' || $request->segment(2) == 'invoicepatient') active open @endif">
+            <li class="nav-item start @if($request->segment(2) == 'patients' || $request->segment(2) == 'customformfeedbackspatient' || $request->segment(2) == 'plans' || $request->segment(2) == 'finances' || $request->segment(2) == 'patients' || $request->segment(2) == 'refundpatient' || $request->segment(2) == 'invoicepatient') active open @endif">
                 <a href="javascript:;" class="nav-link nav-toggle">
                     <i class="icon-users"></i>
                     <span class="title">@lang('global.patients.heading')</span>
                     <span class="arrow"></span>
                 </a>
                 <ul class="sub-menu">
-                    <li class="nav-item start {{ ($request->segment(2) == 'patients' || $request->segment(2) == 'nonplansrefundspatient' || $request->segment(2) == 'customformfeedbackspatient' || $request->segment(2) == 'plans' || $request->segment(2) == 'finances' || $request->segment(2) == 'refundpatient' || $request->segment(2) == 'invoicepatient') ? 'active' : '' }}">
+                    <li class="nav-item start {{ ($request->segment(2) == 'patients' || $request->segment(2) == 'customformfeedbackspatient' || $request->segment(2) == 'plans' || $request->segment(2) == 'finances' || $request->segment(2) == 'refundpatient' || $request->segment(2) == 'invoicepatient') ? 'active' : '' }}">
                         <a href="{{ route('admin.patients.index') }}">
                             <span class="title">@lang('global.patients.title')</span>
                         </a>
@@ -207,7 +207,6 @@
                     $request->segment(2) == 'packagesadvances' ||
                     $request->segment(2) == 'invoices' ||
                     $request->segment(2) == 'refunds' ||
-                    $request->segment(2) == 'nonplansrefunds' ||
                     $request->segment(2) == 'pabao_records' ||
                     $request->segment(2) == 'machinetypes' ||
                     $request->segment(2) == 'towns'
@@ -404,23 +403,10 @@
             @endif
             {{--Refunds Start--}}
             @if(Gate::allows('refunds_manage'))
-            <li class="nav-item start @if($request->segment(2) == 'refunds' || $request->segment(2) == 'nonplansrefunds') active open @endif">
-                <a href="javascript:;" class="nav-link nav-toggle">
+            <li class="nav-item start {{ $request->segment(2) == 'refunds' ? 'active active-sub' : '' }}">
+                <a href="{{ route('admin.refunds.index') }}">
                     <span class="title">@lang('global.refunds.title')</span>
-                    <span class="arrow"></span>
                 </a>
-                <ul class="sub-menu">
-                    <li class="nav-item start {{ ($request->segment(2) == 'refunds') ? 'active' : '' }}">
-                        <a href="{{ route('admin.refunds.index') }}">
-                            <span class="title">@lang('global.refunds.plans_refunds')</span>
-                        </a>
-                    </li>
-                    <li class="nav-item start {{ ($request->segment(2) == 'nonplansrefunds' && $request->segment(3) == 'index') ? 'active' : '' }}">
-                        <a href="{{ route('admin.nonplansrefunds.index') }}">
-                            <span class="title">@lang('global.refunds.non_plans_refunds')</span>
-                        </a>
-                    </li>
-                </ul>
             </li>
             @endif
             @if(Gate::allows('pabao_records_manage'))

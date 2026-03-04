@@ -209,7 +209,8 @@ class TreatmentUpdateService
         }
 
         // Validate scheduled time is within ANY of the rota shifts
-        $scheduledTimeCarbon = Carbon::parse($scheduledTime);
+        // Compare using time-only (H:i) to avoid date component issues with Carbon::parse on time strings
+        $scheduledMinutes = Carbon::parse($scheduledTime)->hour * 60 + Carbon::parse($scheduledTime)->minute;
         $isWithinAnyShift = false;
         $allShiftRanges = [];
 
@@ -218,9 +219,22 @@ class TreatmentUpdateService
             $rotaEndTime = Carbon::parse($rotaDay->end_time);
             $allShiftRanges[] = $rotaStartTime->format('h:i A') . ' - ' . $rotaEndTime->format('h:i A');
 
-            if ($scheduledTimeCarbon->gte($rotaStartTime) && $scheduledTimeCarbon->lte($rotaEndTime)) {
-                $isWithinAnyShift = true;
-                break;
+            $startMinutes = $rotaStartTime->hour * 60 + $rotaStartTime->minute;
+            $endMinutes = $rotaEndTime->hour * 60 + $rotaEndTime->minute;
+
+            // Handle overnight shifts (e.g., 8PM to 12AM) where end <= start in minutes
+            if ($endMinutes <= $startMinutes) {
+                // Overnight shift: valid if time >= start OR time <= end
+                if ($scheduledMinutes >= $startMinutes || $scheduledMinutes <= $endMinutes) {
+                    $isWithinAnyShift = true;
+                    break;
+                }
+            } else {
+                // Normal shift: valid if time >= start AND time <= end
+                if ($scheduledMinutes >= $startMinutes && $scheduledMinutes <= $endMinutes) {
+                    $isWithinAnyShift = true;
+                    break;
+                }
             }
         }
 
@@ -246,7 +260,7 @@ class TreatmentUpdateService
             })
             ->get();
 
-        $scheduledTimeFormatted = $scheduledTimeCarbon->format('H:i:s');
+        $scheduledTimeFormatted = Carbon::parse($scheduledTime)->format('H:i:s');
 
         foreach ($timeOffs as $timeOff) {
             $timeOffStart = Carbon::parse($timeOff->start_time)->format('H:i:s');

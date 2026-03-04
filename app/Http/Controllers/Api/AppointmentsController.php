@@ -155,6 +155,11 @@ class AppointmentsController extends Controller
         }
     }
 
+    public function updateSchedule(Request $request)
+    {
+        return $this->schedule($request);
+    }
+
     public function schedule(Request $request)
     {
         try {
