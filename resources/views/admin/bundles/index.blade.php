@@ -47,7 +47,7 @@
                                 <a href="javascript:void(0);" class="btn btn-primary" id="create-btn" data-toggle="modal" data-target="#modal_bundles">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
-                                    Add Simple Bundle
+                                    Create Bundle
                                 </a>
                         @endif
                         <!--end::Button-->
