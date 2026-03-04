@@ -249,9 +249,15 @@ class InvoiceGenerationController extends Controller
                 return strcmp($a['_type'], $b['_type']);
             });
 
-            // Use invoice number as PDF filename
+            // Build sequential filenames: YYYYMMDD0001.pdf per date
+            $dateSequence = [];
             foreach ($allInvoices as &$inv) {
-                $inv['_pdf_name'] = $inv['invoice_number'] . '.pdf';
+                $dateKey = str_replace('-', '', $inv['invoice_date']); // e.g. 20210701
+                if (!isset($dateSequence[$dateKey])) {
+                    $dateSequence[$dateKey] = 0;
+                }
+                $dateSequence[$dateKey]++;
+                $inv['_pdf_name'] = $dateKey . str_pad($dateSequence[$dateKey], 4, '0', STR_PAD_LEFT) . '.pdf';
             }
             unset($inv);
 
