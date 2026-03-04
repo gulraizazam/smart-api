@@ -17,12 +17,6 @@
                    id="search_total_services"/>
         </div> -->
         <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Apply Discount:</label>
-            <select class="form-control filter-field select2" id="search_apply_discount">
-
-            </select>
-        </div>
-        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Valid From:</label>
                 <input type="text" id="search_startdate" class="custom-datepicker form-control filter-field datatable-input"
                        placeholder="Valid From" data-col-index="5">

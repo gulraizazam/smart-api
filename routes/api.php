@@ -365,11 +365,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::post('status', [BundlesController::class, 'status'])->name('status');
         Route::get('detail/{id}', [BundlesController::class, 'detail'])->name('detail');
         Route::get('{id}/edit', [BundlesController::class, 'edit'])->name('edit');
-        Route::get('editconf/{id}', [BundlesController::class, 'editConfigurable'])->name('editconf');
         Route::post('/', [BundlesController::class, 'store'])->name('store');
-        Route::post('configurable', [BundlesController::class, 'storeConfigurable'])->name('store.configurable');
         Route::put('{id}', [BundlesController::class, 'update'])->name('update');
-        Route::put('configurable/{id}', [BundlesController::class, 'updateConfigurable'])->name('update.configurable');
         Route::delete('{id}', [BundlesController::class, 'destroy'])->name('destroy');
     });
     //Bundles Route End

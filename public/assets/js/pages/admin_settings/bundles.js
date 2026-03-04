@@ -2,15 +2,6 @@ var table_url = route('admin.bundles.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 30,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },
-    {
         field: 'name',
         title: 'Name',
         width: 190,
@@ -23,12 +14,6 @@ var table_columns = [
     {
         field: 'total_services',
         title: 'Total Services',
-        width: 100,
-    },
-
-    {
-        field: 'apply_discount',
-        title: 'Apply Discount',
         width: 100,
     },
     {
@@ -50,6 +35,17 @@ var table_columns = [
             return statuses(data, status_url);
         }
     },{
+        field: 'created_at',
+        title: 'Created At',
+        width: 'auto',
+        template: function (data) {
+            if (data.created_at) {
+                var date = new Date(data.created_at);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) + ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            }
+            return '';
+        }
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -59,11 +55,8 @@ var table_columns = [
         template: function (data) {
             return actions(data);
         }
-    }, {
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    }];
+    }
+];
 
 
 function actions(data) {
@@ -71,12 +64,7 @@ function actions(data) {
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
-    let url;
-    if(data.bundle_type=="configurable"){
-         url = route('admin.bundles.editconf', {id: id});
-    }else{
-         url = route('admin.bundles.edit', {id: id});
-    }
+    let url = route('admin.bundles.edit', {id: id});
    
     let delete_url = route('admin.bundles.destroy', {id: id});
 
@@ -133,16 +121,8 @@ function editRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            
-            if(response.data.bundle.bundle_type=="configurable"){
-                $("#modal_edit_conf_bundles").modal("show");
-                setConfEditData(response);
-            }else{
-                $("#modal_bundles").modal("show");
-                setEditData(response);
-            }
-          
-
+            $("#modal_bundles").modal("show");
+            setEditData(response);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -187,7 +167,7 @@ function setDetailData(response) {
 
 function setEditData(response) {
     
-    $('#model-title').html('Edit Package');
+    $('#model-title').html('Edit Bundle');
     let bundle = response.data.bundle;
     let bundle_services =response.data.bundle_services;
     let relationships =response.data.relationships;
@@ -212,158 +192,6 @@ function setEditData(response) {
 
     calculateServicesTotal();
 }
-function setConfEditData(response) {
-    $('#tes_container').empty();
-    let bundle = response.data.bundle;
-    let base_service_id = response.data.base_service[0].service_id;
-   
-    let action = route('admin.bundles.update', {id: bundle.id});
-    $("#modal_edit_conf_bundles_form").attr("action", action);
-    $('#editput_input').html('<input type="hidden" name="_method" value="put">');
-    $('#edit_bundles_name').val(bundle.name);
-    $('#sessions_buy').val(bundle.base_service_session).change();
-    $('#start').val(bundle.start);
-    $('#end').val(bundle.end);
-    let services = response.data.services;
-    let service_options = '<option value="">Select</option>';
-  
-    Object.values(services).forEach(function(value, index) {
-       
-        if (value.name == 'All Services') {
-              service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
-        } else {
-            service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
-            Object.values(value.children).forEach(function (child, index) {
-                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
-            });
-        }
-    });
-    $("#edit_get_services").html(service_options);
-    Object.values(response.data.get_services).forEach(function(value, index) {
-               
-        populateSection(value,index);
-        
-    });
-    $("#edit_base_service").html(service_options);
-
-    $("#edit_base_service").val(base_service_id).change();
-
-   
-}
-function populateSection(data,index) {
-
-    let newindex = index + 1;
-    var templateSection = $("#get_services_section").clone().removeAttr("style");
-
-    // Use a single modifiedHTML variable to accumulate changes
-    let modifiedHTML = templateSection.html();
-    modifiedHTML = modifiedHTML.replace(/edit_services_name\[\]/g, 'edit_services_name[' + index + ']');
-    modifiedHTML = modifiedHTML.replace(/edit_sessions\[\]/g, 'edit_sessions[' + index + ']');
-    modifiedHTML = modifiedHTML.replace(/edit_disc_type\[\]/g, 'edit_disc_type[' + index + ']');
-    templateSection.html(modifiedHTML);
-
-    templateSection.find('[name="edit_sessions['+ index + ']"]').val(1);
-    templateSection.find('[name="edit_services_name['+ index + ']"]').val(data.service_id).change();
-
-    if (data.discount_type == "complimentory") {
-        templateSection.find('[name="edit_disc_type['+ index + ']"][value="complimentory"]').prop("checked", true);
-    } else {
-        templateSection.find('[name="edit_disc_type['+ index + ']"][value="custom"]').prop("checked", true);
-        templateSection.append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control" name="configurable_amount['+ index + ']" value="'+data.discount_amount+'"></div>');
-    }
-
-    $("#tes_container").append(templateSection);
-
-}
-function applyFilters(datatable) {
-    $('#apply-filters').on('click', function () {
-        let filters = {
-            delete: '',
-            name: $("#search_name").val(),
-            price: $("#search_price").val(),
-            total_services: $("#search_total_services").val(),
-            apply_discount: $("#search_apply_discount").val(),
-            startdate: $("#search_startdate").val(),
-            enddate: $("#search_enddate").val(),
-            created_from: $("#created_from").val(),
-            created_to: $("#created_to").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
-    });
-}
-
-function resetAllFilters(datatable) {
-    $('#reset-filters').on('click', function () {
-        let filters = {
-            delete: '',
-            name: '',
-            price: '',
-            total_services: '',
-            apply_discount: '',
-            startdate: '',
-            enddate: '',
-            created_from: '',
-            created_to: '',
-            status: '',
-            filter: 'filter_cancel',
-        }
-        datatable.search(filters, 'search');
-    });
-}
-
-function setFilters(filter_values, active_filters) {
-    let status = filter_values.status;
-    let status_options = '<option value="">All</option>';
-    let discounts = filter_values.discounts;
-    let discount_options = '<option value="">All</option>';
-
-    let taxs = filter_values.tax_treatment_types;
-    let tax_options = '';
-
-    let services = filter_values.services;
-    let service_options = '';
-
-    Object.entries(status).forEach(function (value, index) {
-        status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-    });
-    Object.entries(discounts).forEach(function (value, index) {
-        discount_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-    });
-
-    Object.entries(taxs).forEach(function (value, i, index) {
-        if (i === 0) {
-            tax_options += '<label class="radio"><input checked name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
-        } else {
-            tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
-        }
-    });
-
-    Object.entries(services).forEach(function (value, index) {
-        service_options += '<option value="' + value[1].id + '" data-name = "' + value[1].name + '" data-price = "' + value[1].price + '" data-id = "' + value[1].id + '">' + value[1].name + '</option>';
-    });
-
-
-    $("#search_status").html(status_options);
-    $("#search_apply_discount").html(discount_options);
-    $("#bundles_tax").html(tax_options);
-    $("#services").html(service_options);
-
-
-    $("#search_apply_discount").val(active_filters.apply_discount);
-    $("#search_price").val(active_filters.price);
-    $("#search_created_from").val(active_filters.created_from);
-    $("#search_created_to").val(active_filters.created_to);
-    $("#search_startdate").val(active_filters.start);
-    $("#search_enddate").val(active_filters.end);
-    $("#search_name").val(active_filters.name);
-    $("#search_total_services").val(active_filters.total_services);
-    $("#search_status").val(active_filters.status);
-
-}
-
 
 function addRow() {
     if ($('#services').val() != '') {
@@ -410,122 +238,84 @@ $('#create-btn').click(function () {
     let action = route('admin.bundles.store');
     $("#modal_bundles_form").attr("action", action);
     $('#put_input').html('');
-    $('#model-title').html('Add Package');
+    $('#model-title').html('Add Bundle');
     $('.HR_SERVICES').remove();
     calculateServicesTotal();
 });
 
-function notParent(val) {
-    let form = ($(val).parents('form'))[0];
-    let value = $(val).val();
-    if (value == '' || value == null) {
-        $('.not-have-parent').show();
-    } else {
-        $(form).find("input[name='is_default'][value='1']").prop('checked', false);
-        $(form).find("input[name='is_default'][value='0']").prop('checked', true);
-
-        $(form).find("input[name='is_arrived'][value='1']").prop('checked', false);
-        $(form).find("input[name='is_arrived'][value='0']").prop('checked', true);
-
-        $(form).find("input[name='is_cancelled'][value='1']").prop('checked', false);
-        $(form).find("input[name='is_cancelled'][value='0']").prop('checked', true);
-
-        $(form).find("input[name='is_unscheduled'][value='1']").prop('checked', false);
-        $(form).find("input[name='is_unscheduled'][value='0']").prop('checked', true);
-
-        $(form).find("input[name='allow_message']").prop('checked', false);
-
-        $('.not-have-parent').hide();
-    }
+function applyFilters(datatable) {
+    $('#apply-filters').on('click', function () {
+        let filters = {
+            delete: '',
+            name: $("#search_name").val(),
+            price: $("#search_price").val(),
+            total_services: $("#search_total_services").val(),
+            startdate: $("#search_startdate").val(),
+            enddate: $("#search_enddate").val(),
+            created_from: $("#created_from").val(),
+            created_to: $("#created_to").val(),
+            status: $("#search_status").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
 }
-function SetFields()
-{       
-        $('#configurable_fields').find('.remove_discount.add_new_discount').parents('.discount_type_wrap').remove();
-        
-        $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            url: route("admin.discounts.getDiscountServices"),
-            type: "GET",
-            data: {},
-            cache: false,
-            success: function (response) {
-    
-                let services = response.data.services;
-                let service_child_value = '';
-                let service_options = '<option value="">Select</option>';
-            
-                Object.values(services).forEach(function(value, index) {
-                    
-                    if (value.name == 'All Services') {
-                          service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
-                    } else {
-                        service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
-                        Object.values(value.children).forEach(function (child, index) {
-                            service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                            service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
-                        });
-                    }
-                });
-                $("#add_base_service").html(service_options);
-                $("#services_sessions").html(service_options);
-                $('#add_base_service').select2();
-               
-                reInitSelect2(".select2", "");
-    
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-    
-                reInitValidation(EditValidation);
-            }
-        });
-  
+
+function resetAllFilters(datatable) {
+    $('#reset-filters').on('click', function () {
+        let filters = {
+            delete: '',
+            name: '',
+            price: '',
+            total_services: '',
+            startdate: '',
+            enddate: '',
+            created_from: '',
+            created_to: '',
+            status: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    });
 }
-var cloneCounter = 1;
 
-$('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
+function setFilters(filter_values, active_filters) {
+    let status = filter_values.status;
+    let status_options = '<option value="">All</option>';
+    let taxs = filter_values.tax_treatment_types;
+    let tax_options = '';
 
-    var cloneElements = $(this).parent().parent('.get_discount_type').children().html();
-    
-    // Replace names of input fields with unique names
-    cloneElements = cloneElements.replace('sessions[]', 'sessions[' + cloneCounter + ']');
-    cloneElements = cloneElements.replace('services_name[]', 'services_name[' + cloneCounter + ']');
-    cloneElements = cloneElements.replaceAll('disc_type[]', 'disc_type[' + cloneCounter + ']');
-    cloneElements = cloneElements.replace('configurable_amount[]', 'configurable_amount[' + cloneCounter + ']');
-    cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
-    cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
-    cloneElements = cloneElements.replace('la-plus', 'la-minus');
+    let services = filter_values.services;
+    let service_options = '';
 
-    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type mt-3"><div class="d-flex">'+cloneElements+'</div></div>');
-    
-    // Increment the counter for the next clone
-    cloneCounter++;
-});
+    Object.entries(status).forEach(function (value, index) {
+        status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+    });
+    Object.entries(taxs).forEach(function (value, i, index) {
+        if (i === 0) {
+            tax_options += '<label class="radio"><input checked name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        } else {
+            tax_options += '<label class="radio"><input name="tax_treatment_type_id" value="' + value[1].id + '" type="radio"/><span></span>' + value[1].name + '</label>';
+        }
+    });
 
-$(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
-    $(this).parent().parent('.get_discount_type').remove();
-});
-$(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
-    var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
-    if(!$('#modal_edit_discounts.show').length){
-        Elementindex = (parseInt(Elementindex)-1);
-    }
-    if($(this).is(':checked') && $(this).val() == "custom"){
-        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+Elementindex+']"></div>');
-    } else{
-        $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
-    }
-});
-$(document).on("keyup", ".add_configurable_amount", function () {
-
-    
-    var val = parseInt(this.value);
-    if (val > 100 || val < 0) {
-        this.value = '';
-        toastr.error("Amount is not allowed greater than 100");
-    }
+    Object.entries(services).forEach(function (value, index) {
+        service_options += '<option value="' + value[1].id + '" data-name = "' + value[1].name + '" data-price = "' + value[1].price + '" data-id = "' + value[1].id + '">' + value[1].name + '</option>';
+    });
 
 
-})
+    $("#search_status").html(status_options);
+    $("#bundles_tax").html(tax_options);
+    $("#services").html(service_options);
+
+
+    $("#search_price").val(active_filters.price);
+    $("#search_created_from").val(active_filters.created_from);
+    $("#search_created_to").val(active_filters.created_to);
+    $("#search_startdate").val(active_filters.start);
+    $("#search_enddate").val(active_filters.end);
+    $("#search_name").val(active_filters.name);
+    $("#search_total_services").val(active_filters.total_services);
+    $("#search_status").val(active_filters.status);
+
+}

@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder" id="model-title" >Add Package</h2>
+        <h2 class="fw-bolder" id="model-title" >Add Bundle</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">

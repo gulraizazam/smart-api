@@ -73,17 +73,6 @@ class BundleHelper
     }
 
     /**
-     * Get discount options for bundles
-     */
-    public static function getDiscountOptions(): array
-    {
-        return [
-            '0' => 'No',
-            '1' => 'Yes'
-        ];
-    }
-
-    /**
      * Clear bundle-related caches
      */
     public static function clearCache(): void
@@ -192,17 +181,8 @@ class BundleHelper
             'start' => $bundle->start ? Carbon::parse($bundle->start)->format('D M, j Y') : null,
             'end' => $bundle->end ? Carbon::parse($bundle->end)->format('D M, j Y') : null,
             'active' => $bundle->active,
-            'bundle_type' => $bundle->bundle_type,
             'created_at' => $bundle->created_at,
         ];
-    }
-
-    /**
-     * Get services tree list for configurable bundles
-     */
-    public static function getServicesTreeList(): array
-    {
-        return GeneralFunctions::ServicesTreeList();
     }
 
     /**
@@ -236,7 +216,6 @@ class BundleHelper
     {
         return [
             'status' => self::getStatusOptions(),
-            'discounts' => self::getDiscountOptions(),
             'tax_treatment_types' => self::getTaxTreatmentTypes(),
             'services' => self::getServices(),
         ];

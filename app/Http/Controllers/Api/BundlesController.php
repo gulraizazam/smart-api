@@ -8,8 +8,6 @@ use App\Exceptions\BundleException;
 use App\HelperModule\ApiHelper;
 use App\Http\Requests\Bundle\StoreBundleRequest;
 use App\Http\Requests\Bundle\UpdateBundleRequest;
-use App\Http\Requests\Bundle\StoreConfigurableBundleRequest;
-use App\Http\Requests\Bundle\UpdateConfigurableBundleRequest;
 use App\Http\Requests\Bundle\UpdateBundleStatusRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -69,23 +67,6 @@ class BundlesController extends Controller
     }
 
     /**
-     * Store a new configurable bundle
-     */
-    public function storeConfigurable(StoreConfigurableBundleRequest $request): JsonResponse
-    {
-        try {
-            $this->bundleService->createConfigurableBundle($request->validated());
-
-            return ApiHelper::apiResponse($this->success, 'Configurable bundle has been created successfully.');
-
-        } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    /**
      * Get bundle data for editing
      */
     public function edit(int $id): JsonResponse
@@ -107,27 +88,6 @@ class BundlesController extends Controller
     }
 
     /**
-     * Get configurable bundle data for editing
-     */
-    public function editConfigurable(int $id): JsonResponse
-    {
-        try {
-            if (!Gate::allows('packages_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-
-            $data = $this->bundleService->getConfigurableBundleForEdit($id);
-
-            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
-
-        } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    /**
      * Update a simple bundle
      */
     public function update(UpdateBundleRequest $request, int $id): JsonResponse
@@ -136,23 +96,6 @@ class BundlesController extends Controller
             $this->bundleService->updateBundle($id, $request->validated());
 
             return ApiHelper::apiResponse($this->success, 'Bundle has been updated successfully.');
-
-        } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    /**
-     * Update a configurable bundle
-     */
-    public function updateConfigurable(UpdateConfigurableBundleRequest $request, int $id): JsonResponse
-    {
-        try {
-            $this->bundleService->updateConfigurableBundle($id, $request->validated());
-
-            return ApiHelper::apiResponse($this->success, 'Configurable bundle has been updated successfully.');
 
         } catch (BundleException $e) {
             return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
