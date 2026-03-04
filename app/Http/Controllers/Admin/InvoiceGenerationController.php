@@ -60,6 +60,9 @@ class InvoiceGenerationController extends Controller
         try {
             $result = $this->invoiceService->generateExemptInvoices($params);
 
+            // Cache result in session so Excel and ZIP downloads use the same data
+            session(['invoice_generation_result' => $result]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Calculations completed successfully',
@@ -105,7 +108,12 @@ class InvoiceGenerationController extends Controller
         ];
 
         try {
-            $result = $this->invoiceService->generateExemptInvoices($params);
+            // Use cached result from calculateAmounts to ensure consistency
+            $result = session('invoice_generation_result');
+            if (!$result) {
+                $result = $this->invoiceService->generateExemptInvoices($params);
+                session(['invoice_generation_result' => $result]);
+            }
 
             // Create Excel file
             $spreadsheet = new Spreadsheet();
@@ -190,7 +198,12 @@ class InvoiceGenerationController extends Controller
         ini_set('memory_limit', '512M');
 
         try {
-            $result = $this->invoiceService->generateExemptInvoices($params);
+            // Use cached result from calculateAmounts to ensure consistency
+            $result = session('invoice_generation_result');
+            if (!$result) {
+                $result = $this->invoiceService->generateExemptInvoices($params);
+                session(['invoice_generation_result' => $result]);
+            }
 
             // Get location info (use first selected location)
             $location = Locations::find($validated['location_ids'][0]);
@@ -236,15 +249,9 @@ class InvoiceGenerationController extends Controller
                 return strcmp($a['_type'], $b['_type']);
             });
 
-            // Build sequential filenames: YYYYMMDD0001.pdf per date
-            $dateSequence = [];
+            // Use invoice number as PDF filename
             foreach ($allInvoices as &$inv) {
-                $dateKey = str_replace('-', '', $inv['invoice_date']); // e.g. 20230711
-                if (!isset($dateSequence[$dateKey])) {
-                    $dateSequence[$dateKey] = 0;
-                }
-                $dateSequence[$dateKey]++;
-                $inv['_pdf_name'] = $dateKey . str_pad($dateSequence[$dateKey], 4, '0', STR_PAD_LEFT) . '.pdf';
+                $inv['_pdf_name'] = $inv['invoice_number'] . '.pdf';
             }
             unset($inv);
 
