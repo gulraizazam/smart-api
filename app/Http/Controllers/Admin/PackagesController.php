@@ -3636,8 +3636,8 @@ class PackagesController extends Controller
 
         $account_info = Accounts::find($package->account_id);
 
-        // Include membershipType relationship for membership plans
-        $packagebundles = PackageBundles::with(['bundle', 'membershipType'])->where('package_id', '=', $package->id)->get();
+        // Include service, bundle and membershipType relationships
+        $packagebundles = PackageBundles::with(['bundle', 'service', 'membershipType'])->where('package_id', '=', $package->id)->get();
 
         $packageservices = PackageService::where('package_id', '=', $package->id)->get();
 
