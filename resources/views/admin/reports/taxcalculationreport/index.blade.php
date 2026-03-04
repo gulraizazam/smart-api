@@ -439,6 +439,9 @@
             html += '<div class="summary-item"><span>Target Exempt (' + data.pool.exempt_percent + '%):</span><span>' + formatNumber(data.pool.target_exempt) + '</span></div>';
             html += '<div class="summary-item"><span>Achieved Exempt (' + data.summary.exempt_percent + '%):</span><span>' + formatNumber(data.summary.total_exempt_invoiced) + '</span></div>';
             html += '<div class="summary-item"><span>Actual Taxable Invoiced (' + data.summary.taxable_percent + '%):</span><span>' + formatNumber(data.pool.actual_taxable_invoiced) + '</span></div>';
+            var taxPercent = parseFloat(data.parameters.tax_percent) || 13;
+            var actualTax = data.pool.actual_taxable_invoiced * taxPercent / (100 + taxPercent);
+            html += '<div class="summary-item"><span>Tax to be Paid (' + taxPercent + '%):</span><span>' + formatNumber(actualTax) + '</span></div>';
             html += '<div class="summary-item total"><span>Target Range (' + data.pool.target_range.min_percent + '-' + data.pool.target_range.max_percent + '%):</span><span>' + formatNumber(data.pool.target_range.min) + ' - ' + formatNumber(data.pool.target_range.max) + '</span></div>';
             html += '</div></div>';
             html += '</div>';
