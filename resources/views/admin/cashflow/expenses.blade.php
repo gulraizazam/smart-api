@@ -127,11 +127,8 @@
                                     <option value="">All Categories</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <input type="date" id="filter-date-from" class="form-control form-control-sm" placeholder="From" />
-                            </div>
-                            <div class="col-md-2">
-                                <input type="date" id="filter-date-to" class="form-control form-control-sm" placeholder="To" />
+                            <div class="col-md-3">
+                                <input type="text" id="filter-date-range" class="form-control form-control-sm" placeholder="Date Range" readonly />
                             </div>
                             <div class="col-md-2">
                                 <div class="input-group input-group-sm">

@@ -22,8 +22,7 @@
                                     <option value="flagged-entries">Flagged Entries</option>
                                     <option value="dormant-vendors">Dormant Vendors</option>
                                 </select>
-                                <input type="date" id="rpt-date-from" class="form-control form-control-sm mr-2" style="width:140px;" />
-                                <input type="date" id="rpt-date-to" class="form-control form-control-sm mr-2" style="width:140px;" />
+                                <input type="text" id="rpt-date-range" class="form-control form-control-sm mr-2" style="width:220px;" readonly />
                                 <select id="rpt-branch" class="form-control form-control-sm mr-2" style="width:180px;">
                                     <option value="">All Branches</option>
                                 </select>

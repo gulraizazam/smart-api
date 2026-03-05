@@ -25,8 +25,7 @@
                                 @endcan
                             </div>
                             <div class="d-flex align-items-center">
-                                <input type="date" id="dash-date-from" class="form-control form-control-sm mr-2" style="width:140px;" />
-                                <input type="date" id="dash-date-to" class="form-control form-control-sm mr-2" style="width:140px;" />
+                                <input type="text" id="dash-date-range" class="form-control form-control-sm mr-2" style="width:220px;" readonly />
                                 <select id="dash-branch" class="form-control form-control-sm mr-2" style="width:180px;">
                                     <option value="">All Branches</option>
                                 </select>
