@@ -3136,10 +3136,12 @@ class PlanService
             // Check if child records exist (optimized with exists() instead of count())
             $hasInvoiceDetails = DB::table('invoice_details')
                 ->where('package_id', $packageId)
+                ->where('deleted_at',null)
                 ->exists();
 
             $hasPackageAdvances = DB::table('package_advances')
                 ->where('package_id', $packageId)
+                ->where('deleted_at',null)
                 ->exists();
 
             if ($hasInvoiceDetails || $hasPackageAdvances) {
