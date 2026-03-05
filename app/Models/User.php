@@ -30,7 +30,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    protected $fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'can_perform_consultation', 'user_type_id', 'resource_type_id', 'referred_by', 'account_id', 'active', 'select_all'];
+    protected $fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'can_perform_consultation', 'user_type_id', 'resource_type_id', 'referred_by', 'account_id', 'active', 'select_all', 'is_advance_eligible'];
 
     protected static $_fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'can_perform_consultation', 'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all'];
 
