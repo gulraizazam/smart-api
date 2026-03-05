@@ -1232,6 +1232,7 @@ class CashFlowController extends Controller
 
             $staff = \App\Models\User::where('account_id', $accountId)
                 ->where('active', 1)
+                ->whereNull('deleted_at')
                 ->whereNotIn('user_type_id', [3])
                 ->orderBy('name')
                 ->get(['id', 'name', 'email', 'is_advance_eligible']);
