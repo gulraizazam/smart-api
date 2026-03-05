@@ -23,7 +23,7 @@
                 // Balance card
                 $('#fdm-branch-name').text(d.branch_name || 'Unknown Branch');
                 $('#fdm-balance').text('PKR ' + nf(d.pool_balance));
-                $('#fdm-pool-name').text(d.pool_name || '');
+                // Pool name no longer shown here — replaced with "Live Cash Balance" label in blade
 
                 // Color the balance card
                 var bal = parseFloat(d.pool_balance || 0);
