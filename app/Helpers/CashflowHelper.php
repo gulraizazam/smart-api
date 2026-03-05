@@ -122,7 +122,7 @@ class CashflowHelper
         return User::where('account_id', $accountId)
             ->where('active', 1)
             ->where('is_advance_eligible', 1)
-            ->where('user_type_id', '!=', User::$PATIENT_GROUP)
+            ->whereNotIn('user_type_id', [3])
             ->orderBy('name')
             ->get(['id', 'name']);
     }
