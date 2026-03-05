@@ -6,7 +6,35 @@ var CashflowExpenses = (function () {
     var formData = null; // cached dropdown data
     var threshold = 10000;
 
+    function initDateRange() {
+        $('#filter-date-range').daterangepicker({
+            locale: { format: 'MM/DD/YYYY' },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'This Year': [moment().startOf('year'), moment().endOf('year')],
+                'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+            },
+            startDate: moment().startOf('month'),
+            endDate: moment()
+        });
+    }
+
+    function getDateRange() {
+        var picker = $('#filter-date-range').data('daterangepicker');
+        if (!picker) return { date_from: '', date_to: '' };
+        return {
+            date_from: picker.startDate.format('YYYY-MM-DD'),
+            date_to: picker.endDate.format('YYYY-MM-DD')
+        };
+    }
+
     function init() {
+        initDateRange();
         loadFormData();
         loadExpenses();
         bindEvents();
@@ -192,8 +220,8 @@ var CashflowExpenses = (function () {
             status: $('#filter-status').val(),
             branch_id: $('#filter-branch').val(),
             category_id: $('#filter-category').val(),
-            date_from: $('#filter-date-from').val(),
-            date_to: $('#filter-date-to').val(),
+            date_from: getDateRange().date_from,
+            date_to: getDateRange().date_to,
             search: $('#filter-search').val()
         };
 
@@ -758,8 +786,8 @@ var CashflowExpenses = (function () {
             search: $('#filter-search').val() || '',
             branch_id: $('#filter-branch').val() || '',
             category_id: $('#filter-category').val() || '',
-            date_from: $('#filter-date-from').val() || '',
-            date_to: $('#filter-date-to').val() || '',
+            date_from: getDateRange().date_from,
+            date_to: getDateRange().date_to,
         };
         var qs = $.param(params);
         window.open(apiBase + 'expenses/export?' + qs, '_blank');

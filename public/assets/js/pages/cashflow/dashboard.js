@@ -6,7 +6,7 @@
     var categoryChart = null;
 
     $(document).ready(function () {
-        setDefaultDates();
+        initDateRange();
         loadBranches();
         loadDashboard();
         bindEvents();
@@ -17,11 +17,30 @@
         $('#btn-reconcile').on('click', runReconciliation);
     }
 
-    function setDefaultDates() {
-        var now = new Date();
-        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        $('#dash-date-from').val(formatDate(firstDay));
-        $('#dash-date-to').val(formatDate(now));
+    function initDateRange() {
+        $('#dash-date-range').daterangepicker({
+            locale: { format: 'MM/DD/YYYY' },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'This Year': [moment().startOf('year'), moment().endOf('year')],
+                'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+            },
+            startDate: moment().startOf('month'),
+            endDate: moment()
+        });
+    }
+
+    function getDateRange() {
+        var picker = $('#dash-date-range').data('daterangepicker');
+        return {
+            date_from: picker.startDate.format('YYYY-MM-DD'),
+            date_to: picker.endDate.format('YYYY-MM-DD')
+        };
     }
 
     function loadBranches() {
@@ -46,9 +65,10 @@
     }
 
     function loadDashboard() {
+        var dr = getDateRange();
         var params = {
-            date_from: $('#dash-date-from').val(),
-            date_to: $('#dash-date-to').val(),
+            date_from: dr.date_from,
+            date_to: dr.date_to,
             branch_id: $('#dash-branch').val() || ''
         };
 

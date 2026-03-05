@@ -4,7 +4,7 @@
     var apiBase = '/api/cashflow/';
 
     $(document).ready(function () {
-        setDefaultDates();
+        initDateRange();
         loadLookups();
         bindEvents();
     });
@@ -24,11 +24,22 @@
         });
     }
 
-    function setDefaultDates() {
-        var now = new Date();
-        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        $('#rpt-date-from').val(fd(firstDay));
-        $('#rpt-date-to').val(fd(now));
+    function initDateRange() {
+        $('#rpt-date-range').daterangepicker({
+            locale: { format: 'MM/DD/YYYY' },
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'This Year': [moment().startOf('year'), moment().endOf('year')],
+                'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
+            },
+            startDate: moment().startOf('month'),
+            endDate: moment()
+        });
     }
 
     function loadLookups() {
@@ -48,9 +59,10 @@
     }
 
     function getFilters() {
+        var picker = $('#rpt-date-range').data('daterangepicker');
         return {
-            date_from: $('#rpt-date-from').val(),
-            date_to: $('#rpt-date-to').val(),
+            date_from: picker ? picker.startDate.format('YYYY-MM-DD') : '',
+            date_to: picker ? picker.endDate.format('YYYY-MM-DD') : '',
             branch_id: $('#rpt-branch').val() || '',
             pool_id: $('#rpt-pool').val() || ''
         };
