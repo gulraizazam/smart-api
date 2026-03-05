@@ -905,6 +905,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
     Route::get('memberships/{id}/student-verification', [MembershipsController::class, 'getStudentVerificationDetails'])->name('memberships.student_verification');
+
+    // Cash Flow Module Routes
+    require __DIR__.'/cashflow.php';
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

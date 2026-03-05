@@ -140,6 +140,18 @@ class Kernel extends ConsoleKernel
 
         // $schedule->command('recent:activities')
         //     ->weekly()->timezone($timeZone);
+
+        /*
+         * Cash Flow: Daily Digest Email (default 08:00 AM PKT, configurable via cashflow_settings)
+         */
+        $schedule->job(new \App\Jobs\SendCashflowDailyDigest)
+            ->dailyAt('08:00')->timezone($timeZone);
+
+        /*
+         * Cash Flow: Monthly Report Email (1st of every month at 09:00 AM)
+         */
+        $schedule->job(new \App\Jobs\SendCashflowMonthlyReport)
+            ->monthlyOn(1, '09:00')->timezone($timeZone);
     }
 
     /**
