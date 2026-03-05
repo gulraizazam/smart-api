@@ -20,10 +20,10 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_settings'))
-                                <button id="btn-reset-module" class="btn btn-outline-danger btn-sm mr-2 d-none">
+                                <button id="btn-reset-module" class="btn btn-outline-danger mr-2 d-none">
                                     <i class="la la-trash"></i> Reset Module
                                 </button>
-                                <button id="btn-save-settings" class="btn btn-primary btn-sm">
+                                <button id="btn-save-settings" class="btn btn-primary">
                                     <i class="la la-save"></i> Save Settings
                                 </button>
                             @endif
@@ -111,10 +111,10 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_pool_manage'))
-                                <button id="btn-init-pools" class="btn btn-info btn-sm mr-2">
+                                <button id="btn-init-pools" class="btn btn-info mr-2">
                                     <i class="la la-sync"></i> Initialize Branch Pools
                                 </button>
-                                <button id="btn-add-pool" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_add_pool">
+                                <button id="btn-add-pool" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_pool">
                                     <i class="la la-plus"></i> Add Pool
                                 </button>
                             @endif
@@ -150,7 +150,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_category_manage'))
-                                <button id="btn-add-category" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_add_category">
+                                <button id="btn-add-category" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_category">
                                     <i class="la la-plus"></i> Add Category
                                 </button>
                             @endif
@@ -184,7 +184,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_settings'))
-                                <button id="btn-save-pm-mapping" class="btn btn-primary btn-sm"><i class="la la-save"></i> Save Mapping</button>
+                                <button id="btn-save-pm-mapping" class="btn btn-primary"><i class="la la-save"></i> Save Mapping</button>
                             @endif
                         </div>
                     </div>
@@ -234,7 +234,7 @@
                                 <option value="settings">Settings</option>
                                 <option value="period_lock">Period Lock</option>
                             </select>
-                            <button id="btn-load-audit" class="btn btn-light-primary btn-sm"><i class="la la-search"></i> Load</button>
+                            <button id="btn-load-audit" class="btn btn-light-primary"><i class="la la-search"></i> Load</button>
                         </div>
                     </div>
                     <div class="card-body p-0">

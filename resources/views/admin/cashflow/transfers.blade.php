@@ -12,7 +12,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_transfer_create'))
-                                <button id="btn-add-transfer" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_transfer">
+                                <button id="btn-add-transfer" class="btn btn-primary" data-toggle="modal" data-target="#modal_transfer">
                                     <i class="la la-plus"></i> New Transfer
                                 </button>
                             @endif
@@ -39,7 +39,7 @@
                                 <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search ref..." />
                             </div>
                             <div class="col-md-2">
-                                <button id="btn-filter" class="btn btn-primary btn-sm btn-block"><i class="la la-search"></i> Filter</button>
+                                <button id="btn-filter" class="btn btn-primary btn-block"><i class="la la-search"></i> Filter</button>
                             </div>
                         </div>
                         <div class="table-responsive">

@@ -11,8 +11,8 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-users mr-2"></i>Staff Advance Summary</h3></div>
                         <div class="card-toolbar">
-                            <button class="btn btn-primary btn-sm mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
-                            <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
+                            <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
+                            <button class="btn btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -41,7 +41,7 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-list-alt mr-2"></i>Ledger: <span id="ledger-staff-name"></span></h3></div>
                         <div class="card-toolbar">
-                            <button class="btn btn-secondary btn-sm" id="btn-close-ledger"><i class="la la-times"></i> Close</button>
+                            <button class="btn btn-secondary" id="btn-close-ledger"><i class="la la-times"></i> Close</button>
                         </div>
                     </div>
                     <div class="card-body">
