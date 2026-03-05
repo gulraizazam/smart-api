@@ -12,7 +12,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_transfer_create'))
-                                <button id="btn-add-transfer" class="btn btn-primary" data-toggle="modal" data-target="#modal_transfer">
+                                <button id="btn-add-transfer" class="btn btn-primary">
                                     <i class="la la-plus"></i> New Transfer
                                 </button>
                             @endif
@@ -107,7 +107,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>From Pool <span class="text-danger">*</span></label>
-                                    <select name="from_pool_id" class="form-control searchable" required>
+                                    <select name="from_pool_id" class="form-control" required>
                                         <option value="">Select source pool</option>
                                     </select>
                                 </div>
@@ -115,7 +115,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>To Pool <span class="text-danger">*</span></label>
-                                    <select name="to_pool_id" class="form-control searchable" required>
+                                    <select name="to_pool_id" class="form-control" required>
                                         <option value="">Select destination pool</option>
                                     </select>
                                 </div>

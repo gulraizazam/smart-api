@@ -94,7 +94,7 @@
                                 <i class="la la-file-excel"></i> Export
                             </button>
                             @if(Gate::allows('cashflow_expense_create'))
-                                <button id="btn-add-expense" class="btn btn-primary" data-toggle="modal" data-target="#modal_expense">
+                                <button id="btn-add-expense" class="btn btn-primary">
                                     <i class="la la-plus"></i> New Expense
                                 </button>
                             @endif
@@ -199,7 +199,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Category <span class="text-danger">*</span></label>
-                                    <select name="category_id" class="form-control searchable" required>
+                                    <select name="category_id" class="form-control" required>
                                         <option value="">Select category</option>
                                     </select>
                                     <a href="javascript:;" id="btn-category-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Category not listed? Suggest new</a>
@@ -210,7 +210,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Paid From Pool <span class="text-danger">*</span></label>
-                                    <select name="paid_from_pool_id" class="form-control searchable" required>
+                                    <select name="paid_from_pool_id" class="form-control" required>
                                         <option value="">Select pool</option>
                                     </select>
                                 </div>
@@ -218,7 +218,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method_id" class="form-control searchable" required>
+                                    <select name="payment_method_id" class="form-control" required>
                                         <option value="">Select method</option>
                                     </select>
                                 </div>
@@ -226,7 +226,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>For Branch</label>
-                                    <select name="for_branch_id" class="form-control searchable" id="expense-branch-select">
+                                    <select name="for_branch_id" class="form-control" id="expense-branch-select">
                                         <option value="">Select branch</option>
                                     </select>
                                     <div class="checkbox-inline mt-2">
@@ -242,7 +242,7 @@
                             <div class="col-md-4">
                                 <div class="form-group" id="vendor-group">
                                     <label>Vendor</label>
-                                    <select name="vendor_id" class="form-control searchable">
+                                    <select name="vendor_id" class="form-control">
                                         <option value="">Select vendor (optional)</option>
                                     </select>
                                     <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
@@ -251,7 +251,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Expense By (Staff)</label>
-                                    <select name="staff_id" class="form-control searchable">
+                                    <select name="staff_id" class="form-control">
                                         <option value="">Select staff (optional)</option>
                                     </select>
                                 </div>

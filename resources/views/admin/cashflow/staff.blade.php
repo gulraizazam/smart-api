@@ -11,8 +11,8 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-users mr-2"></i>Staff Advance Summary</h3></div>
                         <div class="card-toolbar">
-                            <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
-                            <button class="btn btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
+                            <button class="btn btn-primary mr-2" id="btn-open-advance"><i class="la la-plus"></i> Give Advance</button>
+                            <button class="btn btn-success" id="btn-open-return"><i class="la la-undo"></i> Record Return</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -82,11 +82,11 @@
                     <form id="form-advance">
                         <div class="form-group">
                             <label>Staff Member <span class="text-danger">*</span></label>
-                            <select name="user_id" class="form-control searchable" required id="advance-staff-select"><option value="">Select staff</option></select>
+                            <select name="user_id" class="form-control" required id="advance-staff-select"><option value="">Select staff</option></select>
                         </div>
                         <div class="form-group">
                             <label>From Pool <span class="text-danger">*</span></label>
-                            <select name="pool_id" class="form-control searchable" required id="advance-pool-select"><option value="">Select pool</option></select>
+                            <select name="pool_id" class="form-control" required id="advance-pool-select"><option value="">Select pool</option></select>
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>
@@ -112,11 +112,11 @@
                     <form id="form-return">
                         <div class="form-group">
                             <label>Staff Member <span class="text-danger">*</span></label>
-                            <select name="user_id" class="form-control searchable" required id="return-staff-select"><option value="">Select staff</option></select>
+                            <select name="user_id" class="form-control" required id="return-staff-select"><option value="">Select staff</option></select>
                         </div>
                         <div class="form-group">
                             <label>To Pool <span class="text-danger">*</span></label>
-                            <select name="pool_id" class="form-control searchable" required id="return-pool-select"><option value="">Select pool</option></select>
+                            <select name="pool_id" class="form-control" required id="return-pool-select"><option value="">Select pool</option></select>
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>

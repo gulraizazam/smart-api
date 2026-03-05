@@ -9,6 +9,8 @@ var CashflowSettings = (function () {
     }
 
     function bindEvents() {
+        $('#btn-add-pool').on('click', function () { $('#modal_add_pool').modal('show'); });
+        $('#btn-add-category').on('click', function () { $('#modal_add_category').modal('show'); });
         $('#btn-save-settings').on('click', saveSettings);
         $('#btn-init-pools').on('click', initializePools);
         $('#btn-submit-pool').on('click', submitPool);
