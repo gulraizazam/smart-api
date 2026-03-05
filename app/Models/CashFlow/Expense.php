@@ -110,6 +110,14 @@ class Expense extends Model
     /**
      * Vendor transaction linked to this expense (auto-created payment).
      */
+    /**
+     * Alias for paidFromPool (used by dashboard).
+     */
+    public function pool()
+    {
+        return $this->belongsTo(CashPool::class, 'paid_from_pool_id');
+    }
+
     public function vendorTransaction()
     {
         return $this->hasOne(VendorTransaction::class, 'expense_id');
