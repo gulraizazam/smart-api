@@ -219,6 +219,12 @@ class VendorService
             $request->toArray()
         );
 
+        $this->notificationService->notifyVendorRequest(
+            $data['name'],
+            Auth::user()->name,
+            $accountId
+        );
+
         return $request;
     }
 

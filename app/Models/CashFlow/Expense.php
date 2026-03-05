@@ -123,6 +123,18 @@ class Expense extends Model
         return $this->hasOne(VendorTransaction::class, 'expense_id');
     }
 
+    /**
+     * Last edit audit log entry (for "Edited" badge hover detail).
+     */
+    public function lastEditLog()
+    {
+        return $this->hasOne(CashflowAuditLog::class, 'entity_id')
+            ->where('entity_type', 'expense')
+            ->where('action', CashflowAuditLog::ACTION_UPDATED)
+            ->with('user:id,name')
+            ->latest();
+    }
+
     // Scopes
 
     public function scopeForAccount($query, int $accountId)

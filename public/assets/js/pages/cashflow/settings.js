@@ -14,6 +14,8 @@ var CashflowSettings = (function () {
         $('#btn-submit-pool').on('click', submitPool);
         $('#btn-submit-edit-pool').on('click', submitEditPool);
         $('#btn-submit-category').on('click', submitCategory);
+        $('#btn-save-pm-mapping').on('click', savePmMapping);
+        $('#btn-load-audit').on('click', function () { loadAuditTrail(1); });
     }
 
     // ===================== LOAD DATA =====================
@@ -27,6 +29,9 @@ var CashflowSettings = (function () {
                     populateSettings(res.data.settings);
                     renderPools(res.data.pools);
                     renderCategories(res.data.categories);
+                    if (res.data.payment_modes && res.data.pools) {
+                        renderPmMapping(res.data.payment_modes, res.data.pools, res.data.settings);
+                    }
                 } else {
                     toastr.error(res.message || 'Failed to load settings.');
                 }
@@ -406,6 +411,109 @@ var CashflowSettings = (function () {
         $('#category-modal-title').text('Add Category');
     });
 
+    // ===================== PAYMENT METHOD → POOL MAPPING =====================
+
+    function renderPmMapping(paymentModes, pools, settings) {
+        var container = $('#pm-mapping-container').empty();
+        if (!paymentModes || !paymentModes.length) {
+            container.html('<p class="text-muted">No payment methods found.</p>');
+            return;
+        }
+
+        var poolOpts = '<option value="">-- Not Mapped --</option>';
+        $.each(pools, function (i, p) {
+            var label = p.name + (p.location ? ' (' + p.location.name + ')' : '');
+            poolOpts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
+        });
+
+        $.each(paymentModes, function (i, pm) {
+            var settingKey = 'pm_pool_' + pm.id;
+            var currentPool = settings[settingKey] || '';
+            var row = '<div class="form-group row align-items-center">' +
+                '<label class="col-md-4 col-form-label font-weight-bold">' + escapeHtml(pm.name) + '</label>' +
+                '<div class="col-md-8">' +
+                '<select class="form-control pm-pool-select" data-pm-id="' + pm.id + '">' + poolOpts + '</select>' +
+                '</div></div>';
+            container.append(row);
+            if (currentPool) {
+                container.find('.pm-pool-select[data-pm-id="' + pm.id + '"]').val(currentPool);
+            }
+        });
+    }
+
+    function savePmMapping() {
+        var mappings = {};
+        $('.pm-pool-select').each(function () {
+            var pmId = $(this).data('pm-id');
+            mappings['pm_pool_' + pmId] = $(this).val() || '';
+        });
+
+        $.ajax({
+            url: apiBase + 'settings/save',
+            type: 'POST',
+            data: mappings,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) toastr.success('Payment method mapping saved.');
+                else toastr.error(res.message || 'Failed.');
+            },
+            error: function () { toastr.error('Failed to save mapping.'); }
+        });
+    }
+
+    // ===================== AUDIT TRAIL VIEWER =====================
+
+    function loadAuditTrail(page) {
+        var entityType = $('#audit-entity-filter').val();
+        var tbody = $('#audit-trail-tbody');
+        tbody.html('<tr><td colspan="7" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div> Loading...</td></tr>');
+
+        $.ajax({
+            url: apiBase + 'audit-logs',
+            type: 'GET',
+            data: { entity_type: entityType, page: page || 1, per_page: 25 },
+            success: function (res) {
+                if (!res.success) { tbody.html('<tr><td colspan="7" class="text-center text-danger">Failed to load.</td></tr>'); return; }
+                tbody.empty();
+                var logs = res.data;
+                if (!logs || !logs.length) {
+                    tbody.html('<tr><td colspan="7" class="text-center text-muted py-4">No audit logs found.</td></tr>');
+                    $('#audit-info').text('');
+                    $('#audit-pagination').empty();
+                    return;
+                }
+
+                $.each(logs, function (i, log) {
+                    var ts = log.created_at ? new Date(log.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                    var userName = log.user ? escapeHtml(log.user.name) : '<em class="text-muted">System</em>';
+                    var actionBadge = '<span class="label label-light-primary label-inline">' + escapeHtml(log.action || '') + '</span>';
+                    tbody.append(
+                        '<tr>' +
+                        '<td class="px-4 font-size-sm">' + ts + '</td>' +
+                        '<td class="px-4">' + userName + '</td>' +
+                        '<td class="px-4">' + actionBadge + '</td>' +
+                        '<td class="px-4">' + escapeHtml(log.entity_type || '') + '</td>' +
+                        '<td class="px-4">' + (log.entity_id || '-') + '</td>' +
+                        '<td class="px-4 font-size-sm">' + escapeHtml(log.reason || '') + '</td>' +
+                        '<td class="px-4 font-size-xs text-muted">' + escapeHtml(log.ip_address || '') + '</td>' +
+                        '</tr>'
+                    );
+                });
+
+                // Pagination
+                if (res.meta) {
+                    $('#audit-info').text('Page ' + res.meta.current_page + ' of ' + res.meta.last_page + ' (' + res.meta.total + ' logs)');
+                    var links = '';
+                    if (res.meta.current_page > 1) links += '<button class="btn btn-sm btn-outline-primary mr-1 btn-audit-pg" data-page="' + (res.meta.current_page - 1) + '">&laquo;</button>';
+                    if (res.meta.current_page < res.meta.last_page) links += '<button class="btn btn-sm btn-outline-primary btn-audit-pg" data-page="' + (res.meta.current_page + 1) + '">&raquo;</button>';
+                    $('#audit-pagination').html(links);
+                    $('.btn-audit-pg').off('click').on('click', function () { loadAuditTrail($(this).data('page')); });
+                }
+            },
+            error: function () { tbody.html('<tr><td colspan="7" class="text-center text-danger">Failed to load audit trail.</td></tr>'); }
+        });
+    }
+
     // ===================== HELPERS =====================
 
     function escapeHtml(str) {
@@ -414,7 +522,7 @@ var CashflowSettings = (function () {
     }
 
     function numberFormat(num) {
-        return parseFloat(num || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return parseFloat(num || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 });
     }
 
     return { init: init };

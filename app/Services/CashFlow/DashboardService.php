@@ -44,9 +44,12 @@ class DashboardService
             'top_expenses' => $this->getTopExpenses($accountId, $dateFrom, $dateTo, $branchId),
             'cash_collection' => $this->getCashCollection($accountId, $goLiveDate),
             'vendor_outstanding' => $this->getVendorOutstanding($accountId),
+            'vendor_due_soon' => $this->getVendorPaymentsDueSoon($accountId),
             'vendor_trends' => $this->getVendorTrends($accountId),
             'staff_advances' => $this->getStaffAdvancesOutstanding($accountId),
             'recent_entries' => $this->getRecentEntries($accountId),
+            'voided_recent' => $this->getRecentVoidedEntries($accountId),
+            'pending_expenses' => $this->getPendingExpensesList($accountId),
         ];
     }
 
@@ -269,6 +272,61 @@ class DashboardService
             ->limit(10)
             ->get(['id', 'name', 'cached_balance', 'payment_terms'])
             ->toArray();
+    }
+
+    /**
+     * Upcoming vendor payments due soon (based on payment terms).
+     */
+    public function getVendorPaymentsDueSoon(int $accountId): array
+    {
+        $vendors = Vendor::forAccount($accountId)
+            ->where('is_active', 1)
+            ->where('cached_balance', '>', 0)
+            ->whereNotNull('payment_terms')
+            ->where('payment_terms', '!=', 'custom')
+            ->get(['id', 'name', 'cached_balance', 'payment_terms']);
+
+        $termDays = [
+            'upfront' => 0,
+            'net_7' => 7,
+            'net_15' => 15,
+            'net_30' => 30,
+        ];
+
+        $results = [];
+        foreach ($vendors as $vendor) {
+            $days = $termDays[$vendor->payment_terms] ?? null;
+            if ($days === null || $days === 0) continue;
+
+            // Find the latest unpaid purchase transaction date
+            $lastPurchase = \App\Models\CashFlow\VendorTransaction::where('vendor_id', $vendor->id)
+                ->where('type', 'purchase')
+                ->orderByDesc('created_at')
+                ->value('created_at');
+
+            if (!$lastPurchase) continue;
+
+            $dueDate = Carbon::parse($lastPurchase)->addDays($days);
+            $daysUntilDue = (int) Carbon::now()->diffInDays($dueDate, false);
+
+            // Show vendors due within 7 days or overdue
+            if ($daysUntilDue <= 7) {
+                $results[] = [
+                    'id' => $vendor->id,
+                    'name' => $vendor->name,
+                    'balance' => (float) $vendor->cached_balance,
+                    'payment_terms' => $vendor->payment_terms,
+                    'due_date' => $dueDate->toDateString(),
+                    'days_until_due' => $daysUntilDue,
+                    'is_overdue' => $daysUntilDue < 0,
+                ];
+            }
+        }
+
+        // Sort by days_until_due ascending (most urgent first)
+        usort($results, fn($a, $b) => $a['days_until_due'] <=> $b['days_until_due']);
+
+        return array_slice($results, 0, 10);
     }
 
     /**
@@ -512,6 +570,38 @@ class DashboardService
         }
 
         return (float) $query->sum('cash_amount');
+    }
+
+    /**
+     * Pending expenses list for inline approve/reject on dashboard (Sec 16 Screen 1).
+     */
+    public function getPendingExpensesList(int $accountId): array
+    {
+        return Expense::forAccount($accountId)
+            ->where('status', 'pending')
+            ->whereNull('voided_at')
+            ->with(['category:id,name', 'creator:id,name'])
+            ->orderByDesc('expense_date')
+            ->limit(15)
+            ->get(['id', 'expense_date', 'amount', 'description', 'category_id', 'attachment_url', 'created_by'])
+            ->toArray();
+    }
+
+    /**
+     * Voided entries in last 7 days for dashboard alert (Sec 11.5).
+     */
+    public function getRecentVoidedEntries(int $accountId): array
+    {
+        $days = (int) $this->settingService->get('void_alert_days', $accountId, 7);
+
+        return Expense::forAccount($accountId)
+            ->whereNotNull('voided_at')
+            ->where('voided_at', '>=', Carbon::now()->subDays($days))
+            ->with(['category:id,name', 'voidedByUser:id,name', 'forBranch:id,name'])
+            ->orderByDesc('voided_at')
+            ->limit(10)
+            ->get(['id', 'expense_date', 'amount', 'description', 'category_id', 'for_branch_id', 'voided_at', 'voided_by', 'void_reason'])
+            ->toArray();
     }
 
     /**

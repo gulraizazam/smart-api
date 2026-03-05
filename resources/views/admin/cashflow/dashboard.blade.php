@@ -12,16 +12,16 @@
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div class="d-flex align-items-center">
                                 @can('cashflow_expense_create')
-                                <a href="{{ route('admin.cashflow.expenses') }}" class="btn btn-primary btn-sm mr-2"><i class="la la-plus"></i> Expense</a>
+                                <a href="{{ route('admin.cashflow.expenses') }}?action=add" class="btn btn-primary btn-sm mr-2"><i class="la la-plus"></i> Expense</a>
                                 @endcan
                                 @can('cashflow_transfer_create')
-                                <a href="{{ route('admin.cashflow.transfers') }}" class="btn btn-info btn-sm mr-2"><i class="la la-exchange-alt"></i> Transfer</a>
+                                <a href="{{ route('admin.cashflow.transfers') }}?action=add" class="btn btn-info btn-sm mr-2"><i class="la la-exchange-alt"></i> Transfer</a>
                                 @endcan
                                 @can('cashflow_vendor_transaction')
-                                <a href="{{ route('admin.cashflow.vendors') }}" class="btn btn-warning btn-sm mr-2"><i class="la la-shopping-cart"></i> Vendor Purchase</a>
+                                <a href="{{ route('admin.cashflow.vendors') }}?action=add" class="btn btn-warning btn-sm mr-2"><i class="la la-shopping-cart"></i> Vendor Purchase</a>
                                 @endcan
                                 @can('cashflow_staff_advance')
-                                <a href="{{ route('admin.cashflow.staff') }}" class="btn btn-success btn-sm"><i class="la la-hand-holding-usd"></i> Advance</a>
+                                <a href="{{ route('admin.cashflow.staff') }}?action=add" class="btn btn-success btn-sm"><i class="la la-hand-holding-usd"></i> Advance</a>
                                 @endcan
                             </div>
                             <div class="d-flex align-items-center">
@@ -43,6 +43,22 @@
                     <div class="col-md-3"><div class="card card-custom bg-light-info py-3 px-4 cursor-pointer" id="pa-cat-req"><div class="d-flex justify-content-between"><span class="font-weight-bold">Category Requests</span><span class="font-weight-bolder font-size-h4" id="pa-cat-count">0</span></div></div></div>
                     <div class="col-md-3"><div class="card card-custom bg-light-danger py-3 px-4 cursor-pointer" id="pa-flagged"><div class="d-flex justify-content-between"><span class="font-weight-bold">Flagged Entries</span><span class="font-weight-bolder font-size-h4" id="pa-flagged-count">0</span></div></div></div>
                 </div>
+
+                <!-- Pending Expenses Inline List (Sec 16 Screen 1) -->
+                @can('cashflow_expense_approve')
+                <div class="row mb-5 d-none" id="pending-list-row">
+                    <div class="col-lg-12">
+                        <div class="card card-custom">
+                            <div class="card-header py-3">
+                                <div class="card-title"><h3 class="card-label"><i class="la la-hourglass-half mr-2 text-warning"></i>Pending Approval</h3></div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Date</th><th class="px-4">Description</th><th class="px-4">Category</th><th class="text-right px-4">Amount</th><th class="px-4">By</th><th class="px-4">Attach</th><th class="text-center px-4" style="width:120px">Actions</th></tr></thead><tbody id="pending-list-tbody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endcan
 
                 <!-- Summary Cards: Inflows | Outflows | Net -->
                 <div class="row mb-5">
@@ -138,12 +154,40 @@
                     </div>
                 </div>
 
+                <!-- Upcoming Vendor Payments Due -->
+                <div class="row mb-5">
+                    <div class="col-lg-12">
+                        <div class="card card-custom">
+                            <div class="card-header py-3">
+                                <div class="card-title"><h3 class="card-label"><i class="la la-calendar-check mr-2"></i>Upcoming Vendor Payments Due</h3></div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Vendor</th><th class="text-right px-4">Balance Owed</th><th class="px-4">Terms</th><th class="px-4">Due Date</th><th class="px-4">Status</th></tr></thead><tbody id="vendor-due-tbody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Accountant Widgets (shown only for accountant role) -->
                 <div class="row mb-5 d-none" id="accountant-widgets-row">
                     <div class="col-md-3"><div class="card card-custom bg-light-primary py-3 px-4"><div class="font-weight-bold mb-1">My Entries Today</div><div class="font-weight-bolder font-size-h4" id="aw-entries-count">0</div><div class="font-size-sm text-muted" id="aw-entries-total">PKR 0</div></div></div>
                     <div class="col-md-3"><div class="card card-custom bg-light-danger py-3 px-4"><div class="font-weight-bold mb-1">Rejected (Re-entry)</div><div class="font-weight-bolder font-size-h4" id="aw-rejected">0</div></div></div>
                     <div class="col-md-3"><div class="card card-custom bg-light-warning py-3 px-4"><div class="font-weight-bold mb-1">Missing Attachments</div><div class="font-weight-bolder font-size-h4" id="aw-missing">0</div></div></div>
                     <div class="col-md-3"><div class="card card-custom bg-light-info py-3 px-4"><div class="font-weight-bold mb-1">Vendor Trends</div><div class="font-size-sm" id="aw-vendor-trends">Loading...</div></div></div>
+                </div>
+
+                <!-- Voided Entries Alert (last 7 days) -->
+                <div class="row mb-5 d-none" id="voided-alerts-row">
+                    <div class="col-lg-12">
+                        <div class="card card-custom border-left border-danger border-3">
+                            <div class="card-header py-3">
+                                <div class="card-title"><h3 class="card-label text-danger"><i class="la la-exclamation-triangle mr-2"></i>Voided Entries (Last 7 Days)</h3></div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Date</th><th class="px-4">Description</th><th class="text-right px-4">Amount</th><th class="px-4">Voided By</th><th class="px-4">Reason</th></tr></thead><tbody id="voided-alerts-tbody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Recent Entries + Reconciliation -->
