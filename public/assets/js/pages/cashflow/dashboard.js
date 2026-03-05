@@ -4,11 +4,12 @@
     var apiBase = '/api/cashflow/';
     var trendChart = null;
     var categoryChart = null;
+    var dashboardXhr = null;
+    var isLoading = false;
 
     $(document).ready(function () {
         initDateRange();
         loadBranches();
-        loadDashboard();
         bindEvents();
     });
 
@@ -57,14 +58,18 @@
                     // Auto-filter for branch managers (single branch users)
                     if (res.data.branches.length === 1) {
                         sel.val(res.data.branches[0].id);
-                        loadDashboard();
                     }
                 }
+                loadDashboard();
             }
         });
     }
 
     function loadDashboard() {
+        if (isLoading && dashboardXhr) {
+            dashboardXhr.abort();
+        }
+        isLoading = true;
         var dr = getDateRange();
         var params = {
             date_from: dr.date_from,
@@ -72,7 +77,7 @@
             branch_id: $('#dash-branch').val() || ''
         };
 
-        $.ajax({
+        dashboardXhr = $.ajax({
             url: apiBase + 'dashboard/data', type: 'GET', data: params,
             success: function (res) {
                 if (!res.success) { toastr.error(res.message || 'Failed to load dashboard'); return; }
@@ -99,7 +104,8 @@
                     renderVendorTrends(d.vendor_trends);
                 }
             },
-            error: function () { toastr.error('Failed to load dashboard data.'); }
+            error: function (xhr) { if (xhr.statusText !== 'abort') toastr.error('Failed to load dashboard data.'); },
+            complete: function () { isLoading = false; dashboardXhr = null; }
         });
     }
 

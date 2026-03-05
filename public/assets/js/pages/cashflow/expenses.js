@@ -5,6 +5,7 @@ var CashflowExpenses = (function () {
     var currentPage = 1;
     var formData = null; // cached dropdown data
     var threshold = 10000;
+    var expensesXhr = null;
 
     function initDateRange() {
         $('#filter-date-range').daterangepicker({
@@ -214,14 +215,16 @@ var CashflowExpenses = (function () {
     }
 
     function loadExpenses() {
+        if (expensesXhr) expensesXhr.abort();
+        var dr = getDateRange();
         var params = {
             page: currentPage,
             per_page: 25,
             status: $('#filter-status').val(),
             branch_id: $('#filter-branch').val(),
             category_id: $('#filter-category').val(),
-            date_from: getDateRange().date_from,
-            date_to: getDateRange().date_to,
+            date_from: dr.date_from,
+            date_to: dr.date_to,
             search: $('#filter-search').val()
         };
 
@@ -230,7 +233,7 @@ var CashflowExpenses = (function () {
 
         $('#expenses-tbody').html('<tr><td colspan="8" class="text-center"><div class="spinner spinner-primary spinner-sm"></div> Loading...</td></tr>');
 
-        $.ajax({
+        expensesXhr = $.ajax({
             url: apiBase + 'expenses/data',
             type: 'GET',
             data: params,
@@ -243,9 +246,10 @@ var CashflowExpenses = (function () {
                     $('#expenses-tbody').html('<tr><td colspan="8" class="text-center text-danger">' + (res.message || 'Failed to load') + '</td></tr>');
                 }
             },
-            error: function () {
-                $('#expenses-tbody').html('<tr><td colspan="8" class="text-center text-danger">Failed to load expenses.</td></tr>');
-            }
+            error: function (xhr) {
+                if (xhr.statusText !== 'abort') $('#expenses-tbody').html('<tr><td colspan="8" class="text-center text-danger">Failed to load expenses.</td></tr>');
+            },
+            complete: function () { expensesXhr = null; }
         });
     }
 
