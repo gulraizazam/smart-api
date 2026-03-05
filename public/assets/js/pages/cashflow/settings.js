@@ -16,6 +16,7 @@ var CashflowSettings = (function () {
         $('#btn-submit-category').on('click', submitCategory);
         $('#btn-save-pm-mapping').on('click', savePmMapping);
         $('#btn-load-audit').on('click', function () { loadAuditTrail(1); });
+        $('#btn-reset-module').on('click', resetModule);
     }
 
     // ===================== LOAD DATA =====================
@@ -31,6 +32,17 @@ var CashflowSettings = (function () {
                     renderCategories(res.data.categories);
                     if (res.data.payment_modes && res.data.pools) {
                         renderPmMapping(res.data.payment_modes, res.data.pools, res.data.settings);
+                    }
+
+                    loadEligibleStaff();
+
+                    // Sec 27.9: Reset button hidden after first period lock
+                    if (res.data.has_period_locks) {
+                        $('#btn-reset-module').addClass('d-none');
+                        // Sec 3.1: Go-live date frozen after first lock
+                        $('#settings-form [name="go_live_date"]').prop('disabled', true).closest('.form-group').find('.form-text').text('Frozen after first period lock.');
+                    } else {
+                        $('#btn-reset-module').removeClass('d-none');
                     }
                 } else {
                     toastr.error(res.message || 'Failed to load settings.');
@@ -410,6 +422,85 @@ var CashflowSettings = (function () {
         $('#form-category').find('[name="category_id"]').val('');
         $('#category-modal-title').text('Add Category');
     });
+
+    // ===================== MODULE RESET (Sec 27.9) =====================
+
+    function resetModule() {
+        if (!confirm('Are you sure you want to reset the entire Cash Flow module? This will delete ALL transaction data.')) return;
+        var code = prompt('Type RESET to confirm module reset:');
+        if (code !== 'RESET') { toastr.warning('Reset cancelled — confirmation code did not match.'); return; }
+
+        $.ajax({
+            url: apiBase + 'settings/reset-module',
+            type: 'POST',
+            data: { confirm: 'RESET' },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message || 'Module reset complete.');
+                    loadSettingsData();
+                } else {
+                    toastr.error(res.message || 'Reset failed.');
+                }
+            },
+            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Reset failed.'); }
+        });
+    }
+
+    // ===================== ADVANCE-ELIGIBLE STAFF (Sec 27.5) =====================
+
+    function loadEligibleStaff() {
+        $.ajax({
+            url: apiBase + 'settings/eligible-staff',
+            type: 'GET',
+            success: function (res) {
+                var tbody = $('#eligible-staff-tbody').empty();
+                if (!res.success || !res.data || !res.data.length) {
+                    tbody.html('<tr><td colspan="3" class="text-center text-muted py-3">No staff found.</td></tr>');
+                    return;
+                }
+                $.each(res.data, function (i, user) {
+                    var checked = user.is_advance_eligible ? 'checked' : '';
+                    tbody.append(
+                        '<tr>' +
+                        '<td class="py-2 px-4">' + escapeHtml(user.name) + '</td>' +
+                        '<td class="py-2 px-4">' + escapeHtml(user.email || '-') + '</td>' +
+                        '<td class="py-2 px-4 text-center"><input type="checkbox" class="chk-eligible" data-id="' + user.id + '" ' + checked + '></td>' +
+                        '</tr>'
+                    );
+                });
+
+                // Bind toggle
+                $('.chk-eligible').off('change').on('change', function () {
+                    var userId = $(this).data('id');
+                    var eligible = $(this).is(':checked') ? 1 : 0;
+                    toggleEligibility(userId, eligible);
+                });
+            },
+            error: function () { toastr.error('Failed to load staff list.'); }
+        });
+    }
+
+    function toggleEligibility(userId, eligible) {
+        $.ajax({
+            url: apiBase + 'settings/toggle-eligibility',
+            type: 'POST',
+            data: { user_id: userId, is_advance_eligible: eligible },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message || 'Eligibility updated.');
+                } else {
+                    toastr.error(res.message || 'Failed to update.');
+                    loadEligibleStaff(); // revert UI
+                }
+            },
+            error: function (xhr) {
+                toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.');
+                loadEligibleStaff();
+            }
+        });
+    }
 
     // ===================== PAYMENT METHOD → POOL MAPPING =====================
 

@@ -84,13 +84,22 @@ var CashflowStaff = (function () {
 
             var outstandingClass = s.outstanding > 0 ? 'text-danger font-weight-bold' : 'text-success';
 
+            // Aging color: green < 15d, amber 15-30d, red > 30d (Sec 16 Screen 5)
+            var agingBadge = '';
+            if (s.outstanding > 0 && s.days_since_last !== undefined) {
+                var days = parseInt(s.days_since_last) || 0;
+                if (days > 30) agingBadge = ' <span class="label label-light-danger label-inline font-size-xs">' + days + 'd</span>';
+                else if (days > 15) agingBadge = ' <span class="label label-light-warning label-inline font-size-xs">' + days + 'd</span>';
+                else agingBadge = ' <span class="label label-light-success label-inline font-size-xs">' + days + 'd</span>';
+            }
+
             tbody.append(
                 '<tr>' +
                 '<td><a href="javascript:;" class="btn-view-ledger font-weight-bold" data-id="' + s.user_id + '" data-name="' + esc(s.name) + '">' + esc(s.name) + '</a></td>' +
                 '<td>' + eligibleBadge + '</td>' +
                 '<td class="text-right">PKR ' + nf(s.total_advances) + '</td>' +
                 '<td class="text-right">PKR ' + nf(s.total_returns) + '</td>' +
-                '<td class="text-right ' + outstandingClass + '">PKR ' + nf(s.outstanding) + '</td>' +
+                '<td class="text-right ' + outstandingClass + '">PKR ' + nf(s.outstanding) + agingBadge + '</td>' +
                 '<td class="text-center">' +
                     '<button class="btn btn-sm btn-clean btn-icon btn-view-ledger" data-id="' + s.user_id + '" data-name="' + esc(s.name) + '" title="View Ledger"><i class="la la-list-alt text-primary"></i></button>' +
                 '</td>' +

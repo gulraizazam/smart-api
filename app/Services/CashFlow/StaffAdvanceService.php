@@ -181,8 +181,13 @@ class StaffAdvanceService
     {
         $advances = StaffAdvance::forAccount($accountId)->forStaff($userId)->sum('amount');
         $returns = StaffReturn::forAccount($accountId)->forStaff($userId)->sum('amount');
+        // Expenses with this staff_id reduce the advance balance (Sec 8.2)
+        $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+            ->where('staff_id', $userId)
+            ->whereNull('voided_at')
+            ->sum('amount');
 
-        return (float) $advances - (float) $returns;
+        return (float) $advances - (float) $expenses - (float) $returns;
     }
 
     /**

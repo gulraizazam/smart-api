@@ -20,6 +20,9 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_settings'))
+                                <button id="btn-reset-module" class="btn btn-outline-danger btn-sm mr-2 d-none">
+                                    <i class="la la-trash"></i> Reset Module
+                                </button>
                                 <button id="btn-save-settings" class="btn btn-primary btn-sm">
                                     <i class="la la-save"></i> Save Settings
                                 </button>
@@ -189,6 +192,24 @@
                         <p class="text-muted font-size-sm mb-4">Configure which cash pool patient payments are automatically mapped to based on payment method.</p>
                         <div id="pm-mapping-container">
                             <div class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div> Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advance-Eligible Staff (Sec 27.5) -->
+                <div class="card card-custom mb-5">
+                    <div class="card-header py-3">
+                        <div class="card-title"><h3 class="card-label"><i class="la la-user-check mr-2"></i>Advance-Eligible Staff</h3></div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted font-size-sm mb-3">Only users marked as eligible can receive cash advances. Toggle the checkbox to change eligibility.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-head-custom">
+                                <thead><tr><th class="px-4">Name</th><th class="px-4">Email</th><th class="text-center px-4">Eligible</th></tr></thead>
+                                <tbody id="eligible-staff-tbody">
+                                    <tr><td colspan="3" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

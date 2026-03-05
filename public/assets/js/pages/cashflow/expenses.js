@@ -265,31 +265,39 @@ var CashflowExpenses = (function () {
     }
 
     function getStatusBadge(exp) {
-        if (exp.voided_at) return '<span class="label label-dark label-inline status-badge">Voided</span>';
+        var badges = '';
+        if (exp.voided_at) return '<span class="label label-danger label-inline status-badge">Voided</span>';
         switch (exp.status) {
-            case 'approved': return '<span class="label label-light-success label-inline status-badge">Approved</span>';
-            case 'pending': return '<span class="label label-light-warning label-inline status-badge">Pending</span>';
-            case 'rejected': return '<span class="label label-light-danger label-inline status-badge">Rejected</span>';
-            default: return exp.status;
+            case 'approved': badges = '<span class="label label-light-success label-inline status-badge">Approved</span>'; break;
+            case 'pending': badges = '<span class="label label-warning label-inline status-badge">Pending</span>'; break;
+            case 'rejected': badges = '<span class="label label-outline-danger label-inline status-badge">Rejected</span>'; break;
+            default: badges = exp.status;
         }
+        if (exp.is_flagged) badges += ' <span class="label label-light-warning label-inline font-size-xs">Flagged</span>';
+        if (exp.edit_reason) badges += ' <span class="label label-light-primary label-inline font-size-xs">Edited</span>';
+        return badges;
     }
 
     function buildActions(exp) {
         var btns = '';
 
-        // Approve / Reject (only for pending, non-voided)
-        if (exp.status === 'pending' && !exp.voided_at) {
+        var perms = window.cfPerms || {};
+
+        // Approve / Reject (admin only, pending, non-voided)
+        if (perms.canApprove && exp.status === 'pending' && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" data-attachment="' + (exp.attachment_url ? '1' : '0') + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-reject" data-id="' + exp.id + '" title="Reject"><i class="la la-times-circle text-danger"></i></button>';
         }
 
-        // Resubmit (only for rejected, non-voided, by creator)
+        // Resubmit (rejected entries — accountant can resubmit own, admin can resubmit any)
         if (exp.status === 'rejected' && !exp.voided_at) {
-            btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" title="Resubmit"><i class="la la-redo text-info"></i></button>';
+            if (perms.canEdit || (perms.canCreate && exp.created_by === perms.userId)) {
+                btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" title="Resubmit"><i class="la la-redo text-info"></i></button>';
+            }
         }
 
-        // Admin Edit (non-voided)
-        if (!exp.voided_at) {
+        // Admin Edit (non-voided, admin only — Sec 5.7)
+        if (perms.canEdit && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-admin-edit" data-id="' + exp.id + '" ' +
                 'data-amount="' + exp.amount + '" ' +
                 'data-category="' + exp.category_id + '" ' +
@@ -299,8 +307,8 @@ var CashflowExpenses = (function () {
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
         }
 
-        // Void (non-voided)
-        if (!exp.voided_at) {
+        // Void (admin only, non-voided — Sec 11.5)
+        if (perms.canVoid && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-void" data-id="' + exp.id + '" title="Void"><i class="la la-ban text-dark"></i></button>';
         }
 
@@ -477,7 +485,9 @@ var CashflowExpenses = (function () {
 
                     // Detailed confirmation popup per spec
                     var exp = res.data || {};
-                    var pool = exp.paid_from_pool ? exp.paid_from_pool.name : 'N/A';
+                    var poolObj = exp.paid_from_pool || {};
+                    var pool = poolObj.name || 'N/A';
+                    var newBalance = poolObj.cached_balance !== undefined ? 'PKR ' + numberFormat(poolObj.cached_balance) : 'N/A';
                     var amt = 'PKR ' + numberFormat(exp.amount || 0);
                     var status = (exp.status === 'approved') ? '<span class="text-success font-weight-bold">Auto-Approved</span>' : '<span class="text-warning font-weight-bold">Pending Approval</span>';
                     var attach = exp.attachment_url ? '<span class="text-success"><i class="la la-check-circle"></i> Attached</span>' : '<span class="text-danger"><i class="la la-times-circle"></i> No attachment</span>';
@@ -489,6 +499,7 @@ var CashflowExpenses = (function () {
                             '<table class="table table-sm mb-0">' +
                             '<tr><td class="font-weight-bold">Amount</td><td>' + amt + '</td></tr>' +
                             '<tr><td class="font-weight-bold">Pool</td><td>' + escapeHtml(pool) + '</td></tr>' +
+                            '<tr><td class="font-weight-bold">New Balance</td><td>' + newBalance + '</td></tr>' +
                             '<tr><td class="font-weight-bold">Status</td><td>' + status + '</td></tr>' +
                             '<tr><td class="font-weight-bold">Attachment</td><td>' + attach + '</td></tr>' +
                             '</table></div>',
