@@ -11,7 +11,7 @@
                     <div class="card-body text-center py-8">
                         <div class="text-muted font-weight-bold mb-2" id="fdm-branch-name">Loading...</div>
                         <div class="font-weight-bolder display-4 mb-2" id="fdm-balance">PKR 0</div>
-                        <div class="text-muted font-size-sm" id="fdm-pool-name"></div>
+                        <div class="text-muted font-size-sm" id="fdm-pool-name"><i class="la la-circle text-success" style="font-size:8px;vertical-align:middle;"></i> Live Cash Balance</div>
                     </div>
                 </div>
 
