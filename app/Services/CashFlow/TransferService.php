@@ -13,10 +13,12 @@ use Illuminate\Support\Facades\DB;
 class TransferService
 {
     private CashflowAuditService $auditService;
+    private NotificationService $notificationService;
 
-    public function __construct(CashflowAuditService $auditService)
+    public function __construct(CashflowAuditService $auditService, NotificationService $notificationService)
     {
         $this->auditService = $auditService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -104,6 +106,25 @@ class TransferService
                 null,
                 $transfer->toArray()
             );
+
+            // Notify branch managers when transfer involves their branch pool
+            $this->notificationService->notifyTransferForBranch(
+                $transfer->from_pool_id,
+                $transfer->to_pool_id,
+                (float) $transfer->amount,
+                $accountId
+            );
+
+            // Check for negative pool after transfer
+            $fromPool->refresh();
+            if ((float) $fromPool->cached_balance < 0) {
+                $this->notificationService->notifyNegativePool(
+                    $fromPool->name,
+                    (float) $fromPool->cached_balance,
+                    $fromPool->location_id,
+                    $accountId
+                );
+            }
 
             return $transfer->load([
                 'fromPool:id,name,type', 'fromPool.location:id,name',

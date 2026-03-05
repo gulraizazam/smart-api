@@ -173,6 +173,75 @@
                     </div>
                 </div>
 
+                <!--begin::Payment Method Mapping Card-->
+                <div class="card card-custom mb-5">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <h3 class="card-label"><i class="la la-credit-card mr-2"></i>Payment Method → Pool Mapping</h3>
+                        </div>
+                        <div class="card-toolbar">
+                            @if(Gate::allows('cashflow_settings'))
+                                <button id="btn-save-pm-mapping" class="btn btn-primary btn-sm"><i class="la la-save"></i> Save Mapping</button>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted font-size-sm mb-4">Configure which cash pool patient payments are automatically mapped to based on payment method.</p>
+                        <div id="pm-mapping-container">
+                            <div class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div> Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--begin::Audit Trail Card-->
+                <div class="card card-custom mb-5">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <h3 class="card-label"><i class="la la-history mr-2"></i>Audit Trail</h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <select id="audit-entity-filter" class="form-control form-control-sm mr-2" style="width:150px;">
+                                <option value="">All Types</option>
+                                <option value="expense">Expenses</option>
+                                <option value="transfer">Transfers</option>
+                                <option value="vendor">Vendors</option>
+                                <option value="vendor_transaction">Vendor Txn</option>
+                                <option value="staff_advance">Advances</option>
+                                <option value="staff_return">Returns</option>
+                                <option value="cash_pool">Pools</option>
+                                <option value="category">Categories</option>
+                                <option value="settings">Settings</option>
+                                <option value="period_lock">Period Lock</option>
+                            </select>
+                            <button id="btn-load-audit" class="btn btn-light-primary btn-sm"><i class="la la-search"></i> Load</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-head-custom mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4">Time</th>
+                                        <th class="px-4">User</th>
+                                        <th class="px-4">Action</th>
+                                        <th class="px-4">Entity</th>
+                                        <th class="px-4">ID</th>
+                                        <th class="px-4">Reason</th>
+                                        <th class="px-4">IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-trail-tbody">
+                                    <tr><td colspan="7" class="text-center text-muted py-4">Select a type and click Load</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center px-4 py-3">
+                            <span class="text-muted font-size-sm" id="audit-info"></span>
+                            <div id="audit-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

@@ -34,6 +34,12 @@
                     $.each(res.data.branches, function (i, b) {
                         sel.append('<option value="' + b.id + '">' + esc(b.name) + '</option>');
                     });
+
+                    // Auto-filter for branch managers (single branch users)
+                    if (res.data.branches.length === 1) {
+                        sel.val(res.data.branches[0].id);
+                        loadDashboard();
+                    }
                 }
             }
         });
@@ -60,8 +66,11 @@
                 renderTopExpenses(d.top_expenses);
                 renderCashCollection(d.cash_collection);
                 renderVendorOutstanding(d.vendor_outstanding);
+                renderVendorDueSoon(d.vendor_due_soon);
                 renderStaffAdvances(d.staff_advances);
                 renderRecentEntries(d.recent_entries);
+                renderVoidedAlerts(d.voided_recent);
+                renderPendingExpenses(d.pending_expenses);
 
                 if (d.accountant_widgets) {
                     renderAccountantWidgets(d.accountant_widgets);
@@ -249,6 +258,120 @@
                 '<td class="text-right font-weight-bold">PKR ' + nf(s.outstanding) + '</td>' +
                 '<td class="text-center">' + s.days_since_last + '</td>' +
                 '<td class="text-center">' + agingBadge + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderVendorDueSoon(vendors) {
+        var tbody = $('#vendor-due-tbody').empty();
+        if (!vendors || !vendors.length) { tbody.html('<tr><td colspan="5" class="text-center text-muted py-3">No upcoming payments due</td></tr>'); return; }
+
+        $.each(vendors, function (i, v) {
+            var statusBadge;
+            if (v.is_overdue) {
+                statusBadge = '<span class="label label-danger label-inline">Overdue ' + Math.abs(v.days_until_due) + 'd</span>';
+            } else if (v.days_until_due <= 2) {
+                statusBadge = '<span class="label label-warning label-inline">Due in ' + v.days_until_due + 'd</span>';
+            } else {
+                statusBadge = '<span class="label label-light-info label-inline">Due in ' + v.days_until_due + 'd</span>';
+            }
+
+            var dateStr = '';
+            if (v.due_date) {
+                var d = new Date(v.due_date);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
+
+            tbody.append(
+                '<tr>' +
+                '<td class="py-3 px-4">' + esc(v.name) + '</td>' +
+                '<td class="py-3 px-4 text-right font-weight-bold">PKR ' + nf(v.balance) + '</td>' +
+                '<td class="py-3 px-4">' + esc(v.payment_terms || '') + '</td>' +
+                '<td class="py-3 px-4">' + dateStr + '</td>' +
+                '<td class="py-3 px-4">' + statusBadge + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderPendingExpenses(expenses) {
+        var tbody = $('#pending-list-tbody').empty();
+        if (!expenses || !expenses.length) { $('#pending-list-row').addClass('d-none'); return; }
+
+        $('#pending-list-row').removeClass('d-none');
+        $.each(expenses, function (i, exp) {
+            var dateStr = '';
+            if (exp.expense_date) {
+                var d = new Date(exp.expense_date);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
+            var attachIcon = exp.attachment_url
+                ? '<i class="la la-paperclip text-success" title="Has attachment"></i>'
+                : '<i class="la la-times text-danger" title="No attachment"></i>';
+            var actions = '<button class="btn btn-xs btn-light-success mr-1 btn-dash-approve" data-id="' + exp.id + '" data-attach="' + (exp.attachment_url ? '1' : '0') + '"><i class="la la-check"></i></button>' +
+                '<button class="btn btn-xs btn-light-danger btn-dash-reject" data-id="' + exp.id + '"><i class="la la-times"></i></button>';
+
+            tbody.append(
+                '<tr>' +
+                '<td class="py-2 px-4">' + dateStr + '</td>' +
+                '<td class="py-2 px-4">' + esc(exp.description || '') + '</td>' +
+                '<td class="py-2 px-4">' + (exp.category ? esc(exp.category.name) : '-') + '</td>' +
+                '<td class="py-2 px-4 text-right font-weight-bold">PKR ' + nf(exp.amount) + '</td>' +
+                '<td class="py-2 px-4">' + (exp.creator ? esc(exp.creator.name) : '-') + '</td>' +
+                '<td class="py-2 px-4 text-center">' + attachIcon + '</td>' +
+                '<td class="py-2 px-4 text-center">' + actions + '</td>' +
+                '</tr>'
+            );
+        });
+
+        // Bind inline approve
+        $('.btn-dash-approve').off('click').on('click', function () {
+            var id = $(this).data('id');
+            var hasAttach = $(this).data('attach');
+            if (!hasAttach) { toastr.error('Cannot approve: attachment must be present.'); return; }
+            if (!confirm('Approve this expense?')) return;
+            $.ajax({
+                url: apiBase + 'expenses/' + id + '/approve', type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) { toastr.success(res.message || 'Approved.'); loadDashboard(); },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+
+        // Bind inline reject
+        $('.btn-dash-reject').off('click').on('click', function () {
+            var id = $(this).data('id');
+            var reason = prompt('Rejection reason (required):');
+            if (!reason || reason.length < 5) { toastr.warning('Reason must be at least 5 characters.'); return; }
+            $.ajax({
+                url: apiBase + 'expenses/' + id + '/reject', type: 'POST',
+                data: { rejection_reason: reason },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) { toastr.success(res.message || 'Rejected.'); loadDashboard(); },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+    }
+
+    function renderVoidedAlerts(voided) {
+        var tbody = $('#voided-alerts-tbody').empty();
+        if (!voided || !voided.length) { $('#voided-alerts-row').addClass('d-none'); return; }
+
+        $('#voided-alerts-row').removeClass('d-none');
+        $.each(voided, function (i, v) {
+            var dateStr = '';
+            if (v.voided_at) {
+                var d = new Date(v.voided_at);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
+            tbody.append(
+                '<tr>' +
+                '<td class="py-2 px-4">' + dateStr + '</td>' +
+                '<td class="py-2 px-4">' + esc(v.description || '') + '</td>' +
+                '<td class="py-2 px-4 text-right font-weight-bold text-danger">PKR ' + nf(v.amount) + '</td>' +
+                '<td class="py-2 px-4">' + (v.voided_by_user ? esc(v.voided_by_user.name) : '-') + '</td>' +
+                '<td class="py-2 px-4">' + esc(v.void_reason || '') + '</td>' +
                 '</tr>'
             );
         });

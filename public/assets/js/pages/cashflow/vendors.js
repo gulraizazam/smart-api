@@ -9,6 +9,11 @@ var CashflowVendors = (function () {
         loadVendors();
         loadVendorRequests();
         bindEvents();
+
+        // Auto-open modal if coming from dashboard quick-action
+        if (new URLSearchParams(window.location.search).get('action') === 'add') {
+            setTimeout(function () { $('#modal_vendor_purchase').modal('show'); }, 500);
+        }
     }
 
     function bindEvents() {
@@ -262,7 +267,7 @@ var CashflowVendors = (function () {
     }
 
     function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
-    function nf(n) { return parseFloat(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function nf(n) { return parseFloat(n||0).toLocaleString('en-PK',{maximumFractionDigits:0}); }
     function fd(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
     return { init: init };

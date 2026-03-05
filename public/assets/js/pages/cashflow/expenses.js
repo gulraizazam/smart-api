@@ -10,6 +10,11 @@ var CashflowExpenses = (function () {
         loadFormData();
         loadExpenses();
         bindEvents();
+
+        // Auto-open modal if coming from dashboard quick-action
+        if (new URLSearchParams(window.location.search).get('action') === 'add') {
+            setTimeout(function () { $('#modal_expense').modal('show'); }, 500);
+        }
     }
 
     function bindEvents() {
@@ -20,6 +25,19 @@ var CashflowExpenses = (function () {
         $('#btn-confirm-reject').on('click', submitReject);
         $('#btn-confirm-void').on('click', submitVoid);
         $('#btn-submit-admin-edit').on('click', submitAdminEdit);
+        $('#btn-export-expenses').on('click', exportExpenses);
+        $('#btn-vendor-not-listed').on('click', function () { $('#modal_vendor_request').modal('show'); });
+        $('#btn-category-not-listed').on('click', function () { $('#modal_category_request').modal('show'); });
+        $('#btn-submit-vendor-request').on('click', submitVendorRequest);
+        $('#btn-submit-category-request').on('click', submitCategoryRequest);
+
+        // Attachment URL: warn if non-Google-Drive URL (Sec 11.3)
+        $('[name="attachment_url"]', '#form-expense').on('change', function () {
+            var url = $(this).val();
+            if (url && !/drive\.google\.com|docs\.google\.com/i.test(url)) {
+                toastr.warning('This URL does not appear to be a Google Drive link. Please verify.');
+            }
+        });
 
         // General checkbox disables branch select
         $('#chk-general').on('change', function () {
@@ -37,14 +55,39 @@ var CashflowExpenses = (function () {
             }
         });
 
+        // Pre-fill date on modal open
+        $('#modal_expense').on('show.bs.modal', function () {
+            var dateField = $('#form-expense [name="expense_date"]');
+            if (!dateField.val()) dateField.val(getTodayStr());
+        });
+
         // Reset modal on close
         $('#modal_expense').on('hidden.bs.modal', function () {
             $('#form-expense')[0].reset();
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
             $('#expense-branch-select').prop('disabled', false);
+            $('#vendor-group').removeClass('bg-light-warning p-3 rounded');
         });
     }
+
+    // ===================== KEYBOARD SHORTCUTS (Sec 15.6) =====================
+
+    $(document).on('keydown', function (e) {
+        // Alt+E: Open expense modal
+        if (e.altKey && e.key === 'e') {
+            e.preventDefault();
+            $('#modal_expense').modal('show');
+        }
+        // Ctrl+Enter: Submit active modal form
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            if ($('#modal_expense').hasClass('show')) { $('#btn-submit-expense').click(); }
+            else if ($('#modal_reject').hasClass('show')) { $('#btn-confirm-reject').click(); }
+            else if ($('#modal_void').hasClass('show')) { $('#btn-confirm-void').click(); }
+            else if ($('#modal_admin_edit').hasClass('show')) { $('#btn-submit-admin-edit').click(); }
+        }
+    });
 
     // ===================== LOAD DATA =====================
 
@@ -119,13 +162,25 @@ var CashflowExpenses = (function () {
             editCatSelect.append('<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>');
         });
 
-        // Vendor emphasis: highlight vendor field when category with vendor_emphasis is selected
+        // Staff dropdown
+        var staffSelect = $('[name="staff_id"]', '#form-expense');
+        staffSelect.find('option:gt(0)').remove();
+        if (data.staff) {
+            $.each(data.staff, function (i, s) {
+                staffSelect.append('<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>');
+            });
+        }
+
+        // Vendor emphasis: highlight vendor field when category with vendor_emphasis is selected (Sec 5.4)
         $('[name="category_id"]', '#form-expense').on('change', function () {
             var vendorEmphasis = $(this).find(':selected').data('vendor');
-            if (vendorEmphasis) {
-                $('#vendor-group').addClass('bg-light-warning p-3 rounded');
+            if (vendorEmphasis == 1) {
+                $('#vendor-group').addClass('bg-light-warning p-3 rounded').css('opacity', '1');
+            } else if ($(this).val()) {
+                // Low-vendor category: slightly dimmed
+                $('#vendor-group').removeClass('bg-light-warning p-3 rounded').css('opacity', '0.6');
             } else {
-                $('#vendor-group').removeClass('bg-light-warning p-3 rounded');
+                $('#vendor-group').removeClass('bg-light-warning p-3 rounded').css('opacity', '1');
             }
         });
     }
@@ -194,7 +249,7 @@ var CashflowExpenses = (function () {
                 '<td>' + escapeHtml(truncate(exp.description, 50)) +
                     (exp.is_flagged ? ' <i class="la la-flag text-danger" title="' + escapeHtml(exp.flag_reason || '') + '"></i>' : '') +
                     (exp.voided_at ? ' <span class="label label-dark label-inline font-size-xs">VOID</span>' : '') +
-                    (exp.edit_reason ? ' <i class="la la-pencil text-warning" title="Edited"></i>' : '') +
+                    (exp.edit_reason ? ' <i class="la la-pencil text-warning" title="' + escapeHtml(buildEditTooltip(exp)) + '"></i>' : '') +
                 '</td>' +
                 '<td>' + (exp.category ? escapeHtml(exp.category.name) : '-') + '</td>' +
                 '<td><small class="text-muted">' + escapeHtml(branchLabel) + '</small><br><small>' + escapeHtml(poolLabel) + '</small></td>' +
@@ -224,7 +279,7 @@ var CashflowExpenses = (function () {
 
         // Approve / Reject (only for pending, non-voided)
         if (exp.status === 'pending' && !exp.voided_at) {
-            btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" data-attachment="' + (exp.attachment_url ? '1' : '0') + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-reject" data-id="' + exp.id + '" title="Reject"><i class="la la-times-circle text-danger"></i></button>';
         }
 
@@ -258,6 +313,11 @@ var CashflowExpenses = (function () {
     function bindActionButtons() {
         $('.btn-approve').off('click').on('click', function () {
             var id = $(this).data('id');
+            var hasAttachment = $(this).data('attachment');
+            if (!hasAttachment) {
+                toastr.error('Cannot approve: attachment must be present before approval.');
+                return;
+            }
             if (!confirm('Approve this expense?')) return;
             $.ajax({
                 url: apiBase + 'expenses/' + id + '/approve',
@@ -367,6 +427,25 @@ var CashflowExpenses = (function () {
             return;
         }
 
+        // For Branch must be selected (branch or General checkbox)
+        if (!data.is_for_general && !data.for_branch_id) {
+            toastr.warning('Please select a branch or mark as General / Company-wide.');
+            return;
+        }
+
+        // Cash expenses MUST have attachment
+        var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
+        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url) {
+            toastr.error('Attachment is mandatory for cash expenses.');
+            return;
+        }
+
+        // Whole numbers only
+        if (data.amount && data.amount % 1 !== 0) {
+            toastr.warning('Amount must be a whole number (no decimals).');
+            return;
+        }
+
         var btn = $('#btn-submit-expense');
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-2"></i> Submitting...');
 
@@ -377,10 +456,46 @@ var CashflowExpenses = (function () {
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
                 if (res.success) {
-                    toastr.success(res.message);
-                    $('#modal_expense').modal('hide');
-                    form[0].reset();
                     loadExpenses();
+
+                    // Post-save: form stays open, only date resets to today
+                    form.find('[name="amount"]').val('');
+                    form.find('[name="description"]').val('');
+                    form.find('[name="reference_no"]').val('');
+                    form.find('[name="attachment_url"]').val('');
+                    form.find('[name="notes"]').val('');
+                    form.find('[name="category_id"]').val('');
+                    form.find('[name="paid_from_pool_id"]').val('');
+                    form.find('[name="for_branch_id"]').val('');
+                    form.find('[name="payment_method_id"]').val('');
+                    form.find('[name="vendor_id"]').val('');
+                    form.find('[name="staff_id"]').val('');
+                    form.find('#chk-general').prop('checked', false);
+                    form.find('#expense-branch-select').prop('disabled', false);
+                    form.find('[name="expense_date"]').val(getTodayStr());
+                    $('#threshold-hint').html('');
+
+                    // Detailed confirmation popup per spec
+                    var exp = res.data || {};
+                    var pool = exp.paid_from_pool ? exp.paid_from_pool.name : 'N/A';
+                    var amt = 'PKR ' + numberFormat(exp.amount || 0);
+                    var status = (exp.status === 'approved') ? '<span class="text-success font-weight-bold">Auto-Approved</span>' : '<span class="text-warning font-weight-bold">Pending Approval</span>';
+                    var attach = exp.attachment_url ? '<span class="text-success"><i class="la la-check-circle"></i> Attached</span>' : '<span class="text-danger"><i class="la la-times-circle"></i> No attachment</span>';
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Expense Saved',
+                        html: '<div class="text-left">' +
+                            '<table class="table table-sm mb-0">' +
+                            '<tr><td class="font-weight-bold">Amount</td><td>' + amt + '</td></tr>' +
+                            '<tr><td class="font-weight-bold">Pool</td><td>' + escapeHtml(pool) + '</td></tr>' +
+                            '<tr><td class="font-weight-bold">Status</td><td>' + status + '</td></tr>' +
+                            '<tr><td class="font-weight-bold">Attachment</td><td>' + attach + '</td></tr>' +
+                            '</table></div>',
+                        confirmButtonText: 'OK',
+                        customClass: { confirmButton: 'btn btn-primary' },
+                        buttonsStyling: false,
+                    });
                 } else {
                     toastr.error(res.message);
                 }
@@ -576,7 +691,83 @@ var CashflowExpenses = (function () {
         return '<span class="label label-light-' + color + ' label-inline">' + action.replace('_', ' ').toUpperCase() + '</span>';
     }
 
+    // ===================== VENDOR / CATEGORY REQUEST =====================
+
+    function submitVendorRequest() {
+        var form = $('#form-vendor-request');
+        var name = form.find('[name="name"]').val();
+        if (!name) { toastr.warning('Vendor name is required.'); return; }
+
+        var btn = $('#btn-submit-vendor-request');
+        btn.prop('disabled', true);
+
+        $.ajax({
+            url: apiBase + 'vendor-requests/store',
+            type: 'POST',
+            data: { name: name, phone: form.find('[name="phone"]').val(), note: form.find('[name="note"]').val() },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                toastr.success(res.message || 'Vendor request submitted.');
+                $('#modal_vendor_request').modal('hide');
+                form[0].reset();
+            },
+            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to submit request.'); },
+            complete: function () { btn.prop('disabled', false); }
+        });
+    }
+
+    function submitCategoryRequest() {
+        var form = $('#form-category-request');
+        var name = form.find('[name="name"]').val();
+        if (!name) { toastr.warning('Category name is required.'); return; }
+
+        var btn = $('#btn-submit-category-request');
+        btn.prop('disabled', true);
+
+        $.ajax({
+            url: apiBase + 'category-requests/store',
+            type: 'POST',
+            data: { name: name, description: form.find('[name="description"]').val() },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                toastr.success(res.message || 'Category suggestion submitted.');
+                $('#modal_category_request').modal('hide');
+                form[0].reset();
+            },
+            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to submit suggestion.'); },
+            complete: function () { btn.prop('disabled', false); }
+        });
+    }
+
+    // ===================== EXPORT =====================
+
+    function exportExpenses() {
+        var params = {
+            status: $('#filter-status').val() || '',
+            search: $('#filter-search').val() || '',
+            branch_id: $('#filter-branch').val() || '',
+            category_id: $('#filter-category').val() || '',
+            date_from: $('#filter-date-from').val() || '',
+            date_to: $('#filter-date-to').val() || '',
+        };
+        var qs = $.param(params);
+        window.open(apiBase + 'expenses/export?' + qs, '_blank');
+    }
+
     // ===================== HELPERS =====================
+
+    function buildEditTooltip(exp) {
+        var parts = ['Edited'];
+        if (exp.last_edit_log) {
+            if (exp.last_edit_log.user) parts.push('by ' + exp.last_edit_log.user.name);
+            if (exp.last_edit_log.created_at) {
+                var d = new Date(exp.last_edit_log.created_at);
+                parts.push('on ' + ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear());
+            }
+        }
+        if (exp.edit_reason) parts.push('— Reason: ' + exp.edit_reason);
+        return parts.join(' ');
+    }
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -584,7 +775,12 @@ var CashflowExpenses = (function () {
     }
 
     function numberFormat(num) {
-        return parseFloat(num || 0).toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return parseFloat(num || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 });
+    }
+
+    function getTodayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
     }
 
     function formatDate(dateStr) {

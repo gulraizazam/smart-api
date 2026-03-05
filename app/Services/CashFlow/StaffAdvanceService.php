@@ -15,11 +15,13 @@ class StaffAdvanceService
 {
     private CashflowAuditService $auditService;
     private CashflowSettingService $settingService;
+    private NotificationService $notificationService;
 
-    public function __construct(CashflowAuditService $auditService, CashflowSettingService $settingService)
+    public function __construct(CashflowAuditService $auditService, CashflowSettingService $settingService, NotificationService $notificationService)
     {
         $this->auditService = $auditService;
         $this->settingService = $settingService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -126,6 +128,12 @@ class StaffAdvanceService
             $advance->id,
             null,
             $advance->toArray()
+        );
+
+        $this->notificationService->notifyStaffAdvanceGiven(
+            $user->name,
+            (float) $data['amount'],
+            $accountId
         );
 
         return $advance->load(['staffUser:id,name', 'pool:id,name', 'creator:id,name']);

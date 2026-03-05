@@ -43,13 +43,27 @@ class ExpenseService
                 'staff:id,name',
                 'creator:id,name',
                 'verifier:id,name',
+                'lastEditLog',
             ])
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc');
 
-        // Status filter
+        // Status filter (including special filters)
         if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $status = $filters['status'];
+            if ($status === 'flagged') {
+                $query->where('is_flagged', true)->whereNull('voided_at');
+            } elseif ($status === 'voided') {
+                $query->whereNotNull('voided_at');
+            } elseif ($status === 'edited') {
+                $query->whereNotNull('edit_reason')->whereNull('voided_at');
+            } elseif ($status === 'my_pending') {
+                $query->where('status', 'pending')->where('created_by', Auth::id())->whereNull('voided_at');
+            } elseif ($status === 'my_rejected') {
+                $query->where('status', 'rejected')->where('created_by', Auth::id())->whereNull('voided_at');
+            } else {
+                $query->where('status', $status)->whereNull('voided_at');
+            }
         }
 
         // Branch filter
@@ -174,6 +188,20 @@ class ExpenseService
                 $this->notificationService->notifyExpensePending($expense, $accountId);
             }
 
+            // Notify branch manager when expense recorded for their branch
+            $this->notificationService->notifyExpenseForBranch($expense, $accountId);
+
+            // Check for negative pool and notify
+            $pool = \App\Models\CashFlow\CashPool::find($expense->paid_from_pool_id);
+            if ($pool && (float) $pool->cached_balance < 0) {
+                $this->notificationService->notifyNegativePool(
+                    $pool->name,
+                    (float) $pool->cached_balance,
+                    $pool->location_id,
+                    $accountId
+                );
+            }
+
             return $expense->load([
                 'category:id,name', 'paidFromPool:id,name', 'forBranch:id,name',
                 'paymentMethod:id,name', 'vendor:id,name', 'creator:id,name',
@@ -192,12 +220,25 @@ class ExpenseService
             throw new CashflowException('Only pending expenses can be approved.');
         }
 
+        // Attachment must be present before approval (Sec 5.2)
+        if (empty($expense->attachment_url)) {
+            throw new CashflowException('Cannot approve: attachment must be present before approval.');
+        }
+
         $oldValues = $expense->only(['status', 'verified_by']);
 
-        $expense->update([
+        $updateData = [
             'status' => Expense::STATUS_APPROVED,
             'verified_by' => Auth::id(),
-        ]);
+        ];
+
+        // Auto-flag admin self-approval (Sec 11.1)
+        if ($expense->created_by === Auth::id()) {
+            $updateData['is_flagged'] = true;
+            $updateData['flag_reason'] = 'Self-approved by admin';
+        }
+
+        $expense->update($updateData);
 
         $this->auditService->log(
             CashflowAuditLog::ACTION_APPROVED,
@@ -413,6 +454,49 @@ class ExpenseService
 
         if ($dailyTotal > $dailyLimit) {
             $flags[] = 'Daily auto-approved total exceeds ' . CashflowHelper::formatCurrency($dailyLimit);
+        }
+
+        // Duplicate vendor payment: same vendor + same amount within 24hrs (Sec 11.2)
+        if ($expense->vendor_id) {
+            $duplicateExists = Expense::forAccount($accountId)
+                ->where('vendor_id', $expense->vendor_id)
+                ->where('amount', $expense->amount)
+                ->where('id', '!=', $expense->id)
+                ->where('created_at', '>=', now()->subHours(24))
+                ->whereNull('voided_at')
+                ->exists();
+
+            if ($duplicateExists) {
+                $flags[] = 'Potential duplicate: same vendor + amount within 24 hours';
+            }
+        }
+
+        // Vendor overpayment: payment exceeds outstanding balance (Sec 11.2)
+        if ($expense->vendor_id) {
+            $vendor = \App\Models\CashFlow\Vendor::find($expense->vendor_id);
+            if ($vendor && $vendor->cached_balance < 0) {
+                $flags[] = 'Vendor overpayment: exceeds vendor balance';
+            }
+        }
+
+        // Perfect-match advance: expenses exactly equal advance, zero return (Sec 8.3/11.2)
+        if ($expense->staff_id) {
+            $totalAdvances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
+                ->where('user_id', $expense->staff_id)->whereNull('deleted_at')->sum('amount');
+            $totalReturns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
+                ->where('user_id', $expense->staff_id)->whereNull('deleted_at')->sum('amount');
+            $totalExpenses = Expense::forAccount($accountId)->whereNull('voided_at')
+                ->where('staff_id', $expense->staff_id)->sum('amount');
+
+            if ($totalAdvances > 0 && abs($totalAdvances - $totalExpenses) < 1 && $totalReturns == 0) {
+                $flags[] = 'Advance fully spent with zero return';
+            }
+        }
+
+        // Negative pool balance (Sec 11.2)
+        $pool = CashPool::find($expense->paid_from_pool_id);
+        if ($pool && $pool->cached_balance < 0) {
+            $flags[] = 'Negative pool balance after this expense';
         }
 
         if (!empty($flags)) {

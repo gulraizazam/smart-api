@@ -17,7 +17,7 @@ class StoreTransferRequest extends FormRequest
     {
         return [
             'transfer_date' => 'required|date|before_or_equal:today',
-            'amount' => 'required|numeric|min:0.01|max:99999999.99',
+            'amount' => 'required|numeric|min:1|max:99999999|integer',
             'from_pool_id' => 'required|exists:cash_pools,id',
             'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',
             'method' => 'required|in:physical_cash,bank_deposit',

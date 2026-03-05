@@ -12,6 +12,7 @@
     function bindEvents() {
         $('#btn-run-report').on('click', runReport);
         $('#btn-export-csv').on('click', exportCsv);
+        $('#btn-export-pdf').on('click', exportPdf);
         $('#report-type').on('change', function () {
             var type = $(this).val();
             // Show pool filter only for cashflow-statement and daily-movement
@@ -72,6 +73,25 @@
             error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Report failed.'); },
             complete: function () { btn.prop('disabled', false).html('<i class="la la-play"></i> Generate'); }
         });
+    }
+
+    function exportPdf() {
+        var content = $('#report-output').html();
+        if (!content || content.trim() === '') {
+            toastr.warning('Please generate a report first.');
+            return;
+        }
+        var type = $('#report-type option:selected').text();
+        var win = window.open('', '_blank');
+        win.document.write('<html><head><title>' + type + ' - PDF Export</title>');
+        win.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:bold}.text-right{text-align:right}.text-danger{color:#c00}.text-success{color:#060}h4{margin:0 0 10px}@media print{body{padding:0}}</style>');
+        win.document.write('</head><body>');
+        win.document.write('<h3>' + type + '</h3>');
+        win.document.write('<p style="color:#888;font-size:11px">Generated: ' + new Date().toLocaleString() + '</p>');
+        win.document.write(content);
+        win.document.write('</body></html>');
+        win.document.close();
+        setTimeout(function () { win.print(); }, 300);
     }
 
     function exportCsv() {

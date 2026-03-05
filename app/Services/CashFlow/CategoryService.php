@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Cache;
 class CategoryService
 {
     private CashflowAuditService $auditService;
+    private NotificationService $notificationService;
 
-    public function __construct(CashflowAuditService $auditService)
+    public function __construct(CashflowAuditService $auditService, NotificationService $notificationService)
     {
         $this->auditService = $auditService;
+        $this->notificationService = $notificationService;
     }
 
     /**
@@ -149,6 +151,12 @@ class CategoryService
             $request->id,
             null,
             $request->toArray()
+        );
+
+        $this->notificationService->notifyCategoryRequest(
+            $data['name'],
+            \Illuminate\Support\Facades\Auth::user()->name,
+            $accountId
         );
 
         return $request;

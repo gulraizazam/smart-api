@@ -45,6 +45,14 @@ class CashflowSettingService
      */
     public function updateMany(array $settings, int $accountId): void
     {
+        // Go-live date frozen after first period lock (Sec 3.1)
+        if (isset($settings['go_live_date'])) {
+            $hasLocks = \App\Models\CashFlow\PeriodLock::where('account_id', $accountId)->exists();
+            if ($hasLocks) {
+                unset($settings['go_live_date']); // silently skip — frozen
+            }
+        }
+
         foreach ($settings as $key => $value) {
             CashflowSetting::setValue($key, $value, $accountId);
         }

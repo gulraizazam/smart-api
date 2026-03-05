@@ -90,6 +90,9 @@
                             <h3 class="card-label"><i class="la la-receipt mr-2"></i>Expenses</h3>
                         </div>
                         <div class="card-toolbar">
+                            <button id="btn-export-expenses" class="btn btn-light-success btn-sm mr-2">
+                                <i class="la la-file-excel"></i> Export
+                            </button>
                             @if(Gate::allows('cashflow_expense_create'))
                                 <button id="btn-add-expense" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_expense">
                                     <i class="la la-plus"></i> New Expense
@@ -106,6 +109,11 @@
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
                                     <option value="rejected">Rejected</option>
+                                    <option value="flagged">Flagged</option>
+                                    <option value="voided">Voided</option>
+                                    <option value="edited">Edited</option>
+                                    <option value="my_pending">My Pending</option>
+                                    <option value="my_rejected">My Rejected</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -187,7 +195,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Amount (PKR) <span class="text-danger">*</span></label>
-                                    <input type="number" name="amount" class="form-control" min="0.01" step="0.01" required />
+                                    <input type="number" name="amount" class="form-control" min="1" step="1" required />
                                     <span class="form-text text-muted" id="threshold-hint"></span>
                                 </div>
                             </div>
@@ -197,6 +205,7 @@
                                     <select name="category_id" class="form-control searchable" required>
                                         <option value="">Select category</option>
                                     </select>
+                                    <a href="javascript:;" id="btn-category-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Category not listed? Suggest new</a>
                                 </div>
                             </div>
                         </div>
@@ -233,15 +242,24 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group" id="vendor-group">
                                     <label>Vendor</label>
                                     <select name="vendor_id" class="form-control searchable">
                                         <option value="">Select vendor (optional)</option>
                                     </select>
+                                    <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Expense By (Staff)</label>
+                                    <select name="staff_id" class="form-control searchable">
+                                        <option value="">Select staff (optional)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Reference No.</label>
                                     <input type="text" name="reference_no" class="form-control" maxlength="100" />
@@ -271,6 +289,66 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     <button type="button" id="btn-submit-expense" class="btn btn-primary">Submit Expense</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Request Modal (from expense form) -->
+    <div class="modal fade" id="modal_vendor_request" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Request New Vendor</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-vendor-request">
+                        <div class="form-group">
+                            <label>Vendor Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required maxlength="200" />
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" name="phone" class="form-control" maxlength="50" />
+                        </div>
+                        <div class="form-group">
+                            <label>Why is this vendor needed?</label>
+                            <textarea name="note" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-submit-vendor-request" class="btn btn-primary btn-sm">Submit Request</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Suggestion Modal (from expense form) -->
+    <div class="modal fade" id="modal_category_request" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Suggest New Category</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-category-request">
+                        <div class="form-group">
+                            <label>Category Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required maxlength="200" />
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea name="description" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-submit-category-request" class="btn btn-primary btn-sm">Submit Suggestion</button>
                 </div>
             </div>
         </div>

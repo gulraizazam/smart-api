@@ -8,6 +8,11 @@ var CashflowTransfers = (function () {
         loadPools();
         loadTransfers();
         bindEvents();
+
+        // Auto-open modal if coming from dashboard quick-action
+        if (new URLSearchParams(window.location.search).get('action') === 'add') {
+            setTimeout(function () { $('#modal_transfer').modal('show'); }, 500);
+        }
     }
 
     function bindEvents() {
@@ -15,6 +20,12 @@ var CashflowTransfers = (function () {
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadTransfers(); } });
         $('#btn-submit-transfer').on('click', submitTransfer);
         $('#modal_transfer').on('hidden.bs.modal', function () { $('#form-transfer')[0].reset(); });
+
+        // Keyboard shortcuts
+        $(document).on('keydown', function (e) {
+            if (e.altKey && e.key === 't') { e.preventDefault(); $('#modal_transfer').modal('show'); }
+            if (e.ctrlKey && e.key === 'Enter' && $('#modal_transfer').hasClass('show')) { e.preventDefault(); $('#btn-submit-transfer').click(); }
+        });
     }
 
     function loadPools() {
@@ -29,7 +40,7 @@ var CashflowTransfers = (function () {
                 $.each(pools, function (i, p) {
                     var label = p.name + (p.location ? ' (' + p.location.name + ')' : '');
                     opts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
-                    formOpts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
+                    formOpts += '<option value="' + p.id + '" data-balance="' + (p.cached_balance || 0) + '">' + escapeHtml(label) + '</option>';
                 });
                 $('#filter-pool').html(opts);
                 $('[name="from_pool_id"]').html(formOpts);
@@ -128,6 +139,15 @@ var CashflowTransfers = (function () {
             return;
         }
 
+        // Warn if From pool will go negative (Sec 6.3)
+        var fromBalance = parseFloat($('[name="from_pool_id"] option:selected').data('balance')) || 0;
+        var amt = parseFloat(data.amount) || 0;
+        if (fromBalance - amt < 0) {
+            if (!confirm('Warning: This transfer will make the source pool balance negative (Current: PKR ' + Math.round(fromBalance).toLocaleString() + '). Continue?')) {
+                return;
+            }
+        }
+
         var btn = $(this);
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-2"></i> Submitting...');
 
@@ -161,7 +181,7 @@ var CashflowTransfers = (function () {
     }
 
     function escapeHtml(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
-    function numberFormat(n) { return parseFloat(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function numberFormat(n) { return parseFloat(n||0).toLocaleString('en-PK',{maximumFractionDigits:0}); }
     function formatDate(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
     return { init: init };

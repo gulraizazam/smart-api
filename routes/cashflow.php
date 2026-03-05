@@ -21,9 +21,13 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Settings
     Route::prefix('settings')->name('settings.')->middleware('permission:cashflow_settings')->group(function () {
         Route::get('data', [CashFlowController::class, 'settingsData'])->name('data');
+        Route::post('save', [CashFlowController::class, 'settingsUpdate'])->name('save');
         Route::post('update', [CashFlowController::class, 'settingsUpdate'])->name('update');
         Route::post('reset-module', [CashFlowController::class, 'settingsResetModule'])->name('reset');
     });
+
+    // Audit Logs (admin only)
+    Route::get('audit-logs', [CashFlowController::class, 'auditLogs'])->name('audit_logs')->middleware('permission:cashflow_settings');
 
     // Pools
     Route::prefix('pools')->name('pools.')->middleware('permission:cashflow_pool_manage')->group(function () {
@@ -53,6 +57,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('{id}/edit', [CashFlowController::class, 'expensesEdit'])->name('edit');
         Route::post('{id}/void', [CashFlowController::class, 'expensesVoid'])->name('void');
         Route::get('{id}/audit', [CashFlowController::class, 'expensesAudit'])->name('audit');
+        Route::get('export', [CashFlowController::class, 'expensesExport'])->name('export');
     });
 
     // Notifications

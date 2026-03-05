@@ -16,7 +16,7 @@ class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => 'nullable|numeric|min:0.01|max:99999999.99',
+            'amount' => 'nullable|numeric|min:1|max:99999999|integer',
             'category_id' => 'nullable|exists:expense_categories,id',
             'description' => 'nullable|string|min:3|max:500',
             'reference_no' => 'nullable|string|max:100',

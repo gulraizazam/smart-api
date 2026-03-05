@@ -101,6 +101,7 @@ class CashFlowController extends Controller
                     'settings' => $this->settingService->getAll($accountId),
                     'pools' => $this->poolService->getAllPools($accountId),
                     'categories' => $this->categoryService->getAll($accountId),
+                    'payment_modes' => CashflowHelper::getActivePaymentModes(),
                 ],
             ]);
         } catch (\Exception $e) {
@@ -120,6 +121,10 @@ class CashFlowController extends Controller
 
             $accountId = Auth::user()->account_id;
             $settings = $request->input('settings', []);
+            // Support flat key-value pairs (e.g. from PM mapping save)
+            if (empty($settings)) {
+                $settings = $request->except(['_token']);
+            }
             $this->settingService->updateMany($settings, $accountId);
 
             return response()->json(['success' => true, 'message' => 'Settings updated successfully.']);
@@ -192,7 +197,17 @@ class CashFlowController extends Controller
             ]);
 
             $accountId = Auth::user()->account_id;
-            $pool = $this->poolService->updatePool($id, $request->all(), $accountId);
+
+            // Opening balance frozen after first period lock (Sec 4.2)
+            $data = $request->all();
+            if (isset($data['opening_balance'])) {
+                $hasLocks = \App\Models\CashFlow\PeriodLock::where('account_id', $accountId)->exists();
+                if ($hasLocks) {
+                    unset($data['opening_balance']);
+                }
+            }
+
+            $pool = $this->poolService->updatePool($id, $data, $accountId);
 
             return response()->json(['success' => true, 'data' => $pool, 'message' => 'Pool updated successfully.']);
         } catch (CashflowException $e) {
@@ -392,6 +407,7 @@ class CashFlowController extends Controller
                     'branches' => CashflowHelper::getActiveBranches($accountId),
                     'payment_modes' => CashflowHelper::getActivePaymentModes(),
                     'vendors' => CashflowHelper::getActiveVendors($accountId),
+                    'staff' => \App\Models\User::where('account_id', $accountId)->where('active', 1)->get(['id', 'name']),
                     'threshold' => $this->settingService->getApprovalThreshold($accountId),
                 ],
             ]);
@@ -531,6 +547,76 @@ class CashFlowController extends Controller
             $logs = $this->auditService->getEntityLogs('expense', $id, $accountId);
 
             return response()->json(['success' => true, 'data' => $logs]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export expenses as CSV with current filters.
+     */
+    public function expensesExport(Request $request)
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+
+            $query = \App\Models\CashFlow\Expense::forAccount($accountId)
+                ->with(['category:id,name', 'paidFromPool:id,name', 'forBranch:id,name', 'vendor:id,name', 'creator:id,name'])
+                ->orderBy('expense_date', 'desc');
+
+            if ($request->filled('status')) {
+                $status = $request->input('status');
+                if ($status === 'flagged') {
+                    $query->where('is_flagged', true)->whereNull('voided_at');
+                } elseif ($status === 'voided') {
+                    $query->whereNotNull('voided_at');
+                } else {
+                    $query->where('status', $status)->whereNull('voided_at');
+                }
+            }
+            if ($request->filled('branch_id')) {
+                $query->where('for_branch_id', $request->input('branch_id'));
+            }
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->input('category_id'));
+            }
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                $query->whereBetween('expense_date', [$request->input('date_from'), $request->input('date_to')]);
+            }
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                        ->orWhere('reference_no', 'like', "%{$search}%")
+                        ->orWhereHas('vendor', fn($vq) => $vq->where('name', 'like', "%{$search}%"));
+                });
+            }
+
+            $expenses = $query->get();
+            $filename = 'cashflow_expenses_' . date('Y-m-d') . '.csv';
+
+            return \Illuminate\Support\Facades\Response::streamDownload(function () use ($expenses) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['Date', 'Amount', 'Category', 'Pool', 'Branch', 'Vendor', 'Description', 'Reference', 'Status', 'Flagged', 'Created By']);
+
+                foreach ($expenses as $exp) {
+                    fputcsv($handle, [
+                        $exp->expense_date,
+                        number_format($exp->amount, 0),
+                        $exp->category ? $exp->category->name : '',
+                        $exp->paidFromPool ? $exp->paidFromPool->name : '',
+                        $exp->is_for_general ? 'General' : ($exp->forBranch ? $exp->forBranch->name : ''),
+                        $exp->vendor ? $exp->vendor->name : '',
+                        $exp->description,
+                        $exp->reference_no ?? '',
+                        $exp->voided_at ? 'Voided' : $exp->status,
+                        $exp->is_flagged ? $exp->flag_reason : '',
+                        $exp->creator ? $exp->creator->name : '',
+                    ]);
+                }
+
+                fclose($handle);
+            }, $filename, ['Content-Type' => 'text/csv']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -906,9 +992,16 @@ class CashFlowController extends Controller
         try {
             $accountId = Auth::user()->account_id;
 
+            $staff = $this->staffAdvanceService->getEligibleStaff($accountId);
+
+            // Attach outstanding balance for each staff member
+            $staff->each(function ($user) use ($accountId) {
+                $user->outstanding = $this->staffAdvanceService->getOutstanding($user->id, $accountId);
+            });
+
             return response()->json([
                 'success' => true,
-                'data' => $this->staffAdvanceService->getEligibleStaff($accountId),
+                'data' => $staff,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -1083,6 +1176,41 @@ class CashFlowController extends Controller
             return response()->json(['success' => true, 'message' => 'Module has been reset. All transaction data cleared.']);
         } catch (CashflowException $e) {
             return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== AUDIT LOGS (Settings Viewer) =====================
+
+    /**
+     * Paginated audit logs for admin viewer.
+     */
+    public function auditLogs(Request $request): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $query = \App\Models\CashFlow\CashflowAuditLog::where('account_id', $accountId)
+                ->with('user:id,name')
+                ->orderByDesc('id');
+
+            if ($request->filled('entity_type')) {
+                $query->where('entity_type', $request->input('entity_type'));
+            }
+
+            $perPage = min((int) $request->input('per_page', 25), 100);
+            $logs = $query->paginate($perPage);
+
+            return response()->json([
+                'success' => true,
+                'data' => $logs->items(),
+                'meta' => [
+                    'current_page' => $logs->currentPage(),
+                    'last_page' => $logs->lastPage(),
+                    'per_page' => $logs->perPage(),
+                    'total' => $logs->total(),
+                ],
+            ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

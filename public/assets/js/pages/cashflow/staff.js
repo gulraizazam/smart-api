@@ -7,6 +7,11 @@ var CashflowStaff = (function () {
         loadDropdowns();
         loadSummary();
         bindEvents();
+
+        // Auto-open modal if coming from dashboard quick-action
+        if (new URLSearchParams(window.location.search).get('action') === 'add') {
+            setTimeout(function () { $('#modal_advance').modal('show'); }, 500);
+        }
     }
 
     function bindEvents() {
@@ -24,11 +29,13 @@ var CashflowStaff = (function () {
             success: function (res) {
                 if (!res.success) return;
                 var opts = '<option value="">Select staff</option>';
+                var retOpts = '<option value="">Select staff</option>';
                 $.each(res.data, function (i, s) {
-                    opts += '<option value="' + s.id + '">' + esc(s.name) + '</option>';
+                    opts += '<option value="' + s.id + '" data-balance="' + (s.outstanding || 0) + '">' + esc(s.name) + '</option>';
+                    retOpts += '<option value="' + s.id + '">' + esc(s.name) + '</option>';
                 });
                 $('#advance-staff-select').html(opts);
-                $('#return-staff-select').html(opts);
+                $('#return-staff-select').html(retOpts);
             }
         });
 
@@ -148,6 +155,14 @@ var CashflowStaff = (function () {
 
         if (!data.user_id || !data.pool_id || !data.amount) { toastr.warning('Please fill all required fields.'); return; }
 
+        // Warn if staff already has unsettled advance (Sec 8.3)
+        var existingBalance = parseFloat($('#advance-staff-select option:selected').data('balance')) || 0;
+        if (existingBalance > 0) {
+            if (!confirm('Warning: This staff member already has an unsettled advance of PKR ' + Math.round(existingBalance).toLocaleString() + '. Continue?')) {
+                return;
+            }
+        }
+
         var btn = $(this); btn.prop('disabled', true);
 
         $.ajax({
@@ -192,7 +207,7 @@ var CashflowStaff = (function () {
     }
 
     function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
-    function nf(n) { return parseFloat(n||0).toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function nf(n) { return parseFloat(n||0).toLocaleString('en-PK',{maximumFractionDigits:0}); }
     function fd(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
     return { init: init };
