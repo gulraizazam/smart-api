@@ -35,6 +35,11 @@ var CashflowExpenses = (function () {
     }
 
     function init() {
+        // Disable Bootstrap enforceFocus to fix native select elements not clickable inside modals
+        if ($.fn.modal && $.fn.modal.Constructor) {
+            $.fn.modal.Constructor.prototype._enforceFocus = function () {};
+        }
+
         initDateRange();
         loadFormData();
         loadExpenses();
