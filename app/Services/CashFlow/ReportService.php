@@ -405,11 +405,11 @@ class ReportService
 
     private function getInflowsBreakdown(int $accountId, string $dateFrom, string $dateTo, ?int $branchId, ?string $goLiveDate): array
     {
-        $query = PackageAdvances::where('account_id', $accountId)
-            ->where('cash_flow', 'in')
-            ->where('is_cancel', 0)
-            ->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
+        $query = PackageAdvances::where('package_advances.account_id', $accountId)
+            ->where('package_advances.cash_flow', 'in')
+            ->where('package_advances.is_cancel', 0)
+            ->whereNull('package_advances.deleted_at')
+            ->whereBetween(DB::raw('DATE(package_advances.created_at)'), [$dateFrom, $dateTo])
             ->join('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id');
 
         if ($goLiveDate) $query->where('package_advances.created_at', '>=', $goLiveDate);
