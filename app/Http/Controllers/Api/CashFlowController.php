@@ -1233,12 +1233,15 @@ class CashFlowController extends Controller
                 $dayInflow = (float) ($inflows[$d] ?? 0) + (float) ($transfersIn[$d] ?? 0);
                 $dayOutflow = (float) ($outflows[$d] ?? 0) + (float) ($transfersOut[$d] ?? 0);
 
-                $days[] = [
-                    'date' => $d,
-                    'inflows' => $dayInflow,
-                    'outflows' => $dayOutflow,
-                    'balance' => $runningBalance,
-                ];
+                // Only include days that have actual activity
+                if ($dayInflow > 0 || $dayOutflow > 0) {
+                    $days[] = [
+                        'date' => $d,
+                        'inflows' => $dayInflow,
+                        'outflows' => $dayOutflow,
+                        'balance' => $runningBalance,
+                    ];
+                }
 
                 // Working backwards: add outflows and subtract inflows to get previous balance
                 $runningBalance = $runningBalance + $dayOutflow - $dayInflow;
