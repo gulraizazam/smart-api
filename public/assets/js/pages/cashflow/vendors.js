@@ -17,6 +17,9 @@ var CashflowVendors = (function () {
     }
 
     function bindEvents() {
+        $('#btn-open-vendor').on('click', function () { $('#modal_vendor').modal('show'); });
+        $('#btn-open-vendor-request').on('click', function () { $('#modal_vendor_request').modal('show'); });
+        $('#btn-open-transaction').on('click', function () { $('#modal_transaction').modal('show'); });
         $('#btn-filter').on('click', function () { currentPage = 1; loadVendors(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadVendors(); } });
         $('#btn-submit-vendor').on('click', submitVendor);

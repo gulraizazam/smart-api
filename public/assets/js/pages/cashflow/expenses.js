@@ -47,6 +47,7 @@ var CashflowExpenses = (function () {
     }
 
     function bindEvents() {
+        $('#btn-add-expense').on('click', function () { $('#modal_expense').modal('show'); });
         $('#btn-filter').on('click', function () { currentPage = 1; loadExpenses(); });
         $('#filter-status').on('change', function () { currentPage = 1; loadExpenses(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadExpenses(); } });
@@ -135,70 +136,74 @@ var CashflowExpenses = (function () {
     }
 
     function populateDropdowns(data) {
+        // Build HTML strings first, then set once (avoids DOM reflow per append)
+        var html;
+
         // Pools
-        var poolSelect = $('[name="paid_from_pool_id"]', '#form-expense');
-        poolSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select pool</option>';
         $.each(data.pools, function (i, pool) {
             var label = pool.name + (pool.location ? ' (' + pool.location.name + ')' : '');
-            poolSelect.append('<option value="' + pool.id + '">' + escapeHtml(label) + '</option>');
+            html += '<option value="' + pool.id + '">' + escapeHtml(label) + '</option>';
         });
+        $('[name="paid_from_pool_id"]', '#form-expense').html(html);
 
         // Categories
-        var catSelect = $('[name="category_id"]', '#form-expense');
-        catSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select category</option>';
         $.each(data.categories, function (i, cat) {
-            catSelect.append('<option value="' + cat.id + '" data-vendor="' + (cat.vendor_emphasis ? 1 : 0) + '">' + escapeHtml(cat.name) + '</option>');
+            html += '<option value="' + cat.id + '" data-vendor="' + (cat.vendor_emphasis ? 1 : 0) + '">' + escapeHtml(cat.name) + '</option>';
         });
+        $('[name="category_id"]', '#form-expense').html(html);
 
-        // Also populate filter dropdowns
-        var filterCat = $('#filter-category');
-        filterCat.find('option:gt(0)').remove();
+        // Filter categories
+        html = '<option value="">All Categories</option>';
         $.each(data.categories, function (i, cat) {
-            filterCat.append('<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>');
+            html += '<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>';
         });
+        $('#filter-category').html(html);
 
         // Branches
-        var branchSelect = $('[name="for_branch_id"]', '#form-expense');
-        branchSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select branch</option>';
         $.each(data.branches, function (i, branch) {
-            branchSelect.append('<option value="' + branch.id + '">' + escapeHtml(branch.name) + '</option>');
+            html += '<option value="' + branch.id + '">' + escapeHtml(branch.name) + '</option>';
         });
+        $('[name="for_branch_id"]', '#form-expense').html(html);
 
-        var filterBranch = $('#filter-branch');
-        filterBranch.find('option:gt(1)').remove(); // keep "All" and "General"
+        // Filter branches
+        html = '<option value="">All Branches</option><option value="general">General</option>';
         $.each(data.branches, function (i, branch) {
-            filterBranch.append('<option value="' + branch.id + '">' + escapeHtml(branch.name) + '</option>');
+            html += '<option value="' + branch.id + '">' + escapeHtml(branch.name) + '</option>';
         });
+        $('#filter-branch').html(html);
 
         // Payment modes
-        var pmSelect = $('[name="payment_method_id"]', '#form-expense');
-        pmSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select method</option>';
         $.each(data.payment_modes, function (i, pm) {
-            pmSelect.append('<option value="' + pm.id + '">' + escapeHtml(pm.name) + '</option>');
+            html += '<option value="' + pm.id + '">' + escapeHtml(pm.name) + '</option>';
         });
+        $('[name="payment_method_id"]', '#form-expense').html(html);
 
         // Vendors
-        var vendorSelect = $('[name="vendor_id"]', '#form-expense');
-        vendorSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select vendor (optional)</option>';
         $.each(data.vendors, function (i, v) {
-            vendorSelect.append('<option value="' + v.id + '">' + escapeHtml(v.name) + '</option>');
+            html += '<option value="' + v.id + '">' + escapeHtml(v.name) + '</option>';
         });
+        $('[name="vendor_id"]', '#form-expense').html(html);
 
         // Edit category select
-        var editCatSelect = $('#edit-category-select');
-        editCatSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select category</option>';
         $.each(data.categories, function (i, cat) {
-            editCatSelect.append('<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>');
+            html += '<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>';
         });
+        $('#edit-category-select').html(html);
 
         // Staff dropdown
-        var staffSelect = $('[name="staff_id"]', '#form-expense');
-        staffSelect.find('option:gt(0)').remove();
+        html = '<option value="">Select staff (optional)</option>';
         if (data.staff) {
             $.each(data.staff, function (i, s) {
-                staffSelect.append('<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>');
+                html += '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
             });
         }
+        $('[name="staff_id"]', '#form-expense').html(html);
 
         // Vendor emphasis: highlight vendor field when category with vendor_emphasis is selected (Sec 5.4)
         $('[name="category_id"]', '#form-expense').on('change', function () {
@@ -264,6 +269,7 @@ var CashflowExpenses = (function () {
             return;
         }
 
+        var html = '';
         $.each(expenses, function (i, exp) {
             var rowClass = '';
             if (exp.is_flagged) rowClass += ' expense-flagged';
@@ -275,7 +281,7 @@ var CashflowExpenses = (function () {
 
             var actions = buildActions(exp);
 
-            tbody.append(
+            html +=
                 '<tr class="' + rowClass + '">' +
                 '<td>' + formatDate(exp.expense_date) + '</td>' +
                 '<td>' + escapeHtml(truncate(exp.description, 50)) +
@@ -289,9 +295,9 @@ var CashflowExpenses = (function () {
                 '<td>' + statusBadge + '</td>' +
                 '<td>' + (exp.creator ? escapeHtml(exp.creator.name) : '-') + '</td>' +
                 '<td class="text-center text-nowrap">' + actions + '</td>' +
-                '</tr>'
-            );
+                '</tr>';
         });
+        tbody.html(html);
 
         bindActionButtons();
     }
