@@ -12,16 +12,16 @@
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div class="d-flex align-items-center">
                                 @can('cashflow_expense_create')
-                                <a href="{{ route('admin.cashflow.expenses') }}?action=add" class="btn btn-primary btn-sm mr-2"><i class="la la-plus"></i> Expense</a>
+                                <a href="{{ route('admin.cashflow.expenses') }}?action=add" class="btn btn-primary mr-2"><i class="la la-plus"></i> Expense</a>
                                 @endcan
                                 @can('cashflow_transfer_create')
-                                <a href="{{ route('admin.cashflow.transfers') }}?action=add" class="btn btn-info btn-sm mr-2"><i class="la la-exchange-alt"></i> Transfer</a>
+                                <a href="{{ route('admin.cashflow.transfers') }}?action=add" class="btn btn-info mr-2"><i class="la la-exchange-alt"></i> Transfer</a>
                                 @endcan
                                 @can('cashflow_vendor_transaction')
-                                <a href="{{ route('admin.cashflow.vendors') }}?action=add" class="btn btn-warning btn-sm mr-2"><i class="la la-shopping-cart"></i> Vendor Purchase</a>
+                                <a href="{{ route('admin.cashflow.vendors') }}?action=add" class="btn btn-warning mr-2"><i class="la la-shopping-cart"></i> Vendor Purchase</a>
                                 @endcan
                                 @can('cashflow_staff_advance')
-                                <a href="{{ route('admin.cashflow.staff') }}?action=add" class="btn btn-success btn-sm"><i class="la la-hand-holding-usd"></i> Advance</a>
+                                <a href="{{ route('admin.cashflow.staff') }}?action=add" class="btn btn-success"><i class="la la-hand-holding-usd"></i> Advance</a>
                                 @endcan
                             </div>
                             <div class="d-flex align-items-center">
@@ -29,7 +29,7 @@
                                 <select id="dash-branch" class="form-control form-control-sm mr-2" style="width:180px;">
                                     <option value="">All Branches</option>
                                 </select>
-                                <button id="btn-refresh-dash" class="btn btn-light-primary btn-sm"><i class="la la-sync"></i></button>
+                                <button id="btn-refresh-dash" class="btn btn-light-primary"><i class="la la-sync"></i></button>
                             </div>
                         </div>
                     </div>

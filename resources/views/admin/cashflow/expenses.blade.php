@@ -90,11 +90,11 @@
                             <h3 class="card-label"><i class="la la-receipt mr-2"></i>Expenses</h3>
                         </div>
                         <div class="card-toolbar">
-                            <button id="btn-export-expenses" class="btn btn-light-success btn-sm mr-2">
+                            <button id="btn-export-expenses" class="btn btn-light-success mr-2">
                                 <i class="la la-file-excel"></i> Export
                             </button>
                             @if(Gate::allows('cashflow_expense_create'))
-                                <button id="btn-add-expense" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_expense">
+                                <button id="btn-add-expense" class="btn btn-primary" data-toggle="modal" data-target="#modal_expense">
                                     <i class="la la-plus"></i> New Expense
                                 </button>
                             @endif

@@ -29,12 +29,12 @@
                                 <select id="rpt-pool" class="form-control form-control-sm mr-2 d-none" style="width:180px;">
                                     <option value="">All Pools</option>
                                 </select>
-                                <button id="btn-run-report" class="btn btn-primary btn-sm mr-2"><i class="la la-play"></i> Generate</button>
+                                <button id="btn-run-report" class="btn btn-primary mr-2"><i class="la la-play"></i> Generate</button>
                             </div>
                             <div>
                                 @can('cashflow_reports_export')
-                                <button id="btn-export-csv" class="btn btn-light-success btn-sm"><i class="la la-file-excel"></i> Export Excel</button>
-                                <button id="btn-export-pdf" class="btn btn-light-danger btn-sm ml-2"><i class="la la-file-pdf"></i> Export PDF</button>
+                                <button id="btn-export-csv" class="btn btn-light-success"><i class="la la-file-excel"></i> Export Excel</button>
+                                <button id="btn-export-pdf" class="btn btn-light-danger ml-2"><i class="la la-file-pdf"></i> Export PDF</button>
                                 @endcan
                             </div>
                         </div>
