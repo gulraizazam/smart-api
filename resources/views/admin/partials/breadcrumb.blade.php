@@ -30,6 +30,26 @@
         <!--begin::Topbar-->
         <div style="float: right" class="topbar">
 
+            <!--begin::Cashflow Notifications-->
+            @can('cashflow_manage')
+            <div class="topbar-item mr-3 position-relative" id="cashflow-notification-bell">
+                <div class="btn btn-icon btn-clean btn-lg position-relative" id="cashflow_notification_toggle">
+                    <i class="la la-bell icon-lg"></i>
+                    <span class="badge badge-danger badge-pill position-absolute" style="top:5px;right:2px;font-size:10px;display:none;" id="cashflow-notif-count">0</span>
+                </div>
+                <div id="cashflow-notif-dropdown" style="display:none;position:absolute;top:100%;right:0;width:350px;max-height:400px;overflow-y:auto;z-index:1050;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:4px;box-shadow:0 5px 15px rgba(0,0,0,.15);" class="p-0">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                        <h6 class="mb-0">Cash Flow Notifications</h6>
+                        <a href="javascript:;" id="cashflow-mark-all-read" class="text-primary font-size-sm">Mark all read</a>
+                    </div>
+                    <div id="cashflow-notif-list" class="p-0">
+                        <div class="text-center text-muted py-4 font-size-sm">No notifications</div>
+                    </div>
+                </div>
+            </div>
+            @endcan
+            <!--end::Cashflow Notifications-->
+
             <!--begin::User-->
             <div class="topbar-item user-setting">
                 <div class="btn btn-icon btn-icon-mobile w-auto btn-clean d-flex align-items-center btn-lg px-2" id="kt_quick_user_toggle">

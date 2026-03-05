@@ -165,7 +165,96 @@
                 }
             });
         });
+
+        // Cashflow Notification Bell
+        (function() {
+            var $bell = $('#cashflow_notification_toggle');
+            var $dropdown = $('#cashflow-notif-dropdown');
+            var $count = $('#cashflow-notif-count');
+            if (!$bell.length) return;
+
+            // Toggle dropdown
+            $bell.on('click', function(e) {
+                e.stopPropagation();
+                var visible = $dropdown.is(':visible');
+                $dropdown.toggle(!visible);
+                if (!visible) loadNotifications();
+            });
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#cashflow-notification-bell').length) $dropdown.hide();
+            });
+
+            // Poll unread count
+            function pollCount() {
+                $.ajax({
+                    url: '/api/cashflow/notifications',
+                    type: 'GET',
+                    data: { per_page: 1 },
+                    success: function(res) {
+                        if (res.success && res.unread_count > 0) {
+                            $count.text(res.unread_count).show();
+                        } else {
+                            $count.hide();
+                        }
+                    }
+                });
+            }
+            pollCount();
+            setInterval(pollCount, 60000);
+
+            // Load notifications
+            function loadNotifications() {
+                $.ajax({
+                    url: '/api/cashflow/notifications',
+                    type: 'GET',
+                    data: { per_page: 15 },
+                    success: function(res) {
+                        if (!res.success) return;
+                        var $list = $('#cashflow-notif-list').empty();
+                        if (!res.data || res.data.length === 0) {
+                            $list.html('<div class="text-center text-muted py-4 font-size-sm">No notifications</div>');
+                            return;
+                        }
+                        $.each(res.data, function(i, n) {
+                            var bg = n.read_at ? '' : 'bg-light-primary';
+                            $list.append(
+                                '<div class="d-flex align-items-start px-3 py-2 border-bottom ' + bg + '">' +
+                                '<div class="flex-grow-1">' +
+                                '<div class="font-weight-bold font-size-sm">' + (n.title || '') + '</div>' +
+                                '<div class="text-muted font-size-xs">' + (n.message || '') + '</div>' +
+                                '<div class="text-muted font-size-xs mt-1">' + timeAgo(n.created_at) + '</div>' +
+                                '</div></div>'
+                            );
+                        });
+                    }
+                });
+            }
+
+            // Mark all read
+            $('#cashflow-mark-all-read').on('click', function() {
+                $.ajax({
+                    url: '/api/cashflow/notifications/mark-read',
+                    type: 'POST',
+                    data: { all: true },
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    success: function() { $count.hide(); loadNotifications(); }
+                });
+            });
+
+            function timeAgo(dt) {
+                if (!dt) return '';
+                var diff = Math.floor((Date.now() - new Date(dt).getTime()) / 1000);
+                if (diff < 60) return 'just now';
+                if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+                if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+                return Math.floor(diff/86400) + 'd ago';
+            }
+        })();
     </script>
+
+    @if(request()->is('*/cashflow*'))
+    <script src="{{ asset('assets/js/pages/cashflow/keyboard-shortcuts.js') }}"></script>
+    @endif
 
 </body>
 <!--end::Body-->

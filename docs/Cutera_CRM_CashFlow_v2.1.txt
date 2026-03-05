@@ -1,0 +1,1675 @@
+﻿
+CUTERA CRM
+Cash Flow & Expense Management Module
+Complete Software Requirements Specification
+FINAL CONSOLIDATED VERSION
+Version 2.1  |  March 2026
+Prepared for: Red Signal / Cutera Pakistan
+CONFIDENTIAL
+
+Single definitive build spec. Supersedes all previous versions, addendums, and errata.
+
+Table of Contents
+1. Overview & Objectives
+2. System Context & Assumptions
+3. Module Initialization (Go-Live)
+4. Cash Pools (Fund Sources)
+5. Expense Recording
+6. Cash Transfers
+7. Vendor Ledger
+8. Team/Staff Expense Ledger
+9. Expense Categories
+10. Cash Flow Statement & Reports
+10A. Real-World Workflow Examples
+11. Security & Fraud Prevention
+12. Permissions & Roles
+13. Audit Trail
+14. Period Locking
+15. UX & Usability Requirements
+16. Screen-by-Screen Breakdown
+17. Notifications
+18. Database Schema
+19. Business Rules & Validations
+20. Performance & Optimization
+21. Testing Requirements
+22. Configurable Thresholds
+23. Implementation Plan (Developer-Designed)
+24. Future Considerations
+25. Operational Context (How The Business Works)
+26. Design Decisions & Rationale
+27. Implementation Notes for Developer
+
+1. Overview & Objectives
+Complete, consolidated build specification for the Cash Flow & Expense Management module within the Cutera CRM. Supersedes all previous documents.
+
+1.1 Primary Objectives
+Real-time cash position: Exact balance at every branch, head office, and bank at any moment.
+Expense tracking: Every outgoing payment documented with source, beneficiary, receipts, and vendor/staff linkage.
+Vendor accountability: Ledgers for everyone the business pays — suppliers, landlords, lawyers, service providers.
+Team accountability: Track cash advances and expense submissions per staff member.
+Fraud prevention: Built-in controls against financial manipulation by any party.
+Access control: Granular role-based permissions. Least privilege.
+Audit safety: Immutable action log. No record ever truly deleted.
+
+1.2 What This Module Does NOT Do
+NOT a full accounting/ERP system.
+NOT an invoicing system (patient invoices handled elsewhere).
+NOT payroll (salaries recorded as expenses, not computed).
+
+2. System Context & Assumptions
+2.1 Operational Reality
+Cash stays at branches: Each branch collects and holds cash.
+Head office as cash hub: Receives surplus cash from branches. Makes expenses directly.
+Cross-branch payments: Expense for Branch A can be paid from Branch B, HO, or bank.
+Centralized accounting: One accountant (expandable). Entry creation for small amounts = approval. Large amounts need admin approval.
+Single bank account: One bank for business. Schema supports more.
+Dynamic branches: Currently 12. System reads dynamically.
+Patient refunds: Handled by existing CRM. Refunds reduce pool balance through existing payment data. No action needed in this module.
+
+2.2 Key Assumptions
+#
+Assumption
+
+A1
+Branches managed in CRM. Cash flow reads dynamically.
+
+A2
+Each active branch auto-gets a cash pool.
+
+A3
+Head office = separate permanent cash pool.
+
+A4
+1 bank account. Supports adding more.
+
+A5
+Vendors = anyone the business pays (suppliers, landlords, lawyers, hosting, etc).
+
+A6
+Vendor CRUD: admin-only. Accountant selects or suggests new.
+
+A7
+Expense categories: admin-only. Accountant selects or suggests new.
+
+A8
+Laravel 8+ / MySQL. Follows existing CRM patterns.
+
+A9
+Payment methods from existing CRM config (Cash, Credit Card, Bank Transfer).
+
+A10
+Attachments = Google Drive links. Mandatory for cash expenses.
+
+A11
+All dropdowns use existing CRM searchable component (same as patient search).
+
+A12
+Branch access follows existing CRM user-branch assignment. Same filtering logic as other modules.
+
+A13
+All amounts in whole PKR. No paisa/decimal places. DB uses DECIMAL(15,2) but UI shows integers.
+
+A14
+Doctors are salaried. Payments under Salaries category, not separate.
+
+A15
+Card processing fees recorded separately as Bank Charges expense.
+
+A16
+Credit card settlement timing not tracked. Mapped to bank pool immediately.
+
+
+3. Module Initialization (Go-Live)
+One-time setup when module is first deployed. Admin only.
+
+3.1 Go-Live Date
+Admin sets go-live date in Settings (e.g., April 1, 2026).
+All patient payment queries filter by: payment_date >= go_live_date.
+Historical payments before this date NOT included — value captured in opening balances.
+Go-live date frozen after first period lock.
+⚠ SECURITY: Without this filter, cash flow includes years of historical payments without matching expenses. All numbers wrong.
+
+3.2 Setup Checklist
+#
+Step
+Details
+
+1
+Set go-live date
+Settings → Go-Live Date
+
+2
+Verify cash pools
+Auto-created from CRM branches.
+
+3
+Enter pool balances
+Actual counted cash + bank balance as of go-live morning.
+
+4
+Create vendors
+All active vendors with outstanding balances.
+
+5
+Mark advance-eligible staff
+Flag users who can receive cash advances.
+
+6
+Staff advance balances
+Opening advances for staff holding unaccounted cash.
+
+7
+Sanity check
+Pool balances = actual cash. Vendor balances = actual payables.
+
+8
+Start operations
+Every transaction from go-live recorded.
+
+9
+First month-end lock
+Review, lock. Freezes opening balances permanently.
+
+
+3.3 Module Reset (First Month Only)
+During the first month before the first period lock, admin can reset the entire module — wipe all data and start fresh. This is a safety net in case setup was done incorrectly.
+⚠ SECURITY: Requires double confirmation. Permanently disabled after first period lock. Cannot be undone.
+
+4. Cash Pools (Fund Sources)
+A Cash Pool = any place money is held. Every transaction references one.
+
+4.1 Pool Types
+Type
+Count
+Creation
+
+branch_cash
+1 per active branch
+Auto on new branch. Balance=0. Admin notified.
+
+head_office_cash
+1 (fixed)
+Module setup. Always exists.
+
+bank_account
+1 (currently)
+Module setup. Admin can add more.
+
+Total Pools = Active CRM Branches + 1 Head Office + 1 Bank
+
+4.2 Auto-Creation & Deactivation
+Laravel Observer on Branch model detects new active branch → creates pool → notifies admin.
+Branch deactivated → pool soft-deactivated → hidden from dropdowns → stays in reports.
+Branch deactivated with balance > 0 → system prompts admin to transfer remaining balance to HO before deactivation completes.
+⚠ SECURITY: Opening balance frozen after first period lock.
+
+4.3 Patient Payment → Pool Mapping
+Cash at branch → that branch’s cash pool
+Credit Card → bank account pool (settlement timing not tracked)
+Bank Transfer → bank account pool
+Configurable in Settings.
+
+4.4 Balance Calculation
+Balance = Opening + Inflows – Outflows + Transfers In – Transfers Out
+ℹ IMPL: cached_balance via Observer. Dashboard reads cache; reports use true calculation.
+
+5. Expense Recording
+Core feature. Accountant records every business payment.
+
+5.1 Expense Fields
+Field
+Type
+Req
+Description
+
+Expense Date
+Date
+Yes
+Pre-filled today. ONLY field that pre-fills.
+
+Amount
+Integer (PKR)
+Yes
+Whole numbers only. No paisa.
+
+Category
+FK
+Yes
+Admin-managed. Searchable dropdown.
+
+Paid From
+FK (Pool)
+Yes
+Searchable grouped dropdown: Branch > HO > Bank
+
+For Branch
+FK (nullable)
+Yes
+Branch, Head Office, or General / Company-wide
+
+Payment Method
+From CRM
+Yes
+Cash, Credit Card, Bank Transfer
+
+Vendor
+FK (nullable)
+No
+Always visible. Emphasis based on category.
+
+Expense By (Staff)
+FK (nullable)
+No
+Auto-updates staff ledger
+
+Description
+Text
+Yes
+What was purchased
+
+Reference No.
+String
+No
+Invoice/cheque/transaction number
+
+Attachment
+URL
+Cond.
+MANDATORY for cash expenses. Optional for card/bank.
+
+Notes
+Text
+No
+Remarks
+
+Status
+Enum
+Auto
+approved | pending | rejected
+
+Verified By
+FK (nullable)
+Auto
+Admin who approved
+
+Rejection Reason
+Text
+Cond.
+Mandatory when admin rejects
+
+Is Flagged
+Boolean
+Auto
+System flags suspicious entries
+
+Flag Reason
+String
+Auto
+Why flagged
+
+Created By
+FK
+Auto
+Who created
+
+Voided At/By
+Timestamps
+Auto
+Set when admin voids
+
+Void Reason
+Text
+Cond.
+Mandatory on void (min 10 chars)
+
+Edit Reason
+Text
+Cond.
+Mandatory when admin edits any entry
+
+
+5.2 Expense Approval Flow
+Below PKR 10,000 Threshold
+Accountant saves → status = 'approved' (auto) → pool balance affected → done.
+Above PKR 10,000 Threshold
+Accountant saves → status = 'pending' → pool balance affected immediately (cash already spent).
+Admin receives in-app notification. Sees entry in Pending Actions widget on dashboard.
+Admin reviews: sees amount, description, category, pool, attachment preview.
+Attachment MUST be present before admin can click Approve (for above-threshold expenses).
+Admin approves → status = 'approved', badge removed. Done.
+Admin rejects → status = 'rejected', rejection reason mandatory, pool balance REVERSED, accountant notified.
+Accountant edits rejected entry and resubmits → status back to 'pending', pool balance affected again.
+⚠ SECURITY: This is the ONLY case where accountant can edit an entry — resubmitting a rejected expense.
+
+5.3 "For Branch" Options
+Option
+When to Use
+
+Specific branch
+Expense clearly for one branch
+
+Head Office
+For HO operations specifically
+
+General / Company-wide
+Whole business or unattributable
+
+Database: for_branch_id nullable FK. Null = General. Branch reports exclude null. Company reports include all.
+⚠ SECURITY: 'Leave blank' NOT allowed. One must be selected.
+
+"Paid From" vs "For Branch" Examples
+Scenario
+Paid From
+For Branch
+
+Branch buys own supplies
+Lahore DHA Cash
+Lahore DHA
+
+HO pays Islamabad rent
+Head Office Cash
+Islamabad
+
+Bank pays brand marketing
+Bank Account
+General / Company-wide
+
+Karachi pays for Faisalabad
+Karachi Cash
+Faisalabad
+
+Tissue paper for all branches
+Head Office Cash
+General / Company-wide
+
+
+5.4 Vendor Field Behavior
+Always visible. Visual emphasis changes by category:
+High-vendor categories (Consumables, Equipment, Rent, Office Supplies, Professional Fees, Marketing, Software): highlighted.
+Low-vendor categories (Salaries, Bank Charges, Government, Travel): slightly dimmed.
+Admin configures per category: 'Commonly involves vendor: Yes/No' toggle.
+
+Vendor Not Listed
+'Vendor not listed? Request new vendor' button on expense form.
+Opens small modal: vendor name, phone, note (why needed).
+Request sent to admin (in-app notification).
+Expense saved without vendor, flagged 'Vendor Pending'.
+Admin creates vendor if legit. Accountant or admin links vendor to flagged expense later.
+
+5.5 Attachment Rules
+Payment Method
+Attachment
+Reason
+
+Cash
+MANDATORY — cannot save without it
+Anti-fraud: prevents fake cash expenses
+
+Credit Card
+Optional
+Bank records provide audit trail
+
+Bank Transfer
+Optional
+Bank records provide audit trail
+
+Google Drive links only. Validated with regex (drive.google.com or docs.google.com).
+
+5.6 No Smart Defaults
+⚠ SECURITY: ONLY Expense Date pre-fills (today). All other fields empty every time. After save, form resets completely. No session memory.
+
+5.7 Editing Rules
+Who
+Can Edit
+Condition
+
+Accountant
+Only rejected entries
+To fix and resubmit. No other editing.
+
+Admin
+Any entry
+Open period only. Edit reason mandatory. 'Edited' badge shown.
+
+Branch Manager
+Nothing
+Read-only
+
+FDM
+Nothing
+Read-only
+
+
+6. Cash Transfers
+Money between pools. Not expense — total cash unchanged. No approval needed regardless of amount.
+
+6.1 Actual Transfer Flows
+Flow
+Method
+How It Happens
+
+Branch → Head Office
+physical_cash
+Staff member carries cash to HO
+
+Head Office → Bank
+bank_deposit
+Someone deposits cash at bank
+
+Branch → Bank
+bank_deposit
+Someone deposits cash at bank directly
+
+
+6.2 Transfer Fields
+Field
+Type
+Req
+Description
+
+Date
+Date
+Yes
+When transfer happened
+
+Amount
+Integer (PKR)
+Yes
+Whole numbers only
+
+From Pool
+FK
+Yes
+Source. Searchable grouped dropdown.
+
+To Pool
+FK
+Yes
+Destination. Searchable grouped dropdown.
+
+Method
+Enum
+Yes
+physical_cash | bank_deposit
+
+Reference No.
+String
+Yes
+Always required. Deposit slip or handover reference.
+
+Attachment
+URL
+Yes
+Always required. Photo of deposit slip or cash handover proof.
+
+Description
+Text
+No
+Reason
+
+Created By
+FK
+Auto
+Who recorded
+
+
+6.3 Rules
+From ≠ To. Amount > 0. Date not future/locked.
+No approval needed. Goes through immediately.
+Reference and attachment ALWAYS mandatory.
+Warn if From goes negative.
+
+7. Vendor Ledger
+Vendors = anyone the business pays. Product suppliers, landlords, lawyers, printers, Meta, hosting providers, etc.
+⚠ SECURITY: Vendor CRUD is ADMIN-ONLY. Accountant selects from list or requests new vendor. Eliminates ghost vendor fraud.
+
+7.1 Vendor Master (Admin-Only)
+Field
+Type
+Description
+
+Name
+String (unique)
+Company or person
+
+Contact Person
+String
+Primary contact
+
+Phone
+String
+Phone(s)
+
+Email
+String (nullable)
+Email
+
+Address
+Text
+Address
+
+Payment Terms
+Enum
+upfront | net_7 | net_15 | net_30 | custom
+
+Category
+String
+Supplier, service, utility, landlord, etc.
+
+Opening Balance
+Integer (PKR)
+Amount owed at setup. Positive = you owe.
+
+Cached Balance
+Integer
+Auto-updated
+
+Is Active
+Boolean
+Soft delete
+
+Notes
+Text
+Special terms, account numbers
+
+
+7.2 Transaction Types
+Purchase / Bill (Owe More)
+Goods arrive or vendor bills. Increases liability. No cash movement. No approval needed.
+Payment (Owe Less)
+Normal expense with vendor selected. Auto-creates vendor payment. No double entry.
+ℹ IMPL: Upfront shortcut: one expense auto-creates purchase + payment in DB::transaction.
+
+7.3 Vendor Balance
+Balance = Opening + Purchases – Payments
+Positive = you owe. Zero = settled. Negative = overpayment (flagged).
+
+7.4 Vendor Request Flow
+Accountant clicks 'Vendor not listed?' on expense form.
+Fills: vendor name, phone, reason.
+Admin gets in-app notification.
+Admin creates vendor if legitimate.
+Expense saved without vendor, flagged 'Vendor Pending'. Linked later.
+
+8. Team/Staff Expense Ledger
+Tracks cash advances and expense accountability.
+⚠ SECURITY: Only users marked as 'eligible for advances' by admin can receive advances. Not all CRM users.
+
+8.1 Flow
+Accountant gives eligible staff cash from pool (Advance). No approval needed.
+Staff makes purchases, gets receipts.
+Accountant records expense with staff in 'Expense By' (reduces advance balance).
+Leftover returned to any active pool (Return). Balance should reach zero.
+
+8.2 Balance
+Balance = Advances – Expenses – Returns
+Positive = unaccounted cash. Dashboard highlights.
+
+8.3 Rules
+Advance from one pool, return to any active pool (can differ).
+Warn (not block) if staff already has unsettled advance.
+Return cannot exceed balance.
+System flags perfect-match advances (expenses = advance, zero return).
+
+9. Expense Categories
+Admin-only management. Accountant selects from list or suggests new (admin approves).
+
+9.1 Default Categories (13)
+Category
+Vendor Emphasis
+
+Rent & Property
+Yes
+
+Utilities
+Yes
+
+Salaries & Wages (includes doctors)
+No
+
+Medical Supplies & Consumables
+Yes
+
+Equipment & Machinery
+Yes
+
+Marketing & Advertising
+Yes
+
+Office Supplies
+Yes
+
+Travel & Transport
+No
+
+Professional Fees
+Yes
+
+Software & Subscriptions
+Yes
+
+Bank Charges
+No
+
+Government & Compliance
+No
+
+Miscellaneous
+No
+
+
+9.2 Category Fields
+Field
+Type
+Description
+
+Name
+String (unique)
+Display name
+
+Description
+Text (nullable)
+Guidance for accountant
+
+Vendor Emphasis
+Boolean
+Drives vendor field visual emphasis
+
+Is Active
+Boolean
+Never hard delete — deactivate only
+
+Sort Order
+Integer
+Dropdown sequence
+
+
+9.3 Category Suggestion Flow
+Same pattern as vendor requests: 'Category not listed? Suggest new' button. Admin notified. Admin creates if legit.
+
+10. Cash Flow Statement & Reports
+Cash Flow Statement is the primary report. Others are secondary. All exportable as PDF and Excel.
+
+10.1 Cash Flow Statement
+Filters: date range, branch, pool
+A: Opening Balance
+Total across selected pools at range start.
+B: Inflows
+Patient payments: Cash / Card / Bank Transfer. Filtered by go-live date.
+C: Outflows
+Grouped by category.
+D: Net Cash Flow
+Net = Inflows – Outflows
+E: Closing Balance
+Closing = Opening + Net
+F: Pool Breakdown
+Balance at each active pool.
+
+10.2 Secondary Reports
+Branch comparison (General / Company-wide as own row)
+Category trend (monthly per category)
+Vendor outstanding
+Staff advance summary with aging
+Daily cash movement per pool
+Transfer log
+Flagged entries
+Dormant vendors (90+ days no activity)
+
+10.3 Auto Monthly Report
+On the 1st of every month, system emails admin a summary of the previous month: total inflows, outflows, net, category breakdown, pool balances. Scheduled Laravel job.
+
+10A. Real-World Workflow Examples
+These examples document how common business scenarios are recorded in the system. They serve as reference for the developer and for training.
+
+10A.1 Meta Ads Payment
+Business collects cash from multiple branches to pay Meta for Facebook ads.
+Step 1: Record cash transfers from each contributing branch to Head Office (physical_cash method).
+Step 2: Record expense: Category = Marketing, Vendor = Meta, Paid From = Head Office Cash (or whichever pool the cash was consolidated into), For Branch = General / Company-wide, Payment Method = Cash, Attachment = deposit slip to Meta’s bank.
+
+10A.2 Monthly Salaries
+One bulk expense entry for all staff salaries combined.
+Category = Salaries & Wages, Paid From = Bank Account (salaries paid via bank), For Branch = General / Company-wide, Amount = total salary bill.
+Doctors are salaried — included in same entry or separate entry under same Salaries category.
+
+10A.3 Utility Bills
+Each branch’s utility bill is a separate expense entry.
+Lahore DHA electricity: Category = Utilities, Paid From = depends on who pays, For Branch = Lahore DHA, Vendor = LESCO (the utility company).
+12 branches = 12 separate entries for electricity. Same for gas, water, internet if applicable.
+
+10A.4 Branch Rent
+Head Office pays all branch rents centrally.
+Category = Rent & Property, Paid From = Head Office Cash or Bank Account, For Branch = the specific branch (e.g., Islamabad), Vendor = landlord.
+
+10A.5 Accountant on Leave
+Accountant is absent for a few days. Branches still spend cash.
+Entries wait until accountant returns. They will be backdated (expense date = actual date, not entry date).
+Backdated entry flag will trigger (if > 7 days old). This is expected in this scenario — admin will see the flags and understand why.
+No one else can enter expenses. This is by design — keeps accountability with one person.
+
+10A.6 Emergency Branch Expense
+Branch manager pays electrician 5k cash for urgent AC repair. Accountant is remote.
+Branch manager informs accountant via call/WhatsApp.
+Accountant records: Category = Equipment & Machinery, Paid From = that branch’s cash pool, For Branch = that branch, Payment Method = Cash, Attachment = photo of receipt sent by branch.
+
+10A.7 Branch Closure
+Rare scenario: a branch is permanently closed.
+Branch deactivated in CRM.
+Cash pool auto-deactivated. If balance > 0, system prompts admin to transfer remaining cash to Head Office.
+Pool hidden from dropdowns. All historical data preserved in reports.
+
+10A.8 Card Processing Fees
+Bank deducts card processing fees from card settlements.
+Record as a separate expense: Category = Bank Charges, Paid From = Bank Account, For Branch = General / Company-wide, Payment Method = Bank Transfer. No cash attachment needed.
+
+11. Security & Fraud Prevention
+
+11.1 Fraud Risk Matrix
+Risk
+Attack
+Prevention
+
+Ghost Vendor
+Create fake vendor
+Vendor CRUD admin-only. Dormant vendor report.
+
+Inflated Expense
+Record higher amount
+Approval above 10k. Attachment mandatory for cash.
+
+Expense Splitting
+Multiple small entries to dodge threshold
+Daily auto-approved total flag (default 50k).
+
+Backdated Entry
+Date entry months ago
+Auto-flag if created > 7 days after expense date.
+
+Post-Hoc Edit
+Edit entry after review
+Admin-only editing. Edit reason mandatory. 'Edited' badge.
+
+Duplicate Payment
+Pay same vendor same amount twice
+Auto-flag same vendor + same amount within 24 hours.
+
+Advance Abuse
+Inflated receipts against advance
+Flag zero-return advances (perfect match).
+
+Opening Balance Manipulation
+Change balance to cover shortfall
+Frozen after first period lock.
+
+Void Abuse
+Void to hide transactions
+Mandatory reason. Reversal entry. Dashboard 7 days. Digest.
+
+Admin Self-Approval
+Admin approves own expense
+Auto-flag 'Self-approved by admin'. In daily digest.
+
+Period Unlock Abuse
+Unlock, alter, re-lock
+Mandatory reason. Both logged. Changes in digest.
+
+Fake Small Expenses
+Below-threshold fake entries
+Cash attachment mandatory. Daily total flag.
+
+
+11.2 Auto-Flagging System
+Trigger
+Condition
+Flag Reason
+
+Backdated
+created_at minus expense_date > 7 days
+'Entry created [X] days after date'
+
+No attachment (cash)
+Payment method = cash, attachment null
+'No receipt for cash expense'
+
+Advance perfect-match
+Expenses = advance, zero return
+'Advance fully spent, no return'
+
+Negative pool
+Pool balance < 0
+'Negative pool balance'
+
+Vendor overpayment
+Payment > outstanding
+'Exceeds vendor balance'
+
+Duplicate payment
+Same vendor + same amount within 24hrs
+'Potential duplicate'
+
+Admin self-approval
+Admin created AND approved same entry
+'Self-approved by admin'
+
+Daily splitting
+Total auto-approved (below 10k) in one day > 50k
+'High daily auto-approved total'
+
+Vendor pending
+Expense saved without vendor (request pending)
+'Vendor pending'
+
+
+11.3 Attachment Validation
+Google Drive URLs only: drive.google.com or docs.google.com.
+Non-matching URL: warning (not block). Logged.
+Cash expenses: cannot save without valid attachment.
+
+11.4 Edit Controls
+Only admin can edit any entry. Accountant can only edit rejected entries for resubmission.
+Edit reason mandatory (text field). Stored in audit trail.
+'Edited' badge visible on entry in list view.
+Hover shows who, when, what changed.
+
+11.5 Void Controls
+Admin only. Reason mandatory (min 10 chars).
+Creates reversal entry. Original preserved.
+Both visible in dashboard alerts for 7 days.
+
+12. Permissions & Roles
+Branch access follows existing CRM user-branch assignment. Same filtering as other modules.
+
+Action
+Admin
+Accountant
+Branch Mgr
+FDM
+View Only
+
+Dashboard
+✓
+✓
+Own branch
+✗
+✓
+
+FDM Cash View
+✓
+✗
+✗
+Own branch
+✗
+
+Add expense
+✓
+✓
+✗
+✗
+✗
+
+Edit expense
+✓ (any, with reason)
+Rejected only
+✗
+✗
+✗
+
+Approve/reject expense
+✓
+✗
+✗
+✗
+✗
+
+Void expense
+✓
+✗
+✗
+✗
+✗
+
+Add transfer
+✓
+✓
+✗
+✗
+✗
+
+Vendor CRUD
+✓
+✗ (suggest only)
+✗
+✗
+✗
+
+Vendor ledger view
+✓
+✓
+✗
+✗
+✓
+
+Vendor purchase/payment
+✓
+✓
+✗
+✗
+✗
+
+Staff advance/return
+✓
+✓
+✗
+✗
+✗
+
+Categories
+✓
+✗ (suggest only)
+✗
+✗
+✗
+
+Cash pool mgmt
+✓
+✗
+✗
+✗
+✗
+
+Period lock
+✓
+✗
+✗
+✗
+✗
+
+Audit trail
+✓
+✗
+✗
+✗
+✗
+
+Thresholds/settings
+✓
+✗
+✗
+✗
+✗
+
+Reports + export
+✓
+✓
+✗
+✗
+✓
+
+
+⚠ SECURITY: Single admin risk: if admin unavailable, pending expenses pile up. Strongly recommend adding a backup admin or approval role.
+
+13. Audit Trail
+Every action logged. Cannot be edited, deleted, or disabled. Admin-only view in UI. Read-only, searchable.
+
+13.1 Logged Actions
+Expense created / edited / voided / approved / rejected / resubmitted
+Transfer created
+Vendor created / edited / deactivated / requested
+Vendor purchase / payment
+Staff advance / expense / return
+Period locked / unlocked
+Pool auto-created / edited / deactivated
+Category created / edited / deactivated / requested
+Settings/threshold changed
+Module reset
+
+13.2 Log Fields
+Field
+Type
+Description
+
+Timestamp
+DateTime
+Server time
+
+User ID
+FK (nullable)
+Null for system/auto
+
+Action
+Enum
+created | updated | voided | approved | rejected | resubmitted | locked | unlocked | deactivated | auto_created | reset
+
+Entity Type
+String
+expense | transfer | vendor | etc.
+
+Entity ID
+Integer
+Affected record
+
+Old Values
+JSON
+Before (null for create)
+
+New Values
+JSON
+After
+
+Reason
+Text (nullable)
+Edit reason, void reason, rejection reason, unlock reason
+
+IP Address
+String
+User IP
+
+⚠ SECURITY: cashflow_audit_logs: NO delete, NO update, NO truncate. Write-only forever.
+
+14. Period Locking
+Monthly. Admin-only lock/unlock.
+Locked = no adds/edits/voids for that month.
+Sequential: can’t lock March before February.
+Current month never lockable.
+On lock: snapshots every pool balance.
+On unlock: mandatory reason in audit.
+After FIRST lock: all opening balances + go-live date frozen. Module reset disabled.
+
+15. UX & Usability Requirements
+If a user needs training to figure out a screen, the screen is poorly designed.
+
+15.1 Core UX Rules
+Follow existing CRM design patterns, colors, spacing, components exactly.
+Module is a section within existing CRM sidebar. Same login, same session.
+Required fields clearly marked. Optional fields not cluttered.
+Validation errors next to field, not popup.
+Success = confirmation popup showing: amount, pool, new balance, attachment status.
+Loading states for actions > 500ms.
+Destructive actions require confirmation dialog.
+Tables sortable by column headers. Default: newest first.
+Money with thousand separators: 1,250,000 not 1250000. Whole numbers only.
+Dashboard fast. Heavy calcs use cache.
+No horizontal scroll on 1366x768 laptop.
+
+15.2 Dropdown Standard
+ALL dropdowns use existing CRM searchable component (patient search style). No new library.
+
+15.3 Modal Forms
+All entry forms (expense, transfer, vendor purchase, staff advance) open as modals from dashboard quick-action bar. Fill, save, modal closes, dashboard updates. No page navigation for common actions.
+
+15.4 Post-Save Behavior
+Confirmation popup: amount, pool, new balance, attachment check.
+Form resets completely. Only date stays as today.
+Form stays open for next entry.
+
+15.5 Search & Filter (Expense List)
+Single search bar: description, vendor name, reference, amount. Instant/debounced.
+Collapsible filter panel. Status filter: All | Pending | Approved | Rejected | Flagged | Voided | Edited.
+Accountant status filter: 'My Pending' / 'My Rejected' for quick access.
+
+15.6 Keyboard Shortcuts
+Shortcut
+Action
+
+Alt+E
+Add Expense
+
+Alt+T
+Add Transfer
+
+Tab
+Move fields
+
+Ctrl+Enter
+Save
+
+Escape
+Close/cancel
+
+
+15.7 Branch-Specific Dashboard
+Branch manager login → dashboard auto-filtered to their assigned branch(es). Same for FDM.
+
+16. Screen-by-Screen Breakdown
+8 screens total.
+
+Screen 1: Dashboard
+Default date range: current month. Auto-filters by user’s assigned branches.
+Top Section
+Quick-Action Bar: + Expense | + Transfer | + Vendor Purchase | + Advance (all open as modals)
+Pending Actions Widget: expenses awaiting approval count, vendor requests, flagged entries. Click to expand.
+Summary Section
+Summary Cards: Inflows | Outflows | Net — with month-over-month % comparison
+Pool Balance Cards: all active pools with balance. Color-coded.
+Charts & Analysis
+Inflows vs Outflows daily trend line chart (for the month)
+Category breakdown: pie chart (proportions) + bar chart (amounts). Click slice to filter.
+Top 5 highest individual expenses this month
+Cash collection per branch (patient payments today/this week)
+Vendor Section
+Vendor Outstanding: top 10 by highest balance, sorted. 'View All' link.
+Vendor Purchase Trends: top 5 vendors by spend, small sparkline charts showing last 6 months of purchase amounts next to each vendor name. Lightweight — keeps dashboard fast.
+Upcoming Vendor Payments Due (based on payment terms)
+Staff & Accountability
+Staff Advances Outstanding: who, amount, aging (green/amber/red)
+Accountant Widgets (visible to accountant role)
+My Entries Today: count + total
+Rejected Entries Needing Re-entry
+Entries Missing Attachment
+Vendor Balances Due Soon
+Bottom Section
+Recent 5 entries today
+Reconciliation Check button (admin only, manual, shows green/red result)
+
+Screen 2: Expenses
+Search + collapsible filters + status filter
+Badges: Edited (amber), Voided (red), Pending (orange), Rejected (red outline), Flagged (yellow)
+Admin: approve/reject directly from list, view, edit, void
+Export PDF/Excel
+
+Screen 3: Cash Transfers
+Table + '+ Add Transfer' modal
+Reference and attachment always shown
+
+Screen 4: Vendors (Master-Detail)
+Left: vendor list with balance, status. Search.
+Right: selected vendor ledger with running balance
+Admin: + Add Vendor, edit, deactivate. Accountant: record purchase, request new vendor.
+
+Screen 5: Staff Ledger (Master-Detail)
+Left: eligible staff with balance, aging color
+Right: transaction history
+Actions: Give Advance, Record Return
+
+Screen 6: Reports
+Cash Flow Statement (primary) + 8 secondary reports
+PDF/Excel export on all
+
+Screen 7: Settings (Admin)
+Cash pools, categories (with vendor emphasis toggle), thresholds, period locking, audit trail viewer, payment method mapping, digest config, go-live date, advance-eligible users, module reset (first month only)
+
+Screen 8: FDM Cash View
+Read-only. Own branch only (from CRM branch assignment).
+Big balance card at top
+Last 10 days of cash movements: inflows (green) / outflows (red) with running balance
+No entry, no edit, no export
+
+17. Notifications
+17.1 In-App Notifications (Bell Icon)
+Event
+Recipient
+
+Expense pending approval
+Admin
+
+Expense approved
+Accountant
+
+Expense rejected (with reason)
+Accountant
+
+New vendor request
+Admin
+
+New category request
+Admin
+
+Staff advance given
+Admin
+
+Negative pool balance
+Admin + Branch Manager (own branch)
+
+Expense recorded for branch
+Branch Manager (own branch)
+
+Transfer involving branch pool
+Branch Manager (own branch)
+
+
+17.2 Daily Digest Email (Simplified)
+Sent daily at configurable time. Contains ONLY:
+Flagged entries (with flag reason)
+Pending approvals (with age)
+Rejected entries
+Admin self-approved entries
+Voided entries
+No full cash summary — admin sees that on dashboard.
+
+17.3 Monthly Report Email
+Auto-sent on the 1st. Previous month summary: inflows, outflows, net, category breakdown, pool balances.
+
+18. Database Schema
+Laravel conventions. DECIMAL(15,2) for money (UI shows integers). SoftDeletes everywhere.
+
+18.1 Tables
+Table
+Purpose
+
+cash_pools
+Dynamic per branch + HO + bank. cached_balance.
+
+expense_categories
+Admin-managed. vendor_emphasis boolean.
+
+expenses
+All entries. status (approved|pending|rejected), verified_by, rejection_reason, is_flagged, flag_reason, voided_at/by/reason, edit_reason.
+
+cash_transfers
+Inter-pool. Reference + attachment always required.
+
+vendors
+Admin-managed. cached_balance.
+
+vendor_transactions
+Purchases + payments.
+
+vendor_requests
+Pending vendor suggestions from accountant.
+
+category_requests
+Pending category suggestions from accountant.
+
+staff_advances
+Cash advances to eligible users.
+
+staff_returns
+Cash returns.
+
+period_locks
+Month/year + balance snapshots (JSON).
+
+cashflow_audit_logs
+Immutable. Write-only.
+
+cashflow_settings
+Key-value: thresholds, go-live, digest config.
+
+cashflow_notifications
+In-app notifications.
+
+
+18.2 Key Design Rules
+DECIMAL(15,2): All money in DB. UI displays as integers.
+Soft deletes: All models.
+Void not delete: voided_at + reversal.
+DB::transaction: Upfront vendor, void+reversal, transfer balance updates, approval/rejection balance changes.
+Observers: Branch (pool auto-create), Expense/Transfer/VendorTransaction/Advance/Return (cached balance update).
+Audit immutable: No delete/update routes on audit logs.
+Payment methods: READ from existing CRM config.
+Patient payments: READ from existing CRM. Filtered by go-live date.
+Branch filtering: Same logic as other CRM modules. Read from user-branch assignment.
+
+19. Business Rules & Validations
+19.1 Expenses
+Amount > 0 (integer). Date not future. Not in locked period. Pool active.
+Below 10k: auto-approved. Above 10k: pending admin approval.
+Cash payment: attachment mandatory.
+Accountant edits ONLY rejected entries. Admin edits any (reason mandatory).
+Void: admin only, reason mandatory, reversal entry.
+Vendor selected → auto vendor payment. Staff selected → auto reduce advance.
+Rejected: balance reversed. Resubmitted: balance re-applied.
+
+19.2 Transfers
+From ≠ To. Amount > 0. Date not future/locked. Reference + attachment always required.
+No approval. Warn if negative. Two methods only: physical_cash, bank_deposit.
+
+19.3 Vendors
+Admin-only CRUD. Accountant suggests. Name unique (case-insensitive). No hard delete.
+Warn overpayment. Upfront: DB::transaction. Dormant report at 90 days.
+
+19.4 Staff
+Only advance-eligible users. Warn existing balance > 0. Return cannot exceed balance.
+Advance from any pool, return to any pool.
+
+19.5 Reconciliation
+Sum(Pool Balances) = Patient Payments – Expenses + Opening Balances – Staff Advances
+Manual button on dashboard. Admin clicks → green/red result.
+
+20. Performance & Optimization
+Cached balances via Observer on all transaction models.
+Dashboard reads cache. Reports use true calculation.
+Database indexes on: (expense_date, pool), (expense_date, branch), (vendor_id), (staff_id), (is_flagged), (status), (voided_at).
+N+1 prevention: eager loading on all list views.
+Dashboard < 2 seconds. Expense list < 1 second. Reports < 5 seconds.
+
+21. Testing Requirements
+AI agent performs comprehensive testing at every phase. Not optional.
+
+21.1 Functional Testing
+All CRUD, all validations, all business rules, all permissions, all auto-behaviors.
+Approval flow: below/above threshold, approve, reject, resubmit, re-approve.
+Cross-branch scenarios. Edge cases (negative pool, overpayment, return > balance).
+
+21.2 Security Testing
+Permission bypass via URL/API. SQL injection. XSS. CSRF.
+Audit trail integrity. Period lock enforcement. Opening balance freeze.
+Branch filtering: verify users cannot see other branches' data.
+
+21.3 Optimization Testing
+Dashboard load time. Expense search speed. Cached balance accuracy.
+EXPLAIN on critical queries. N+1 detection.
+
+21.4 Test Documentation
+What tested, expected vs actual, pass/fail, bugs and fixes. Documentation is a deliverable.
+
+22. Configurable Thresholds
+Setting
+Default
+Purpose
+
+Go-Live Date
+(set once)
+Module start. Payments filtered from here.
+
+Expense Approval Threshold
+PKR 10,000
+Admin approval above this.
+
+Backdated Entry Flag Days
+7 days
+Flag if created > X days after date.
+
+Daily Auto-Approved Limit
+PKR 50,000
+Flag if total below-threshold expenses in one day exceed this.
+
+Advance Aging Alert Days
+15 days
+Alert unsettled advances.
+
+Cumulative Advance Threshold
+PKR 100,000
+Alert staff total outstanding.
+
+Dormant Vendor Days
+90 days
+Flag inactive vendors.
+
+Void Alert Display Days
+7 days
+Voided entries in dashboard alerts.
+
+Daily Digest Send Time
+08:00 AM
+Email time.
+
+Daily Digest Recipients
+Admin email(s)
+Comma-separated.
+
+
+23. Implementation Plan (Developer-Designed)
+Build order designed by the developer based on technical dependencies, testability, and incremental value delivery. Each phase produces working, testable functionality.
+
+Phase 1: Database & Foundation (Must Be Right First)
+Everything else depends on this. No UI yet — just the backbone.
+All migrations: cash_pools, expense_categories (13 defaults + vendor_emphasis), expenses (with status/approval/rejection/flag/void/edit_reason fields), cash_transfers, vendors, vendor_transactions, vendor_requests, category_requests, staff_advances, staff_returns, period_locks, cashflow_audit_logs, cashflow_settings, cashflow_notifications.
+All Eloquent models with relationships, scopes, and SoftDeletes.
+Branch Observer: auto-create/deactivate cash pools when branches change.
+Balance Observers: cached_balance update on Expense, Transfer, VendorTransaction, Advance, Return models.
+Permission entries for all roles (admin, accountant, branch_manager, fdm, view_only).
+Branch filtering trait/scope — reuse existing CRM pattern for user-branch access control.
+CashflowSettings model with get/set helpers. Seed defaults (10k threshold, 7 day backdate, etc).
+Go-live date config. Global helper/trait for patient payment date filtering.
+Advance-eligible flag on users table (migration to add column).
+Audit logging service: write-only, called from all subsequent phases.
+Test: Run migrations, verify all tables, test Observer creates pool on new branch, test cached_balance updates correctly, test branch filtering scope.
+
+Phase 2: Settings Screen + Core Expense Flow
+Admin can configure. Accountant can enter expenses. The core loop works.
+Settings screen (admin only): go-live date, pool management (review/rename/opening balance), category management (CRUD + vendor emphasis toggle), threshold configuration, advance-eligible user marking, payment method mapping.
+Expense form (modal): all fields per spec. Date pre-fills only. Cash = attachment mandatory. Searchable dropdowns from CRM component. Vendor emphasis by category. 'Vendor not listed?' button → vendor request.
+Expense approval flow: below 10k = auto-approved. Above 10k = pending. Admin approve/reject from list. Rejection reverses balance, reason mandatory, accountant notified. Accountant edits rejected → resubmit.
+Expense list with search, filters, status tabs (My Pending / My Rejected for accountant).
+Badges: Pending, Approved, Rejected, Flagged, Edited, Voided.
+Admin: edit any entry (reason mandatory), void (reason mandatory, reversal entry).
+In-app notification system: bell icon, notification model, real-time via polling or events.
+Audit logging on all expense actions.
+Test: Full expense lifecycle — create below/above threshold, approve, reject, resubmit, edit, void. Permissions enforcement. Notification delivery. Cash attachment validation. Audit trail entries.
+
+Phase 3: Transfers + Vendor & Staff Ledgers
+All transaction types working. Complete data entry capability.
+Cash transfer form (modal): physical_cash and bank_deposit methods. Reference + attachment always mandatory. No approval. Grouped pool dropdowns.
+Transfer list with filters.
+Vendor CRUD (admin only). Vendor request approval flow (admin notified, creates if legit, links to flagged expense).
+Vendor ledger: master-detail screen. Purchase recording (no approval needed). Payment auto-created when expense has vendor. Upfront shortcut (DB::transaction). Balance display.
+Category suggestion flow: accountant requests, admin notified, admin creates.
+Staff advance form (modal): eligible users only, warn existing balance, from any pool.
+Staff return form: to any pool, cannot exceed balance.
+Staff ledger: master-detail screen with aging colors.
+Audit logging on all new actions.
+Test: Transfer both methods. Vendor full lifecycle including request flow. Staff advance → expense → return cycle. Vendor upfront shortcut. Perfect-match flag. Cross-model balance accuracy.
+
+Phase 4: Dashboard + FDM Screen + Reports
+All data is being entered. Now visualize it.
+Admin dashboard: full widget layout per spec — quick-action bar (modals), pending actions widget, summary cards with month-over-month %, pool balance cards, daily trend line chart, category pie + bar charts, top 5 expenses, cash collection per branch, vendor outstanding top 10 + sparklines + due dates, staff advances summary, recent 5 entries, reconciliation check button.
+Accountant dashboard: same plus — my entries today, rejected needing re-entry, missing attachments, vendor due dates.
+Branch manager dashboard: auto-filtered to assigned branch(es). Read-only.
+FDM Cash View screen: big balance card + 10-day transaction log. Read-only, own branch.
+Admin approval directly from dashboard (view attachment as link, approve/reject inline).
+Cash Flow Statement report (primary): 6-section structure with filters. PDF + Excel export.
+8 secondary reports: branch comparison, category trend, vendor outstanding, staff advance, daily movement, transfer log, flagged entries, dormant vendors. All with PDF + Excel.
+Google Drive attachment: displayed as clickable link that opens in new tab (not embedded iframe — Drive does not reliably support embedding).
+Test: Dashboard loads < 2 sec. All widgets show correct data. Branch filtering works per role. FDM sees only own branch. Reports match manual calculations. Export works.
+
+Phase 5: Security Automation + Scheduled Jobs + Polish
+Harden everything. Automate detection. Final touches.
+All auto-flagging triggers: backdated, duplicate vendor payment, admin self-approval, daily splitting threshold, negative pool, vendor overpayment, perfect-match advance, vendor pending, missing attachment.
+Period locking: sequential, snapshot balances, freeze opening balances + go-live after first lock. Unlock with mandatory reason.
+Module reset: admin only, first month only, double confirmation, disabled after first lock.
+Daily digest email (simplified): flagged + pending + rejected + self-approved + voided. Scheduled at configurable time.
+Monthly report email: auto on 1st of month. Previous month summary.
+Full security testing: permission bypass, SQL injection, XSS, CSRF, audit integrity, branch isolation.
+Performance optimization: verify indexes, EXPLAIN critical queries, N+1 detection, cache accuracy.
+Keyboard shortcuts: Alt+E, Alt+T, Ctrl+Enter, Escape.
+Comprehensive test documentation: what tested, expected vs actual, pass/fail, bugs and fixes.
+Test: Every flagging trigger fires correctly. Period lock blocks all edits. Module reset wipes clean. Digest and monthly emails send correctly. Security tests pass. Performance benchmarks met.
+
+Phase Dependency Logic
+Phase 1 must complete before anything else — all other phases depend on the data layer. Phase 2 before 3 because expense is the core entity and the approval pattern is reused. Phase 3 before 4 because dashboard needs all transaction types to display. Phase 5 last because security automation and scheduled jobs are layers on top of working features.
+
+24. Future Considerations
+Not in v1. Architecture supports:
+Budget vs actual (per category per branch)
+Multiple bank accounts
+Recurring expenses
+Receipt OCR
+Bank statement import
+Expense split across branches
+Tax reporting (FBR)
+Mobile app
+FDM cash count verification (physical vs system)
+Transfer receiving confirmation
+Backup admin / approval delegation
+
+25. Operational Context (How The Business Works)
+This section documents the real-world operational context that drives design decisions. The developer must understand this context to build the right system.
+
+25.1 Daily Operations
+10–20 expense entries per day across all 12+ branches and HO.
+Accountant enters expenses throughout the day as they happen — not in batch at end of day.
+Branches communicate expenses to accountant via phone calls and WhatsApp messages. Receipts are often photos sent via WhatsApp, then uploaded to Google Drive.
+There is currently 1 accountant. System designed to support multiple accountants in future (same role, same permissions). 1 admin.
+If accountant is on leave, entries wait until they return. Entries are backdated (expense date = actual date). Backdated flag will trigger — this is expected behavior. No one else enters expenses.
+
+25.2 Cash Movement
+Cash stays at branches. Each branch physically holds its cash. Expenses typically paid from branch cash.
+Head Office also holds cash and makes expenses directly.
+Cash transfers: a trusted staff member physically carries cash from branch to HO. No armored transport, no digital transfer of cash.
+There is NO confirmation from the receiving end. Accountant records the transfer and that is sufficient. The FDM screen serves as a secondary check — FDM can see the outflow and verify the amount left.
+HO or branches deposit cash at the bank physically. Someone goes to the bank with cash.
+No bank withdrawals are made. Money flows: branches → HO and/or bank. Never bank → branch.
+
+25.3 Payment Patterns
+Salaries: one bulk entry for all staff combined. Not per employee. Doctors are salaried employees, not consultants. Included in Salaries category.
+Utility bills: one entry per bill per branch. 12 branches = 12 electricity entries.
+Rent: Head Office pays all branch rents centrally. Paid From = HO Cash or Bank, For Branch = specific branch.
+Meta/Google ads: cash collected from multiple branches via transfers, consolidated, then paid as one Marketing expense. For Branch = General / Company-wide.
+Card processing fees: bank auto-deducts. Recorded as separate Bank Charges expense.
+Credit card patient payments: mapped to bank pool immediately. Settlement timing (1–3 day delay) not tracked.
+Patient refunds: handled by existing CRM payment system. Refunds reduce pool balance through existing data. No action in this module.
+
+25.4 Admin Workflow
+Admin checks dashboard daily for: pending approvals, flagged entries, pool balances.
+Admin runs reports monthly for deeper analysis.
+Branch managers only see dashboard (their branch). No report access. No data entry.
+FDMs see only their branch cash view. No disputes in system — handled offline.
+
+25.5 Branch Lifecycle
+Currently 12 branches. System reads dynamically — never hardcode branch count.
+New branch: pool auto-created with balance 0. Admin notified to set opening balance.
+Branch closure (rare but happened once): pool soft-deactivated. If balance > 0, admin prompted to transfer remaining cash to HO. Pool hidden from dropdowns. All historical data preserved.
+
+26. Design Decisions & Rationale
+Every major design choice was discussed and decided by the product owner. This section documents the reasoning so the developer does not accidentally reverse or question these decisions.
+
+26.1 No Smart Defaults (Except Date)
+Decision: Only Expense Date pre-fills with today. All other fields (Paid From, For Branch, Category, Payment Method, Vendor, Staff, Description, Reference) start empty every time. After save, form resets completely.
+Rationale: If fields pre-fill with last-used values or smart suggestions, the accountant can submit the form without actively reviewing every field. This leads to wrong records — expenses tagged to the wrong branch, wrong pool, or wrong vendor. Since 10–20 entries happen daily, even a small error rate compounds.
+⚠ SECURITY: Do NOT add session memory, last-used values, or auto-populate logic. This was explicitly rejected.
+
+26.2 Cash Attachment Mandatory, Card/Bank Optional
+Decision: Cash expenses MUST have a Google Drive attachment. Credit card and bank transfer expenses do not require attachment.
+Rationale: The bank account has its own controls — cheque signatories, online banking approvals, statement records. Nobody can steal from the bank without external checks. But cash is physically held at branches and HO. Without receipts, it’s easy to record a fake cash expense and pocket the money. Mandatory cash receipts make this much harder.
+
+26.3 No Automated Reconciliation
+Decision: No nightly reconciliation job. Instead, a manual 'Run Reconciliation Check' button on the dashboard.
+Rationale: Admin prefers manual control over automated background processes. When admin wants to verify, they click the button and get an immediate green/red result. No daily_reconciliation_snapshots table needed.
+
+26.4 Accountant Cannot Edit
+Decision: Accountant can create entries but cannot edit them. Only admin can edit (with mandatory reason). The sole exception: accountant can edit a rejected entry to fix and resubmit it.
+Rationale: Prevents post-hoc manipulation. If the accountant could edit, they could create an entry, wait for it to pass review, then quietly change the amount or vendor. By restricting edits to admin only (with a mandatory reason logged in audit trail), every change has accountability.
+
+26.5 Transfers Don’t Need Approval
+Decision: Cash transfers go through immediately regardless of amount. No pending/approval flow.
+Rationale: Transfers don’t create or destroy money — they just move it between pools. Total business cash stays the same. The real risk is in expenses (money leaving the business), not transfers. Reference and attachment are mandatory for every transfer, providing audit trail.
+
+26.6 FDM Read-Only, No Dispute Button
+Decision: FDM can only view their branch cash. No entry, no edit, no export, no dispute button.
+Rationale: Disputes happen through offline conversation (phone/WhatsApp). Adding a dispute feature adds UI complexity without clear workflow resolution. The FDM screen’s value is visibility and deterrence, not interactive dispute management.
+
+26.7 PKR 10,000 Approval Threshold (Not 50,000)
+Decision: Expenses above PKR 10,000 need admin approval. Initial design was 50,000 but the product owner chose tighter control.
+Rationale: In this business context, 10k is a meaningful amount. A 50k threshold would let too many mid-range expenses pass without review. The 10k threshold ensures admin sees all significant spending while still allowing small routine purchases to flow instantly.
+
+26.8 Removed Features
+Vendor Payment Nudge — Removed
+Was: When expense > 10k without vendor, system prompts 'Is this a vendor payment?'
+Why removed: Unnecessary friction. Many legitimate expenses above 10k have no vendor (salaries, utilities, government fees). The vendor field is always visible with category-based emphasis — that’s enough.
+
+HO + General Over-Tagging Warning — Removed
+Was: Alert if > 30% of expenses tagged as HO or General.
+Why removed: Not useful for this business. HO genuinely pays many expenses centrally (all rents, salaries, marketing). A 30% threshold would always trigger false alarms.
+
+26.9 Doctors Under Salaries
+Decision: No separate 'Doctor Payments' category. Doctors are salaried employees. Their pay goes under 'Salaries & Wages'.
+Rationale: In this business, doctors are not consultants paid per session. They are salaried staff. A separate category would be misleading and unused.
+
+26.10 Whole Numbers Only
+Decision: UI accepts and displays whole PKR amounts only. No decimal input, no paisa shown.
+Rationale: Nobody deals in paisa in Pakistani business transactions. Database stores DECIMAL(15,2) for technical safety, but the UI layer enforces integer-only input and display.
+
+26.11 Google Drive Only for Attachments
+Decision: All attachments are Google Drive URLs. No file upload to CRM server.
+Rationale: Business already uses Google Drive for document management. Receipts are typically photos taken on phone, sent via WhatsApp, then uploaded to Drive by the accountant. Drive provides its own access control, versioning, and storage. Uploading to the CRM server would require storage management, backup, and serving infrastructure that isn’t needed.
+
+26.12 ‘For Branch’ Must Be Selected
+Decision: 'For Branch' is mandatory. The option to leave it blank was explicitly rejected.
+Rationale: If blank is allowed, lazy entries would have no branch tag and wouldn’t appear in any branch report. Every expense must be attributed: specific branch, Head Office, or General / Company-wide. These three options cover all scenarios.
+
+26.13 No Live Dashboard Updates
+Decision: Dashboard does not auto-refresh. User presses F5 or navigates back to refresh.
+Rationale: With 10–20 entries/day, real-time updates add engineering complexity (WebSockets/polling) for minimal benefit. The admin checks the dashboard periodically, not watching it continuously.
+
+27. Implementation Notes for Developer
+Technical details and gotchas the developer must know.
+
+27.1 Branch Filtering
+Do NOT build a new branch access system. Reuse the existing CRM pattern.
+Look at how other modules (appointments, patients) filter data by user’s assigned branches.
+Use the exact same approach: scope/trait that reads the user’s branch assignment and filters queries.
+Users table already has branch assignment (check: could be a pivot table or FK). The cash flow module just reads it.
+
+27.2 Payment Methods
+Do NOT create a new payment methods table or enum for this module.
+Read from the existing CRM payment method configuration (same methods used for patient payments).
+Currently: Cash, Credit Card, Bank Transfer. If new methods are added to CRM, they automatically appear in expense form.
+
+27.3 Dropdowns
+Do NOT introduce a new dropdown library or component.
+Use the existing CRM searchable dropdown component (same one used for patient search).
+All dropdowns: show full list on click + search/type-ahead box at top.
+Apply to: Paid From, For Branch, Category, Payment Method, Vendor, Staff, Transfer pools.
+
+27.4 Google Drive Attachment
+Validate URL with regex: must match drive.google.com or docs.google.com patterns.
+Custom Laravel validation rule: new GoogleDriveUrlRule.
+Display on dashboard/approval: clickable link that opens in new tab.
+Do NOT attempt iframe embedding — Google Drive does not reliably support it.
+Non-matching URLs: show warning but do not block save (except for cash expenses where attachment is mandatory).
+
+27.5 Advance-Eligible Users
+Add a boolean column (e.g., is_advance_eligible) to the existing users table via migration.
+Admin manages this in Settings screen.
+Only users with this flag = true appear in the staff dropdown when giving advances.
+
+27.6 Vendor & Category Requests
+vendor_requests table: id, name, phone, note, requested_by (FK), status (pending|approved|dismissed), admin_notes, created_at/updated_at.
+category_requests table: id, name, description, requested_by (FK), status (pending|approved|dismissed), admin_notes, created_at/updated_at.
+When admin creates the actual vendor/category from a request, update request status to 'approved'.
+Requests appear in admin’s Pending Actions widget on dashboard.
+
+27.7 In-App Notifications
+cashflow_notifications table: id, user_id, type, title, message, data (JSON), read_at (nullable), created_at.
+Bell icon in CRM header (or wherever existing notification UI exists).
+Unread count badge on bell icon.
+Use Laravel’s built-in notification system if available in this CRM, or build a simple polling mechanism.
+Do NOT require WebSocket infrastructure. Simple AJAX polling every 30–60 seconds is sufficient for 10–20 events/day.
+
+27.8 Scheduled Jobs
+Daily digest: Laravel Mailable + Kernel.php schedule. Queued. Configurable send time from cashflow_settings.
+Monthly report: scheduled for 1st of each month. Generates summary of previous month.
+Both should fail gracefully and log errors, not crash.
+
+27.9 Module Reset
+Available only before first period lock. Check: period_locks table empty.
+Implementation: truncate all cashflow_* tables (except cashflow_settings). Re-seed category defaults.
+Requires double confirmation: 'Are you sure?' → 'Type RESET to confirm'.
+Log the reset action in audit trail BEFORE truncating (write to a separate log or preserve audit entry).
+After first period lock: hide the reset button entirely. Do not just disable — hide.
+
+27.10 Cached Balance Updates
+Use Laravel Observers on: Expense, CashTransfer, VendorTransaction, StaffAdvance, StaffReturn models.
+On created/updated/deleted: recalculate the affected cash_pool.cached_balance and/or vendor.cached_balance.
+Use DB::transaction for the recalculation to avoid race conditions.
+Dashboard reads cached_balance. Reports use true SUM() calculation.
+Reconciliation check button compares cached vs calculated and shows discrepancy.
+
+27.11 Approval Balance Logic
+This is the most complex balance flow. Pay careful attention:
+Expense created below threshold → status = 'approved' → pool balance decremented.
+Expense created above threshold → status = 'pending' → pool balance decremented immediately (cash is physically spent).
+Admin approves → status = 'approved'. No balance change (already decremented).
+Admin rejects → status = 'rejected' → pool balance INCREMENTED (reversal). Rejection reason saved. Accountant notified.
+Accountant edits rejected entry → status back to 'pending' → pool balance decremented again.
+Admin approves resubmission → status = 'approved'. No balance change.
+Admin rejects again → balance reversed again. Cycle can repeat.
+⚠ SECURITY: Every status transition must be wrapped in DB::transaction with the balance update. Test this thoroughly.
+27.12 Existing CRM Integration (Critical First Step)
+This module is NOT a standalone system. It is built inside the existing Cutera CRM codebase, using the same database, same authentication, same UI framework, same conventions.
+Before writing any code, the developer MUST explore the existing codebase and map these integration points:
+Branches table: Table name, structure, active/inactive flag, how branches are created/managed. The Branch Observer depends on this.
+Users table: Structure, role/permission system (Spatie or custom?), how branch assignment works (FK, pivot table, JSON column?). Needed for branch filtering, advance eligibility, and role-based access.
+Patient payments table: Table name, columns for amount, payment method, branch, date. This is the READ-ONLY inflow source. The go-live date filter applies here.
+Payment methods: How they are stored and configured. This module reads from the same config — does not create its own.
+Permission/role system: How existing roles and permissions are defined. New cash flow permissions must follow the same pattern.
+Searchable dropdown component: Which component/library is used for patient search. All cash flow dropdowns must use this exact component.
+UI framework: CSS framework, component library, layout patterns, sidebar navigation structure. The cash flow screens must look identical to existing screens.
+Laravel version, auth guard, queue driver, mail driver: These affect how notifications, scheduled jobs, and emails are implemented.
+Notification system: Does the CRM already have an in-app notification system (bell icon)? If yes, reuse it. If no, build one that can be reused by other modules.
+Folder structure and naming conventions: Controllers, Models, Services, routes, views — follow whatever pattern already exists. Do not introduce new conventions.
+The product owner will provide full codebase and database access. The developer should spend the first portion of Phase 1 exploring and documenting these integration points before writing any migration or model.
+
+
+End of Document
+Cutera CRM — Cash Flow & Expense Management — v2.1 Final (Complete)

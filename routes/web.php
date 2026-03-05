@@ -670,5 +670,17 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');
         Route::post('wrong-conversions/reset/{id}', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'reset'])->name('wrong-conversions.reset');
         Route::post('wrong-conversions/reset-all', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'resetAll'])->name('wrong-conversions.reset-all');
+
+        // Cash Flow Module (view-only routes)
+        Route::prefix('cashflow')->name('cashflow.')->middleware('permission:cashflow_manage')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\CashFlowController::class, 'dashboard'])->name('dashboard');
+            Route::get('expenses', [\App\Http\Controllers\Admin\CashFlowController::class, 'expenses'])->name('expenses');
+            Route::get('transfers', [\App\Http\Controllers\Admin\CashFlowController::class, 'transfers'])->name('transfers');
+            Route::get('vendors', [\App\Http\Controllers\Admin\CashFlowController::class, 'vendors'])->name('vendors');
+            Route::get('staff', [\App\Http\Controllers\Admin\CashFlowController::class, 'staff'])->name('staff');
+            Route::get('reports', [\App\Http\Controllers\Admin\CashFlowController::class, 'reports'])->name('reports');
+            Route::get('settings', [\App\Http\Controllers\Admin\CashFlowController::class, 'settings'])->name('settings');
+            Route::get('fdm', [\App\Http\Controllers\Admin\CashFlowController::class, 'fdmView'])->name('fdm');
+        });
     });
 });

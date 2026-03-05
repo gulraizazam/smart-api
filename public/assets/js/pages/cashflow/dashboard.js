@@ -1,0 +1,323 @@
+'use strict';
+
+(function () {
+    var apiBase = '/api/cashflow/';
+    var trendChart = null;
+    var categoryChart = null;
+
+    $(document).ready(function () {
+        setDefaultDates();
+        loadBranches();
+        loadDashboard();
+        bindEvents();
+    });
+
+    function bindEvents() {
+        $('#btn-refresh-dash').on('click', loadDashboard);
+        $('#btn-reconcile').on('click', runReconciliation);
+    }
+
+    function setDefaultDates() {
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        $('#dash-date-from').val(formatDate(firstDay));
+        $('#dash-date-to').val(formatDate(now));
+    }
+
+    function loadBranches() {
+        $.ajax({
+            url: apiBase + 'lookups', type: 'GET',
+            success: function (res) {
+                if (!res.success) return;
+                var sel = $('#dash-branch');
+                if (res.data && res.data.branches) {
+                    $.each(res.data.branches, function (i, b) {
+                        sel.append('<option value="' + b.id + '">' + esc(b.name) + '</option>');
+                    });
+                }
+            }
+        });
+    }
+
+    function loadDashboard() {
+        var params = {
+            date_from: $('#dash-date-from').val(),
+            date_to: $('#dash-date-to').val(),
+            branch_id: $('#dash-branch').val() || ''
+        };
+
+        $.ajax({
+            url: apiBase + 'dashboard/data', type: 'GET', data: params,
+            success: function (res) {
+                if (!res.success) { toastr.error(res.message || 'Failed to load dashboard'); return; }
+                var d = res.data;
+
+                renderPendingActions(d.pending_actions);
+                renderSummary(d.summary);
+                renderPools(d.pools);
+                renderDailyTrend(d.daily_trend);
+                renderCategoryPie(d.category_breakdown);
+                renderTopExpenses(d.top_expenses);
+                renderCashCollection(d.cash_collection);
+                renderVendorOutstanding(d.vendor_outstanding);
+                renderStaffAdvances(d.staff_advances);
+                renderRecentEntries(d.recent_entries);
+
+                if (d.accountant_widgets) {
+                    renderAccountantWidgets(d.accountant_widgets);
+                }
+                if (d.vendor_trends) {
+                    renderVendorTrends(d.vendor_trends);
+                }
+            },
+            error: function () { toastr.error('Failed to load dashboard data.'); }
+        });
+    }
+
+    // ===================== RENDER FUNCTIONS =====================
+
+    function renderPendingActions(pa) {
+        if (!pa) return;
+        $('#pa-pending-count').text(pa.pending_expenses || 0);
+        $('#pa-vendor-count').text(pa.vendor_requests || 0);
+        $('#pa-cat-count').text(pa.category_requests || 0);
+        $('#pa-flagged-count').text(pa.flagged_entries || 0);
+    }
+
+    function renderSummary(s) {
+        if (!s) return;
+        $('#sum-inflows').text('PKR ' + nf(s.inflows));
+        $('#sum-outflows').text('PKR ' + nf(s.outflows));
+        $('#sum-net').text('PKR ' + nf(s.net));
+
+        $('#sum-inflows-change').html(changeBadge(s.inflow_change_pct));
+        $('#sum-outflows-change').html(changeBadge(s.outflow_change_pct));
+
+        var prevNet = s.prev_net || 0;
+        var netPct = prevNet !== 0 ? (((s.net - prevNet) / Math.abs(prevNet)) * 100).toFixed(1) : null;
+        $('#sum-net-change').html(changeBadge(netPct));
+    }
+
+    function changeBadge(pct) {
+        if (pct === null || pct === undefined) return '<span class="text-muted">N/A vs prev period</span>';
+        var cls = pct >= 0 ? 'text-success' : 'text-danger';
+        var arrow = pct >= 0 ? '&#9650;' : '&#9660;';
+        return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(pct) + '% vs prev period</span>';
+    }
+
+    function renderPools(pools) {
+        var container = $('#pool-balance-cards').empty();
+        if (!pools || !pools.length) { container.html('<span class="text-muted">No pools found.</span>'); return; }
+
+        $.each(pools, function (i, p) {
+            var bal = parseFloat(p.cached_balance || 0);
+            var colorClass = bal < 0 ? 'bg-light-danger' : (bal === 0 ? 'bg-light-secondary' : 'bg-light-success');
+            container.append(
+                '<div class="' + colorClass + ' rounded p-3 mr-3 mb-3 text-center" style="min-width:140px;">' +
+                '<div class="font-weight-bold font-size-sm">' + esc(p.name) + '</div>' +
+                '<div class="font-weight-bolder font-size-h5 mt-1">PKR ' + nf(bal) + '</div>' +
+                '<div class="text-muted font-size-xs">' + esc(p.type) + '</div>' +
+                '</div>'
+            );
+        });
+    }
+
+    function renderDailyTrend(trend) {
+        if (!trend || !trend.length) return;
+
+        var labels = [], inData = [], outData = [];
+        $.each(trend, function (i, d) {
+            labels.push(d.date.substring(5)); // MM-DD
+            inData.push(d.inflows);
+            outData.push(d.outflows);
+        });
+
+        var ctx = document.getElementById('chart-daily-trend');
+        if (!ctx) return;
+
+        if (trendChart) trendChart.destroy();
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Inflows', data: inData, borderColor: '#1BC5BD', backgroundColor: 'rgba(27,197,189,0.1)', fill: true, tension: 0.3 },
+                    { label: 'Outflows', data: outData, borderColor: '#F64E60', backgroundColor: 'rgba(246,78,96,0.1)', fill: true, tension: 0.3 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return 'PKR ' + nf(v); } } } }
+            }
+        });
+    }
+
+    function renderCategoryPie(cats) {
+        if (!cats || !cats.length) return;
+
+        var labels = [], data = [], colors = [
+            '#6993FF', '#1BC5BD', '#FFA800', '#F64E60', '#8950FC',
+            '#3699FF', '#E4E6EF', '#F3F6F9', '#181C32', '#B5B5C3', '#D1D3E0', '#7E8299', '#F1416C'
+        ];
+
+        $.each(cats, function (i, c) {
+            labels.push(c.category);
+            data.push(parseFloat(c.total));
+        });
+
+        var ctx = document.getElementById('chart-category-pie');
+        if (!ctx) return;
+
+        if (categoryChart) categoryChart.destroy();
+        categoryChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{ data: data, backgroundColor: colors.slice(0, data.length) }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+            }
+        });
+    }
+
+    function renderTopExpenses(expenses) {
+        var tbody = $('#top-expenses-tbody').empty();
+        if (!expenses || !expenses.length) { tbody.html('<tr><td colspan="4" class="text-center text-muted">No expenses</td></tr>'); return; }
+
+        $.each(expenses, function (i, e) {
+            tbody.append(
+                '<tr>' +
+                '<td>' + esc(e.expense_date || '') + '</td>' +
+                '<td>' + esc(e.category ? e.category.name : '') + '</td>' +
+                '<td class="text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
+                '<td>' + esc(e.pool ? e.pool.name : '') + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderCashCollection(collection) {
+        var tbody = $('#cash-collection-tbody').empty();
+        if (!collection || !collection.length) { tbody.html('<tr><td colspan="3" class="text-center text-muted">No data</td></tr>'); return; }
+
+        $.each(collection, function (i, c) {
+            tbody.append(
+                '<tr>' +
+                '<td>' + esc(c.branch_name) + '</td>' +
+                '<td class="text-right">PKR ' + nf(c.today) + '</td>' +
+                '<td class="text-right">PKR ' + nf(c.this_week) + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderVendorOutstanding(vendors) {
+        var tbody = $('#vendor-outstanding-tbody').empty();
+        if (!vendors || !vendors.length) { tbody.html('<tr><td colspan="3" class="text-center text-muted">No outstanding</td></tr>'); return; }
+
+        $.each(vendors, function (i, v) {
+            tbody.append(
+                '<tr>' +
+                '<td>' + esc(v.name) + '</td>' +
+                '<td class="text-right font-weight-bold">PKR ' + nf(v.cached_balance) + '</td>' +
+                '<td>' + esc(v.payment_terms || '-') + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderStaffAdvances(staff) {
+        var tbody = $('#staff-advances-tbody').empty();
+        if (!staff || !staff.length) { tbody.html('<tr><td colspan="4" class="text-center text-muted">No outstanding advances</td></tr>'); return; }
+
+        $.each(staff, function (i, s) {
+            var agingBadge = '<span class="label label-light-success label-inline">' + s.days_since_last + 'd</span>';
+            if (s.aging === 'amber') agingBadge = '<span class="label label-light-warning label-inline">' + s.days_since_last + 'd</span>';
+            if (s.aging === 'red') agingBadge = '<span class="label label-light-danger label-inline">' + s.days_since_last + 'd</span>';
+
+            tbody.append(
+                '<tr>' +
+                '<td>' + esc(s.name) + '</td>' +
+                '<td class="text-right font-weight-bold">PKR ' + nf(s.outstanding) + '</td>' +
+                '<td class="text-center">' + s.days_since_last + '</td>' +
+                '<td class="text-center">' + agingBadge + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderRecentEntries(entries) {
+        var tbody = $('#recent-entries-tbody').empty();
+        if (!entries || !entries.length) { tbody.html('<tr><td colspan="5" class="text-center text-muted">No entries today</td></tr>'); return; }
+
+        $.each(entries, function (i, e) {
+            tbody.append(
+                '<tr>' +
+                '<td>' + esc(e.expense_date || '') + '</td>' +
+                '<td>' + esc(e.category ? e.category.name : '') + '</td>' +
+                '<td class="text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
+                '<td>' + esc(e.pool ? e.pool.name : '') + '</td>' +
+                '<td>' + esc(e.creator ? e.creator.name : '') + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderAccountantWidgets(aw) {
+        $('#accountant-widgets-row').removeClass('d-none');
+        $('#aw-entries-count').text(aw.my_entries_today ? aw.my_entries_today.count : 0);
+        $('#aw-entries-total').text('PKR ' + nf(aw.my_entries_today ? aw.my_entries_today.total : 0));
+        $('#aw-rejected').text(aw.rejected_needing_reentry || 0);
+        $('#aw-missing').text(aw.missing_attachments || 0);
+    }
+
+    function renderVendorTrends(trends) {
+        if (!trends || !trends.length) return;
+        var html = '';
+        $.each(trends, function (i, t) {
+            html += '<div class="d-flex justify-content-between mb-1"><span class="font-size-xs">' + esc(t.vendor_name) + '</span><span class="font-weight-bold font-size-xs">PKR ' + nf(t.total) + '</span></div>';
+        });
+        $('#aw-vendor-trends').html(html);
+    }
+
+    // ===================== RECONCILIATION =====================
+
+    function runReconciliation() {
+        var btn = $('#btn-reconcile');
+        btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i> Checking...');
+
+        $.ajax({
+            url: apiBase + 'dashboard/reconciliation', type: 'GET',
+            success: function (res) {
+                var $r = $('#reconcile-result').removeClass('d-none');
+                if (!res.success) { $r.html('<div class="alert alert-danger">' + esc(res.message) + '</div>'); return; }
+
+                var d = res.data;
+                var cls = d.is_balanced ? 'alert-success' : 'alert-danger';
+                var icon = d.is_balanced ? '<i class="la la-check-circle font-size-h3"></i>' : '<i class="la la-exclamation-triangle font-size-h3"></i>';
+                var status = d.is_balanced ? 'BALANCED' : 'DISCREPANCY: PKR ' + nf(Math.abs(d.discrepancy));
+
+                $r.html(
+                    '<div class="alert ' + cls + ' text-center mb-0">' + icon + '<br/>' +
+                    '<strong>' + status + '</strong>' +
+                    '<div class="font-size-xs mt-2">' +
+                    'Cached: PKR ' + nf(d.cached_total) + '<br/>' +
+                    'Calculated: PKR ' + nf(d.calculated_total) +
+                    '</div></div>'
+                );
+            },
+            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Reconciliation failed.'); },
+            complete: function () { btn.prop('disabled', false).html('<i class="la la-check-circle"></i> Run Reconciliation Check'); }
+        });
+    }
+
+    // ===================== HELPERS =====================
+
+    function nf(n) { return Number(parseFloat(n) || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 }); }
+    function esc(s) { return $('<span>').text(s || '').html(); }
+    function formatDate(d) { return d.toISOString().split('T')[0]; }
+
+})();

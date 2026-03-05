@@ -1283,6 +1283,88 @@
                     @endcan
                 </li>
 
+                {{-- Cash Flow Module --}}
+                @can('cashflow_manage')
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.cashflow.dashboard','admin.cashflow.expenses','admin.cashflow.transfers','admin.cashflow.vendors','admin.cashflow.staff','admin.cashflow.fdm','admin.cashflow.reports','admin.cashflow.settings']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:;" class="menu-link menu-toggle">
+                        <i class="menu-icon la la-money-bill-wave"></i>
+                        <span class="menu-text">Cash Flow</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item menu-item-parent" aria-haspopup="true">
+                                <span class="menu-link"><span class="menu-text">Cash Flow</span></span>
+                            </li>
+                            @can('cashflow_dashboard')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.dashboard') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.dashboard') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Dashboard</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_expense_create')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.expenses') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.expenses') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Expenses</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_transfer_create')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.transfers') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.transfers') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Transfers</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_vendor_manage')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.vendors') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.vendors') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Vendors</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_staff_advance')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.staff') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.staff') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Staff Advances</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_fdm_view')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.fdm') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.fdm') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">FDM View</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_reports')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.reports') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.reports') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Reports</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('cashflow_settings')
+                            <li class="menu-item {{ activeMenu('admin.cashflow.settings') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.cashflow.settings') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Settings</span>
+                                </a>
+                            </li>
+                            @endcan
+                        </ul>
+                    </div>
+                </li>
+                @endcan
 
             </ul>
             <!--end::Menu Nav-->
