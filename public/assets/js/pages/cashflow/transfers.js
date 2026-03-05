@@ -3,6 +3,7 @@
 var CashflowTransfers = (function () {
     var apiBase = '/api/cashflow/';
     var currentPage = 1;
+    var transfersXhr = null;
 
     function initDateRange() {
         $('#filter-date-range').daterangepicker({
@@ -78,19 +79,21 @@ var CashflowTransfers = (function () {
     }
 
     function loadTransfers() {
+        if (transfersXhr) transfersXhr.abort();
+        var dr = getDateRange();
         var params = {
             page: currentPage,
             pool_id: $('#filter-pool').val(),
             method: $('#filter-method').val(),
-            date_from: getDateRange().date_from,
-            date_to: getDateRange().date_to,
+            date_from: dr.date_from,
+            date_to: dr.date_to,
             search: $('#filter-search').val()
         };
         Object.keys(params).forEach(function (k) { if (!params[k]) delete params[k]; });
 
         $('#transfers-tbody').html('<tr><td colspan="7" class="text-center"><div class="spinner spinner-primary spinner-sm"></div> Loading...</td></tr>');
 
-        $.ajax({
+        transfersXhr = $.ajax({
             url: apiBase + 'transfers/data',
             type: 'GET',
             data: params,
@@ -100,9 +103,10 @@ var CashflowTransfers = (function () {
                     renderPagination(res.meta);
                 }
             },
-            error: function () {
-                $('#transfers-tbody').html('<tr><td colspan="7" class="text-center text-danger">Failed to load.</td></tr>');
-            }
+            error: function (xhr) {
+                if (xhr.statusText !== 'abort') $('#transfers-tbody').html('<tr><td colspan="7" class="text-center text-danger">Failed to load.</td></tr>');
+            },
+            complete: function () { transfersXhr = null; }
         });
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CashFlowController;
+use App\Http\Controllers\Api\CashflowNotificationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -62,10 +63,10 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('export', [CashFlowController::class, 'expensesExport'])->name('export');
     });
 
-    // Notifications
+    // Notifications (lightweight controller to avoid heavy CashFlowController instantiation on every page poll)
     Route::prefix('notifications')->name('notifications.')->group(function () {
-        Route::get('/', [CashFlowController::class, 'notificationsIndex'])->name('index');
-        Route::post('mark-read', [CashFlowController::class, 'notificationsMarkRead'])->name('mark_read');
+        Route::get('/', [CashflowNotificationController::class, 'index'])->name('index');
+        Route::post('mark-read', [CashflowNotificationController::class, 'markRead'])->name('mark_read');
     });
 
     // Transfers
