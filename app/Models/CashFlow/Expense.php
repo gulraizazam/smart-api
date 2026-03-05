@@ -119,7 +119,7 @@ class Expense extends Model
 
     public function scopeForAccount($query, int $accountId)
     {
-        return $query->where('account_id', $accountId);
+        return $query->where('expenses.account_id', $accountId);
     }
 
     public function scopeApproved($query)
