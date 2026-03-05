@@ -188,12 +188,17 @@
         if (!expenses || !expenses.length) { tbody.html('<tr><td colspan="4" class="text-center text-muted">No expenses</td></tr>'); return; }
 
         $.each(expenses, function (i, e) {
+            var dateStr = '';
+            if (e.expense_date) {
+                var d = new Date(e.expense_date);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
             tbody.append(
                 '<tr>' +
-                '<td>' + esc(e.expense_date || '') + '</td>' +
-                '<td>' + esc(e.category ? e.category.name : '') + '</td>' +
-                '<td class="text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
-                '<td>' + esc(e.pool ? e.pool.name : '') + '</td>' +
+                '<td class="py-3 px-4">' + esc(dateStr) + '</td>' +
+                '<td class="py-3 px-4">' + esc(e.category ? e.category.name : '') + '</td>' +
+                '<td class="py-3 px-4 text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
+                '<td class="py-3 px-4">' + esc(e.pool ? e.pool.name : '') + '</td>' +
                 '</tr>'
             );
         });
@@ -206,9 +211,9 @@
         $.each(collection, function (i, c) {
             tbody.append(
                 '<tr>' +
-                '<td>' + esc(c.branch_name) + '</td>' +
-                '<td class="text-right">PKR ' + nf(c.today) + '</td>' +
-                '<td class="text-right">PKR ' + nf(c.this_week) + '</td>' +
+                '<td class="py-3 px-4">' + esc(c.branch_name) + '</td>' +
+                '<td class="py-3 px-4 text-right">PKR ' + nf(c.today) + '</td>' +
+                '<td class="py-3 px-4 text-right">PKR ' + nf(c.this_week) + '</td>' +
                 '</tr>'
             );
         });
@@ -254,13 +259,18 @@
         if (!entries || !entries.length) { tbody.html('<tr><td colspan="5" class="text-center text-muted">No entries today</td></tr>'); return; }
 
         $.each(entries, function (i, e) {
+            var dateStr = '';
+            if (e.expense_date) {
+                var d = new Date(e.expense_date);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
             tbody.append(
                 '<tr>' +
-                '<td>' + esc(e.expense_date || '') + '</td>' +
-                '<td>' + esc(e.category ? e.category.name : '') + '</td>' +
-                '<td class="text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
-                '<td>' + esc(e.pool ? e.pool.name : '') + '</td>' +
-                '<td>' + esc(e.creator ? e.creator.name : '') + '</td>' +
+                '<td class="py-3 px-4">' + esc(dateStr) + '</td>' +
+                '<td class="py-3 px-4">' + esc(e.category ? e.category.name : '') + '</td>' +
+                '<td class="py-3 px-4 text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
+                '<td class="py-3 px-4">' + esc(e.pool ? e.pool.name : '') + '</td>' +
+                '<td class="py-3 px-4">' + esc(e.creator ? e.creator.name : '') + '</td>' +
                 '</tr>'
             );
         });
