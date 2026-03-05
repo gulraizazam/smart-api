@@ -47,7 +47,7 @@ class StoreExpenseRequest extends FormRequest
         $pmId = $this->input('payment_method_id');
         if (!$pmId) return false;
 
-        $pm = \App\Models\PaymentMode::find($pmId);
+        $pm = \App\Models\PaymentModes::find($pmId);
         return $pm && str_contains(strtolower($pm->name), 'cash');
     }
 
