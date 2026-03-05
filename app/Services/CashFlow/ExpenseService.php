@@ -106,6 +106,7 @@ class ExpenseService
                 $q->where('description', 'like', "%{$search}%")
                     ->orWhere('reference_no', 'like', "%{$search}%")
                     ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhere('amount', 'like', "%{$search}%")
                     ->orWhereHas('vendor', function ($vq) use ($search) {
                         $vq->where('name', 'like', "%{$search}%");
                     });
@@ -490,6 +491,14 @@ class ExpenseService
 
             if ($totalAdvances > 0 && abs($totalAdvances - $totalExpenses) < 1 && $totalReturns == 0) {
                 $flags[] = 'Advance fully spent with zero return';
+            }
+        }
+
+        // Vendor Pending: high-vendor category but no vendor selected (Sec 5.4/11.2)
+        if (!$expense->vendor_id && $expense->category) {
+            $cat = $expense->category;
+            if ($cat->vendor_emphasis) {
+                $flags[] = 'Vendor pending';
             }
         }
 

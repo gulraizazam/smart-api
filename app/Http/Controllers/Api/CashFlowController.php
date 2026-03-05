@@ -102,6 +102,7 @@ class CashFlowController extends Controller
                     'pools' => $this->poolService->getAllPools($accountId),
                     'categories' => $this->categoryService->getAll($accountId),
                     'payment_modes' => CashflowHelper::getActivePaymentModes(),
+                    'has_period_locks' => \App\Models\CashFlow\PeriodLock::where('account_id', $accountId)->exists(),
                 ],
             ]);
         } catch (\Exception $e) {
@@ -429,6 +430,9 @@ class CashFlowController extends Controller
             }
 
             $expense = $this->expenseService->create($request->validated(), $accountId);
+
+            // Load pool for response (Sec 15.1: success popup shows new balance)
+            $expense->load('paidFromPool:id,name,cached_balance');
 
             return response()->json([
                 'success' => true,
@@ -1213,6 +1217,62 @@ class CashFlowController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== ADVANCE-ELIGIBLE STAFF (Sec 27.5) =====================
+
+    /**
+     * List all non-patient staff with their advance eligibility flag.
+     */
+    public function eligibleStaffList(): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+
+            $staff = \App\Models\User::where('account_id', $accountId)
+                ->where('active', 1)
+                ->where('user_type_id', '!=', \App\Models\User::$PATIENT_GROUP)
+                ->orderBy('name')
+                ->get(['id', 'name', 'email', 'is_advance_eligible']);
+
+            return response()->json(['success' => true, 'data' => $staff]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Toggle advance eligibility for a staff member.
+     */
+    public function toggleStaffEligibility(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'is_advance_eligible' => 'required|boolean',
+            ]);
+
+            $accountId = Auth::user()->account_id;
+            $user = \App\Models\User::where('account_id', $accountId)->findOrFail($request->user_id);
+
+            $user->update(['is_advance_eligible' => $request->is_advance_eligible]);
+
+            $this->auditService->log(
+                'updated',
+                'user',
+                $user->id,
+                ['is_advance_eligible' => !$request->is_advance_eligible],
+                ['is_advance_eligible' => (bool) $request->is_advance_eligible],
+                'Advance eligibility toggled'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => $user->name . ' advance eligibility ' . ($request->is_advance_eligible ? 'enabled' : 'disabled') . '.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 

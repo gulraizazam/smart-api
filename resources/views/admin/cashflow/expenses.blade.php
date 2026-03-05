@@ -484,6 +484,15 @@
     </div>
 
     @push('js')
+        <script>
+            var cfPerms = {
+                canApprove: {{ Gate::allows('cashflow_expense_approve') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow_expense_edit') ? 'true' : 'false' }},
+                canVoid: {{ Gate::allows('cashflow_expense_void') ? 'true' : 'false' }},
+                canCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
+                userId: {{ auth()->id() }}
+            };
+        </script>
         <script src="{{ asset('assets/js/pages/cashflow/expenses.js') }}"></script>
     @endpush
 @endsection

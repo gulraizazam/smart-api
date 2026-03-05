@@ -279,7 +279,7 @@ class NotificationService
     {
         return User::where('account_id', $accountId)
             ->where('active', 1)
-            ->permission('cashflow_branch_dashboard')
+            ->permission('cashflow_dashboard')
             ->whereHas('user_has_locations', function ($q) use ($branchId) {
                 $q->where('location_id', $branchId);
             })

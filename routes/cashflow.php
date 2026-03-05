@@ -24,6 +24,8 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('save', [CashFlowController::class, 'settingsUpdate'])->name('save');
         Route::post('update', [CashFlowController::class, 'settingsUpdate'])->name('update');
         Route::post('reset-module', [CashFlowController::class, 'settingsResetModule'])->name('reset');
+        Route::get('eligible-staff', [CashFlowController::class, 'eligibleStaffList'])->name('eligible_staff');
+        Route::post('toggle-eligibility', [CashFlowController::class, 'toggleStaffEligibility'])->name('toggle_eligibility');
     });
 
     // Audit Logs (admin only)
