@@ -430,16 +430,16 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description" class="form-control" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
                             <label>Attachment (Google Drive URL)</label>
                             <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." />
                         </div>
                         <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" name="description" class="form-control" maxlength="50" />
+                        </div>
+                        <div class="form-group">
                             <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
-                            <textarea name="edit_reason" class="form-control" rows="2" required minlength="5"></textarea>
+                            <input type="text" name="edit_reason" class="form-control" maxlength="50" required minlength="5" />
                         </div>
                     </form>
                 </div>
