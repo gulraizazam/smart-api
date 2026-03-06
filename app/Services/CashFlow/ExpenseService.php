@@ -332,7 +332,8 @@ class ExpenseService
      */
     public function adminEdit(int $expenseId, array $data, int $accountId): Expense
     {
-        $expense = Expense::forAccount($accountId)->findOrFail($expenseId);
+        $auditRelations = ['category:id,name', 'paidFromPool:id,name', 'paymentMethod:id,name', 'forBranch:id,name', 'vendor:id,name', 'staff:id,name'];
+        $expense = Expense::forAccount($accountId)->with($auditRelations)->findOrFail($expenseId);
 
         if ($expense->isVoided()) {
             throw new CashflowException('Voided expenses cannot be edited.');
@@ -355,12 +356,14 @@ class ExpenseService
 
         $expense->update($updateData);
 
+        $newValues = $expense->fresh()->load($auditRelations)->toArray();
+
         $this->auditService->log(
             CashflowAuditLog::ACTION_UPDATED,
             CashflowAuditLog::ENTITY_EXPENSE,
             $expense->id,
             $oldValues,
-            $expense->fresh()->toArray(),
+            $newValues,
             $data['edit_reason']
         );
 
