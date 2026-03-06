@@ -139,7 +139,7 @@ class TransferService
                 'from_pool_id' => $data['from_pool_id'],
                 'to_pool_id' => $data['to_pool_id'],
                 'method' => $data['method'],
-                'reference_no' => $data['reference_no'],
+                'reference_no' => $data['reference_no'] ?? null,
                 'attachment_url' => $data['attachment_url'],
                 'description' => $data['description'] ?? null,
                 'created_by' => $user->id,
