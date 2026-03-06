@@ -86,8 +86,8 @@
                         <div class="card-title"><h3 class="card-label"><i class="la la-wallet mr-2"></i>Pool Balances</h3></div>
                         <div class="card-toolbar"><span class="font-weight-bolder font-size-h5 text-primary" id="pool-total">PKR 0</span></div>
                     </div>
-                    <div class="card-body py-2 px-4">
-                        <div class="row" id="pool-balance-grid"><div class="col-12 text-center text-muted py-3">Loading...</div></div>
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex overflow-auto pb-1" id="pool-balance-strip" style="gap:8px;"><span class="text-muted py-2">Loading...</span></div>
                     </div>
                 </div>
 
@@ -109,16 +109,8 @@
                     </div>
                 </div>
 
-                <!-- Top 5 Expenses + Cash Collection -->
+                <!-- Cash Collection per Branch -->
                 <div class="row mb-5">
-                    <div class="col-lg-6">
-                        <div class="card card-custom h-100">
-                            <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-sort-amount-down mr-2"></i>Top 5 Expenses</h3></div></div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th>Date</th><th>Category</th><th class="text-right">Amount</th><th>Pool</th></tr></thead><tbody id="top-expenses-tbody"></tbody></table></div>
-                            </div>
-                        </div>
-                    </div>
                     <div class="col-lg-6">
                         <div class="card card-custom h-100">
                             <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-cash-register mr-2"></i>Cash Collection per Branch</h3></div></div>
@@ -175,14 +167,24 @@
                 </div>
 
                 <!-- Voided Entries Alert (last 7 days) -->
-                <div class="row mb-5 d-none" id="voided-alerts-row">
-                    <div class="col-lg-12">
-                        <div class="card card-custom border-left border-danger border-3">
+                <div class="row mb-5">
+                    <div class="col-lg-6 d-none" id="voided-alerts-col">
+                        <div class="card card-custom border-left border-danger border-3 h-100">
                             <div class="card-header py-3">
-                                <div class="card-title"><h3 class="card-label text-danger"><i class="la la-exclamation-triangle mr-2"></i>Voided Entries (Last 7 Days)</h3></div>
+                                <div class="card-title"><h3 class="card-label text-danger"><i class="la la-exclamation-triangle mr-2"></i>Voided (Last 7 Days)</h3></div>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Date</th><th class="px-4">Description</th><th class="text-right px-4">Amount</th><th class="px-4">Voided By</th><th class="px-4">Reason</th></tr></thead><tbody id="voided-alerts-tbody"></tbody></table></div>
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Date</th><th class="px-4">Description</th><th class="text-right px-4">Amount</th><th class="px-4">Reason</th></tr></thead><tbody id="voided-alerts-tbody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 d-none" id="flagged-alerts-col">
+                        <div class="card card-custom border-left border-warning border-3 h-100">
+                            <div class="card-header py-3">
+                                <div class="card-title"><h3 class="card-label text-warning"><i class="la la-flag mr-2"></i>Flagged Entries</h3></div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Date</th><th class="px-4">Description</th><th class="text-right px-4">Amount</th><th class="px-4">Flag Reason</th></tr></thead><tbody id="flagged-alerts-tbody"></tbody></table></div>
                             </div>
                         </div>
                     </div>

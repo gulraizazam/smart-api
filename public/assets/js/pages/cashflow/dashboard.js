@@ -46,13 +46,13 @@
                 renderPools(d.pools);
                 renderDailyTrend(d.daily_trend);
                 renderCategoryPie(d.category_breakdown);
-                renderTopExpenses(d.top_expenses);
                 renderCashCollection(d.cash_collection);
                 renderVendorOutstanding(d.vendor_outstanding);
                 renderVendorDueSoon(d.vendor_due_soon);
                 renderStaffAdvances(d.staff_advances);
                 renderRecentEntries(d.recent_entries);
                 renderVoidedAlerts(d.voided_recent);
+                renderFlaggedEntries(d.flagged_entries);
                 renderPendingExpenses(d.pending_expenses);
 
                 if (d.accountant_widgets) {
@@ -99,32 +99,23 @@
     }
 
     function renderPools(pools) {
-        var grid = $('#pool-balance-grid').empty();
-        if (!pools || !pools.length) { grid.html('<div class="col-12 text-center text-muted py-3">No pools found.</div>'); $('#pool-total').text('PKR 0'); return; }
+        var strip = $('#pool-balance-strip').empty();
+        if (!pools || !pools.length) { strip.html('<span class="text-muted py-2">No pools found.</span>'); $('#pool-total').text('PKR 0'); return; }
 
-        var maxBal = 0, total = 0;
-        $.each(pools, function (i, p) {
-            var b = parseFloat(p.cached_balance || 0);
-            if (b > maxBal) maxBal = b;
-            total += b;
-        });
-
+        var total = 0;
+        $.each(pools, function (i, p) { total += parseFloat(p.cached_balance || 0); });
         $('#pool-total').text('PKR ' + nf(total));
 
         $.each(pools, function (i, p) {
             var bal = parseFloat(p.cached_balance || 0);
-            var pct = maxBal > 0 ? Math.max(Math.round((bal / maxBal) * 100), 2) : 0;
-            var barColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
-            var textColor = bal < 0 ? 'text-danger' : '';
+            var borderColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
+            var amtColor = bal < 0 ? '#F64E60' : '#181C32';
             var label = esc(p.name).replace(/^CUTERA\s*/i, '');
 
-            grid.append(
-                '<div class="col-lg-6 py-1">' +
-                '<div class="d-flex align-items-center">' +
-                '<span class="font-weight-bold font-size-xs text-truncate" style="width:140px;min-width:140px;">' + label + '</span>' +
-                '<div class="flex-grow-1 mx-2" style="background:#F3F6F9;border-radius:3px;height:6px;"><div style="background:' + barColor + ';border-radius:3px;height:6px;width:' + pct + '%;"></div></div>' +
-                '<span class="font-weight-bolder font-size-xs ' + textColor + '" style="min-width:90px;text-align:right;">PKR ' + nf(bal) + '</span>' +
-                '</div>' +
+            strip.append(
+                '<div style="flex:0 0 auto;border-left:3px solid ' + borderColor + ';background:#F8F9FB;border-radius:4px;padding:6px 12px;min-width:120px;">' +
+                '<div style="font-size:10px;color:#7E8299;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + label + '</div>' +
+                '<div style="font-size:13px;font-weight:700;color:' + amtColor + ';white-space:nowrap;">PKR ' + nf(bal) + '</div>' +
                 '</div>'
             );
         });
@@ -188,27 +179,6 @@
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
             }
-        });
-    }
-
-    function renderTopExpenses(expenses) {
-        var tbody = $('#top-expenses-tbody').empty();
-        if (!expenses || !expenses.length) { tbody.html('<tr><td colspan="4" class="text-center text-muted">No expenses</td></tr>'); return; }
-
-        $.each(expenses, function (i, e) {
-            var dateStr = '';
-            if (e.expense_date) {
-                var d = new Date(e.expense_date);
-                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
-            }
-            tbody.append(
-                '<tr>' +
-                '<td class="py-3 px-4">' + esc(dateStr) + '</td>' +
-                '<td class="py-3 px-4">' + esc(e.category ? e.category.name : '') + '</td>' +
-                '<td class="py-3 px-4 text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
-                '<td class="py-3 px-4">' + esc(e.pool ? e.pool.name : '') + '</td>' +
-                '</tr>'
-            );
         });
     }
 
@@ -355,9 +325,9 @@
 
     function renderVoidedAlerts(voided) {
         var tbody = $('#voided-alerts-tbody').empty();
-        if (!voided || !voided.length) { $('#voided-alerts-row').addClass('d-none'); return; }
+        if (!voided || !voided.length) { $('#voided-alerts-col').addClass('d-none'); return; }
 
-        $('#voided-alerts-row').removeClass('d-none');
+        $('#voided-alerts-col').removeClass('d-none');
         $.each(voided, function (i, v) {
             var dateStr = '';
             if (v.voided_at) {
@@ -369,8 +339,29 @@
                 '<td class="py-2 px-4">' + dateStr + '</td>' +
                 '<td class="py-2 px-4">' + esc(v.description || '') + '</td>' +
                 '<td class="py-2 px-4 text-right font-weight-bold text-danger">PKR ' + nf(v.amount) + '</td>' +
-                '<td class="py-2 px-4">' + (v.voided_by_user ? esc(v.voided_by_user.name) : '-') + '</td>' +
                 '<td class="py-2 px-4">' + esc(v.void_reason || '') + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderFlaggedEntries(flagged) {
+        var tbody = $('#flagged-alerts-tbody').empty();
+        if (!flagged || !flagged.length) { $('#flagged-alerts-col').addClass('d-none'); return; }
+
+        $('#flagged-alerts-col').removeClass('d-none');
+        $.each(flagged, function (i, f) {
+            var dateStr = '';
+            if (f.expense_date) {
+                var d = new Date(f.expense_date);
+                dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
+            }
+            tbody.append(
+                '<tr>' +
+                '<td class="py-2 px-4">' + dateStr + '</td>' +
+                '<td class="py-2 px-4">' + esc(f.description || '') + '</td>' +
+                '<td class="py-2 px-4 text-right font-weight-bold text-warning">PKR ' + nf(f.amount) + '</td>' +
+                '<td class="py-2 px-4">' + esc(f.flag_reason || '') + '</td>' +
                 '</tr>'
             );
         });

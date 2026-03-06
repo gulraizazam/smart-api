@@ -41,7 +41,6 @@ class DashboardService
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
             'category_breakdown' => $this->getCategoryBreakdown($accountId, $dateFrom, $dateTo, $branchId),
-            'top_expenses' => $this->getTopExpenses($accountId, $dateFrom, $dateTo, $branchId),
             'cash_collection' => $this->getCashCollection($accountId, $goLiveDate),
             'vendor_outstanding' => $this->getVendorOutstanding($accountId),
             'vendor_due_soon' => $this->getVendorPaymentsDueSoon($accountId),
@@ -49,6 +48,7 @@ class DashboardService
             'staff_advances' => $this->getStaffAdvancesOutstanding($accountId),
             'recent_entries' => $this->getRecentEntries($accountId),
             'voided_recent' => $this->getRecentVoidedEntries($accountId),
+            'flagged_entries' => $this->getFlaggedEntries($accountId),
             'pending_expenses' => $this->getPendingExpensesList($accountId),
         ];
     }
@@ -485,7 +485,7 @@ class DashboardService
             ->whereNull('voided_at')
             ->with(['category:id,name', 'pool:id,name', 'creator:id,name'])
             ->orderByDesc('created_at')
-            ->limit(5)
+            ->limit(10)
             ->get()
             ->toArray();
     }
@@ -601,6 +601,21 @@ class DashboardService
             ->orderByDesc('voided_at')
             ->limit(10)
             ->get(['id', 'expense_date', 'amount', 'description', 'category_id', 'for_branch_id', 'voided_at', 'voided_by', 'void_reason'])
+            ->toArray();
+    }
+
+    /**
+     * Flagged entries for dashboard alert.
+     */
+    public function getFlaggedEntries(int $accountId): array
+    {
+        return Expense::forAccount($accountId)
+            ->where('is_flagged', true)
+            ->whereNull('voided_at')
+            ->with(['category:id,name', 'creator:id,name'])
+            ->orderByDesc('expense_date')
+            ->limit(10)
+            ->get(['id', 'expense_date', 'amount', 'description', 'category_id', 'created_by', 'flag_reason'])
             ->toArray();
     }
 
