@@ -826,6 +826,52 @@ class CashFlowController extends Controller
         }
     }
 
+    /**
+     * Edit a cash transfer.
+     */
+    public function transfersEdit(Request $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_transfer_create')) {
+                throw CashflowException::unauthorized('edit transfers');
+            }
+
+            $request->validate([
+                'amount' => 'required|numeric|min:1|integer',
+                'from_pool_id' => 'required|exists:cash_pools,id',
+                'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',
+                'method' => 'required|in:physical_cash,bank_deposit',
+                'attachment_url' => ['required', 'string', 'max:500'],
+                'description' => 'nullable|string|max:50',
+                'edit_reason' => 'required|string|min:5|max:50',
+            ]);
+
+            $accountId = Auth::user()->account_id;
+            $transfer = $this->transferService->edit($id, $request->all(), $accountId);
+
+            return response()->json(['success' => true, 'data' => $transfer, 'message' => 'Transfer updated successfully.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get audit trail for a specific transfer.
+     */
+    public function transfersAudit(int $id): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $logs = $this->auditService->getEntityLogs('transfer', $id, $accountId);
+
+            return response()->json(['success' => true, 'data' => $logs]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ===================== VENDORS =====================
 
     /**

@@ -166,6 +166,101 @@
         </div>
     </div>
 
+    <!-- Edit Transfer Modal -->
+    <div class="modal fade" id="modal_edit_transfer">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Cash Transfer</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit-transfer">
+                        <input type="hidden" name="transfer_id" />
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Amount (PKR) <span class="text-danger">*</span></label>
+                                    <input type="number" name="amount" class="form-control" min="1" step="1" required />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Method <span class="text-danger">*</span></label>
+                                    <select name="method" class="form-control kt-select2-general" required>
+                                        <option value="physical_cash">Physical Cash</option>
+                                        <option value="bank_deposit">Bank Deposit</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">&nbsp;</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>From Pool <span class="text-danger">*</span></label>
+                                    <select name="from_pool_id" class="form-control kt-select2-general" required id="edit-from-pool-select">
+                                        <option value="">Select source pool</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>To Pool <span class="text-danger">*</span></label>
+                                    <select name="to_pool_id" class="form-control kt-select2-general" required id="edit-to-pool-select">
+                                        <option value="">Select destination pool</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
+                                    <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <input type="text" name="description" class="form-control" maxlength="50" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
+                                    <input type="text" name="edit_reason" class="form-control" maxlength="50" required minlength="5" />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-submit-edit-transfer" class="btn btn-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Trail Modal -->
+    <div class="modal fade" id="modal_audit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header py-3" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-history text-primary mr-2"></i>Audit Trail</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><i class="la la-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div id="audit-loading" class="text-center py-5"><div class="spinner spinner-primary"></div></div>
+                    <div id="audit-timeline" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('js')
         <script src="{{ asset('assets/js/pages/cashflow/transfers.js') }}"></script>
     @endpush
