@@ -58,10 +58,10 @@ var CashflowTransfers = (function () {
         });
         $('#btn-submit-transfer').on('click', submitTransfer);
         $('#modal_transfer').on('shown.bs.modal', function () {
-            var modal = $(this);
-            modal.find('[name="method"]').select2({ placeholder: 'Select method', dropdownParent: modal });
-            modal.find('[name="from_pool_id"]').select2({ placeholder: 'Select source pool', dropdownParent: modal });
-            modal.find('[name="to_pool_id"]').select2({ placeholder: 'Select destination pool', dropdownParent: modal });
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="method"]').select2({ placeholder: 'Select method', dropdownParent: mb });
+            mb.find('[name="from_pool_id"]').select2({ placeholder: 'Select source pool', dropdownParent: mb });
+            mb.find('[name="to_pool_id"]').select2({ placeholder: 'Select destination pool', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-transfer')[0].reset();

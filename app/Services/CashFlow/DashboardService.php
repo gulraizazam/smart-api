@@ -45,6 +45,7 @@ class DashboardService
             'vendor_due_soon' => $this->getVendorPaymentsDueSoon($accountId),
             'vendor_trends' => $this->getVendorTrends($accountId),
             'staff_advances' => $this->getStaffAdvancesOutstanding($accountId),
+            'staff_expenses' => $this->getRecentStaffExpenses($accountId),
             'recent_entries' => $this->getRecentEntries($accountId),
             'voided_recent' => $this->getRecentVoidedEntries($accountId),
             'flagged_entries' => $this->getFlaggedEntries($accountId),
@@ -494,6 +495,22 @@ class DashboardService
             ->orderByDesc('created_at')
             ->limit(10)
             ->get()
+            ->toArray();
+    }
+
+    /**
+     * Recent 10 expenses made by staff (expenses with staff_id set).
+     */
+    public function getRecentStaffExpenses(int $accountId): array
+    {
+        return Expense::forAccount($accountId)
+            ->whereNotNull('staff_id')
+            ->whereNull('voided_at')
+            ->with(['staff:id,name', 'category:id,name'])
+            ->orderByDesc('expense_date')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get(['id', 'expense_date', 'amount', 'description', 'staff_id', 'category_id', 'status'])
             ->toArray();
     }
 

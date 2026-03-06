@@ -74,7 +74,7 @@
     </div>
 
     <!-- Transfer Modal -->
-    <div class="modal fade" id="modal_transfer" tabindex="-1">
+    <div class="modal fade" id="modal_transfer">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">

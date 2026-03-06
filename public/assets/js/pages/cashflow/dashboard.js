@@ -49,6 +49,7 @@
                 renderVendorOutstanding(d.vendor_outstanding);
                 renderVendorDueSoon(d.vendor_due_soon);
                 renderStaffAdvances(d.staff_advances);
+                renderStaffExpenses(d.staff_expenses);
                 renderRecentEntries(d.recent_entries);
                 renderVoidedAlerts(d.voided_recent);
                 renderFlaggedEntries(d.flagged_entries);
@@ -114,9 +115,9 @@
             var label = esc(p.name).replace(/^CUTERA\s*/i, '');
 
             strip.append(
-                '<div style="flex:0 0 auto;border-left:3px solid ' + borderColor + ';background:#F8F9FB;border-radius:4px;padding:6px 12px;min-width:120px;">' +
-                '<div style="font-size:10px;color:#7E8299;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">' + label + '</div>' +
-                '<div style="font-size:13px;font-weight:700;color:' + amtColor + ';white-space:nowrap;">PKR ' + nf(bal) + '</div>' +
+                '<div style="border-left:3px solid ' + borderColor + ';background:#F8F9FB;border-radius:4px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;">' +
+                '<span style="font-size:11px;color:#7E8299;white-space:nowrap;">' + label + '</span>' +
+                '<span style="font-size:12px;font-weight:700;color:' + amtColor + ';white-space:nowrap;">PKR ' + nf(bal) + '</span>' +
                 '</div>'
             );
         });
@@ -213,6 +214,27 @@
                 '<td class="text-right font-weight-bold">PKR ' + nf(s.outstanding) + '</td>' +
                 '<td class="text-center">' + s.days_since_last + '</td>' +
                 '<td class="text-center">' + agingBadge + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function renderStaffExpenses(expenses) {
+        var tbody = $('#staff-expenses-tbody').empty();
+        if (!expenses || !expenses.length) { tbody.html('<tr><td colspan="5" class="text-center text-muted">No staff expenses found</td></tr>'); return; }
+
+        $.each(expenses, function (i, e) {
+            var statusBadge = '<span class="label label-light-success label-inline">' + esc(e.status) + '</span>';
+            if (e.status === 'pending') statusBadge = '<span class="label label-light-warning label-inline">Pending</span>';
+            if (e.status === 'rejected') statusBadge = '<span class="label label-light-danger label-inline">Rejected</span>';
+
+            tbody.append(
+                '<tr>' +
+                '<td>' + formatDate(e.expense_date) + '</td>' +
+                '<td>' + (e.staff ? esc(e.staff.name) : '-') + '</td>' +
+                '<td>' + esc(truncate(e.description || '', 30)) + '</td>' +
+                '<td class="text-right font-weight-bold">PKR ' + nf(e.amount) + '</td>' +
+                '<td class="text-center">' + statusBadge + '</td>' +
                 '</tr>'
             );
         });
@@ -427,6 +449,7 @@
 
     function nf(n) { return Number(parseFloat(n) || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 }); }
     function esc(s) { return $('<span>').text(s || '').html(); }
-    function formatDate(d) { return d.toISOString().split('T')[0]; }
+    function formatDate(d) { if (!d) return '-'; if (typeof d === 'string') { var p = d.split(/[-T]/); return p[2] + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(p[1],10)-1] + ' ' + p[0]; } return d.toISOString().split('T')[0]; }
+    function truncate(s, n) { return s && s.length > n ? s.substring(0, n) + '...' : (s || ''); }
 
 })();

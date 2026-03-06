@@ -33,7 +33,8 @@ var CashflowVendors = (function () {
         $('#btn-submit-transaction').on('click', submitPurchase);
         $('#btn-close-ledger').on('click', function () { $('#vendor-ledger-card').addClass('d-none'); currentLedgerVendorId = null; });
         $('#modal_vendor').on('shown.bs.modal', function () {
-            $(this).find('[name="payment_terms"]').select2({ placeholder: 'Select payment terms', dropdownParent: $(this) });
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="payment_terms"]').select2({ placeholder: 'Select payment terms', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-vendor')[0].reset(); $('#form-vendor [name="vendor_id"]').val(''); $('#vendor-modal-title').text('Add Vendor');
