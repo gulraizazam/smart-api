@@ -99,8 +99,8 @@
     }
 
     function renderPools(pools) {
-        var tbody = $('#pool-balance-tbody').empty();
-        if (!pools || !pools.length) { tbody.html('<tr><td class="text-center text-muted py-3">No pools found.</td></tr>'); $('#pool-total').text('PKR 0'); return; }
+        var grid = $('#pool-balance-grid').empty();
+        if (!pools || !pools.length) { grid.html('<div class="col-12 text-center text-muted py-3">No pools found.</div>'); $('#pool-total').text('PKR 0'); return; }
 
         var maxBal = 0, total = 0;
         $.each(pools, function (i, p) {
@@ -115,15 +115,17 @@
             var bal = parseFloat(p.cached_balance || 0);
             var pct = maxBal > 0 ? Math.max(Math.round((bal / maxBal) * 100), 2) : 0;
             var barColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
-            var textColor = bal < 0 ? 'text-danger' : 'text-dark';
+            var textColor = bal < 0 ? 'text-danger' : '';
             var label = esc(p.name).replace(/^CUTERA\s*/i, '');
 
-            tbody.append(
-                '<tr>' +
-                '<td class="py-2 pl-4" style="width:180px;"><span class="font-weight-bold font-size-sm">' + label + '</span></td>' +
-                '<td class="py-2"><div style="background:#F3F6F9;border-radius:4px;height:8px;width:100%;"><div style="background:' + barColor + ';border-radius:4px;height:8px;width:' + pct + '%;"></div></div></td>' +
-                '<td class="py-2 pr-4 text-right" style="width:130px;"><span class="font-weight-bolder font-size-sm ' + textColor + '">PKR ' + nf(bal) + '</span></td>' +
-                '</tr>'
+            grid.append(
+                '<div class="col-lg-6 py-1">' +
+                '<div class="d-flex align-items-center">' +
+                '<span class="font-weight-bold font-size-xs text-truncate" style="width:140px;min-width:140px;">' + label + '</span>' +
+                '<div class="flex-grow-1 mx-2" style="background:#F3F6F9;border-radius:3px;height:6px;"><div style="background:' + barColor + ';border-radius:3px;height:6px;width:' + pct + '%;"></div></div>' +
+                '<span class="font-weight-bolder font-size-xs ' + textColor + '" style="min-width:90px;text-align:right;">PKR ' + nf(bal) + '</span>' +
+                '</div>' +
+                '</div>'
             );
         });
     }
