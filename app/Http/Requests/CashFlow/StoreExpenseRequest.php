@@ -25,7 +25,7 @@ class StoreExpenseRequest extends FormRequest
             'payment_method_id' => 'required|exists:payment_modes,id',
             'vendor_id' => 'nullable|exists:cashflow_vendors,id',
             'staff_id' => 'nullable|exists:users,id',
-            'description' => 'required|string|min:3|max:500',
+            'description' => 'required|string|min:3|max:50',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
             'notes' => 'nullable|string|max:1000',

@@ -142,6 +142,41 @@
                     </div>
                 </div>
 
+                <!--begin::Pending Requests Card-->
+                @if(Gate::allows('cashflow_category_manage') || Gate::allows('cashflow_vendor_manage'))
+                <div class="card card-custom mb-5 d-none" id="pending-requests-card">
+                    <div class="card-header py-3">
+                        <div class="card-title"><h3 class="card-label"><i class="la la-inbox mr-2 text-warning"></i>Pending Requests</h3></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @can('cashflow_category_manage')
+                            <div class="col-lg-6">
+                                <h6 class="font-weight-bold mb-3">Category Requests</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-head-custom mb-0">
+                                        <thead><tr><th>Name</th><th>Requested By</th><th class="text-center" style="width:100px">Actions</th></tr></thead>
+                                        <tbody id="cat-requests-tbody"><tr><td colspan="3" class="text-center text-muted py-3">Loading...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            @endcan
+                            @can('cashflow_vendor_manage')
+                            <div class="col-lg-6">
+                                <h6 class="font-weight-bold mb-3">Vendor Requests</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-head-custom mb-0">
+                                        <thead><tr><th>Name</th><th>Requested By</th><th class="text-center" style="width:100px">Actions</th></tr></thead>
+                                        <tbody id="vendor-requests-tbody"><tr><td colspan="3" class="text-center text-muted py-3">Loading...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            @endcan
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!--begin::Categories Card-->
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
@@ -221,7 +256,7 @@
                             <h3 class="card-label"><i class="la la-history mr-2"></i>Audit Trail</h3>
                         </div>
                         <div class="card-toolbar">
-                            <select id="audit-entity-filter" class="form-control form-control-sm mr-2" style="width:150px;">
+                            <select id="audit-entity-filter" class="form-control form-control-sm kt-select2-general mr-2" style="width:150px;">
                                 <option value="">All Types</option>
                                 <option value="expense">Expenses</option>
                                 <option value="transfer">Transfers</option>
@@ -283,7 +318,7 @@
                         </div>
                         <div class="form-group">
                             <label>Type <span class="text-danger">*</span></label>
-                            <select name="type" class="form-control" required>
+                            <select name="type" class="form-control kt-select2-general" required>
                                 <option value="head_office_cash">Head Office Cash</option>
                                 <option value="bank_account">Bank Account</option>
                             </select>

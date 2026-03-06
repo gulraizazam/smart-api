@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
+use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Expense;
 use App\Http\Requests\CashFlow\RejectExpenseRequest;
 use App\Http\Requests\CashFlow\StoreExpenseRequest;
@@ -127,7 +128,16 @@ class CashFlowController extends Controller
             if (empty($settings)) {
                 $settings = $request->except(['_token']);
             }
+            $oldSettings = $this->settingService->getAll($accountId);
             $this->settingService->updateMany($settings, $accountId);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_UPDATED,
+                CashflowAuditLog::ENTITY_SETTING,
+                0,
+                $oldSettings,
+                $settings
+            );
 
             return response()->json(['success' => true, 'message' => 'Settings updated successfully.']);
         } catch (CashflowException $e) {
@@ -539,7 +549,7 @@ class CashFlowController extends Controller
             $expense = Expense::forAccount($accountId)->findOrFail($id);
             $expense->update(['is_flagged' => false, 'flag_reason' => null]);
 
-            $this->auditService->log($accountId, 'expense_unflagged', $expense->id, Auth::id(), 'Expense unflagged by admin');
+            $this->auditService->log('unflagged', 'expense', $expense->id, ['is_flagged' => true], ['is_flagged' => false], 'Expense unflagged by admin');
 
             return response()->json(['success' => true, 'message' => 'Expense unflagged.']);
         } catch (CashflowException $e) {
@@ -836,13 +846,17 @@ class CashFlowController extends Controller
             }
 
             $accountId = Auth::user()->account_id;
-            $vendor = $this->vendorService->updateVendor($id, [
-                'is_active' => null, // toggle handled in service
-            ], $accountId);
-
-            // Manual toggle
             $vendor = \App\Models\CashFlow\Vendor::forAccount($accountId)->findOrFail($id);
-            $vendor->update(['is_active' => !$vendor->is_active]);
+            $oldActive = $vendor->is_active;
+            $vendor->update(['is_active' => !$oldActive]);
+
+            $this->auditService->log(
+                $oldActive ? CashflowAuditLog::ACTION_DEACTIVATED : CashflowAuditLog::ACTION_UPDATED,
+                CashflowAuditLog::ENTITY_VENDOR,
+                $vendor->id,
+                ['is_active' => $oldActive],
+                ['is_active' => !$oldActive]
+            );
 
             return response()->json([
                 'success' => true,

@@ -21,12 +21,12 @@
                     <div class="card-body">
                         <div class="row mb-4">
                             <div class="col-md-2">
-                                <select id="filter-pool" class="form-control form-control-sm">
+                                <select id="filter-pool" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Pools</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <select id="filter-method" class="form-control form-control-sm">
+                                <select id="filter-method" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Methods</option>
                                     <option value="physical_cash">Physical Cash</option>
                                     <option value="bank_deposit">Bank Deposit</option>
@@ -35,11 +35,14 @@
                             <div class="col-md-3">
                                 <input type="text" id="filter-date-range" class="form-control form-control-sm" placeholder="Date Range" readonly />
                             </div>
-                            <div class="col-md-2">
-                                <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search ref..." />
-                            </div>
-                            <div class="col-md-2">
-                                <button id="btn-filter" class="btn btn-primary btn-block"><i class="la la-search"></i> Filter</button>
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="filter-search" class="form-control" placeholder="Search ref..." />
+                                    <div class="input-group-append">
+                                        <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
+                                        <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -96,7 +99,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Method <span class="text-danger">*</span></label>
-                                    <select name="method" class="form-control" required>
+                                    <select name="method" class="form-control kt-select2-general" required>
                                         <option value="physical_cash">Physical Cash</option>
                                         <option value="bank_deposit">Bank Deposit</option>
                                     </select>
@@ -107,7 +110,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>From Pool <span class="text-danger">*</span></label>
-                                    <select name="from_pool_id" class="form-control" required>
+                                    <select name="from_pool_id" class="form-control kt-select2-general" required>
                                         <option value="">Select source pool</option>
                                     </select>
                                 </div>
@@ -115,7 +118,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>To Pool <span class="text-danger">*</span></label>
-                                    <select name="to_pool_id" class="form-control" required>
+                                    <select name="to_pool_id" class="form-control kt-select2-general" required>
                                         <option value="">Select destination pool</option>
                                     </select>
                                 </div>

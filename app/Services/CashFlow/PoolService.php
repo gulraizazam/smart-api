@@ -130,7 +130,7 @@ class PoolService
                 ->exists();
 
             if (!$exists) {
-                CashPool::create([
+                $pool = CashPool::create([
                     'account_id' => $accountId,
                     'type' => CashPool::TYPE_BRANCH_CASH,
                     'location_id' => $location->id,
@@ -139,6 +139,15 @@ class PoolService
                     'cached_balance' => 0,
                     'is_active' => 1,
                 ]);
+
+                $this->auditService->log(
+                    CashflowAuditLog::ACTION_AUTO_CREATED,
+                    CashflowAuditLog::ENTITY_CASH_POOL,
+                    $pool->id,
+                    null,
+                    $pool->toArray()
+                );
+
                 $created++;
             }
         }

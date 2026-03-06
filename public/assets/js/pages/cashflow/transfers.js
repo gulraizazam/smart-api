@@ -47,8 +47,25 @@ var CashflowTransfers = (function () {
     function bindEvents() {
         $('#btn-filter').on('click', function () { currentPage = 1; loadTransfers(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadTransfers(); } });
+        $('#btn-reset-filters').on('click', function () {
+            $('#filter-pool').val('').trigger('change');
+            $('#filter-method').val('').trigger('change');
+            $('#filter-search').val('');
+            var picker = $('#filter-date-range').data('daterangepicker');
+            if (picker) { picker.setStartDate(moment().startOf('month')); picker.setEndDate(moment()); }
+            currentPage = 1;
+            loadTransfers();
+        });
         $('#btn-submit-transfer').on('click', submitTransfer);
-        $('#modal_transfer').on('hidden.bs.modal', function () { $('#form-transfer')[0].reset(); });
+        $('#modal_transfer').on('shown.bs.modal', function () {
+            var modal = $(this);
+            modal.find('[name="method"]').select2({ placeholder: 'Select method', dropdownParent: modal });
+            modal.find('[name="from_pool_id"]').select2({ placeholder: 'Select source pool', dropdownParent: modal });
+            modal.find('[name="to_pool_id"]').select2({ placeholder: 'Select destination pool', dropdownParent: modal });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-transfer')[0].reset();
+        });
 
         // Keyboard shortcuts
         $(document).on('keydown', function (e) {
@@ -67,13 +84,17 @@ var CashflowTransfers = (function () {
                 var opts = '<option value="">All Pools</option>';
                 var formOpts = '<option value="">Select pool</option>';
                 $.each(pools, function (i, p) {
-                    var label = p.name + (p.location ? ' (' + p.location.name + ')' : '');
+                    var label = p.name;
                     opts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
                     formOpts += '<option value="' + p.id + '" data-balance="' + (p.cached_balance || 0) + '">' + escapeHtml(label) + '</option>';
                 });
                 $('#filter-pool').html(opts);
                 $('[name="from_pool_id"]').html(formOpts);
                 $('[name="to_pool_id"]').html(formOpts);
+
+                // Init Select2 on page-level filter selects (after options are populated)
+                $('#filter-pool').select2();
+                $('#filter-method').select2();
             }
         });
     }
@@ -126,9 +147,7 @@ var CashflowTransfers = (function () {
 
         $.each(transfers, function (i, t) {
             var fromLabel = t.from_pool ? t.from_pool.name : '-';
-            if (t.from_pool && t.from_pool.location) fromLabel += ' <small class="text-muted">(' + t.from_pool.location.name + ')</small>';
             var toLabel = t.to_pool ? t.to_pool.name : '-';
-            if (t.to_pool && t.to_pool.location) toLabel += ' <small class="text-muted">(' + t.to_pool.location.name + ')</small>';
 
             tbody.append(
                 '<tr>' +

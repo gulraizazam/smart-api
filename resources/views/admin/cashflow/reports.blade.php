@@ -11,7 +11,7 @@
                     <div class="card-body py-3">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                             <div class="d-flex align-items-center">
-                                <select id="report-type" class="form-control form-control-sm mr-3" style="width:250px;">
+                                <select id="report-type" class="form-control form-control-sm kt-select2-general mr-3" style="width:250px;">
                                     <option value="cashflow-statement">Cash Flow Statement</option>
                                     <option value="branch-comparison">Branch Comparison</option>
                                     <option value="category-trend">Category Trend</option>
@@ -23,10 +23,10 @@
                                     <option value="dormant-vendors">Dormant Vendors</option>
                                 </select>
                                 <input type="text" id="rpt-date-range" class="form-control form-control-sm mr-2" style="width:220px;" readonly />
-                                <select id="rpt-branch" class="form-control form-control-sm mr-2" style="width:180px;">
+                                <select id="rpt-branch" class="form-control form-control-sm kt-select2-general mr-2" style="width:180px;">
                                     <option value="">All Branches</option>
                                 </select>
-                                <select id="rpt-pool" class="form-control form-control-sm mr-2 d-none" style="width:180px;">
+                                <select id="rpt-pool" class="form-control form-control-sm kt-select2-general mr-2 d-none" style="width:180px;">
                                     <option value="">All Pools</option>
                                 </select>
                                 <button id="btn-run-report" class="btn btn-primary mr-2"><i class="la la-play"></i> Generate</button>

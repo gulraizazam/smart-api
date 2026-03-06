@@ -10,6 +10,9 @@ var CashflowVendors = (function () {
         loadVendorRequests();
         bindEvents();
 
+        // Init Select2 on page-level filter selects
+        $('#filter-active').select2();
+
         // Auto-open modal if coming from dashboard quick-action
         if (new URLSearchParams(window.location.search).get('action') === 'add') {
             setTimeout(function () { $('#modal_vendor_purchase').modal('show'); }, 500);
@@ -19,11 +22,22 @@ var CashflowVendors = (function () {
     function bindEvents() {
         $('#btn-filter').on('click', function () { currentPage = 1; loadVendors(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadVendors(); } });
+        $('#btn-reset-filters').on('click', function () {
+            $('#filter-active').val('').trigger('change');
+            $('#filter-search').val('');
+            currentPage = 1;
+            loadVendors();
+        });
         $('#btn-submit-vendor').on('click', submitVendor);
         $('#btn-submit-request').on('click', submitVendorRequest);
         $('#btn-submit-transaction').on('click', submitPurchase);
         $('#btn-close-ledger').on('click', function () { $('#vendor-ledger-card').addClass('d-none'); currentLedgerVendorId = null; });
-        $('#modal_vendor').on('hidden.bs.modal', function () { $('#form-vendor')[0].reset(); $('#form-vendor [name="vendor_id"]').val(''); $('#vendor-modal-title').text('Add Vendor'); });
+        $('#modal_vendor').on('shown.bs.modal', function () {
+            $(this).find('[name="payment_terms"]').select2({ placeholder: 'Select payment terms', dropdownParent: $(this) });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-vendor')[0].reset(); $('#form-vendor [name="vendor_id"]').val(''); $('#vendor-modal-title').text('Add Vendor');
+        });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
         $('#modal_transaction').on('hidden.bs.modal', function () { $('#form-transaction')[0].reset(); });
     }

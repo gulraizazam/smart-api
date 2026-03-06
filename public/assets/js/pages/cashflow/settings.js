@@ -6,6 +6,9 @@ var CashflowSettings = (function () {
     function init() {
         loadSettingsData();
         bindEvents();
+
+        // Init Select2 on page-level filter selects
+        $('#audit-entity-filter').select2();
     }
 
     function bindEvents() {
@@ -17,6 +20,13 @@ var CashflowSettings = (function () {
         $('#btn-save-pm-mapping').on('click', savePmMapping);
         $('#btn-load-audit').on('click', function () { loadAuditTrail(1); });
         $('#btn-reset-module').on('click', resetModule);
+
+        $('#modal_add_pool, #modal_add_category').on('shown.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2({ placeholder: 'Select type', dropdownParent: $(this) });
+        }).on('hidden.bs.modal', function () {
+            var s2 = $(this).find('.kt-select2-general');
+            if (s2.length && s2.data('select2')) s2.select2('destroy');
+        });
     }
 
     // ===================== LOAD DATA =====================
@@ -35,6 +45,7 @@ var CashflowSettings = (function () {
                     }
 
                     loadEligibleStaff();
+                    loadPendingRequests();
 
                     // Sec 27.9: Reset button hidden after first period lock
                     if (res.data.has_period_locks) {
@@ -513,7 +524,7 @@ var CashflowSettings = (function () {
 
         var poolOpts = '<option value="">-- Not Mapped --</option>';
         $.each(pools, function (i, p) {
-            var label = p.name + (p.location ? ' (' + p.location.name + ')' : '');
+            var label = p.name;
             poolOpts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
         });
 
@@ -614,6 +625,123 @@ var CashflowSettings = (function () {
 
     function numberFormat(num) {
         return parseFloat(num || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 });
+    }
+
+    // ===================== PENDING REQUESTS =====================
+
+    function loadPendingRequests() {
+        // Category requests
+        if ($('#cat-requests-tbody').length) {
+            $.ajax({
+                url: apiBase + 'category-requests/data',
+                type: 'GET',
+                data: { status: 'pending' },
+                success: function (res) {
+                    var tbody = $('#cat-requests-tbody').empty();
+                    var items = res.success ? (res.data || []) : [];
+                    if (!items.length) {
+                        tbody.html('<tr><td colspan="3" class="text-center text-muted py-3">No pending requests.</td></tr>');
+                    } else {
+                        $.each(items, function (i, req) {
+                            tbody.append(
+                                '<tr>' +
+                                '<td>' + escapeHtml(req.name) + '</td>' +
+                                '<td>' + (req.requester ? escapeHtml(req.requester.name) : '-') + '</td>' +
+                                '<td class="text-center text-nowrap">' +
+                                '<button class="btn btn-sm btn-clean btn-icon btn-approve-cat" data-id="' + req.id + '" title="Approve"><i class="la la-check-circle text-success"></i></button>' +
+                                '<button class="btn btn-sm btn-clean btn-icon btn-dismiss-cat" data-id="' + req.id + '" title="Dismiss"><i class="la la-times-circle text-danger"></i></button>' +
+                                '</td></tr>'
+                            );
+                        });
+                        bindRequestButtons('cat');
+                    }
+                    toggleRequestsCard();
+                }
+            });
+        }
+
+        // Vendor requests
+        if ($('#vendor-requests-tbody').length) {
+            $.ajax({
+                url: apiBase + 'vendor-requests/data',
+                type: 'GET',
+                data: { status: 'pending' },
+                success: function (res) {
+                    var tbody = $('#vendor-requests-tbody').empty();
+                    var items = res.success ? (res.data || []) : [];
+                    if (!items.length) {
+                        tbody.html('<tr><td colspan="3" class="text-center text-muted py-3">No pending requests.</td></tr>');
+                    } else {
+                        $.each(items, function (i, req) {
+                            tbody.append(
+                                '<tr>' +
+                                '<td>' + escapeHtml(req.name) + '</td>' +
+                                '<td>' + (req.requester ? escapeHtml(req.requester.name) : '-') + '</td>' +
+                                '<td class="text-center text-nowrap">' +
+                                '<button class="btn btn-sm btn-clean btn-icon btn-approve-vendor" data-id="' + req.id + '" title="Approve"><i class="la la-check-circle text-success"></i></button>' +
+                                '<button class="btn btn-sm btn-clean btn-icon btn-dismiss-vendor" data-id="' + req.id + '" title="Dismiss"><i class="la la-times-circle text-danger"></i></button>' +
+                                '</td></tr>'
+                            );
+                        });
+                        bindRequestButtons('vendor');
+                    }
+                    toggleRequestsCard();
+                }
+            });
+        }
+    }
+
+    function toggleRequestsCard() {
+        // Show the card if either tbody has pending rows (not the "no pending" message)
+        var hasCat = $('#cat-requests-tbody .btn-approve-cat').length > 0;
+        var hasVendor = $('#vendor-requests-tbody .btn-approve-vendor').length > 0;
+        if (hasCat || hasVendor) {
+            $('#pending-requests-card').removeClass('d-none');
+        }
+    }
+
+    function bindRequestButtons(type) {
+        var prefix = type === 'cat' ? 'category-requests' : 'vendor-requests';
+
+        $('.btn-approve-' + type).off('click').on('click', function () {
+            var id = $(this).data('id');
+            if (!confirm('Approve this request?')) return;
+            $.ajax({
+                url: apiBase + prefix + '/' + id + '/approve',
+                type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        loadPendingRequests();
+                        loadSettingsData();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+
+        $('.btn-dismiss-' + type).off('click').on('click', function () {
+            var id = $(this).data('id');
+            var notes = prompt('Reason for dismissal (optional):');
+            $.ajax({
+                url: apiBase + prefix + '/' + id + '/dismiss',
+                type: 'POST',
+                data: { admin_notes: notes || '' },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        loadPendingRequests();
+                    } else {
+                        toastr.error(res.message);
+                    }
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
     }
 
     return { init: init };

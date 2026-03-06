@@ -82,11 +82,11 @@
                     <form id="form-advance">
                         <div class="form-group">
                             <label>Staff Member <span class="text-danger">*</span></label>
-                            <select name="user_id" class="form-control" required id="advance-staff-select"><option value="">Select staff</option></select>
+                            <select name="user_id" class="form-control kt-select2-general" required id="advance-staff-select"><option value="">Select staff</option></select>
                         </div>
                         <div class="form-group">
                             <label>From Pool <span class="text-danger">*</span></label>
-                            <select name="pool_id" class="form-control" required id="advance-pool-select"><option value="">Select pool</option></select>
+                            <select name="pool_id" class="form-control kt-select2-general" required id="advance-pool-select"><option value="">Select pool</option></select>
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>
@@ -112,11 +112,11 @@
                     <form id="form-return">
                         <div class="form-group">
                             <label>Staff Member <span class="text-danger">*</span></label>
-                            <select name="user_id" class="form-control" required id="return-staff-select"><option value="">Select staff</option></select>
+                            <select name="user_id" class="form-control kt-select2-general" required id="return-staff-select"><option value="">Select staff</option></select>
                         </div>
                         <div class="form-group">
                             <label>To Pool <span class="text-danger">*</span></label>
-                            <select name="pool_id" class="form-control" required id="return-pool-select"><option value="">Select pool</option></select>
+                            <select name="pool_id" class="form-control kt-select2-general" required id="return-pool-select"><option value="">Select pool</option></select>
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>
