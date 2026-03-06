@@ -15,11 +15,13 @@ class CashTransfer extends Model
     protected $fillable = [
         'account_id', 'transfer_date', 'amount', 'from_pool_id', 'to_pool_id',
         'method', 'reference_no', 'attachment_url', 'description', 'created_by',
+        'voided_at', 'void_reason', 'voided_by',
     ];
 
     protected $casts = [
         'transfer_date' => 'date',
         'amount' => 'decimal:2',
+        'voided_at' => 'datetime',
     ];
 
     // Method constants
@@ -48,6 +50,19 @@ class CashTransfer extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
+
+    /**
+     * User who voided the transfer.
+     */
+    public function voidedByUser()
+    {
+        return $this->belongsTo(User::class, 'voided_by')->withTrashed();
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 
     // Scopes

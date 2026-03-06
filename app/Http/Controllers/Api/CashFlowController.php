@@ -801,6 +801,31 @@ class CashFlowController extends Controller
         }
     }
 
+    /**
+     * Void a cash transfer.
+     */
+    public function transfersVoid(Request $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_transfer_create')) {
+                throw CashflowException::unauthorized('void transfers');
+            }
+
+            $request->validate([
+                'void_reason' => 'required|string|min:5|max:100',
+            ]);
+
+            $accountId = Auth::user()->account_id;
+            $transfer = $this->transferService->void($id, $request->void_reason, $accountId);
+
+            return response()->json(['success' => true, 'data' => $transfer, 'message' => 'Transfer voided successfully.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ===================== VENDORS =====================
 
     /**

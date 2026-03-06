@@ -161,18 +161,66 @@ var CashflowTransfers = (function () {
         $.each(transfers, function (i, t) {
             var fromLabel = t.from_pool ? t.from_pool.name : '-';
             var toLabel = t.to_pool ? t.to_pool.name : '-';
+            var isVoided = !!t.voided_at;
+            var rowClass = isVoided ? 'text-muted' : '';
+            var amtStyle = isVoided ? 'text-decoration:line-through;' : '';
+
+            var statusBadge = '';
+            if (isVoided) {
+                statusBadge = ' <span class="label label-light-dark label-inline" title="' + escapeHtml(t.void_reason || '') + '">VOID</span>';
+            }
+
+            var actions = '';
+            if (!isVoided) {
+                actions = '<button class="btn btn-sm btn-clean btn-icon btn-void-transfer" data-id="' + t.id + '" title="Void this transfer"><i class="la la-ban text-danger"></i></button>';
+            }
+
+            var descTip = t.description ? ' title="' + escapeHtml(t.description) + '"' : '';
 
             tbody.append(
-                '<tr>' +
-                '<td>' + formatDate(t.transfer_date) + '</td>' +
+                '<tr class="' + rowClass + '">' +
+                '<td' + descTip + '>' + formatDate(t.transfer_date) + statusBadge + '</td>' +
                 '<td>' + fromLabel + '</td>' +
                 '<td>' + toLabel + '</td>' +
-                '<td class="text-right font-weight-bold">PKR ' + numberFormat(t.amount) + '</td>' +
+                '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + numberFormat(t.amount) + '</td>' +
                 '<td>' + (methodLabels[t.method] || t.method) + '</td>' +
-                '<td>' + escapeHtml(t.reference_no || '-') + '</td>' +
                 '<td>' + (t.creator ? escapeHtml(t.creator.name) : '-') + '</td>' +
+                '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
+        });
+
+        // Bind void button handler
+        $('.btn-void-transfer').off('click').on('click', function () {
+            var id = $(this).data('id');
+            var reason = prompt('Reason for voiding this transfer (min 5 chars):');
+            if (reason === null) return;
+            if (!reason || reason.length < 5) {
+                toastr.warning('Void reason must be at least 5 characters.');
+                return;
+            }
+            voidTransfer(id, reason);
+        });
+    }
+
+    function voidTransfer(id, reason) {
+        $.ajax({
+            url: apiBase + 'transfers/' + id + '/void',
+            type: 'POST',
+            data: { void_reason: reason },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message);
+                    loadTransfers();
+                } else {
+                    toastr.error(res.message);
+                }
+            },
+            error: function (xhr) {
+                var resp = xhr.responseJSON;
+                toastr.error(resp ? resp.message : 'Failed to void transfer.');
+            }
         });
     }
 
