@@ -284,6 +284,7 @@ var CashflowExpenses = (function () {
                 '<tr class="' + rowClass + '">' +
                 '<td>' + formatDate(exp.expense_date) + '</td>' +
                 '<td>' + escapeHtml(truncate(exp.description, 50)) +
+                    (exp.attachment_url ? ' <a href="javascript:;" class="btn-preview" data-url="' + escapeHtml(exp.attachment_url) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>' : '') +
                     (exp.is_flagged ? ' <i class="la la-flag text-danger" title="' + escapeHtml(exp.flag_reason || '') + '"></i>' : '') +
                     (exp.voided_at ? ' <span class="label label-dark label-inline font-size-xs">VOID</span>' : '') +
                     (exp.edit_reason ? ' <i class="la la-pencil text-warning" title="' + escapeHtml(buildEditTooltip(exp)) + '"></i>' : '') +
@@ -339,7 +340,6 @@ var CashflowExpenses = (function () {
                 'data-amount="' + exp.amount + '" ' +
                 'data-category="' + exp.category_id + '" ' +
                 'data-description="' + escapeHtml(exp.description) + '" ' +
-                'data-reference="' + escapeHtml(exp.reference_no || '') + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
         }
@@ -413,7 +413,6 @@ var CashflowExpenses = (function () {
             form.find('[name="amount"]').val(btn.data('amount'));
             form.find('[name="category_id"]').val(btn.data('category'));
             form.find('[name="description"]').val(btn.data('description'));
-            form.find('[name="reference_no"]').val(btn.data('reference'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             form.find('[name="edit_reason"]').val('');
             $('#modal_admin_edit').modal('show');
@@ -446,6 +445,37 @@ var CashflowExpenses = (function () {
             var id = $(this).data('id');
             loadAuditTrail(id);
         });
+
+        $('.btn-preview').off('click').on('click', function () {
+            var url = $(this).data('url');
+            if (!url) return;
+            var previewUrl = getDrivePreviewUrl(url);
+            if (previewUrl) {
+                $('#preview-iframe').attr('src', previewUrl);
+                $('#preview-open-new').attr('href', url);
+                $('#modal_preview').modal('show');
+            } else {
+                window.open(url, '_blank');
+            }
+        });
+
+        $('#modal_preview').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+            $('#preview-iframe').attr('src', '');
+        });
+    }
+
+    function getDrivePreviewUrl(url) {
+        if (!url) return null;
+        var match;
+        // https://drive.google.com/file/d/{ID}/...
+        match = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        // https://drive.google.com/open?id={ID}
+        match = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        // https://docs.google.com/...
+        if (/docs\.google\.com/.test(url)) return url.replace(/\/edit.*$/, '/preview');
+        return null;
     }
 
     function renderPagination(meta) {
@@ -524,13 +554,12 @@ var CashflowExpenses = (function () {
             success: function (res) {
                 if (res.success) {
                     loadExpenses();
+                    $('#modal_expense').modal('hide');
 
-                    // Post-save: form stays open, only date resets to today
+                    // Reset form fields
                     form.find('[name="amount"]').val('');
                     form.find('[name="description"]').val('');
-                    form.find('[name="reference_no"]').val('');
                     form.find('[name="attachment_url"]').val('');
-                    form.find('[name="notes"]').val('');
                     form.find('[name="category_id"]').val('');
                     form.find('[name="paid_from_pool_id"]').val('');
                     form.find('[name="for_branch_id"]').val('');

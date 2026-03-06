@@ -33,10 +33,12 @@
 
                 <!-- Pending Actions Widget -->
                 <div class="row mb-5" id="pending-actions-row">
-                    <div class="col-md-3"><div class="card card-custom bg-light-warning py-3 px-4 cursor-pointer" id="pa-pending"><div class="d-flex justify-content-between"><span class="font-weight-bold">Pending Expenses</span><span class="font-weight-bolder font-size-h4" id="pa-pending-count">0</span></div></div></div>
-                    <div class="col-md-3"><div class="card card-custom bg-light-info py-3 px-4 cursor-pointer" id="pa-vendor-req"><div class="d-flex justify-content-between"><span class="font-weight-bold">Vendor Requests</span><span class="font-weight-bolder font-size-h4" id="pa-vendor-count">0</span></div></div></div>
-                    <div class="col-md-3"><div class="card card-custom bg-light-info py-3 px-4 cursor-pointer" id="pa-cat-req"><div class="d-flex justify-content-between"><span class="font-weight-bold">Category Requests</span><span class="font-weight-bolder font-size-h4" id="pa-cat-count">0</span></div></div></div>
-                    <div class="col-md-3"><div class="card card-custom bg-light-danger py-3 px-4 cursor-pointer" id="pa-flagged"><div class="d-flex justify-content-between"><span class="font-weight-bold">Flagged Entries</span><span class="font-weight-bolder font-size-h4" id="pa-flagged-count">0</span></div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-warning py-3 px-3 cursor-pointer" id="pa-pending"><div class="font-size-xs font-weight-bold">Pending</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-pending-count">0</div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-danger py-3 px-3 cursor-pointer" id="pa-flagged"><div class="font-size-xs font-weight-bold">Flagged</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-flagged-count">0</div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-dark py-3 px-3"><div class="font-size-xs font-weight-bold">No Receipts</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-no-receipt">0</div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-success py-3 px-3"><div class="font-size-xs font-weight-bold">Today</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-today-total">PKR 0</div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-info py-3 px-3"><div class="font-size-xs font-weight-bold">This Month</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-mtd-total">PKR 0</div></div></div>
+                    <div class="col-md-2"><div class="card card-custom bg-light-primary py-3 px-3"><div class="font-size-xs font-weight-bold">Advances Owed</div><div class="font-weight-bolder font-size-h4 mt-1" id="pa-advances-owed">PKR 0</div></div></div>
                 </div>
 
                 <!-- Pending Expenses Inline List (Sec 16 Screen 1) -->
@@ -105,18 +107,6 @@
                         <div class="card card-custom h-100">
                             <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-chart-pie mr-2"></i>By Category</h3></div></div>
                             <div class="card-body"><canvas id="chart-category-pie" height="250"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cash Collection per Branch -->
-                <div class="row mb-5">
-                    <div class="col-lg-6">
-                        <div class="card card-custom h-100">
-                            <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-cash-register mr-2"></i>Cash Collection per Branch</h3></div></div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th>Branch</th><th class="text-right">Today</th><th class="text-right">This Week</th></tr></thead><tbody id="cash-collection-tbody"></tbody></table></div>
-                            </div>
                         </div>
                     </div>
                 </div>
