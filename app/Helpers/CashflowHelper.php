@@ -111,7 +111,9 @@ class CashflowHelper
      */
     public static function getActivePaymentModes(): \Illuminate\Support\Collection
     {
-        return PaymentModes::getActiveOnly();
+        return PaymentModes::getActiveOnly()->filter(function ($mode) {
+            return (int) $mode->payment_type !== 6; // Exclude 'Settle Amount' — billing-only mode
+        })->values();
     }
 
     /**

@@ -46,7 +46,6 @@
                 renderPools(d.pools);
                 renderDailyTrend(d.daily_trend);
                 renderCategoryPie(d.category_breakdown);
-                renderCashCollection(d.cash_collection);
                 renderVendorOutstanding(d.vendor_outstanding);
                 renderVendorDueSoon(d.vendor_due_soon);
                 renderStaffAdvances(d.staff_advances);
@@ -72,9 +71,11 @@
     function renderPendingActions(pa) {
         if (!pa) return;
         $('#pa-pending-count').text(pa.pending_expenses || 0);
-        $('#pa-vendor-count').text(pa.vendor_requests || 0);
-        $('#pa-cat-count').text(pa.category_requests || 0);
         $('#pa-flagged-count').text(pa.flagged_entries || 0);
+        $('#pa-no-receipt').text(pa.no_receipt_count || 0);
+        $('#pa-today-total').text('PKR ' + nf(pa.today_total || 0));
+        $('#pa-mtd-total').text('PKR ' + nf(pa.mtd_total || 0));
+        $('#pa-advances-owed').text('PKR ' + nf(pa.advances_outstanding || 0));
     }
 
     function renderSummary(s) {
@@ -179,21 +180,6 @@
                 responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
             }
-        });
-    }
-
-    function renderCashCollection(collection) {
-        var tbody = $('#cash-collection-tbody').empty();
-        if (!collection || !collection.length) { tbody.html('<tr><td colspan="3" class="text-center text-muted">No data</td></tr>'); return; }
-
-        $.each(collection, function (i, c) {
-            tbody.append(
-                '<tr>' +
-                '<td class="py-3 px-4">' + esc(c.branch_name) + '</td>' +
-                '<td class="py-3 px-4 text-right">PKR ' + nf(c.today) + '</td>' +
-                '<td class="py-3 px-4 text-right">PKR ' + nf(c.this_week) + '</td>' +
-                '</tr>'
-            );
         });
     }
 

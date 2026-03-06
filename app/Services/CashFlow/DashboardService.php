@@ -41,7 +41,6 @@ class DashboardService
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
             'category_breakdown' => $this->getCategoryBreakdown($accountId, $dateFrom, $dateTo, $branchId),
-            'cash_collection' => $this->getCashCollection($accountId, $goLiveDate),
             'vendor_outstanding' => $this->getVendorOutstanding($accountId),
             'vendor_due_soon' => $this->getVendorPaymentsDueSoon($accountId),
             'vendor_trends' => $this->getVendorTrends($accountId),
@@ -100,11 +99,19 @@ class DashboardService
      */
     public function getPendingActions(int $accountId): array
     {
+        // Staff advances outstanding = total advances - expenses by staff - returns
+        $totalAdvances = (float) StaffAdvance::where('account_id', $accountId)->whereNull('deleted_at')->sum('amount');
+        $totalReturns = (float) StaffReturn::where('account_id', $accountId)->whereNull('deleted_at')->sum('amount');
+        $staffExpenses = (float) Expense::forAccount($accountId)->whereNull('voided_at')->whereNotNull('staff_id')->sum('amount');
+        $advancesOutstanding = max(0, $totalAdvances - $staffExpenses - $totalReturns);
+
         return [
             'pending_expenses' => Expense::forAccount($accountId)->where('status', 'pending')->whereNull('voided_at')->count(),
-            'vendor_requests' => VendorRequest::forAccount($accountId)->pending()->count(),
-            'category_requests' => CategoryRequest::forAccount($accountId)->pending()->count(),
             'flagged_entries' => Expense::forAccount($accountId)->where('is_flagged', true)->whereNull('voided_at')->count(),
+            'no_receipt_count' => Expense::forAccount($accountId)->whereNull('voided_at')->whereNull('attachment_url')->count(),
+            'today_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->whereDate('expense_date', Carbon::today())->sum('amount'),
+            'mtd_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->whereBetween('expense_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::today()->toDateString()])->sum('amount'),
+            'advances_outstanding' => $advancesOutstanding,
         ];
     }
 

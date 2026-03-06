@@ -239,7 +239,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group" id="vendor-group">
                                     <label>Vendor</label>
                                     <select name="vendor_id" class="form-control">
@@ -248,7 +248,7 @@
                                     <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Expense By (Staff)</label>
                                     <select name="staff_id" class="form-control">
@@ -256,30 +256,14 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label>Reference No.</label>
-                                    <input type="text" name="reference_no" class="form-control" maxlength="100" />
-                                </div>
-                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Attachment (Google Drive URL)</label>
+                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
                             <textarea name="description" class="form-control" rows="2" required minlength="3" maxlength="500"></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Attachment (Google Drive URL)</label>
-                                    <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Notes</label>
-                                    <textarea name="notes" class="form-control" rows="1" maxlength="1000"></textarea>
-                                </div>
-                            </div>
                         </div>
                     </form>
                 </div>
@@ -429,19 +413,9 @@
                             <label>Description</label>
                             <textarea name="description" class="form-control" rows="2"></textarea>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Reference No.</label>
-                                    <input type="text" name="reference_no" class="form-control" />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Attachment URL</label>
-                                    <input type="url" name="attachment_url" class="form-control" />
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label>Attachment (Google Drive URL)</label>
+                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." />
                         </div>
                         <div class="form-group">
                             <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
@@ -475,6 +449,24 @@
                 </div>
                 <div class="modal-footer" style="border-top:1px solid #E4E6EF;">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attachment Preview Modal -->
+    <div class="modal fade" id="modal_preview" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-3" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-paperclip text-primary mr-2"></i>Attachment Preview</h5>
+                    <div>
+                        <a id="preview-open-new" href="#" target="_blank" class="btn btn-sm btn-light-primary mr-2"><i class="la la-external-link-alt"></i> Open in Drive</a>
+                        <button type="button" class="close ml-2" data-dismiss="modal" aria-label="Close"><i class="la la-times"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="preview-iframe" src="" style="width:100%;height:75vh;border:none;"></iframe>
                 </div>
             </div>
         </div>
