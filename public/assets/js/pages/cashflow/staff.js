@@ -275,11 +275,10 @@ var CashflowStaff = (function () {
 
     function submitEditAdvance() {
         var form = $('#form-edit-advance');
+        if (!form[0].reportValidity()) return;
+
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
-
-        if (!data.amount || !data.pool_id || !data.edit_reason) { toastr.warning('Please fill all required fields.'); return; }
-        if (data.edit_reason.length < 5) { toastr.warning('Edit reason must be at least 5 characters.'); return; }
 
         var id = data.advance_id;
         var btn = $('#btn-submit-edit-advance');
@@ -303,10 +302,10 @@ var CashflowStaff = (function () {
 
     function submitAdvance() {
         var form = $('#form-advance');
-        var data = {};
-        form.find('input, select, textarea').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+        if (!form[0].reportValidity()) return;
 
-        if (!data.user_id || !data.pool_id || !data.amount) { toastr.warning('Please fill all required fields.'); return; }
+        var data = {};
+        form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
 
         // Warn if staff already has unsettled advance (Sec 8.3)
         var existingBalance = parseFloat($('#advance-staff-select option:selected').data('balance')) || 0;
@@ -336,10 +335,10 @@ var CashflowStaff = (function () {
 
     function submitReturn() {
         var form = $('#form-return');
-        var data = {};
-        form.find('input, select, textarea').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+        if (!form[0].reportValidity()) return;
 
-        if (!data.user_id || !data.pool_id || !data.amount) { toastr.warning('Please fill all required fields.'); return; }
+        var data = {};
+        form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
 
         var btn = $(this); btn.prop('disabled', true);
 
