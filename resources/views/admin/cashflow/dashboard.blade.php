@@ -82,9 +82,16 @@
 
                 <!-- Pool Balance Cards -->
                 <div class="card card-custom mb-5">
-                    <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-wallet mr-2"></i>Pool Balances</h3></div></div>
-                    <div class="card-body py-3">
-                        <div class="d-flex flex-wrap" id="pool-balance-cards"><span class="text-muted">Loading...</span></div>
+                    <div class="card-header py-3">
+                        <div class="card-title"><h3 class="card-label"><i class="la la-wallet mr-2"></i>Pool Balances</h3></div>
+                        <div class="card-toolbar"><span class="font-weight-bolder font-size-h5 text-primary" id="pool-total">PKR 0</span></div>
+                    </div>
+                    <div class="card-body py-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless mb-0" id="pool-balance-table">
+                                <tbody id="pool-balance-tbody"><tr><td class="text-center text-muted py-3">Loading...</td></tr></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
