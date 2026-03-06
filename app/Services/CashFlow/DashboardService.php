@@ -90,6 +90,7 @@ class DashboardService
         return CashPool::forAccount($accountId)
             ->active()
             ->with('location:id,name')
+            ->orderByRaw("CASE WHEN type = 'bank_account' THEN 1 ELSE 0 END")
             ->orderBy('name')
             ->get(['id', 'name', 'type', 'cached_balance', 'location_id'])
             ->toArray();

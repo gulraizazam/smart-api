@@ -112,7 +112,7 @@
             var bal = parseFloat(p.cached_balance || 0);
             var borderColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
             var amtColor = bal < 0 ? '#F64E60' : '#181C32';
-            var label = esc(p.name).replace(/^CUTERA\s*/i, '');
+            var label = p.type === 'bank_account' ? esc(p.name) : esc(p.name).replace(/^CUTERA\s*/i, '');
 
             strip.append(
                 '<div style="border-left:3px solid ' + borderColor + ';background:#F8F9FB;border-radius:4px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;">' +
