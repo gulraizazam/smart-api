@@ -262,6 +262,14 @@
     </div>
 
     @push('js')
+        <script>
+            var cfPerms = {
+                canCreate: {{ Gate::allows('cashflow_transfer_create') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow_transfer_edit') ? 'true' : 'false' }},
+                canVoid: {{ Gate::allows('cashflow_transfer_void') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+            };
+        </script>
         <script src="{{ asset('assets/js/pages/cashflow/transfers.js') }}"></script>
     @endpush
 @endsection

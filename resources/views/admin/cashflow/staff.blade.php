@@ -164,7 +164,30 @@
         </div>
     </div>
 
+    <!-- Audit Trail Modal -->
+    <div class="modal fade" id="modal_audit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header py-3" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-history text-primary mr-2"></i>Audit Trail</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><i class="la la-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div id="audit-loading" class="text-center py-5"><div class="spinner spinner-primary"></div></div>
+                    <div id="audit-timeline" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('js')
+        <script>
+            var cfPerms = {
+                canEdit: {{ Gate::allows('cashflow_staff_advance_edit') ? 'true' : 'false' }},
+                canVoid: {{ Gate::allows('cashflow_staff_advance_void') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+            };
+        </script>
         <script src="{{ asset('assets/js/pages/cashflow/staff.js') }}"></script>
     @endpush
 @endsection

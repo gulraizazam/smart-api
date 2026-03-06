@@ -115,8 +115,10 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('advance/store', [CashFlowController::class, 'staffAdvanceStore'])->name('advance.store');
         Route::post('advance/{id}/void', [CashFlowController::class, 'staffAdvanceVoid'])->name('advance.void');
         Route::post('advance/{id}/update', [CashFlowController::class, 'staffAdvanceUpdate'])->name('advance.update');
+        Route::get('advance/{id}/audit', [CashFlowController::class, 'staffAdvanceAudit'])->name('advance.audit');
         Route::post('return/store', [CashFlowController::class, 'staffReturnStore'])->name('return.store');
         Route::post('return/{id}/void', [CashFlowController::class, 'staffReturnVoid'])->name('return.void');
+        Route::get('return/{id}/audit', [CashFlowController::class, 'staffReturnAudit'])->name('return.audit');
     });
 
     // Dashboard

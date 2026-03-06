@@ -507,7 +507,9 @@ var CashflowExpenses = (function () {
         }
 
         // Audit trail
-        btns += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + exp.id + '" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
+        if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + exp.id + '" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
+        }
 
         return btns;
     }
