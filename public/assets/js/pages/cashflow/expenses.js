@@ -133,6 +133,15 @@ var CashflowExpenses = (function () {
             modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select branch', dropdownParent: modalBody });
             modalBody.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modalBody });
             modalBody.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modalBody });
+
+            // After Select2 init, filter pools by pre-selected payment method (for duplicate-from-voided)
+            var initPm = modalBody.find('[name="payment_method_id"] option:selected').text().toLowerCase();
+            if (initPm && initPm !== 'select method') {
+                filterPoolsByPaymentMethod(initPm, '#form-expense');
+            }
+
+            // Sync Select2 with pre-filled values
+            modalBody.find('select.kt-select2-general').trigger('change.select2');
         });
 
         // Reset modal on close
@@ -279,13 +288,14 @@ var CashflowExpenses = (function () {
      * Bank/Wire Transfer → bank_account pools
      * No selection → show all
      */
-    function filterPoolsByPaymentMethod(pmText) {
-        var poolSelect = $('[name="paid_from_pool_id"]', '#form-expense');
+    function filterPoolsByPaymentMethod(pmText, formSelector) {
+        formSelector = formSelector || '#form-expense';
+        var poolSelect = $('[name="paid_from_pool_id"]', formSelector);
         var currentVal = poolSelect.val();
 
         // Determine allowed pool types based on payment method name
         var allowedTypes = [];
-        if (!pmText || pmText === 'select method') {
+        if (!pmText || pmText === 'select method' || pmText === 'keep current') {
             // No filter — show all
             allowedTypes = [];
         } else if (pmText.indexOf('card') !== -1 || pmText.indexOf('credit') !== -1 ||
@@ -297,12 +307,30 @@ var CashflowExpenses = (function () {
             allowedTypes = ['branch_cash', 'head_office_cash'];
         }
 
+        // Count how many matching options exist
+        var matchCount = 0;
+        poolSelect.find('option').each(function () {
+            var opt = $(this);
+            if (!opt.val()) return;
+            var type = opt.data('type') || '';
+            if (allowedTypes.length === 0 || allowedTypes.indexOf(type) !== -1) {
+                matchCount++;
+            }
+        });
+
+        // If no matching pools exist for this payment method, show all pools (don't block user)
+        if (matchCount === 0) {
+            allowedTypes = [];
+        }
+
+        var lastMatch = null;
         poolSelect.find('option').each(function () {
             var opt = $(this);
             if (!opt.val()) return; // keep placeholder
             var type = opt.data('type') || '';
             if (allowedTypes.length === 0 || allowedTypes.indexOf(type) !== -1) {
                 opt.prop('disabled', false).show();
+                lastMatch = opt.val();
             } else {
                 opt.prop('disabled', true).hide();
             }
@@ -312,6 +340,11 @@ var CashflowExpenses = (function () {
         var selectedOpt = poolSelect.find('option[value="' + currentVal + '"]');
         if (currentVal && selectedOpt.prop('disabled')) {
             poolSelect.val('').trigger('change.select2');
+        }
+
+        // Auto-select if only one matching pool
+        if (matchCount === 1 && !poolSelect.val()) {
+            poolSelect.val(lastMatch).trigger('change.select2');
         }
     }
 
@@ -435,7 +468,7 @@ var CashflowExpenses = (function () {
         // Admin Edit (non-voided, admin only — Sec 5.7)
         if (perms.canEdit && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-admin-edit" data-id="' + exp.id + '" ' +
-                'data-amount="' + exp.amount + '" ' +
+                'data-amount="' + (parseInt(exp.amount) || 0) + '" ' +
                 'data-category="' + exp.category_id + '" ' +
                 'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
                 'data-payment="' + (exp.payment_method_id || '') + '" ' +
@@ -456,9 +489,11 @@ var CashflowExpenses = (function () {
 
         // Duplicate as New (voided expenses — re-enter with same data)
         if (exp.voided_at && perms.canCreate) {
+            var dupDate = (exp.expense_date || '').substring(0, 10);
+            var dupAmount = parseInt(exp.amount) || 0;
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-duplicate" ' +
-                'data-date="' + exp.expense_date + '" ' +
-                'data-amount="' + exp.amount + '" ' +
+                'data-date="' + dupDate + '" ' +
+                'data-amount="' + dupAmount + '" ' +
                 'data-category="' + exp.category_id + '" ' +
                 'data-pool="' + exp.paid_from_pool_id + '" ' +
                 'data-payment="' + (exp.payment_method_id || '') + '" ' +
@@ -554,11 +589,24 @@ var CashflowExpenses = (function () {
             $('#modal_admin_edit').modal('show');
         });
 
+        // Filter pools when payment method changes in admin edit form
+        $(document).on('change', '#form-admin-edit [name="payment_method_id"]', function () {
+            var pmText = $(this).find('option:selected').text().toLowerCase();
+            filterPoolsByPaymentMethod(pmText, '#form-admin-edit');
+        });
+
         $('#modal_admin_edit').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: mb });
             mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
             mb.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: mb });
+
+            // Apply initial pool filter based on pre-selected payment method
+            var initPm = mb.find('[name="payment_method_id"] option:selected').text().toLowerCase();
+            filterPoolsByPaymentMethod(initPm, '#form-admin-edit');
+
+            // Sync Select2 with pre-filled values
+            mb.find('select.kt-select2-general').trigger('change.select2');
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
         });
@@ -586,18 +634,18 @@ var CashflowExpenses = (function () {
             form[0].reset();
             form.find('[name="expense_date"]').val(btn.data('date') || getTodayStr());
             form.find('[name="amount"]').val(btn.data('amount'));
-            form.find('[name="category_id"]').val(btn.data('category'));
-            form.find('[name="paid_from_pool_id"]').val(btn.data('pool'));
-            form.find('[name="payment_method_id"]').val(btn.data('payment'));
-            form.find('[name="vendor_id"]').val(btn.data('vendor'));
-            form.find('[name="staff_id"]').val(btn.data('staff'));
+            form.find('[name="category_id"]').val(btn.data('category')).trigger('change');
+            form.find('[name="paid_from_pool_id"]').val(btn.data('pool')).trigger('change');
+            form.find('[name="payment_method_id"]').val(btn.data('payment')).trigger('change');
+            form.find('[name="vendor_id"]').val(btn.data('vendor') || '').trigger('change');
+            form.find('[name="staff_id"]').val(btn.data('staff') || '').trigger('change');
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             if (btn.data('general') == 1) {
                 form.find('#chk-general').prop('checked', true);
                 form.find('#expense-branch-select').prop('disabled', true);
             } else {
-                form.find('[name="for_branch_id"]').val(btn.data('branch'));
+                form.find('[name="for_branch_id"]').val(btn.data('branch')).trigger('change');
             }
             $('#expense-modal-title').text('New Expense (from voided)');
             $('#modal_expense').modal('show');
@@ -937,6 +985,8 @@ var CashflowExpenses = (function () {
                         var color = actionColors[log.action] || '#7E8299';
                         var isLast = (i === res.data.length - 1);
 
+                        var changeSummary = buildChangeSummary(log);
+
                         html += '<div class="d-flex align-items-start' + (isLast ? '' : ' mb-4') + '">' +
                             '<div class="flex-shrink-0 mr-4 text-center" style="width:40px;">' +
                             '<div style="width:36px;height:36px;border-radius:50%;background:' + color + '15;display:flex;align-items:center;justify-content:center;">' +
@@ -949,6 +999,7 @@ var CashflowExpenses = (function () {
                             '<span class="text-muted font-size-xs">' + time + '</span>' +
                             '</div>' +
                             (log.reason ? '<div class="text-muted font-size-sm mt-1"><i class="la la-comment-alt mr-1"></i>' + escapeHtml(log.reason) + '</div>' : '') +
+                            (changeSummary ? '<div class="mt-1">' + changeSummary + '</div>' : '') +
                             '</div></div>';
                     });
                     $('#audit-timeline').html(html).removeClass('d-none');
@@ -961,6 +1012,83 @@ var CashflowExpenses = (function () {
                 $('#audit-timeline').html('<div class="text-center text-danger py-3">Failed to load audit trail.</div>').removeClass('d-none');
             }
         });
+    }
+
+    /**
+     * Build a human-readable summary of field-level changes from audit log old/new values.
+     */
+    function buildChangeSummary(log) {
+        if (!log.old_values || !log.new_values) return '';
+        if (log.action === 'created') return '';
+
+        var oldV = log.old_values;
+        var newV = log.new_values;
+        var changes = [];
+
+        // Fields to track with human-readable labels
+        var fieldLabels = {
+            amount: 'Amount',
+            description: 'Description',
+            status: 'Status',
+            category_id: 'Category',
+            paid_from_pool_id: 'Paid From Pool',
+            payment_method_id: 'Payment Method',
+            for_branch_id: 'Branch',
+            vendor_id: 'Vendor',
+            staff_id: 'Staff',
+            attachment_url: 'Attachment',
+            reference_no: 'Reference No',
+            notes: 'Notes',
+            is_for_general: 'General/Company-wide',
+            rejection_reason: 'Rejection Reason',
+            void_reason: 'Void Reason'
+        };
+
+        // Relationship name lookups from nested objects in old/new values
+        function getRelName(values, field) {
+            var map = {
+                category_id: 'category',
+                paid_from_pool_id: 'paid_from_pool',
+                payment_method_id: 'payment_method',
+                for_branch_id: 'for_branch',
+                vendor_id: 'vendor',
+                staff_id: 'staff'
+            };
+            var rel = map[field];
+            if (rel && values[rel] && values[rel].name) return values[rel].name;
+            return null;
+        }
+
+        function formatVal(field, val, values) {
+            if (val === null || val === undefined || val === '') return '(empty)';
+            var relName = getRelName(values, field);
+            if (relName) return relName;
+            if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
+            if (field === 'is_for_general') return val ? 'Yes' : 'No';
+            if (field === 'attachment_url') return val ? 'Attached' : '(none)';
+            return escapeHtml(String(val));
+        }
+
+        $.each(fieldLabels, function (field, label) {
+            var oldVal = oldV[field];
+            var newVal = newV[field];
+
+            // Normalize for comparison
+            var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
+            var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+
+            if (oldNorm !== newNorm) {
+                changes.push(
+                    '<span class="font-weight-bold">' + label + ':</span> ' +
+                    '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +
+                    ' <i class="la la-arrow-right font-size-xs"></i> ' +
+                    '<span class="text-success">' + formatVal(field, newVal, newV) + '</span>'
+                );
+            }
+        });
+
+        if (changes.length === 0) return '';
+        return '<div class="font-size-sm text-muted mt-1" style="line-height:1.8;">' + changes.join('<br>') + '</div>';
     }
 
     function getActionBadge(action) {

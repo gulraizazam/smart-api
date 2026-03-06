@@ -399,7 +399,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Amount (PKR)</label>
-                                    <input type="number" name="amount" class="form-control" min="0.01" step="0.01" />
+                                    <input type="number" name="amount" class="form-control" min="1" step="1" />
                                 </div>
                             </div>
                             <div class="col-md-6">

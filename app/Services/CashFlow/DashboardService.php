@@ -539,20 +539,33 @@ class DashboardService
                 ->sum('cash_amount');
         }
 
-        // Expenses (outflows)
-        $expenses = (float) Expense::forAccount($accountId)
-            ->whereNull('voided_at')
-            ->sum('amount');
+        // Expenses (outflows) since go-live
+        $expenses = 0.0;
+        if ($goLiveDate) {
+            $expenses = (float) Expense::forAccount($accountId)
+                ->whereNull('voided_at')
+                ->where('status', '!=', 'rejected')
+                ->where('expense_date', '>=', $goLiveDate)
+                ->sum('amount');
+        }
 
-        // Staff advances (outflows from pools)
-        $staffAdvances = (float) StaffAdvance::where('account_id', $accountId)
-            ->whereNull('deleted_at')
-            ->sum('amount');
+        // Staff advances (outflows from pools) since go-live
+        $staffAdvances = 0.0;
+        if ($goLiveDate) {
+            $staffAdvances = (float) StaffAdvance::where('account_id', $accountId)
+                ->whereNull('deleted_at')
+                ->where('created_at', '>=', $goLiveDate)
+                ->sum('amount');
+        }
 
-        // Staff returns (inflows to pools)
-        $staffReturns = (float) StaffReturn::where('account_id', $accountId)
-            ->whereNull('deleted_at')
-            ->sum('amount');
+        // Staff returns (inflows to pools) since go-live
+        $staffReturns = 0.0;
+        if ($goLiveDate) {
+            $staffReturns = (float) StaffReturn::where('account_id', $accountId)
+                ->whereNull('deleted_at')
+                ->where('created_at', '>=', $goLiveDate)
+                ->sum('amount');
+        }
 
         // Patient refunds (outflows from pools)
         $patientRefunds = 0.0;

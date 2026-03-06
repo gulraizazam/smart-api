@@ -274,6 +274,7 @@ class PoolService
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
             ->where('status', '!=', 'rejected')
+            ->where('expense_date', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 
         foreach ($expenses as $exp) {
@@ -285,6 +286,7 @@ class PoolService
         // Step 5: Transfers — debit source, credit destination
         $transfers = \App\Models\CashFlow\CashTransfer::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'from_pool_id', 'to_pool_id']);
 
         foreach ($transfers as $tr) {
@@ -299,6 +301,7 @@ class PoolService
         // Step 6: Staff advances — debit pools
         $advances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
         foreach ($advances as $adv) {
@@ -310,6 +313,7 @@ class PoolService
         // Step 7: Staff returns — credit pools
         $returns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
         foreach ($returns as $ret) {
