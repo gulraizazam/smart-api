@@ -87,7 +87,7 @@ var CashflowExpenses = (function () {
         // Toggle attachment mandatory indicator when payment method changes
         $('[name="payment_method_id"]', '#form-expense').on('change', function () {
             var pmText = $(this).find('option:selected').text().toLowerCase();
-            var label = form.find('[name="attachment_url"]').closest('.form-group').find('label');
+            var label = $('#form-expense').find('[name="attachment_url"]').closest('.form-group').find('label');
             if (pmText.indexOf('cash') !== -1) {
                 label.html('Attachment (Google Drive URL) <span class="text-danger">*</span>');
             } else {
