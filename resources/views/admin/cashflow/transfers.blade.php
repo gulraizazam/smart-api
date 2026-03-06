@@ -54,8 +54,8 @@
                                         <th>To Pool</th>
                                         <th class="text-right">Amount</th>
                                         <th>Method</th>
-                                        <th>Reference</th>
                                         <th>By</th>
+                                        <th class="text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="transfers-tbody">

@@ -76,6 +76,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     Route::prefix('transfers')->name('transfers.')->group(function () {
         Route::get('data', [CashFlowController::class, 'transfersData'])->name('data');
         Route::post('store', [CashFlowController::class, 'transfersStore'])->name('store');
+        Route::post('{id}/void', [CashFlowController::class, 'transfersVoid'])->name('void');
     });
 
     // Vendors

@@ -283,9 +283,10 @@ class PoolService
             }
         }
 
-        // Step 5: Transfers — debit source, credit destination
+        // Step 5: Transfers — debit source, credit destination (exclude voided)
         $transfers = \App\Models\CashFlow\CashTransfer::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->whereNull('voided_at')
             ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'from_pool_id', 'to_pool_id']);
 

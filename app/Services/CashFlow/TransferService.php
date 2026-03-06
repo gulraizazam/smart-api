@@ -61,6 +61,52 @@ class TransferService
     }
 
     /**
+     * Void a cash transfer (reverses pool balance changes).
+     */
+    public function void(int $transferId, string $reason, int $accountId): CashTransfer
+    {
+        $transfer = CashTransfer::forAccount($accountId)->findOrFail($transferId);
+
+        if ($transfer->isVoided()) {
+            throw new CashflowException('Transfer is already voided.');
+        }
+
+        if (CashflowHelper::isDateInLockedPeriod($transfer->transfer_date->format('Y-m-d'), $accountId)) {
+            throw CashflowException::periodLocked($transfer->transfer_date->month, $transfer->transfer_date->year);
+        }
+
+        return DB::transaction(function () use ($transfer, $reason) {
+            // Reverse pool balances: credit from_pool, debit to_pool
+            DB::table('cash_pools')
+                ->where('id', $transfer->from_pool_id)
+                ->increment('cached_balance', $transfer->amount);
+
+            DB::table('cash_pools')
+                ->where('id', $transfer->to_pool_id)
+                ->decrement('cached_balance', $transfer->amount);
+
+            $oldValues = $transfer->toArray();
+
+            $transfer->update([
+                'voided_at' => now(),
+                'void_reason' => $reason,
+                'voided_by' => Auth::id(),
+            ]);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_VOIDED,
+                CashflowAuditLog::ENTITY_TRANSFER,
+                $transfer->id,
+                $oldValues,
+                $transfer->fresh()->toArray(),
+                $reason
+            );
+
+            return $transfer->fresh();
+        });
+    }
+
+    /**
      * Create a cash transfer between pools.
      */
     public function create(array $data, int $accountId): CashTransfer
