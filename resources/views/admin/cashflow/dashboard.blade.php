@@ -86,10 +86,19 @@
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-wallet mr-2"></i>Pool Balances</h3></div>
-                        <div class="card-toolbar"><span class="font-weight-bolder font-size-h5 text-primary" id="pool-total">PKR 0</span></div>
+                        <div class="card-toolbar d-flex align-items-center" style="gap:16px;">
+                            <span style="font-size:11px;color:#7E8299;">Cash Total</span>
+                            <span class="font-weight-bolder font-size-h5 text-primary" id="pool-total-cash">PKR 0</span>
+                            <span style="width:1px;height:20px;background:#E4E6EF;"></span>
+                            <span style="font-size:11px;color:#7E8299;">Bank Total</span>
+                            <span class="font-weight-bolder font-size-h5" style="color:#8950FC;" id="pool-total-bank">PKR 0</span>
+                        </div>
                     </div>
                     <div class="card-body py-2 px-3">
                         <div class="d-flex flex-wrap" id="pool-balance-strip" style="gap:6px;"><span class="text-muted py-2">Loading...</span></div>
+                        <div id="pool-bank-section" class="d-none" style="margin-top:8px;padding-top:8px;border-top:1px dashed #E4E6EF;">
+                            <div class="d-flex flex-wrap" id="pool-balance-strip-bank" style="gap:6px;"></div>
+                        </div>
                     </div>
                 </div>
 
