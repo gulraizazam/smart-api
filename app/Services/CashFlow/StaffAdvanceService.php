@@ -30,11 +30,13 @@ class StaffAdvanceService
     public function getStaffSummary(int $accountId)
     {
         $advances = StaffAdvance::forAccount($accountId)
+            ->whereNull('voided_at')
             ->select('user_id', DB::raw('SUM(amount) as total_advances'))
             ->groupBy('user_id')
             ->pluck('total_advances', 'user_id');
 
         $returns = StaffReturn::forAccount($accountId)
+            ->whereNull('voided_at')
             ->select('user_id', DB::raw('SUM(amount) as total_returns'))
             ->groupBy('user_id')
             ->pluck('total_returns', 'user_id');
@@ -175,12 +177,130 @@ class StaffAdvanceService
     }
 
     /**
+     * Void a staff advance (reverses pool balance).
+     */
+    public function voidAdvance(int $advanceId, string $reason, int $accountId): StaffAdvance
+    {
+        $advance = StaffAdvance::forAccount($accountId)->findOrFail($advanceId);
+
+        if ($advance->isVoided()) {
+            throw new CashflowException('This advance is already voided.');
+        }
+
+        return DB::transaction(function () use ($advance, $reason) {
+            // Reverse: credit pool back (advance took money from pool)
+            DB::table('cash_pools')
+                ->where('id', $advance->pool_id)
+                ->increment('cached_balance', $advance->amount);
+
+            $oldValues = $advance->toArray();
+
+            $advance->update([
+                'voided_at' => now(),
+                'void_reason' => $reason,
+                'voided_by' => Auth::id(),
+            ]);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_VOIDED,
+                CashflowAuditLog::ENTITY_STAFF_ADVANCE,
+                $advance->id,
+                $oldValues,
+                $advance->fresh()->toArray(),
+                $reason
+            );
+
+            return $advance->fresh();
+        });
+    }
+
+    /**
+     * Edit a staff advance (amount, pool, description).
+     */
+    public function editAdvance(int $advanceId, array $data, int $accountId): StaffAdvance
+    {
+        $advance = StaffAdvance::forAccount($accountId)->findOrFail($advanceId);
+
+        if ($advance->isVoided()) {
+            throw new CashflowException('Cannot edit a voided advance.');
+        }
+
+        return DB::transaction(function () use ($advance, $data) {
+            $oldValues = $advance->toArray();
+            $oldAmount = (float) $advance->amount;
+            $oldPoolId = $advance->pool_id;
+            $newAmount = isset($data['amount']) ? (float) $data['amount'] : $oldAmount;
+            $newPoolId = $data['pool_id'] ?? $oldPoolId;
+
+            // Reverse old pool deduction
+            DB::table('cash_pools')->where('id', $oldPoolId)->increment('cached_balance', $oldAmount);
+            // Apply new pool deduction
+            DB::table('cash_pools')->where('id', $newPoolId)->decrement('cached_balance', $newAmount);
+
+            $advance->update([
+                'amount' => $newAmount,
+                'pool_id' => $newPoolId,
+                'description' => $data['description'] ?? $advance->description,
+            ]);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_UPDATED,
+                CashflowAuditLog::ENTITY_STAFF_ADVANCE,
+                $advance->id,
+                $oldValues,
+                $advance->fresh()->toArray(),
+                $data['edit_reason'] ?? 'Advance edited'
+            );
+
+            return $advance->fresh()->load(['staffUser:id,name', 'pool:id,name', 'creator:id,name']);
+        });
+    }
+
+    /**
+     * Void a staff return (reverses pool balance).
+     */
+    public function voidReturn(int $returnId, string $reason, int $accountId): StaffReturn
+    {
+        $return = StaffReturn::forAccount($accountId)->findOrFail($returnId);
+
+        if ($return->isVoided()) {
+            throw new CashflowException('This return is already voided.');
+        }
+
+        return DB::transaction(function () use ($return, $reason) {
+            // Reverse: debit pool (return had credited pool)
+            DB::table('cash_pools')
+                ->where('id', $return->pool_id)
+                ->decrement('cached_balance', $return->amount);
+
+            $oldValues = $return->toArray();
+
+            $return->update([
+                'voided_at' => now(),
+                'void_reason' => $reason,
+                'voided_by' => Auth::id(),
+            ]);
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_VOIDED,
+                CashflowAuditLog::ENTITY_STAFF_RETURN,
+                $return->id,
+                $oldValues,
+                $return->fresh()->toArray(),
+                $reason
+            );
+
+            return $return->fresh();
+        });
+    }
+
+    /**
      * Get outstanding advance balance for a staff member.
      */
     public function getOutstanding(int $userId, int $accountId): float
     {
-        $advances = StaffAdvance::forAccount($accountId)->forStaff($userId)->sum('amount');
-        $returns = StaffReturn::forAccount($accountId)->forStaff($userId)->sum('amount');
+        $advances = StaffAdvance::forAccount($accountId)->forStaff($userId)->whereNull('voided_at')->sum('amount');
+        $returns = StaffReturn::forAccount($accountId)->forStaff($userId)->whereNull('voided_at')->sum('amount');
         // Expenses with this staff_id reduce the advance balance (Sec 8.2)
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->where('staff_id', $userId)

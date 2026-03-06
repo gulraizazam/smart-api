@@ -54,7 +54,7 @@
                         <h6 class="mt-4 mb-2">Advances</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-head-custom">
-                                <thead><tr><th>Date</th><th>Pool</th><th class="text-right">Amount</th><th>Description</th><th>By</th></tr></thead>
+                                <thead><tr><th>Date</th><th>Pool</th><th class="text-right">Amount</th><th>Description</th><th>By</th><th class="text-right">Actions</th></tr></thead>
                                 <tbody id="ledger-advances-tbody"></tbody>
                             </table>
                         </div>
@@ -62,7 +62,7 @@
                         <h6 class="mt-4 mb-2">Returns</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-head-custom">
-                                <thead><tr><th>Date</th><th>Pool</th><th class="text-right">Amount</th><th>Description</th><th>By</th></tr></thead>
+                                <thead><tr><th>Date</th><th>Pool</th><th class="text-right">Amount</th><th>Description</th><th>By</th><th class="text-right">Actions</th></tr></thead>
                                 <tbody id="ledger-returns-tbody"></tbody>
                             </table>
                         </div>
@@ -90,11 +90,11 @@
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>
-                            <input type="number" name="amount" class="form-control" min="0.01" step="0.01" required />
+                            <input type="number" name="amount" class="form-control" min="1" step="1" required />
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea name="description" class="form-control" rows="2"></textarea>
+                            <input type="text" name="description" class="form-control" maxlength="50" placeholder="Brief description" />
                         </div>
                     </form>
                 </div>
@@ -120,15 +120,46 @@
                         </div>
                         <div class="form-group">
                             <label>Amount (PKR) <span class="text-danger">*</span></label>
-                            <input type="number" name="amount" class="form-control" min="0.01" step="0.01" required />
+                            <input type="number" name="amount" class="form-control" min="1" step="1" required />
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea name="description" class="form-control" rows="2"></textarea>
+                            <input type="text" name="description" class="form-control" maxlength="50" placeholder="Brief description" />
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button><button type="button" id="btn-submit-return" class="btn btn-success">Record Return</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Advance Modal -->
+    <div class="modal fade" id="modal_edit_advance">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Edit Staff Advance</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-body">
+                    <form id="form-edit-advance">
+                        <input type="hidden" name="advance_id" />
+                        <div class="form-group">
+                            <label>Amount (PKR) <span class="text-danger">*</span></label>
+                            <input type="number" name="amount" class="form-control" min="1" step="1" required />
+                        </div>
+                        <div class="form-group">
+                            <label>From Pool <span class="text-danger">*</span></label>
+                            <select name="pool_id" class="form-control kt-select2-general" required id="edit-advance-pool-select"><option value="">Select pool</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" name="description" class="form-control" maxlength="50" />
+                        </div>
+                        <div class="form-group">
+                            <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
+                            <input type="text" name="edit_reason" class="form-control" maxlength="50" required minlength="5" />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button><button type="button" id="btn-submit-edit-advance" class="btn btn-primary">Save Changes</button></div>
             </div>
         </div>
     </div>

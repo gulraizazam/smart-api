@@ -14,10 +14,12 @@ class StaffAdvance extends Model
 
     protected $fillable = [
         'account_id', 'user_id', 'pool_id', 'amount', 'description', 'created_by',
+        'voided_at', 'void_reason', 'voided_by',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'voided_at' => 'datetime',
     ];
 
     /**
@@ -42,6 +44,19 @@ class StaffAdvance extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
+
+    /**
+     * User who voided this advance.
+     */
+    public function voidedByUser()
+    {
+        return $this->belongsTo(User::class, 'voided_by')->withTrashed();
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 
     // Scopes
