@@ -97,7 +97,7 @@
     </div>
 
     <!-- Add/Edit Vendor Modal -->
-    <div class="modal fade" id="modal_vendor" tabindex="-1">
+    <div class="modal fade" id="modal_vendor">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title" id="vendor-modal-title">Add Vendor</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>

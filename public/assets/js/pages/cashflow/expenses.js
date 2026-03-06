@@ -111,17 +111,27 @@ var CashflowExpenses = (function () {
             }
         });
 
+        // Init date picker on expense_date field
+        $('#form-expense [name="expense_date"]').daterangepicker({
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            locale: { format: 'YYYY-MM-DD' }
+        }).on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD'));
+        });
+
         // Pre-fill date and init Select2 on modal open
         $('#modal_expense').on('shown.bs.modal', function () {
             var dateField = $('#form-expense [name="expense_date"]');
             if (!dateField.val()) dateField.val(getTodayStr());
-            var modal = $(this);
-            modal.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: modal });
-            modal.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
-            modal.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modal });
-            modal.find('[name="for_branch_id"]').select2({ placeholder: 'Select branch', dropdownParent: modal });
-            modal.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modal });
-            modal.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
+            var modalBody = $(this).find('.modal-body');
+            modalBody.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: modalBody });
+            modalBody.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modalBody });
+            modalBody.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modalBody });
+            modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select branch', dropdownParent: modalBody });
+            modalBody.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modalBody });
+            modalBody.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modalBody });
         });
 
         // Reset modal on close
@@ -345,11 +355,11 @@ var CashflowExpenses = (function () {
 
     function getStatusBadge(exp) {
         var badges = '';
-        if (exp.voided_at) return '<span class="label label-danger label-inline status-badge">Voided</span>';
+        if (exp.voided_at) return '<span class="label label-danger label-inline status-badge" title="' + escapeHtml(exp.void_reason || '') + '">Voided</span>';
         switch (exp.status) {
             case 'approved': badges = '<span class="label label-light-success label-inline status-badge">Approved</span>'; break;
             case 'pending': badges = '<span class="label label-warning label-inline status-badge">Pending</span>'; break;
-            case 'rejected': badges = '<span class="label label-outline-danger label-inline status-badge">Rejected</span>'; break;
+            case 'rejected': badges = '<span class="label label-outline-danger label-inline status-badge" title="' + escapeHtml(exp.rejection_reason || '') + '">Rejected</span>'; break;
             default: badges = exp.status;
         }
         if (exp.is_flagged) badges += ' <span class="label label-light-warning label-inline font-size-xs">Flagged</span>';
@@ -477,7 +487,8 @@ var CashflowExpenses = (function () {
         });
 
         $('#modal_admin_edit').on('shown.bs.modal', function () {
-            $(this).find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: $(this) });
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
         });

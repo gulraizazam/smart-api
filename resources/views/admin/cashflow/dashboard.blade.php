@@ -89,7 +89,7 @@
                         <div class="card-toolbar"><span class="font-weight-bolder font-size-h5 text-primary" id="pool-total">PKR 0</span></div>
                     </div>
                     <div class="card-body py-2 px-3">
-                        <div class="d-flex overflow-auto pb-1" id="pool-balance-strip" style="gap:8px;"><span class="text-muted py-2">Loading...</span></div>
+                        <div class="d-flex flex-wrap" id="pool-balance-strip" style="gap:6px;"><span class="text-muted py-2">Loading...</span></div>
                     </div>
                 </div>
 
@@ -126,23 +126,31 @@
                     </div>
                     <div class="col-lg-6">
                         <div class="card card-custom h-100">
+                            <div class="card-header py-3">
+                                <div class="card-title"><h3 class="card-label"><i class="la la-calendar-check mr-2"></i>Upcoming Vendor Payments Due</h3></div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Vendor</th><th class="text-right px-4">Balance</th><th class="px-4">Terms</th><th class="px-4">Due</th><th class="px-4">Status</th></tr></thead><tbody id="vendor-due-tbody"></tbody></table></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Staff Row: Advances Outstanding + Recent Staff Expenses -->
+                <div class="row mb-5">
+                    <div class="col-lg-6">
+                        <div class="card card-custom h-100">
                             <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-user-clock mr-2"></i>Staff Advances Outstanding</h3></div></div>
                             <div class="card-body p-0">
                                 <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th>Staff</th><th class="text-right">Outstanding</th><th>Days</th><th>Status</th></tr></thead><tbody id="staff-advances-tbody"></tbody></table></div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Upcoming Vendor Payments Due -->
-                <div class="row mb-5">
-                    <div class="col-lg-12">
-                        <div class="card card-custom">
-                            <div class="card-header py-3">
-                                <div class="card-title"><h3 class="card-label"><i class="la la-calendar-check mr-2"></i>Upcoming Vendor Payments Due</h3></div>
-                            </div>
+                    <div class="col-lg-6">
+                        <div class="card card-custom h-100">
+                            <div class="card-header py-3"><div class="card-title"><h3 class="card-label"><i class="la la-receipt mr-2"></i>Recent Staff Expenses (Top 10)</h3></div></div>
                             <div class="card-body p-0">
-                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th class="px-4">Vendor</th><th class="text-right px-4">Balance Owed</th><th class="px-4">Terms</th><th class="px-4">Due Date</th><th class="px-4">Status</th></tr></thead><tbody id="vendor-due-tbody"></tbody></table></div>
+                                <div class="table-responsive"><table class="table table-sm table-head-custom mb-0"><thead><tr><th>Date</th><th>Staff</th><th>Description</th><th class="text-right">Amount</th><th>Status</th></tr></thead><tbody id="staff-expenses-tbody"></tbody></table></div>
                             </div>
                         </div>
                     </div>

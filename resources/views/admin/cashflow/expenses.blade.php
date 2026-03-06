@@ -175,7 +175,7 @@
     </div>
 
     <!-- Create/View Expense Modal -->
-    <div class="modal fade" id="modal_expense" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_expense" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -188,7 +188,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="expense_date" class="form-control" required />
+                                    <input type="text" name="expense_date" class="form-control" required readonly placeholder="Select date" style="cursor:pointer;background:#fff;" />
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -385,7 +385,7 @@
     </div>
 
     <!-- Admin Edit Modal -->
-    <div class="modal fade" id="modal_admin_edit" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_admin_edit" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">

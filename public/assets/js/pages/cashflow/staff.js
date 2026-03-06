@@ -19,17 +19,17 @@ var CashflowStaff = (function () {
         $('#btn-submit-return').on('click', submitReturn);
         $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); });
         $('#modal_advance').on('shown.bs.modal', function () {
-            var modal = $(this);
-            modal.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
-            modal.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: mb });
+            mb.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-advance')[0].reset();
         });
         $('#modal_return').on('shown.bs.modal', function () {
-            var modal = $(this);
-            modal.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
-            modal.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: mb });
+            mb.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-return')[0].reset();

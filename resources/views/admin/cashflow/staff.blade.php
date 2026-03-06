@@ -74,7 +74,7 @@
     </div>
 
     <!-- Give Advance Modal -->
-    <div class="modal fade" id="modal_advance" tabindex="-1">
+    <div class="modal fade" id="modal_advance">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Give Staff Advance</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
@@ -104,7 +104,7 @@
     </div>
 
     <!-- Record Return Modal -->
-    <div class="modal fade" id="modal_return" tabindex="-1">
+    <div class="modal fade" id="modal_return">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Record Staff Return</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
