@@ -99,18 +99,31 @@
     }
 
     function renderPools(pools) {
-        var container = $('#pool-balance-cards').empty();
-        if (!pools || !pools.length) { container.html('<span class="text-muted">No pools found.</span>'); return; }
+        var tbody = $('#pool-balance-tbody').empty();
+        if (!pools || !pools.length) { tbody.html('<tr><td class="text-center text-muted py-3">No pools found.</td></tr>'); $('#pool-total').text('PKR 0'); return; }
+
+        var maxBal = 0, total = 0;
+        $.each(pools, function (i, p) {
+            var b = parseFloat(p.cached_balance || 0);
+            if (b > maxBal) maxBal = b;
+            total += b;
+        });
+
+        $('#pool-total').text('PKR ' + nf(total));
 
         $.each(pools, function (i, p) {
             var bal = parseFloat(p.cached_balance || 0);
-            var colorClass = bal < 0 ? 'bg-light-danger' : (bal === 0 ? 'bg-light-secondary' : 'bg-light-success');
-            container.append(
-                '<div class="' + colorClass + ' rounded p-3 mr-3 mb-3 text-center" style="min-width:140px;">' +
-                '<div class="font-weight-bold font-size-sm">' + esc(p.name) + '</div>' +
-                '<div class="font-weight-bolder font-size-h5 mt-1">PKR ' + nf(bal) + '</div>' +
-                '<div class="text-muted font-size-xs">' + esc(p.type) + '</div>' +
-                '</div>'
+            var pct = maxBal > 0 ? Math.max(Math.round((bal / maxBal) * 100), 2) : 0;
+            var barColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
+            var textColor = bal < 0 ? 'text-danger' : 'text-dark';
+            var label = esc(p.name).replace(/^CUTERA\s*/i, '');
+
+            tbody.append(
+                '<tr>' +
+                '<td class="py-2 pl-4" style="width:180px;"><span class="font-weight-bold font-size-sm">' + label + '</span></td>' +
+                '<td class="py-2"><div style="background:#F3F6F9;border-radius:4px;height:8px;width:100%;"><div style="background:' + barColor + ';border-radius:4px;height:8px;width:' + pct + '%;"></div></div></td>' +
+                '<td class="py-2 pr-4 text-right" style="width:130px;"><span class="font-weight-bolder font-size-sm ' + textColor + '">PKR ' + nf(bal) + '</span></td>' +
+                '</tr>'
             );
         });
     }
