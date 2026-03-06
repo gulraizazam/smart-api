@@ -37,6 +37,8 @@ class CashflowLookupsController extends Controller
                     'vendors' => CashflowHelper::getActiveVendors($accountId),
                     'staff' => User::where('account_id', $accountId)
                         ->where('active', 1)
+                        ->whereNotIn('user_type_id', [3])
+                        ->orderBy('name')
                         ->get(['id', 'name']),
                     'threshold' => $this->getApprovalThreshold($accountId),
                 ],

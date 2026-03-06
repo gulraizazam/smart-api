@@ -35,20 +35,10 @@ var CashflowExpenses = (function () {
     }
 
     function init() {
-        console.time('CF_INIT_TOTAL');
-        console.time('CF_initDateRange');
         initDateRange();
-        console.timeEnd('CF_initDateRange');
-        console.time('CF_loadFormData_call');
         loadFormData();
-        console.timeEnd('CF_loadFormData_call');
-        console.time('CF_loadExpenses_call');
         loadExpenses();
-        console.timeEnd('CF_loadExpenses_call');
-        console.time('CF_bindEvents');
         bindEvents();
-        console.timeEnd('CF_bindEvents');
-        console.timeEnd('CF_INIT_TOTAL');
 
         // Auto-open modal if coming from dashboard quick-action
         if (new URLSearchParams(window.location.search).get('action') === 'add') {
@@ -96,13 +86,8 @@ var CashflowExpenses = (function () {
 
         // Pre-fill date on modal open
         $('#modal_expense').on('show.bs.modal', function () {
-            console.time('CF_MODAL_SHOW');
             var dateField = $('#form-expense [name="expense_date"]');
             if (!dateField.val()) dateField.val(getTodayStr());
-            console.timeEnd('CF_MODAL_SHOW');
-        });
-        $('#modal_expense').on('shown.bs.modal', function () {
-            console.log('CF_MODAL_SHOWN (visible now)');
         });
 
         // Reset modal on close
@@ -136,19 +121,14 @@ var CashflowExpenses = (function () {
     // ===================== LOAD DATA =====================
 
     function loadFormData() {
-        console.time('CF_formData_AJAX');
         $.ajax({
             url: apiBase + 'expenses/form-data',
             type: 'GET',
             success: function (res) {
-                console.timeEnd('CF_formData_AJAX');
                 if (res.success) {
-                    console.log('CF_formData items:', 'pools=' + (res.data.pools||[]).length, 'cats=' + (res.data.categories||[]).length, 'vendors=' + (res.data.vendors||[]).length, 'staff=' + (res.data.staff||[]).length);
                     formData = res.data;
                     threshold = parseFloat(res.data.threshold) || 10000;
-                    console.time('CF_populateDropdowns');
                     populateDropdowns(res.data);
-                    console.timeEnd('CF_populateDropdowns');
                 }
             }
         });
@@ -866,7 +846,5 @@ var CashflowExpenses = (function () {
 })();
 
 $(document).ready(function () {
-    setTimeout(function () {
-        CashflowExpenses.init();
-    }, 0);
+    CashflowExpenses.init();
 });
