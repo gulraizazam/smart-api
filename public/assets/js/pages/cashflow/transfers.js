@@ -45,7 +45,6 @@ var CashflowTransfers = (function () {
     }
 
     function bindEvents() {
-        $('#btn-add-transfer').on('click', function () { $('#modal_transfer').modal('show'); });
         $('#btn-filter').on('click', function () { currentPage = 1; loadTransfers(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadTransfers(); } });
         $('#btn-submit-transfer').on('click', submitTransfer);

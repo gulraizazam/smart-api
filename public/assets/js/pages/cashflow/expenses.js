@@ -35,11 +35,6 @@ var CashflowExpenses = (function () {
     }
 
     function init() {
-        // Disable Bootstrap enforceFocus to fix native select elements not clickable inside modals
-        if ($.fn.modal && $.fn.modal.Constructor) {
-            $.fn.modal.Constructor.prototype._enforceFocus = function () {};
-        }
-
         initDateRange();
         loadFormData();
         loadExpenses();
@@ -52,7 +47,6 @@ var CashflowExpenses = (function () {
     }
 
     function bindEvents() {
-        $('#btn-add-expense').on('click', function () { $('#modal_expense').modal('show'); });
         $('#btn-filter').on('click', function () { currentPage = 1; loadExpenses(); });
         $('#filter-status').on('change', function () { currentPage = 1; loadExpenses(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadExpenses(); } });
@@ -852,5 +846,7 @@ var CashflowExpenses = (function () {
 })();
 
 $(document).ready(function () {
-    CashflowExpenses.init();
+    setTimeout(function () {
+        CashflowExpenses.init();
+    }, 0);
 });

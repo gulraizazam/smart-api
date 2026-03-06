@@ -114,7 +114,7 @@
                                 <button id="btn-init-pools" class="btn btn-info mr-2">
                                     <i class="la la-sync"></i> Initialize Branch Pools
                                 </button>
-                                <button id="btn-add-pool" class="btn btn-primary">
+                                <button id="btn-add-pool" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_pool">
                                     <i class="la la-plus"></i> Add Pool
                                 </button>
                             @endif
@@ -150,7 +150,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_category_manage'))
-                                <button id="btn-add-category" class="btn btn-primary">
+                                <button id="btn-add-category" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_category">
                                     <i class="la la-plus"></i> Add Category
                                 </button>
                             @endif
