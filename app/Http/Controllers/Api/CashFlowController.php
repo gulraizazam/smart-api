@@ -408,7 +408,7 @@ class CashFlowController extends Controller
                     'branches' => CashflowHelper::getActiveBranches($accountId),
                     'payment_modes' => CashflowHelper::getActivePaymentModes(),
                     'vendors' => CashflowHelper::getActiveVendors($accountId),
-                    'staff' => \App\Models\User::where('account_id', $accountId)->where('active', 1)->get(['id', 'name']),
+                    'staff' => \App\Models\User::where('account_id', $accountId)->where('active', 1)->whereNotIn('user_type_id', [3])->orderBy('name')->get(['id', 'name']),
                     'threshold' => $this->settingService->getApprovalThreshold($accountId),
                 ],
             ]);
