@@ -75,15 +75,73 @@ var CashflowTransfers = (function () {
             mb.find('[name="method"]').select2({ placeholder: 'Select method', dropdownParent: mb });
             mb.find('[name="from_pool_id"]').select2({ placeholder: 'Select source pool', dropdownParent: mb });
             mb.find('[name="to_pool_id"]').select2({ placeholder: 'Select destination pool', dropdownParent: mb });
+
+            // Apply initial pool filtering based on default method
+            var initMethod = mb.find('[name="method"]').val();
+            if (initMethod) filterTransferPools(initMethod);
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-transfer')[0].reset();
+            $('#form-transfer [name="transfer_date"]').val('');
+        });
+
+        // Filter pools when transfer method changes
+        $(document).on('change', '#form-transfer [name="method"]', function () {
+            filterTransferPools($(this).val());
         });
 
         // Keyboard shortcuts
         $(document).on('keydown', function (e) {
             if (e.altKey && e.key === 't') { e.preventDefault(); $('#modal_transfer').modal('show'); }
             if (e.ctrlKey && e.key === 'Enter' && $('#modal_transfer').hasClass('show')) { e.preventDefault(); $('#btn-submit-transfer').click(); }
+        });
+    }
+
+    function filterTransferPools(method) {
+        var fromSelect = $('[name="from_pool_id"]', '#form-transfer');
+        var toSelect = $('[name="to_pool_id"]', '#form-transfer');
+
+        // Show all if no method
+        if (!method) {
+            fromSelect.find('option').prop('disabled', false).show();
+            toSelect.find('option').prop('disabled', false).show();
+            return;
+        }
+
+        // physical_cash: from=cash pools, to=cash pools
+        // bank_deposit: from=cash pools, to=bank pools (depositing cash into bank)
+        var fromTypes, toTypes;
+        if (method === 'bank_deposit') {
+            fromTypes = ['branch_cash', 'head_office_cash'];
+            toTypes = ['bank_account'];
+        } else {
+            // physical_cash: both should be cash pools
+            fromTypes = ['branch_cash', 'head_office_cash'];
+            toTypes = ['branch_cash', 'head_office_cash'];
+        }
+
+        [{ sel: fromSelect, types: fromTypes }, { sel: toSelect, types: toTypes }].forEach(function (cfg) {
+            var hasMatch = false;
+            cfg.sel.find('option').each(function () {
+                var opt = $(this);
+                if (!opt.val()) return;
+                var type = opt.data('type') || '';
+                if (cfg.types.indexOf(type) !== -1) {
+                    opt.prop('disabled', false).show();
+                    hasMatch = true;
+                } else {
+                    opt.prop('disabled', true).hide();
+                }
+            });
+            // If no match, show all (fallback)
+            if (!hasMatch) {
+                cfg.sel.find('option').prop('disabled', false).show();
+            }
+            // Reset if current selection is now disabled
+            var curVal = cfg.sel.val();
+            if (curVal && cfg.sel.find('option[value="' + curVal + '"]').prop('disabled')) {
+                cfg.sel.val('').trigger('change.select2');
+            }
         });
     }
 
@@ -99,11 +157,11 @@ var CashflowTransfers = (function () {
                 $.each(pools, function (i, p) {
                     var label = p.name;
                     opts += '<option value="' + p.id + '">' + escapeHtml(label) + '</option>';
-                    formOpts += '<option value="' + p.id + '" data-balance="' + (p.cached_balance || 0) + '">' + escapeHtml(label) + '</option>';
+                    formOpts += '<option value="' + p.id + '" data-type="' + (p.type || '') + '" data-balance="' + (p.cached_balance || 0) + '">' + escapeHtml(label) + '</option>';
                 });
                 $('#filter-pool').html(opts);
-                $('[name="from_pool_id"]').html(formOpts);
-                $('[name="to_pool_id"]').html(formOpts);
+                $('[name="from_pool_id"]', '#form-transfer').html(formOpts);
+                $('[name="to_pool_id"]', '#form-transfer').html(formOpts);
 
                 // Init Select2 on page-level filter selects (after options are populated)
                 $('#filter-pool').select2();
@@ -176,10 +234,11 @@ var CashflowTransfers = (function () {
             }
 
             var descTip = t.description ? ' title="' + escapeHtml(t.description) + '"' : '';
+            var attachIcon = t.attachment_url ? ' <a href="' + escapeHtml(t.attachment_url) + '" target="_blank" title="View attachment"><i class="la la-paperclip text-primary"></i></a>' : '';
 
             tbody.append(
                 '<tr class="' + rowClass + '">' +
-                '<td' + descTip + '>' + formatDate(t.transfer_date) + statusBadge + '</td>' +
+                '<td' + descTip + '>' + formatDate(t.transfer_date) + statusBadge + attachIcon + '</td>' +
                 '<td>' + fromLabel + '</td>' +
                 '<td>' + toLabel + '</td>' +
                 '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + numberFormat(t.amount) + '</td>' +
@@ -237,7 +296,7 @@ var CashflowTransfers = (function () {
     function submitTransfer() {
         var form = $('#form-transfer');
         var data = {};
-        form.find('input, select, textarea').each(function () {
+        form.find('input, select').each(function () {
             var n = $(this).attr('name');
             if (n) data[n] = $(this).val();
         });
@@ -260,7 +319,7 @@ var CashflowTransfers = (function () {
             }
         }
 
-        var btn = $(this);
+        var btn = $('#btn-submit-transfer');
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-2"></i> Submitting...');
 
         $.ajax({

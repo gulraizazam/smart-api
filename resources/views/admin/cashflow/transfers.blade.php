@@ -37,7 +37,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" id="filter-search" class="form-control" placeholder="Search ref..." />
+                                    <input type="text" id="filter-search" class="form-control" placeholder="Search..." />
                                     <div class="input-group-append">
                                         <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
                                         <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
