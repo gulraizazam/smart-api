@@ -234,7 +234,7 @@ var CashflowTransfers = (function () {
             }
 
             var descTip = t.description ? ' title="' + escapeHtml(t.description) + '"' : '';
-            var attachIcon = t.attachment_url ? ' <a href="' + escapeHtml(t.attachment_url) + '" target="_blank" title="View attachment"><i class="la la-paperclip text-primary"></i></a>' : '';
+            var attachIcon = t.attachment_url ? ' <a href="javascript:;" class="btn-preview" data-url="' + escapeHtml(t.attachment_url) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>' : '';
 
             tbody.append(
                 '<tr class="' + rowClass + '">' +
@@ -247,6 +247,24 @@ var CashflowTransfers = (function () {
                 '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
+        });
+
+        // Bind preview handler
+        $('.btn-preview').off('click').on('click', function () {
+            var url = $(this).data('url');
+            if (!url) return;
+            var previewUrl = getDrivePreviewUrl(url);
+            if (previewUrl) {
+                $('#preview-iframe').attr('src', previewUrl);
+                $('#preview-open-new').attr('href', url);
+                $('#modal_preview').modal('show');
+            } else {
+                window.open(url, '_blank');
+            }
+        });
+
+        $('#modal_preview').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+            $('#preview-iframe').attr('src', '');
         });
 
         // Bind void button handler
@@ -349,6 +367,17 @@ var CashflowTransfers = (function () {
                 btn.prop('disabled', false).html('Submit Transfer');
             }
         });
+    }
+
+    function getDrivePreviewUrl(url) {
+        if (!url) return null;
+        var match;
+        match = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        match = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        if (/docs\.google\.com/.test(url)) return url.replace(/\/edit.*$/, '/preview');
+        return null;
     }
 
     function escapeHtml(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
