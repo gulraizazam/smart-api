@@ -344,6 +344,11 @@ var CashflowExpenses = (function () {
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
         }
 
+        // Unflag (admin only, flagged, non-voided)
+        if (perms.canApprove && exp.is_flagged && !exp.voided_at) {
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-unflag" data-id="' + exp.id + '" title="Dismiss Flag"><i class="la la-flag text-warning"></i></button>';
+        }
+
         // Void (admin only, non-voided — Sec 11.5)
         if (perms.canVoid && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-void" data-id="' + exp.id + '" title="Void"><i class="la la-ban text-dark"></i></button>';
@@ -412,6 +417,23 @@ var CashflowExpenses = (function () {
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             form.find('[name="edit_reason"]').val('');
             $('#modal_admin_edit').modal('show');
+        });
+
+        $('.btn-unflag').off('click').on('click', function () {
+            var id = $(this).data('id');
+            if (!confirm('Dismiss the flag on this expense?')) return;
+            $.ajax({
+                url: apiBase + 'expenses/' + id + '/unflag',
+                type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    toastr.success(res.message || 'Flag dismissed.');
+                    loadExpenses();
+                },
+                error: function (xhr) {
+                    toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to unflag.');
+                }
+            });
         });
 
         $('.btn-void').off('click').on('click', function () {

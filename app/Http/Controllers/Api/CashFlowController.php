@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
+use App\Models\CashFlow\Expense;
 use App\Http\Requests\CashFlow\RejectExpenseRequest;
 use App\Http\Requests\CashFlow\StoreExpenseRequest;
 use App\Http\Requests\CashFlow\UpdateExpenseRequest;
@@ -517,6 +518,30 @@ class CashFlowController extends Controller
             $expense = $this->expenseService->adminEdit($id, $request->validated(), $accountId);
 
             return response()->json(['success' => true, 'data' => $expense, 'message' => 'Expense updated.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Unflag an expense (admin only).
+     */
+    public function expensesUnflag(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_expense_approve')) {
+                throw CashflowException::unauthorized('unflag expenses');
+            }
+
+            $accountId = Auth::user()->account_id;
+            $expense = Expense::forAccount($accountId)->findOrFail($id);
+            $expense->update(['is_flagged' => false, 'flag_reason' => null]);
+
+            $this->auditService->log($accountId, 'expense_unflagged', $expense->id, Auth::id(), 'Expense unflagged by admin');
+
+            return response()->json(['success' => true, 'message' => 'Expense unflagged.']);
         } catch (CashflowException $e) {
             return $e->render(request());
         } catch (\Exception $e) {

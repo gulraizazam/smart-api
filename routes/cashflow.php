@@ -60,6 +60,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('{id}/resubmit', [CashFlowController::class, 'expensesResubmit'])->name('resubmit');
         Route::post('{id}/edit', [CashFlowController::class, 'expensesEdit'])->name('edit');
         Route::post('{id}/void', [CashFlowController::class, 'expensesVoid'])->name('void');
+        Route::post('{id}/unflag', [CashFlowController::class, 'expensesUnflag'])->name('unflag');
         Route::get('{id}/audit', [CashFlowController::class, 'expensesAudit'])->name('audit');
         Route::get('export', [CashFlowController::class, 'expensesExport'])->name('export');
     });
