@@ -25,10 +25,6 @@
                                 @endcan
                             </div>
                             <div class="d-flex align-items-center">
-                                <input type="text" id="dash-date-range" class="form-control form-control-sm mr-2" style="width:220px;" readonly />
-                                <select id="dash-branch" class="form-control form-control-sm mr-2" style="width:180px;">
-                                    <option value="">All Branches</option>
-                                </select>
                                 <button id="btn-refresh-dash" class="btn btn-light-primary"><i class="la la-sync"></i></button>
                             </div>
                         </div>

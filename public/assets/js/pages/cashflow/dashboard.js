@@ -8,9 +8,8 @@
     var isLoading = false;
 
     $(document).ready(function () {
-        initDateRange();
-        loadBranches();
         bindEvents();
+        loadDashboard();
     });
 
     function bindEvents() {
@@ -18,51 +17,11 @@
         $('#btn-reconcile').on('click', runReconciliation);
     }
 
-    function initDateRange() {
-        $('#dash-date-range').daterangepicker({
-            locale: { format: 'MM/DD/YYYY' },
-            ranges: {
-                'Today': [moment(), moment()],
-                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                'This Month': [moment().startOf('month'), moment().endOf('month')],
-                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                'This Year': [moment().startOf('year'), moment().endOf('year')],
-                'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
-            },
-            startDate: moment().startOf('month'),
-            endDate: moment()
-        });
-    }
-
     function getDateRange() {
-        var picker = $('#dash-date-range').data('daterangepicker');
         return {
-            date_from: picker.startDate.format('YYYY-MM-DD'),
-            date_to: picker.endDate.format('YYYY-MM-DD')
+            date_from: moment().startOf('month').format('YYYY-MM-DD'),
+            date_to: moment().format('YYYY-MM-DD')
         };
-    }
-
-    function loadBranches() {
-        $.ajax({
-            url: apiBase + 'lookups', type: 'GET',
-            success: function (res) {
-                if (!res.success) return;
-                var sel = $('#dash-branch');
-                if (res.data && res.data.branches) {
-                    $.each(res.data.branches, function (i, b) {
-                        sel.append('<option value="' + b.id + '">' + esc(b.name) + '</option>');
-                    });
-
-                    // Auto-filter for branch managers (single branch users)
-                    if (res.data.branches.length === 1) {
-                        sel.val(res.data.branches[0].id);
-                    }
-                }
-                loadDashboard();
-            }
-        });
     }
 
     function loadDashboard() {
@@ -73,8 +32,7 @@
         var dr = getDateRange();
         var params = {
             date_from: dr.date_from,
-            date_to: dr.date_to,
-            branch_id: $('#dash-branch').val() || ''
+            date_to: dr.date_to
         };
 
         dashboardXhr = $.ajax({
