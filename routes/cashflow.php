@@ -40,6 +40,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('{id}/update', [CashFlowController::class, 'poolsUpdate'])->name('update');
         Route::post('{id}/delete', [CashFlowController::class, 'poolsDelete'])->name('delete');
         Route::post('initialize', [CashFlowController::class, 'poolsInit'])->name('initialize');
+        Route::post('recalculate', [CashFlowController::class, 'poolsRecalculate'])->name('recalculate');
     });
 
     // Categories

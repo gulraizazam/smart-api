@@ -8,11 +8,13 @@ use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
 use App\Models\CashFlow\VendorTransaction;
 use App\Models\Locations;
+use App\Models\PackageAdvances;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
 use App\Observers\CashFlow\StaffAdvanceObserver;
 use App\Observers\CashFlow\StaffReturnObserver;
+use App\Observers\CashFlow\PackageAdvanceObserver;
 use App\Observers\CashFlow\VendorTransactionObserver;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,5 +34,6 @@ class CashflowServiceProvider extends ServiceProvider
         VendorTransaction::observe(VendorTransactionObserver::class);
         StaffAdvance::observe(StaffAdvanceObserver::class);
         StaffReturn::observe(StaffReturnObserver::class);
+        PackageAdvances::observe(PackageAdvanceObserver::class);
     }
 }

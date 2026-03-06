@@ -94,6 +94,10 @@ class PoolService
             $pool->name = $data['name'];
         }
 
+        if (isset($data['type'])) {
+            $pool->type = $data['type'];
+        }
+
         if (isset($data['is_active'])) {
             $pool->is_active = $data['is_active'];
         }
@@ -189,6 +193,165 @@ class PoolService
         );
 
         $this->clearCache($accountId);
+    }
+
+    /**
+     * Recalculate all pool balances from scratch.
+     * Resets each pool to opening_balance, then replays all transactions since go-live date.
+     */
+    public function recalculatePoolBalances(int $accountId): array
+    {
+        $settingService = app(CashflowSettingService::class);
+        $goLiveDate = $settingService->getGoLiveDate($accountId);
+
+        if (!$goLiveDate) {
+            throw new CashflowException('Go-live date is not set. Please configure it in settings first.');
+        }
+
+        $pools = CashPool::forAccount($accountId)->get();
+        $results = [];
+
+        // Build a map of location_id → branch_cash pool_id
+        $branchPoolMap = [];
+        $hoPoolId = null;
+        $bankPoolId = null;
+
+        foreach ($pools as $pool) {
+            if ($pool->type === CashPool::TYPE_BRANCH_CASH && $pool->location_id) {
+                $branchPoolMap[$pool->location_id] = $pool->id;
+            } elseif ($pool->type === CashPool::TYPE_HEAD_OFFICE_CASH && !$hoPoolId) {
+                $hoPoolId = $pool->id;
+            } elseif ($pool->type === CashPool::TYPE_BANK_ACCOUNT && !$bankPoolId) {
+                $bankPoolId = $pool->id;
+            }
+        }
+
+        // Build cash payment mode IDs
+        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
+            ->get()
+            ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+            ->pluck('id')
+            ->toArray();
+
+        // Step 1: Reset all pools to opening_balance
+        $balances = [];
+        foreach ($pools as $pool) {
+            $balances[$pool->id] = (float) $pool->opening_balance;
+        }
+
+        // Step 2: Patient payments (inflows) — credit pools
+        $payments = \App\Models\PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'in')
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $goLiveDate)
+            ->get(['cash_amount', 'payment_mode_id', 'location_id']);
+
+        foreach ($payments as $pa) {
+            $poolId = $this->resolvePoolId($pa, $cashModeIds, $branchPoolMap, $hoPoolId, $bankPoolId);
+            if ($poolId && isset($balances[$poolId])) {
+                $balances[$poolId] += (float) $pa->cash_amount;
+            }
+        }
+
+        // Step 3: Refunds (outflows) — debit pools
+        $refunds = \App\Models\PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $goLiveDate)
+            ->get(['cash_amount', 'payment_mode_id', 'location_id']);
+
+        foreach ($refunds as $ref) {
+            $poolId = $this->resolvePoolId($ref, $cashModeIds, $branchPoolMap, $hoPoolId, $bankPoolId);
+            if ($poolId && isset($balances[$poolId])) {
+                $balances[$poolId] -= (float) $ref->cash_amount;
+            }
+        }
+
+        // Step 4: Expenses — debit pools (non-voided, non-rejected)
+        $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+            ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
+            ->get(['amount', 'paid_from_pool_id']);
+
+        foreach ($expenses as $exp) {
+            if (isset($balances[$exp->paid_from_pool_id])) {
+                $balances[$exp->paid_from_pool_id] -= (float) $exp->amount;
+            }
+        }
+
+        // Step 5: Transfers — debit source, credit destination
+        $transfers = \App\Models\CashFlow\CashTransfer::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->get(['amount', 'from_pool_id', 'to_pool_id']);
+
+        foreach ($transfers as $tr) {
+            if (isset($balances[$tr->from_pool_id])) {
+                $balances[$tr->from_pool_id] -= (float) $tr->amount;
+            }
+            if (isset($balances[$tr->to_pool_id])) {
+                $balances[$tr->to_pool_id] += (float) $tr->amount;
+            }
+        }
+
+        // Step 6: Staff advances — debit pools
+        $advances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->get(['amount', 'pool_id']);
+
+        foreach ($advances as $adv) {
+            if (isset($balances[$adv->pool_id])) {
+                $balances[$adv->pool_id] -= (float) $adv->amount;
+            }
+        }
+
+        // Step 7: Staff returns — credit pools
+        $returns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->get(['amount', 'pool_id']);
+
+        foreach ($returns as $ret) {
+            if (isset($balances[$ret->pool_id])) {
+                $balances[$ret->pool_id] += (float) $ret->amount;
+            }
+        }
+
+        // Step 8: Apply calculated balances
+        foreach ($pools as $pool) {
+            $oldBalance = (float) $pool->cached_balance;
+            $newBalance = round($balances[$pool->id] ?? (float) $pool->opening_balance, 2);
+
+            if (abs($oldBalance - $newBalance) > 0.01) {
+                $results[] = [
+                    'pool' => $pool->name,
+                    'old_balance' => $oldBalance,
+                    'new_balance' => $newBalance,
+                    'diff' => round($newBalance - $oldBalance, 2),
+                ];
+            }
+
+            DB::table('cash_pools')->where('id', $pool->id)->update(['cached_balance' => $newBalance]);
+        }
+
+        $this->clearCache($accountId);
+
+        return $results;
+    }
+
+    /**
+     * Resolve pool ID for a PackageAdvance record (used by recalculate).
+     */
+    private function resolvePoolId($advance, array $cashModeIds, array $branchPoolMap, ?int $hoPoolId, ?int $bankPoolId): ?int
+    {
+        $isCash = in_array($advance->payment_mode_id, $cashModeIds);
+
+        if ($isCash && $advance->location_id) {
+            return $branchPoolMap[$advance->location_id] ?? $hoPoolId;
+        }
+
+        return $bankPoolId;
     }
 
     private function clearCache(int $accountId): void

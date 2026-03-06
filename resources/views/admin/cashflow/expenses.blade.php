@@ -411,6 +411,24 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Paid From Pool</label>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" id="edit-pool-select">
+                                        <option value="">Keep current</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Payment Method</label>
+                                    <select name="payment_method_id" class="form-control kt-select2-general" id="edit-payment-method-select">
+                                        <option value="">Keep current</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>Description</label>
                             <textarea name="description" class="form-control" rows="2"></textarea>
