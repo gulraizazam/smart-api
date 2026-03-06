@@ -57,8 +57,21 @@ var CashflowTransfers = (function () {
             loadTransfers();
         });
         $('#btn-submit-transfer').on('click', submitTransfer);
+
+        // Init date picker on transfer_date field
+        $('#form-transfer [name="transfer_date"]').daterangepicker({
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            locale: { format: 'YYYY-MM-DD' }
+        }).on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD'));
+        });
+
         $('#modal_transfer').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
+            var dateField = mb.find('[name="transfer_date"]');
+            if (!dateField.val()) dateField.val(moment().format('YYYY-MM-DD'));
             mb.find('[name="method"]').select2({ placeholder: 'Select method', dropdownParent: mb });
             mb.find('[name="from_pool_id"]').select2({ placeholder: 'Select source pool', dropdownParent: mb });
             mb.find('[name="to_pool_id"]').select2({ placeholder: 'Select destination pool', dropdownParent: mb });
@@ -181,7 +194,7 @@ var CashflowTransfers = (function () {
             if (n) data[n] = $(this).val();
         });
 
-        if (!data.transfer_date || !data.amount || !data.from_pool_id || !data.to_pool_id || !data.reference_no || !data.attachment_url) {
+        if (!data.transfer_date || !data.amount || !data.from_pool_id || !data.to_pool_id || !data.attachment_url) {
             toastr.warning('Please fill all required fields.');
             return;
         }

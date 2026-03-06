@@ -21,9 +21,9 @@ class StoreTransferRequest extends FormRequest
             'from_pool_id' => 'required|exists:cash_pools,id',
             'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',
             'method' => 'required|in:physical_cash,bank_deposit',
-            'reference_no' => 'required|string|max:100',
+            'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['required', 'string', 'max:500', new GoogleDriveUrlRule],
-            'description' => 'nullable|string|max:500',
+            'description' => 'nullable|string|max:50',
         ];
     }
 
@@ -32,7 +32,6 @@ class StoreTransferRequest extends FormRequest
         return [
             'to_pool_id.different' => 'Source and destination pools must be different.',
             'attachment_url.required' => 'Transfer receipt/attachment is required.',
-            'reference_no.required' => 'Reference number is required for transfers.',
-        ];
+                    ];
     }
 }
