@@ -1137,6 +1137,62 @@ class CashFlowController extends Controller
         }
     }
 
+    /**
+     * Void a staff advance.
+     */
+    public function staffAdvanceVoid(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate(['void_reason' => 'required|string|min:5|max:100']);
+            $accountId = Auth::user()->account_id;
+            $advance = $this->staffAdvanceService->voidAdvance($id, $request->void_reason, $accountId);
+            return response()->json(['success' => true, 'data' => $advance, 'message' => 'Advance voided successfully.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Edit a staff advance.
+     */
+    public function staffAdvanceUpdate(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'amount' => 'required|numeric|min:1|integer',
+                'pool_id' => 'required|exists:cash_pools,id',
+                'description' => 'nullable|string|max:50',
+                'edit_reason' => 'required|string|min:5|max:50',
+            ]);
+            $accountId = Auth::user()->account_id;
+            $advance = $this->staffAdvanceService->editAdvance($id, $request->all(), $accountId);
+            return response()->json(['success' => true, 'data' => $advance, 'message' => 'Advance updated successfully.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Void a staff return.
+     */
+    public function staffReturnVoid(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate(['void_reason' => 'required|string|min:5|max:100']);
+            $accountId = Auth::user()->account_id;
+            $return = $this->staffAdvanceService->voidReturn($id, $request->void_reason, $accountId);
+            return response()->json(['success' => true, 'data' => $return, 'message' => 'Return voided successfully.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ===================== CATEGORY REQUESTS =====================
 
     /**

@@ -2,6 +2,8 @@
 
 var CashflowStaff = (function () {
     var apiBase = '/api/cashflow/';
+    var currentLedgerUserId = null;
+    var poolOptionsHtml = '';
 
     function init() {
         loadDropdowns();
@@ -17,7 +19,8 @@ var CashflowStaff = (function () {
     function bindEvents() {
         $('#btn-submit-advance').on('click', submitAdvance);
         $('#btn-submit-return').on('click', submitReturn);
-        $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); });
+        $('#btn-submit-edit-advance').on('click', submitEditAdvance);
+        $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); currentLedgerUserId = null; });
         $('#modal_advance').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: mb });
@@ -33,6 +36,13 @@ var CashflowStaff = (function () {
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-return')[0].reset();
+        });
+        $('#modal_edit_advance').on('shown.bs.modal', function () {
+            var mb = $(this).find('.modal-body');
+            mb.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-edit-advance')[0].reset();
         });
     }
 
@@ -58,13 +68,14 @@ var CashflowStaff = (function () {
             url: apiBase + 'lookups', type: 'GET',
             success: function (res) {
                 if (!res.success) return;
-                var opts = '<option value="">Select pool</option>';
+                poolOptionsHtml = '<option value="">Select pool</option>';
                 $.each(res.data.pools, function (i, p) {
                     var label = p.name;
-                    opts += '<option value="' + p.id + '">' + esc(label) + '</option>';
+                    poolOptionsHtml += '<option value="' + p.id + '">' + esc(label) + '</option>';
                 });
-                $('#advance-pool-select').html(opts);
-                $('#return-pool-select').html(opts);
+                $('#advance-pool-select').html(poolOptionsHtml);
+                $('#return-pool-select').html(poolOptionsHtml);
+                $('#edit-advance-pool-select').html(poolOptionsHtml);
             }
         });
     }
@@ -132,8 +143,9 @@ var CashflowStaff = (function () {
     }
 
     function loadLedger(userId) {
-        $('#ledger-advances-tbody').html('<tr><td colspan="5" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
-        $('#ledger-returns-tbody').html('<tr><td colspan="5" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        currentLedgerUserId = userId;
+        $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#ledger-returns-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
 
         $.ajax({
             url: apiBase + 'staff/' + userId + '/ledger', type: 'GET',
@@ -145,29 +157,147 @@ var CashflowStaff = (function () {
                 $('#ledger-returns').text('PKR ' + nf(d.total_returns));
                 $('#ledger-outstanding').text('PKR ' + nf(d.outstanding));
 
-                renderLedgerTable(d.advances, '#ledger-advances-tbody');
-                renderLedgerTable(d.returns, '#ledger-returns-tbody');
+                renderAdvancesTable(d.advances);
+                renderReturnsTable(d.returns);
             }
         });
     }
 
-    function renderLedgerTable(items, tbodySel) {
-        var tbody = $(tbodySel).empty();
+    function renderAdvancesTable(items) {
+        var tbody = $('#ledger-advances-tbody').empty();
         if (!items || items.length === 0) {
-            tbody.html('<tr><td colspan="5" class="text-center text-muted">None.</td></tr>');
+            tbody.html('<tr><td colspan="6" class="text-center text-muted">None.</td></tr>');
             return;
         }
 
         $.each(items, function (i, item) {
+            var isVoided = !!item.voided_at;
+            var rowClass = isVoided ? 'text-muted' : '';
+            var amtStyle = isVoided ? 'text-decoration:line-through;' : '';
+            var voidBadge = isVoided ? ' <span class="label label-light-dark label-inline font-size-xs" title="' + esc(item.void_reason || '') + '">VOID</span>' : '';
+
+            var actions = '';
+            if (!isVoided) {
+                actions = '<button class="btn btn-sm btn-clean btn-icon btn-edit-advance" data-id="' + item.id + '" data-amount="' + parseInt(item.amount) + '" data-pool="' + item.pool_id + '" data-desc="' + esc(item.description || '') + '" title="Edit"><i class="la la-pencil text-primary"></i></button>' +
+                          '<button class="btn btn-sm btn-clean btn-icon btn-void-advance" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+            }
+
             tbody.append(
-                '<tr>' +
-                '<td>' + fd(item.created_at) + '</td>' +
+                '<tr class="' + rowClass + '">' +
+                '<td>' + fd(item.created_at) + voidBadge + '</td>' +
                 '<td>' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
-                '<td class="text-right font-weight-bold">PKR ' + nf(item.amount) + '</td>' +
+                '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
                 '<td>' + esc(item.description || '-') + '</td>' +
                 '<td>' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
+                '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
+        });
+
+        // Bind void handler
+        $('.btn-void-advance').off('click').on('click', function () {
+            var id = $(this).data('id');
+            var reason = prompt('Reason for voiding this advance (min 5 chars):');
+            if (reason === null) return;
+            if (!reason || reason.length < 5) { toastr.warning('Void reason must be at least 5 characters.'); return; }
+            $.ajax({
+                url: apiBase + 'staff/advance/' + id + '/void', type: 'POST',
+                data: { void_reason: reason },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) { toastr.success(res.message); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
+                    else toastr.error(res.message);
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+
+        // Bind edit handler
+        $('.btn-edit-advance').off('click').on('click', function () {
+            var btn = $(this);
+            var form = $('#form-edit-advance');
+            form.find('[name="advance_id"]').val(btn.data('id'));
+            form.find('[name="amount"]').val(btn.data('amount'));
+            form.find('[name="description"]').val(btn.data('desc'));
+            $('#edit-advance-pool-select').val(btn.data('pool'));
+            $('#modal_edit_advance').modal('show');
+        });
+    }
+
+    function renderReturnsTable(items) {
+        var tbody = $('#ledger-returns-tbody').empty();
+        if (!items || items.length === 0) {
+            tbody.html('<tr><td colspan="6" class="text-center text-muted">None.</td></tr>');
+            return;
+        }
+
+        $.each(items, function (i, item) {
+            var isVoided = !!item.voided_at;
+            var rowClass = isVoided ? 'text-muted' : '';
+            var amtStyle = isVoided ? 'text-decoration:line-through;' : '';
+            var voidBadge = isVoided ? ' <span class="label label-light-dark label-inline font-size-xs" title="' + esc(item.void_reason || '') + '">VOID</span>' : '';
+
+            var actions = '';
+            if (!isVoided) {
+                actions = '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+            }
+
+            tbody.append(
+                '<tr class="' + rowClass + '">' +
+                '<td>' + fd(item.created_at) + voidBadge + '</td>' +
+                '<td>' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
+                '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
+                '<td>' + esc(item.description || '-') + '</td>' +
+                '<td>' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
+                '<td class="text-right">' + actions + '</td>' +
+                '</tr>'
+            );
+        });
+
+        // Bind void handler for returns
+        $('.btn-void-return').off('click').on('click', function () {
+            var id = $(this).data('id');
+            var reason = prompt('Reason for voiding this return (min 5 chars):');
+            if (reason === null) return;
+            if (!reason || reason.length < 5) { toastr.warning('Void reason must be at least 5 characters.'); return; }
+            $.ajax({
+                url: apiBase + 'staff/return/' + id + '/void', type: 'POST',
+                data: { void_reason: reason },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) { toastr.success(res.message); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
+                    else toastr.error(res.message);
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+    }
+
+    function submitEditAdvance() {
+        var form = $('#form-edit-advance');
+        var data = {};
+        form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+
+        if (!data.amount || !data.pool_id || !data.edit_reason) { toastr.warning('Please fill all required fields.'); return; }
+        if (data.edit_reason.length < 5) { toastr.warning('Edit reason must be at least 5 characters.'); return; }
+
+        var id = data.advance_id;
+        var btn = $('#btn-submit-edit-advance');
+        btn.prop('disabled', true);
+
+        $.ajax({
+            url: apiBase + 'staff/advance/' + id + '/update', type: 'POST', data: data,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) { toastr.success(res.message); $('#modal_edit_advance').modal('hide'); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
+                else toastr.error(res.message);
+            },
+            error: function (xhr) {
+                var r = xhr.responseJSON;
+                if (r && r.errors) $.each(r.errors, function (f, m) { toastr.error(m[0]); });
+                else toastr.error(r ? r.message : 'Failed.');
+            },
+            complete: function () { btn.prop('disabled', false); }
         });
     }
 

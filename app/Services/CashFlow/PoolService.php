@@ -299,9 +299,10 @@ class PoolService
             }
         }
 
-        // Step 6: Staff advances — debit pools
+        // Step 6: Staff advances — debit pools (exclude voided)
         $advances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->whereNull('voided_at')
             ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
@@ -311,9 +312,10 @@ class PoolService
             }
         }
 
-        // Step 7: Staff returns — credit pools
+        // Step 7: Staff returns — credit pools (exclude voided)
         $returns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->whereNull('voided_at')
             ->where('created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
