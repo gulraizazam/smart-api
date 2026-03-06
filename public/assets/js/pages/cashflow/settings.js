@@ -14,6 +14,7 @@ var CashflowSettings = (function () {
     function bindEvents() {
         $('#btn-save-settings').on('click', saveSettings);
         $('#btn-init-pools').on('click', initializePools);
+        $('#btn-recalculate-pools').on('click', recalculatePools);
         $('#btn-submit-pool').on('click', submitPool);
         $('#btn-submit-edit-pool').on('click', submitEditPool);
         $('#btn-submit-category').on('click', submitCategory);
@@ -169,6 +170,7 @@ var CashflowSettings = (function () {
             var form = $('#form-edit-pool');
             form.find('[name="pool_id"]').val(btn.data('id'));
             form.find('[name="name"]').val(btn.data('name'));
+            form.find('[name="type"]').val(btn.data('type'));
             form.find('[name="opening_balance"]').val(btn.data('opening'));
 
             if (btn.data('frozen')) {
@@ -230,6 +232,40 @@ var CashflowSettings = (function () {
         });
     }
 
+    function recalculatePools() {
+        if (!confirm('This will recalculate all pool balances from opening balances + all transactions since go-live date. Continue?')) return;
+
+        var btn = $('#btn-recalculate-pools');
+        btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-2"></i> Recalculating...');
+
+        $.ajax({
+            url: apiBase + 'pools/recalculate',
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message);
+                    if (res.data && res.data.length > 0) {
+                        var msg = 'Adjustments made:\n';
+                        $.each(res.data, function (i, r) {
+                            msg += r.pool + ': ' + r.old_balance + ' → ' + r.new_balance + ' (' + (r.diff > 0 ? '+' : '') + r.diff + ')\n';
+                        });
+                        alert(msg);
+                    }
+                    loadSettingsData();
+                } else {
+                    toastr.error(res.message);
+                }
+            },
+            error: function (xhr) {
+                toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to recalculate pool balances.');
+            },
+            complete: function () {
+                btn.prop('disabled', false).html('<i class="la la-calculator"></i> Recalculate Balances');
+            }
+        });
+    }
+
     function submitPool() {
         var form = $('#form-add-pool');
         var data = {
@@ -275,6 +311,7 @@ var CashflowSettings = (function () {
         var poolId = form.find('[name="pool_id"]').val();
         var data = {
             name: form.find('[name="name"]').val(),
+            type: form.find('[name="type"]').val(),
             opening_balance: form.find('[name="opening_balance"]').val()
         };
 

@@ -344,7 +344,7 @@ class ExpenseService
 
         $oldValues = $expense->toArray();
 
-        $allowed = ['amount', 'category_id', 'description', 'reference_no', 'attachment_url', 'notes'];
+        $allowed = ['amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
         foreach ($allowed as $field) {

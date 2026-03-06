@@ -111,6 +111,9 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_pool_manage'))
+                                <button id="btn-recalculate-pools" class="btn btn-warning mr-2">
+                                    <i class="la la-calculator"></i> Recalculate Balances
+                                </button>
                                 <button id="btn-init-pools" class="btn btn-info mr-2">
                                     <i class="la la-sync"></i> Initialize Branch Pools
                                 </button>
@@ -351,6 +354,14 @@
                         <div class="form-group">
                             <label>Pool Name <span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Type <span class="text-danger">*</span></label>
+                            <select name="type" class="form-control" required>
+                                <option value="branch_cash">Branch Cash</option>
+                                <option value="head_office_cash">Head Office Cash</option>
+                                <option value="bank_account">Bank Account</option>
+                            </select>
                         </div>
                         <div class="form-group" id="edit-opening-balance-group">
                             <label>Opening Balance</label>

@@ -274,6 +274,33 @@ class CashFlowController extends Controller
         }
     }
 
+    /**
+     * Recalculate all pool balances from opening balances + all transactions since go-live.
+     */
+    public function poolsRecalculate(): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_settings')) {
+                throw CashflowException::unauthorized('recalculate pool balances');
+            }
+
+            $accountId = Auth::user()->account_id;
+            $results = $this->poolService->recalculatePoolBalances($accountId);
+
+            $message = count($results) > 0
+                ? count($results) . ' pool(s) adjusted.'
+                : 'All pool balances are already accurate.';
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => $results,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     // ===================== CATEGORIES =====================
 
     /**

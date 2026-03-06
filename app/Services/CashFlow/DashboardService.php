@@ -554,8 +554,20 @@ class DashboardService
             ->whereNull('deleted_at')
             ->sum('amount');
 
-        // Expected = Opening + Patient Payments - Expenses - Staff Advances + Staff Returns
-        $expectedTotal = $openingTotal + $patientPayments - $expenses - $staffAdvances + $staffReturns;
+        // Patient refunds (outflows from pools)
+        $patientRefunds = 0.0;
+        if ($goLiveDate) {
+            $patientRefunds = (float) PackageAdvances::where('account_id', $accountId)
+                ->where('cash_flow', 'out')
+                ->where('is_refund', 1)
+                ->where('is_cancel', 0)
+                ->whereNull('deleted_at')
+                ->where('created_at', '>=', $goLiveDate)
+                ->sum('cash_amount');
+        }
+
+        // Expected = Opening + Patient Payments - Refunds - Expenses - Staff Advances + Staff Returns
+        $expectedTotal = $openingTotal + $patientPayments - $patientRefunds - $expenses - $staffAdvances + $staffReturns;
 
         $discrepancy = round($cachedTotal - $expectedTotal, 2);
 
@@ -564,6 +576,7 @@ class DashboardService
             'calculated_total' => $expectedTotal,
             'opening_balances' => $openingTotal,
             'patient_payments' => $patientPayments,
+            'patient_refunds' => $patientRefunds,
             'total_expenses' => $expenses,
             'staff_advances' => $staffAdvances,
             'staff_returns' => $staffReturns,

@@ -84,7 +84,7 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Toggle attachment mandatory indicator when payment method changes
+        // Toggle attachment mandatory indicator + filter pools when payment method changes
         $('[name="payment_method_id"]', '#form-expense').on('change', function () {
             var pmText = $(this).find('option:selected').text().toLowerCase();
             var label = $('#form-expense').find('[name="attachment_url"]').closest('.form-group').find('label');
@@ -93,6 +93,7 @@ var CashflowExpenses = (function () {
             } else {
                 label.html('Attachment (Google Drive URL)');
             }
+            filterPoolsByPaymentMethod(pmText);
         });
 
         // General checkbox disables branch select
@@ -183,11 +184,10 @@ var CashflowExpenses = (function () {
         // Build HTML strings first, then set once (avoids DOM reflow per append)
         var html;
 
-        // Pools
+        // Pools (include type for filtering by payment method)
         html = '<option value="">Select pool</option>';
         $.each(data.pools, function (i, pool) {
-            var label = pool.name;
-            html += '<option value="' + pool.id + '">' + escapeHtml(label) + '</option>';
+            html += '<option value="' + pool.id + '" data-type="' + (pool.type || '') + '">' + escapeHtml(pool.name) + '</option>';
         });
         $('[name="paid_from_pool_id"]', '#form-expense').html(html);
 
@@ -249,6 +249,10 @@ var CashflowExpenses = (function () {
         }
         $('[name="staff_id"]', '#form-expense').html(html);
 
+        // Filter pools on initial load if payment method is pre-set (e.g. duplicate)
+        var initPm = $('[name="payment_method_id"]', '#form-expense').find('option:selected').text().toLowerCase();
+        if (initPm) filterPoolsByPaymentMethod(initPm);
+
         // Vendor emphasis: highlight vendor field when category with vendor_emphasis is selected (Sec 5.4)
         $('[name="category_id"]', '#form-expense').on('change', function () {
             var vendorEmphasis = $(this).find(':selected').data('vendor');
@@ -266,6 +270,49 @@ var CashflowExpenses = (function () {
         $('#filter-status').select2();
         $('#filter-branch').select2();
         $('#filter-category').select2();
+    }
+
+    /**
+     * Filter pool dropdown options based on selected payment method.
+     * Cash → branch_cash, head_office_cash pools
+     * Card → card pools
+     * Bank/Wire Transfer → bank_account pools
+     * No selection → show all
+     */
+    function filterPoolsByPaymentMethod(pmText) {
+        var poolSelect = $('[name="paid_from_pool_id"]', '#form-expense');
+        var currentVal = poolSelect.val();
+
+        // Determine allowed pool types based on payment method name
+        var allowedTypes = [];
+        if (!pmText || pmText === 'select method') {
+            // No filter — show all
+            allowedTypes = [];
+        } else if (pmText.indexOf('card') !== -1 || pmText.indexOf('credit') !== -1 ||
+                   pmText.indexOf('bank') !== -1 || pmText.indexOf('wire') !== -1 || pmText.indexOf('transfer') !== -1) {
+            // Card and Bank/Wire both come from bank account pools
+            allowedTypes = ['bank_account'];
+        } else {
+            // Cash or any other — show cash pools
+            allowedTypes = ['branch_cash', 'head_office_cash'];
+        }
+
+        poolSelect.find('option').each(function () {
+            var opt = $(this);
+            if (!opt.val()) return; // keep placeholder
+            var type = opt.data('type') || '';
+            if (allowedTypes.length === 0 || allowedTypes.indexOf(type) !== -1) {
+                opt.prop('disabled', false).show();
+            } else {
+                opt.prop('disabled', true).hide();
+            }
+        });
+
+        // If current selection is now disabled, reset
+        var selectedOpt = poolSelect.find('option[value="' + currentVal + '"]');
+        if (currentVal && selectedOpt.prop('disabled')) {
+            poolSelect.val('').trigger('change.select2');
+        }
     }
 
     function loadExpenses() {
@@ -390,6 +437,8 @@ var CashflowExpenses = (function () {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-admin-edit" data-id="' + exp.id + '" ' +
                 'data-amount="' + exp.amount + '" ' +
                 'data-category="' + exp.category_id + '" ' +
+                'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
+                'data-payment="' + (exp.payment_method_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description) + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
@@ -483,12 +532,33 @@ var CashflowExpenses = (function () {
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             form.find('[name="edit_reason"]').val('');
+
+            // Populate pool dropdown from create form options
+            var poolHtml = '<option value="">Keep current</option>';
+            $('[name="paid_from_pool_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    poolHtml += '<option value="' + $(this).val() + '" data-type="' + ($(this).data('type') || '') + '">' + $(this).text() + '</option>';
+                }
+            });
+            form.find('[name="paid_from_pool_id"]').html(poolHtml).val(btn.data('pool') || '');
+
+            // Populate payment method dropdown from create form options
+            var pmHtml = '<option value="">Keep current</option>';
+            $('[name="payment_method_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    pmHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+                }
+            });
+            form.find('[name="payment_method_id"]').html(pmHtml).val(btn.data('payment') || '');
+
             $('#modal_admin_edit').modal('show');
         });
 
         $('#modal_admin_edit').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: mb });
+            mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
+            mb.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
         });
