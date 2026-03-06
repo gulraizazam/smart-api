@@ -54,6 +54,11 @@
                 if (d.pools) {
                     $.each(d.pools, function (i, p) { $('#rpt-pool').append('<option value="' + p.id + '">' + esc(p.name) + '</option>'); });
                 }
+
+                // Init Select2 on page-level filter selects (after options are populated)
+                $('#report-type').select2();
+                $('#rpt-branch').select2();
+                $('#rpt-pool').select2();
             }
         });
     }

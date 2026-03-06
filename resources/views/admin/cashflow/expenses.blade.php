@@ -4,8 +4,9 @@
     @push('css')
         <style>
             .status-badge { font-size: 0.85rem; }
-            .expense-flagged { border-left: 3px solid #F64E60 !important; }
-            .expense-voided { opacity: 0.6; }
+            .expense-flagged { border-left: 3px solid #FFA800 !important; }
+            .expense-rejected { border-left: 3px solid #F64E60 !important; }
+            .expense-voided { border-left: 3px solid #F64E60 !important; opacity: 0.6; }
             .amount-cell { font-weight: 600; white-space: nowrap; }
         </style>
     @endpush
@@ -104,7 +105,7 @@
                         <!-- Filters -->
                         <div class="row mb-4">
                             <div class="col-md-2">
-                                <select id="filter-status" class="form-control form-control-sm">
+                                <select id="filter-status" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Status</option>
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
@@ -117,24 +118,25 @@
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <select id="filter-branch" class="form-control form-control-sm">
+                                <select id="filter-branch" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Branches</option>
                                     <option value="general">General</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <select id="filter-category" class="form-control form-control-sm">
+                                <select id="filter-category" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Categories</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <input type="text" id="filter-date-range" class="form-control form-control-sm" placeholder="Date Range" readonly />
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <div class="input-group input-group-sm">
                                     <input type="text" id="filter-search" class="form-control" placeholder="Search..." />
                                     <div class="input-group-append">
                                         <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
+                                        <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -147,7 +149,7 @@
                                         <th>Date</th>
                                         <th>Description</th>
                                         <th>Category</th>
-                                        <th>Branch/Pool</th>
+                                        <th>Pool</th>
                                         <th class="text-right">Amount</th>
                                         <th>Status</th>
                                         <th>Created By</th>
@@ -199,7 +201,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Category <span class="text-danger">*</span></label>
-                                    <select name="category_id" class="form-control" required>
+                                    <select name="category_id" class="form-control kt-select2-general" required>
                                         <option value="">Select category</option>
                                     </select>
                                     <a href="javascript:;" id="btn-category-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Category not listed? Suggest new</a>
@@ -210,7 +212,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Paid From Pool <span class="text-danger">*</span></label>
-                                    <select name="paid_from_pool_id" class="form-control" required>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" required>
                                         <option value="">Select pool</option>
                                     </select>
                                 </div>
@@ -218,7 +220,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method_id" class="form-control" required>
+                                    <select name="payment_method_id" class="form-control kt-select2-general" required>
                                         <option value="">Select method</option>
                                     </select>
                                 </div>
@@ -226,7 +228,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>For Branch</label>
-                                    <select name="for_branch_id" class="form-control" id="expense-branch-select">
+                                    <select name="for_branch_id" class="form-control kt-select2-general" id="expense-branch-select">
                                         <option value="">Select branch</option>
                                     </select>
                                     <div class="checkbox-inline mt-2">
@@ -242,7 +244,7 @@
                             <div class="col-md-6">
                                 <div class="form-group" id="vendor-group">
                                     <label>Vendor</label>
-                                    <select name="vendor_id" class="form-control">
+                                    <select name="vendor_id" class="form-control kt-select2-general">
                                         <option value="">Select vendor (optional)</option>
                                     </select>
                                     <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
@@ -251,7 +253,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Expense By (Staff)</label>
-                                    <select name="staff_id" class="form-control">
+                                    <select name="staff_id" class="form-control kt-select2-general">
                                         <option value="">Select staff (optional)</option>
                                     </select>
                                 </div>
@@ -263,7 +265,7 @@
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
-                            <textarea name="description" class="form-control" rows="2" required minlength="3" maxlength="500"></textarea>
+                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="50" placeholder="Brief expense note (max 50 chars)" />
                         </div>
                     </form>
                 </div>
@@ -403,7 +405,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Category</label>
-                                    <select name="category_id" class="form-control" id="edit-category-select">
+                                    <select name="category_id" class="form-control kt-select2-general" id="edit-category-select">
                                         <option value="">Keep current</option>
                                     </select>
                                 </div>

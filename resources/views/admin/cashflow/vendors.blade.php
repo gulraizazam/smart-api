@@ -18,18 +18,21 @@
                     </div>
                     <div class="card-body">
                         <div class="row mb-4">
-                            <div class="col-md-4">
-                                <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search vendors..." />
-                            </div>
                             <div class="col-md-3">
-                                <select id="filter-active" class="form-control form-control-sm">
+                                <select id="filter-active" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Status</option>
                                     <option value="1">Active</option>
                                     <option value="0">Inactive</option>
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <button id="btn-filter" class="btn btn-primary btn-block"><i class="la la-search"></i></button>
+                            <div class="col-md-5">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="filter-search" class="form-control" placeholder="Search vendors..." />
+                                    <div class="input-group-append">
+                                        <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
+                                        <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="table-responsive">
@@ -108,7 +111,7 @@
                         <div class="row">
                             <div class="col-md-4"><div class="form-group"><label>Phone</label><input type="text" name="phone" class="form-control" /></div></div>
                             <div class="col-md-4"><div class="form-group"><label>Email</label><input type="email" name="email" class="form-control" /></div></div>
-                            <div class="col-md-4"><div class="form-group"><label>Payment Terms</label><select name="payment_terms" class="form-control"><option value="upfront">Upfront</option><option value="net_7">Net 7</option><option value="net_15">Net 15</option><option value="net_30">Net 30</option><option value="custom">Custom</option></select></div></div>
+                            <div class="col-md-4"><div class="form-group"><label>Payment Terms</label><select name="payment_terms" class="form-control kt-select2-general"><option value="upfront">Upfront</option><option value="net_7">Net 7</option><option value="net_15">Net 15</option><option value="net_30">Net 30</option><option value="custom">Custom</option></select></div></div>
                         </div>
                         <div class="row">
                             <div class="col-md-6"><div class="form-group"><label>Category</label><input type="text" name="category" class="form-control" placeholder="e.g. Cleaning, Office Supplies" /></div></div>

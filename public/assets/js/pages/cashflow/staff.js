@@ -18,8 +18,22 @@ var CashflowStaff = (function () {
         $('#btn-submit-advance').on('click', submitAdvance);
         $('#btn-submit-return').on('click', submitReturn);
         $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); });
-        $('#modal_advance').on('hidden.bs.modal', function () { $('#form-advance')[0].reset(); });
-        $('#modal_return').on('hidden.bs.modal', function () { $('#form-return')[0].reset(); });
+        $('#modal_advance').on('shown.bs.modal', function () {
+            var modal = $(this);
+            modal.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
+            modal.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-advance')[0].reset();
+        });
+        $('#modal_return').on('shown.bs.modal', function () {
+            var modal = $(this);
+            modal.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
+            modal.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-return')[0].reset();
+        });
     }
 
     function loadDropdowns() {
@@ -46,7 +60,7 @@ var CashflowStaff = (function () {
                 if (!res.success) return;
                 var opts = '<option value="">Select pool</option>';
                 $.each(res.data.pools, function (i, p) {
-                    var label = p.name + (p.location ? ' (' + p.location.name + ')' : '');
+                    var label = p.name;
                     opts += '<option value="' + p.id + '">' + esc(label) + '</option>';
                 });
                 $('#advance-pool-select').html(opts);

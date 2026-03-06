@@ -50,6 +50,16 @@ var CashflowExpenses = (function () {
         $('#btn-filter').on('click', function () { currentPage = 1; loadExpenses(); });
         $('#filter-status').on('change', function () { currentPage = 1; loadExpenses(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadExpenses(); } });
+        $('#btn-reset-filters').on('click', function () {
+            $('#filter-status').val('').trigger('change');
+            $('#filter-branch').val('').trigger('change');
+            $('#filter-category').val('').trigger('change');
+            $('#filter-search').val('');
+            var picker = $('#filter-date-range').data('daterangepicker');
+            if (picker) { picker.setStartDate(moment().startOf('month')); picker.setEndDate(moment()); }
+            currentPage = 1;
+            loadExpenses();
+        });
         $('#btn-submit-expense').on('click', submitExpense);
         $('#btn-confirm-reject').on('click', submitReject);
         $('#btn-confirm-void').on('click', submitVoid);
@@ -60,11 +70,28 @@ var CashflowExpenses = (function () {
         $('#btn-submit-vendor-request').on('click', submitVendorRequest);
         $('#btn-submit-category-request').on('click', submitCategoryRequest);
 
+        // Remove validation highlight on input
+        $('#form-expense').on('input change', '.is-invalid', function () {
+            $(this).removeClass('is-invalid');
+            $(this).siblings('.select2-container').css('border', '').css('border-radius', '');
+        });
+
         // Attachment URL: warn if non-Google-Drive URL (Sec 11.3)
         $('[name="attachment_url"]', '#form-expense').on('change', function () {
             var url = $(this).val();
             if (url && !/drive\.google\.com|docs\.google\.com/i.test(url)) {
                 toastr.warning('This URL does not appear to be a Google Drive link. Please verify.');
+            }
+        });
+
+        // Toggle attachment mandatory indicator when payment method changes
+        $('[name="payment_method_id"]', '#form-expense').on('change', function () {
+            var pmText = $(this).find('option:selected').text().toLowerCase();
+            var label = form.find('[name="attachment_url"]').closest('.form-group').find('label');
+            if (pmText.indexOf('cash') !== -1) {
+                label.html('Attachment (Google Drive URL) <span class="text-danger">*</span>');
+            } else {
+                label.html('Attachment (Google Drive URL)');
             }
         });
 
@@ -84,14 +111,22 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Pre-fill date on modal open
-        $('#modal_expense').on('show.bs.modal', function () {
+        // Pre-fill date and init Select2 on modal open
+        $('#modal_expense').on('shown.bs.modal', function () {
             var dateField = $('#form-expense [name="expense_date"]');
             if (!dateField.val()) dateField.val(getTodayStr());
+            var modal = $(this);
+            modal.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: modal });
+            modal.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modal });
+            modal.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modal });
+            modal.find('[name="for_branch_id"]').select2({ placeholder: 'Select branch', dropdownParent: modal });
+            modal.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modal });
+            modal.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modal });
         });
 
         // Reset modal on close
         $('#modal_expense').on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
             $('#form-expense')[0].reset();
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
@@ -141,7 +176,7 @@ var CashflowExpenses = (function () {
         // Pools
         html = '<option value="">Select pool</option>';
         $.each(data.pools, function (i, pool) {
-            var label = pool.name + (pool.location ? ' (' + pool.location.name + ')' : '');
+            var label = pool.name;
             html += '<option value="' + pool.id + '">' + escapeHtml(label) + '</option>';
         });
         $('[name="paid_from_pool_id"]', '#form-expense').html(html);
@@ -216,6 +251,11 @@ var CashflowExpenses = (function () {
                 $('#vendor-group').removeClass('bg-light-warning p-3 rounded').css('opacity', '1');
             }
         });
+
+        // Init Select2 on page-level filter selects (after options are populated)
+        $('#filter-status').select2();
+        $('#filter-branch').select2();
+        $('#filter-category').select2();
     }
 
     function loadExpenses() {
@@ -272,6 +312,7 @@ var CashflowExpenses = (function () {
         $.each(expenses, function (i, exp) {
             var rowClass = '';
             if (exp.is_flagged) rowClass += ' expense-flagged';
+            if (exp.status === 'rejected') rowClass += ' expense-rejected';
             if (exp.voided_at) rowClass += ' expense-voided';
 
             var statusBadge = getStatusBadge(exp);
@@ -290,7 +331,7 @@ var CashflowExpenses = (function () {
                     (exp.edit_reason ? ' <i class="la la-pencil text-warning" title="' + escapeHtml(buildEditTooltip(exp)) + '"></i>' : '') +
                 '</td>' +
                 '<td>' + (exp.category ? escapeHtml(exp.category.name) : '-') + '</td>' +
-                '<td><small class="text-muted">' + escapeHtml(branchLabel) + '</small><br><small>' + escapeHtml(poolLabel) + '</small></td>' +
+                '<td><small>' + escapeHtml(poolLabel) + '</small></td>' +
                 '<td class="text-right amount-cell">PKR ' + numberFormat(exp.amount) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
                 '<td>' + (exp.creator ? escapeHtml(exp.creator.name) : '-') + '</td>' +
@@ -352,6 +393,23 @@ var CashflowExpenses = (function () {
         // Void (admin only, non-voided — Sec 11.5)
         if (perms.canVoid && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-void" data-id="' + exp.id + '" title="Void"><i class="la la-ban text-dark"></i></button>';
+        }
+
+        // Duplicate as New (voided expenses — re-enter with same data)
+        if (exp.voided_at && perms.canCreate) {
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-duplicate" ' +
+                'data-date="' + exp.expense_date + '" ' +
+                'data-amount="' + exp.amount + '" ' +
+                'data-category="' + exp.category_id + '" ' +
+                'data-pool="' + exp.paid_from_pool_id + '" ' +
+                'data-payment="' + (exp.payment_method_id || '') + '" ' +
+                'data-branch="' + (exp.for_branch_id || '') + '" ' +
+                'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
+                'data-vendor="' + (exp.vendor_id || '') + '" ' +
+                'data-staff="' + (exp.staff_id || '') + '" ' +
+                'data-description="' + escapeHtml(exp.description || '') + '" ' +
+                'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
+                'title="Duplicate as New"><i class="la la-copy text-info"></i></button>';
         }
 
         // Audit trail
@@ -418,6 +476,12 @@ var CashflowExpenses = (function () {
             $('#modal_admin_edit').modal('show');
         });
 
+        $('#modal_admin_edit').on('shown.bs.modal', function () {
+            $(this).find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: $(this) });
+        }).on('hidden.bs.modal', function () {
+            $(this).find('.kt-select2-general').select2('destroy');
+        });
+
         $('.btn-unflag').off('click').on('click', function () {
             var id = $(this).data('id');
             if (!confirm('Dismiss the flag on this expense?')) return;
@@ -433,6 +497,29 @@ var CashflowExpenses = (function () {
                     toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to unflag.');
                 }
             });
+        });
+
+        $('.btn-duplicate').off('click').on('click', function () {
+            var btn = $(this);
+            var form = $('#form-expense');
+            form[0].reset();
+            form.find('[name="expense_date"]').val(btn.data('date') || getTodayStr());
+            form.find('[name="amount"]').val(btn.data('amount'));
+            form.find('[name="category_id"]').val(btn.data('category'));
+            form.find('[name="paid_from_pool_id"]').val(btn.data('pool'));
+            form.find('[name="payment_method_id"]').val(btn.data('payment'));
+            form.find('[name="vendor_id"]').val(btn.data('vendor'));
+            form.find('[name="staff_id"]').val(btn.data('staff'));
+            form.find('[name="description"]').val(btn.data('description'));
+            form.find('[name="attachment_url"]').val(btn.data('attachment'));
+            if (btn.data('general') == 1) {
+                form.find('#chk-general').prop('checked', true);
+                form.find('#expense-branch-select').prop('disabled', true);
+            } else {
+                form.find('[name="for_branch_id"]').val(btn.data('branch'));
+            }
+            $('#expense-modal-title').text('New Expense (from voided)');
+            $('#modal_expense').modal('show');
         });
 
         $('.btn-void').off('click').on('click', function () {
@@ -519,21 +606,36 @@ var CashflowExpenses = (function () {
             }
         });
 
-        if (!data.expense_date || !data.amount || !data.category_id || !data.paid_from_pool_id || !data.payment_method_id || !data.description) {
-            toastr.warning('Please fill all required fields.');
-            return;
-        }
-
-        // For Branch must be selected (branch or General checkbox)
+        // Highlight missing required fields
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.select2-container').removeClass('is-invalid');
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description'];
+        var missing = [];
+        $.each(requiredFields, function (i, name) {
+            if (!data[name]) {
+                var el = form.find('[name="' + name + '"]');
+                el.addClass('is-invalid');
+                // Also highlight Select2 container for select elements
+                el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+                missing.push(name);
+            }
+        });
         if (!data.is_for_general && !data.for_branch_id) {
-            toastr.warning('Please select a branch or mark as General / Company-wide.');
-            return;
+            var branchEl = form.find('[name="for_branch_id"]');
+            branchEl.addClass('is-invalid');
+            branchEl.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+            missing.push('for_branch_id');
         }
-
         // Cash expenses MUST have attachment
         var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
         if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url) {
-            toastr.error('Attachment is mandatory for cash expenses.');
+            form.find('[name="attachment_url"]').addClass('is-invalid');
+            missing.push('attachment_url');
+        }
+        if (missing.length) {
+            toastr.warning('Please fill the highlighted fields.');
+            var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
+            if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
