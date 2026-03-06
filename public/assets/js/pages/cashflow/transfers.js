@@ -358,16 +358,14 @@ var CashflowTransfers = (function () {
 
     function submitTransfer() {
         var form = $('#form-transfer');
+        if (!form[0].reportValidity()) return;
+
         var data = {};
         form.find('input, select').each(function () {
             var n = $(this).attr('name');
             if (n) data[n] = $(this).val();
         });
 
-        if (!data.transfer_date || !data.amount || !data.from_pool_id || !data.to_pool_id || !data.attachment_url) {
-            toastr.warning('Please fill all required fields.');
-            return;
-        }
         if (data.from_pool_id === data.to_pool_id) {
             toastr.warning('Source and destination pools must be different.');
             return;
@@ -427,17 +425,13 @@ var CashflowTransfers = (function () {
 
     function submitEditTransfer() {
         var form = $('#form-edit-transfer');
+        if (!form[0].reportValidity()) return;
+
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
 
-        if (!data.amount || !data.from_pool_id || !data.to_pool_id || !data.method || !data.attachment_url || !data.edit_reason) {
-            toastr.warning('Please fill all required fields.'); return;
-        }
         if (data.from_pool_id === data.to_pool_id) {
             toastr.warning('Source and destination pools must be different.'); return;
-        }
-        if (data.edit_reason.length < 5) {
-            toastr.warning('Edit reason must be at least 5 characters.'); return;
         }
 
         var id = data.transfer_id;
