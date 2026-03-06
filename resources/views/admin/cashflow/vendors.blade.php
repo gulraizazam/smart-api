@@ -162,6 +162,13 @@
     </div>
 
     @push('js')
+        <script>
+            var cfPerms = {
+                canManage: {{ Gate::allows('cashflow_vendor_manage') ? 'true' : 'false' }},
+                canTransaction: {{ Gate::allows('cashflow_vendor_transaction') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+            };
+        </script>
         <script src="{{ asset('assets/js/pages/cashflow/vendors.js') }}"></script>
     @endpush
 @endsection

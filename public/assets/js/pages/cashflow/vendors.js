@@ -79,7 +79,7 @@ var CashflowVendors = (function () {
                 '<td class="text-right ' + balClass + '">PKR ' + nf(v.cached_balance) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
                 '<td class="text-center">' +
-                    '<button class="btn btn-sm btn-clean btn-icon btn-edit-vendor" data-vendor=\'' + JSON.stringify(v) + '\' title="Edit"><i class="la la-edit text-primary"></i></button>' +
+                    ((typeof cfPerms !== 'undefined' && cfPerms.canManage) ? '<button class="btn btn-sm btn-clean btn-icon btn-edit-vendor" data-vendor=\'' + JSON.stringify(v) + '\' title="Edit"><i class="la la-edit text-primary"></i></button>' : '') +
                 '</td>' +
                 '</tr>'
             );
@@ -211,7 +211,7 @@ var CashflowVendors = (function () {
 
         $.each(reqs, function (i, r) {
             var actions = '';
-            if (r.status === 'pending') {
+            if (r.status === 'pending' && typeof cfPerms !== 'undefined' && cfPerms.canManage) {
                 actions = '<button class="btn btn-sm btn-clean btn-icon btn-approve-req" data-id="' + r.id + '" title="Approve"><i class="la la-check text-success"></i></button>' +
                           '<button class="btn btn-sm btn-clean btn-icon btn-dismiss-req" data-id="' + r.id + '" title="Dismiss"><i class="la la-times text-danger"></i></button>';
             }
