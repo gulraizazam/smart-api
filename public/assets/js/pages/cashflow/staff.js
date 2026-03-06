@@ -15,8 +15,6 @@ var CashflowStaff = (function () {
     }
 
     function bindEvents() {
-        $('#btn-open-advance').on('click', function () { $('#modal_advance').modal('show'); });
-        $('#btn-open-return').on('click', function () { $('#modal_return').modal('show'); });
         $('#btn-submit-advance').on('click', submitAdvance);
         $('#btn-submit-return').on('click', submitReturn);
         $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); });

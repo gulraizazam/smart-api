@@ -12,7 +12,7 @@
                         <div class="card-title"><h3 class="card-label"><i class="la la-store mr-2"></i>Vendors</h3></div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_vendor_manage'))
-                                <button class="btn btn-primary" id="btn-open-vendor"><i class="la la-plus"></i> Add Vendor</button>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#modal_vendor"><i class="la la-plus"></i> Add Vendor</button>
                             @endif
                         </div>
                     </div>
@@ -50,7 +50,7 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-inbox mr-2"></i>Vendor Requests</h3></div>
                         <div class="card-toolbar">
-                            <button class="btn btn-info" id="btn-open-vendor-request"><i class="la la-plus"></i> Request New Vendor</button>
+                            <button class="btn btn-info" data-toggle="modal" data-target="#modal_vendor_request"><i class="la la-plus"></i> Request New Vendor</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -70,7 +70,7 @@
                         <div class="card-toolbar">
                             <button class="btn btn-secondary" id="btn-close-ledger"><i class="la la-times"></i> Close</button>
                             @if(Gate::allows('cashflow_vendor_transaction'))
-                                <button class="btn btn-primary ml-2" id="btn-open-transaction"><i class="la la-plus"></i> Record Purchase</button>
+                                <button class="btn btn-primary ml-2" data-toggle="modal" data-target="#modal_transaction"><i class="la la-plus"></i> Record Purchase</button>
                             @endif
                         </div>
                     </div>

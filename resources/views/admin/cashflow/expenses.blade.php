@@ -94,7 +94,7 @@
                                 <i class="la la-file-excel"></i> Export
                             </button>
                             @if(Gate::allows('cashflow_expense_create'))
-                                <button id="btn-add-expense" class="btn btn-primary">
+                                <button id="btn-add-expense" class="btn btn-primary" data-toggle="modal" data-target="#modal_expense">
                                     <i class="la la-plus"></i> New Expense
                                 </button>
                             @endif
@@ -173,7 +173,7 @@
     </div>
 
     <!-- Create/View Expense Modal -->
-    <div class="modal fade" id="modal_expense" tabindex="-1">
+    <div class="modal fade" id="modal_expense" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -292,7 +292,7 @@
     </div>
 
     <!-- Vendor Request Modal (from expense form) -->
-    <div class="modal fade" id="modal_vendor_request" tabindex="-1">
+    <div class="modal fade" id="modal_vendor_request" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
@@ -324,7 +324,7 @@
     </div>
 
     <!-- Category Suggestion Modal (from expense form) -->
-    <div class="modal fade" id="modal_category_request" tabindex="-1">
+    <div class="modal fade" id="modal_category_request" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
@@ -352,7 +352,7 @@
     </div>
 
     <!-- Reject Modal -->
-    <div class="modal fade" id="modal_reject" tabindex="-1">
+    <div class="modal fade" id="modal_reject" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -375,7 +375,7 @@
     </div>
 
     <!-- Void Modal -->
-    <div class="modal fade" id="modal_void" tabindex="-1">
+    <div class="modal fade" id="modal_void" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -399,7 +399,7 @@
     </div>
 
     <!-- Admin Edit Modal -->
-    <div class="modal fade" id="modal_admin_edit" tabindex="-1">
+    <div class="modal fade" id="modal_admin_edit" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -458,7 +458,7 @@
     </div>
 
     <!-- Audit Trail Modal -->
-    <div class="modal fade" id="modal_audit" tabindex="-1">
+    <div class="modal fade" id="modal_audit" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">

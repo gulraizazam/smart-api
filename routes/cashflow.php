@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\CashFlowController;
+use App\Http\Controllers\Api\CashflowLookupsController;
 use App\Http\Controllers\Api\CashflowNotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('cashflow')->name('cashflow.')->group(function () {
 
     // Lookups (common dropdown data)
-    Route::get('lookups', [CashFlowController::class, 'lookups'])->name('lookups');
+    Route::get('lookups', [CashflowLookupsController::class, 'lookups'])->name('lookups');
 
     // Settings
     Route::prefix('settings')->name('settings.')->middleware('permission:cashflow_settings')->group(function () {
@@ -52,7 +53,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Expenses
     Route::prefix('expenses')->name('expenses.')->group(function () {
         Route::get('data', [CashFlowController::class, 'expensesData'])->name('data');
-        Route::get('form-data', [CashFlowController::class, 'expensesFormData'])->name('form_data');
+        Route::get('form-data', [CashflowLookupsController::class, 'expensesFormData'])->name('form_data');
         Route::post('store', [CashFlowController::class, 'expensesStore'])->name('store');
         Route::post('{id}/approve', [CashFlowController::class, 'expensesApprove'])->name('approve');
         Route::post('{id}/reject', [CashFlowController::class, 'expensesReject'])->name('reject');

@@ -12,7 +12,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('cashflow_transfer_create'))
-                                <button id="btn-add-transfer" class="btn btn-primary">
+                                <button id="btn-add-transfer" class="btn btn-primary" data-toggle="modal" data-target="#modal_transfer">
                                     <i class="la la-plus"></i> New Transfer
                                 </button>
                             @endif
