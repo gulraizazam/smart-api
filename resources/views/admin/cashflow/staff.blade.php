@@ -11,8 +11,10 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-users mr-2"></i>Staff Advance Summary</h3></div>
                         <div class="card-toolbar">
-                            <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
-                            <button class="btn btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
+                            @if(Gate::allows('cashflow_staff_advance'))
+                                <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
+                                <button class="btn btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body">
