@@ -101,25 +101,44 @@
     }
 
     function renderPools(pools) {
-        var strip = $('#pool-balance-strip').empty();
-        if (!pools || !pools.length) { strip.html('<span class="text-muted py-2">No pools found.</span>'); $('#pool-total').text('PKR 0'); return; }
+        var cashStrip = $('#pool-balance-strip').empty();
+        var bankStrip = $('#pool-balance-strip-bank').empty();
+        var bankSection = $('#pool-bank-section').addClass('d-none');
 
-        var total = 0;
-        $.each(pools, function (i, p) { total += parseFloat(p.cached_balance || 0); });
-        $('#pool-total').text('PKR ' + nf(total));
+        if (!pools || !pools.length) {
+            cashStrip.html('<span class="text-muted py-2">No pools found.</span>');
+            $('#pool-total-cash').text('PKR 0');
+            $('#pool-total-bank').text('PKR 0');
+            return;
+        }
+
+        var cashTotal = 0, bankTotal = 0;
+        $.each(pools, function (i, p) {
+            var bal = parseFloat(p.cached_balance || 0);
+            if (p.type === 'bank_account') { bankTotal += bal; } else { cashTotal += bal; }
+        });
+        $('#pool-total-cash').text('PKR ' + nf(cashTotal));
+        $('#pool-total-bank').text('PKR ' + nf(bankTotal));
 
         $.each(pools, function (i, p) {
             var bal = parseFloat(p.cached_balance || 0);
             var borderColor = bal < 0 ? '#F64E60' : (bal === 0 ? '#E4E6EF' : '#1BC5BD');
             var amtColor = bal < 0 ? '#F64E60' : '#181C32';
-            var label = p.type === 'bank_account' ? esc(p.name) : esc(p.name).replace(/^CUTERA\s*/i, '');
+            var isBank = p.type === 'bank_account';
+            var label = isBank ? esc(p.name) : esc(p.name).replace(/^CUTERA\s*/i, '');
+            var borderLeft = isBank ? '3px solid #8950FC' : '3px solid ' + borderColor;
 
-            strip.append(
-                '<div style="border-left:3px solid ' + borderColor + ';background:#F8F9FB;border-radius:4px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;">' +
+            var card = '<div style="border-left:' + borderLeft + ';background:#F8F9FB;border-radius:4px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px;">' +
                 '<span style="font-size:11px;color:#7E8299;white-space:nowrap;">' + label + '</span>' +
                 '<span style="font-size:12px;font-weight:700;color:' + amtColor + ';white-space:nowrap;">PKR ' + nf(bal) + '</span>' +
-                '</div>'
-            );
+                '</div>';
+
+            if (isBank) {
+                bankStrip.append(card);
+                bankSection.removeClass('d-none');
+            } else {
+                cashStrip.append(card);
+            }
         });
     }
 
