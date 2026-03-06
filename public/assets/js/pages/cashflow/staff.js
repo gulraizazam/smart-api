@@ -273,12 +273,32 @@ var CashflowStaff = (function () {
         });
     }
 
+    function highlightRequired(form, requiredFields, data) {
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.select2-container').css('border', '').css('border-radius', '');
+        var missing = [];
+        $.each(requiredFields, function (i, name) {
+            if (!data[name]) {
+                var el = form.find('[name="' + name + '"]');
+                el.addClass('is-invalid');
+                el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+                missing.push(name);
+            }
+        });
+        if (missing.length) {
+            toastr.warning('Please fill the highlighted fields.');
+            var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
+            if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return missing.length === 0;
+    }
+
     function submitEditAdvance() {
         var form = $('#form-edit-advance');
-        if (!form[0].reportValidity()) return;
-
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+
+        if (!highlightRequired(form, ['amount', 'pool_id', 'edit_reason'], data)) return;
 
         var id = data.advance_id;
         var btn = $('#btn-submit-edit-advance');
@@ -302,10 +322,10 @@ var CashflowStaff = (function () {
 
     function submitAdvance() {
         var form = $('#form-advance');
-        if (!form[0].reportValidity()) return;
-
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+
+        if (!highlightRequired(form, ['user_id', 'pool_id', 'amount'], data)) return;
 
         // Warn if staff already has unsettled advance (Sec 8.3)
         var existingBalance = parseFloat($('#advance-staff-select option:selected').data('balance')) || 0;
@@ -335,10 +355,10 @@ var CashflowStaff = (function () {
 
     function submitReturn() {
         var form = $('#form-return');
-        if (!form[0].reportValidity()) return;
-
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+
+        if (!highlightRequired(form, ['user_id', 'pool_id', 'amount'], data)) return;
 
         var btn = $(this); btn.prop('disabled', true);
 

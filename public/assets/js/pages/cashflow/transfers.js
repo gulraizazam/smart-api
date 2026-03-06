@@ -356,15 +356,35 @@ var CashflowTransfers = (function () {
         $('.btn-page').off('click').on('click', function () { currentPage = $(this).data('page'); loadTransfers(); });
     }
 
+    function highlightRequired(form, requiredFields, data) {
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.select2-container').css('border', '').css('border-radius', '');
+        var missing = [];
+        $.each(requiredFields, function (i, name) {
+            if (!data[name]) {
+                var el = form.find('[name="' + name + '"]');
+                el.addClass('is-invalid');
+                el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+                missing.push(name);
+            }
+        });
+        if (missing.length) {
+            toastr.warning('Please fill the highlighted fields.');
+            var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
+            if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return missing.length === 0;
+    }
+
     function submitTransfer() {
         var form = $('#form-transfer');
-        if (!form[0].reportValidity()) return;
-
         var data = {};
         form.find('input, select').each(function () {
             var n = $(this).attr('name');
             if (n) data[n] = $(this).val();
         });
+
+        if (!highlightRequired(form, ['transfer_date', 'amount', 'from_pool_id', 'to_pool_id', 'attachment_url'], data)) return;
 
         if (data.from_pool_id === data.to_pool_id) {
             toastr.warning('Source and destination pools must be different.');
@@ -425,10 +445,10 @@ var CashflowTransfers = (function () {
 
     function submitEditTransfer() {
         var form = $('#form-edit-transfer');
-        if (!form[0].reportValidity()) return;
-
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+
+        if (!highlightRequired(form, ['amount', 'from_pool_id', 'to_pool_id', 'method', 'attachment_url', 'edit_reason'], data)) return;
 
         if (data.from_pool_id === data.to_pool_id) {
             toastr.warning('Source and destination pools must be different.'); return;
