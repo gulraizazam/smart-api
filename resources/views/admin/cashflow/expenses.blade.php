@@ -499,6 +499,7 @@
                 canEdit: {{ Gate::allows('cashflow_expense_edit') ? 'true' : 'false' }},
                 canVoid: {{ Gate::allows('cashflow_expense_void') ? 'true' : 'false' }},
                 canCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
+                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }},
                 userId: {{ auth()->id() }}
             };
         </script>

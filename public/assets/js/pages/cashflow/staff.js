@@ -178,8 +178,15 @@ var CashflowStaff = (function () {
 
             var actions = '';
             if (!isVoided) {
-                actions = '<button class="btn btn-sm btn-clean btn-icon btn-edit-advance" data-id="' + item.id + '" data-amount="' + parseInt(item.amount) + '" data-pool="' + item.pool_id + '" data-desc="' + esc(item.description || '') + '" title="Edit"><i class="la la-pencil text-primary"></i></button>' +
-                          '<button class="btn btn-sm btn-clean btn-icon btn-void-advance" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                if (typeof cfPerms !== 'undefined' && cfPerms.canEdit) {
+                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-edit-advance" data-id="' + item.id + '" data-amount="' + parseInt(item.amount) + '" data-pool="' + item.pool_id + '" data-desc="' + esc(item.description || '') + '" title="Edit"><i class="la la-pencil text-primary"></i></button>';
+                }
+                if (typeof cfPerms !== 'undefined' && cfPerms.canVoid) {
+                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-advance" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                }
+            }
+            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+                actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + item.id + '" data-type="advance" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
             }
 
             tbody.append(
@@ -212,6 +219,11 @@ var CashflowStaff = (function () {
             });
         });
 
+        // Bind audit handler for advances
+        $('#ledger-advances-tbody .btn-audit').off('click').on('click', function () {
+            loadAuditTrail($(this).data('id'), $(this).data('type'));
+        });
+
         // Bind edit handler
         $('.btn-edit-advance').off('click').on('click', function () {
             var btn = $(this);
@@ -239,7 +251,12 @@ var CashflowStaff = (function () {
 
             var actions = '';
             if (!isVoided) {
-                actions = '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                if (typeof cfPerms !== 'undefined' && cfPerms.canVoid) {
+                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                }
+            }
+            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+                actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + item.id + '" data-type="return" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
             }
 
             tbody.append(
@@ -252,6 +269,11 @@ var CashflowStaff = (function () {
                 '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
+        });
+
+        // Bind audit handler for returns
+        $('#ledger-returns-tbody .btn-audit').off('click').on('click', function () {
+            loadAuditTrail($(this).data('id'), $(this).data('type'));
         });
 
         // Bind void handler for returns
@@ -376,6 +398,122 @@ var CashflowStaff = (function () {
             },
             complete: function () { btn.prop('disabled', false); }
         });
+    }
+
+    // ===================== AUDIT TRAIL =====================
+
+    function loadAuditTrail(id, type) {
+        $('#audit-loading').removeClass('d-none');
+        $('#audit-timeline').addClass('d-none').empty();
+        $('#modal_audit').modal('show');
+
+        var url = type === 'return'
+            ? apiBase + 'staff/return/' + id + '/audit'
+            : apiBase + 'staff/advance/' + id + '/audit';
+
+        $.ajax({
+            url: url, type: 'GET',
+            success: function (res) {
+                $('#audit-loading').addClass('d-none');
+                if (res.success && res.data.length > 0) {
+                    var html = '';
+                    var actionIcons = {
+                        created: 'la-plus-circle', updated: 'la-edit', voided: 'la-ban'
+                    };
+                    var actionColors = {
+                        created: '#3699FF', updated: '#8950FC', voided: '#181C32'
+                    };
+
+                    $.each(res.data, function (i, log) {
+                        var actionBadge = getActionBadge(log.action);
+                        var userName = log.user ? log.user.name : 'System';
+                        var time = new Date(log.created_at).toLocaleString();
+                        var icon = actionIcons[log.action] || 'la-history';
+                        var color = actionColors[log.action] || '#7E8299';
+                        var isLast = (i === res.data.length - 1);
+                        var changeSummary = buildChangeSummary(log);
+
+                        html += '<div class="d-flex align-items-start' + (isLast ? '' : ' mb-4') + '">' +
+                            '<div class="flex-shrink-0 mr-4 text-center" style="width:40px;">' +
+                            '<div style="width:36px;height:36px;border-radius:50%;background:' + color + '15;display:flex;align-items:center;justify-content:center;">' +
+                            '<i class="la ' + icon + '" style="font-size:18px;color:' + color + ';"></i></div>' +
+                            (isLast ? '' : '<div style="width:2px;height:20px;background:#E4E6EF;margin:4px auto 0;"></div>') +
+                            '</div>' +
+                            '<div class="flex-grow-1 pb-3' + (isLast ? '' : ' border-bottom') + '">' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                            '<div>' + actionBadge + ' <span class="font-weight-bold ml-1">' + esc(userName) + '</span></div>' +
+                            '<span class="text-muted font-size-xs">' + time + '</span>' +
+                            '</div>' +
+                            (log.reason ? '<div class="text-muted font-size-sm mt-1"><i class="la la-comment-alt mr-1"></i>' + esc(log.reason) + '</div>' : '') +
+                            (changeSummary ? '<div class="mt-1">' + changeSummary + '</div>' : '') +
+                            '</div></div>';
+                    });
+                    $('#audit-timeline').html(html).removeClass('d-none');
+                } else {
+                    $('#audit-timeline').html('<div class="text-center text-muted py-5"><i class="la la-inbox" style="font-size:40px;"></i><br>No audit records found.</div>').removeClass('d-none');
+                }
+            },
+            error: function () {
+                $('#audit-loading').addClass('d-none');
+                $('#audit-timeline').html('<div class="text-center text-danger py-3">Failed to load audit trail.</div>').removeClass('d-none');
+            }
+        });
+    }
+
+    function buildChangeSummary(log) {
+        if (!log.old_values || !log.new_values) return '';
+        if (log.action === 'created') return '';
+
+        var oldV = log.old_values;
+        var newV = log.new_values;
+        var changes = [];
+
+        var fieldLabels = {
+            amount: 'Amount',
+            pool_id: 'Pool',
+            description: 'Description',
+            void_reason: 'Void Reason'
+        };
+
+        function getRelName(values, field) {
+            if (field === 'pool_id' && values.pool && values.pool.name) return values.pool.name;
+            return null;
+        }
+
+        function formatVal(field, val, values) {
+            if (val === null || val === undefined || val === '') return '(empty)';
+            var relName = getRelName(values, field);
+            if (relName) return relName;
+            if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
+            return esc(String(val));
+        }
+
+        $.each(fieldLabels, function (field, label) {
+            var oldVal = oldV[field];
+            var newVal = newV[field];
+            var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
+            var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+
+            if (oldNorm !== newNorm) {
+                changes.push(
+                    '<span class="font-weight-bold">' + label + ':</span> ' +
+                    '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +
+                    ' <i class="la la-arrow-right font-size-xs"></i> ' +
+                    '<span class="text-success">' + formatVal(field, newVal, newV) + '</span>'
+                );
+            }
+        });
+
+        if (changes.length === 0) return '';
+        return '<div class="font-size-sm text-muted mt-1" style="line-height:1.8;">' + changes.join('<br>') + '</div>';
+    }
+
+    function getActionBadge(action) {
+        var colors = {
+            created: 'primary', updated: 'info', voided: 'dark'
+        };
+        var color = colors[action] || 'secondary';
+        return '<span class="label label-light-' + color + ' label-inline">' + action.replace('_', ' ').toUpperCase() + '</span>';
     }
 
     function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }

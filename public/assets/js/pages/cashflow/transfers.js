@@ -246,17 +246,23 @@ var CashflowTransfers = (function () {
 
             var actions = '';
             if (!isVoided) {
-                actions = '<button class="btn btn-sm btn-clean btn-icon btn-edit-transfer" data-id="' + t.id + '"' +
-                    ' data-amount="' + parseInt(t.amount) + '"' +
-                    ' data-from="' + t.from_pool_id + '"' +
-                    ' data-to="' + t.to_pool_id + '"' +
-                    ' data-method="' + escapeHtml(t.method) + '"' +
-                    ' data-attachment="' + escapeHtml(t.attachment_url || '') + '"' +
-                    ' data-desc="' + escapeHtml(t.description || '') + '"' +
-                    ' title="Edit"><i class="la la-pencil text-primary"></i></button>' +
-                    '<button class="btn btn-sm btn-clean btn-icon btn-void-transfer" data-id="' + t.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                if (typeof cfPerms !== 'undefined' && cfPerms.canEdit) {
+                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-edit-transfer" data-id="' + t.id + '"' +
+                        ' data-amount="' + parseInt(t.amount) + '"' +
+                        ' data-from="' + t.from_pool_id + '"' +
+                        ' data-to="' + t.to_pool_id + '"' +
+                        ' data-method="' + escapeHtml(t.method) + '"' +
+                        ' data-attachment="' + escapeHtml(t.attachment_url || '') + '"' +
+                        ' data-desc="' + escapeHtml(t.description || '') + '"' +
+                        ' title="Edit"><i class="la la-pencil text-primary"></i></button>';
+                }
+                if (typeof cfPerms !== 'undefined' && cfPerms.canVoid) {
+                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-transfer" data-id="' + t.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
+                }
             }
-            actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit-transfer" data-id="' + t.id + '" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
+            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+                actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit-transfer" data-id="' + t.id + '" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
+            }
 
             var descTip = t.description ? ' title="' + escapeHtml(t.description) + '"' : '';
             var attachIcon = t.attachment_url ? ' <a href="javascript:;" class="btn-preview" data-url="' + escapeHtml(t.attachment_url) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>' : '';

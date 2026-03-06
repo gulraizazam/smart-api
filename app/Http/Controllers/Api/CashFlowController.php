@@ -609,6 +609,10 @@ class CashFlowController extends Controller
     public function expensesAudit(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('cashflow_audit_view')) {
+                throw CashflowException::unauthorized('view audit trail');
+            }
+
             $accountId = Auth::user()->account_id;
             $logs = $this->auditService->getEntityLogs('expense', $id, $accountId);
 
@@ -807,7 +811,7 @@ class CashFlowController extends Controller
     public function transfersVoid(Request $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_transfer_create')) {
+            if (!Gate::allows('cashflow_transfer_void')) {
                 throw CashflowException::unauthorized('void transfers');
             }
 
@@ -832,7 +836,7 @@ class CashFlowController extends Controller
     public function transfersEdit(Request $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_transfer_create')) {
+            if (!Gate::allows('cashflow_transfer_edit')) {
                 throw CashflowException::unauthorized('edit transfers');
             }
 
@@ -863,6 +867,10 @@ class CashFlowController extends Controller
     public function transfersAudit(int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('cashflow_audit_view')) {
+                throw CashflowException::unauthorized('view audit trail');
+            }
+
             $accountId = Auth::user()->account_id;
             $logs = $this->auditService->getEntityLogs('transfer', $id, $accountId);
 
@@ -1189,6 +1197,10 @@ class CashFlowController extends Controller
     public function staffAdvanceVoid(Request $request, int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('cashflow_staff_advance_void')) {
+                throw CashflowException::unauthorized('void staff advances');
+            }
+
             $request->validate(['void_reason' => 'required|string|min:5|max:100']);
             $accountId = Auth::user()->account_id;
             $advance = $this->staffAdvanceService->voidAdvance($id, $request->void_reason, $accountId);
@@ -1206,6 +1218,10 @@ class CashFlowController extends Controller
     public function staffAdvanceUpdate(Request $request, int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('cashflow_staff_advance_edit')) {
+                throw CashflowException::unauthorized('edit staff advances');
+            }
+
             $request->validate([
                 'amount' => 'required|numeric|min:1|integer',
                 'pool_id' => 'required|exists:cash_pools,id',
@@ -1228,12 +1244,52 @@ class CashFlowController extends Controller
     public function staffReturnVoid(Request $request, int $id): JsonResponse
     {
         try {
+            if (!Gate::allows('cashflow_staff_advance_void')) {
+                throw CashflowException::unauthorized('void staff returns');
+            }
+
             $request->validate(['void_reason' => 'required|string|min:5|max:100']);
             $accountId = Auth::user()->account_id;
             $return = $this->staffAdvanceService->voidReturn($id, $request->void_reason, $accountId);
             return response()->json(['success' => true, 'data' => $return, 'message' => 'Return voided successfully.']);
         } catch (CashflowException $e) {
             return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get audit trail for a specific staff advance.
+     */
+    public function staffAdvanceAudit(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_audit_view')) {
+                throw CashflowException::unauthorized('view audit trail');
+            }
+
+            $accountId = Auth::user()->account_id;
+            $logs = $this->auditService->getEntityLogs('staff_advance', $id, $accountId);
+            return response()->json(['success' => true, 'data' => $logs]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get audit trail for a specific staff return.
+     */
+    public function staffReturnAudit(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_audit_view')) {
+                throw CashflowException::unauthorized('view audit trail');
+            }
+
+            $accountId = Auth::user()->account_id;
+            $logs = $this->auditService->getEntityLogs('staff_return', $id, $accountId);
+            return response()->json(['success' => true, 'data' => $logs]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
