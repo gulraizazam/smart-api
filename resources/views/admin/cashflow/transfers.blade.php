@@ -87,13 +87,13 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="transfer_date" class="form-control" required />
+                                    <input type="text" name="transfer_date" class="form-control" required readonly placeholder="Select date" style="cursor:pointer;background:#fff;" />
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Amount (PKR) <span class="text-danger">*</span></label>
-                                    <input type="number" name="amount" class="form-control" min="0.01" step="0.01" required />
+                                    <input type="number" name="amount" class="form-control" min="1" step="1" required />
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -127,20 +127,16 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Reference No. <span class="text-danger">*</span></label>
-                                    <input type="text" name="reference_no" class="form-control" required maxlength="100" />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
                                     <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
                                     <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description" class="form-control" rows="2" maxlength="500"></textarea>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <input type="text" name="description" class="form-control" maxlength="50" placeholder="Brief description" />
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
