@@ -19,7 +19,7 @@ class CashTransfer extends Model
     ];
 
     protected $casts = [
-        'transfer_date' => 'date',
+        'transfer_date' => 'date:Y-m-d',
         'amount' => 'decimal:2',
         'voided_at' => 'datetime',
     ];

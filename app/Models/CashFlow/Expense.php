@@ -23,7 +23,7 @@ class Expense extends Model
     ];
 
     protected $casts = [
-        'expense_date' => 'date',
+        'expense_date' => 'date:Y-m-d',
         'amount' => 'decimal:2',
         'is_flagged' => 'boolean',
         'is_for_general' => 'boolean',
