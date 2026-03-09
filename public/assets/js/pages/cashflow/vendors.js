@@ -371,9 +371,15 @@ var CashflowVendors = (function () {
                                     (tx.reference_no ? ' <span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
                                 '</div>' +
                             '</div>' +
-                            '<div class="text-right flex-shrink-0 ml-3">' +
-                                '<div class="font-weight-bolder ' + amtClass + '">' + amtPrefix + 'PKR ' + nf(tx.amount) + '</div>' +
-                                '<div class="font-size-xs ' + runBalClass + '">Bal: PKR ' + nf(runBal) + '</div>' +
+                            '<div class="d-flex align-items-center flex-shrink-0 ml-3" style="gap:16px;">' +
+                                '<div class="text-right" style="min-width:90px;">' +
+                                    '<div class="font-size-xs text-muted">Amount</div>' +
+                                    '<div class="font-weight-bolder font-size-sm ' + amtClass + '">PKR ' + nf(tx.amount) + '</div>' +
+                                '</div>' +
+                                '<div class="text-right" style="min-width:90px;">' +
+                                    '<div class="font-size-xs text-muted">Balance</div>' +
+                                    '<div class="font-weight-bolder font-size-sm ' + runBalClass + '">PKR ' + nf(runBal) + '</div>' +
+                                '</div>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
