@@ -36,13 +36,24 @@ var CashflowExpenses = (function () {
 
     function init() {
         initDateRange();
-        loadFormData();
+        var formDataReady = loadFormData();
         loadExpenses();
         bindEvents();
 
-        // Auto-open modal if coming from dashboard quick-action
-        if (new URLSearchParams(window.location.search).get('action') === 'add') {
-            setTimeout(function () { $('#modal_expense').modal('show'); }, 500);
+        // Auto-open modal if coming from dashboard quick-action or vendor Record Purchase
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'add') {
+            var preVendorId = urlParams.get('vendor_id');
+            formDataReady.done(function () {
+                if (preVendorId) {
+                    $('#form-expense [name="vendor_id"]').val(preVendorId);
+                }
+                $('#modal_expense').modal('show');
+                // After modal shown, trigger vendor select2 update
+                if (preVendorId) {
+                    setTimeout(function () { $('#form-expense [name="vendor_id"]').val(preVendorId).trigger('change'); }, 300);
+                }
+            });
         }
     }
 
@@ -168,7 +179,7 @@ var CashflowExpenses = (function () {
     // ===================== LOAD DATA =====================
 
     function loadFormData() {
-        $.ajax({
+        return $.ajax({
             url: apiBase + 'expenses/form-data',
             type: 'GET',
             success: function (res) {
@@ -1007,7 +1018,7 @@ var CashflowExpenses = (function () {
         }
 
         // Strip empty optional fields so they don't overwrite existing values with blank
-        if (!data.vendor_id) delete data.vendor_id;
+        // NOTE: vendor_id must always be sent so the backend can detect vendor changes/clearing
         if (!data.attachment_url) delete data.attachment_url;
 
         var btn = $(this);

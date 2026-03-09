@@ -3,113 +3,183 @@
 var CashflowVendors = (function () {
     var apiBase = '/api/cashflow/';
     var currentPage = 1;
-    var currentLedgerVendorId = null;
+    var ledgerPage = 1;
+    var currentVendorId = null;
+    var currentVendorData = null;
+    var termsLabels = { upfront: 'Upfront', net_7: 'Net 7', net_15: 'Net 15', net_30: 'Net 30', custom: 'Custom' };
 
     function init() {
         loadVendors();
         loadVendorRequests();
         bindEvents();
-
-        // Init Select2 on page-level filter selects
-        $('#filter-active').select2();
-
-        // Auto-open modal if coming from dashboard quick-action
-        if (new URLSearchParams(window.location.search).get('action') === 'add') {
-            setTimeout(function () { $('#modal_vendor_purchase').modal('show'); }, 500);
-        }
     }
 
     function bindEvents() {
         $('#btn-filter').on('click', function () { currentPage = 1; loadVendors(); });
         $('#filter-search').on('keypress', function (e) { if (e.which === 13) { currentPage = 1; loadVendors(); } });
         $('#btn-reset-filters').on('click', function () {
-            $('#filter-active').val('').trigger('change');
+            $('#filter-active').val('');
             $('#filter-search').val('');
             currentPage = 1;
             loadVendors();
         });
         $('#btn-submit-vendor').on('click', submitVendor);
         $('#btn-submit-request').on('click', submitVendorRequest);
-        $('#btn-submit-transaction').on('click', submitPurchase);
-        $('#btn-close-ledger').on('click', function () { $('#vendor-ledger-card').addClass('d-none'); currentLedgerVendorId = null; });
+
+        // Ledger type filter
+        $('#ledger-type-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
+
+        // Record Purchase → redirect to expenses page with vendor pre-selected
+        $('#btn-record-purchase').on('click', function () {
+            if (!currentVendorId) return;
+            window.location.href = '/admin/cashflow/expenses?action=add&vendor_id=' + currentVendorId;
+        });
+
+        // Edit current vendor from ledger header
+        $('#btn-edit-current-vendor').on('click', function () {
+            if (!currentVendorData) return;
+            openEditVendor(currentVendorData);
+        });
+
+        // Modal events
         $('#modal_vendor').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="payment_terms"]').select2({ placeholder: 'Select payment terms', dropdownParent: mb });
         }).on('hidden.bs.modal', function () {
             $(this).find('.kt-select2-general').select2('destroy');
-            $('#form-vendor')[0].reset(); $('#form-vendor [name="vendor_id"]').val(''); $('#vendor-modal-title').text('Add Vendor');
+            $('#form-vendor')[0].reset();
+            $('#form-vendor [name="vendor_id"]').val('');
+            $('#vendor-modal-title').text('Add Vendor');
         });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
-        $('#modal_transaction').on('hidden.bs.modal', function () { $('#form-transaction')[0].reset(); });
     }
 
-    // ===================== VENDORS =====================
+    // ===================== VENDORS LIST (Left Panel) =====================
 
     function loadVendors() {
         var params = { page: currentPage, search: $('#filter-search').val(), is_active: $('#filter-active').val() };
         Object.keys(params).forEach(function (k) { if (params[k] === '' || params[k] === undefined) delete params[k]; });
 
-        $('#vendors-tbody').html('<tr><td colspan="7" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#vendors-list').html('<div class="text-center text-muted py-5"><div class="spinner spinner-primary spinner-sm"></div></div>');
 
         $.ajax({
             url: apiBase + 'vendors/data', type: 'GET', data: params,
             success: function (res) {
-                if (res.success) { renderVendors(res.data); renderPagination(res.meta, '#vendors-pagination-info', '#vendors-pagination-links', loadVendors); }
+                if (res.success) {
+                    renderVendors(res.data);
+                    renderPagination(res.meta, '#vendors-pagination-info', '#vendors-pagination-links', function () { loadVendors(); });
+                }
             },
-            error: function () { $('#vendors-tbody').html('<tr><td colspan="7" class="text-center text-danger">Failed to load.</td></tr>'); }
+            error: function () { $('#vendors-list').html('<div class="text-center text-danger py-3">Failed to load.</div>'); }
         });
     }
 
     function renderVendors(vendors) {
-        var tbody = $('#vendors-tbody').empty();
-        if (!vendors || vendors.length === 0) { tbody.html('<tr><td colspan="7" class="text-center text-muted">No vendors found.</td></tr>'); return; }
-
-        var termsLabels = { upfront: 'Upfront', net_7: 'Net 7', net_15: 'Net 15', net_30: 'Net 30', custom: 'Custom' };
+        var container = $('#vendors-list').empty();
+        if (!vendors || vendors.length === 0) {
+            container.html('<div class="text-center text-muted py-5">No vendors found.</div>');
+            return;
+        }
 
         $.each(vendors, function (i, v) {
-            var statusBadge = v.is_active ? '<span class="label label-light-success label-inline">Active</span>' : '<span class="label label-light-danger label-inline">Inactive</span>';
-            var balClass = parseFloat(v.cached_balance) < 0 ? 'text-danger' : '';
+            var bal = parseFloat(v.cached_balance) || 0;
+            var balClass = bal < 0 ? 'text-danger' : (bal > 0 ? 'text-warning' : 'text-success');
+            var activeClass = v.is_active ? '' : ' opacity-50';
+            var selectedClass = (currentVendorId === v.id) ? ' bg-light-primary' : '';
 
-            tbody.append(
-                '<tr>' +
-                '<td><a href="javascript:;" class="btn-view-ledger font-weight-bold" data-id="' + v.id + '" data-name="' + esc(v.name) + '">' + esc(v.name) + '</a></td>' +
-                '<td>' + esc(v.contact_person || '-') + '</td>' +
-                '<td>' + esc(v.phone || '-') + '</td>' +
-                '<td>' + (termsLabels[v.payment_terms] || v.payment_terms) + '</td>' +
-                '<td class="text-right ' + balClass + '">PKR ' + nf(v.cached_balance) + '</td>' +
-                '<td>' + statusBadge + '</td>' +
-                '<td class="text-center">' +
-                    ((typeof cfPerms !== 'undefined' && cfPerms.canManage) ? '<button class="btn btn-sm btn-clean btn-icon btn-edit-vendor" data-vendor=\'' + JSON.stringify(v) + '\' title="Edit"><i class="la la-edit text-primary"></i></button>' : '') +
-                '</td>' +
-                '</tr>'
+            var item = $(
+                '<div class="d-flex align-items-center justify-content-between py-2 px-3 rounded cursor-pointer vendor-item' + activeClass + selectedClass + '" data-id="' + v.id + '" style="border-bottom:1px solid #F3F6F9;transition:background .15s;">' +
+                    '<div class="d-flex align-items-center min-w-0">' +
+                        '<div class="symbol symbol-35 symbol-circle symbol-light-primary mr-3 flex-shrink-0">' +
+                            '<span class="symbol-label font-weight-bold">' + esc(v.name.charAt(0).toUpperCase()) + '</span>' +
+                        '</div>' +
+                        '<div class="min-w-0">' +
+                            '<div class="font-weight-bold text-dark-75 text-truncate" style="max-width:180px;">' + esc(v.name) + '</div>' +
+                            '<div class="text-muted font-size-xs">' + (termsLabels[v.payment_terms] || '') +
+                                (!v.is_active ? ' <span class="label label-light-danger label-inline font-size-xs py-0 px-1">Inactive</span>' : '') +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="text-right flex-shrink-0 ml-2">' +
+                        '<div class="font-weight-bolder font-size-sm ' + balClass + '">PKR ' + nf(bal) + '</div>' +
+                        ((typeof cfPerms !== 'undefined' && cfPerms.canManage) ?
+                            '<a href="javascript:;" class="btn-edit-vendor-inline text-hover-primary" data-vendor-json=\'' + JSON.stringify(v).replace(/'/g, '&#39;') + '\' title="Edit"><i class="la la-edit font-size-sm text-muted"></i></a>' : '') +
+                    '</div>' +
+                '</div>'
             );
+
+            container.append(item);
         });
 
-        $('.btn-view-ledger').off('click').on('click', function () {
-            currentLedgerVendorId = $(this).data('id');
-            $('#ledger-vendor-name').text($(this).data('name'));
-            $('#tx-vendor-id').val(currentLedgerVendorId);
-            loadLedger(currentLedgerVendorId);
-            $('#vendor-ledger-card').removeClass('d-none');
-            $('html, body').animate({ scrollTop: $('#vendor-ledger-card').offset().top - 80 }, 300);
+        // Click vendor → open ledger
+        container.find('.vendor-item').off('click').on('click', function (e) {
+            if ($(e.target).closest('.btn-edit-vendor-inline').length) return;
+            var id = $(this).data('id');
+            selectVendor(id, vendors);
         });
 
-        $('.btn-edit-vendor').off('click').on('click', function () {
-            var v = $(this).data('vendor');
-            var form = $('#form-vendor');
-            form.find('[name="vendor_id"]').val(v.id);
-            form.find('[name="name"]').val(v.name);
-            form.find('[name="contact_person"]').val(v.contact_person || '');
-            form.find('[name="phone"]').val(v.phone || '');
-            form.find('[name="email"]').val(v.email || '');
-            form.find('[name="payment_terms"]').val(v.payment_terms);
-            form.find('[name="category"]').val(v.category || '');
-            form.find('[name="opening_balance"]').val(v.opening_balance);
-            form.find('[name="address"]').val(v.address || '');
-            form.find('[name="notes"]').val(v.notes || '');
-            $('#vendor-modal-title').text('Edit Vendor');
-            $('#modal_vendor').modal('show');
+        // Edit vendor inline
+        container.find('.btn-edit-vendor-inline').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var v = $(this).data('vendor-json');
+            if (typeof v === 'string') v = JSON.parse(v);
+            openEditVendor(v);
         });
+
+        // Hover effect
+        container.find('.vendor-item').hover(
+            function () { if (!$(this).hasClass('bg-light-primary')) $(this).css('background', '#F3F6F9'); },
+            function () { if (!$(this).hasClass('bg-light-primary')) $(this).css('background', ''); }
+        );
+    }
+
+    function selectVendor(vendorId, vendorsList) {
+        // Find vendor in list
+        var vendor = null;
+        if (vendorsList) {
+            for (var i = 0; i < vendorsList.length; i++) {
+                if (vendorsList[i].id === vendorId) { vendor = vendorsList[i]; break; }
+            }
+        }
+
+        currentVendorId = vendorId;
+        currentVendorData = vendor;
+
+        // Highlight selected
+        $('.vendor-item').removeClass('bg-light-primary').css('background', '');
+        $('.vendor-item[data-id="' + vendorId + '"]').addClass('bg-light-primary');
+
+        // Show ledger, hide empty state
+        $('#ledger-empty-state').addClass('d-none');
+        $('#vendor-ledger-card').removeClass('d-none');
+
+        // Populate header
+        if (vendor) {
+            $('#ledger-vendor-name').text(vendor.name);
+            $('#ledger-vendor-contact').html(vendor.contact_person ? '<i class="la la-user mr-1"></i>' + esc(vendor.contact_person) : '');
+            $('#ledger-vendor-phone').html(vendor.phone ? '<i class="la la-phone mr-1"></i>' + esc(vendor.phone) : '');
+            $('#ledger-vendor-terms').html('<i class="la la-calendar mr-1"></i>' + (termsLabels[vendor.payment_terms] || 'N/A'));
+        }
+
+        ledgerPage = 1;
+        $('#ledger-type-filter').val('');
+        loadLedger(vendorId);
+    }
+
+    function openEditVendor(v) {
+        var form = $('#form-vendor');
+        form.find('[name="vendor_id"]').val(v.id);
+        form.find('[name="name"]').val(v.name);
+        form.find('[name="contact_person"]').val(v.contact_person || '');
+        form.find('[name="phone"]').val(v.phone || '');
+        form.find('[name="email"]').val(v.email || '');
+        form.find('[name="payment_terms"]').val(v.payment_terms);
+        form.find('[name="category"]').val(v.category || '');
+        form.find('[name="opening_balance"]').val(v.opening_balance);
+        form.find('[name="address"]').val(v.address || '');
+        form.find('[name="notes"]').val(v.notes || '');
+        $('#vendor-modal-title').text('Edit Vendor');
+        $('#modal_vendor').modal('show');
     }
 
     function submitVendor() {
@@ -127,74 +197,110 @@ var CashflowVendors = (function () {
             url: url, type: 'POST', data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
-                if (res.success) { toastr.success(res.message); $('#modal_vendor').modal('hide'); loadVendors(); }
-                else toastr.error(res.message);
+                if (res.success) {
+                    toastr.success(res.message);
+                    $('#modal_vendor').modal('hide');
+                    loadVendors();
+                    // Refresh ledger if editing current vendor
+                    if (vendorId && currentVendorId == vendorId) {
+                        currentVendorData = res.data;
+                        $('#ledger-vendor-name').text(res.data.name);
+                        loadLedger(currentVendorId);
+                    }
+                } else toastr.error(res.message);
             },
             error: function (xhr) { var r = xhr.responseJSON; if (r && r.errors) $.each(r.errors, function (f, m) { toastr.error(m[0]); }); else toastr.error(r ? r.message : 'Failed.'); },
             complete: function () { btn.prop('disabled', false); }
         });
     }
 
-    // ===================== LEDGER =====================
+    // ===================== LEDGER (Right Panel) =====================
 
     function loadLedger(vendorId) {
-        $('#ledger-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        var typeFilter = $('#ledger-type-filter').val();
+        var params = { page: ledgerPage, per_page: 50 };
+        if (typeFilter) params.type = typeFilter;
+
+        $('#ledger-transactions').html('<div class="text-center text-muted py-5"><div class="spinner spinner-primary spinner-sm"></div></div>');
 
         $.ajax({
-            url: apiBase + 'vendors/' + vendorId + '/ledger', type: 'GET',
+            url: apiBase + 'vendors/' + vendorId + '/ledger', type: 'GET', data: params,
             success: function (res) {
                 if (!res.success) return;
                 var d = res.data;
+                var bal = parseFloat(d.vendor.cached_balance) || 0;
+
                 $('#ledger-opening').text('PKR ' + nf(d.vendor.opening_balance));
-                $('#ledger-balance').text('PKR ' + nf(d.vendor.cached_balance));
-                $('#ledger-count').text(d.transactions.total || d.transactions.data.length);
-                renderLedger(d.transactions.data || d.transactions);
+                $('#ledger-balance').text('PKR ' + nf(bal));
+                $('#ledger-count').text(d.transactions.total || 0);
+
+                // Color the balance card based on outstanding
+                var borderColor = bal > 0 ? '#F64E60' : (bal < 0 ? '#1BC5BD' : '#FFA800');
+                $('#ledger-balance-card').css('border-left-color', borderColor);
+                $('#ledger-balance').toggleClass('text-danger', bal > 0).toggleClass('text-success', bal < 0);
+
+                var txData = d.transactions.data || d.transactions;
+                renderLedger(txData);
+
+                // Ledger pagination
+                if (d.transactions.last_page) {
+                    renderPagination({
+                        current_page: d.transactions.current_page,
+                        last_page: d.transactions.last_page,
+                        total: d.transactions.total,
+                        per_page: d.transactions.per_page
+                    }, '#ledger-pagination-info', '#ledger-pagination-links', function () { loadLedger(vendorId); });
+                }
             }
         });
     }
 
     function renderLedger(txs) {
-        var tbody = $('#ledger-tbody').empty();
-        if (!txs || txs.length === 0) { tbody.html('<tr><td colspan="6" class="text-center text-muted">No transactions.</td></tr>'); return; }
-
-        var typeLabels = { purchase: '<span class="label label-light-danger label-inline">Purchase</span>', payment: '<span class="label label-light-success label-inline">Payment</span>' };
+        var container = $('#ledger-transactions').empty();
+        if (!txs || txs.length === 0) {
+            container.html('<div class="text-center text-muted py-5"><i class="la la-inbox" style="font-size:36px;"></i><br>No transactions found.</div>');
+            return;
+        }
 
         $.each(txs, function (i, tx) {
-            tbody.append(
-                '<tr>' +
-                '<td>' + fd(tx.created_at) + '</td>' +
-                '<td>' + (typeLabels[tx.type] || tx.type) + '</td>' +
-                '<td class="text-right font-weight-bold">PKR ' + nf(tx.amount) + '</td>' +
-                '<td>' + esc(tx.description || '-') + '</td>' +
-                '<td>' + esc(tx.reference_no || '-') + '</td>' +
-                '<td>' + (tx.creator ? esc(tx.creator.name) : '-') + '</td>' +
-                '</tr>'
+            var isPurchase = tx.type === 'purchase';
+            var typeIcon = isPurchase ? 'la-arrow-up text-danger' : 'la-arrow-down text-success';
+            var typeLabel = isPurchase ? 'Purchase' : 'Payment';
+            var amtClass = isPurchase ? 'text-danger' : 'text-success';
+            var amtPrefix = isPurchase ? '+' : '-';
+            var desc = tx.description || (tx.expense && tx.expense.description ? tx.expense.description : '-');
+            var expDate = tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null;
+            var dateStr = fd(expDate || tx.created_at);
+
+            container.append(
+                '<div class="d-flex align-items-center py-2" style="border-bottom:1px solid #F3F6F9;">' +
+                    '<div class="flex-shrink-0 mr-3">' +
+                        '<div style="width:32px;height:32px;border-radius:50%;background:' + (isPurchase ? '#FFF5F8' : '#E8FFF3') + ';display:flex;align-items:center;justify-content:center;">' +
+                            '<i class="la ' + typeIcon + '" style="font-size:16px;"></i>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="flex-grow-1 min-w-0">' +
+                        '<div class="d-flex justify-content-between align-items-center">' +
+                            '<div class="min-w-0">' +
+                                '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate">' + esc(desc) + '</div>' +
+                                '<div class="text-muted font-size-xs">' +
+                                    '<span class="mr-2">' + dateStr + '</span>' +
+                                    '<span class="label label-' + (isPurchase ? 'light-danger' : 'light-success') + ' label-inline font-size-xs py-0 px-2">' + typeLabel + '</span>' +
+                                    (tx.reference_no ? ' <span class="ml-2 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="text-right flex-shrink-0 ml-3">' +
+                                '<div class="font-weight-bolder ' + amtClass + '">' + amtPrefix + 'PKR ' + nf(tx.amount) + '</div>' +
+                                '<div class="text-muted font-size-xs">' + (tx.creator ? esc(tx.creator.name) : '') + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
             );
         });
     }
 
-    function submitPurchase() {
-        var form = $('#form-transaction');
-        var data = {};
-        form.find('input, textarea').each(function () { var n = $(this).attr('name'); if (n && n !== 'vendor_id') data[n] = $(this).val(); });
-
-        if (!currentLedgerVendorId || !data.amount) { toastr.warning('Please fill required fields.'); return; }
-
-        var btn = $(this); btn.prop('disabled', true);
-
-        $.ajax({
-            url: apiBase + 'vendors/' + currentLedgerVendorId + '/purchase', type: 'POST', data: data,
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: function (res) {
-                if (res.success) { toastr.success(res.message); $('#modal_transaction').modal('hide'); loadLedger(currentLedgerVendorId); loadVendors(); }
-                else toastr.error(res.message);
-            },
-            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); },
-            complete: function () { btn.prop('disabled', false); }
-        });
-    }
-
-    // ===================== VENDOR REQUESTS =====================
+    // ===================== VENDOR REQUESTS (Left Panel) =====================
 
     function loadVendorRequests() {
         $.ajax({
@@ -204,31 +310,35 @@ var CashflowVendors = (function () {
     }
 
     function renderRequests(reqs) {
-        var tbody = $('#requests-tbody').empty();
-        if (!reqs || reqs.length === 0) { tbody.html('<tr><td colspan="6" class="text-center text-muted">No pending requests.</td></tr>'); return; }
-
-        var statusLabels = { pending: 'label-light-warning', approved: 'label-light-success', dismissed: 'label-light-danger' };
+        var container = $('#requests-list').empty();
+        if (!reqs || reqs.length === 0) {
+            container.html('<div class="text-center text-muted py-3 font-size-sm">No pending requests.</div>');
+            return;
+        }
 
         $.each(reqs, function (i, r) {
             var actions = '';
             if (r.status === 'pending' && typeof cfPerms !== 'undefined' && cfPerms.canManage) {
-                actions = '<button class="btn btn-sm btn-clean btn-icon btn-approve-req" data-id="' + r.id + '" title="Approve"><i class="la la-check text-success"></i></button>' +
-                          '<button class="btn btn-sm btn-clean btn-icon btn-dismiss-req" data-id="' + r.id + '" title="Dismiss"><i class="la la-times text-danger"></i></button>';
+                actions =
+                    '<a href="javascript:;" class="btn-approve-req text-success mr-2" data-id="' + r.id + '" title="Approve"><i class="la la-check font-size-lg"></i></a>' +
+                    '<a href="javascript:;" class="btn-dismiss-req text-danger" data-id="' + r.id + '" title="Dismiss"><i class="la la-times font-size-lg"></i></a>';
             }
 
-            tbody.append(
-                '<tr>' +
-                '<td>' + esc(r.name) + '</td>' +
-                '<td>' + esc(r.phone || '-') + '</td>' +
-                '<td>' + esc(r.note || '-') + '</td>' +
-                '<td>' + (r.requester ? esc(r.requester.name) : '-') + '</td>' +
-                '<td><span class="label ' + (statusLabels[r.status] || 'label-secondary') + ' label-inline">' + r.status + '</span></td>' +
-                '<td class="text-center">' + actions + '</td>' +
-                '</tr>'
+            container.append(
+                '<div class="d-flex align-items-center justify-content-between py-2 px-1" style="border-bottom:1px solid #F3F6F9;">' +
+                    '<div class="min-w-0">' +
+                        '<div class="font-weight-bold font-size-sm text-truncate" style="max-width:200px;">' + esc(r.name) + '</div>' +
+                        '<div class="text-muted font-size-xs">' +
+                            (r.phone ? esc(r.phone) + ' &middot; ' : '') +
+                            (r.requester ? esc(r.requester.name) : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="flex-shrink-0">' + actions + '</div>' +
+                '</div>'
             );
         });
 
-        $('.btn-approve-req').off('click').on('click', function () {
+        container.find('.btn-approve-req').off('click').on('click', function () {
             var id = $(this).data('id');
             if (!confirm('Approve this vendor request? A new vendor will be created.')) return;
             $.ajax({
@@ -239,7 +349,7 @@ var CashflowVendors = (function () {
             });
         });
 
-        $('.btn-dismiss-req').off('click').on('click', function () {
+        container.find('.btn-dismiss-req').off('click').on('click', function () {
             var id = $(this).data('id');
             var notes = prompt('Enter reason for dismissal (optional):');
             $.ajax({
@@ -273,12 +383,17 @@ var CashflowVendors = (function () {
 
     function renderPagination(meta, infoSel, linksSel, loadFn) {
         if (!meta) return;
-        $(infoSel).text('Page ' + meta.current_page + ' of ' + meta.last_page + ' (' + meta.total + ' total)');
+        $(infoSel).text(meta.total + ' records (page ' + meta.current_page + '/' + meta.last_page + ')');
         var links = '';
-        if (meta.current_page > 1) links += '<button class="btn btn-sm btn-outline-primary mr-1 btn-pg" data-page="' + (meta.current_page - 1) + '">&laquo;</button>';
-        if (meta.current_page < meta.last_page) links += '<button class="btn btn-sm btn-outline-primary btn-pg" data-page="' + (meta.current_page + 1) + '">&raquo;</button>';
+        if (meta.current_page > 1) links += '<button class="btn btn-xs btn-outline-primary mr-1 btn-pg" data-page="' + (meta.current_page - 1) + '">&laquo;</button>';
+        if (meta.current_page < meta.last_page) links += '<button class="btn btn-xs btn-outline-primary btn-pg" data-page="' + (meta.current_page + 1) + '">&raquo;</button>';
         $(linksSel).html(links);
-        $(linksSel + ' .btn-pg').off('click').on('click', function () { currentPage = $(this).data('page'); loadFn(); });
+        $(linksSel + ' .btn-pg').off('click').on('click', function () {
+            var pg = $(this).data('page');
+            if (linksSel.indexOf('ledger') > -1) { ledgerPage = pg; }
+            else { currentPage = pg; }
+            loadFn();
+        });
     }
 
     function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
