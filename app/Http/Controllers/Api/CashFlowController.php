@@ -1000,13 +1000,82 @@ class CashFlowController extends Controller
     {
         try {
             $accountId = Auth::user()->account_id;
-            $filters = $request->only(['type']);
-            $result = $this->vendorService->getVendorLedger($id, $accountId, $filters, $request->input('per_page', 25));
+            $filters = $request->only(['type', 'date_from', 'date_to']);
+            $result = $this->vendorService->getVendorLedger($id, $accountId, $filters, $request->input('per_page', 50));
 
             return response()->json([
                 'success' => true,
                 'data' => $result,
             ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update a standalone vendor transaction (purchase).
+     */
+    public function vendorsTransactionUpdate(StoreVendorPurchaseRequest $request, int $vendorId, int $txId): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $tx = $this->vendorService->updateTransaction($txId, $request->validated(), $accountId);
+            return response()->json(['success' => true, 'data' => $tx, 'message' => 'Transaction updated.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a standalone vendor transaction (purchase).
+     */
+    public function vendorsTransactionDelete(Request $request, int $vendorId, int $txId): JsonResponse
+    {
+        try {
+            if (!Auth::user()->can('cashflow_vendor_transaction')) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
+            $accountId = Auth::user()->account_id;
+            $this->vendorService->deleteTransaction($txId, $accountId);
+            return response()->json(['success' => true, 'message' => 'Transaction deleted.']);
+        } catch (CashflowException $e) {
+            return $e->render(request());
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Export vendor ledger as CSV.
+     */
+    public function vendorsLedgerExport(Request $request, int $id)
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $filters = $request->only(['type', 'date_from', 'date_to']);
+            $data = $this->vendorService->exportVendorLedger($id, $accountId, $filters);
+
+            $vendor = $data['vendor'];
+            $filename = 'vendor_ledger_' . \Illuminate\Support\Str::slug($vendor->name) . '_' . $data['date_from'] . '_to_' . $data['date_to'] . '.csv';
+
+            $headers = ['Content-Type' => 'text/csv', 'Content-Disposition' => 'attachment; filename="' . $filename . '"'];
+
+            $callback = function () use ($data) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, ['Vendor: ' . $data['vendor']->name]);
+                fputcsv($out, ['Period: ' . $data['date_from'] . ' to ' . $data['date_to']]);
+                fputcsv($out, ['Opening Balance: ' . $data['opening_balance']]);
+                fputcsv($out, []);
+                fputcsv($out, ['Date', 'Type', 'Description', 'Reference', 'Branch', 'Purchase', 'Payment', 'Balance', 'Recorded By']);
+                foreach ($data['rows'] as $row) {
+                    fputcsv($out, array_values($row));
+                }
+                fclose($out);
+            };
+
+            return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

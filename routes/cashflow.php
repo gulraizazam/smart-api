@@ -89,6 +89,9 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('{id}/toggle', [CashFlowController::class, 'vendorsToggle'])->name('toggle');
         Route::get('{id}/ledger', [CashFlowController::class, 'vendorsLedger'])->name('ledger');
         Route::post('{id}/purchase', [CashFlowController::class, 'vendorsPurchase'])->name('purchase');
+        Route::post('{id}/transactions/{txId}/update', [CashFlowController::class, 'vendorsTransactionUpdate'])->name('transaction.update');
+        Route::post('{id}/transactions/{txId}/delete', [CashFlowController::class, 'vendorsTransactionDelete'])->name('transaction.delete');
+        Route::get('{id}/ledger/export', [CashFlowController::class, 'vendorsLedgerExport'])->name('ledger.export');
     });
 
     // Vendor Requests
