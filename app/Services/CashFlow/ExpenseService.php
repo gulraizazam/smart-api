@@ -344,6 +344,8 @@ class ExpenseService
         }
 
         $oldValues = $expense->toArray();
+        $oldVendorId = $expense->vendor_id;
+        $oldAmount = (float) $expense->amount;
 
         $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
@@ -369,20 +371,85 @@ class ExpenseService
             }
         }
 
-        $expense->update($updateData);
+        return DB::transaction(function () use ($expense, $updateData, $auditRelations, $oldValues, $oldVendorId, $oldAmount, $data, $accountId) {
+            $expense->update($updateData);
 
-        $newValues = $expense->fresh()->load($auditRelations)->toArray();
+            $newVendorId = $expense->fresh()->vendor_id;
+            $newAmount = (float) $expense->fresh()->amount;
 
-        $this->auditService->log(
-            CashflowAuditLog::ACTION_UPDATED,
-            CashflowAuditLog::ENTITY_EXPENSE,
-            $expense->id,
-            $oldValues,
-            $newValues,
-            $data['edit_reason']
-        );
+            // Sync vendor transaction when vendor or amount changes
+            $existingVendorTx = VendorTransaction::where('expense_id', $expense->id)->whereNull('deleted_at')->first();
 
-        return $expense->fresh();
+            if ($oldVendorId && !$newVendorId) {
+                // Vendor removed: reverse old vendor balance and delete transaction
+                if ($existingVendorTx) {
+                    DB::table('cashflow_vendors')->where('id', $oldVendorId)
+                        ->increment('cached_balance', $existingVendorTx->amount);
+                    $existingVendorTx->delete();
+                }
+            } elseif (!$oldVendorId && $newVendorId) {
+                // Vendor added: create new vendor transaction
+                VendorTransaction::create([
+                    'account_id' => $accountId,
+                    'vendor_id' => $newVendorId,
+                    'type' => VendorTransaction::TYPE_PAYMENT,
+                    'amount' => $newAmount,
+                    'expense_id' => $expense->id,
+                    'description' => 'Payment via expense #' . $expense->id,
+                    'reference_no' => $expense->fresh()->reference_no,
+                    'created_by' => \Illuminate\Support\Facades\Auth::id(),
+                ]);
+                // Observer handles balance decrement for new vendor
+            } elseif ($oldVendorId && $newVendorId) {
+                if ($oldVendorId != $newVendorId) {
+                    // Vendor changed: reverse old, apply to new
+                    if ($existingVendorTx) {
+                        // Reverse old vendor balance
+                        DB::table('cashflow_vendors')->where('id', $oldVendorId)
+                            ->increment('cached_balance', $existingVendorTx->amount);
+
+                        // Update transaction to new vendor with new amount
+                        $existingVendorTx->update([
+                            'vendor_id' => $newVendorId,
+                            'amount' => $newAmount,
+                            'description' => 'Payment via expense #' . $expense->id,
+                            'reference_no' => $expense->fresh()->reference_no,
+                        ]);
+
+                        // Decrement new vendor balance
+                        DB::table('cashflow_vendors')->where('id', $newVendorId)
+                            ->decrement('cached_balance', $newAmount);
+                    }
+                } elseif ($oldAmount != $newAmount) {
+                    // Same vendor, amount changed: adjust balance delta
+                    if ($existingVendorTx) {
+                        $amountDiff = $newAmount - (float) $existingVendorTx->amount;
+                        $existingVendorTx->update(['amount' => $newAmount]);
+
+                        if ($amountDiff > 0) {
+                            DB::table('cashflow_vendors')->where('id', $newVendorId)
+                                ->decrement('cached_balance', $amountDiff);
+                        } elseif ($amountDiff < 0) {
+                            DB::table('cashflow_vendors')->where('id', $newVendorId)
+                                ->increment('cached_balance', abs($amountDiff));
+                        }
+                    }
+                }
+            }
+
+            $newValues = $expense->fresh()->load($auditRelations)->toArray();
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_UPDATED,
+                CashflowAuditLog::ENTITY_EXPENSE,
+                $expense->id,
+                $oldValues,
+                $newValues,
+                $data['edit_reason']
+            );
+
+            return $expense->fresh();
+        });
     }
 
     /**
