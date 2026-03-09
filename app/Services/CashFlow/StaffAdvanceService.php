@@ -193,7 +193,7 @@ class StaffAdvanceService
                 ->where('id', $advance->pool_id)
                 ->increment('cached_balance', $advance->amount);
 
-            $oldValues = $advance->toArray();
+            $oldValues = $advance->only(['voided_at', 'voided_by', 'void_reason']);
 
             $advance->update([
                 'voided_at' => now(),
@@ -206,7 +206,7 @@ class StaffAdvanceService
                 CashflowAuditLog::ENTITY_STAFF_ADVANCE,
                 $advance->id,
                 $oldValues,
-                $advance->fresh()->toArray(),
+                ['voided_at' => now()->toDateTimeString(), 'void_reason' => $reason],
                 $reason
             );
 
@@ -226,6 +226,8 @@ class StaffAdvanceService
         }
 
         return DB::transaction(function () use ($advance, $data) {
+            $auditRelations = ['staffUser:id,name', 'pool:id,name', 'creator:id,name'];
+            $advance->load($auditRelations);
             $oldValues = $advance->toArray();
             $oldAmount = (float) $advance->amount;
             $oldPoolId = $advance->pool_id;
@@ -243,16 +245,18 @@ class StaffAdvanceService
                 'description' => $data['description'] ?? $advance->description,
             ]);
 
+            $newValues = $advance->fresh()->load($auditRelations)->toArray();
+
             $this->auditService->log(
                 CashflowAuditLog::ACTION_UPDATED,
                 CashflowAuditLog::ENTITY_STAFF_ADVANCE,
                 $advance->id,
                 $oldValues,
-                $advance->fresh()->toArray(),
+                $newValues,
                 $data['edit_reason'] ?? 'Advance edited'
             );
 
-            return $advance->fresh()->load(['staffUser:id,name', 'pool:id,name', 'creator:id,name']);
+            return $advance->fresh()->load($auditRelations);
         });
     }
 
@@ -273,7 +277,7 @@ class StaffAdvanceService
                 ->where('id', $return->pool_id)
                 ->decrement('cached_balance', $return->amount);
 
-            $oldValues = $return->toArray();
+            $oldValues = $return->only(['voided_at', 'voided_by', 'void_reason']);
 
             $return->update([
                 'voided_at' => now(),
@@ -286,7 +290,7 @@ class StaffAdvanceService
                 CashflowAuditLog::ENTITY_STAFF_RETURN,
                 $return->id,
                 $oldValues,
-                $return->fresh()->toArray(),
+                ['voided_at' => now()->toDateTimeString(), 'void_reason' => $reason],
                 $reason
             );
 

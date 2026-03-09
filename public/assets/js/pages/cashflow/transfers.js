@@ -545,6 +545,7 @@ var CashflowTransfers = (function () {
         var changes = [];
 
         var fieldLabels = {
+            transfer_date: 'Date',
             amount: 'Amount',
             from_pool_id: 'From Pool',
             to_pool_id: 'To Pool',
@@ -565,6 +566,7 @@ var CashflowTransfers = (function () {
             if (val === null || val === undefined || val === '') return '(empty)';
             var relName = getRelName(values, field);
             if (relName) return relName;
+            if (field === 'transfer_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             if (field === 'method') return val === 'bank_deposit' ? 'Bank Deposit' : 'Physical Cash';
             if (field === 'attachment_url') return val ? 'Attached' : '(none)';
@@ -576,6 +578,8 @@ var CashflowTransfers = (function () {
             var newVal = newV[field];
             var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
             var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+            // Normalize dates to YYYY-MM-DD to avoid false positives from format differences
+            if (field === 'transfer_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
 
             if (oldNorm !== newNorm) {
                 changes.push(

@@ -400,7 +400,7 @@ class ExpenseService
             throw CashflowException::periodLocked($expense->expense_date->month, $expense->expense_date->year);
         }
 
-        $oldValues = $expense->toArray();
+        $oldValues = $expense->only(['voided_at', 'voided_by', 'void_reason']);
 
         return DB::transaction(function () use ($expense, $reason, $accountId, $oldValues) {
             // Reverse pool balance: increment pool (give money back)

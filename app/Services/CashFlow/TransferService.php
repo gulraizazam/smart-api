@@ -85,7 +85,7 @@ class TransferService
                 ->where('id', $transfer->to_pool_id)
                 ->decrement('cached_balance', $transfer->amount);
 
-            $oldValues = $transfer->toArray();
+            $oldValues = $transfer->only(['voided_at', 'voided_by', 'void_reason']);
 
             $transfer->update([
                 'voided_at' => now(),
@@ -98,7 +98,7 @@ class TransferService
                 CashflowAuditLog::ENTITY_TRANSFER,
                 $transfer->id,
                 $oldValues,
-                $transfer->fresh()->toArray(),
+                ['voided_at' => now()->toDateTimeString(), 'void_reason' => $reason],
                 $reason
             );
 
@@ -156,18 +156,19 @@ class TransferService
                 'attachment_url' => $data['attachment_url'] ?? $transfer->attachment_url,
             ]);
 
-            $transfer->load(['fromPool:id,name', 'toPool:id,name', 'creator:id,name']);
+            $auditRelations = ['fromPool:id,name', 'toPool:id,name', 'creator:id,name'];
+            $newValues = $transfer->fresh()->load($auditRelations)->toArray();
 
             $this->auditService->log(
                 CashflowAuditLog::ACTION_UPDATED,
                 CashflowAuditLog::ENTITY_TRANSFER,
                 $transfer->id,
                 $oldValues,
-                $transfer->toArray(),
+                $newValues,
                 $data['edit_reason'] ?? 'Transfer edited'
             );
 
-            return $transfer;
+            return $transfer->fresh()->load($auditRelations);
         });
     }
 
