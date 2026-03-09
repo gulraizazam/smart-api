@@ -113,7 +113,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Staff Advances & Returns
-    Route::prefix('staff')->name('staff.')->middleware('permission:cashflow_staff_advance')->group(function () {
+    Route::prefix('staff')->name('staff.')->group(function () {
         Route::get('summary', [CashFlowController::class, 'staffSummary'])->name('summary');
         Route::get('{userId}/ledger', [CashFlowController::class, 'staffLedger'])->name('ledger');
         Route::get('eligible', [CashFlowController::class, 'staffEligible'])->name('eligible');

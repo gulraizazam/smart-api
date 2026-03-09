@@ -71,7 +71,7 @@
                                 <div class="col-6 col-md-3">
                                     <div class="card card-custom" style="border-left:4px solid #3699FF;">
                                         <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Opening Balance</div>
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Balance on <span id="ov-month-label">1st</span></div>
                                             <div class="font-size-h5 font-weight-bolder mt-1" id="ov-opening">—</div>
                                             <div class="text-muted font-size-xs" id="ov-vendor-count">—</div>
                                         </div>

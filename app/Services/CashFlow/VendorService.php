@@ -131,16 +131,24 @@ class VendorService
     {
         $vendors = Vendor::forAccount($accountId)->where('is_active', true)->get();
 
-        $totalOpeningBalance = $vendors->sum('opening_balance');
+        $totalStaticOpening = (float) $vendors->sum('opening_balance');
         $totalOutstanding = $vendors->sum('cached_balance');
         $vendorCount = $vendors->count();
         $vendorsWithBalance = $vendors->where('cached_balance', '>', 0)->count();
 
-        // This month's purchases & payments
         $monthStart = now()->startOfMonth()->toDateString();
         $monthEnd = now()->toDateString();
         $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
 
+        // Combined opening balance at start of month (same logic as per-vendor ledger):
+        // sum(opening_balance) + pre-month purchases - pre-month payments
+        $prePeriod = VendorTransaction::forAccount($accountId)
+            ->whereRaw("{$dateExpr} < ?", [$monthStart]);
+        $prePurchases = (float) (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePayments = (float) (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $totalOpeningBalance = $totalStaticOpening + $prePurchases - $prePayments;
+
+        // This month's purchases & payments
         $monthBase = VendorTransaction::forAccount($accountId)
             ->whereRaw("{$dateExpr} >= ?", [$monthStart])
             ->whereRaw("{$dateExpr} <= ?", [$monthEnd]);
