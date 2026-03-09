@@ -552,13 +552,21 @@ var CashflowExpenses = (function () {
             form.find('[name="expense_id"]').val(btn.data('id'));
             form.find('[name="expense_date"]').val(btn.data('date') || '');
             form.find('[name="amount"]').val(btn.data('amount'));
-            form.find('[name="category_id"]').val(btn.data('category'));
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             form.find('[name="edit_reason"]').val('');
 
+            // Populate category dropdown from create form options
+            var catHtml = '<option value="">Select category</option>';
+            $('[name="category_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    catHtml += '<option value="' + $(this).val() + '" data-vendor="' + ($(this).data('vendor') || '') + '">' + $(this).text() + '</option>';
+                }
+            });
+            form.find('[name="category_id"]').html(catHtml).val(btn.data('category') || '');
+
             // Populate pool dropdown from create form options
-            var poolHtml = '<option value="">Keep current</option>';
+            var poolHtml = '<option value="">Select pool</option>';
             $('[name="paid_from_pool_id"]', '#form-expense').find('option').each(function () {
                 if ($(this).val()) {
                     poolHtml += '<option value="' + $(this).val() + '" data-type="' + ($(this).data('type') || '') + '">' + $(this).text() + '</option>';
@@ -567,7 +575,7 @@ var CashflowExpenses = (function () {
             form.find('[name="paid_from_pool_id"]').html(poolHtml).val(btn.data('pool') || '');
 
             // Populate payment method dropdown from create form options
-            var pmHtml = '<option value="">Keep current</option>';
+            var pmHtml = '<option value="">Select method</option>';
             $('[name="payment_method_id"]', '#form-expense').find('option').each(function () {
                 if ($(this).val()) {
                     pmHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
@@ -576,7 +584,7 @@ var CashflowExpenses = (function () {
             form.find('[name="payment_method_id"]').html(pmHtml).val(btn.data('payment') || '');
 
             // Populate branch/for dropdown from create form options
-            var branchHtml = '<option value="">Keep current</option>';
+            var branchHtml = '<option value="">Select</option>';
             $('[name="for_branch_id"]', '#form-expense').find('option').each(function () {
                 if ($(this).val()) {
                     branchHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
@@ -589,7 +597,7 @@ var CashflowExpenses = (function () {
             }
 
             // Populate vendor dropdown from create form options
-            var vendorHtml = '<option value="">Keep current</option><option value="0">-- No Vendor --</option>';
+            var vendorHtml = '<option value="">Select vendor (optional)</option><option value="0">-- No Vendor --</option>';
             $('[name="vendor_id"]', '#form-expense').find('option').each(function () {
                 if ($(this).val()) {
                     vendorHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
@@ -935,45 +943,72 @@ var CashflowExpenses = (function () {
         var data = {};
         form.find('input, select, textarea').each(function () {
             var name = $(this).attr('name');
-            if (name && name !== 'expense_id') {
-                var val = $(this).val();
-                if (val) data[name] = val;
+            if (!name || name === 'expense_id') return;
+            if ($(this).is(':checkbox')) {
+                data[name] = $(this).is(':checked') ? 1 : 0;
+            } else {
+                data[name] = $(this).val();
             }
         });
 
         // Handle merged branch/general dropdown
-        var branchVal = form.find('[name="for_branch_id"]').val();
-        if (branchVal === 'general') {
+        if (data.for_branch_id === 'general') {
             data.is_for_general = 1;
-            delete data.for_branch_id;
-        } else if (branchVal) {
+            data.for_branch_id = '';
+        } else {
             data.is_for_general = 0;
-            data.for_branch_id = branchVal;
         }
 
         // Handle vendor clear (value "0" means remove vendor)
-        var vendorVal = form.find('[name="vendor_id"]').val();
-        if (vendorVal === '0') {
+        if (data.vendor_id === '0') {
             data.vendor_id = '';
         }
 
-        // Validation with red border highlighting
+        // Highlight missing required fields (same as add expense)
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.select2-container').css('border', '').css('border-radius', '');
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'paid_from_pool_id', 'description', 'for_branch_id', 'edit_reason'];
         var missing = [];
+        $.each(requiredFields, function (i, name) {
+            // for_branch_id: check original dropdown value (before we cleared it for 'general')
+            var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
+            if (!val) {
+                var el = form.find('[name="' + name + '"]');
+                el.addClass('is-invalid');
+                el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+                missing.push(name);
+            }
+        });
 
-        if (!data.edit_reason || data.edit_reason.length < 5) {
-            var reasonEl = form.find('[name="edit_reason"]');
-            reasonEl.addClass('is-invalid');
-            missing.push('edit_reason');
+        // Edit reason min length
+        if (data.edit_reason && data.edit_reason.length < 5) {
+            form.find('[name="edit_reason"]').addClass('is-invalid');
+            if (missing.indexOf('edit_reason') === -1) missing.push('edit_reason');
+        }
+
+        // Cash expenses MUST have attachment
+        var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
+        if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url) {
+            form.find('[name="attachment_url"]').addClass('is-invalid');
+            missing.push('attachment_url');
         }
 
         if (missing.length) {
-            toastr.warning('Edit reason must be at least 5 characters.');
-            var first = form.find('.is-invalid').first();
+            toastr.warning('Please fill the highlighted fields.');
+            var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
             if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
+
+        // Whole numbers only
+        if (data.amount && data.amount % 1 !== 0) {
+            toastr.warning('Amount must be a whole number (no decimals).');
+            return;
+        }
+
+        // Strip empty optional fields so they don't overwrite existing values with blank
+        if (!data.vendor_id) delete data.vendor_id;
+        if (!data.attachment_url) delete data.attachment_url;
 
         var btn = $(this);
         btn.prop('disabled', true);
