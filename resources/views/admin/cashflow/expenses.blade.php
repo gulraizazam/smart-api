@@ -8,6 +8,9 @@
             .expense-rejected { border-left: 3px solid #F64E60 !important; }
             .expense-voided { border-left: 3px solid #F64E60 !important; opacity: 0.6; }
             .amount-cell { font-weight: 600; white-space: nowrap; }
+            .form-control .form-control-sm{
+                height: 50px;
+            }
         </style>
     @endpush
 
