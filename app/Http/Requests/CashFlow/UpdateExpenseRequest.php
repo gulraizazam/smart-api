@@ -16,7 +16,7 @@ class UpdateExpenseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'expense_date' => 'required|date|before_or_equal:today',
+            'expense_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
             'category_id' => 'required|exists:expense_categories,id',
             'paid_from_pool_id' => 'required|exists:cash_pools,id',
@@ -24,7 +24,7 @@ class UpdateExpenseRequest extends FormRequest
             'for_branch_id' => 'nullable|exists:locations,id',
             'is_for_general' => 'nullable|boolean',
             'vendor_id' => 'nullable',
-            'description' => 'required|string|min:3|max:50',
+            'description' => 'required|string|min:3|max:100',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
             'notes' => 'nullable|string|max:1000',

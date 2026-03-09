@@ -14,7 +14,7 @@ class VendorTransaction extends Model
 
     protected $fillable = [
         'account_id', 'vendor_id', 'type', 'amount',
-        'expense_id', 'description', 'reference_no',
+        'expense_id', 'description', 'reference_no', 'attachment_url',
         'transaction_date', 'for_branch_id', 'is_for_general',
         'created_by',
     ];

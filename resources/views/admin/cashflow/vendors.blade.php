@@ -267,6 +267,10 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>Attachment (Google Drive URL)</label>
+                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

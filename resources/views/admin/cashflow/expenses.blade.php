@@ -268,7 +268,7 @@
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
-                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="50" placeholder="Brief expense note (max 50 chars)" />
+                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="100" placeholder="Brief expense note (max 100 chars)" />
                         </div>
                     </form>
                 </div>
@@ -464,7 +464,7 @@
                         </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
-                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="50" placeholder="Brief expense note (max 50 chars)" />
+                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="100" placeholder="Brief expense note (max 100 chars)" />
                         </div>
                         <div class="form-group">
                             <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
