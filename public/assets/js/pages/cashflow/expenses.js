@@ -84,7 +84,7 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Toggle attachment mandatory indicator + filter pools + toggle staff field when payment method changes
+        // Toggle attachment mandatory indicator + filter pools when payment method changes
         $('[name="payment_method_id"]', '#form-expense').on('change', function () {
             var pmText = $(this).find('option:selected').text().toLowerCase();
             var label = $('#form-expense').find('[name="attachment_url"]').closest('.form-group').find('label');
@@ -94,7 +94,6 @@ var CashflowExpenses = (function () {
                 label.html('Attachment (Google Drive URL)');
             }
             filterPoolsByPaymentMethod(pmText);
-            toggleStaffField(pmText);
         });
 
         // Amount field threshold hint
@@ -127,13 +126,11 @@ var CashflowExpenses = (function () {
             modalBody.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modalBody });
             modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select', dropdownParent: modalBody });
             modalBody.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modalBody });
-            modalBody.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modalBody });
 
-            // After Select2 init, filter pools + toggle staff by pre-selected payment method (for duplicate-from-voided)
+            // After Select2 init, filter pools by pre-selected payment method (for duplicate-from-voided)
             var initPm = modalBody.find('[name="payment_method_id"] option:selected').text().toLowerCase();
             if (initPm && initPm !== 'select method') {
                 filterPoolsByPaymentMethod(initPm, '#form-expense');
-                toggleStaffField(initPm);
             }
 
             // Sync Select2 with pre-filled values
@@ -146,7 +143,6 @@ var CashflowExpenses = (function () {
             $('#form-expense')[0].reset();
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
-            $('#staff-field-group').show();
             $('#vendor-group').removeClass('bg-light-warning p-3 rounded');
         });
     }
@@ -246,15 +242,6 @@ var CashflowExpenses = (function () {
         });
         $('#edit-category-select').html(html);
 
-        // Staff dropdown
-        html = '<option value="">Select staff (optional)</option>';
-        if (data.staff) {
-            $.each(data.staff, function (i, s) {
-                html += '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
-            });
-        }
-        $('[name="staff_id"]', '#form-expense').html(html);
-
         // Filter pools on initial load if payment method is pre-set (e.g. duplicate)
         var initPm = $('[name="payment_method_id"]', '#form-expense').find('option:selected').text().toLowerCase();
         if (initPm) filterPoolsByPaymentMethod(initPm);
@@ -341,20 +328,6 @@ var CashflowExpenses = (function () {
         // Auto-select if only one matching pool
         if (matchCount === 1 && !poolSelect.val()) {
             poolSelect.val(lastMatch).trigger('change.select2');
-        }
-    }
-
-    /**
-     * Show/hide the "Expense By (Staff)" field based on payment method.
-     * Staff field only applies to cash expenses — bank expenses don't involve staff cash.
-     */
-    function toggleStaffField(pmText) {
-        var isBankOrWire = pmText && (pmText.indexOf('bank') !== -1 || pmText.indexOf('wire') !== -1 || pmText.indexOf('transfer') !== -1);
-        if (isBankOrWire) {
-            $('#staff-field-group').hide();
-            $('[name="staff_id"]', '#form-expense').val('').trigger('change.select2');
-        } else {
-            $('#staff-field-group').show();
         }
     }
 
@@ -478,10 +451,14 @@ var CashflowExpenses = (function () {
         // Admin Edit (non-voided, admin only — Sec 5.7)
         if (perms.canEdit && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-admin-edit" data-id="' + exp.id + '" ' +
+                'data-date="' + ((exp.expense_date || '').substring(0, 10)) + '" ' +
                 'data-amount="' + (parseInt(exp.amount) || 0) + '" ' +
                 'data-category="' + exp.category_id + '" ' +
                 'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
                 'data-payment="' + (exp.payment_method_id || '') + '" ' +
+                'data-branch="' + (exp.for_branch_id || '') + '" ' +
+                'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
+                'data-vendor="' + (exp.vendor_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description) + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
@@ -510,7 +487,6 @@ var CashflowExpenses = (function () {
                 'data-branch="' + (exp.for_branch_id || '') + '" ' +
                 'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
                 'data-vendor="' + (exp.vendor_id || '') + '" ' +
-                'data-staff="' + (exp.staff_id || '') + '" ' +
                 'data-description="' + escapeHtml(exp.description || '') + '" ' +
                 'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
                 'title="Duplicate as New"><i class="la la-copy text-info"></i></button>';
@@ -574,6 +550,7 @@ var CashflowExpenses = (function () {
             var btn = $(this);
             var form = $('#form-admin-edit');
             form.find('[name="expense_id"]').val(btn.data('id'));
+            form.find('[name="expense_date"]').val(btn.data('date') || '');
             form.find('[name="amount"]').val(btn.data('amount'));
             form.find('[name="category_id"]').val(btn.data('category'));
             form.find('[name="description"]').val(btn.data('description'));
@@ -598,6 +575,32 @@ var CashflowExpenses = (function () {
             });
             form.find('[name="payment_method_id"]').html(pmHtml).val(btn.data('payment') || '');
 
+            // Populate branch/for dropdown from create form options
+            var branchHtml = '<option value="">Keep current</option>';
+            $('[name="for_branch_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    branchHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+                }
+            });
+            if (btn.data('general') == 1) {
+                form.find('[name="for_branch_id"]').html(branchHtml).val('general');
+            } else {
+                form.find('[name="for_branch_id"]').html(branchHtml).val(btn.data('branch') || '');
+            }
+
+            // Populate vendor dropdown from create form options
+            var vendorHtml = '<option value="">Keep current</option><option value="0">-- No Vendor --</option>';
+            $('[name="vendor_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    vendorHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+                }
+            });
+            form.find('[name="vendor_id"]').html(vendorHtml).val(btn.data('vendor') || '');
+
+            // Clear validation highlights
+            form.find('.is-invalid').removeClass('is-invalid');
+            form.find('.select2-container').css('border', '').css('border-radius', '');
+
             $('#modal_admin_edit').modal('show');
         });
 
@@ -607,11 +610,23 @@ var CashflowExpenses = (function () {
             filterPoolsByPaymentMethod(pmText, '#form-admin-edit');
         });
 
+        // Init date picker for edit modal
+        $('#form-admin-edit [name="expense_date"]').daterangepicker({
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            locale: { format: 'YYYY-MM-DD' }
+        }).on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD'));
+        });
+
         $('#modal_admin_edit').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: mb });
-            mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
             mb.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: mb });
+            mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
+            mb.find('[name="for_branch_id"]').select2({ placeholder: 'Select', dropdownParent: mb });
+            mb.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: mb });
 
             // Apply initial pool filter based on pre-selected payment method
             var initPm = mb.find('[name="payment_method_id"] option:selected').text().toLowerCase();
@@ -650,7 +665,6 @@ var CashflowExpenses = (function () {
             form.find('[name="paid_from_pool_id"]').val(btn.data('pool')).trigger('change');
             form.find('[name="payment_method_id"]').val(btn.data('payment')).trigger('change');
             form.find('[name="vendor_id"]').val(btn.data('vendor') || '').trigger('change');
-            form.find('[name="staff_id"]').val(btn.data('staff') || '').trigger('change');
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             if (btn.data('general') == 1) {
@@ -810,9 +824,7 @@ var CashflowExpenses = (function () {
                     form.find('[name="for_branch_id"]').val('');
                     form.find('[name="payment_method_id"]').val('');
                     form.find('[name="vendor_id"]').val('');
-                    form.find('[name="staff_id"]').val('');
                     form.find('[name="expense_date"]').val(getTodayStr());
-                    $('#staff-field-group').show();
                     $('#threshold-hint').html('');
 
                     // Detailed confirmation popup per spec
@@ -929,8 +941,37 @@ var CashflowExpenses = (function () {
             }
         });
 
+        // Handle merged branch/general dropdown
+        var branchVal = form.find('[name="for_branch_id"]').val();
+        if (branchVal === 'general') {
+            data.is_for_general = 1;
+            delete data.for_branch_id;
+        } else if (branchVal) {
+            data.is_for_general = 0;
+            data.for_branch_id = branchVal;
+        }
+
+        // Handle vendor clear (value "0" means remove vendor)
+        var vendorVal = form.find('[name="vendor_id"]').val();
+        if (vendorVal === '0') {
+            data.vendor_id = '';
+        }
+
+        // Validation with red border highlighting
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.select2-container').css('border', '').css('border-radius', '');
+        var missing = [];
+
         if (!data.edit_reason || data.edit_reason.length < 5) {
+            var reasonEl = form.find('[name="edit_reason"]');
+            reasonEl.addClass('is-invalid');
+            missing.push('edit_reason');
+        }
+
+        if (missing.length) {
             toastr.warning('Edit reason must be at least 5 characters.');
+            var first = form.find('.is-invalid').first();
+            if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
 
@@ -954,7 +995,15 @@ var CashflowExpenses = (function () {
             error: function (xhr) {
                 var resp = xhr.responseJSON;
                 if (resp && resp.errors) {
-                    $.each(resp.errors, function (field, msgs) { toastr.error(msgs[0]); });
+                    // Highlight fields with server-side validation errors
+                    $.each(resp.errors, function (field, msgs) {
+                        var el = form.find('[name="' + field + '"]');
+                        if (el.length) {
+                            el.addClass('is-invalid');
+                            el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+                        }
+                        toastr.error(msgs[0]);
+                    });
                 } else {
                     toastr.error(resp ? resp.message : 'Failed to update.');
                 }

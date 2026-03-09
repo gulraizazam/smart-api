@@ -667,18 +667,17 @@ class CashFlowController extends Controller
 
             return \Illuminate\Support\Facades\Response::streamDownload(function () use ($expenses) {
                 $handle = fopen('php://output', 'w');
-                fputcsv($handle, ['Date', 'Amount', 'Category', 'Pool', 'Branch', 'Vendor', 'Description', 'Reference', 'Status', 'Flagged', 'Created By']);
+                fputcsv($handle, ['Date', 'Amount', 'Category', 'Pool', 'Branch', 'Vendor', 'Description', 'Status', 'Flagged', 'Created By']);
 
                 foreach ($expenses as $exp) {
                     fputcsv($handle, [
-                        $exp->expense_date,
+                        $exp->expense_date ? $exp->expense_date->format('d/m/Y') : '',
                         number_format($exp->amount, 0),
                         $exp->category ? $exp->category->name : '',
                         $exp->paidFromPool ? $exp->paidFromPool->name : '',
                         $exp->is_for_general ? 'General' : ($exp->forBranch ? $exp->forBranch->name : ''),
                         $exp->vendor ? $exp->vendor->name : '',
                         $exp->description,
-                        $exp->reference_no ?? '',
                         $exp->voided_at ? 'Voided' : $exp->status,
                         $exp->is_flagged ? $exp->flag_reason : '',
                         $exp->creator ? $exp->creator->name : '',
