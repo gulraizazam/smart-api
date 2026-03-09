@@ -1305,38 +1305,38 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('cashflow_expense_create')
+                            @canany(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.expenses') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.expenses') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Expenses</span>
                                 </a>
                             </li>
-                            @endcan
-                            @can('cashflow_transfer_create')
+                            @endcanany
+                            @canany(['cashflow_transfer_view', 'cashflow_transfer_create'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.transfers') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.transfers') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Transfers</span>
                                 </a>
                             </li>
-                            @endcan
-                            @can('cashflow_vendor_manage')
+                            @endcanany
+                            @canany(['cashflow_vendor_view', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.vendors') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.vendors') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Vendors</span>
                                 </a>
                             </li>
-                            @endcan
-                            @can('cashflow_staff_advance')
+                            @endcanany
+                            @canany(['cashflow_staff_advance_view', 'cashflow_staff_advance'])
                             <li class="menu-item {{ activeMenu('admin.cashflow.staff') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.staff') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Staff Advances</span>
                                 </a>
                             </li>
-                            @endcan
+                            @endcanany
                             @can('cashflow_fdm_view')
                             <li class="menu-item {{ activeMenu('admin.cashflow.fdm') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.cashflow.fdm') }}" class="menu-link">

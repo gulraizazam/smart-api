@@ -1206,6 +1206,9 @@ class CashFlowController extends Controller
     public function staffSummary(): JsonResponse
     {
         try {
+            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
             $accountId = Auth::user()->account_id;
 
             return response()->json([
@@ -1223,6 +1226,9 @@ class CashFlowController extends Controller
     public function staffLedger(int $userId): JsonResponse
     {
         try {
+            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
             $accountId = Auth::user()->account_id;
 
             return response()->json([
@@ -1240,6 +1246,9 @@ class CashFlowController extends Controller
     public function staffEligible(): JsonResponse
     {
         try {
+            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
             $accountId = Auth::user()->account_id;
 
             $staff = $this->staffAdvanceService->getEligibleStaff($accountId);

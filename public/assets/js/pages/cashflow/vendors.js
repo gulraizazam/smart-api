@@ -702,6 +702,9 @@ var CashflowVendors = (function () {
 
     function renderOverview(data) {
         // Summary cards
+        var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var now = new Date();
+        $('#ov-month-label').text('01 ' + monthNames[now.getMonth()] + ' ' + now.getFullYear());
         $('#ov-opening').text('PKR ' + nf(data.total_opening_balance));
         $('#ov-vendor-count').text(data.vendor_count + ' active vendor' + (data.vendor_count !== 1 ? 's' : ''));
         $('#ov-outstanding').text('PKR ' + nf(data.total_outstanding));
