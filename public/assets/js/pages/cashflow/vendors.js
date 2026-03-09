@@ -42,6 +42,14 @@ var CashflowVendors = (function () {
         // Export ledger CSV
         $('#btn-export-ledger').on('click', exportLedger);
 
+        // Attachment URL: warn if non-Google-Drive URL
+        $('[name="attachment_url"]', '#form-purchase').on('change', function () {
+            var url = $(this).val();
+            if (url && !/drive\.google\.com|docs\.google\.com/i.test(url)) {
+                toastr.warning('This URL does not appear to be a Google Drive link. Please verify.');
+            }
+        });
+
         // Edit current vendor from ledger header
         $('#btn-edit-current-vendor').on('click', function () {
             if (!currentVendorData) return;
@@ -325,6 +333,18 @@ var CashflowVendors = (function () {
             var desc = (tx.expense && tx.expense.description) ? tx.expense.description : (tx.description || '-');
             var dateStr = fd(tx.transaction_date || (tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null) || tx.created_at);
 
+            // Attachment preview icon (from purchase attachment_url or linked expense attachment_url)
+            var attachUrl = tx.attachment_url || (tx.expense && tx.expense.attachment_url ? tx.expense.attachment_url : null);
+            var attachIcon = '';
+            if (attachUrl) {
+                var previewUrl = getDrivePreviewUrl(attachUrl);
+                if (previewUrl) {
+                    attachIcon = ' <a href="javascript:;" class="btn-preview-attach" data-url="' + esc(previewUrl) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>';
+                } else {
+                    attachIcon = ' <a href="' + esc(attachUrl) + '" target="_blank" title="View attachment"><i class="la la-paperclip text-primary"></i></a>';
+                }
+            }
+
             // Branch info
             var branchLabel = '';
             if (tx.is_for_general) {
@@ -363,7 +383,7 @@ var CashflowVendors = (function () {
                     '<div class="flex-grow-1 min-w-0">' +
                         '<div class="d-flex justify-content-between align-items-start">' +
                             '<div class="min-w-0">' +
-                                '<div>' + descHtml + actions + '</div>' +
+                                '<div>' + descHtml + attachIcon + actions + '</div>' +
                                 '<div class="text-muted font-size-xs mt-1">' +
                                     '<span class="mr-2">' + dateStr + '</span>' +
                                     '<span class="label label-' + (isPurchase ? 'light-danger' : 'light-success') + ' label-inline font-size-xs py-0 px-2">' + typeLabel + '</span>' +
@@ -398,6 +418,18 @@ var CashflowVendors = (function () {
             e.stopPropagation();
             var id = $(this).data('id');
             deletePurchase(id);
+        });
+
+        // Preview attachment in iframe modal
+        container.find('.btn-preview-attach').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var url = $(this).data('url');
+            Swal.fire({
+                html: '<iframe src="' + url + '" style="width:100%;height:70vh;border:none;"></iframe>',
+                width: '80%',
+                showConfirmButton: false,
+                showCloseButton: true
+            });
         });
     }
 
@@ -497,6 +529,7 @@ var CashflowVendors = (function () {
             form.find('[name="amount"]').val(Math.round(parseFloat(tx.amount)));
             form.find('[name="transaction_date"]').val(tx.transaction_date ? tx.transaction_date.substring(0, 10) : '');
             form.find('[name="reference_no"]').val(tx.reference_no || '');
+            form.find('[name="attachment_url"]').val(tx.attachment_url || '');
             // Branch/general
             if (tx.is_for_general) {
                 form.find('[name="for_branch_id"]').val('general');
@@ -509,6 +542,13 @@ var CashflowVendors = (function () {
             // New mode
             form.find('[name="transaction_date"]').val(getTodayStr());
         }
+
+        // Set date min/max: last 7 days to today
+        var dateField = form.find('[name="transaction_date"]');
+        var today = getTodayStr();
+        var minDate = new Date(); minDate.setDate(minDate.getDate() - 7);
+        var minStr = minDate.getFullYear() + '-' + String(minDate.getMonth() + 1).padStart(2, '0') + '-' + String(minDate.getDate()).padStart(2, '0');
+        dateField.attr('min', minStr).attr('max', today);
 
         $('#modal_purchase').modal('show');
     }
@@ -629,6 +669,17 @@ var CashflowVendors = (function () {
     }
 
     // ===================== HELPERS =====================
+
+    function getDrivePreviewUrl(url) {
+        if (!url) return null;
+        var match;
+        match = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        match = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        if (/docs\.google\.com/.test(url)) return url.replace(/\/edit.*$/, '/preview');
+        return null;
+    }
 
     function getTodayStr() {
         var d = new Date();

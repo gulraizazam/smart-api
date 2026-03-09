@@ -16,7 +16,7 @@ class StoreTransferRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'transfer_date' => 'required|date|before_or_equal:today',
+            'transfer_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
             'from_pool_id' => 'required|exists:cash_pools,id',
             'to_pool_id' => 'required|exists:cash_pools,id|different:from_pool_id',

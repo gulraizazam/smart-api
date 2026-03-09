@@ -155,7 +155,7 @@ class VendorService
         // Query for filtered period (DESC for latest-first display)
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
-            ->with(['expense:id,description,expense_date', 'creator:id,name', 'forBranch:id,name'])
+            ->with(['expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
             ->whereRaw("{$dateExpr} <= ?", [$dateTo])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
@@ -244,7 +244,7 @@ class VendorService
 
         $tx = DB::transaction(function () use ($tx, $data, $oldAmount) {
             $updateData = [];
-            $allowed = ['description', 'amount', 'reference_no', 'transaction_date', 'for_branch_id', 'is_for_general'];
+            $allowed = ['description', 'amount', 'reference_no', 'attachment_url', 'transaction_date', 'for_branch_id', 'is_for_general'];
             foreach ($allowed as $field) {
                 if (array_key_exists($field, $data)) {
                     $updateData[$field] = $data[$field];
@@ -408,6 +408,7 @@ class VendorService
                 'expense_id' => $data['expense_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'reference_no' => $data['reference_no'] ?? null,
+                'attachment_url' => $data['attachment_url'] ?? null,
                 'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
                 'for_branch_id' => !empty($data['is_for_general']) ? null : ($data['for_branch_id'] ?? null),
                 'is_for_general' => !empty($data['is_for_general']) ? 1 : 0,

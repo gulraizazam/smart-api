@@ -60,11 +60,13 @@ var CashflowTransfers = (function () {
         $('#btn-submit-transfer').on('click', submitTransfer);
         $('#btn-submit-edit-transfer').on('click', submitEditTransfer);
 
-        // Init date picker on transfer_date field
+        // Init date picker on transfer_date field (last 7 days only)
         $('#form-transfer [name="transfer_date"]').daterangepicker({
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
+            minDate: moment().subtract(7, 'days'),
+            maxDate: moment(),
             locale: { format: 'YYYY-MM-DD' }
         }).on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MM-DD'));

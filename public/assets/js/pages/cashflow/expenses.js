@@ -130,11 +130,13 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Init date picker on expense_date field
+        // Init date picker on expense_date field (last 7 days only)
         $('#form-expense [name="expense_date"]').daterangepicker({
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
+            minDate: moment().subtract(7, 'days'),
+            maxDate: moment(),
             locale: { format: 'YYYY-MM-DD' }
         }).on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MM-DD'));
@@ -653,11 +655,13 @@ var CashflowExpenses = (function () {
             filterPoolsByPaymentMethod(pmText, '#form-admin-edit');
         });
 
-        // Init date picker for edit modal
+        // Init date picker for edit modal (last 7 days only)
         $('#form-admin-edit [name="expense_date"]').daterangepicker({
             singleDatePicker: true,
             showDropdowns: true,
             autoUpdateInput: false,
+            minDate: moment().subtract(7, 'days'),
+            maxDate: moment(),
             locale: { format: 'YYYY-MM-DD' }
         }).on('apply.daterangepicker', function (ev, picker) {
             $(this).val(picker.startDate.format('YYYY-MM-DD'));
