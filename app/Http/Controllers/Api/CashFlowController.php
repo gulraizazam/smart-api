@@ -1048,6 +1048,25 @@ class CashFlowController extends Controller
     }
 
     /**
+     * Get audit trail for a specific vendor transaction.
+     */
+    public function vendorsTransactionAudit(int $vendorId, int $txId): JsonResponse
+    {
+        try {
+            if (!Gate::allows('cashflow_audit_view')) {
+                throw CashflowException::unauthorized('view audit trail');
+            }
+
+            $accountId = Auth::user()->account_id;
+            $logs = $this->auditService->getEntityLogs('vendor_transaction', $txId, $accountId);
+
+            return response()->json(['success' => true, 'data' => $logs]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Export vendor ledger as CSV.
      */
     public function vendorsLedgerExport(Request $request, int $id)
