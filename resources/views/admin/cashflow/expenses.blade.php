@@ -15,6 +15,9 @@
             #filter-search{
                 height: 35px !important;
             }
+            .audit-timeline{
+                margin-top:10px;
+            }
             
         </style>
     @endpush
