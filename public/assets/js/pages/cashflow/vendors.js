@@ -384,6 +384,10 @@ var CashflowVendors = (function () {
                     '<a href="javascript:;" class="btn-edit-tx text-hover-primary ml-2" title="Edit" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-edit font-size-sm text-muted"></i></a>' +
                     '<a href="javascript:;" class="btn-delete-tx text-hover-danger ml-1" title="Delete" data-id="' + tx.id + '"><i class="la la-trash font-size-sm text-muted"></i></a>';
             }
+            // Audit trail button (all entries, if user has audit permission)
+            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+                actions += '<a href="javascript:;" class="btn-tx-audit text-hover-info ml-1" title="Audit Trail" data-id="' + tx.id + '"><i class="la la-history font-size-sm text-muted"></i></a>';
+            }
 
             container.append(
                 '<div class="d-flex align-items-center py-2" style="border-bottom:1px solid #F3F6F9;">' +
@@ -442,6 +446,13 @@ var CashflowVendors = (function () {
                 showConfirmButton: false,
                 showCloseButton: true
             });
+        });
+
+        // Audit trail
+        container.find('.btn-tx-audit').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var txId = $(this).data('id');
+            loadTxAuditTrail(txId);
         });
     }
 
@@ -673,7 +684,134 @@ var CashflowVendors = (function () {
         window.open(url, '_blank');
     }
 
-    // ===================== HELPERS =====================
+    // ===================== AUDIT TRAIL =====================
+
+    function loadTxAuditTrail(txId) {
+        $('#tx-audit-loading').removeClass('d-none');
+        $('#tx-audit-timeline').addClass('d-none').empty();
+        $('#modal_tx_audit').modal('show');
+
+        $.ajax({
+            url: apiBase + 'vendors/' + currentVendorId + '/transactions/' + txId + '/audit',
+            type: 'GET',
+            success: function (res) {
+                $('#tx-audit-loading').addClass('d-none');
+                if (res.success && res.data.length > 0) {
+                    var html = '';
+                    var actionIcons = {
+                        created: 'la-plus-circle', updated: 'la-edit', approved: 'la-check-circle',
+                        rejected: 'la-times-circle', voided: 'la-ban', deleted: 'la-trash',
+                        auto_created: 'la-magic', reset: 'la-undo'
+                    };
+                    var actionColors = {
+                        created: '#3699FF', updated: '#8950FC', approved: '#1BC5BD',
+                        rejected: '#F64E60', voided: '#181C32', deleted: '#F64E60',
+                        auto_created: '#3699FF', reset: '#FFA800'
+                    };
+
+                    $.each(res.data, function (i, log) {
+                        var actionBadge = getTxActionBadge(log.action);
+                        var userName = log.user ? log.user.name : 'System';
+                        var time = new Date(log.created_at).toLocaleString();
+                        var icon = actionIcons[log.action] || 'la-history';
+                        var color = actionColors[log.action] || '#7E8299';
+                        var isLast = (i === res.data.length - 1);
+                        var changeSummary = buildTxChangeSummary(log);
+
+                        html += '<div class="d-flex align-items-start' + (isLast ? '' : ' mb-4') + '">' +
+                            '<div class="flex-shrink-0 mr-4 text-center" style="width:40px;">' +
+                            '<div style="width:36px;height:36px;border-radius:50%;background:' + color + '15;display:flex;align-items:center;justify-content:center;">' +
+                            '<i class="la ' + icon + '" style="font-size:18px;color:' + color + ';"></i></div>' +
+                            (isLast ? '' : '<div style="width:2px;height:20px;background:#E4E6EF;margin:4px auto 0;"></div>') +
+                            '</div>' +
+                            '<div class="flex-grow-1 pb-3' + (isLast ? '' : ' border-bottom') + '">' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                            '<div>' + actionBadge + ' <span class="font-weight-bold ml-1">' + esc(userName) + '</span></div>' +
+                            '<span class="text-muted font-size-xs">' + time + '</span>' +
+                            '</div>' +
+                            (log.reason ? '<div class="text-muted font-size-sm mt-1"><i class="la la-comment-alt mr-1"></i>' + esc(log.reason) + '</div>' : '') +
+                            (changeSummary ? '<div class="mt-1">' + changeSummary + '</div>' : '') +
+                            '</div></div>';
+                    });
+                    $('#tx-audit-timeline').html(html).removeClass('d-none');
+                } else {
+                    $('#tx-audit-timeline').html('<div class="text-center text-muted py-5"><i class="la la-inbox" style="font-size:40px;"></i><br>No audit records found.</div>').removeClass('d-none');
+                }
+            },
+            error: function () {
+                $('#tx-audit-loading').addClass('d-none');
+                $('#tx-audit-timeline').html('<div class="text-center text-danger py-3">Failed to load audit trail.</div>').removeClass('d-none');
+            }
+        });
+    }
+
+    function buildTxChangeSummary(log) {
+        if (!log.old_values || !log.new_values) return '';
+        if (log.action === 'created') return '';
+
+        var oldV = log.old_values;
+        var newV = log.new_values;
+        var changes = [];
+
+        var fieldLabels = {
+            transaction_date: 'Date',
+            amount: 'Amount',
+            description: 'Description',
+            reference_no: 'Reference No',
+            attachment_url: 'Attachment',
+            for_branch_id: 'Branch',
+            is_for_general: 'General/Company-wide'
+        };
+
+        function getRelName(values, field) {
+            var map = { for_branch_id: 'for_branch' };
+            var rel = map[field];
+            if (rel && values[rel] && values[rel].name) return values[rel].name;
+            return null;
+        }
+
+        function formatVal(field, val, values) {
+            if (val === null || val === undefined || val === '') return '(empty)';
+            var relName = getRelName(values, field);
+            if (relName) return relName;
+            if (field === 'transaction_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
+            if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
+            if (field === 'is_for_general') return val ? 'Yes' : 'No';
+            if (field === 'attachment_url') return val ? 'Attached' : '(none)';
+            return esc(String(val));
+        }
+
+        $.each(fieldLabels, function (field, label) {
+            var oldVal = oldV[field];
+            var newVal = newV[field];
+            var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
+            var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+            if (field === 'transaction_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
+
+            if (oldNorm !== newNorm) {
+                changes.push(
+                    '<span class="font-weight-bold">' + label + ':</span> ' +
+                    '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +
+                    ' <i class="la la-arrow-right font-size-xs"></i> ' +
+                    '<span class="text-success">' + formatVal(field, newVal, newV) + '</span>'
+                );
+            }
+        });
+
+        if (changes.length === 0) return '';
+        return '<div class="font-size-sm text-muted mt-1" style="line-height:1.8;">' + changes.join('<br>') + '</div>';
+    }
+
+    function getTxActionBadge(action) {
+        var colors = {
+            created: 'primary', updated: 'info', approved: 'success', rejected: 'danger',
+            voided: 'dark', deleted: 'danger', auto_created: 'primary', reset: 'warning'
+        };
+        var color = colors[action] || 'secondary';
+        return '<span class="label label-light-' + color + ' label-inline">' + action.replace('_', ' ').toUpperCase() + '</span>';
+    }
+
+    // ===================== HELPERS ======================
 
     function getDrivePreviewUrl(url) {
         if (!url) return null;

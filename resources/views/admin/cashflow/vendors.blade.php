@@ -282,6 +282,25 @@
     </div>
     @endif
 
+    <!-- Audit Trail Modal -->
+    <div class="modal fade" id="modal_tx_audit" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-history text-primary mr-2"></i>Transaction Audit Trail</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><i class="la la-times"></i></button>
+                </div>
+                <div class="modal-body" style="max-height:500px;overflow-y:auto;">
+                    <div id="tx-audit-loading" class="text-center py-5"><div class="spinner spinner-primary spinner-lg"></div></div>
+                    <div id="tx-audit-timeline" class="d-none"></div>
+                </div>
+                <div class="modal-footer" style="border-top:1px solid #E4E6EF;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('js')
         <script>
             var cfPerms = {
