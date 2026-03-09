@@ -974,6 +974,20 @@ class CashFlowController extends Controller
     }
 
     /**
+     * Get vendors overview dashboard (summary stats, top outstanding, recent transactions).
+     */
+    public function vendorsOverview(): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $data = $this->vendorService->getVendorsOverview($accountId);
+            return response()->json(['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Record a purchase for a specific vendor (shortcut endpoint).
      */
     public function vendorsPurchase(StoreVendorPurchaseRequest $request, int $id): JsonResponse

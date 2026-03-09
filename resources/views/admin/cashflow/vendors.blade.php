@@ -64,11 +64,78 @@
 
                     {{-- ========== RIGHT PANEL (65%) – Vendor Ledger Detail ========== --}}
                     <div class="col-lg-7 col-xl-8" id="vendor-right-panel">
-                        {{-- Empty State --}}
-                        <div id="ledger-empty-state" class="card card-custom">
-                            <div class="card-body text-center py-20">
-                                <i class="la la-hand-pointer" style="font-size:60px;color:#B5B5C3;"></i>
-                                <p class="text-muted font-size-lg mt-4 mb-0">Select a vendor from the list to view their ledger</p>
+                        {{-- Vendor Overview (default view) --}}
+                        <div id="vendor-overview">
+                            {{-- Summary Cards --}}
+                            <div class="row mb-4">
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #3699FF;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Opening Balance</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1" id="ov-opening">—</div>
+                                            <div class="text-muted font-size-xs" id="ov-vendor-count">—</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #F64E60;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Outstanding</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1" id="ov-outstanding">—</div>
+                                            <div class="text-muted font-size-xs" id="ov-with-balance">—</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #FFA800;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">This Month Purchases</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1 text-danger" id="ov-month-purchases">—</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #1BC5BD;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">This Month Payments</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1 text-success" id="ov-month-payments">—</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Top Outstanding Vendors --}}
+                            <div class="card card-custom mb-4">
+                                <div class="card-header py-3" style="min-height:auto;">
+                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-sort-amount-down mr-1 text-danger"></i>Top Outstanding Vendors</h3></div>
+                                </div>
+                                <div class="card-body py-3 px-5" id="ov-top-vendors">
+                                    <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                </div>
+                            </div>
+
+                            {{-- Recent Transactions --}}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card card-custom mb-4">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
+                                        </div>
+                                        <div class="card-body py-2 px-5" id="ov-recent-purchases">
+                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card card-custom mb-4">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
+                                        </div>
+                                        <div class="card-body py-2 px-5" id="ov-recent-payments">
+                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -228,7 +295,7 @@
                         <input type="hidden" name="transaction_id" value="" />
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
-                            <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required />
+                            <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required maxlength="100" />
                         </div>
                         <div class="row">
                             <div class="col-md-6">

@@ -122,6 +122,69 @@ class VendorService
         return $vendor->fresh();
     }
 
+    // ===================== VENDOR OVERVIEW =====================
+
+    /**
+     * Get vendors overview dashboard data: summary stats, top outstanding, recent transactions.
+     */
+    public function getVendorsOverview(int $accountId): array
+    {
+        $vendors = Vendor::forAccount($accountId)->where('is_active', true)->get();
+
+        $totalOpeningBalance = $vendors->sum('opening_balance');
+        $totalOutstanding = $vendors->sum('cached_balance');
+        $vendorCount = $vendors->count();
+        $vendorsWithBalance = $vendors->where('cached_balance', '>', 0)->count();
+
+        // This month's purchases & payments
+        $monthStart = now()->startOfMonth()->toDateString();
+        $monthEnd = now()->toDateString();
+        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+
+        $monthBase = VendorTransaction::forAccount($accountId)
+            ->whereRaw("{$dateExpr} >= ?", [$monthStart])
+            ->whereRaw("{$dateExpr} <= ?", [$monthEnd]);
+
+        $monthPurchases = (clone $monthBase)->where('type', 'purchase')->sum('amount');
+        $monthPayments = (clone $monthBase)->where('type', 'payment')->sum('amount');
+
+        // Top 5 vendors by outstanding balance
+        $topVendors = Vendor::forAccount($accountId)
+            ->where('is_active', true)
+            ->where('cached_balance', '>', 0)
+            ->orderByDesc('cached_balance')
+            ->limit(5)
+            ->get(['id', 'name', 'cached_balance', 'payment_terms']);
+
+        // Recent 10 purchases
+        $recentPurchases = VendorTransaction::forAccount($accountId)
+            ->where('type', 'purchase')
+            ->with(['vendor:id,name'])
+            ->orderByRaw("{$dateExpr} DESC, created_at DESC")
+            ->limit(10)
+            ->get(['id', 'vendor_id', 'amount', 'description', 'transaction_date', 'created_at']);
+
+        // Recent 10 payments
+        $recentPayments = VendorTransaction::forAccount($accountId)
+            ->where('type', 'payment')
+            ->with(['vendor:id,name', 'expense:id,description'])
+            ->orderByRaw("{$dateExpr} DESC, created_at DESC")
+            ->limit(10)
+            ->get(['id', 'vendor_id', 'expense_id', 'amount', 'description', 'transaction_date', 'created_at']);
+
+        return [
+            'total_opening_balance' => round((float) $totalOpeningBalance, 2),
+            'total_outstanding' => round((float) $totalOutstanding, 2),
+            'vendor_count' => $vendorCount,
+            'vendors_with_balance' => $vendorsWithBalance,
+            'month_purchases' => round((float) $monthPurchases, 2),
+            'month_payments' => round((float) $monthPayments, 2),
+            'top_vendors' => $topVendors,
+            'recent_purchases' => $recentPurchases,
+            'recent_payments' => $recentPayments,
+        ];
+    }
+
     // ===================== VENDOR LEDGER =====================
 
     /**
