@@ -134,7 +134,7 @@ class VendorService
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
             ->with(['expense:id,description,expense_date', 'creator:id,name'])
-            ->orderBy('created_at', 'desc');
+            ->orderByRaw('COALESCE(transaction_date, DATE(created_at)) DESC, created_at DESC');
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
@@ -163,6 +163,9 @@ class VendorService
                 'expense_id' => $data['expense_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'reference_no' => $data['reference_no'] ?? null,
+                'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
+                'for_branch_id' => !empty($data['is_for_general']) ? null : ($data['for_branch_id'] ?? null),
+                'is_for_general' => !empty($data['is_for_general']) ? 1 : 0,
                 'created_by' => Auth::id(),
             ]);
         });

@@ -87,7 +87,7 @@
                                             </div>
                                         </div>
                                         <div class="d-flex">
-                                            @if(Gate::allows('cashflow_expense_create'))
+                                            @if(Gate::allows('cashflow_vendor_transaction'))
                                                 <button class="btn btn-sm btn-primary mr-2" id="btn-record-purchase"><i class="la la-shopping-cart mr-1"></i>Record Purchase</button>
                                             @endif
                                             @if(Gate::allows('cashflow_vendor_manage'))
@@ -202,6 +202,69 @@
             </div>
         </div>
     </div>
+
+    <!-- Record Purchase Modal -->
+    @if(Gate::allows('cashflow_vendor_transaction'))
+    <div class="modal fade" id="modal_purchase" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="la la-shopping-cart mr-1"></i>Record Purchase — <span id="purchase-vendor-name" class="text-primary"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-purchase">
+                        <div class="form-group">
+                            <label>Description <span class="text-danger">*</span></label>
+                            <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Amount <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend"><span class="input-group-text">PKR</span></div>
+                                        <input type="number" name="amount" class="form-control" min="1" step="1" required />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Date <span class="text-danger">*</span></label>
+                                    <input type="date" name="transaction_date" class="form-control" required />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Reference / Invoice No</label>
+                                    <input type="text" name="reference_no" class="form-control" placeholder="Optional" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>For <span class="text-danger">*</span></label>
+                                    <select name="for_branch_id" class="form-control">
+                                        <option value="">Select</option>
+                                        <option value="general">General / Company-wide</option>
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-submit-purchase" class="btn btn-primary"><i class="la la-check mr-1"></i>Record Purchase</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     @push('js')
         <script>

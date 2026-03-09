@@ -169,6 +169,9 @@ class ExpenseService
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
                     'reference_no' => $expense->reference_no,
+                    'transaction_date' => $expense->expense_date->format('Y-m-d'),
+                    'for_branch_id' => $expense->for_branch_id,
+                    'is_for_general' => $expense->is_for_general ? 1 : 0,
                     'created_by' => $user->id,
                 ]);
             }
@@ -389,6 +392,7 @@ class ExpenseService
                 }
             } elseif (!$oldVendorId && $newVendorId) {
                 // Vendor added: create new vendor transaction
+                $freshExpense = $expense->fresh();
                 VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $newVendorId,
@@ -396,7 +400,10 @@ class ExpenseService
                     'amount' => $newAmount,
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
-                    'reference_no' => $expense->fresh()->reference_no,
+                    'reference_no' => $freshExpense->reference_no,
+                    'transaction_date' => $freshExpense->expense_date->format('Y-m-d'),
+                    'for_branch_id' => $freshExpense->for_branch_id,
+                    'is_for_general' => $freshExpense->is_for_general ? 1 : 0,
                     'created_by' => \Illuminate\Support\Facades\Auth::id(),
                 ]);
                 // Observer handles balance decrement for new vendor
