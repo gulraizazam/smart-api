@@ -243,7 +243,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="transaction_date" class="form-control" required />
+                                    <input type="text" name="transaction_date" class="form-control" required readonly style="cursor:pointer;background:#fff;" placeholder="Select date" />
                                 </div>
                             </div>
                         </div>
@@ -268,8 +268,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Attachment (Google Drive URL)</label>
-                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
+                            <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
+                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" required />
                         </div>
                     </form>
                 </div>

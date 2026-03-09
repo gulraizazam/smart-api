@@ -42,6 +42,18 @@ var CashflowVendors = (function () {
         // Export ledger CSV
         $('#btn-export-ledger').on('click', exportLedger);
 
+        // Init date picker on purchase transaction_date field (last 7 days only, whole field clickable)
+        $('#form-purchase [name="transaction_date"]').daterangepicker({
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: false,
+            minDate: moment().subtract(7, 'days'),
+            maxDate: moment(),
+            locale: { format: 'YYYY-MM-DD' }
+        }).on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD'));
+        });
+
         // Attachment URL: warn if non-Google-Drive URL
         $('[name="attachment_url"]', '#form-purchase').on('change', function () {
             var url = $(this).val();
@@ -543,13 +555,6 @@ var CashflowVendors = (function () {
             form.find('[name="transaction_date"]').val(getTodayStr());
         }
 
-        // Set date min/max: last 7 days to today
-        var dateField = form.find('[name="transaction_date"]');
-        var today = getTodayStr();
-        var minDate = new Date(); minDate.setDate(minDate.getDate() - 7);
-        var minStr = minDate.getFullYear() + '-' + String(minDate.getMonth() + 1).padStart(2, '0') + '-' + String(minDate.getDate()).padStart(2, '0');
-        dateField.attr('min', minStr).attr('max', today);
-
         $('#modal_purchase').modal('show');
     }
 
@@ -573,7 +578,7 @@ var CashflowVendors = (function () {
         // Validate
         form.find('.is-invalid').removeClass('is-invalid');
         var missing = [];
-        var requiredFields = ['description', 'amount', 'transaction_date'];
+        var requiredFields = ['description', 'amount', 'transaction_date', 'attachment_url'];
         $.each(requiredFields, function (i, name) {
             if (!data[name]) { form.find('[name="' + name + '"]').addClass('is-invalid'); missing.push(name); }
         });
