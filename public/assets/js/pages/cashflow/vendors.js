@@ -29,11 +29,14 @@ var CashflowVendors = (function () {
         // Ledger type filter
         $('#ledger-type-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
 
-        // Record Purchase → redirect to expenses page with vendor pre-selected
+        // Record Purchase → open purchase modal
         $('#btn-record-purchase').on('click', function () {
             if (!currentVendorId) return;
-            window.location.href = '/admin/cashflow/expenses?action=add&vendor_id=' + currentVendorId;
+            $('#purchase-vendor-name').text(currentVendorData ? currentVendorData.name : '');
+            $('#form-purchase [name="transaction_date"]').val(getTodayStr());
+            $('#modal_purchase').modal('show');
         });
+        $('#btn-submit-purchase').on('click', submitPurchase);
 
         // Edit current vendor from ledger header
         $('#btn-edit-current-vendor').on('click', function () {
@@ -52,6 +55,10 @@ var CashflowVendors = (function () {
             $('#vendor-modal-title').text('Add Vendor');
         });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
+        $('#modal_purchase').on('hidden.bs.modal', function () {
+            $('#form-purchase')[0].reset();
+            $('#form-purchase .is-invalid').removeClass('is-invalid');
+        });
     }
 
     // ===================== VENDORS LIST (Left Panel) =====================
@@ -269,8 +276,7 @@ var CashflowVendors = (function () {
             var amtClass = isPurchase ? 'text-danger' : 'text-success';
             var amtPrefix = isPurchase ? '+' : '-';
             var desc = (tx.expense && tx.expense.description) ? tx.expense.description : (tx.description || '-');
-            var expDate = tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null;
-            var dateStr = fd(expDate || tx.created_at);
+            var dateStr = fd(tx.transaction_date || (tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null) || tx.created_at);
 
             container.append(
                 '<div class="d-flex align-items-center py-2" style="border-bottom:1px solid #F3F6F9;">' +
@@ -379,7 +385,84 @@ var CashflowVendors = (function () {
         });
     }
 
+    // ===================== RECORD PURCHASE =====================
+
+    function submitPurchase() {
+        var form = $('#form-purchase');
+        var data = {};
+        form.find('input, select, textarea').each(function () {
+            var n = $(this).attr('name');
+            if (n) data[n] = $(this).val();
+        });
+
+        // Handle branch/general
+        if (data.for_branch_id === 'general') {
+            data.is_for_general = 1;
+            data.for_branch_id = '';
+        } else {
+            data.is_for_general = 0;
+        }
+
+        // Validate required fields
+        form.find('.is-invalid').removeClass('is-invalid');
+        var missing = [];
+        var requiredFields = ['description', 'amount', 'transaction_date', 'for_branch_id'];
+        $.each(requiredFields, function (i, name) {
+            var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
+            if (!val) {
+                form.find('[name="' + name + '"]').addClass('is-invalid');
+                missing.push(name);
+            }
+        });
+        if (missing.length) { toastr.warning('Please fill the highlighted fields.'); return; }
+
+        // Whole numbers only
+        if (data.amount && data.amount % 1 !== 0) {
+            toastr.warning('Amount must be a whole number.'); return;
+        }
+
+        var btn = $('#btn-submit-purchase');
+        btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');
+
+        $.ajax({
+            url: apiBase + 'vendors/' + currentVendorId + '/purchase',
+            type: 'POST',
+            data: data,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message || 'Purchase recorded.');
+                    $('#modal_purchase').modal('hide');
+                    loadLedger(currentVendorId);
+                    loadVendors();
+                } else {
+                    toastr.error(res.message || 'Failed.');
+                }
+            },
+            error: function (xhr) {
+                var msg = 'Failed to record purchase.';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.errors) {
+                        var errs = xhr.responseJSON.errors;
+                        msg = Object.keys(errs).map(function (k) { return errs[k][0]; }).join('\n');
+                    } else if (xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                }
+                toastr.error(msg);
+            },
+            complete: function () {
+                btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>Record Purchase');
+            }
+        });
+    }
+
     // ===================== HELPERS =====================
+
+    function getTodayStr() {
+        var d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
 
     function renderPagination(meta, infoSel, linksSel, loadFn) {
         if (!meta) return;

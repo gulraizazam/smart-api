@@ -15,9 +15,21 @@ class StoreVendorPurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => 'required|numeric|min:0.01|max:99999999.99',
-            'description' => 'nullable|string|max:500',
+            'amount' => 'required|numeric|min:1|max:99999999|integer',
+            'description' => 'required|string|min:3|max:500',
             'reference_no' => 'nullable|string|max:100',
+            'transaction_date' => 'required|date|before_or_equal:today',
+            'for_branch_id' => 'nullable',
+            'is_for_general' => 'nullable|boolean',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (!$this->input('for_branch_id') && !$this->input('is_for_general')) {
+                $validator->errors()->add('for_branch_id', 'Please select a branch or General / Company-wide.');
+            }
+        });
     }
 }

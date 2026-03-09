@@ -36,7 +36,8 @@ class CashFlowController extends Controller
         if (!Gate::allows('cashflow_vendor_manage') && !Gate::allows('cashflow_vendor_ledger_view')) {
             return abort(401);
         }
-        return view('admin.cashflow.vendors');
+        $branches = \App\Helpers\CashflowHelper::getActiveBranches(auth()->user()->account_id);
+        return view('admin.cashflow.vendors', compact('branches'));
     }
 
     public function staff()

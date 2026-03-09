@@ -14,11 +14,15 @@ class VendorTransaction extends Model
 
     protected $fillable = [
         'account_id', 'vendor_id', 'type', 'amount',
-        'expense_id', 'description', 'reference_no', 'created_by',
+        'expense_id', 'description', 'reference_no',
+        'transaction_date', 'for_branch_id', 'is_for_general',
+        'created_by',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'transaction_date' => 'date:Y-m-d',
+        'is_for_general' => 'boolean',
     ];
 
     // Type constants
@@ -39,6 +43,14 @@ class VendorTransaction extends Model
     public function expense()
     {
         return $this->belongsTo(Expense::class, 'expense_id')->withTrashed();
+    }
+
+    /**
+     * Branch this transaction is for.
+     */
+    public function forBranch()
+    {
+        return $this->belongsTo(\App\Models\Location::class, 'for_branch_id');
     }
 
     /**

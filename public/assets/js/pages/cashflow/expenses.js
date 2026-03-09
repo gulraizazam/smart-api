@@ -107,6 +107,19 @@ var CashflowExpenses = (function () {
             filterPoolsByPaymentMethod(pmText);
         });
 
+        // Show/hide vendor field based on category vendor_emphasis
+        $('[name="category_id"]', '#form-expense').on('change', function () {
+            var opt = $(this).find('option:selected');
+            var vendorEmphasis = opt.data('vendor') == 1;
+            var vendorGroup = $('#vendor-group');
+            if (vendorEmphasis) {
+                vendorGroup.show().addClass('bg-light-warning p-3 rounded');
+            } else {
+                vendorGroup.hide().removeClass('bg-light-warning p-3 rounded');
+                $('#form-expense [name="vendor_id"]').val('').trigger('change');
+            }
+        });
+
         // Amount field threshold hint
         $('[name="amount"]', '#form-expense').on('input', function () {
             var val = parseFloat($(this).val()) || 0;
@@ -144,6 +157,17 @@ var CashflowExpenses = (function () {
                 filterPoolsByPaymentMethod(initPm, '#form-expense');
             }
 
+            // Show/hide vendor group based on selected category
+            var catOpt = modalBody.find('[name="category_id"] option:selected');
+            var hasVendorEmphasis = catOpt.data('vendor') == 1;
+            var hasVendorPreFilled = !!modalBody.find('[name="vendor_id"]').val();
+            if (hasVendorEmphasis || hasVendorPreFilled) {
+                $('#vendor-group').show();
+                if (hasVendorEmphasis) $('#vendor-group').addClass('bg-light-warning p-3 rounded');
+            } else {
+                $('#vendor-group').hide();
+            }
+
             // Sync Select2 with pre-filled values
             modalBody.find('select.kt-select2-general').trigger('change.select2');
         });
@@ -154,7 +178,7 @@ var CashflowExpenses = (function () {
             $('#form-expense')[0].reset();
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
-            $('#vendor-group').removeClass('bg-light-warning p-3 rounded');
+            $('#vendor-group').removeClass('bg-light-warning p-3 rounded').show();
         });
     }
 
