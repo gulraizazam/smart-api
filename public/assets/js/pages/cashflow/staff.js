@@ -469,14 +469,17 @@ var CashflowStaff = (function () {
         var changes = [];
 
         var fieldLabels = {
+            advance_date: 'Date',
             amount: 'Amount',
             pool_id: 'Pool',
+            staff_user_id: 'Staff',
             description: 'Description',
             void_reason: 'Void Reason'
         };
 
         function getRelName(values, field) {
             if (field === 'pool_id' && values.pool && values.pool.name) return values.pool.name;
+            if (field === 'staff_user_id' && values.staff_user && values.staff_user.name) return values.staff_user.name;
             return null;
         }
 
@@ -484,6 +487,7 @@ var CashflowStaff = (function () {
             if (val === null || val === undefined || val === '') return '(empty)';
             var relName = getRelName(values, field);
             if (relName) return relName;
+            if (field === 'advance_date' || field === 'return_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             return esc(String(val));
         }
@@ -493,6 +497,8 @@ var CashflowStaff = (function () {
             var newVal = newV[field];
             var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
             var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+            // Normalize dates to YYYY-MM-DD to avoid false positives from format differences
+            if (field === 'advance_date' || field === 'return_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
 
             if (oldNorm !== newNorm) {
                 changes.push(

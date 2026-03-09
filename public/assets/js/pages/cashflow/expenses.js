@@ -1124,6 +1124,7 @@ var CashflowExpenses = (function () {
 
         // Fields to track with human-readable labels
         var fieldLabels = {
+            expense_date: 'Date',
             amount: 'Amount',
             description: 'Description',
             status: 'Status',
@@ -1160,6 +1161,7 @@ var CashflowExpenses = (function () {
             if (val === null || val === undefined || val === '') return '(empty)';
             var relName = getRelName(values, field);
             if (relName) return relName;
+            if (field === 'expense_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             if (field === 'is_for_general') return val ? 'Yes' : 'No';
             if (field === 'attachment_url') return val ? 'Attached' : '(none)';
@@ -1173,6 +1175,8 @@ var CashflowExpenses = (function () {
             // Normalize for comparison
             var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
             var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
+            // Normalize dates to YYYY-MM-DD to avoid false positives from format differences
+            if (field === 'expense_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
 
             if (oldNorm !== newNorm) {
                 changes.push(
