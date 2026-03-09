@@ -8,9 +8,14 @@
             .expense-rejected { border-left: 3px solid #F64E60 !important; }
             .expense-voided { border-left: 3px solid #F64E60 !important; opacity: 0.6; }
             .amount-cell { font-weight: 600; white-space: nowrap; }
-            .form-control .form-control-sm{
-                height: 50px;
+            #filter-date-range{
+                height: 35px !important;
             }
+           
+            #filter-search{
+                height: 35px !important;
+            }
+            
         </style>
     @endpush
 
@@ -107,7 +112,7 @@
                     <div class="card-body">
                         <!-- Filters -->
                         <style>
-                            .expense-filters .select2-container--default .select2-selection--single { height: calc(1.35em + 1.1rem + 2px) !important; display: flex; align-items: center; }
+                            .expense-filters .select2-container--default .select2-selection--single { height: 35px !important; display: flex; align-items: center; }
                             .expense-filters .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: normal; }
                             .expense-filters .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; }
                         </style>
@@ -143,8 +148,8 @@
                                 <div class="input-group input-group-sm">
                                     <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search..." />
                                     <div class="input-group-append">
-                                        <button id="btn-filter" class="btn btn-primary btn-sm"><i class="la la-search"></i></button>
-                                        <button id="btn-reset-filters" class="btn btn-secondary btn-sm" title="Reset Filters"><i class="la la-undo"></i></button>
+                                        <button id="btn-filter" class="btn btn-primary btn-sm" style="height: 35px;"><i class="la la-search"></i></button>
+                                        <button id="btn-reset-filters" class="btn btn-secondary btn-sm" title="Reset Filters" style="height: 35px;"><i class="la la-undo"></i></button>
                                     </div>
                                 </div>
                             </div>
