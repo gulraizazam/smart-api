@@ -137,8 +137,8 @@
                                 <div class="card-header py-3" style="min-height:auto;">
                                     <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-list-alt mr-1"></i>Transactions</h3></div>
                                     <div class="card-toolbar d-flex align-items-center" style="gap:6px;">
-                                        <div class="input-group input-group-sm" style="width:210px;">
-                                            <div class="input-group-prepend"><span class="input-group-text py-0 px-2"><i class="la la-calendar font-size-sm"></i></span></div>
+                                        <div class="input-group input-group-sm" style="width:210px;margin-top:5px">
+                                            <div class="input-group-prepend" style="height:32px !important"><span class="input-group-text py-0 px-2"><i class="la la-calendar font-size-sm"></i></span></div>
                                             <input type="text" id="ledger-date-range" class="form-control form-control-sm" placeholder="Date range" readonly style="cursor:pointer;background:#fff;" />
                                         </div>
                                         <select id="ledger-type-filter" class="form-control form-control-sm" style="width:110px;">
