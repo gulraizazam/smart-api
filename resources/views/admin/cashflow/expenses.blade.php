@@ -133,7 +133,7 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="input-group input-group-sm">
-                                    <input type="text" id="filter-search" class="form-control" placeholder="Search..." />
+                                    <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search..." />
                                     <div class="input-group-append">
                                         <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
                                         <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
@@ -211,17 +211,17 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Paid From Pool <span class="text-danger">*</span></label>
-                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" required>
-                                        <option value="">Select pool</option>
+                                    <label>Payment Method <span class="text-danger">*</span></label>
+                                    <select name="payment_method_id" class="form-control kt-select2-general" required>
+                                        <option value="">Select method</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Payment Method <span class="text-danger">*</span></label>
-                                    <select name="payment_method_id" class="form-control kt-select2-general" required>
-                                        <option value="">Select method</option>
+                                    <label>Paid From Pool <span class="text-danger">*</span></label>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" required>
+                                        <option value="">Select pool</option>
                                     </select>
                                 </div>
                             </div>
@@ -243,15 +243,6 @@
                                         <option value="">Select vendor (optional)</option>
                                     </select>
                                     <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="staff-field-group">
-                                <div class="form-group">
-                                    <label>Expense By (Staff)</label>
-                                    <select name="staff_id" class="form-control kt-select2-general">
-                                        <option value="">Select staff (optional)</option>
-                                    </select>
-                                    <span class="form-text text-muted">Only for cash expenses</span>
                                 </div>
                             </div>
                         </div>
@@ -392,13 +383,19 @@
                     <form id="form-admin-edit">
                         <input type="hidden" name="expense_id" />
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Date</label>
+                                    <input type="text" name="expense_date" class="form-control" readonly placeholder="Keep current" style="cursor:pointer;background:#fff;" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Amount (PKR)</label>
                                     <input type="number" name="amount" class="form-control" min="1" step="1" />
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Category</label>
                                     <select name="category_id" class="form-control kt-select2-general" id="edit-category-select">
@@ -408,15 +405,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Paid From Pool</label>
-                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" id="edit-pool-select">
-                                        <option value="">Keep current</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Payment Method</label>
                                     <select name="payment_method_id" class="form-control kt-select2-general" id="edit-payment-method-select">
@@ -424,10 +413,38 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Paid From Pool</label>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" id="edit-pool-select">
+                                        <option value="">Keep current</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>For</label>
+                                    <select name="for_branch_id" class="form-control kt-select2-general" id="edit-branch-select">
+                                        <option value="">Keep current</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Attachment (Google Drive URL)</label>
-                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Vendor</label>
+                                    <select name="vendor_id" class="form-control kt-select2-general" id="edit-vendor-select">
+                                        <option value="">Keep current</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Attachment (Google Drive URL)</label>
+                                    <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." />
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Description</label>

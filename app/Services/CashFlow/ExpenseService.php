@@ -345,10 +345,25 @@ class ExpenseService
 
         $oldValues = $expense->toArray();
 
-        $allowed = ['amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
+        // Handle merged branch/general field
+        if (!empty($data['is_for_general'])) {
+            $updateData['is_for_general'] = true;
+            $updateData['for_branch_id'] = null;
+        } elseif (isset($data['for_branch_id'])) {
+            $updateData['is_for_general'] = false;
+            $updateData['for_branch_id'] = $data['for_branch_id'] ?: null;
+        }
+
+        // Handle vendor_id (allow clearing)
+        if (array_key_exists('vendor_id', $data)) {
+            $updateData['vendor_id'] = $data['vendor_id'] ?: null;
+        }
+
         foreach ($allowed as $field) {
+            if ($field === 'vendor_id') continue; // handled above
             if (isset($data[$field])) {
                 $updateData[$field] = $data[$field];
             }
