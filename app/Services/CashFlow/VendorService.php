@@ -152,13 +152,13 @@ class VendorService
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
 
-        // Query for filtered period
+        // Query for filtered period (DESC for latest-first display)
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
             ->with(['expense:id,description,expense_date', 'creator:id,name', 'forBranch:id,name'])
             ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
             ->whereRaw("{$dateExpr} <= ?", [$dateTo])
-            ->orderByRaw("{$dateExpr} ASC, created_at ASC");
+            ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
@@ -174,34 +174,41 @@ class VendorService
         $periodPayments = (clone $periodBase)->where('type', 'payment')->sum('amount');
         $periodCount = (clone $periodBase)->count();
 
-        // Get all transactions for the period (paginated) and compute running balance
+        // Get paginated transactions (latest first)
         $transactions = $query->paginate($perPage);
 
-        // Running balance: for page 1, start from opening balance.
-        // For subsequent pages, we need to account for all rows before this page.
-        $runningBase = $openingBalance;
+        // Compute running balance: we need the cumulative balance up to each row.
+        // Strategy: find the closing balance for the LAST item on this page,
+        // then work backwards. The closing balance for the entire period is:
+        // openingBalance + periodPurchases - periodPayments (unfiltered by type).
+        // For page N (DESC), we skip the first (N-1)*perPage newest items.
+        $closingBalance = $openingBalance + (float) $periodPurchases - (float) $periodPayments;
+
+        // If not page 1, subtract the newer transactions that come before this page (in DESC order)
         if ($transactions->currentPage() > 1) {
-            // Count all transactions before this page's offset
-            $offset = ($transactions->currentPage() - 1) * $perPage;
-            $priorPageTxs = VendorTransaction::forAccount($accountId)
+            $skipCount = ($transactions->currentPage() - 1) * $perPage;
+            $newerTxs = VendorTransaction::forAccount($accountId)
                 ->where('vendor_id', $vendorId)
                 ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
                 ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
             if (!empty($filters['type'])) {
-                $priorPageTxs->where('type', $filters['type']);
+                $newerTxs->where('type', $filters['type']);
             }
-            $priorPageTxs = $priorPageTxs->orderByRaw("{$dateExpr} ASC, created_at ASC")
-                ->limit($offset)->get();
-            foreach ($priorPageTxs as $ptx) {
-                $runningBase += ($ptx->type === 'purchase') ? (float) $ptx->amount : -(float) $ptx->amount;
+            $newerTxs = $newerTxs->orderByRaw("{$dateExpr} DESC, created_at DESC")
+                ->limit($skipCount)->get();
+            foreach ($newerTxs as $ntx) {
+                $closingBalance -= ($ntx->type === 'purchase') ? (float) $ntx->amount : -(float) $ntx->amount;
             }
         }
 
-        // Attach running_balance to each transaction item (convert to array for proper JSON serialization)
-        $items = $transactions->getCollection()->map(function ($tx) use (&$runningBase) {
-            $runningBase += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+        // Attach running_balance: iterate in DESC order, closingBalance is the balance
+        // AFTER the first (newest) item on this page. Subtract each item going backwards.
+        $runBal = $closingBalance;
+        $items = $transactions->getCollection()->map(function ($tx) use (&$runBal) {
             $arr = $tx->toArray();
-            $arr['running_balance'] = round($runningBase, 2);
+            $arr['running_balance'] = round($runBal, 2);
+            // Move backwards: undo this transaction to get balance before it
+            $runBal -= ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
             return $arr;
         });
         $transactions->setCollection($items);
