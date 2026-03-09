@@ -50,7 +50,7 @@ class VendorTransaction extends Model
      */
     public function forBranch()
     {
-        return $this->belongsTo(\App\Models\Location::class, 'for_branch_id');
+        return $this->belongsTo(\App\Models\Locations::class, 'for_branch_id');
     }
 
     /**
