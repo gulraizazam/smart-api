@@ -84,6 +84,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Vendors
     Route::prefix('vendors')->name('vendors.')->group(function () {
         Route::get('data', [CashFlowController::class, 'vendorsData'])->name('data');
+        Route::get('overview', [CashFlowController::class, 'vendorsOverview'])->name('overview');
         Route::post('store', [CashFlowController::class, 'vendorsStore'])->name('store');
         Route::post('{id}/update', [CashFlowController::class, 'vendorsUpdate'])->name('update');
         Route::post('{id}/toggle', [CashFlowController::class, 'vendorsToggle'])->name('toggle');

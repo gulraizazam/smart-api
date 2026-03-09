@@ -13,6 +13,7 @@ var CashflowVendors = (function () {
     function init() {
         loadVendors();
         loadVendorRequests();
+        loadOverview();
         bindEvents();
         initLedgerDatePicker();
     }
@@ -210,7 +211,7 @@ var CashflowVendors = (function () {
         $('.vendor-item').removeClass('bg-light-primary').css('background', '');
         $('.vendor-item[data-id="' + vendorId + '"]').addClass('bg-light-primary');
 
-        $('#ledger-empty-state').addClass('d-none');
+        $('#vendor-overview').addClass('d-none');
         $('#vendor-ledger-card').removeClass('d-none');
 
         if (vendor) {
@@ -682,6 +683,97 @@ var CashflowVendors = (function () {
         if (typeFilter) params.push('type=' + typeFilter);
         var url = apiBase + 'vendors/' + currentVendorId + '/ledger/export' + (params.length ? '?' + params.join('&') : '');
         window.open(url, '_blank');
+    }
+
+    // ===================== VENDOR OVERVIEW =====================
+
+    function loadOverview() {
+        $.ajax({
+            url: apiBase + 'vendors/overview',
+            type: 'GET',
+            success: function (res) {
+                if (res.success) renderOverview(res.data);
+            },
+            error: function () {
+                $('#ov-top-vendors').html('<div class="text-muted text-center py-3">Failed to load overview.</div>');
+            }
+        });
+    }
+
+    function renderOverview(data) {
+        // Summary cards
+        $('#ov-opening').text('PKR ' + nf(data.total_opening_balance));
+        $('#ov-vendor-count').text(data.vendor_count + ' active vendor' + (data.vendor_count !== 1 ? 's' : ''));
+        $('#ov-outstanding').text('PKR ' + nf(data.total_outstanding));
+        $('#ov-with-balance').text(data.vendors_with_balance + ' with balance');
+        $('#ov-month-purchases').text('PKR ' + nf(data.month_purchases));
+        $('#ov-month-payments').text('PKR ' + nf(data.month_payments));
+
+        // Top outstanding vendors
+        var topHtml = '';
+        if (data.top_vendors && data.top_vendors.length) {
+            $.each(data.top_vendors, function (i, v) {
+                var terms = termsLabels[v.payment_terms] || '';
+                topHtml += '<div class="d-flex align-items-center justify-content-between py-2' + (i < data.top_vendors.length - 1 ? ' border-bottom' : '') + '">' +
+                    '<div class="d-flex align-items-center">' +
+                        '<span class="font-weight-bold text-muted mr-3" style="width:18px;">' + (i + 1) + '.</span>' +
+                        '<div>' +
+                            '<a href="javascript:;" class="font-weight-bold text-dark-75 text-hover-primary ov-vendor-link" data-id="' + v.id + '">' + esc(v.name) + '</a>' +
+                            (terms ? '<span class="text-muted font-size-xs ml-2">' + terms + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<span class="font-weight-bolder text-danger">PKR ' + nf(v.cached_balance) + '</span>' +
+                '</div>';
+            });
+        } else {
+            topHtml = '<div class="text-center text-muted py-4"><i class="la la-check-circle" style="font-size:30px;"></i><br>No outstanding balances</div>';
+        }
+        $('#ov-top-vendors').html(topHtml);
+
+        // Click on vendor name in overview → open their ledger
+        $('.ov-vendor-link').off('click').on('click', function () {
+            var vendorId = parseInt($(this).data('id'));
+            showVendorLedger(vendorId);
+        });
+
+        // Recent purchases
+        var purchHtml = '';
+        if (data.recent_purchases && data.recent_purchases.length) {
+            $.each(data.recent_purchases, function (i, tx) {
+                var vendorName = tx.vendor ? tx.vendor.name : '—';
+                var dateStr = fd(tx.transaction_date || tx.created_at);
+                purchHtml += '<div class="d-flex align-items-center justify-content-between py-2' + (i < data.recent_purchases.length - 1 ? ' border-bottom' : '') + '">' +
+                    '<div class="min-w-0">' +
+                        '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:200px;">' + esc(tx.description || '—') + '</div>' +
+                        '<div class="text-muted font-size-xs">' + esc(vendorName) + ' &middot; ' + dateStr + '</div>' +
+                    '</div>' +
+                    '<span class="font-weight-bolder text-danger font-size-sm flex-shrink-0 ml-2">PKR ' + nf(tx.amount) + '</span>' +
+                '</div>';
+            });
+        } else {
+            purchHtml = '<div class="text-center text-muted py-3 font-size-sm">No recent purchases</div>';
+        }
+        $('#ov-recent-purchases').html(purchHtml);
+
+        // Recent payments
+        var payHtml = '';
+        if (data.recent_payments && data.recent_payments.length) {
+            $.each(data.recent_payments, function (i, tx) {
+                var vendorName = tx.vendor ? tx.vendor.name : '—';
+                var desc = (tx.expense && tx.expense.description) ? tx.expense.description : (tx.description || '—');
+                var dateStr = fd(tx.transaction_date || tx.created_at);
+                payHtml += '<div class="d-flex align-items-center justify-content-between py-2' + (i < data.recent_payments.length - 1 ? ' border-bottom' : '') + '">' +
+                    '<div class="min-w-0">' +
+                        '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:200px;">' + esc(desc) + '</div>' +
+                        '<div class="text-muted font-size-xs">' + esc(vendorName) + ' &middot; ' + dateStr + '</div>' +
+                    '</div>' +
+                    '<span class="font-weight-bolder text-success font-size-sm flex-shrink-0 ml-2">PKR ' + nf(tx.amount) + '</span>' +
+                '</div>';
+            });
+        } else {
+            payHtml = '<div class="text-center text-muted py-3 font-size-sm">No recent payments</div>';
+        }
+        $('#ov-recent-payments').html(payHtml);
     }
 
     // ===================== AUDIT TRAIL =====================
