@@ -7,11 +7,14 @@ var CashflowVendors = (function () {
     var currentVendorId = null;
     var currentVendorData = null;
     var termsLabels = { upfront: 'Upfront', net_7: 'Net 7', net_15: 'Net 15', net_30: 'Net 30', custom: 'Custom' };
+    var ledgerDateFrom = null;
+    var ledgerDateTo = null;
 
     function init() {
         loadVendors();
         loadVendorRequests();
         bindEvents();
+        initLedgerDatePicker();
     }
 
     function bindEvents() {
@@ -29,14 +32,15 @@ var CashflowVendors = (function () {
         // Ledger type filter
         $('#ledger-type-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
 
-        // Record Purchase → open purchase modal
+        // Record Purchase → open purchase modal (new)
         $('#btn-record-purchase').on('click', function () {
             if (!currentVendorId) return;
-            $('#purchase-vendor-name').text(currentVendorData ? currentVendorData.name : '');
-            $('#form-purchase [name="transaction_date"]').val(getTodayStr());
-            $('#modal_purchase').modal('show');
+            openPurchaseModal(null);
         });
         $('#btn-submit-purchase').on('click', submitPurchase);
+
+        // Export ledger CSV
+        $('#btn-export-ledger').on('click', exportLedger);
 
         // Edit current vendor from ledger header
         $('#btn-edit-current-vendor').on('click', function () {
@@ -57,7 +61,39 @@ var CashflowVendors = (function () {
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
         $('#modal_purchase').on('hidden.bs.modal', function () {
             $('#form-purchase')[0].reset();
+            $('#form-purchase [name="transaction_id"]').val('');
             $('#form-purchase .is-invalid').removeClass('is-invalid');
+            $('#purchase-modal-title').html('<i class="la la-shopping-cart mr-1"></i>Record Purchase — <span id="purchase-vendor-name" class="text-primary"></span>');
+            $('#btn-submit-purchase').html('<i class="la la-check mr-1"></i>Record Purchase');
+        });
+    }
+
+    function initLedgerDatePicker() {
+        var start = moment().startOf('month');
+        var end = moment();
+        ledgerDateFrom = start.format('YYYY-MM-DD');
+        ledgerDateTo = end.format('YYYY-MM-DD');
+
+        $('#ledger-date-range').daterangepicker({
+            startDate: start,
+            endDate: end,
+            ranges: {
+                'This Month': [moment().startOf('month'), moment()],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Quarter': [moment().startOf('quarter'), moment()],
+                'This Year': [moment().startOf('year'), moment()]
+            },
+            locale: { format: 'DD MMM YYYY' },
+            alwaysShowCalendars: true,
+            autoUpdateInput: true,
+            opens: 'left'
+        }, function (s, e) {
+            ledgerDateFrom = s.format('YYYY-MM-DD');
+            ledgerDateTo = e.format('YYYY-MM-DD');
+            ledgerPage = 1;
+            if (currentVendorId) loadLedger(currentVendorId);
         });
     }
 
@@ -141,7 +177,6 @@ var CashflowVendors = (function () {
     }
 
     function selectVendor(vendorId, vendorsList) {
-        // Find vendor in list
         var vendor = null;
         if (vendorsList) {
             for (var i = 0; i < vendorsList.length; i++) {
@@ -152,20 +187,22 @@ var CashflowVendors = (function () {
         currentVendorId = vendorId;
         currentVendorData = vendor;
 
-        // Highlight selected
         $('.vendor-item').removeClass('bg-light-primary').css('background', '');
         $('.vendor-item[data-id="' + vendorId + '"]').addClass('bg-light-primary');
 
-        // Show ledger, hide empty state
         $('#ledger-empty-state').addClass('d-none');
         $('#vendor-ledger-card').removeClass('d-none');
 
-        // Populate header
         if (vendor) {
             $('#ledger-vendor-name').text(vendor.name);
             $('#ledger-vendor-contact').html(vendor.contact_person ? '<i class="la la-user mr-1"></i>' + esc(vendor.contact_person) : '');
             $('#ledger-vendor-phone').html(vendor.phone ? '<i class="la la-phone mr-1"></i>' + esc(vendor.phone) : '');
-            $('#ledger-vendor-terms').html('<i class="la la-calendar mr-1"></i>' + (termsLabels[vendor.payment_terms] || 'N/A'));
+            var termsHtml = '<i class="la la-calendar mr-1"></i>' + (termsLabels[vendor.payment_terms] || 'N/A');
+            // Overdue indicator
+            if (vendor.payment_terms && vendor.payment_terms !== 'upfront' && parseFloat(vendor.cached_balance) > 0) {
+                termsHtml += ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2 ml-1">Balance due</span>';
+            }
+            $('#ledger-vendor-terms').html(termsHtml);
         }
 
         ledgerPage = 1;
@@ -208,7 +245,6 @@ var CashflowVendors = (function () {
                     toastr.success(res.message);
                     $('#modal_vendor').modal('hide');
                     loadVendors();
-                    // Refresh ledger if editing current vendor
                     if (vendorId && currentVendorId == vendorId) {
                         currentVendorData = res.data;
                         $('#ledger-vendor-name').text(res.data.name);
@@ -227,6 +263,8 @@ var CashflowVendors = (function () {
         var typeFilter = $('#ledger-type-filter').val();
         var params = { page: ledgerPage, per_page: 50 };
         if (typeFilter) params.type = typeFilter;
+        if (ledgerDateFrom) params.date_from = ledgerDateFrom;
+        if (ledgerDateTo) params.date_to = ledgerDateTo;
 
         $('#ledger-transactions').html('<div class="text-center text-muted py-5"><div class="spinner spinner-primary spinner-sm"></div></div>');
 
@@ -237,19 +275,28 @@ var CashflowVendors = (function () {
                 var d = res.data;
                 var bal = parseFloat(d.vendor.cached_balance) || 0;
 
-                $('#ledger-opening').text('PKR ' + nf(d.vendor.opening_balance));
-                $('#ledger-balance').text('PKR ' + nf(bal));
-                $('#ledger-count').text(d.transactions.total || 0);
+                // Opening balance (computed for the period start)
+                $('#ledger-opening').text('PKR ' + nf(d.opening_balance));
+                $('#ledger-opening-date').text(fd(d.date_from));
 
-                // Color the balance card based on outstanding
+                // Outstanding (overall current balance)
+                $('#ledger-balance').text('PKR ' + nf(bal));
                 var borderColor = bal > 0 ? '#F64E60' : (bal < 0 ? '#1BC5BD' : '#FFA800');
                 $('#ledger-balance-card').css('border-left-color', borderColor);
                 $('#ledger-balance').toggleClass('text-danger', bal > 0).toggleClass('text-success', bal < 0);
 
+                // Period stats
+                var stats = d.period_stats || {};
+                $('#ledger-count').text(stats.count || 0);
+                $('#ledger-stat-purchases').text('PKR ' + nf(stats.total_purchases));
+                $('#ledger-stat-payments').text('PKR ' + nf(stats.total_payments));
+                var net = parseFloat(stats.net) || 0;
+                $('#ledger-stat-net').text((net >= 0 ? '+' : '') + 'PKR ' + nf(net))
+                    .toggleClass('text-danger', net > 0).toggleClass('text-success', net < 0).toggleClass('text-muted', net === 0);
+
                 var txData = d.transactions.data || d.transactions;
                 renderLedger(txData);
 
-                // Ledger pagination
                 if (d.transactions.last_page) {
                     renderPagination({
                         current_page: d.transactions.current_page,
@@ -265,7 +312,7 @@ var CashflowVendors = (function () {
     function renderLedger(txs) {
         var container = $('#ledger-transactions').empty();
         if (!txs || txs.length === 0) {
-            container.html('<div class="text-center text-muted py-5"><i class="la la-inbox" style="font-size:36px;"></i><br>No transactions found.</div>');
+            container.html('<div class="text-center text-muted py-5"><i class="la la-inbox" style="font-size:36px;"></i><br>No transactions found for this period.</div>');
             return;
         }
 
@@ -278,6 +325,34 @@ var CashflowVendors = (function () {
             var desc = (tx.expense && tx.expense.description) ? tx.expense.description : (tx.description || '-');
             var dateStr = fd(tx.transaction_date || (tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null) || tx.created_at);
 
+            // Branch info
+            var branchLabel = '';
+            if (tx.is_for_general) {
+                branchLabel = '<span class="label label-light-info label-inline font-size-xs py-0 px-2 ml-1">General</span>';
+            } else if (tx.for_branch && tx.for_branch.name) {
+                branchLabel = '<span class="label label-light-info label-inline font-size-xs py-0 px-2 ml-1">' + esc(tx.for_branch.name) + '</span>';
+            }
+
+            // Running balance
+            var runBal = parseFloat(tx.running_balance) || 0;
+            var runBalClass = runBal > 0 ? 'text-danger' : (runBal < 0 ? 'text-success' : 'text-muted');
+
+            // Description: clickable link to expense for payment entries
+            var descHtml;
+            if (!isPurchase && tx.expense_id) {
+                descHtml = '<a href="/admin/cashflow/expenses?highlight=' + tx.expense_id + '" class="font-weight-bold font-size-sm text-primary text-truncate" style="max-width:260px;display:inline-block;" title="View expense #' + tx.expense_id + '">' + esc(desc) + '</a>';
+            } else {
+                descHtml = '<span class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:260px;display:inline-block;">' + esc(desc) + '</span>';
+            }
+
+            // Edit/Delete actions for standalone purchase entries (no expense_id)
+            var actions = '';
+            if (!tx.expense_id && typeof cfPerms !== 'undefined' && cfPerms.canTransaction) {
+                actions =
+                    '<a href="javascript:;" class="btn-edit-tx text-hover-primary ml-2" title="Edit" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-edit font-size-sm text-muted"></i></a>' +
+                    '<a href="javascript:;" class="btn-delete-tx text-hover-danger ml-1" title="Delete" data-id="' + tx.id + '"><i class="la la-trash font-size-sm text-muted"></i></a>';
+            }
+
             container.append(
                 '<div class="d-flex align-items-center py-2" style="border-bottom:1px solid #F3F6F9;">' +
                     '<div class="flex-shrink-0 mr-3">' +
@@ -286,23 +361,37 @@ var CashflowVendors = (function () {
                         '</div>' +
                     '</div>' +
                     '<div class="flex-grow-1 min-w-0">' +
-                        '<div class="d-flex justify-content-between align-items-center">' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
                             '<div class="min-w-0">' +
-                                '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate">' + esc(desc) + '</div>' +
-                                '<div class="text-muted font-size-xs">' +
+                                '<div>' + descHtml + actions + '</div>' +
+                                '<div class="text-muted font-size-xs mt-1">' +
                                     '<span class="mr-2">' + dateStr + '</span>' +
                                     '<span class="label label-' + (isPurchase ? 'light-danger' : 'light-success') + ' label-inline font-size-xs py-0 px-2">' + typeLabel + '</span>' +
-                                    (tx.reference_no ? ' <span class="ml-2 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
+                                    branchLabel +
+                                    (tx.reference_no ? ' <span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
                                 '</div>' +
                             '</div>' +
                             '<div class="text-right flex-shrink-0 ml-3">' +
                                 '<div class="font-weight-bolder ' + amtClass + '">' + amtPrefix + 'PKR ' + nf(tx.amount) + '</div>' +
-                                '<div class="text-muted font-size-xs">' + (tx.creator ? esc(tx.creator.name) : '') + '</div>' +
+                                '<div class="font-size-xs ' + runBalClass + '">Bal: PKR ' + nf(runBal) + '</div>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
                 '</div>'
             );
+        });
+
+        // Bind edit/delete actions
+        container.find('.btn-edit-tx').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var tx = $(this).data('tx');
+            if (typeof tx === 'string') tx = JSON.parse(tx);
+            openPurchaseModal(tx);
+        });
+        container.find('.btn-delete-tx').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var id = $(this).data('id');
+            deletePurchase(id);
         });
     }
 
@@ -385,14 +474,46 @@ var CashflowVendors = (function () {
         });
     }
 
-    // ===================== RECORD PURCHASE =====================
+    // ===================== RECORD / EDIT PURCHASE =====================
+
+    function openPurchaseModal(tx) {
+        var form = $('#form-purchase');
+        form[0].reset();
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('[name="transaction_id"]').val('');
+
+        $('#purchase-vendor-name').text(currentVendorData ? currentVendorData.name : '');
+
+        if (tx) {
+            // Edit mode
+            form.find('[name="transaction_id"]').val(tx.id);
+            form.find('[name="description"]').val(tx.description || '');
+            form.find('[name="amount"]').val(Math.round(parseFloat(tx.amount)));
+            form.find('[name="transaction_date"]').val(tx.transaction_date ? tx.transaction_date.substring(0, 10) : '');
+            form.find('[name="reference_no"]').val(tx.reference_no || '');
+            // Branch/general
+            if (tx.is_for_general) {
+                form.find('[name="for_branch_id"]').val('general');
+            } else if (tx.for_branch_id) {
+                form.find('[name="for_branch_id"]').val(tx.for_branch_id);
+            }
+            $('#purchase-modal-title').html('<i class="la la-edit mr-1"></i>Edit Purchase — <span id="purchase-vendor-name" class="text-primary">' + esc(currentVendorData ? currentVendorData.name : '') + '</span>');
+            $('#btn-submit-purchase').html('<i class="la la-check mr-1"></i>Update Purchase');
+        } else {
+            // New mode
+            form.find('[name="transaction_date"]').val(getTodayStr());
+        }
+
+        $('#modal_purchase').modal('show');
+    }
 
     function submitPurchase() {
         var form = $('#form-purchase');
+        var txId = form.find('[name="transaction_id"]').val();
         var data = {};
         form.find('input, select, textarea').each(function () {
             var n = $(this).attr('name');
-            if (n) data[n] = $(this).val();
+            if (n && n !== 'transaction_id') data[n] = $(this).val();
         });
 
         // Handle branch/general
@@ -403,20 +524,20 @@ var CashflowVendors = (function () {
             data.is_for_general = 0;
         }
 
-        // Validate required fields
+        // Validate
         form.find('.is-invalid').removeClass('is-invalid');
         var missing = [];
-        var requiredFields = ['description', 'amount', 'transaction_date', 'for_branch_id'];
+        var requiredFields = ['description', 'amount', 'transaction_date'];
         $.each(requiredFields, function (i, name) {
-            var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
-            if (!val) {
-                form.find('[name="' + name + '"]').addClass('is-invalid');
-                missing.push(name);
-            }
+            if (!data[name]) { form.find('[name="' + name + '"]').addClass('is-invalid'); missing.push(name); }
         });
+        // Validate branch: original select value (before conversion)
+        if (!form.find('[name="for_branch_id"]').val()) {
+            form.find('[name="for_branch_id"]').addClass('is-invalid');
+            missing.push('for_branch_id');
+        }
         if (missing.length) { toastr.warning('Please fill the highlighted fields.'); return; }
 
-        // Whole numbers only
         if (data.amount && data.amount % 1 !== 0) {
             toastr.warning('Amount must be a whole number.'); return;
         }
@@ -424,14 +545,23 @@ var CashflowVendors = (function () {
         var btn = $('#btn-submit-purchase');
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');
 
+        var url, successMsg;
+        if (txId) {
+            url = apiBase + 'vendors/' + currentVendorId + '/transactions/' + txId + '/update';
+            successMsg = 'Purchase updated.';
+        } else {
+            url = apiBase + 'vendors/' + currentVendorId + '/purchase';
+            successMsg = 'Purchase recorded.';
+        }
+
         $.ajax({
-            url: apiBase + 'vendors/' + currentVendorId + '/purchase',
+            url: url,
             type: 'POST',
             data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
                 if (res.success) {
-                    toastr.success(res.message || 'Purchase recorded.');
+                    toastr.success(res.message || successMsg);
                     $('#modal_purchase').modal('hide');
                     loadLedger(currentVendorId);
                     loadVendors();
@@ -440,7 +570,7 @@ var CashflowVendors = (function () {
                 }
             },
             error: function (xhr) {
-                var msg = 'Failed to record purchase.';
+                var msg = 'Failed.';
                 if (xhr.responseJSON) {
                     if (xhr.responseJSON.errors) {
                         var errs = xhr.responseJSON.errors;
@@ -452,9 +582,44 @@ var CashflowVendors = (function () {
                 toastr.error(msg);
             },
             complete: function () {
-                btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>Record Purchase');
+                btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>' + (txId ? 'Update Purchase' : 'Record Purchase'));
             }
         });
+    }
+
+    function deletePurchase(txId) {
+        if (!confirm('Delete this purchase entry? The vendor balance will be adjusted.')) return;
+
+        $.ajax({
+            url: apiBase + 'vendors/' + currentVendorId + '/transactions/' + txId + '/delete',
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message || 'Deleted.');
+                    loadLedger(currentVendorId);
+                    loadVendors();
+                } else {
+                    toastr.error(res.message || 'Failed.');
+                }
+            },
+            error: function (xhr) {
+                toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.');
+            }
+        });
+    }
+
+    // ===================== EXPORT =====================
+
+    function exportLedger() {
+        if (!currentVendorId) return;
+        var params = [];
+        if (ledgerDateFrom) params.push('date_from=' + ledgerDateFrom);
+        if (ledgerDateTo) params.push('date_to=' + ledgerDateTo);
+        var typeFilter = $('#ledger-type-filter').val();
+        if (typeFilter) params.push('type=' + typeFilter);
+        var url = apiBase + 'vendors/' + currentVendorId + '/ledger/export' + (params.length ? '?' + params.join('&') : '');
+        window.open(url, '_blank');
     }
 
     // ===================== HELPERS =====================

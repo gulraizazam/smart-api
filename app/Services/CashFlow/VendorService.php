@@ -125,24 +125,262 @@ class VendorService
     // ===================== VENDOR LEDGER =====================
 
     /**
-     * Get vendor ledger (transactions).
+     * Get vendor ledger (transactions) with date filtering, computed opening balance, period stats, and running balance.
      */
     public function getVendorLedger(int $vendorId, int $accountId, array $filters = [], int $perPage = 25)
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
 
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
+
+        // If no date filter, default to current month
+        if (!$dateFrom && !$dateTo) {
+            $dateFrom = now()->startOfMonth()->toDateString();
+            $dateTo = now()->toDateString();
+        }
+
+        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+
+        // Compute opening balance at period start:
+        // vendor.opening_balance + SUM(purchases before date_from) - SUM(payments before date_from)
+        $prePeriod = VendorTransaction::forAccount($accountId)
+            ->where('vendor_id', $vendorId)
+            ->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+
+        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
+
+        // Query for filtered period
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
-            ->with(['expense:id,description,expense_date', 'creator:id,name'])
-            ->orderByRaw('COALESCE(transaction_date, DATE(created_at)) DESC, created_at DESC');
+            ->with(['expense:id,description,expense_date', 'creator:id,name', 'forBranch:id,name'])
+            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
+            ->whereRaw("{$dateExpr} <= ?", [$dateTo])
+            ->orderByRaw("{$dateExpr} ASC, created_at ASC");
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
+        // Period stats (on unfiltered-by-type query for the date range)
+        $periodBase = VendorTransaction::forAccount($accountId)
+            ->where('vendor_id', $vendorId)
+            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
+            ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+
+        $periodPurchases = (clone $periodBase)->where('type', 'purchase')->sum('amount');
+        $periodPayments = (clone $periodBase)->where('type', 'payment')->sum('amount');
+        $periodCount = (clone $periodBase)->count();
+
+        // Get all transactions for the period (paginated) and compute running balance
+        $transactions = $query->paginate($perPage);
+
+        // Running balance: for page 1, start from opening balance.
+        // For subsequent pages, we need to account for all rows before this page.
+        $runningBase = $openingBalance;
+        if ($transactions->currentPage() > 1) {
+            // Count all transactions before this page's offset
+            $offset = ($transactions->currentPage() - 1) * $perPage;
+            $priorPageTxs = VendorTransaction::forAccount($accountId)
+                ->where('vendor_id', $vendorId)
+                ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
+                ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+            if (!empty($filters['type'])) {
+                $priorPageTxs->where('type', $filters['type']);
+            }
+            $priorPageTxs = $priorPageTxs->orderByRaw("{$dateExpr} ASC, created_at ASC")
+                ->limit($offset)->get();
+            foreach ($priorPageTxs as $ptx) {
+                $runningBase += ($ptx->type === 'purchase') ? (float) $ptx->amount : -(float) $ptx->amount;
+            }
+        }
+
+        // Attach running_balance to each transaction item (convert to array for proper JSON serialization)
+        $items = $transactions->getCollection()->map(function ($tx) use (&$runningBase) {
+            $runningBase += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+            $arr = $tx->toArray();
+            $arr['running_balance'] = round($runningBase, 2);
+            return $arr;
+        });
+        $transactions->setCollection($items);
+
         return [
             'vendor' => $vendor,
-            'transactions' => $query->paginate($perPage),
+            'transactions' => $transactions,
+            'opening_balance' => round($openingBalance, 2),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'period_stats' => [
+                'total_purchases' => round((float) $periodPurchases, 2),
+                'total_payments' => round((float) $periodPayments, 2),
+                'net' => round((float) $periodPurchases - (float) $periodPayments, 2),
+                'count' => $periodCount,
+            ],
+        ];
+    }
+
+    /**
+     * Update a standalone purchase transaction (not linked to an expense).
+     */
+    public function updateTransaction(int $transactionId, array $data, int $accountId): VendorTransaction
+    {
+        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+
+        if ($tx->expense_id) {
+            throw new CashflowException('Cannot edit a payment linked to an expense. Edit the expense instead.');
+        }
+
+        $oldValues = $tx->toArray();
+        $oldAmount = (float) $tx->amount;
+
+        $tx = DB::transaction(function () use ($tx, $data, $oldAmount) {
+            $updateData = [];
+            $allowed = ['description', 'amount', 'reference_no', 'transaction_date', 'for_branch_id', 'is_for_general'];
+            foreach ($allowed as $field) {
+                if (array_key_exists($field, $data)) {
+                    $updateData[$field] = $data[$field];
+                }
+            }
+
+            // Handle branch/general
+            if (!empty($data['is_for_general'])) {
+                $updateData['for_branch_id'] = null;
+                $updateData['is_for_general'] = 1;
+            } elseif (isset($data['for_branch_id'])) {
+                $updateData['is_for_general'] = 0;
+            }
+
+            $tx->update($updateData);
+
+            // Adjust vendor cached_balance if amount changed
+            $newAmount = (float) $tx->fresh()->amount;
+            if ($oldAmount != $newAmount) {
+                $diff = $newAmount - $oldAmount;
+                if ($tx->type === 'purchase') {
+                    // Purchase increases balance
+                    if ($diff > 0) {
+                        DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $diff);
+                    } else {
+                        DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', abs($diff));
+                    }
+                } else {
+                    // Payment decreases balance
+                    if ($diff > 0) {
+                        DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $diff);
+                    } else {
+                        DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', abs($diff));
+                    }
+                }
+            }
+
+            return $tx->fresh();
+        });
+
+        $this->auditService->log(
+            CashflowAuditLog::ACTION_UPDATED,
+            CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
+            $tx->id,
+            $oldValues,
+            $tx->toArray()
+        );
+
+        $this->clearCache($accountId);
+        return $tx;
+    }
+
+    /**
+     * Delete a standalone purchase transaction (not linked to an expense).
+     */
+    public function deleteTransaction(int $transactionId, int $accountId): void
+    {
+        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+
+        if ($tx->expense_id) {
+            throw new CashflowException('Cannot delete a payment linked to an expense. Void the expense instead.');
+        }
+
+        $oldValues = $tx->toArray();
+
+        DB::transaction(function () use ($tx) {
+            // Reverse vendor cached_balance
+            if ($tx->type === 'purchase') {
+                DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $tx->amount);
+            } else {
+                DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $tx->amount);
+            }
+            $tx->delete();
+        });
+
+        $this->auditService->log(
+            CashflowAuditLog::ACTION_DELETED,
+            CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
+            $tx->id,
+            $oldValues,
+            null
+        );
+
+        $this->clearCache($accountId);
+    }
+
+    /**
+     * Export vendor ledger as array (for CSV generation).
+     */
+    public function exportVendorLedger(int $vendorId, int $accountId, array $filters = []): array
+    {
+        $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
+
+        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $filters['date_to'] ?? now()->toDateString();
+        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+
+        // Opening balance at period start
+        $prePeriod = VendorTransaction::forAccount($accountId)
+            ->where('vendor_id', $vendorId)
+            ->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
+
+        $query = VendorTransaction::forAccount($accountId)
+            ->where('vendor_id', $vendorId)
+            ->with(['expense:id,description,expense_date', 'forBranch:id,name', 'creator:id,name'])
+            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
+            ->whereRaw("{$dateExpr} <= ?", [$dateTo])
+            ->orderByRaw("{$dateExpr} ASC, created_at ASC");
+
+        if (!empty($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
+
+        $txs = $query->get();
+
+        $rows = [];
+        $running = $openingBalance;
+        foreach ($txs as $tx) {
+            $running += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+            $desc = ($tx->expense && $tx->expense->description) ? $tx->expense->description : ($tx->description ?? '');
+            $branchName = $tx->is_for_general ? 'General' : ($tx->forBranch ? $tx->forBranch->name : '');
+            $rows[] = [
+                'date' => $tx->transaction_date ?? $tx->created_at->toDateString(),
+                'type' => ucfirst($tx->type),
+                'description' => $desc,
+                'reference' => $tx->reference_no ?? '',
+                'branch' => $branchName,
+                'purchase' => $tx->type === 'purchase' ? (float) $tx->amount : '',
+                'payment' => $tx->type === 'payment' ? (float) $tx->amount : '',
+                'balance' => round($running, 2),
+                'by' => $tx->creator ? $tx->creator->name : '',
+            ];
+        }
+
+        return [
+            'vendor' => $vendor,
+            'opening_balance' => round($openingBalance, 2),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'rows' => $rows,
         ];
     }
 

@@ -99,11 +99,11 @@
                             </div>
 
                             {{-- Balance Summary --}}
-                            <div class="row mb-4">
+                            <div class="row mb-3">
                                 <div class="col-4">
                                     <div class="card card-custom" style="border-left:4px solid #3699FF;">
                                         <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Opening Balance</div>
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Balance on <span id="ledger-opening-date"></span></div>
                                             <div class="font-size-h5 font-weight-bolder mt-1" id="ledger-opening">PKR 0</div>
                                         </div>
                                     </div>
@@ -119,23 +119,34 @@
                                 <div class="col-4">
                                     <div class="card card-custom" style="border-left:4px solid #8950FC;">
                                         <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Total Transactions</div>
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Transactions</div>
                                             <div class="font-size-h5 font-weight-bolder mt-1" id="ledger-count">0</div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            {{-- Period Summary Stats --}}
+                            <div class="d-flex align-items-center mb-4 px-1" style="gap:20px;">
+                                <span class="font-size-sm"><span class="text-muted">Purchases:</span> <span class="font-weight-bold text-danger" id="ledger-stat-purchases">PKR 0</span></span>
+                                <span class="font-size-sm"><span class="text-muted">Payments:</span> <span class="font-weight-bold text-success" id="ledger-stat-payments">PKR 0</span></span>
+                                <span class="font-size-sm"><span class="text-muted">Net:</span> <span class="font-weight-bold" id="ledger-stat-net">PKR 0</span></span>
                             </div>
 
                             {{-- Ledger Transactions --}}
                             <div class="card card-custom">
                                 <div class="card-header py-3" style="min-height:auto;">
                                     <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-list-alt mr-1"></i>Transactions</h3></div>
-                                    <div class="card-toolbar">
-                                        <select id="ledger-type-filter" class="form-control form-control-sm" style="width:120px;">
+                                    <div class="card-toolbar d-flex align-items-center" style="gap:6px;">
+                                        <div class="input-group input-group-sm" style="width:210px;">
+                                            <div class="input-group-prepend"><span class="input-group-text py-0 px-2"><i class="la la-calendar font-size-sm"></i></span></div>
+                                            <input type="text" id="ledger-date-range" class="form-control form-control-sm" placeholder="Date range" readonly style="cursor:pointer;background:#fff;" />
+                                        </div>
+                                        <select id="ledger-type-filter" class="form-control form-control-sm" style="width:110px;">
                                             <option value="">All Types</option>
                                             <option value="purchase">Purchases</option>
                                             <option value="payment">Payments</option>
                                         </select>
+                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" id="btn-export-ledger" title="Export CSV"><i class="la la-download p-0"></i></button>
                                     </div>
                                 </div>
                                 <div class="card-body py-3 px-4">
@@ -209,11 +220,12 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="la la-shopping-cart mr-1"></i>Record Purchase — <span id="purchase-vendor-name" class="text-primary"></span></h5>
+                    <h5 class="modal-title" id="purchase-modal-title"><i class="la la-shopping-cart mr-1"></i>Record Purchase — <span id="purchase-vendor-name" class="text-primary"></span></h5>
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
                     <form id="form-purchase">
+                        <input type="hidden" name="transaction_id" value="" />
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
                             <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required />
