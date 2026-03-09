@@ -103,7 +103,12 @@
                     </div>
                     <div class="card-body">
                         <!-- Filters -->
-                        <div class="row mb-4">
+                        <style>
+                            .expense-filters .select2-container--default .select2-selection--single { height: calc(1.35em + 1.1rem + 2px) !important; display: flex; align-items: center; }
+                            .expense-filters .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: normal; }
+                            .expense-filters .select2-container--default .select2-selection--single .select2-selection__arrow { height: 100%; }
+                        </style>
+                        <div class="row mb-4 align-items-center expense-filters">
                             <div class="col-md-2">
                                 <select id="filter-status" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Status</option>
@@ -135,8 +140,8 @@
                                 <div class="input-group input-group-sm">
                                     <input type="text" id="filter-search" class="form-control form-control-sm" placeholder="Search..." />
                                     <div class="input-group-append">
-                                        <button id="btn-filter" class="btn btn-primary"><i class="la la-search"></i></button>
-                                        <button id="btn-reset-filters" class="btn btn-secondary" title="Reset Filters"><i class="la la-undo"></i></button>
+                                        <button id="btn-filter" class="btn btn-primary btn-sm"><i class="la la-search"></i></button>
+                                        <button id="btn-reset-filters" class="btn btn-secondary btn-sm" title="Reset Filters"><i class="la la-undo"></i></button>
                                     </div>
                                 </div>
                             </div>
@@ -227,8 +232,8 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>For</label>
-                                    <select name="for_branch_id" class="form-control kt-select2-general" id="expense-branch-select">
+                                    <label>For <span class="text-danger">*</span></label>
+                                    <select name="for_branch_id" class="form-control kt-select2-general" id="expense-branch-select" required>
                                         <option value="">Select</option>
                                         <option value="general">General / Company-wide</option>
                                     </select>
@@ -385,21 +390,21 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Date</label>
-                                    <input type="text" name="expense_date" class="form-control" readonly placeholder="Keep current" style="cursor:pointer;background:#fff;" />
+                                    <label>Date <span class="text-danger">*</span></label>
+                                    <input type="text" name="expense_date" class="form-control" required readonly placeholder="Select date" style="cursor:pointer;background:#fff;" />
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Amount (PKR)</label>
-                                    <input type="number" name="amount" class="form-control" min="1" step="1" />
+                                    <label>Amount (PKR) <span class="text-danger">*</span></label>
+                                    <input type="number" name="amount" class="form-control" min="1" step="1" required />
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Category</label>
-                                    <select name="category_id" class="form-control kt-select2-general" id="edit-category-select">
-                                        <option value="">Keep current</option>
+                                    <label>Category <span class="text-danger">*</span></label>
+                                    <select name="category_id" class="form-control kt-select2-general" id="edit-category-select" required>
+                                        <option value="">Select category</option>
                                     </select>
                                 </div>
                             </div>
@@ -407,25 +412,25 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Payment Method</label>
-                                    <select name="payment_method_id" class="form-control kt-select2-general" id="edit-payment-method-select">
-                                        <option value="">Keep current</option>
+                                    <label>Payment Method <span class="text-danger">*</span></label>
+                                    <select name="payment_method_id" class="form-control kt-select2-general" id="edit-payment-method-select" required>
+                                        <option value="">Select method</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Paid From Pool</label>
-                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" id="edit-pool-select">
-                                        <option value="">Keep current</option>
+                                    <label>Paid From Pool <span class="text-danger">*</span></label>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" id="edit-pool-select" required>
+                                        <option value="">Select pool</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>For</label>
-                                    <select name="for_branch_id" class="form-control kt-select2-general" id="edit-branch-select">
-                                        <option value="">Keep current</option>
+                                    <label>For <span class="text-danger">*</span></label>
+                                    <select name="for_branch_id" class="form-control kt-select2-general" id="edit-branch-select" required>
+                                        <option value="">Select</option>
                                     </select>
                                 </div>
                             </div>
@@ -435,7 +440,7 @@
                                 <div class="form-group">
                                     <label>Vendor</label>
                                     <select name="vendor_id" class="form-control kt-select2-general" id="edit-vendor-select">
-                                        <option value="">Keep current</option>
+                                        <option value="">Select vendor (optional)</option>
                                     </select>
                                 </div>
                             </div>
@@ -447,8 +452,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Description</label>
-                            <input type="text" name="description" class="form-control" maxlength="50" />
+                            <label>Description <span class="text-danger">*</span></label>
+                            <input type="text" name="description" class="form-control" required minlength="3" maxlength="50" placeholder="Brief expense note (max 50 chars)" />
                         </div>
                         <div class="form-group">
                             <label>Edit Reason <span class="text-danger">*</span> (min 5 chars)</label>
