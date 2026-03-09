@@ -268,7 +268,7 @@ var CashflowVendors = (function () {
             var typeLabel = isPurchase ? 'Purchase' : 'Payment';
             var amtClass = isPurchase ? 'text-danger' : 'text-success';
             var amtPrefix = isPurchase ? '+' : '-';
-            var desc = tx.description || (tx.expense && tx.expense.description ? tx.expense.description : '-');
+            var desc = (tx.expense && tx.expense.description) ? tx.expense.description : (tx.description || '-');
             var expDate = tx.expense && tx.expense.expense_date ? tx.expense.expense_date : null;
             var dateStr = fd(expDate || tx.created_at);
 
