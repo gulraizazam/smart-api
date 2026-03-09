@@ -227,16 +227,11 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>For Branch</label>
+                                    <label>For</label>
                                     <select name="for_branch_id" class="form-control kt-select2-general" id="expense-branch-select">
-                                        <option value="">Select branch</option>
+                                        <option value="">Select</option>
+                                        <option value="general">General / Company-wide</option>
                                     </select>
-                                    <div class="checkbox-inline mt-2">
-                                        <label class="checkbox checkbox-primary">
-                                            <input type="checkbox" name="is_for_general" value="1" id="chk-general" />
-                                            <span></span>General / Company-wide
-                                        </label>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -250,12 +245,13 @@
                                     <a href="javascript:;" id="btn-vendor-not-listed" class="form-text text-primary font-size-xs"><i class="la la-plus-circle"></i> Vendor not listed? Request new</a>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="staff-field-group">
                                 <div class="form-group">
                                     <label>Expense By (Staff)</label>
                                     <select name="staff_id" class="form-control kt-select2-general">
                                         <option value="">Select staff (optional)</option>
                                     </select>
+                                    <span class="form-text text-muted">Only for cash expenses</span>
                                 </div>
                             </div>
                         </div>

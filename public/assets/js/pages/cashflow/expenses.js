@@ -84,7 +84,7 @@ var CashflowExpenses = (function () {
             }
         });
 
-        // Toggle attachment mandatory indicator + filter pools when payment method changes
+        // Toggle attachment mandatory indicator + filter pools + toggle staff field when payment method changes
         $('[name="payment_method_id"]', '#form-expense').on('change', function () {
             var pmText = $(this).find('option:selected').text().toLowerCase();
             var label = $('#form-expense').find('[name="attachment_url"]').closest('.form-group').find('label');
@@ -94,12 +94,7 @@ var CashflowExpenses = (function () {
                 label.html('Attachment (Google Drive URL)');
             }
             filterPoolsByPaymentMethod(pmText);
-        });
-
-        // General checkbox disables branch select
-        $('#chk-general').on('change', function () {
-            $('#expense-branch-select').prop('disabled', $(this).is(':checked'));
-            if ($(this).is(':checked')) $('#expense-branch-select').val('');
+            toggleStaffField(pmText);
         });
 
         // Amount field threshold hint
@@ -130,14 +125,15 @@ var CashflowExpenses = (function () {
             modalBody.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: modalBody });
             modalBody.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modalBody });
             modalBody.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modalBody });
-            modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select branch', dropdownParent: modalBody });
+            modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select', dropdownParent: modalBody });
             modalBody.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modalBody });
             modalBody.find('[name="staff_id"]').select2({ placeholder: 'Select staff', dropdownParent: modalBody });
 
-            // After Select2 init, filter pools by pre-selected payment method (for duplicate-from-voided)
+            // After Select2 init, filter pools + toggle staff by pre-selected payment method (for duplicate-from-voided)
             var initPm = modalBody.find('[name="payment_method_id"] option:selected').text().toLowerCase();
             if (initPm && initPm !== 'select method') {
                 filterPoolsByPaymentMethod(initPm, '#form-expense');
+                toggleStaffField(initPm);
             }
 
             // Sync Select2 with pre-filled values
@@ -150,7 +146,7 @@ var CashflowExpenses = (function () {
             $('#form-expense')[0].reset();
             $('#expense-modal-title').text('New Expense');
             $('#threshold-hint').html('');
-            $('#expense-branch-select').prop('disabled', false);
+            $('#staff-field-group').show();
             $('#vendor-group').removeClass('bg-light-warning p-3 rounded');
         });
     }
@@ -214,8 +210,8 @@ var CashflowExpenses = (function () {
         });
         $('#filter-category').html(html);
 
-        // Branches
-        html = '<option value="">Select branch</option>';
+        // Branches ("For" field with General as first option)
+        html = '<option value="">Select</option><option value="general">General / Company-wide</option>';
         $.each(data.branches, function (i, branch) {
             html += '<option value="' + branch.id + '">' + escapeHtml(branch.name) + '</option>';
         });
@@ -228,9 +224,10 @@ var CashflowExpenses = (function () {
         });
         $('#filter-branch').html(html);
 
-        // Payment modes
+        // Payment modes (exclude 'card' type)
         html = '<option value="">Select method</option>';
         $.each(data.payment_modes, function (i, pm) {
+            if (pm.name && pm.name.toLowerCase().indexOf('card') !== -1) return; // skip card
             html += '<option value="' + pm.id + '">' + escapeHtml(pm.name) + '</option>';
         });
         $('[name="payment_method_id"]', '#form-expense').html(html);
@@ -284,7 +281,6 @@ var CashflowExpenses = (function () {
     /**
      * Filter pool dropdown options based on selected payment method.
      * Cash → branch_cash, head_office_cash pools
-     * Card → card pools
      * Bank/Wire Transfer → bank_account pools
      * No selection → show all
      */
@@ -345,6 +341,20 @@ var CashflowExpenses = (function () {
         // Auto-select if only one matching pool
         if (matchCount === 1 && !poolSelect.val()) {
             poolSelect.val(lastMatch).trigger('change.select2');
+        }
+    }
+
+    /**
+     * Show/hide the "Expense By (Staff)" field based on payment method.
+     * Staff field only applies to cash expenses — bank expenses don't involve staff cash.
+     */
+    function toggleStaffField(pmText) {
+        var isBankOrWire = pmText && (pmText.indexOf('bank') !== -1 || pmText.indexOf('wire') !== -1 || pmText.indexOf('transfer') !== -1);
+        if (isBankOrWire) {
+            $('#staff-field-group').hide();
+            $('[name="staff_id"]', '#form-expense').val('').trigger('change.select2');
+        } else {
+            $('#staff-field-group').show();
         }
     }
 
@@ -644,8 +654,7 @@ var CashflowExpenses = (function () {
             form.find('[name="description"]').val(btn.data('description'));
             form.find('[name="attachment_url"]').val(btn.data('attachment'));
             if (btn.data('general') == 1) {
-                form.find('#chk-general').prop('checked', true);
-                form.find('#expense-branch-select').prop('disabled', true);
+                form.find('[name="for_branch_id"]').val('general').trigger('change');
             } else {
                 form.find('[name="for_branch_id"]').val(btn.data('branch')).trigger('change');
             }
@@ -737,26 +746,29 @@ var CashflowExpenses = (function () {
             }
         });
 
+        // Handle merged branch/general dropdown
+        if (data.for_branch_id === 'general') {
+            data.is_for_general = 1;
+            data.for_branch_id = '';
+        } else {
+            data.is_for_general = 0;
+        }
+
         // Highlight missing required fields
         form.find('.is-invalid').removeClass('is-invalid');
-        form.find('.select2-container').removeClass('is-invalid');
-        var requiredFields = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description'];
+        form.find('.select2-container').css('border', '').css('border-radius', '');
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'for_branch_id'];
         var missing = [];
         $.each(requiredFields, function (i, name) {
-            if (!data[name]) {
+            // for_branch_id: check original dropdown value (before we cleared it for 'general')
+            var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
+            if (!val) {
                 var el = form.find('[name="' + name + '"]');
                 el.addClass('is-invalid');
-                // Also highlight Select2 container for select elements
                 el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
                 missing.push(name);
             }
         });
-        if (!data.is_for_general && !data.for_branch_id) {
-            var branchEl = form.find('[name="for_branch_id"]');
-            branchEl.addClass('is-invalid');
-            branchEl.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
-            missing.push('for_branch_id');
-        }
         // Cash expenses MUST have attachment
         var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
         if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url) {
@@ -799,9 +811,8 @@ var CashflowExpenses = (function () {
                     form.find('[name="payment_method_id"]').val('');
                     form.find('[name="vendor_id"]').val('');
                     form.find('[name="staff_id"]').val('');
-                    form.find('#chk-general').prop('checked', false);
-                    form.find('#expense-branch-select').prop('disabled', false);
                     form.find('[name="expense_date"]').val(getTodayStr());
+                    $('#staff-field-group').show();
                     $('#threshold-hint').html('');
 
                     // Detailed confirmation popup per spec
