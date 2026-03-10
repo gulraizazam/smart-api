@@ -176,6 +176,77 @@ var CashflowStaff = (function () {
         $('#ov-staff-count').text(withBalance + ' staff with balance');
         $('#ov-advances').text('PKR ' + nf(totalAdvances));
         $('#ov-returns').text('PKR ' + nf(totalReturns));
+        renderTopOutstanding(items);
+    }
+
+    function renderTopOutstanding(items) {
+        var container = $('#overview-top-outstanding').empty();
+
+        var withBalance = $.grep(items, function (s) { return parseFloat(s.outstanding || 0) > 0; });
+        withBalance.sort(function (a, b) { return parseFloat(b.outstanding) - parseFloat(a.outstanding); });
+        var top = withBalance.slice(0, 5);
+
+        if (top.length === 0) {
+            container.html(
+                '<div class="text-center text-muted py-5">' +
+                '<i class="la la-check-circle text-success" style="font-size:36px;"></i>' +
+                '<p class="mt-2 mb-0 font-size-sm">No outstanding advances.</p>' +
+                '</div>'
+            );
+            return;
+        }
+
+        var maxAmt = parseFloat(top[0].outstanding);
+        var html = '';
+
+        $.each(top, function (i, s) {
+            var days = parseInt(s.days_since_last) || 0;
+            var agingColor = days > 30 ? '#F64E60' : (days > 15 ? '#FFA800' : '#1BC5BD');
+            var agingLabel = days > 0 ? days + 'd' : '';
+            var pct = maxAmt > 0 ? Math.round((parseFloat(s.outstanding) / maxAmt) * 100) : 0;
+            var barColor = days > 30 ? '#F64E60' : (days > 15 ? '#FFA800' : '#3699FF');
+            var rank = i + 1;
+
+            html +=
+                '<div class="d-flex align-items-center mb-4 staff-list-item" data-id="' + s.user_id + '" data-name="' + esc(s.name) + '" data-eligible="' + (s.is_advance_eligible ? 'Eligible' : 'Ineligible') + '" style="cursor:pointer;">' +
+                    '<div class="flex-shrink-0 mr-3 text-center" style="width:28px;">' +
+                        '<span class="font-weight-bolder font-size-sm text-muted">#' + rank + '</span>' +
+                    '</div>' +
+                    '<div class="flex-grow-1">' +
+                        '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                            '<span class="font-weight-bold font-size-sm">' + esc(s.name) + '</span>' +
+                            '<div class="d-flex align-items-center">' +
+                                (agingLabel ? '<span class="label label-inline font-size-xs mr-2" style="background:' + agingColor + '18;color:' + agingColor + ';font-weight:600;">' + agingLabel + '</span>' : '') +
+                                '<span class="font-weight-bolder font-size-sm text-danger">PKR ' + nf(s.outstanding) + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="background:#F3F6F9;border-radius:4px;height:5px;overflow:hidden;">' +
+                            '<div style="height:5px;border-radius:4px;background:' + barColor + ';width:' + pct + '%;transition:width 0.4s;"></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        });
+
+        if (withBalance.length > 5) {
+            html += '<div class="text-center text-muted font-size-xs mt-1">+ ' + (withBalance.length - 5) + ' more — select from list</div>';
+        }
+
+        container.html(html);
+
+        container.find('.staff-list-item').on('click', function () {
+            var userId = $(this).data('id');
+            var name = $(this).data('name');
+            var eligible = $(this).data('eligible');
+
+            $('#staff-list .staff-list-item').css('background', '').removeClass('active');
+            $('#staff-list .staff-list-item[data-id="' + userId + '"]').css('background', '#EEF6FF').addClass('active');
+
+            $('#ledger-staff-name').text(name);
+            $('#ledger-staff-eligible').text(eligible);
+            $('#staff-overview').addClass('d-none');
+            $('#staff-ledger-panel').removeClass('d-none');
+            loadLedger(userId);
+        });
     }
 
     // ===================== RIGHT PANEL – LEDGER =====================
