@@ -167,7 +167,7 @@
                                         <th>Date</th>
                                         <th>Description</th>
                                         <th>Category</th>
-                                        <th>Pool</th>
+                                        <th>Pool / Staff</th>
                                         <th class="text-right">Amount</th>
                                         <th>Status</th>
                                         <th>Created By</th>

@@ -437,7 +437,7 @@ var CashflowExpenses = (function () {
 
             var statusBadge = getStatusBadge(exp);
             var branchLabel = exp.is_for_general ? '<span class="text-muted">General</span>' : (exp.for_branch ? exp.for_branch.name : '-');
-            var poolLabel = exp.paid_from_pool ? exp.paid_from_pool.name : '-';
+            var poolLabel = exp.staff ? exp.staff.name : (exp.paid_from_pool ? exp.paid_from_pool.name : '-');
 
             var actions = buildActions(exp);
 
