@@ -44,6 +44,7 @@ class StaffAdvanceService
 
         $expenses = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereNotNull('staff_id')
             ->select('staff_id', DB::raw('SUM(amount) as total_expenses'))
             ->groupBy('staff_id')
@@ -89,6 +90,7 @@ class StaffAdvanceService
         $expenses = Expense::forAccount($accountId)
             ->where('staff_id', $userId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->with(['category:id,name', 'creator:id,name'])
             ->orderBy('expense_date', 'desc')
             ->get();
