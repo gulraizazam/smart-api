@@ -4,13 +4,13 @@ var CashflowStaff = (function () {
     var apiBase = '/api/cashflow/';
     var currentLedgerUserId = null;
     var poolOptionsHtml = '';
+    var summaryData = [];
 
     function init() {
         loadDropdowns();
         loadSummary();
         bindEvents();
 
-        // Auto-open modal if coming from dashboard quick-action
         if (new URLSearchParams(window.location.search).get('action') === 'add') {
             setTimeout(function () { $('#modal_advance').modal('show'); }, 500);
         }
@@ -20,7 +20,14 @@ var CashflowStaff = (function () {
         $('#btn-submit-advance').on('click', submitAdvance);
         $('#btn-submit-return').on('click', submitReturn);
         $('#btn-submit-edit-advance').on('click', submitEditAdvance);
-        $('#btn-close-ledger').on('click', function () { $('#staff-ledger-card').addClass('d-none'); currentLedgerUserId = null; });
+
+        $('#btn-close-ledger').on('click', function () {
+            currentLedgerUserId = null;
+            $('#staff-ledger-panel').addClass('d-none');
+            $('#staff-overview').removeClass('d-none');
+            $('#staff-list .staff-list-item').removeClass('active bg-light-primary');
+        });
+
         $('#modal_advance').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: mb });
@@ -29,6 +36,7 @@ var CashflowStaff = (function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-advance')[0].reset();
         });
+
         $('#modal_return').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="user_id"]').select2({ placeholder: 'Select staff', dropdownParent: mb });
@@ -37,6 +45,7 @@ var CashflowStaff = (function () {
             $(this).find('.kt-select2-general').select2('destroy');
             $('#form-return')[0].reset();
         });
+
         $('#modal_edit_advance').on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
@@ -46,8 +55,9 @@ var CashflowStaff = (function () {
         });
     }
 
+    // ===================== DROPDOWNS =====================
+
     function loadDropdowns() {
-        // Eligible staff
         $.ajax({
             url: apiBase + 'staff/eligible', type: 'GET',
             success: function (res) {
@@ -63,15 +73,13 @@ var CashflowStaff = (function () {
             }
         });
 
-        // Pools
         $.ajax({
             url: apiBase + 'lookups', type: 'GET',
             success: function (res) {
                 if (!res.success) return;
                 poolOptionsHtml = '<option value="">Select pool</option>';
                 $.each(res.data.pools, function (i, p) {
-                    var label = p.name;
-                    poolOptionsHtml += '<option value="' + p.id + '">' + esc(label) + '</option>';
+                    poolOptionsHtml += '<option value="' + p.id + '">' + esc(p.name) + '</option>';
                 });
                 $('#advance-pool-select').html(poolOptionsHtml);
                 $('#return-pool-select').html(poolOptionsHtml);
@@ -80,72 +88,102 @@ var CashflowStaff = (function () {
         });
     }
 
+    // ===================== LEFT PANEL – STAFF LIST =====================
+
     function loadSummary() {
-        $('#summary-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#staff-list').html('<div class="text-center text-muted py-5"><div class="spinner spinner-primary spinner-sm"></div></div>');
 
         $.ajax({
             url: apiBase + 'staff/summary', type: 'GET',
             success: function (res) {
-                if (res.success) renderSummary(res.data);
+                if (res.success) {
+                    summaryData = res.data || [];
+                    renderStaffList(summaryData);
+                    renderOverviewStats(summaryData);
+                }
             },
             error: function () {
-                $('#summary-tbody').html('<tr><td colspan="6" class="text-center text-danger">Failed to load.</td></tr>');
+                $('#staff-list').html('<div class="text-center text-danger py-3">Failed to load.</div>');
             }
         });
     }
 
-    function renderSummary(items) {
-        var tbody = $('#summary-tbody').empty();
+    function renderStaffList(items) {
+        var container = $('#staff-list').empty();
 
         if (!items || items.length === 0) {
-            tbody.html('<tr><td colspan="6" class="text-center text-muted">No staff advances recorded yet.</td></tr>');
+            container.html('<div class="text-center text-muted py-5">No staff advances recorded yet.</div>');
             return;
         }
 
         $.each(items, function (i, s) {
-            var eligibleBadge = s.is_advance_eligible
-                ? '<span class="label label-light-success label-inline">Yes</span>'
-                : '<span class="label label-light-danger label-inline">No</span>';
-
             var outstandingClass = s.outstanding > 0 ? 'text-danger font-weight-bold' : 'text-success';
+            var eligibleBadge = s.is_advance_eligible
+                ? '<span class="label label-light-success label-inline font-size-xs">Eligible</span>'
+                : '<span class="label label-light-secondary label-inline font-size-xs">Ineligible</span>';
 
-            // Aging color: green < 15d, amber 15-30d, red > 30d (Sec 16 Screen 5)
-            var agingBadge = '';
+            var agingHtml = '';
             if (s.outstanding > 0 && s.days_since_last !== undefined) {
                 var days = parseInt(s.days_since_last) || 0;
-                if (days > 30) agingBadge = ' <span class="label label-light-danger label-inline font-size-xs">' + days + 'd</span>';
-                else if (days > 15) agingBadge = ' <span class="label label-light-warning label-inline font-size-xs">' + days + 'd</span>';
-                else agingBadge = ' <span class="label label-light-success label-inline font-size-xs">' + days + 'd</span>';
+                var agingColor = days > 30 ? 'danger' : (days > 15 ? 'warning' : 'success');
+                agingHtml = ' <span class="label label-light-' + agingColor + ' label-inline font-size-xs">' + days + 'd</span>';
             }
 
-            tbody.append(
-                '<tr>' +
-                '<td><a href="javascript:;" class="btn-view-ledger font-weight-bold" data-id="' + s.user_id + '" data-name="' + esc(s.name) + '">' + esc(s.name) + '</a></td>' +
-                '<td>' + eligibleBadge + '</td>' +
-                '<td class="text-right">PKR ' + nf(s.total_advances) + '</td>' +
-                '<td class="text-right">PKR ' + nf(s.total_returns) + '</td>' +
-                '<td class="text-right ' + outstandingClass + '">PKR ' + nf(s.outstanding) + agingBadge + '</td>' +
-                '<td class="text-center">' +
-                    '<button class="btn btn-sm btn-clean btn-icon btn-view-ledger" data-id="' + s.user_id + '" data-name="' + esc(s.name) + '" title="View Ledger"><i class="la la-list-alt text-primary"></i></button>' +
-                '</td>' +
-                '</tr>'
+            container.append(
+                '<div class="staff-list-item d-flex align-items-center justify-content-between px-3 py-3 rounded cursor-pointer" ' +
+                'data-id="' + s.user_id + '" data-name="' + esc(s.name) + '" data-eligible="' + (s.is_advance_eligible ? 'Eligible' : 'Ineligible') + '" ' +
+                'style="border-bottom:1px solid #F3F6F9;cursor:pointer;" ' +
+                'onmouseover="this.style.background=\'#F3F6F9\'" onmouseout="if(!$(this).hasClass(\'active\')){this.style.background=\'\'}">' +
+                    '<div>' +
+                        '<div class="font-weight-bold font-size-sm">' + esc(s.name) + '</div>' +
+                        '<div class="mt-1">' + eligibleBadge + '</div>' +
+                    '</div>' +
+                    '<div class="text-right">' +
+                        '<div class="' + outstandingClass + ' font-size-sm font-weight-bold">PKR ' + nf(s.outstanding) + agingHtml + '</div>' +
+                        '<div class="text-muted font-size-xs mt-1">Outstanding</div>' +
+                    '</div>' +
+                '</div>'
             );
         });
 
-        $('.btn-view-ledger').off('click').on('click', function () {
+        $('#staff-list').on('click', '.staff-list-item', function () {
             var userId = $(this).data('id');
             var name = $(this).data('name');
+            var eligible = $(this).data('eligible');
+
+            $('#staff-list .staff-list-item').css('background', '').removeClass('active');
+            $(this).css('background', '#EEF6FF').addClass('active');
+
             $('#ledger-staff-name').text(name);
+            $('#ledger-staff-eligible').text(eligible);
+
+            $('#staff-overview').addClass('d-none');
+            $('#staff-ledger-panel').removeClass('d-none');
+
             loadLedger(userId);
-            $('#staff-ledger-card').removeClass('d-none');
-            $('html, body').animate({ scrollTop: $('#staff-ledger-card').offset().top - 80 }, 300);
         });
     }
 
+    function renderOverviewStats(items) {
+        var totalOutstanding = 0, totalAdvances = 0, totalReturns = 0, withBalance = 0;
+        $.each(items, function (i, s) {
+            totalOutstanding += parseFloat(s.outstanding || 0);
+            totalAdvances += parseFloat(s.total_advances || 0);
+            totalReturns += parseFloat(s.total_returns || 0);
+            if (s.outstanding > 0) withBalance++;
+        });
+        $('#ov-outstanding').text('PKR ' + nf(totalOutstanding));
+        $('#ov-staff-count').text(withBalance + ' staff with balance');
+        $('#ov-advances').text('PKR ' + nf(totalAdvances));
+        $('#ov-returns').text('PKR ' + nf(totalReturns));
+    }
+
+    // ===================== RIGHT PANEL – LEDGER =====================
+
     function loadLedger(userId) {
         currentLedgerUserId = userId;
-        $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
-        $('#ledger-returns-tbody').html('<tr><td colspan="6" class="text-center"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#ledger-returns-tbody').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
 
         $.ajax({
             url: apiBase + 'staff/' + userId + '/ledger', type: 'GET',
@@ -153,12 +191,17 @@ var CashflowStaff = (function () {
                 if (!res.success) return;
                 var d = res.data;
 
+                var outstandingClass = d.outstanding > 0 ? 'text-danger' : 'text-success';
                 $('#ledger-advances').text('PKR ' + nf(d.total_advances));
                 $('#ledger-returns').text('PKR ' + nf(d.total_returns));
-                $('#ledger-outstanding').text('PKR ' + nf(d.outstanding));
+                $('#ledger-outstanding').text('PKR ' + nf(d.outstanding)).removeClass('text-danger text-success').addClass(outstandingClass);
 
                 renderAdvancesTable(d.advances);
                 renderReturnsTable(d.returns);
+            },
+            error: function () {
+                $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center text-danger">Failed to load.</td></tr>');
+                $('#ledger-returns-tbody').html('');
             }
         });
     }
@@ -166,7 +209,7 @@ var CashflowStaff = (function () {
     function renderAdvancesTable(items) {
         var tbody = $('#ledger-advances-tbody').empty();
         if (!items || items.length === 0) {
-            tbody.html('<tr><td colspan="6" class="text-center text-muted">None.</td></tr>');
+            tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">No advances recorded.</td></tr>');
             return;
         }
 
@@ -178,31 +221,30 @@ var CashflowStaff = (function () {
 
             var actions = '';
             if (!isVoided) {
-                if (typeof cfPerms !== 'undefined' && cfPerms.canEdit) {
+                if (cfPerms.canEdit) {
                     actions += '<button class="btn btn-sm btn-clean btn-icon btn-edit-advance" data-id="' + item.id + '" data-amount="' + parseInt(item.amount) + '" data-pool="' + item.pool_id + '" data-desc="' + esc(item.description || '') + '" title="Edit"><i class="la la-pencil text-primary"></i></button>';
                 }
-                if (typeof cfPerms !== 'undefined' && cfPerms.canVoid) {
+                if (cfPerms.canVoid) {
                     actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-advance" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
                 }
             }
-            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+            if (cfPerms.canAudit) {
                 actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + item.id + '" data-type="advance" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
             }
 
             tbody.append(
                 '<tr class="' + rowClass + '">' +
-                '<td>' + fd(item.created_at) + voidBadge + '</td>' +
-                '<td>' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
-                '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
-                '<td>' + esc(item.description || '-') + '</td>' +
-                '<td>' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
+                '<td class="font-size-sm">' + fd(item.created_at) + voidBadge + '</td>' +
+                '<td class="font-size-sm">' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
+                '<td class="text-right font-weight-bold font-size-sm" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
+                '<td class="font-size-sm">' + esc(item.description || '-') + '</td>' +
+                '<td class="font-size-sm">' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
                 '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
         });
 
-        // Bind void handler
-        $('.btn-void-advance').off('click').on('click', function () {
+        tbody.find('.btn-void-advance').on('click', function () {
             var id = $(this).data('id');
             var reason = prompt('Reason for voiding this advance (min 5 chars):');
             if (reason === null) return;
@@ -212,20 +254,18 @@ var CashflowStaff = (function () {
                 data: { void_reason: reason },
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 success: function (res) {
-                    if (res.success) { toastr.success(res.message); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
+                    if (res.success) { toastr.success(res.message); loadLedger(currentLedgerUserId); loadSummary(); }
                     else toastr.error(res.message);
                 },
                 error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
             });
         });
 
-        // Bind audit handler for advances
-        $('#ledger-advances-tbody .btn-audit').off('click').on('click', function () {
+        tbody.find('.btn-audit').on('click', function () {
             loadAuditTrail($(this).data('id'), $(this).data('type'));
         });
 
-        // Bind edit handler
-        $('.btn-edit-advance').off('click').on('click', function () {
+        tbody.find('.btn-edit-advance').on('click', function () {
             var btn = $(this);
             var form = $('#form-edit-advance');
             form.find('[name="advance_id"]').val(btn.data('id'));
@@ -239,7 +279,7 @@ var CashflowStaff = (function () {
     function renderReturnsTable(items) {
         var tbody = $('#ledger-returns-tbody').empty();
         if (!items || items.length === 0) {
-            tbody.html('<tr><td colspan="6" class="text-center text-muted">None.</td></tr>');
+            tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">No returns recorded.</td></tr>');
             return;
         }
 
@@ -250,34 +290,26 @@ var CashflowStaff = (function () {
             var voidBadge = isVoided ? ' <span class="label label-light-dark label-inline font-size-xs" title="' + esc(item.void_reason || '') + '">VOID</span>' : '';
 
             var actions = '';
-            if (!isVoided) {
-                if (typeof cfPerms !== 'undefined' && cfPerms.canReturnVoid) {
-                    actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
-                }
+            if (!isVoided && cfPerms.canReturnVoid) {
+                actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
             }
-            if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
+            if (cfPerms.canAudit) {
                 actions += '<button class="btn btn-sm btn-clean btn-icon btn-audit" data-id="' + item.id + '" data-type="return" title="Audit Trail"><i class="la la-history text-muted"></i></button>';
             }
 
             tbody.append(
                 '<tr class="' + rowClass + '">' +
-                '<td>' + fd(item.created_at) + voidBadge + '</td>' +
-                '<td>' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
-                '<td class="text-right font-weight-bold" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
-                '<td>' + esc(item.description || '-') + '</td>' +
-                '<td>' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
+                '<td class="font-size-sm">' + fd(item.created_at) + voidBadge + '</td>' +
+                '<td class="font-size-sm">' + (item.pool ? esc(item.pool.name) : '-') + '</td>' +
+                '<td class="text-right font-weight-bold font-size-sm" style="' + amtStyle + '">PKR ' + nf(item.amount) + '</td>' +
+                '<td class="font-size-sm">' + esc(item.description || '-') + '</td>' +
+                '<td class="font-size-sm">' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
                 '<td class="text-right">' + actions + '</td>' +
                 '</tr>'
             );
         });
 
-        // Bind audit handler for returns
-        $('#ledger-returns-tbody .btn-audit').off('click').on('click', function () {
-            loadAuditTrail($(this).data('id'), $(this).data('type'));
-        });
-
-        // Bind void handler for returns
-        $('.btn-void-return').off('click').on('click', function () {
+        tbody.find('.btn-void-return').on('click', function () {
             var id = $(this).data('id');
             var reason = prompt('Reason for voiding this return (min 5 chars):');
             if (reason === null) return;
@@ -287,13 +319,19 @@ var CashflowStaff = (function () {
                 data: { void_reason: reason },
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                 success: function (res) {
-                    if (res.success) { toastr.success(res.message); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
+                    if (res.success) { toastr.success(res.message); loadLedger(currentLedgerUserId); loadSummary(); }
                     else toastr.error(res.message);
                 },
                 error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
             });
         });
+
+        tbody.find('.btn-audit').on('click', function () {
+            loadAuditTrail($(this).data('id'), $(this).data('type'));
+        });
     }
+
+    // ===================== FORM SUBMISSIONS =====================
 
     function highlightRequired(form, requiredFields, data) {
         form.find('.is-invalid').removeClass('is-invalid');
@@ -309,62 +347,32 @@ var CashflowStaff = (function () {
         });
         if (missing.length) {
             toastr.warning('Please fill the highlighted fields.');
-            var first = form.find('.is-invalid:visible, .select2-container[style*="border"]').first();
-            if (first.length) first[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         return missing.length === 0;
-    }
-
-    function submitEditAdvance() {
-        var form = $('#form-edit-advance');
-        var data = {};
-        form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
-
-        if (!highlightRequired(form, ['amount', 'pool_id', 'edit_reason'], data)) return;
-
-        var id = data.advance_id;
-        var btn = $('#btn-submit-edit-advance');
-        btn.prop('disabled', true);
-
-        $.ajax({
-            url: apiBase + 'staff/advance/' + id + '/update', type: 'POST', data: data,
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: function (res) {
-                if (res.success) { toastr.success(res.message); $('#modal_edit_advance').modal('hide'); if (currentLedgerUserId) loadLedger(currentLedgerUserId); loadSummary(); }
-                else toastr.error(res.message);
-            },
-            error: function (xhr) {
-                var r = xhr.responseJSON;
-                if (r && r.errors) $.each(r.errors, function (f, m) { toastr.error(m[0]); });
-                else toastr.error(r ? r.message : 'Failed.');
-            },
-            complete: function () { btn.prop('disabled', false); }
-        });
     }
 
     function submitAdvance() {
         var form = $('#form-advance');
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
-
         if (!highlightRequired(form, ['user_id', 'pool_id', 'amount'], data)) return;
 
-        // Warn if staff already has unsettled advance (Sec 8.3)
         var existingBalance = parseFloat($('#advance-staff-select option:selected').data('balance')) || 0;
         if (existingBalance > 0) {
-            if (!confirm('Warning: This staff member already has an unsettled advance of PKR ' + Math.round(existingBalance).toLocaleString() + '. Continue?')) {
-                return;
-            }
+            if (!confirm('Warning: This staff member already has an unsettled advance of PKR ' + Math.round(existingBalance).toLocaleString() + '. Continue?')) return;
         }
 
-        var btn = $(this); btn.prop('disabled', true);
-
+        var btn = $('#btn-submit-advance').prop('disabled', true);
         $.ajax({
             url: apiBase + 'staff/advance/store', type: 'POST', data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
-                if (res.success) { toastr.success(res.message); $('#modal_advance').modal('hide'); loadSummary(); }
-                else toastr.error(res.message);
+                if (res.success) {
+                    toastr.success(res.message);
+                    $('#modal_advance').modal('hide');
+                    loadSummary();
+                    if (currentLedgerUserId) loadLedger(currentLedgerUserId);
+                } else toastr.error(res.message);
             },
             error: function (xhr) {
                 var r = xhr.responseJSON;
@@ -379,17 +387,47 @@ var CashflowStaff = (function () {
         var form = $('#form-return');
         var data = {};
         form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
-
         if (!highlightRequired(form, ['user_id', 'pool_id', 'amount'], data)) return;
 
-        var btn = $(this); btn.prop('disabled', true);
-
+        var btn = $('#btn-submit-return').prop('disabled', true);
         $.ajax({
             url: apiBase + 'staff/return/store', type: 'POST', data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
-                if (res.success) { toastr.success(res.message); $('#modal_return').modal('hide'); loadSummary(); }
-                else toastr.error(res.message);
+                if (res.success) {
+                    toastr.success(res.message);
+                    $('#modal_return').modal('hide');
+                    loadSummary();
+                    if (currentLedgerUserId) loadLedger(currentLedgerUserId);
+                } else toastr.error(res.message);
+            },
+            error: function (xhr) {
+                var r = xhr.responseJSON;
+                if (r && r.errors) $.each(r.errors, function (f, m) { toastr.error(m[0]); });
+                else toastr.error(r ? r.message : 'Failed.');
+            },
+            complete: function () { btn.prop('disabled', false); }
+        });
+    }
+
+    function submitEditAdvance() {
+        var form = $('#form-edit-advance');
+        var data = {};
+        form.find('input, select').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
+        if (!highlightRequired(form, ['amount', 'pool_id', 'edit_reason'], data)) return;
+
+        var id = data.advance_id;
+        var btn = $('#btn-submit-edit-advance').prop('disabled', true);
+        $.ajax({
+            url: apiBase + 'staff/advance/' + id + '/update', type: 'POST', data: data,
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message);
+                    $('#modal_edit_advance').modal('hide');
+                    if (currentLedgerUserId) loadLedger(currentLedgerUserId);
+                    loadSummary();
+                } else toastr.error(res.message);
             },
             error: function (xhr) {
                 var r = xhr.responseJSON;
@@ -417,12 +455,8 @@ var CashflowStaff = (function () {
                 $('#audit-loading').addClass('d-none');
                 if (res.success && res.data.length > 0) {
                     var html = '';
-                    var actionIcons = {
-                        created: 'la-plus-circle', updated: 'la-edit', voided: 'la-ban'
-                    };
-                    var actionColors = {
-                        created: '#3699FF', updated: '#8950FC', voided: '#181C32'
-                    };
+                    var actionIcons = { created: 'la-plus-circle', updated: 'la-edit', voided: 'la-ban' };
+                    var actionColors = { created: '#3699FF', updated: '#8950FC', voided: '#181C32' };
 
                     $.each(res.data, function (i, log) {
                         var actionBadge = getActionBadge(log.action);
@@ -461,65 +495,40 @@ var CashflowStaff = (function () {
     }
 
     function buildChangeSummary(log) {
-        if (!log.old_values || !log.new_values) return '';
-        if (log.action === 'created') return '';
-
-        var oldV = log.old_values;
-        var newV = log.new_values;
-        var changes = [];
-
-        var fieldLabels = {
-            advance_date: 'Date',
-            amount: 'Amount',
-            pool_id: 'Pool',
-            staff_user_id: 'Staff',
-            description: 'Description',
-            void_reason: 'Void Reason'
-        };
+        if (!log.old_values || !log.new_values || log.action === 'created') return '';
+        var oldV = log.old_values, newV = log.new_values, changes = [];
+        var fieldLabels = { advance_date: 'Date', amount: 'Amount', pool_id: 'Pool', staff_user_id: 'Staff', description: 'Description', void_reason: 'Void Reason' };
 
         function getRelName(values, field) {
             if (field === 'pool_id' && values.pool && values.pool.name) return values.pool.name;
             if (field === 'staff_user_id' && values.staff_user && values.staff_user.name) return values.staff_user.name;
             return null;
         }
-
         function formatVal(field, val, values) {
             if (val === null || val === undefined || val === '') return '(empty)';
             var relName = getRelName(values, field);
             if (relName) return relName;
-            if (field === 'advance_date' || field === 'return_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
+            if (field === 'advance_date' || field === 'return_date') return String(val).substring(0, 10) || '(empty)';
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             return esc(String(val));
         }
 
         $.each(fieldLabels, function (field, label) {
-            var oldVal = oldV[field];
-            var newVal = newV[field];
+            var oldVal = oldV[field], newVal = newV[field];
             var oldNorm = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
             var newNorm = (newVal === null || newVal === undefined) ? '' : String(newVal);
-            // Normalize dates to YYYY-MM-DD to avoid false positives from format differences
             if (field === 'advance_date' || field === 'return_date') { oldNorm = oldNorm.substring(0, 10); newNorm = newNorm.substring(0, 10); }
-
             if (oldNorm !== newNorm) {
-                changes.push(
-                    '<span class="font-weight-bold">' + label + ':</span> ' +
-                    '<span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span>' +
-                    ' <i class="la la-arrow-right font-size-xs"></i> ' +
-                    '<span class="text-success">' + formatVal(field, newVal, newV) + '</span>'
-                );
+                changes.push('<span class="font-weight-bold">' + label + ':</span> <span class="text-danger">' + formatVal(field, oldVal, oldV) + '</span> <i class="la la-arrow-right font-size-xs"></i> <span class="text-success">' + formatVal(field, newVal, newV) + '</span>');
             }
         });
 
-        if (changes.length === 0) return '';
-        return '<div class="font-size-sm text-muted mt-1" style="line-height:1.8;">' + changes.join('<br>') + '</div>';
+        return changes.length ? '<div class="font-size-sm text-muted mt-1" style="line-height:1.8;">' + changes.join('<br>') + '</div>' : '';
     }
 
     function getActionBadge(action) {
-        var colors = {
-            created: 'primary', updated: 'info', voided: 'dark'
-        };
-        var color = colors[action] || 'secondary';
-        return '<span class="label label-light-' + color + ' label-inline">' + action.replace('_', ' ').toUpperCase() + '</span>';
+        var colors = { created: 'primary', updated: 'info', voided: 'dark' };
+        return '<span class="label label-light-' + (colors[action] || 'secondary') + ' label-inline">' + action.replace('_', ' ').toUpperCase() + '</span>';
     }
 
     function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : ''; }
