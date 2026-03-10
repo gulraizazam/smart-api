@@ -148,7 +148,7 @@ var CashflowExpenses = (function () {
             if (!dateField.val()) dateField.val(getTodayStr());
             var modalBody = $(this).find('.modal-body');
             modalBody.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: modalBody });
-            modalBody.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: modalBody });
+            modalBody.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool or staff', dropdownParent: modalBody });
             modalBody.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: modalBody });
             modalBody.find('[name="for_branch_id"]').select2({ placeholder: 'Select', dropdownParent: modalBody });
             modalBody.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: modalBody });
@@ -222,11 +222,20 @@ var CashflowExpenses = (function () {
         // Build HTML strings first, then set once (avoids DOM reflow per append)
         var html;
 
-        // Pools (include type for filtering by payment method)
-        html = '<option value="">Select pool</option>';
+        // Pools + Staff (include type for filtering by payment method)
+        html = '<option value="">Select</option>';
+        html += '<optgroup label="Cash Pools">';
         $.each(data.pools, function (i, pool) {
             html += '<option value="' + pool.id + '" data-type="' + (pool.type || '') + '">' + escapeHtml(pool.name) + '</option>';
         });
+        html += '</optgroup>';
+        if (data.staff && data.staff.length) {
+            html += '<optgroup label="Staff Advances">';
+            $.each(data.staff, function (i, s) {
+                html += '<option value="staff_' + s.id + '" data-type="cash">' + escapeHtml(s.name) + '</option>';
+            });
+            html += '</optgroup>';
+        }
         $('[name="paid_from_pool_id"]', '#form-expense').html(html);
 
         // Categories
@@ -344,8 +353,9 @@ var CashflowExpenses = (function () {
         }
 
         var lastMatch = null;
-        poolSelect.find('option').each(function () {
+        poolSelect.find('option, optgroup').each(function () {
             var opt = $(this);
+            if (opt.is('optgroup')) return;
             if (!opt.val()) return; // keep placeholder
             var type = opt.data('type') || '';
             if (allowedTypes.length === 0 || allowedTypes.indexOf(type) !== -1) {
@@ -817,13 +827,21 @@ var CashflowExpenses = (function () {
             data.is_for_general = 0;
         }
 
+        // Detect staff-advance selection and remap fields
+        var poolVal = data['paid_from_pool_id'] || '';
+        if (typeof poolVal === 'string' && poolVal.indexOf('staff_') === 0) {
+            data['staff_id'] = poolVal.replace('staff_', '');
+            data['paid_from_pool_id'] = '';
+        } else {
+            data['staff_id'] = '';
+        }
+
         // Highlight missing required fields
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.select2-container').css('border', '').css('border-radius', '');
-        var requiredFields = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'for_branch_id'];
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'description', 'for_branch_id'];
         var missing = [];
         $.each(requiredFields, function (i, name) {
-            // for_branch_id: check original dropdown value (before we cleared it for 'general')
             var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
             if (!val) {
                 var el = form.find('[name="' + name + '"]');
@@ -832,6 +850,13 @@ var CashflowExpenses = (function () {
                 missing.push(name);
             }
         });
+        // Must have either a pool OR a staff member
+        if (!data['paid_from_pool_id'] && !data['staff_id']) {
+            var poolEl = form.find('[name="paid_from_pool_id"]');
+            poolEl.addClass('is-invalid');
+            poolEl.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+            missing.push('paid_from_pool_id');
+        }
         // Cash expenses MUST have attachment
         var selectedPM = $('[name="payment_method_id"] option:selected', form).text().toLowerCase();
         if (selectedPM.indexOf('cash') !== -1 && !data.attachment_url) {
@@ -873,6 +898,7 @@ var CashflowExpenses = (function () {
                     form.find('[name="for_branch_id"]').val('');
                     form.find('[name="payment_method_id"]').val('');
                     form.find('[name="vendor_id"]').val('');
+                    form.find('[name="staff_id"]').val('');
                     form.find('[name="expense_date"]').val(getTodayStr());
                     $('#threshold-hint').html('');
 

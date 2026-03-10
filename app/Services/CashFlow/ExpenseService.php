@@ -196,7 +196,7 @@ class ExpenseService
             $this->notificationService->notifyExpenseForBranch($expense, $accountId);
 
             // Check for negative pool and notify
-            $pool = \App\Models\CashFlow\CashPool::find($expense->paid_from_pool_id);
+            $pool = $expense->paid_from_pool_id ? \App\Models\CashFlow\CashPool::find($expense->paid_from_pool_id) : null;
             if ($pool && (float) $pool->cached_balance < 0) {
                 $this->notificationService->notifyNegativePool(
                     $pool->name,
@@ -478,7 +478,7 @@ class ExpenseService
 
         return DB::transaction(function () use ($expense, $reason, $accountId, $oldValues) {
             // Reverse pool balance: increment pool (give money back)
-            if ($expense->status !== Expense::STATUS_REJECTED) {
+            if ($expense->status !== Expense::STATUS_REJECTED && $expense->paid_from_pool_id) {
                 DB::table('cash_pools')
                     ->where('id', $expense->paid_from_pool_id)
                     ->increment('cached_balance', $expense->amount);

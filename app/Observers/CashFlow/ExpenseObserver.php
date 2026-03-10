@@ -17,6 +17,7 @@ class ExpenseObserver
     public function created(Expense $expense): void
     {
         try {
+            if (!$expense->paid_from_pool_id) return;
             $this->decrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
         } catch (\Exception $e) {
             Log::error('CashFlow ExpenseObserver::created failed', [
@@ -47,6 +48,7 @@ class ExpenseObserver
 
             // --- Status changed to rejected — reverse the pool deduction ---
             if ($expense->isDirty('status') && $expense->status === Expense::STATUS_REJECTED) {
+                if (!$expense->paid_from_pool_id) return;
                 $this->incrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
                 Log::info('CashFlow: Expense rejected, pool reversed', [
                     'expense_id' => $expense->id, 'pool_id' => $expense->paid_from_pool_id,
@@ -60,6 +62,7 @@ class ExpenseObserver
                 && $expense->status === Expense::STATUS_PENDING
                 && $expense->getOriginal('status') === Expense::STATUS_REJECTED
             ) {
+                if (!$expense->paid_from_pool_id) return;
                 $this->decrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
                 Log::info('CashFlow: Expense resubmitted, pool re-debited', [
                     'expense_id' => $expense->id, 'pool_id' => $expense->paid_from_pool_id,
@@ -80,8 +83,9 @@ class ExpenseObserver
                 return; // nothing that affects pools
             }
 
-            $oldPoolId = (int) $expense->getOriginal('paid_from_pool_id');
-            $newPoolId = (int) $expense->paid_from_pool_id;
+            $oldPoolId = $expense->getOriginal('paid_from_pool_id');
+            $newPoolId = $expense->paid_from_pool_id;
+            if (!$oldPoolId && !$newPoolId) return;
             $oldAmount = (float) $expense->getOriginal('amount');
             $newAmount = (float) $expense->amount;
 
@@ -115,15 +119,17 @@ class ExpenseObserver
         }
     }
 
-    private function decrementPoolBalance(int $poolId, $amount): void
+    private function decrementPoolBalance(?int $poolId, $amount): void
     {
+        if (!$poolId) return;
         DB::table('cash_pools')
             ->where('id', $poolId)
             ->decrement('cached_balance', $amount);
     }
 
-    private function incrementPoolBalance(int $poolId, $amount): void
+    private function incrementPoolBalance(?int $poolId, $amount): void
     {
+        if (!$poolId) return;
         DB::table('cash_pools')
             ->where('id', $poolId)
             ->increment('cached_balance', $amount);
