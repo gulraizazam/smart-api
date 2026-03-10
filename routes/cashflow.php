@@ -118,6 +118,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     // Staff Advances & Returns
     Route::prefix('staff')->name('staff.')->group(function () {
         Route::get('summary', [CashFlowController::class, 'staffSummary'])->name('summary');
+        Route::get('recent-activity', [CashFlowController::class, 'staffRecentActivity'])->name('recent_activity');
         Route::get('{userId}/ledger', [CashFlowController::class, 'staffLedger'])->name('ledger');
         Route::get('eligible', [CashFlowController::class, 'staffEligible'])->name('eligible');
         Route::post('advance/store', [CashFlowController::class, 'staffAdvanceStore'])->name('advance.store');

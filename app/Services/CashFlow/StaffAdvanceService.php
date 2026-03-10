@@ -321,4 +321,45 @@ class StaffAdvanceService
     {
         return CashflowHelper::getAdvanceEligibleStaff($accountId);
     }
+
+    /**
+     * Get recent advances and returns across all staff (for overview cards).
+     */
+    public function getRecentActivity(int $accountId, int $limit = 5): array
+    {
+        $advances = StaffAdvance::forAccount($accountId)
+            ->whereNull('voided_at')
+            ->with(['staffUser:id,name', 'pool:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(fn($a) => [
+                'id'          => $a->id,
+                'description' => $a->description,
+                'staff_name'  => optional($a->staffUser)->name,
+                'pool_name'   => optional($a->pool)->name,
+                'amount'      => (float) $a->amount,
+                'date'        => $a->created_at?->toDateString(),
+            ]);
+
+        $returns = StaffReturn::forAccount($accountId)
+            ->whereNull('voided_at')
+            ->with(['staffUser:id,name', 'pool:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(fn($r) => [
+                'id'          => $r->id,
+                'description' => $r->description,
+                'staff_name'  => optional($r->staffUser)->name,
+                'pool_name'   => optional($r->pool)->name,
+                'amount'      => (float) $r->amount,
+                'date'        => $r->created_at?->toDateString(),
+            ]);
+
+        return [
+            'advances' => $advances->values(),
+            'returns'  => $returns->values(),
+        ];
+    }
 }
