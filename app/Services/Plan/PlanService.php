@@ -89,11 +89,22 @@ class PlanService
         // Build result query with eager loading and aggregations
         $resultQuery = $this->buildOptimizedResultQuery($whereConditions, $accountId);
 
+        // Include locations for the Centre filter dropdown
+        $userCentres = ACL::getUserCentres();
+        $locations = \App\Models\Locations::whereIn('id', $userCentres)
+            ->where('active', 1)
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
         return [
             'total' => $totalRecords,
             'query' => $resultQuery,
             'orderBy' => $orderBy,
             'order' => $order,
+            'filter_values' => [
+                'locations' => $locations,
+            ],
         ];
     }
 
