@@ -104,6 +104,7 @@ var CashflowVendors = (function () {
             $('#form-vendor .vendor-select2').select2('destroy');
             $('#form-vendor')[0].reset();
             $('#form-vendor .is-invalid').removeClass('is-invalid');
+            $('#form-vendor .is-invalid-select2').removeClass('is-invalid-select2');
             $('#form-vendor [name="vendor_id"]').val('');
             $('#vendor-is-active').prop('checked', true);
             $('#vendor-active-label').text('Active');
@@ -351,6 +352,7 @@ var CashflowVendors = (function () {
 
         // Clear previous errors
         form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.is-invalid-select2').removeClass('is-invalid-select2');
 
         var data = {};
         form.find('input:not([type="checkbox"]), select, textarea').each(function () {
@@ -377,11 +379,13 @@ var CashflowVendors = (function () {
             valid = false;
         }
         if (!data.payment_terms) {
-            form.find('[name="payment_terms"]').addClass('is-invalid');
+            var ptEl = form.find('[name="payment_terms"]').addClass('is-invalid');
+            ptEl.closest('.form-group').find('.select2-selection').addClass('is-invalid-select2');
             valid = false;
         }
         if (!data.category_id) {
-            form.find('[name="category_id"]').addClass('is-invalid');
+            var catEl = form.find('[name="category_id"]').addClass('is-invalid');
+            catEl.closest('.form-group').find('.select2-selection').addClass('is-invalid-select2');
             valid = false;
         }
         if (!valid) { toastr.warning('Please fill in all required fields (marked with *).'); return; }
