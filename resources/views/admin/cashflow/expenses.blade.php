@@ -237,9 +237,9 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label>Paid From Pool <span class="text-danger">*</span></label>
-                                    <select name="paid_from_pool_id" class="form-control kt-select2-general" required>
-                                        <option value="">Select pool</option>
+                                    <label>Paid From <span class="text-danger">*</span></label>
+                                    <select name="paid_from_pool_id" class="form-control kt-select2-general">
+                                        <option value="">Select pool or staff</option>
                                     </select>
                                 </div>
                             </div>
