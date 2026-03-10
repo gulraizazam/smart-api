@@ -19,7 +19,7 @@ class StoreExpenseRequest extends FormRequest
             'expense_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
             'category_id' => 'required|exists:expense_categories,id',
-            'paid_from_pool_id' => 'required|exists:cash_pools,id',
+            'paid_from_pool_id' => 'nullable|exists:cash_pools,id',
             'for_branch_id' => 'nullable|exists:locations,id',
             'is_for_general' => 'nullable|boolean',
             'payment_method_id' => 'required|exists:payment_modes,id',
@@ -57,6 +57,11 @@ class StoreExpenseRequest extends FormRequest
             // For Branch must be selected or General checked (Sec 5.3/26.12)
             if (!$this->input('for_branch_id') && !$this->input('is_for_general')) {
                 $validator->errors()->add('for_branch_id', 'Please select a branch or mark as General / Company-wide.');
+            }
+
+            // Must have either a pool or a staff member
+            if (!$this->input('paid_from_pool_id') && !$this->input('staff_id')) {
+                $validator->errors()->add('paid_from_pool_id', 'Please select a cash pool or a staff member.');
             }
         });
     }
