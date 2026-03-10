@@ -81,6 +81,9 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('{id}/audit', [CashFlowController::class, 'transfersAudit'])->name('audit');
     });
 
+    // Vendor form data (category dropdown)
+    Route::get('vendors/form-data', [CashflowLookupsController::class, 'vendorFormData'])->name('vendors.form_data');
+
     // Vendors
     Route::prefix('vendors')->name('vendors.')->group(function () {
         Route::get('data', [CashFlowController::class, 'vendorsData'])->name('data');

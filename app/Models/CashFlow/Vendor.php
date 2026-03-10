@@ -14,7 +14,7 @@ class Vendor extends Model
 
     protected $fillable = [
         'account_id', 'name', 'contact_person', 'phone', 'email', 'address',
-        'payment_terms', 'category', 'opening_balance', 'cached_balance',
+        'payment_terms', 'category', 'category_id', 'opening_balance', 'cached_balance',
         'is_active', 'notes', 'created_by',
     ];
 

@@ -69,15 +69,51 @@ var CashflowVendors = (function () {
             openEditVendor(currentVendorData);
         });
 
+        // Toggle active status from ledger header
+        $('#btn-toggle-current-vendor').on('click', function () {
+            if (!currentVendorId || !currentVendorData) return;
+            var isActive = !!currentVendorData.is_active;
+            var action = isActive ? 'Deactivate' : 'Activate';
+            if (!confirm(action + ' vendor "' + (currentVendorData.name || '') + '"?')) return;
+            $.ajax({
+                url: apiBase + 'vendors/' + currentVendorId + '/toggle', type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) {
+                        toastr.success(res.message || 'Updated.');
+                        currentVendorData = res.data;
+                        updateToggleHeaderBtn(!!res.data.is_active);
+                        loadVendors();
+                    } else toastr.error(res.message || 'Failed.');
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+
         // Modal events
-        $('#modal_vendor').on('shown.bs.modal', function () {
+        $('#modal_vendor').on('show.bs.modal', function () {
+            // Load vendor-emphasis categories if not yet loaded
+            if ($('#vendor-category-select option').length <= 1) {
+                loadVendorCategories();
+            }
+        }).on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
-            mb.find('[name="payment_terms"]').select2({ placeholder: 'Select payment terms', dropdownParent: mb });
+            mb.find('.vendor-select2').select2({ dropdownParent: mb });
+            mb.find('[data-toggle="tooltip"]').tooltip();
         }).on('hidden.bs.modal', function () {
-            $(this).find('.kt-select2-general').select2('destroy');
+            $('#form-vendor .vendor-select2').select2('destroy');
             $('#form-vendor')[0].reset();
+            $('#form-vendor .is-invalid').removeClass('is-invalid');
             $('#form-vendor [name="vendor_id"]').val('');
-            $('#vendor-modal-title').text('Add Vendor');
+            $('#vendor-is-active').prop('checked', true);
+            $('#vendor-active-label').text('Active');
+            $('#vendor-active-toggle-wrap').css('display', 'none');
+            $('#vendor-modal-title').html('<i class="la la-store mr-1"></i>Add Vendor');
+        });
+
+        // Active toggle label update
+        $('#vendor-is-active').on('change', function () {
+            $('#vendor-active-label').text($(this).is(':checked') ? 'Active' : 'Inactive');
         });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
         $('#modal_purchase').on('hidden.bs.modal', function () {
@@ -115,6 +151,26 @@ var CashflowVendors = (function () {
             ledgerDateTo = e.format('YYYY-MM-DD');
             ledgerPage = 1;
             if (currentVendorId) loadLedger(currentVendorId);
+        });
+    }
+
+    // ===================== VENDOR CATEGORIES (for Add/Edit modal) =====================
+
+    function loadVendorCategories() {
+        $.ajax({
+            url: apiBase + 'vendors/form-data', type: 'GET',
+            success: function (res) {
+                if (!res.success) return;
+                var cats = res.data.vendor_categories || [];
+                var sel = $('#vendor-category-select').empty().append('<option value="">— None —</option>');
+                $.each(cats, function (i, c) {
+                    sel.append('<option value="' + c.id + '">' + esc(c.name) + '</option>');
+                });
+                // Re-trigger select2 if modal is open
+                if ($('#modal_vendor').hasClass('show')) {
+                    sel.trigger('change');
+                }
+            }
         });
     }
 
@@ -166,8 +222,12 @@ var CashflowVendors = (function () {
                     '</div>' +
                     '<div class="text-right flex-shrink-0 ml-2">' +
                         '<div class="font-weight-bolder font-size-sm ' + balClass + '">PKR ' + nf(bal) + '</div>' +
+                        '<div class="d-flex justify-content-end">' +
+                        ((typeof cfPerms !== 'undefined' && cfPerms.canToggle) ?
+                            '<a href="javascript:;" class="btn-toggle-vendor ml-1" data-id="' + v.id + '" data-active="' + (v.is_active ? 1 : 0) + '" title="' + (v.is_active ? 'Deactivate' : 'Activate') + '"><i class="la la-' + (v.is_active ? 'toggle-on text-success' : 'toggle-off text-muted') + ' font-size-lg"></i></a>' : '') +
                         ((typeof cfPerms !== 'undefined' && cfPerms.canEdit) ?
-                            '<a href="javascript:;" class="btn-edit-vendor-inline text-hover-primary" data-vendor-json=\'' + JSON.stringify(v).replace(/'/g, '&#39;') + '\' title="Edit"><i class="la la-edit font-size-sm text-muted"></i></a>' : '') +
+                            '<a href="javascript:;" class="btn-edit-vendor-inline text-hover-primary ml-1" data-vendor-json=\'' + JSON.stringify(v).replace(/'/g, '&#39;') + '\' title="Edit"><i class="la la-edit font-size-sm text-muted"></i></a>' : '') +
+                        '</div>' +
                     '</div>' +
                 '</div>'
             );
@@ -175,9 +235,28 @@ var CashflowVendors = (function () {
             container.append(item);
         });
 
+        // Toggle activate/deactivate
+        container.find('.btn-toggle-vendor').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var btn = $(this);
+            var id = btn.data('id');
+            var isActive = parseInt(btn.data('active'));
+            var action = isActive ? 'Deactivate' : 'Activate';
+            if (!confirm(action + ' this vendor?')) return;
+            $.ajax({
+                url: apiBase + 'vendors/' + id + '/toggle', type: 'POST',
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                success: function (res) {
+                    if (res.success) { toastr.success(res.message || 'Updated.'); loadVendors(); }
+                    else toastr.error(res.message || 'Failed.');
+                },
+                error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
+            });
+        });
+
         // Click vendor → open ledger
         container.find('.vendor-item').off('click').on('click', function (e) {
-            if ($(e.target).closest('.btn-edit-vendor-inline').length) return;
+            if ($(e.target).closest('.btn-edit-vendor-inline, .btn-toggle-vendor').length) return;
             var id = $(this).data('id');
             selectVendor(id, vendors);
         });
@@ -195,6 +274,14 @@ var CashflowVendors = (function () {
             function () { if (!$(this).hasClass('bg-light-primary')) $(this).css('background', '#F3F6F9'); },
             function () { if (!$(this).hasClass('bg-light-primary')) $(this).css('background', ''); }
         );
+    }
+
+    function updateToggleHeaderBtn(isActive) {
+        var btn = $('#btn-toggle-current-vendor');
+        if (!btn.length) return;
+        btn.attr('title', isActive ? 'Deactivate Vendor' : 'Activate Vendor');
+        btn.find('i').attr('class', 'la la-' + (isActive ? 'toggle-on text-success' : 'toggle-off text-muted'));
+        btn.toggleClass('btn-light-warning', isActive).toggleClass('btn-light-secondary', !isActive);
     }
 
     function selectVendor(vendorId, vendorsList) {
@@ -215,15 +302,17 @@ var CashflowVendors = (function () {
         $('#vendor-ledger-card').removeClass('d-none');
 
         if (vendor) {
-            $('#ledger-vendor-name').text(vendor.name);
+            var nameHtml = esc(vendor.name);
+            if (!vendor.is_active) nameHtml += ' <span class="label label-light-danger label-inline font-size-xs ml-2">Inactive</span>';
+            $('#ledger-vendor-name').html(nameHtml);
             $('#ledger-vendor-contact').html(vendor.contact_person ? '<i class="la la-user mr-1"></i>' + esc(vendor.contact_person) : '');
             $('#ledger-vendor-phone').html(vendor.phone ? '<i class="la la-phone mr-1"></i>' + esc(vendor.phone) : '');
             var termsHtml = '<i class="la la-calendar mr-1"></i>' + (termsLabels[vendor.payment_terms] || 'N/A');
-            // Overdue indicator
             if (vendor.payment_terms && vendor.payment_terms !== 'upfront' && parseFloat(vendor.cached_balance) > 0) {
                 termsHtml += ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2 ml-1">Balance due</span>';
             }
             $('#ledger-vendor-terms').html(termsHtml);
+            updateToggleHeaderBtn(!!vendor.is_active);
         }
 
         ledgerPage = 1;
@@ -238,24 +327,51 @@ var CashflowVendors = (function () {
         form.find('[name="contact_person"]').val(v.contact_person || '');
         form.find('[name="phone"]').val(v.phone || '');
         form.find('[name="email"]').val(v.email || '');
-        form.find('[name="payment_terms"]').val(v.payment_terms);
-        form.find('[name="category"]').val(v.category || '');
-        form.find('[name="opening_balance"]').val(v.opening_balance);
+        form.find('[name="payment_terms"]').val(v.payment_terms || 'upfront');
+        form.find('[name="category_id"]').val(v.category_id || '').trigger('change');
+        form.find('[name="opening_balance"]').val(v.opening_balance || 0);
         form.find('[name="address"]').val(v.address || '');
         form.find('[name="notes"]').val(v.notes || '');
-        $('#vendor-modal-title').text('Edit Vendor');
+        // Show active toggle on edit
+        $('#vendor-active-toggle-wrap').css('display', '');
+        var isActive = v.is_active !== undefined ? !!v.is_active : true;
+        $('#vendor-is-active').prop('checked', isActive);
+        $('#vendor-active-label').text(isActive ? 'Active' : 'Inactive');
+        $('#vendor-modal-title').html('<i class="la la-edit mr-1"></i>Edit Vendor');
         $('#modal_vendor').modal('show');
     }
 
     function submitVendor() {
         var form = $('#form-vendor');
         var vendorId = form.find('[name="vendor_id"]').val();
+
+        // Clear previous errors
+        form.find('.is-invalid').removeClass('is-invalid');
+
         var data = {};
-        form.find('input, select, textarea').each(function () { var n = $(this).attr('name'); if (n && n !== 'vendor_id') data[n] = $(this).val(); });
+        form.find('input:not([type="checkbox"]), select, textarea').each(function () {
+            var n = $(this).attr('name');
+            if (n && n !== 'vendor_id') data[n] = $(this).val();
+        });
+        // Active toggle (only sent on edit)
+        if (vendorId) {
+            data.is_active = $('#vendor-is-active').is(':checked') ? 1 : 0;
+        }
 
-        if (!data.name) { toastr.warning('Vendor name is required.'); return; }
+        // Client-side validation
+        var valid = true;
+        if (!data.name || !data.name.trim()) {
+            form.find('[name="name"]').addClass('is-invalid');
+            valid = false;
+        }
+        if (!data.payment_terms) {
+            form.find('[name="payment_terms"]').closest('.form-group').find('select').addClass('is-invalid');
+            valid = false;
+        }
+        if (!valid) { toastr.warning('Please fill in the highlighted required fields.'); return; }
 
-        var btn = $(this); btn.prop('disabled', true);
+        var btn = $('#btn-submit-vendor');
+        btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');
         var url = vendorId ? apiBase + 'vendors/' + vendorId + '/update' : apiBase + 'vendors/store';
 
         $.ajax({
@@ -273,8 +389,16 @@ var CashflowVendors = (function () {
                     }
                 } else toastr.error(res.message);
             },
-            error: function (xhr) { var r = xhr.responseJSON; if (r && r.errors) $.each(r.errors, function (f, m) { toastr.error(m[0]); }); else toastr.error(r ? r.message : 'Failed.'); },
-            complete: function () { btn.prop('disabled', false); }
+            error: function (xhr) {
+                var r = xhr.responseJSON;
+                if (r && r.errors) {
+                    $.each(r.errors, function (field, msgs) {
+                        toastr.error(msgs[0]);
+                        form.find('[name="' + field + '"]').addClass('is-invalid');
+                    });
+                } else toastr.error(r ? r.message : 'Failed.');
+            },
+            complete: function () { btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>Save Vendor'); }
         });
     }
 

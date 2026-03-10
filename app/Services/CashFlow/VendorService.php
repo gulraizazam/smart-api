@@ -63,6 +63,7 @@ class VendorService
             'address' => $data['address'] ?? null,
             'payment_terms' => $data['payment_terms'] ?? 'upfront',
             'category' => $data['category'] ?? null,
+            'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
             'opening_balance' => $data['opening_balance'] ?? 0,
             'cached_balance' => $data['opening_balance'] ?? 0,
             'is_active' => 1,
@@ -90,12 +91,17 @@ class VendorService
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
         $oldValues = $vendor->toArray();
 
-        $allowed = ['name', 'contact_person', 'phone', 'email', 'address', 'payment_terms', 'category', 'notes', 'is_active', 'opening_balance'];
+        $allowed = ['name', 'contact_person', 'phone', 'email', 'address', 'payment_terms', 'category', 'category_id', 'notes', 'is_active', 'opening_balance'];
         $updateData = [];
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
                 $updateData[$field] = $data[$field];
             }
+        }
+
+        // Coerce category_id: empty string → null
+        if (array_key_exists('category_id', $updateData)) {
+            $updateData['category_id'] = !empty($updateData['category_id']) ? (int) $updateData['category_id'] : null;
         }
 
         // If opening_balance changed, adjust cached_balance by the same delta

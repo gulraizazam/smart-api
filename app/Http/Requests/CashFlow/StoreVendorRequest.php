@@ -22,6 +22,7 @@ class StoreVendorRequest extends FormRequest
             'address' => 'nullable|string|max:1000',
             'payment_terms' => 'nullable|in:upfront,net_7,net_15,net_30,custom',
             'category' => 'nullable|string|max:255',
+            'category_id' => 'nullable|integer|exists:expense_categories,id',
             'opening_balance' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ];
