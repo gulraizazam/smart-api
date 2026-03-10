@@ -49,7 +49,7 @@ class User extends Authenticatable
     }
     public function membership()
     {
-        return $this->hasOne(Membership::class, 'patient_id')->latestOfMany();
+        return $this->hasOne(Membership::class, 'patient_id')->orderByDesc('id');
     }
     public function scopeIsActive($query, $status = 1)
     {
