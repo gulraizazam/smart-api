@@ -53,7 +53,7 @@ class StaffAdvanceService
         $userIds = $advances->keys()->merge($returns->keys())->merge($expenses->keys())->unique();
         $users = User::whereIn('id', $userIds)->get(['id', 'name', 'is_advance_eligible']);
 
-        return $users->map(function ($user) use ($advances, $returns, $expenses) {
+        return $users->map(function ($user) use ($advances, $returns, $expenses, $accountId) {
             $totalAdvances = $advances->get($user->id, 0);
             $totalReturns = $returns->get($user->id, 0);
             $totalExpenses = $expenses->get($user->id, 0);
@@ -64,7 +64,7 @@ class StaffAdvanceService
                 'total_advances' => (float) $totalAdvances,
                 'total_returns' => (float) $totalReturns,
                 'total_expenses' => (float) $totalExpenses,
-                'outstanding' => (float) $totalAdvances - (float) $totalReturns - (float) $totalExpenses,
+                'outstanding' => $this->getOutstanding($user->id, $accountId),
             ];
         })->filter(fn($item) => $item['total_advances'] > 0 || $item['total_returns'] > 0 || $item['total_expenses'] > 0)
           ->values();
