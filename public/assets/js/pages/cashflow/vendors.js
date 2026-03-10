@@ -107,13 +107,16 @@ var CashflowVendors = (function () {
             $('#form-vendor [name="vendor_id"]').val('');
             $('#vendor-is-active').prop('checked', true);
             $('#vendor-active-label').text('Active');
+            $('#vendor-active-switch').addClass('switch-primary');
             $('#vendor-active-toggle-wrap').css('display', 'none');
             $('#vendor-modal-title').html('<i class="la la-store mr-1"></i>Add Vendor');
         });
 
-        // Active toggle label update
+        // Active toggle label + color update
         $('#vendor-is-active').on('change', function () {
-            $('#vendor-active-label').text($(this).is(':checked') ? 'Active' : 'Inactive');
+            var checked = $(this).is(':checked');
+            $('#vendor-active-label').text(checked ? 'Active' : 'Inactive');
+            $('#vendor-active-switch').toggleClass('switch-primary', checked);
         });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
         $('#modal_purchase').on('hidden.bs.modal', function () {
@@ -337,6 +340,7 @@ var CashflowVendors = (function () {
         var isActive = v.is_active !== undefined ? !!v.is_active : true;
         $('#vendor-is-active').prop('checked', isActive);
         $('#vendor-active-label').text(isActive ? 'Active' : 'Inactive');
+        $('#vendor-active-switch').toggleClass('switch-primary', isActive);
         $('#vendor-modal-title').html('<i class="la la-edit mr-1"></i>Edit Vendor');
         $('#modal_vendor').modal('show');
     }
@@ -364,11 +368,23 @@ var CashflowVendors = (function () {
             form.find('[name="name"]').addClass('is-invalid');
             valid = false;
         }
-        if (!data.payment_terms) {
-            form.find('[name="payment_terms"]').closest('.form-group').find('select').addClass('is-invalid');
+        if (!data.contact_person || !data.contact_person.trim()) {
+            form.find('[name="contact_person"]').addClass('is-invalid');
             valid = false;
         }
-        if (!valid) { toastr.warning('Please fill in the highlighted required fields.'); return; }
+        if (!data.phone || !data.phone.trim()) {
+            form.find('[name="phone"]').addClass('is-invalid');
+            valid = false;
+        }
+        if (!data.payment_terms) {
+            form.find('[name="payment_terms"]').addClass('is-invalid');
+            valid = false;
+        }
+        if (!data.category_id) {
+            form.find('[name="category_id"]').addClass('is-invalid');
+            valid = false;
+        }
+        if (!valid) { toastr.warning('Please fill in all required fields (marked with *).'); return; }
 
         var btn = $('#btn-submit-vendor');
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');

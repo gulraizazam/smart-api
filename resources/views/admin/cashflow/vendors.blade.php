@@ -262,8 +262,9 @@
                             </div>
                             <div class="col-5">
                                 <div class="form-group mb-3">
-                                    <label class="font-size-sm font-weight-bold mb-1">Contact Person</label>
+                                    <label class="font-size-sm font-weight-bold mb-1">Contact Person <span class="text-danger">*</span></label>
                                     <input type="text" name="contact_person" class="form-control form-control-sm" placeholder="Full name" />
+                                    <div class="invalid-feedback">Contact person is required.</div>
                                 </div>
                             </div>
                         </div>
@@ -272,8 +273,9 @@
                         <div class="row">
                             <div class="col-5">
                                 <div class="form-group mb-3">
-                                    <label class="font-size-sm font-weight-bold mb-1">Phone</label>
+                                    <label class="font-size-sm font-weight-bold mb-1">Phone <span class="text-danger">*</span></label>
                                     <input type="text" name="phone" class="form-control form-control-sm" placeholder="+92 300 0000000" />
+                                    <div class="invalid-feedback">Phone number is required.</div>
                                 </div>
                             </div>
                             <div class="col-7">
@@ -301,10 +303,11 @@
                             </div>
                             <div class="col-6">
                                 <div class="form-group mb-3">
-                                    <label class="font-size-sm font-weight-bold mb-1">Category</label>
+                                    <label class="font-size-sm font-weight-bold mb-1">Category <span class="text-danger">*</span></label>
                                     <select name="category_id" class="form-control form-control-sm vendor-select2" id="vendor-category-select">
-                                        <option value="">— None —</option>
+                                        <option value="">— Select Category —</option>
                                     </select>
+                                    <div class="invalid-feedback">Category is required.</div>
                                     <small class="text-muted">Categories with Vendor Emphasis enabled</small>
                                 </div>
                             </div>
@@ -329,7 +332,7 @@
                                 <div class="form-group mb-3 w-100">
                                     <label class="font-size-sm font-weight-bold mb-1 d-block">Status</label>
                                     <div class="d-flex align-items-center">
-                                        <span class="switch switch-sm switch-primary">
+                                        <span class="switch switch-sm" id="vendor-active-switch">
                                             <label>
                                                 <input type="checkbox" name="is_active" id="vendor-is-active" value="1" checked />
                                                 <span></span>
