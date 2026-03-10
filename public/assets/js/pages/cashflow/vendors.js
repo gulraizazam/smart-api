@@ -104,12 +104,12 @@ var CashflowVendors = (function () {
             $('#form-vendor .vendor-select2').select2('destroy');
             $('#form-vendor')[0].reset();
             $('#form-vendor .is-invalid').removeClass('is-invalid');
-            $('#form-vendor .is-invalid-select2').removeClass('is-invalid-select2');
+            $('#form-vendor .is-invalid-select2-direct').removeClass('is-invalid-select2-direct');
             $('#form-vendor [name="vendor_id"]').val('');
             $('#vendor-is-active').prop('checked', true);
             $('#vendor-active-label').text('Active');
             $('#vendor-active-switch').addClass('switch-primary');
-            $('#vendor-active-toggle-wrap').css('display', 'none');
+            $('#vendor-active-toggle-wrap').addClass('vendor-toggle-hidden');
             $('#vendor-modal-title').html('<i class="la la-store mr-1"></i>Add Vendor');
         });
 
@@ -337,7 +337,7 @@ var CashflowVendors = (function () {
         form.find('[name="address"]').val(v.address || '');
         form.find('[name="notes"]').val(v.notes || '');
         // Show active toggle on edit
-        $('#vendor-active-toggle-wrap').css('display', '');
+        $('#vendor-active-toggle-wrap').removeClass('vendor-toggle-hidden');
         var isActive = v.is_active !== undefined ? !!v.is_active : true;
         $('#vendor-is-active').prop('checked', isActive);
         $('#vendor-active-label').text(isActive ? 'Active' : 'Inactive');
@@ -352,7 +352,7 @@ var CashflowVendors = (function () {
 
         // Clear previous errors
         form.find('.is-invalid').removeClass('is-invalid');
-        form.find('.is-invalid-select2').removeClass('is-invalid-select2');
+        form.find('.is-invalid-select2-direct').removeClass('is-invalid-select2-direct');
 
         var data = {};
         form.find('input:not([type="checkbox"]), select, textarea').each(function () {
@@ -379,13 +379,13 @@ var CashflowVendors = (function () {
             valid = false;
         }
         if (!data.payment_terms) {
-            var ptEl = form.find('[name="payment_terms"]').addClass('is-invalid');
-            ptEl.closest('.form-group').find('.select2-selection').addClass('is-invalid-select2');
+            form.find('[name="payment_terms"]').addClass('is-invalid')
+                .siblings('.select2-container').find('.select2-selection').addClass('is-invalid-select2-direct');
             valid = false;
         }
         if (!data.category_id) {
-            var catEl = form.find('[name="category_id"]').addClass('is-invalid');
-            catEl.closest('.form-group').find('.select2-selection').addClass('is-invalid-select2');
+            form.find('[name="category_id"]').addClass('is-invalid')
+                .siblings('.select2-container').find('.select2-selection').addClass('is-invalid-select2-direct');
             valid = false;
         }
         if (!valid) { toastr.warning('Please fill in all required fields (marked with *).'); return; }
