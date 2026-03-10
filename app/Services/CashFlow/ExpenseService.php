@@ -350,7 +350,7 @@ class ExpenseService
         $oldVendorId = $expense->vendor_id;
         $oldAmount = (float) $expense->amount;
 
-        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id'];
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes', 'vendor_id', 'staff_id'];
         $updateData = ['edit_reason' => $data['edit_reason']];
 
         // Handle merged branch/general field
@@ -367,10 +367,19 @@ class ExpenseService
             $updateData['vendor_id'] = $data['vendor_id'] ?: null;
         }
 
+        // Handle staff_id (allow clearing when switching to pool)
+        if (array_key_exists('staff_id', $data)) {
+            $updateData['staff_id'] = $data['staff_id'] ?: null;
+        }
+        // If staff is selected, clear pool; if pool is selected, clear staff
+        if (!empty($data['staff_id'])) {
+            $updateData['paid_from_pool_id'] = null;
+        }
+
         foreach ($allowed as $field) {
-            if ($field === 'vendor_id') continue; // handled above
-            if (isset($data[$field])) {
-                $updateData[$field] = $data[$field];
+            if ($field === 'vendor_id' || $field === 'staff_id') continue; // handled above
+            if (array_key_exists($field, $data)) {
+                $updateData[$field] = ($data[$field] !== '' && $data[$field] !== null) ? $data[$field] : null;
             }
         }
 
@@ -595,7 +604,7 @@ class ExpenseService
         }
 
         // Negative pool balance (Sec 11.2)
-        $pool = CashPool::find($expense->paid_from_pool_id);
+        $pool = $expense->paid_from_pool_id ? CashPool::find($expense->paid_from_pool_id) : null;
         if ($pool && $pool->cached_balance < 0) {
             $flags[] = 'Negative pool balance after this expense';
         }

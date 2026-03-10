@@ -504,6 +504,7 @@ var CashflowExpenses = (function () {
                 'data-amount="' + (parseInt(exp.amount) || 0) + '" ' +
                 'data-category="' + exp.category_id + '" ' +
                 'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
+                'data-staff="' + (exp.staff_id || '') + '" ' +
                 'data-payment="' + (exp.payment_method_id || '') + '" ' +
                 'data-branch="' + (exp.for_branch_id || '') + '" ' +
                 'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
@@ -531,7 +532,8 @@ var CashflowExpenses = (function () {
                 'data-date="' + dupDate + '" ' +
                 'data-amount="' + dupAmount + '" ' +
                 'data-category="' + exp.category_id + '" ' +
-                'data-pool="' + exp.paid_from_pool_id + '" ' +
+                'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
+                'data-staff="' + (exp.staff_id || '') + '" ' +
                 'data-payment="' + (exp.payment_method_id || '') + '" ' +
                 'data-branch="' + (exp.for_branch_id || '') + '" ' +
                 'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
@@ -614,14 +616,14 @@ var CashflowExpenses = (function () {
             });
             form.find('[name="category_id"]').html(catHtml).val(btn.data('category') || '');
 
-            // Populate pool dropdown from create form options
-            var poolHtml = '<option value="">Select pool</option>';
-            $('[name="paid_from_pool_id"]', '#form-expense').find('option').each(function () {
-                if ($(this).val()) {
-                    poolHtml += '<option value="' + $(this).val() + '" data-type="' + ($(this).data('type') || '') + '">' + $(this).text() + '</option>';
-                }
-            });
-            form.find('[name="paid_from_pool_id"]').html(poolHtml).val(btn.data('pool') || '');
+            // Populate pool dropdown from create form options (includes staff optgroup)
+            var poolHtml = $('[name="paid_from_pool_id"]', '#form-expense').html();
+            var poolVal = btn.data('pool') || '';
+            var staffVal = btn.data('staff') || '';
+            if (!poolVal && staffVal) {
+                poolVal = 'staff_' + staffVal;
+            }
+            form.find('[name="paid_from_pool_id"]').html(poolHtml).val(poolVal);
 
             // Populate payment method dropdown from create form options
             var pmHtml = '<option value="">Select method</option>';
@@ -683,7 +685,7 @@ var CashflowExpenses = (function () {
             var mb = $(this).find('.modal-body');
             mb.find('[name="category_id"]').select2({ placeholder: 'Select category', dropdownParent: mb });
             mb.find('[name="payment_method_id"]').select2({ placeholder: 'Select method', dropdownParent: mb });
-            mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool', dropdownParent: mb });
+            mb.find('[name="paid_from_pool_id"]').select2({ placeholder: 'Select pool or staff', dropdownParent: mb });
             mb.find('[name="for_branch_id"]').select2({ placeholder: 'Select', dropdownParent: mb });
             mb.find('[name="vendor_id"]').select2({ placeholder: 'Select vendor', dropdownParent: mb });
 
@@ -721,7 +723,10 @@ var CashflowExpenses = (function () {
             form.find('[name="expense_date"]').val(btn.data('date') || getTodayStr());
             form.find('[name="amount"]').val(btn.data('amount'));
             form.find('[name="category_id"]').val(btn.data('category')).trigger('change');
-            form.find('[name="paid_from_pool_id"]').val(btn.data('pool')).trigger('change');
+            var dupPool = btn.data('pool') || '';
+            var dupStaff = btn.data('staff') || '';
+            if (!dupPool && dupStaff) dupPool = 'staff_' + dupStaff;
+            form.find('[name="paid_from_pool_id"]').val(dupPool).trigger('change');
             form.find('[name="payment_method_id"]').val(btn.data('payment')).trigger('change');
             form.find('[name="vendor_id"]').val(btn.data('vendor') || '').trigger('change');
             form.find('[name="description"]').val(btn.data('description'));
@@ -1031,21 +1036,36 @@ var CashflowExpenses = (function () {
             data.vendor_id = '';
         }
 
+        // Detect staff-advance selection and remap fields
+        var poolVal = data['paid_from_pool_id'] || '';
+        if (typeof poolVal === 'string' && poolVal.indexOf('staff_') === 0) {
+            data['staff_id'] = poolVal.replace('staff_', '');
+            data['paid_from_pool_id'] = '';
+        } else {
+            data['staff_id'] = '';
+        }
+
         // Highlight missing required fields (same as add expense)
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.select2-container').css('border', '').css('border-radius', '');
-        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'paid_from_pool_id', 'description', 'for_branch_id', 'edit_reason'];
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'description', 'for_branch_id', 'edit_reason'];
         var missing = [];
         $.each(requiredFields, function (i, name) {
-            // for_branch_id: check original dropdown value (before we cleared it for 'general')
             var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
             if (!val) {
-                var el = form.find('[name="' + name + '"]');
+                var el = form.find('[name="' + name + '"');
                 el.addClass('is-invalid');
                 el.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
                 missing.push(name);
             }
         });
+        // Must have either a pool OR a staff member
+        if (!data['paid_from_pool_id'] && !data['staff_id']) {
+            var poolEl = form.find('[name="paid_from_pool_id"]');
+            poolEl.addClass('is-invalid');
+            poolEl.siblings('.select2-container').css('border', '1px solid #F64E60').css('border-radius', '0.42rem');
+            missing.push('paid_from_pool_id');
+        }
 
         // Edit reason min length
         if (data.edit_reason && data.edit_reason.length < 5) {
