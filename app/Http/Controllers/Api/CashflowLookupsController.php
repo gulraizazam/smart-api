@@ -49,6 +49,25 @@ class CashflowLookupsController extends Controller
     }
 
     /**
+     * Get dropdown data for the vendor form (vendor-emphasis categories).
+     */
+    public function vendorFormData(): JsonResponse
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $categories = \App\Models\CashFlow\ExpenseCategory::forAccount($accountId)
+                ->active()
+                ->where('vendor_emphasis', true)
+                ->sorted()
+                ->get(['id', 'name']);
+
+            return response()->json(['success' => true, 'data' => ['vendor_categories' => $categories]]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Generic lookups endpoint (pools list for transfers/staff pages).
      */
     public function lookups(): JsonResponse

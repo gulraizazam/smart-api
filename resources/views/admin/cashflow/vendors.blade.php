@@ -153,12 +153,15 @@
                                                 <span class="text-muted font-size-sm" id="ledger-vendor-terms"></span>
                                             </div>
                                         </div>
-                                        <div class="d-flex">
+                                        <div class="d-flex align-items-center">
                                             @if(Gate::allows('cashflow_vendor_transaction'))
                                                 <button class="btn btn-sm btn-primary mr-2" id="btn-record-purchase"><i class="la la-shopping-cart mr-1"></i>Record Purchase</button>
                                             @endif
                                             @if(Gate::allows('cashflow_vendor_edit'))
-                                                <button class="btn btn-sm btn-light-primary mr-2" id="btn-edit-current-vendor"><i class="la la-edit"></i></button>
+                                                <button class="btn btn-sm btn-light-primary mr-2" id="btn-edit-current-vendor" title="Edit Vendor"><i class="la la-edit"></i></button>
+                                            @endif
+                                            @if(Gate::allows('cashflow_vendor_toggle'))
+                                                <button class="btn btn-sm btn-light-warning" id="btn-toggle-current-vendor" title="Activate / Deactivate"><i class="la la-toggle-on"></i></button>
                                             @endif
                                         </div>
                                     </div>
@@ -238,30 +241,124 @@
 
     <!-- Add/Edit Vendor Modal -->
     <div class="modal fade" id="modal_vendor">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-md">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="vendor-modal-title">Add Vendor</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
-                <div class="modal-body">
+                <div class="modal-header py-3">
+                    <h5 class="modal-title font-size-h6" id="vendor-modal-title"><i class="la la-store mr-1"></i>Add Vendor</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body py-4 px-5">
                     <form id="form-vendor">
                         <input type="hidden" name="vendor_id" />
+
+                        {{-- Name + Contact Person --}}
                         <div class="row">
-                            <div class="col-md-6"><div class="form-group"><label>Name <span class="text-danger">*</span></label><input type="text" name="name" class="form-control" required /></div></div>
-                            <div class="col-md-6"><div class="form-group"><label>Contact Person</label><input type="text" name="contact_person" class="form-control" /></div></div>
+                            <div class="col-7">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Vendor Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. MedSource Supplies" />
+                                    <div class="invalid-feedback">Vendor name is required.</div>
+                                </div>
+                            </div>
+                            <div class="col-5">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Contact Person</label>
+                                    <input type="text" name="contact_person" class="form-control form-control-sm" placeholder="Full name" />
+                                </div>
+                            </div>
                         </div>
+
+                        {{-- Phone + Email --}}
                         <div class="row">
-                            <div class="col-md-4"><div class="form-group"><label>Phone</label><input type="text" name="phone" class="form-control" /></div></div>
-                            <div class="col-md-4"><div class="form-group"><label>Email</label><input type="email" name="email" class="form-control" /></div></div>
-                            <div class="col-md-4"><div class="form-group"><label>Payment Terms</label><select name="payment_terms" class="form-control kt-select2-general"><option value="upfront">Upfront</option><option value="net_7">Net 7</option><option value="net_15">Net 15</option><option value="net_30">Net 30</option><option value="custom">Custom</option></select></div></div>
+                            <div class="col-5">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Phone</label>
+                                    <input type="text" name="phone" class="form-control form-control-sm" placeholder="+92 300 0000000" />
+                                </div>
+                            </div>
+                            <div class="col-7">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Email</label>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="vendor@example.com" />
+                                </div>
+                            </div>
                         </div>
+
+                        {{-- Payment Terms + Category --}}
                         <div class="row">
-                            <div class="col-md-6"><div class="form-group"><label>Category</label><input type="text" name="category" class="form-control" placeholder="e.g. Cleaning, Office Supplies" /></div></div>
-                            <div class="col-md-6"><div class="form-group"><label>Opening Balance</label><input type="number" name="opening_balance" class="form-control" min="0" step="0.01" value="0" /></div></div>
+                            <div class="col-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Payment Terms <span class="text-danger">*</span></label>
+                                    <select name="payment_terms" class="form-control form-control-sm vendor-select2">
+                                        <option value="upfront">Upfront (pay immediately)</option>
+                                        <option value="net_7">Net 7 (pay within 7 days)</option>
+                                        <option value="net_15">Net 15 (pay within 15 days)</option>
+                                        <option value="net_30">Net 30 (pay within 30 days)</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                    <div class="invalid-feedback">Payment terms are required.</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">Category</label>
+                                    <select name="category_id" class="form-control form-control-sm vendor-select2" id="vendor-category-select">
+                                        <option value="">— None —</option>
+                                    </select>
+                                    <small class="text-muted">Categories with Vendor Emphasis enabled</small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group"><label>Address</label><textarea name="address" class="form-control" rows="2"></textarea></div>
-                        <div class="form-group"><label>Notes</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
+
+                        {{-- Opening Balance + Active toggle --}}
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group mb-3">
+                                    <label class="font-size-sm font-weight-bold mb-1">
+                                        Opening Balance
+                                        <i class="la la-info-circle text-info ml-1" title="The outstanding amount already owed to this vendor before you started tracking in this system. Enter 0 if no prior balance exists." data-toggle="tooltip" data-placement="top"></i>
+                                    </label>
+                                    <div class="input-group input-group-sm">
+                                        <div class="input-group-prepend"><span class="input-group-text">PKR</span></div>
+                                        <input type="number" name="opening_balance" class="form-control form-control-sm" min="0" step="1" value="0" placeholder="0" />
+                                    </div>
+                                    <small class="text-muted">Prior outstanding balance before system start</small>
+                                </div>
+                            </div>
+                            <div class="col-6 d-flex align-items-center" id="vendor-active-toggle-wrap" style="display:none!important;">
+                                <div class="form-group mb-3 w-100">
+                                    <label class="font-size-sm font-weight-bold mb-1 d-block">Status</label>
+                                    <div class="d-flex align-items-center">
+                                        <span class="switch switch-sm switch-primary">
+                                            <label>
+                                                <input type="checkbox" name="is_active" id="vendor-is-active" value="1" checked />
+                                                <span></span>
+                                            </label>
+                                        </span>
+                                        <span class="ml-2 font-size-sm" id="vendor-active-label">Active</span>
+                                    </div>
+                                    <small class="text-muted">Inactive vendors are hidden from purchase forms</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Address --}}
+                        <div class="form-group mb-3">
+                            <label class="font-size-sm font-weight-bold mb-1">Address</label>
+                            <textarea name="address" class="form-control form-control-sm" rows="2" placeholder="Street, City"></textarea>
+                        </div>
+
+                        {{-- Notes --}}
+                        <div class="form-group mb-0">
+                            <label class="font-size-sm font-weight-bold mb-1">Notes</label>
+                            <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Internal notes about this vendor"></textarea>
+                        </div>
                     </form>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button><button type="button" id="btn-submit-vendor" class="btn btn-primary">Save</button></div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="btn-submit-vendor" class="btn btn-primary btn-sm"><i class="la la-check mr-1"></i>Save Vendor</button>
+                </div>
             </div>
         </div>
     </div>
