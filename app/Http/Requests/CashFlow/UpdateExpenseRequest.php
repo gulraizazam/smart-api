@@ -19,11 +19,12 @@ class UpdateExpenseRequest extends FormRequest
             'expense_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
             'amount' => 'required|numeric|min:1|max:99999999|integer',
             'category_id' => 'required|exists:expense_categories,id',
-            'paid_from_pool_id' => 'required|exists:cash_pools,id',
+            'paid_from_pool_id' => 'nullable|exists:cash_pools,id',
             'payment_method_id' => 'required|exists:payment_modes,id',
             'for_branch_id' => 'nullable|exists:locations,id',
             'is_for_general' => 'nullable|boolean',
             'vendor_id' => 'nullable',
+            'staff_id' => 'nullable|exists:users,id',
             'description' => 'required|string|min:3|max:100',
             'reference_no' => 'nullable|string|max:100',
             'attachment_url' => ['nullable', 'string', 'max:500', new GoogleDriveUrlRule],
@@ -38,6 +39,11 @@ class UpdateExpenseRequest extends FormRequest
             if (!$this->input('for_branch_id') && !$this->input('is_for_general')) {
                 $validator->errors()->add('for_branch_id', 'Please select a branch or General / Company-wide.');
             }
+
+            // Must have either a pool or a staff member
+            if (!$this->input('paid_from_pool_id') && !$this->input('staff_id')) {
+                $validator->errors()->add('paid_from_pool_id', 'Please select a cash pool or a staff member.');
+            }
         });
     }
 
@@ -50,7 +56,7 @@ class UpdateExpenseRequest extends FormRequest
             'amount.min' => 'Amount must be at least 1.',
             'amount.integer' => 'Amount must be a whole number (no decimals).',
             'category_id.required' => 'Category is required.',
-            'paid_from_pool_id.required' => 'Paid From Pool is required.',
+            'paid_from_pool_id.exists' => 'The selected pool is invalid.',
             'payment_method_id.required' => 'Payment Method is required.',
             'description.required' => 'Description is required.',
             'description.min' => 'Description must be at least 3 characters.',
