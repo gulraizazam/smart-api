@@ -284,7 +284,7 @@ var CashflowExpenses = (function () {
         // Edit category select
         html = '<option value="">Select category</option>';
         $.each(data.categories, function (i, cat) {
-            html += '<option value="' + cat.id + '">' + escapeHtml(cat.name) + '</option>';
+            html += '<option value="' + cat.id + '" data-vendor="' + (cat.vendor_emphasis ? 1 : 0) + '">' + escapeHtml(cat.name) + '</option>';
         });
         $('#edit-category-select').html(html);
 
@@ -683,6 +683,20 @@ var CashflowExpenses = (function () {
             filterPoolsByPaymentMethod(pmText, '#form-admin-edit');
         });
 
+        // Show/hide vendor field based on category vendor_emphasis in edit form
+        $(document).on('change', '#form-admin-edit [name="category_id"]', function () {
+            var vendorEmphasis = $(this).find(':selected').data('vendor') == 1;
+            var hasVendorPreFilled = !!$('#form-admin-edit [name="vendor_id"]').val();
+            if (vendorEmphasis || hasVendorPreFilled) {
+                $('#edit-vendor-group').show();
+                if (vendorEmphasis) $('#edit-vendor-group').addClass('bg-light-warning p-3 rounded');
+                else $('#edit-vendor-group').removeClass('bg-light-warning p-3 rounded');
+            } else {
+                $('#edit-vendor-group').hide().removeClass('bg-light-warning p-3 rounded');
+                $('#form-admin-edit [name="vendor_id"]').val('').trigger('change');
+            }
+        });
+
         // Init date picker for edit modal (last 7 days only)
         $('#form-admin-edit [name="expense_date"]').daterangepicker({
             singleDatePicker: true,
@@ -706,6 +720,17 @@ var CashflowExpenses = (function () {
             // Apply initial pool filter based on pre-selected payment method
             var initPm = mb.find('[name="payment_method_id"] option:selected').text().toLowerCase();
             filterPoolsByPaymentMethod(initPm, '#form-admin-edit');
+
+            // Show/hide vendor group based on selected category
+            var catOpt = mb.find('[name="category_id"] option:selected');
+            var hasVendorEmphasis = catOpt.data('vendor') == 1;
+            var hasVendorPreFilled = !!mb.find('[name="vendor_id"]').val();
+            if (hasVendorEmphasis || hasVendorPreFilled) {
+                $('#edit-vendor-group').show();
+                if (hasVendorEmphasis) $('#edit-vendor-group').addClass('bg-light-warning p-3 rounded');
+            } else {
+                $('#edit-vendor-group').hide().removeClass('bg-light-warning p-3 rounded');
+            }
 
             // Sync Select2 with pre-filled values
             mb.find('select.kt-select2-general').trigger('change.select2');
