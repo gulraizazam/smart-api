@@ -95,7 +95,7 @@ class ReportService
                 ->where('cash_flow', 'in')
                 ->where('is_cancel', 0)
                 ->whereNull('deleted_at')
-                ->where('created_at', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
                 ->select('location_id', DB::raw('SUM(cash_amount) as total'))
                 ->groupBy('location_id')
@@ -374,7 +374,7 @@ class ReportService
             ->whereNull('deleted_at')
             ->where(DB::raw('DATE(created_at)'), '<', $dateFrom);
 
-        if ($goLiveDate) $inflowQuery->where('created_at', '>=', $goLiveDate);
+        if ($goLiveDate) $inflowQuery->where('system_created_at', '>=', $goLiveDate);
         if ($branchId) $inflowQuery->where('location_id', $branchId);
 
         $priorInflows = (float) $inflowQuery->sum('cash_amount');
@@ -412,7 +412,7 @@ class ReportService
             ->whereBetween(DB::raw('DATE(package_advances.created_at)'), [$dateFrom, $dateTo])
             ->join('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id');
 
-        if ($goLiveDate) $query->where('package_advances.created_at', '>=', $goLiveDate);
+        if ($goLiveDate) $query->where('package_advances.system_created_at', '>=', $goLiveDate);
         if ($branchId) $query->where('package_advances.location_id', $branchId);
 
         return $query

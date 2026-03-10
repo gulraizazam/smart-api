@@ -244,7 +244,7 @@ class PoolService
             ->where('cash_flow', 'in')
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->where('created_at', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['cash_amount', 'payment_mode_id', 'location_id']);
 
         foreach ($payments as $pa) {
@@ -260,7 +260,7 @@ class PoolService
             ->where('is_refund', 1)
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->where('created_at', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['cash_amount', 'payment_mode_id', 'location_id']);
 
         foreach ($refunds as $ref) {
@@ -274,7 +274,7 @@ class PoolService
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->whereNull('voided_at')
             ->where('status', '!=', 'rejected')
-            ->where('expense_date', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'paid_from_pool_id']);
 
         foreach ($expenses as $exp) {
@@ -287,7 +287,7 @@ class PoolService
         $transfers = \App\Models\CashFlow\CashTransfer::where('account_id', $accountId)
             ->whereNull('deleted_at')
             ->whereNull('voided_at')
-            ->where('created_at', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'from_pool_id', 'to_pool_id']);
 
         foreach ($transfers as $tr) {
@@ -303,7 +303,7 @@ class PoolService
         $advances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')
             ->whereNull('voided_at')
-            ->where('created_at', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
         foreach ($advances as $adv) {
@@ -316,7 +316,7 @@ class PoolService
         $returns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')
             ->whereNull('voided_at')
-            ->where('created_at', '>=', $goLiveDate)
+            ->where('system_created_at', '>=', $goLiveDate)
             ->get(['amount', 'pool_id']);
 
         foreach ($returns as $ret) {
