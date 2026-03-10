@@ -120,10 +120,37 @@ class PlanService
 
     /**
      * Build optimized result query with eager loading and aggregations.
-     * Uses LEFT JOINs on pre-aggregated subqueries instead of per-row correlated subqueries.
+     * Uses LEFT JOINs on pre-aggregated subqueries scoped to the relevant account + locations
+     * to avoid full-table scans on package_advances / package_bundles / package_services.
      */
     protected function buildOptimizedResultQuery(array $where, int $accountId): \Illuminate\Database\Eloquent\Builder
     {
+        $userCentres = ACL::getUserCentres();
+        $canViewInactive = \Illuminate\Support\Facades\Gate::allows('view_inactive_plans');
+
+        // Build a scoped sub-select of package IDs so the aggregate subqueries
+        // only touch rows that actually belong to this account/location set.
+        // This converts the three full-table-scan GROUP BYs into indexed lookups.
+        $scopedPackageIds = DB::table('packages')
+            ->select('id')
+            ->where('account_id', $accountId)
+            ->whereIn('location_id', $userCentres)
+            ->whereNull('deleted_at')
+            ->when(!$canViewInactive, fn($q) => $q->where('active', 1));
+
+        if (!empty($where)) {
+            foreach ($where as $condition) {
+                if (is_array($condition) && count($condition) === 3) {
+                    // Strip the "packages." table prefix for the inner query
+                    $col = str_replace('packages.', '', $condition[0]);
+                    $scopedPackageIds->where($col, $condition[1], $condition[2]);
+                }
+            }
+        }
+
+        $scopedSql = $scopedPackageIds->toSql();
+        $scopedBindings = $scopedPackageIds->getBindings();
+
         $query = Packages::query()
             ->select([
                 'packages.*',
@@ -145,7 +172,7 @@ class PlanService
                     COALESCE(ps_agg.max_updated, "1970-01-01")
                 ) as latest_advance_updated_at'),
             ])
-            // Pre-aggregate package_advances per package_id (single pass)
+            // Pre-aggregate package_advances — scoped to relevant package IDs only
             ->leftJoin(DB::raw('(
                 SELECT package_id,
                     SUM(CASE WHEN cash_flow = "in" AND is_cancel = 0 THEN cash_amount ELSE 0 END) as cash_receive,
@@ -154,25 +181,34 @@ class PlanService
                     MAX(updated_at) as max_updated
                 FROM package_advances
                 WHERE deleted_at IS NULL
+                  AND package_id IN (' . $scopedSql . ')
                 GROUP BY package_id
-            ) as pa_agg'), 'pa_agg.package_id', '=', 'packages.id')
-            // Pre-aggregate package_bundles per package_id (single pass)
+            ) as pa_agg'), function ($join) use ($scopedBindings) {
+                $join->on('pa_agg.package_id', '=', 'packages.id');
+            })
+            // Pre-aggregate package_bundles — scoped to relevant package IDs only
             ->leftJoin(DB::raw('(
                 SELECT package_id,
                     SUM(tax_including_price) as bundle_total,
                     MAX(updated_at) as max_updated
                 FROM package_bundles
+                WHERE package_id IN (' . $scopedSql . ')
                 GROUP BY package_id
-            ) as pb_agg'), 'pb_agg.package_id', '=', 'packages.id')
-            // Pre-aggregate package_services per package_id (single pass)
+            ) as pb_agg'), function ($join) use ($scopedBindings) {
+                $join->on('pb_agg.package_id', '=', 'packages.id');
+            })
+            // Pre-aggregate package_services — scoped to relevant package IDs only
             ->leftJoin(DB::raw('(
                 SELECT package_id,
                     SUM(tax_including_price) as service_total,
                     COUNT(*) as session_count,
                     MAX(updated_at) as max_updated
                 FROM package_services
+                WHERE package_id IN (' . $scopedSql . ')
                 GROUP BY package_id
-            ) as ps_agg'), 'ps_agg.package_id', '=', 'packages.id')
+            ) as ps_agg'), function ($join) use ($scopedBindings) {
+                $join->on('ps_agg.package_id', '=', 'packages.id');
+            })
             ->with([
                 'user:id,name,account_id',
                 'user.membership:id,patient_id,code,active,end_date,is_referral',
@@ -180,14 +216,18 @@ class PlanService
                 'location.city:id,name'
             ]);
 
+        // Inject the scoped bindings three times (once per subquery)
+        $allBindings = array_merge($scopedBindings, $scopedBindings, $scopedBindings);
+        $query->addBinding($allBindings, 'join');
+
         if (!empty($where)) {
             $query->where($where);
         }
 
-        $query->whereIn('packages.location_id', ACL::getUserCentres());
+        $query->whereIn('packages.location_id', $userCentres);
 
         // Check permission for viewing inactive plans
-        if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+        if (!$canViewInactive) {
             $query->where('packages.active', 1);
         }
 
@@ -372,7 +412,9 @@ class PlanService
      */
     protected function getOrderParams(array $filters): array
     {
-        $orderBy = 'latest_advance_updated_at';
+        // Default to packages.updated_at — this is indexable, unlike the computed
+        // GREATEST() alias (latest_advance_updated_at) which forces a filesort.
+        $orderBy = 'packages.updated_at';
         $order = 'DESC';
 
         if (isset($filters['sort']['field']) && isset($filters['sort']['sort'])) {
@@ -385,11 +427,17 @@ class PlanService
             $order = 'DESC';
         }
 
-        // Map sortable fields
-        $allowedFields = ['id', 'package_id', 'created_at', 'updated_at', 'latest_advance_updated_at'];
-        if (!in_array($orderBy, $allowedFields)) {
-            $orderBy = 'latest_advance_updated_at';
-        }
+        // Map sortable fields to their qualified column names
+        $fieldMap = [
+            'id'                          => 'packages.id',
+            'package_id'                  => 'packages.id',
+            'created_at'                  => 'packages.created_at',
+            'updated_at'                  => 'packages.updated_at',
+            'packages.updated_at'         => 'packages.updated_at',
+            'latest_advance_updated_at'   => 'latest_advance_updated_at',
+        ];
+
+        $orderBy = $fieldMap[$orderBy] ?? 'packages.updated_at';
 
         return [$orderBy, $order];
     }
