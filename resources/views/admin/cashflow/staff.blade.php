@@ -11,8 +11,10 @@
                     <div class="card-header py-3">
                         <div class="card-title"><h3 class="card-label"><i class="la la-users mr-2"></i>Staff Advance Summary</h3></div>
                         <div class="card-toolbar">
-                            @if(Gate::allows('cashflow_staff_advance'))
+                            @if(Gate::allows('cashflow_staff_advance_create'))
                                 <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#modal_advance"><i class="la la-plus"></i> Give Advance</button>
+                            @endif
+                            @if(Gate::allows('cashflow_staff_return_create'))
                                 <button class="btn btn-success" data-toggle="modal" data-target="#modal_return"><i class="la la-undo"></i> Record Return</button>
                             @endif
                         </div>
@@ -185,8 +187,11 @@
     @push('js')
         <script>
             var cfPerms = {
+                canAdvanceCreate: {{ Gate::allows('cashflow_staff_advance_create') ? 'true' : 'false' }},
                 canEdit: {{ Gate::allows('cashflow_staff_advance_edit') ? 'true' : 'false' }},
                 canVoid: {{ Gate::allows('cashflow_staff_advance_void') ? 'true' : 'false' }},
+                canReturnCreate: {{ Gate::allows('cashflow_staff_return_create') ? 'true' : 'false' }},
+                canReturnVoid: {{ Gate::allows('cashflow_staff_return_void') ? 'true' : 'false' }},
                 canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
             };
         </script>

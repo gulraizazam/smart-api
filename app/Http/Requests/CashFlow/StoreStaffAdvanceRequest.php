@@ -9,7 +9,7 @@ class StoreStaffAdvanceRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_staff_advance');
+        return Auth::user()->can('cashflow_staff_advance_create');
     }
 
     public function rules(): array

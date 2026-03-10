@@ -9,7 +9,7 @@ class StoreVendorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::user()->can('cashflow_vendor_manage');
+        return Auth::user()->can('cashflow_vendor_create');
     }
 
     public function rules(): array

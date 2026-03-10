@@ -166,7 +166,7 @@ var CashflowVendors = (function () {
                     '</div>' +
                     '<div class="text-right flex-shrink-0 ml-2">' +
                         '<div class="font-weight-bolder font-size-sm ' + balClass + '">PKR ' + nf(bal) + '</div>' +
-                        ((typeof cfPerms !== 'undefined' && cfPerms.canManage) ?
+                        ((typeof cfPerms !== 'undefined' && cfPerms.canEdit) ?
                             '<a href="javascript:;" class="btn-edit-vendor-inline text-hover-primary" data-vendor-json=\'' + JSON.stringify(v).replace(/'/g, '&#39;') + '\' title="Edit"><i class="la la-edit font-size-sm text-muted"></i></a>' : '') +
                     '</div>' +
                 '</div>'
@@ -380,10 +380,13 @@ var CashflowVendors = (function () {
 
             // Edit/Delete actions for standalone purchase entries (no expense_id)
             var actions = '';
-            if (!tx.expense_id && typeof cfPerms !== 'undefined' && cfPerms.canTransaction) {
-                actions =
-                    '<a href="javascript:;" class="btn-edit-tx text-hover-primary ml-2" title="Edit" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-edit font-size-sm text-muted"></i></a>' +
-                    '<a href="javascript:;" class="btn-delete-tx text-hover-danger ml-1" title="Delete" data-id="' + tx.id + '"><i class="la la-trash font-size-sm text-muted"></i></a>';
+            if (!tx.expense_id && typeof cfPerms !== 'undefined') {
+                if (cfPerms.canTransactionEdit) {
+                    actions += '<a href="javascript:;" class="btn-edit-tx text-hover-primary ml-2" title="Edit" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-edit font-size-sm text-muted"></i></a>';
+                }
+                if (cfPerms.canTransactionDelete) {
+                    actions += '<a href="javascript:;" class="btn-delete-tx text-hover-danger ml-1" title="Delete" data-id="' + tx.id + '"><i class="la la-trash font-size-sm text-muted"></i></a>';
+                }
             }
             // Audit trail button (all entries, if user has audit permission)
             if (typeof cfPerms !== 'undefined' && cfPerms.canAudit) {
@@ -736,7 +739,7 @@ var CashflowVendors = (function () {
         // Click on vendor name in overview → open their ledger
         $('.ov-vendor-link').off('click').on('click', function () {
             var vendorId = parseInt($(this).data('id'));
-            showVendorLedger(vendorId);
+            selectVendor(vendorId, null);
         });
 
         // Recent purchases
