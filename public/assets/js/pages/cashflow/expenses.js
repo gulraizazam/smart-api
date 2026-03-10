@@ -232,7 +232,7 @@ var CashflowExpenses = (function () {
         if (data.staff && data.staff.length) {
             html += '<optgroup label="Staff Advances">';
             $.each(data.staff, function (i, s) {
-                html += '<option value="staff_' + s.id + '" data-type="cash">' + escapeHtml(s.name) + '</option>';
+                html += '<option value="staff_' + s.id + '" data-type="staff">' + escapeHtml(s.name) + '</option>';
             });
             html += '</optgroup>';
         }
@@ -329,11 +329,11 @@ var CashflowExpenses = (function () {
             allowedTypes = [];
         } else if (pmText.indexOf('card') !== -1 || pmText.indexOf('credit') !== -1 ||
                    pmText.indexOf('bank') !== -1 || pmText.indexOf('wire') !== -1 || pmText.indexOf('transfer') !== -1) {
-            // Card and Bank/Wire both come from bank account pools
+            // Card and Bank/Wire both come from bank account pools — staff advances not applicable
             allowedTypes = ['bank_account'];
         } else {
-            // Cash or any other — show cash pools
-            allowedTypes = ['branch_cash', 'head_office_cash'];
+            // Cash or any other — show cash pools AND staff advances
+            allowedTypes = ['branch_cash', 'head_office_cash', 'staff'];
         }
 
         // Count how many matching options exist
