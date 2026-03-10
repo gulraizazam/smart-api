@@ -36,7 +36,7 @@ class DashboardService
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
         return [
-            'summary' => $this->getSummaryCards($accountId, $branchId),
+            'summary' => $this->getSummaryCards($accountId, $branchId, $goLiveDate),
             'pools' => $this->getPoolBalances($accountId),
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
@@ -58,10 +58,10 @@ class DashboardService
      * No date filtering: these represent total cash movements since the system started,
      * consistent with how pool balances (cached_balance) work.
      */
-    public function getSummaryCards(int $accountId, ?int $branchId): array
+    public function getSummaryCards(int $accountId, ?int $branchId, ?string $goLiveDate = null): array
     {
-        $inflows = $this->getAllTimeInflows($accountId, $branchId);
-        $outflows = $this->getAllTimeOutflows($accountId, $branchId);
+        $inflows = $this->getAllTimeInflows($accountId, $branchId, $goLiveDate);
+        $outflows = $this->getAllTimeOutflows($accountId, $branchId, $goLiveDate);
 
         return [
             'inflows' => $inflows,
@@ -133,7 +133,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $inflowQuery->where('created_at', '>=', $goLiveDate);
+            $inflowQuery->where('system_created_at', '>=', $goLiveDate);
         }
 
         if ($branchId) {
@@ -155,7 +155,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $refundQuery->where('created_at', '>=', $goLiveDate);
+            $refundQuery->where('system_created_at', '>=', $goLiveDate);
         }
 
         if ($branchId) {
@@ -244,7 +244,7 @@ class DashboardService
                 ->whereNull('deleted_at');
 
             if ($goLiveDate) {
-                $q->where('created_at', '>=', $goLiveDate);
+                $q->where('system_created_at', '>=', $goLiveDate);
             }
 
             return $q;
@@ -546,7 +546,7 @@ class DashboardService
                 ->where('cash_flow', 'in')
                 ->where('is_cancel', 0)
                 ->whereNull('deleted_at')
-                ->where('created_at', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('cash_amount');
         }
 
@@ -556,7 +556,7 @@ class DashboardService
             $expenses = (float) Expense::forAccount($accountId)
                 ->whereNull('voided_at')
                 ->where('status', '!=', 'rejected')
-                ->where('expense_date', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('amount');
         }
 
@@ -565,7 +565,7 @@ class DashboardService
         if ($goLiveDate) {
             $staffAdvances = (float) StaffAdvance::where('account_id', $accountId)
                 ->whereNull('deleted_at')
-                ->where('created_at', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('amount');
         }
 
@@ -574,7 +574,7 @@ class DashboardService
         if ($goLiveDate) {
             $staffReturns = (float) StaffReturn::where('account_id', $accountId)
                 ->whereNull('deleted_at')
-                ->where('created_at', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('amount');
         }
 
@@ -586,7 +586,7 @@ class DashboardService
                 ->where('is_refund', 1)
                 ->where('is_cancel', 0)
                 ->whereNull('deleted_at')
-                ->where('created_at', '>=', $goLiveDate)
+                ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('cash_amount');
         }
 
@@ -624,7 +624,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $query->where('created_at', '>=', $goLiveDate);
+            $query->where('system_created_at', '>=', $goLiveDate);
         }
 
         if ($branchId) {
@@ -642,7 +642,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $refundQuery->where('created_at', '>=', $goLiveDate);
+            $refundQuery->where('system_created_at', '>=', $goLiveDate);
         }
 
         if ($branchId) {
@@ -721,12 +721,16 @@ class DashboardService
      * All-time cumulative inflows (patient payments minus refunds).
      * No date filtering — represents real-time cash position consistent with pool balances.
      */
-    private function getAllTimeInflows(int $accountId, ?int $branchId): float
+    private function getAllTimeInflows(int $accountId, ?int $branchId, ?string $goLiveDate = null): float
     {
         $paymentQuery = PackageAdvances::where('account_id', $accountId)
             ->where('cash_flow', 'in')
             ->where('is_cancel', 0)
             ->whereNull('deleted_at');
+
+        if ($goLiveDate) {
+            $paymentQuery->where('system_created_at', '>=', $goLiveDate);
+        }
 
         if ($branchId) {
             $paymentQuery->where('location_id', $branchId);
@@ -739,6 +743,10 @@ class DashboardService
             ->where('is_refund', 1)
             ->where('is_cancel', 0)
             ->whereNull('deleted_at');
+
+        if ($goLiveDate) {
+            $refundQuery->where('system_created_at', '>=', $goLiveDate);
+        }
 
         if ($branchId) {
             $refundQuery->where('location_id', $branchId);
@@ -753,10 +761,14 @@ class DashboardService
      * All-time cumulative outflows (expenses).
      * No date filtering — represents real-time cash position consistent with pool balances.
      */
-    private function getAllTimeOutflows(int $accountId, ?int $branchId): float
+    private function getAllTimeOutflows(int $accountId, ?int $branchId, ?string $goLiveDate = null): float
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at');
+
+        if ($goLiveDate) {
+            $query->where('system_created_at', '>=', $goLiveDate);
+        }
 
         if ($branchId) {
             $query->where('for_branch_id', $branchId);
