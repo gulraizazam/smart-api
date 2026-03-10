@@ -588,12 +588,19 @@ var CashflowVendors = (function () {
         container.find('.btn-preview-attach').off('click').on('click', function (e) {
             e.stopPropagation();
             var url = $(this).data('url');
-            Swal.fire({
-                html: '<iframe src="' + url + '" style="width:100%;height:70vh;border:none;"></iframe>',
-                width: '80%',
-                showConfirmButton: false,
-                showCloseButton: true
-            });
+            if (!url) return;
+            var previewUrl = getDrivePreviewUrl(url);
+            if (previewUrl) {
+                $('#preview-iframe').attr('src', previewUrl);
+                $('#preview-open-new').attr('href', url);
+                $('#modal_preview').modal('show');
+            } else {
+                window.open(url, '_blank');
+            }
+        });
+
+        $('#modal_preview').off('hidden.bs.modal').on('hidden.bs.modal', function () {
+            $('#preview-iframe').attr('src', '');
         });
 
         // Audit trail
