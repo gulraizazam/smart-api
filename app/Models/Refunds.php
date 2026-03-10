@@ -130,7 +130,7 @@ class Refunds extends Model
         $data['created_at'] = $custom_created_at;
         $data['updated_at'] = $custom_created_at;
 
-        $record = self::create($data);
+        $record = PackageAdvances::create($data);
         $patient = User::whereId($packageinformation->patient_id)->first();
         $location = Locations::whereId($packageinformation->location_id)->first();
         
@@ -210,7 +210,7 @@ class Refunds extends Model
                 $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
                 $data_adjustment['created_at'] = $custom_created_at;
                 $data_adjustment['updated_at'] = $custom_created_at;
-                $record = self::create($data_adjustment);
+                $record = PackageAdvances::create($data_adjustment);
                 if($amount_left > 0){
                     $dataInvoice['total_price'] = $amount_left;
                     $dataInvoice['account_id'] = Auth::User()->account_id;
