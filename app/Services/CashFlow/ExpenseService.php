@@ -258,7 +258,7 @@ class ExpenseService
     }
 
     /**
-     * Reject an expense (reverses pool deduction via observer).
+     * Reject an expense (reverses pool deduction via observer, reverses vendor balance here).
      */
     public function reject(int $expenseId, string $reason, int $accountId): Expense
     {
@@ -270,23 +270,34 @@ class ExpenseService
 
         $oldValues = $expense->only(['status', 'verified_by', 'rejection_reason']);
 
-        $expense->update([
-            'status' => Expense::STATUS_REJECTED,
-            'verified_by' => Auth::id(),
-            'rejection_reason' => $reason,
-        ]);
+        return DB::transaction(function () use ($expense, $reason, $oldValues) {
+            // Reverse vendor transaction if exists
+            $vendorTx = $expense->vendorTransaction;
+            if ($vendorTx) {
+                DB::table('cashflow_vendors')
+                    ->where('id', $expense->vendor_id)
+                    ->increment('cached_balance', $vendorTx->amount);
+                $vendorTx->delete();
+            }
 
-        $this->auditService->log(
-            CashflowAuditLog::ACTION_REJECTED,
-            CashflowAuditLog::ENTITY_EXPENSE,
-            $expense->id,
-            $oldValues,
-            ['status' => Expense::STATUS_REJECTED, 'rejection_reason' => $reason]
-        );
+            $expense->update([
+                'status' => Expense::STATUS_REJECTED,
+                'verified_by' => Auth::id(),
+                'rejection_reason' => $reason,
+            ]);
 
-        $this->notificationService->notifyExpenseRejected($expense);
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_REJECTED,
+                CashflowAuditLog::ENTITY_EXPENSE,
+                $expense->id,
+                $oldValues,
+                ['status' => Expense::STATUS_REJECTED, 'rejection_reason' => $reason]
+            );
 
-        return $expense->fresh();
+            $this->notificationService->notifyExpenseRejected($expense);
+
+            return $expense->fresh();
+        });
     }
 
     /**
@@ -315,19 +326,38 @@ class ExpenseService
             }
         }
 
-        $expense->update($updateData);
+        return DB::transaction(function () use ($expense, $updateData, $oldValues, $accountId) {
+            $expense->update($updateData);
 
-        $this->auditService->log(
-            CashflowAuditLog::ACTION_RESUBMITTED,
-            CashflowAuditLog::ENTITY_EXPENSE,
-            $expense->id,
-            $oldValues,
-            $expense->fresh()->toArray()
-        );
+            // Re-create vendor transaction if vendor exists and no active transaction
+            if ($expense->vendor_id && !$expense->vendorTransaction) {
+                VendorTransaction::create([
+                    'account_id' => $accountId,
+                    'vendor_id' => $expense->vendor_id,
+                    'type' => VendorTransaction::TYPE_PAYMENT,
+                    'amount' => $expense->amount,
+                    'expense_id' => $expense->id,
+                    'description' => 'Payment via expense #' . $expense->id,
+                    'reference_no' => $expense->reference_no,
+                    'transaction_date' => $expense->expense_date->format('Y-m-d'),
+                    'for_branch_id' => $expense->for_branch_id,
+                    'is_for_general' => $expense->is_for_general ? 1 : 0,
+                    'created_by' => Auth::id(),
+                ]);
+            }
 
-        $this->notificationService->notifyExpensePending($expense->fresh(), $accountId);
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_RESUBMITTED,
+                CashflowAuditLog::ENTITY_EXPENSE,
+                $expense->id,
+                $oldValues,
+                $expense->fresh()->toArray()
+            );
 
-        return $expense->fresh();
+            $this->notificationService->notifyExpensePending($expense->fresh(), $accountId);
+
+            return $expense->fresh();
+        });
     }
 
     /**
