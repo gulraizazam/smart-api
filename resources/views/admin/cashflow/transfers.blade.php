@@ -124,19 +124,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
-                                    <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <input type="text" name="description" class="form-control" maxlength="50" placeholder="Brief description" />
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
+                            <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" name="description" class="form-control" maxlength="100" placeholder="Optional notes (max 100 chars)" />
                         </div>
                     </form>
                 </div>
@@ -213,19 +207,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
-                                    <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label>Description</label>
-                                    <input type="text" name="description" class="form-control" maxlength="50" />
-                                </div>
-                            </div>
+                        <div class="form-group">
+                            <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
+                            <input type="url" name="attachment_url" class="form-control" required placeholder="https://drive.google.com/..." />
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <input type="text" name="description" class="form-control" maxlength="100" />
                         </div>
                         <div class="row">
                             <div class="col-md-6">
