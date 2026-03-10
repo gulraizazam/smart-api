@@ -450,7 +450,7 @@
                         </div>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group" id="edit-vendor-group">
                                     <label>Vendor</label>
                                     <select name="vendor_id" class="form-control kt-select2-general" id="edit-vendor-select">
                                         <option value="">Select vendor (optional)</option>
