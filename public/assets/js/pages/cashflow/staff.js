@@ -306,6 +306,7 @@ var CashflowStaff = (function () {
         currentLedgerUserId = userId;
         $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
         $('#ledger-returns-tbody').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
+        $('#ledger-expenses-tbody').html('<tr><td colspan="6" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div></td></tr>');
 
         $.ajax({
             url: apiBase + 'staff/' + userId + '/ledger', type: 'GET',
@@ -316,10 +317,12 @@ var CashflowStaff = (function () {
                 var outstandingClass = d.outstanding > 0 ? 'text-danger' : 'text-success';
                 $('#ledger-advances').text('PKR ' + nf(d.total_advances));
                 $('#ledger-returns').text('PKR ' + nf(d.total_returns));
+                $('#ledger-expenses').text('PKR ' + nf(d.total_expenses || 0));
                 $('#ledger-outstanding').text('PKR ' + nf(d.outstanding)).removeClass('text-danger text-success').addClass(outstandingClass);
 
                 renderAdvancesTable(d.advances);
                 renderReturnsTable(d.returns);
+                renderExpensesTable(d.expenses);
             },
             error: function () {
                 $('#ledger-advances-tbody').html('<tr><td colspan="6" class="text-center text-danger">Failed to load.</td></tr>');
@@ -450,6 +453,33 @@ var CashflowStaff = (function () {
 
         tbody.find('.btn-audit').on('click', function () {
             loadAuditTrail($(this).data('id'), $(this).data('type'));
+        });
+    }
+
+    function renderExpensesTable(items) {
+        var tbody = $('#ledger-expenses-tbody').empty();
+        if (!items || items.length === 0) {
+            tbody.html('<tr><td colspan="6" class="text-center text-muted py-3">No expenses recorded against this staff.</td></tr>');
+            return;
+        }
+
+        $.each(items, function (i, item) {
+            var statusBadge = '';
+            if (item.status === 'approved') statusBadge = '<span class="label label-light-success label-inline font-size-xs">Approved</span>';
+            else if (item.status === 'pending') statusBadge = '<span class="label label-light-warning label-inline font-size-xs">Pending</span>';
+            else if (item.status === 'rejected') statusBadge = '<span class="label label-light-danger label-inline font-size-xs">Rejected</span>';
+            else statusBadge = '<span class="label label-light-dark label-inline font-size-xs">' + esc(item.status || '-') + '</span>';
+
+            tbody.append(
+                '<tr>' +
+                '<td class="font-size-sm">' + fd(item.expense_date) + '</td>' +
+                '<td class="font-size-sm">' + (item.category ? esc(item.category.name) : '-') + '</td>' +
+                '<td class="text-right font-weight-bold font-size-sm">PKR ' + nf(item.amount) + '</td>' +
+                '<td class="font-size-sm">' + esc(item.description || '-') + '</td>' +
+                '<td>' + statusBadge + '</td>' +
+                '<td class="font-size-sm">' + (item.creator ? esc(item.creator.name) : '-') + '</td>' +
+                '</tr>'
+            );
         });
     }
 

@@ -131,7 +131,7 @@
 
                             {{-- Summary cards --}}
                             <div class="row mb-3">
-                                <div class="col-4">
+                                <div class="col-3">
                                     <div class="card card-custom" style="border-left:4px solid #F64E60;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">Total Advances</div>
@@ -139,7 +139,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
                                     <div class="card card-custom" style="border-left:4px solid #1BC5BD;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">Total Returns</div>
@@ -147,7 +147,15 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-4">
+                                <div class="col-3">
+                                    <div class="card card-custom" style="border-left:4px solid #3699FF;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Expenses</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1 text-primary" id="ledger-expenses">PKR 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-3">
                                     <div class="card card-custom" style="border-left:4px solid #FFA800;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">Outstanding</div>
@@ -175,7 +183,7 @@
                             </div>
 
                             {{-- Returns table --}}
-                            <div class="card card-custom">
+                            <div class="card card-custom mb-4">
                                 <div class="card-header py-3" style="min-height:auto;">
                                     <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-success"></i>Returns</h3></div>
                                 </div>
@@ -184,6 +192,23 @@
                                         <table class="table table-sm table-head-custom mb-0">
                                             <thead><tr><th>Date</th><th>Pool</th><th class="text-right">Amount</th><th>Description</th><th>By</th><th class="text-right">Actions</th></tr></thead>
                                             <tbody id="ledger-returns-tbody">
+                                                <tr><td colspan="6" class="text-center text-muted py-3">—</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Expenses table --}}
+                            <div class="card card-custom">
+                                <div class="card-header py-3" style="min-height:auto;">
+                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-receipt mr-1 text-primary"></i>Expenses (Paid from Advance)</h3></div>
+                                </div>
+                                <div class="card-body py-3 px-4">
+                                    <div class="table-responsive" style="max-height:280px;overflow-y:auto;">
+                                        <table class="table table-sm table-head-custom mb-0">
+                                            <thead><tr><th>Date</th><th>Category</th><th class="text-right">Amount</th><th>Description</th><th>Status</th><th>By</th></tr></thead>
+                                            <tbody id="ledger-expenses-tbody">
                                                 <tr><td colspan="6" class="text-center text-muted py-3">—</td></tr>
                                             </tbody>
                                         </table>

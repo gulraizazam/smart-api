@@ -5,6 +5,7 @@ namespace App\Services\CashFlow;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Models\CashFlow\CashflowAuditLog;
+use App\Models\CashFlow\Expense;
 use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
 use App\Models\User;
@@ -41,21 +42,30 @@ class StaffAdvanceService
             ->groupBy('user_id')
             ->pluck('total_returns', 'user_id');
 
-        $userIds = $advances->keys()->merge($returns->keys())->unique();
+        $expenses = Expense::forAccount($accountId)
+            ->whereNull('voided_at')
+            ->whereNotNull('staff_id')
+            ->select('staff_id', DB::raw('SUM(amount) as total_expenses'))
+            ->groupBy('staff_id')
+            ->pluck('total_expenses', 'staff_id');
+
+        $userIds = $advances->keys()->merge($returns->keys())->merge($expenses->keys())->unique();
         $users = User::whereIn('id', $userIds)->get(['id', 'name', 'is_advance_eligible']);
 
-        return $users->map(function ($user) use ($advances, $returns) {
+        return $users->map(function ($user) use ($advances, $returns, $expenses) {
             $totalAdvances = $advances->get($user->id, 0);
             $totalReturns = $returns->get($user->id, 0);
+            $totalExpenses = $expenses->get($user->id, 0);
             return [
                 'user_id' => $user->id,
                 'name' => $user->name,
                 'is_advance_eligible' => $user->is_advance_eligible,
                 'total_advances' => (float) $totalAdvances,
                 'total_returns' => (float) $totalReturns,
-                'outstanding' => (float) $totalAdvances - (float) $totalReturns,
+                'total_expenses' => (float) $totalExpenses,
+                'outstanding' => (float) $totalAdvances - (float) $totalReturns - (float) $totalExpenses,
             ];
-        })->filter(fn($item) => $item['total_advances'] > 0 || $item['total_returns'] > 0)
+        })->filter(fn($item) => $item['total_advances'] > 0 || $item['total_returns'] > 0 || $item['total_expenses'] > 0)
           ->values();
     }
 
@@ -76,18 +86,28 @@ class StaffAdvanceService
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $expenses = Expense::forAccount($accountId)
+            ->where('staff_id', $userId)
+            ->whereNull('voided_at')
+            ->with(['category:id,name', 'creator:id,name'])
+            ->orderBy('expense_date', 'desc')
+            ->get();
+
         $user = User::find($userId, ['id', 'name', 'is_advance_eligible']);
 
         $totalAdvances = $advances->sum('amount');
         $totalReturns = $returns->sum('amount');
+        $totalExpenses = $expenses->sum('amount');
 
         return [
             'user' => $user,
             'advances' => $advances,
             'returns' => $returns,
+            'expenses' => $expenses,
             'total_advances' => (float) $totalAdvances,
             'total_returns' => (float) $totalReturns,
-            'outstanding' => (float) $totalAdvances - (float) $totalReturns,
+            'total_expenses' => (float) $totalExpenses,
+            'outstanding' => (float) $totalAdvances - (float) $totalReturns - (float) $totalExpenses,
         ];
     }
 
