@@ -102,9 +102,11 @@
                             <h3 class="card-label"><i class="la la-receipt mr-2"></i>Expenses</h3>
                         </div>
                         <div class="card-toolbar">
+                            @if(Gate::allows('cashflow_expense_export'))
                             <button id="btn-export-expenses" class="btn btn-light-success mr-2">
                                 <i class="la la-file-excel"></i> Export
                             </button>
+                            @endif
                             @if(Gate::allows('cashflow_expense_create'))
                                 <button id="btn-add-expense" class="btn btn-primary" data-toggle="modal" data-target="#modal_expense">
                                     <i class="la la-plus"></i> New Expense
@@ -525,9 +527,14 @@
         <script>
             var cfPerms = {
                 canApprove: {{ Gate::allows('cashflow_expense_approve') ? 'true' : 'false' }},
+                canReject: {{ Gate::allows('cashflow_expense_reject') ? 'true' : 'false' }},
                 canEdit: {{ Gate::allows('cashflow_expense_edit') ? 'true' : 'false' }},
                 canVoid: {{ Gate::allows('cashflow_expense_void') ? 'true' : 'false' }},
                 canCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
+                canResubmit: {{ Gate::allows('cashflow_expense_resubmit') ? 'true' : 'false' }},
+                canUnflag: {{ Gate::allows('cashflow_expense_unflag') ? 'true' : 'false' }},
+                canDuplicate: {{ Gate::allows('cashflow_expense_duplicate') ? 'true' : 'false' }},
+                canExport: {{ Gate::allows('cashflow_expense_export') ? 'true' : 'false' }},
                 canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }},
                 userId: {{ auth()->id() }}
             };

@@ -36,21 +36,48 @@ class CashflowPermissionsSeeder extends Seeder
 
             // Child permissions under cashflow_manage
             $children = [
+                // Dashboard & FDM
                 ['name' => 'cashflow_dashboard', 'title' => 'View Cash Flow Dashboard'],
                 ['name' => 'cashflow_fdm_view', 'title' => 'View FDM Screen (Branch Cash)'],
+
+                // Expenses
                 ['name' => 'cashflow_expense_view', 'title' => 'View Expenses'],
                 ['name' => 'cashflow_expense_create', 'title' => 'Create Expenses'],
                 ['name' => 'cashflow_expense_edit', 'title' => 'Edit Expenses (Admin)'],
-                ['name' => 'cashflow_expense_approve', 'title' => 'Approve/Reject Expenses'],
+                ['name' => 'cashflow_expense_approve', 'title' => 'Approve Expenses'],
+                ['name' => 'cashflow_expense_reject', 'title' => 'Reject Expenses'],
                 ['name' => 'cashflow_expense_void', 'title' => 'Void Expenses'],
+                ['name' => 'cashflow_expense_resubmit', 'title' => 'Resubmit Rejected Expenses'],
+                ['name' => 'cashflow_expense_unflag', 'title' => 'Remove Flag from Expenses'],
+                ['name' => 'cashflow_expense_duplicate', 'title' => 'Duplicate Voided Expenses'],
+                ['name' => 'cashflow_expense_export', 'title' => 'Export Expenses'],
+
+                // Transfers
                 ['name' => 'cashflow_transfer_view', 'title' => 'View Transfers'],
                 ['name' => 'cashflow_transfer_create', 'title' => 'Create Cash Transfers'],
+                ['name' => 'cashflow_transfer_edit', 'title' => 'Edit Transfers'],
+                ['name' => 'cashflow_transfer_void', 'title' => 'Void Transfers'],
+
+                // Vendors
                 ['name' => 'cashflow_vendor_view', 'title' => 'View Vendors'],
-                ['name' => 'cashflow_vendor_manage', 'title' => 'Manage Vendors'],
+                ['name' => 'cashflow_vendor_create', 'title' => 'Create Vendors'],
+                ['name' => 'cashflow_vendor_edit', 'title' => 'Edit Vendors'],
+                ['name' => 'cashflow_vendor_toggle', 'title' => 'Activate/Deactivate Vendors'],
                 ['name' => 'cashflow_vendor_ledger_view', 'title' => 'View Vendor Ledger'],
-                ['name' => 'cashflow_vendor_transaction', 'title' => 'Record Vendor Transactions'],
+                ['name' => 'cashflow_vendor_ledger_export', 'title' => 'Export Vendor Ledger'],
+                ['name' => 'cashflow_vendor_transaction', 'title' => 'Record Vendor Purchases'],
+                ['name' => 'cashflow_vendor_transaction_edit', 'title' => 'Edit Vendor Purchases'],
+                ['name' => 'cashflow_vendor_transaction_delete', 'title' => 'Delete Vendor Purchases'],
+
+                // Staff Advances
                 ['name' => 'cashflow_staff_advance_view', 'title' => 'View Staff Advances'],
-                ['name' => 'cashflow_staff_advance', 'title' => 'Manage Staff Advances'],
+                ['name' => 'cashflow_staff_advance_create', 'title' => 'Create Staff Advances'],
+                ['name' => 'cashflow_staff_advance_edit', 'title' => 'Edit Staff Advances'],
+                ['name' => 'cashflow_staff_advance_void', 'title' => 'Void Staff Advances'],
+                ['name' => 'cashflow_staff_return_create', 'title' => 'Record Staff Returns'],
+                ['name' => 'cashflow_staff_return_void', 'title' => 'Void Staff Returns'],
+
+                // Admin
                 ['name' => 'cashflow_category_manage', 'title' => 'Manage Expense Categories'],
                 ['name' => 'cashflow_pool_manage', 'title' => 'Manage Cash Pools'],
                 ['name' => 'cashflow_period_lock', 'title' => 'Lock/Unlock Periods'],

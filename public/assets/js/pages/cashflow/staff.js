@@ -251,7 +251,7 @@ var CashflowStaff = (function () {
 
             var actions = '';
             if (!isVoided) {
-                if (typeof cfPerms !== 'undefined' && cfPerms.canVoid) {
+                if (typeof cfPerms !== 'undefined' && cfPerms.canReturnVoid) {
                     actions += '<button class="btn btn-sm btn-clean btn-icon btn-void-return" data-id="' + item.id + '" title="Void"><i class="la la-ban text-danger"></i></button>';
                 }
             }

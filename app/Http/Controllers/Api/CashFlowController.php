@@ -530,7 +530,7 @@ class CashFlowController extends Controller
     public function expensesResubmit(Request $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_expense_create')) {
+            if (!Gate::allows('cashflow_expense_resubmit')) {
                 throw CashflowException::unauthorized('resubmit expenses');
             }
 
@@ -568,7 +568,7 @@ class CashFlowController extends Controller
     public function expensesUnflag(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_expense_approve')) {
+            if (!Gate::allows('cashflow_expense_unflag')) {
                 throw CashflowException::unauthorized('unflag expenses');
             }
 
@@ -628,6 +628,9 @@ class CashFlowController extends Controller
     public function expensesExport(Request $request)
     {
         try {
+            if (!Gate::allows('cashflow_expense_export')) {
+                throw CashflowException::unauthorized('export expenses');
+            }
             $accountId = Auth::user()->account_id;
 
             $query = \App\Models\CashFlow\Expense::forAccount($accountId)
@@ -946,8 +949,8 @@ class CashFlowController extends Controller
     public function vendorsToggle(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_vendor_manage')) {
-                throw CashflowException::unauthorized('manage vendors');
+            if (!Gate::allows('cashflow_vendor_toggle')) {
+                throw CashflowException::unauthorized('activate/deactivate vendors');
             }
 
             $accountId = Auth::user()->account_id;
@@ -1086,6 +1089,9 @@ class CashFlowController extends Controller
     public function vendorsLedgerExport(Request $request, int $id)
     {
         try {
+            if (!Gate::allows('cashflow_vendor_ledger_export')) {
+                throw CashflowException::unauthorized('export vendor ledger');
+            }
             $accountId = Auth::user()->account_id;
             $filters = $request->only(['type', 'date_from', 'date_to']);
             $data = $this->vendorService->exportVendorLedger($id, $accountId, $filters);
@@ -1162,7 +1168,7 @@ class CashFlowController extends Controller
     public function vendorRequestsApprove(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_vendor_manage')) {
+            if (!Auth::user()->can('cashflow_vendor_manage')) {
                 throw CashflowException::unauthorized('approve vendor requests');
             }
 
@@ -1354,7 +1360,7 @@ class CashFlowController extends Controller
     public function staffReturnVoid(Request $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('cashflow_staff_advance_void')) {
+            if (!Gate::allows('cashflow_staff_return_void')) {
                 throw CashflowException::unauthorized('void staff returns');
             }
 

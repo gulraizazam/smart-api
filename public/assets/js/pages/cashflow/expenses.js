@@ -472,17 +472,19 @@ var CashflowExpenses = (function () {
 
         var perms = window.cfPerms || {};
 
-        // Approve / Reject (admin only, pending, non-voided)
+        // Approve (pending, non-voided)
         if (perms.canApprove && exp.status === 'pending' && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" data-attachment="' + (exp.attachment_url ? '1' : '0') + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
+        }
+
+        // Reject (pending, non-voided)
+        if (perms.canReject && exp.status === 'pending' && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-reject" data-id="' + exp.id + '" title="Reject"><i class="la la-times-circle text-danger"></i></button>';
         }
 
-        // Resubmit (rejected entries — accountant can resubmit own, admin can resubmit any)
-        if (exp.status === 'rejected' && !exp.voided_at) {
-            if (perms.canEdit || (perms.canCreate && exp.created_by === perms.userId)) {
-                btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" title="Resubmit"><i class="la la-redo text-info"></i></button>';
-            }
+        // Resubmit (rejected entries)
+        if (perms.canResubmit && exp.status === 'rejected' && !exp.voided_at) {
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" title="Resubmit"><i class="la la-redo text-info"></i></button>';
         }
 
         // Admin Edit (non-voided, admin only — Sec 5.7)
@@ -501,8 +503,8 @@ var CashflowExpenses = (function () {
                 'title="Edit"><i class="la la-edit text-primary"></i></button>';
         }
 
-        // Unflag (admin only, flagged, non-voided)
-        if (perms.canApprove && exp.is_flagged && !exp.voided_at) {
+        // Unflag (flagged, non-voided)
+        if (perms.canUnflag && exp.is_flagged && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-unflag" data-id="' + exp.id + '" title="Dismiss Flag"><i class="la la-flag text-warning"></i></button>';
         }
 
@@ -512,7 +514,7 @@ var CashflowExpenses = (function () {
         }
 
         // Duplicate as New (voided expenses — re-enter with same data)
-        if (exp.voided_at && perms.canCreate) {
+        if (exp.voided_at && perms.canDuplicate) {
             var dupDate = (exp.expense_date || '').substring(0, 10);
             var dupAmount = parseInt(exp.amount) || 0;
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-duplicate" ' +

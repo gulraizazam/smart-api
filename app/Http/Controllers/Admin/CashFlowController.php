@@ -17,7 +17,7 @@ class CashFlowController extends Controller
 
     public function expenses()
     {
-        if (!Gate::any(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve', 'cashflow_expense_edit'])) {
+        if (!Gate::any(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve', 'cashflow_expense_reject', 'cashflow_expense_edit', 'cashflow_expense_void'])) {
             return abort(401);
         }
         return view('admin.cashflow.expenses');
@@ -25,7 +25,7 @@ class CashFlowController extends Controller
 
     public function transfers()
     {
-        if (!Gate::any(['cashflow_transfer_view', 'cashflow_transfer_create'])) {
+        if (!Gate::any(['cashflow_transfer_view', 'cashflow_transfer_create', 'cashflow_transfer_edit', 'cashflow_transfer_void'])) {
             return abort(401);
         }
         return view('admin.cashflow.transfers');
@@ -33,7 +33,7 @@ class CashFlowController extends Controller
 
     public function vendors()
     {
-        if (!Gate::any(['cashflow_vendor_view', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view', 'cashflow_vendor_transaction'])) {
+        if (!Gate::any(['cashflow_vendor_view', 'cashflow_vendor_create', 'cashflow_vendor_edit', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view', 'cashflow_vendor_transaction'])) {
             return abort(401);
         }
         $branches = \App\Helpers\CashflowHelper::getActiveBranches(auth()->user()->account_id);
@@ -42,7 +42,7 @@ class CashFlowController extends Controller
 
     public function staff()
     {
-        if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+        if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance_create', 'cashflow_staff_advance_edit', 'cashflow_staff_advance_void', 'cashflow_staff_return_create', 'cashflow_staff_return_void'])) {
             return abort(401);
         }
         return view('admin.cashflow.staff');

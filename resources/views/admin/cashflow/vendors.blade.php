@@ -15,7 +15,7 @@
                             <div class="card-header py-3" style="min-height:auto;">
                                 <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-store mr-1"></i>Vendors</h3></div>
                                 <div class="card-toolbar">
-                                    @if(Gate::allows('cashflow_vendor_manage'))
+                                    @if(Gate::allows('cashflow_vendor_create'))
                                         <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#modal_vendor"><i class="la la-plus"></i> Add</button>
                                     @endif
                                 </div>
@@ -157,7 +157,7 @@
                                             @if(Gate::allows('cashflow_vendor_transaction'))
                                                 <button class="btn btn-sm btn-primary mr-2" id="btn-record-purchase"><i class="la la-shopping-cart mr-1"></i>Record Purchase</button>
                                             @endif
-                                            @if(Gate::allows('cashflow_vendor_manage'))
+                                            @if(Gate::allows('cashflow_vendor_edit'))
                                                 <button class="btn btn-sm btn-light-primary mr-2" id="btn-edit-current-vendor"><i class="la la-edit"></i></button>
                                             @endif
                                         </div>
@@ -213,7 +213,9 @@
                                             <option value="purchase">Purchases</option>
                                             <option value="payment">Payments</option>
                                         </select>
+                                        @if(Gate::allows('cashflow_vendor_ledger_export'))
                                         <button class="btn btn-sm btn-outline-secondary py-1 px-2" id="btn-export-ledger" title="Export CSV"><i class="la la-download p-0"></i></button>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="card-body py-3 px-4">
@@ -372,7 +374,13 @@
         <script>
             var cfPerms = {
                 canManage: {{ Gate::allows('cashflow_vendor_manage') ? 'true' : 'false' }},
+                canCreate: {{ Gate::allows('cashflow_vendor_create') ? 'true' : 'false' }},
+                canEdit: {{ Gate::allows('cashflow_vendor_edit') ? 'true' : 'false' }},
+                canToggle: {{ Gate::allows('cashflow_vendor_toggle') ? 'true' : 'false' }},
                 canTransaction: {{ Gate::allows('cashflow_vendor_transaction') ? 'true' : 'false' }},
+                canTransactionEdit: {{ Gate::allows('cashflow_vendor_transaction_edit') ? 'true' : 'false' }},
+                canTransactionDelete: {{ Gate::allows('cashflow_vendor_transaction_delete') ? 'true' : 'false' }},
+                canLedgerExport: {{ Gate::allows('cashflow_vendor_ledger_export') ? 'true' : 'false' }},
                 canExpenseCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
                 canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
             };
