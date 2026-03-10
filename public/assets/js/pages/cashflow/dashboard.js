@@ -85,19 +85,10 @@
         $('#sum-outflows').text('PKR ' + nf(s.outflows));
         $('#sum-net').text('PKR ' + nf(s.net));
 
-        $('#sum-inflows-change').html(changeBadge(s.inflow_change_pct));
-        $('#sum-outflows-change').html(changeBadge(s.outflow_change_pct));
-
-        var prevNet = s.prev_net || 0;
-        var netPct = prevNet !== 0 ? (((s.net - prevNet) / Math.abs(prevNet)) * 100).toFixed(1) : null;
-        $('#sum-net-change').html(changeBadge(netPct));
-    }
-
-    function changeBadge(pct) {
-        if (pct === null || pct === undefined) return '<span class="text-muted">N/A vs prev period</span>';
-        var cls = pct >= 0 ? 'text-success' : 'text-danger';
-        var arrow = pct >= 0 ? '&#9650;' : '&#9660;';
-        return '<span class="' + cls + '">' + arrow + ' ' + Math.abs(pct) + '% vs prev period</span>';
+        // Summary cards are all-time cumulative — no period comparison
+        $('#sum-inflows-change').html('<span class="text-muted">All time</span>');
+        $('#sum-outflows-change').html('<span class="text-muted">All time</span>');
+        $('#sum-net-change').html('<span class="text-muted">All time</span>');
     }
 
     function renderPools(pools) {
