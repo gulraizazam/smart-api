@@ -36,7 +36,7 @@ class DashboardService
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
         return [
-            'summary' => $this->getSummaryCards($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
+            'summary' => $this->getSummaryCards($accountId, $branchId),
             'pools' => $this->getPoolBalances($accountId),
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
@@ -54,31 +54,19 @@ class DashboardService
     }
 
     /**
-     * Summary cards: Inflows | Outflows | Net with month-over-month %.
+     * Summary cards: Inflows | Outflows | Net — all-time cumulative (real-time cash position).
+     * No date filtering: these represent total cash movements since the system started,
+     * consistent with how pool balances (cached_balance) work.
      */
-    public function getSummaryCards(int $accountId, string $dateFrom, string $dateTo, ?int $branchId, ?string $goLiveDate): array
+    public function getSummaryCards(int $accountId, ?int $branchId): array
     {
-        // Current period
-        $inflows = $this->getInflows($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate);
-        $outflows = $this->getOutflows($accountId, $dateFrom, $dateTo, $branchId);
-
-        // Previous period for comparison
-        $daysDiff = Carbon::parse($dateFrom)->diffInDays(Carbon::parse($dateTo)) + 1;
-        $prevTo = Carbon::parse($dateFrom)->subDay()->toDateString();
-        $prevFrom = Carbon::parse($prevTo)->subDays($daysDiff - 1)->toDateString();
-
-        $prevInflows = $this->getInflows($accountId, $prevFrom, $prevTo, $branchId, $goLiveDate);
-        $prevOutflows = $this->getOutflows($accountId, $prevFrom, $prevTo, $branchId);
+        $inflows = $this->getAllTimeInflows($accountId, $branchId);
+        $outflows = $this->getAllTimeOutflows($accountId, $branchId);
 
         return [
             'inflows' => $inflows,
             'outflows' => $outflows,
             'net' => $inflows - $outflows,
-            'prev_inflows' => $prevInflows,
-            'prev_outflows' => $prevOutflows,
-            'prev_net' => $prevInflows - $prevOutflows,
-            'inflow_change_pct' => $prevInflows > 0 ? round((($inflows - $prevInflows) / $prevInflows) * 100, 1) : null,
-            'outflow_change_pct' => $prevOutflows > 0 ? round((($outflows - $prevOutflows) / $prevOutflows) * 100, 1) : null,
         ];
     }
 
@@ -721,6 +709,54 @@ class DashboardService
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
             ->whereBetween('expense_date', [$dateFrom, $dateTo]);
+
+        if ($branchId) {
+            $query->where('for_branch_id', $branchId);
+        }
+
+        return (float) $query->sum('amount');
+    }
+
+    /**
+     * All-time cumulative inflows (patient payments minus refunds).
+     * No date filtering — represents real-time cash position consistent with pool balances.
+     */
+    private function getAllTimeInflows(int $accountId, ?int $branchId): float
+    {
+        $paymentQuery = PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'in')
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at');
+
+        if ($branchId) {
+            $paymentQuery->where('location_id', $branchId);
+        }
+
+        $payments = (float) $paymentQuery->sum('cash_amount');
+
+        $refundQuery = PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at');
+
+        if ($branchId) {
+            $refundQuery->where('location_id', $branchId);
+        }
+
+        $refunds = (float) $refundQuery->sum('cash_amount');
+
+        return $payments - $refunds;
+    }
+
+    /**
+     * All-time cumulative outflows (expenses).
+     * No date filtering — represents real-time cash position consistent with pool balances.
+     */
+    private function getAllTimeOutflows(int $accountId, ?int $branchId): float
+    {
+        $query = Expense::forAccount($accountId)
+            ->whereNull('voided_at');
 
         if ($branchId) {
             $query->where('for_branch_id', $branchId);
