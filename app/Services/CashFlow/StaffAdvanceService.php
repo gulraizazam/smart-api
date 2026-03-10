@@ -331,6 +331,7 @@ class StaffAdvanceService
         $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
             ->where('staff_id', $userId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->sum('amount');
 
         return (float) $advances - (float) $expenses - (float) $returns;
