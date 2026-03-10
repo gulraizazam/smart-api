@@ -5,6 +5,7 @@ namespace App\Observers\CashFlow;
 use App\Models\CashFlow\CashPool;
 use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
+use App\Services\CashFlow\CashflowSettingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -26,6 +27,10 @@ class PackageAdvanceObserver
 
             if (!$this->affectsPool($advance)) {
                 return;
+            }
+
+            if ($this->isBeforeGoLive($advance)) {
+                return; // pre-go-live records are captured in opening balances
             }
 
             $pool = $this->resolvePool($advance->account_id, $advance->payment_mode_id, $advance->location_id);
@@ -61,6 +66,10 @@ class PackageAdvanceObserver
         try {
             if (!$this->affectsPoolOriginal($advance)) {
                 return; // original record was settlement/invoice — no pool impact to adjust
+            }
+
+            if ($this->isBeforeGoLive($advance)) {
+                return; // pre-go-live records are captured in opening balances
             }
 
             // --- Case 1: Cancellation ---
@@ -152,6 +161,10 @@ class PackageAdvanceObserver
 
             if (!$this->affectsPool($advance)) {
                 return;
+            }
+
+            if ($this->isBeforeGoLive($advance)) {
+                return; // pre-go-live records are captured in opening balances
             }
 
             $pool = $this->resolvePool($advance->account_id, $advance->payment_mode_id, $advance->location_id);
@@ -306,5 +319,33 @@ class PackageAdvanceObserver
         DB::table('cash_pools')
             ->where('id', $poolId)
             ->decrement('cached_balance', $amount);
+    }
+
+    /**
+     * Check if the advance record was created before the go-live date.
+     * Pre-go-live records are already captured in pool opening balances
+     * and should not affect cached_balance.
+     */
+    private function isBeforeGoLive(PackageAdvances $advance): bool
+    {
+        try {
+            $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($advance->account_id);
+            if (!$goLiveDate) {
+                return false; // no go-live set — allow all
+            }
+
+            $systemCreatedAt = $advance->system_created_at;
+            if (!$systemCreatedAt) {
+                return false; // no timestamp — allow (shouldn't happen for new records)
+            }
+
+            return $systemCreatedAt < $goLiveDate;
+        } catch (\Exception $e) {
+            Log::warning('CashFlow: isBeforeGoLive check failed, allowing impact', [
+                'advance_id' => $advance->id,
+                'error' => $e->getMessage(),
+            ]);
+            return false; // fail open — allow pool impact if check fails
+        }
     }
 }
