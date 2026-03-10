@@ -6,7 +6,6 @@ use App\Helpers\CashflowHelper;
 use App\Http\Controllers\Controller;
 use App\Models\CashFlow\CashflowSetting;
 use App\Models\CashFlow\ExpenseCategory;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -35,11 +34,7 @@ class CashflowLookupsController extends Controller
                     'branches' => CashflowHelper::getActiveBranches($accountId),
                     'payment_modes' => CashflowHelper::getActivePaymentModes(),
                     'vendors' => CashflowHelper::getActiveVendors($accountId),
-                    'staff' => User::where('account_id', $accountId)
-                        ->where('active', 1)
-                        ->whereNotIn('user_type_id', [3])
-                        ->orderBy('name')
-                        ->get(['id', 'name']),
+                    'staff' => CashflowHelper::getAdvanceEligibleStaff($accountId),
                     'threshold' => $this->getApprovalThreshold($accountId),
                 ],
             ]);
