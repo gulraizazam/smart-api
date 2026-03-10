@@ -1,5 +1,16 @@
 @extends('admin.layouts.master')
 @section('title', 'Cash Flow - Vendors')
+@push('styles')
+<style>
+    .select2-selection.is-invalid-select2 {
+        border: 1px solid #F64E60 !important;
+        border-radius: 0.42rem;
+    }
+    .select2-selection.is-invalid-select2 .select2-selection__rendered {
+        color: #F64E60;
+    }
+</style>
+@endpush
 @section('content')
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb', ['module' => 'Vendor Management', 'title' => 'Vendors'])
