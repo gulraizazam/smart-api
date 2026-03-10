@@ -571,6 +571,7 @@ class DashboardService
         if ($goLiveDate) {
             $staffAdvances = (float) StaffAdvance::where('account_id', $accountId)
                 ->whereNull('deleted_at')
+                ->whereNull('voided_at')
                 ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('amount');
         }
@@ -580,6 +581,7 @@ class DashboardService
         if ($goLiveDate) {
             $staffReturns = (float) StaffReturn::where('account_id', $accountId)
                 ->whereNull('deleted_at')
+                ->whereNull('voided_at')
                 ->where('system_created_at', '>=', $goLiveDate)
                 ->sum('amount');
         }
