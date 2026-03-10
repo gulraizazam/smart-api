@@ -361,6 +361,173 @@ class PoolService
         return $bankPoolId;
     }
 
+    /**
+     * Calculate expected pool balances without writing to DB (dry-run of recalculate).
+     * Returns ['per_pool' => [...], 'total' => float, 'breakdown' => [...]]
+     */
+    public function calculateExpectedBalances(int $accountId): array
+    {
+        $settingService = app(CashflowSettingService::class);
+        $goLiveDate = $settingService->getGoLiveDate($accountId);
+
+        if (!$goLiveDate) {
+            return ['per_pool' => [], 'total' => 0, 'breakdown' => []];
+        }
+
+        $pools = CashPool::forAccount($accountId)->get();
+
+        $branchPoolMap = [];
+        $hoPoolId = null;
+        $bankPoolId = null;
+
+        foreach ($pools as $pool) {
+            if ($pool->type === CashPool::TYPE_BRANCH_CASH && $pool->location_id) {
+                $branchPoolMap[$pool->location_id] = $pool->id;
+            } elseif ($pool->type === CashPool::TYPE_HEAD_OFFICE_CASH && !$hoPoolId) {
+                $hoPoolId = $pool->id;
+            } elseif ($pool->type === CashPool::TYPE_BANK_ACCOUNT && !$bankPoolId) {
+                $bankPoolId = $pool->id;
+            }
+        }
+
+        $cashModeIds = \App\Models\PaymentModes::where('active', 1)
+            ->get()
+            ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+            ->pluck('id')
+            ->toArray();
+
+        // Step 1: Reset all pools to opening_balance
+        $balances = [];
+        $openingTotal = 0.0;
+        foreach ($pools as $pool) {
+            $balances[$pool->id] = (float) $pool->opening_balance;
+            $openingTotal += (float) $pool->opening_balance;
+        }
+
+        // Step 2: Patient payments (inflows)
+        $patientPayments = 0.0;
+        $payments = \App\Models\PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'in')
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['cash_amount', 'payment_mode_id', 'location_id']);
+
+        foreach ($payments as $pa) {
+            $poolId = $this->resolvePoolId($pa, $cashModeIds, $branchPoolMap, $hoPoolId, $bankPoolId);
+            if ($poolId && isset($balances[$poolId])) {
+                $balances[$poolId] += (float) $pa->cash_amount;
+                $patientPayments += (float) $pa->cash_amount;
+            }
+        }
+
+        // Step 3: Refunds (outflows)
+        $patientRefunds = 0.0;
+        $refunds = \App\Models\PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['cash_amount', 'payment_mode_id', 'location_id']);
+
+        foreach ($refunds as $ref) {
+            $poolId = $this->resolvePoolId($ref, $cashModeIds, $branchPoolMap, $hoPoolId, $bankPoolId);
+            if ($poolId && isset($balances[$poolId])) {
+                $balances[$poolId] -= (float) $ref->cash_amount;
+                $patientRefunds += (float) $ref->cash_amount;
+            }
+        }
+
+        // Step 4: Expenses (non-voided, non-rejected, with pool)
+        $totalExpenses = 0.0;
+        $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+            ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['amount', 'paid_from_pool_id']);
+
+        foreach ($expenses as $exp) {
+            if ($exp->paid_from_pool_id && isset($balances[$exp->paid_from_pool_id])) {
+                $balances[$exp->paid_from_pool_id] -= (float) $exp->amount;
+                $totalExpenses += (float) $exp->amount;
+            }
+        }
+
+        // Step 5: Transfers (zero-sum but affects per-pool)
+        $transfers = \App\Models\CashFlow\CashTransfer::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->whereNull('voided_at')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['amount', 'from_pool_id', 'to_pool_id']);
+
+        foreach ($transfers as $tr) {
+            if (isset($balances[$tr->from_pool_id])) {
+                $balances[$tr->from_pool_id] -= (float) $tr->amount;
+            }
+            if (isset($balances[$tr->to_pool_id])) {
+                $balances[$tr->to_pool_id] += (float) $tr->amount;
+            }
+        }
+
+        // Step 6: Staff advances (debit pools)
+        $staffAdvancesTotal = 0.0;
+        $advances = \App\Models\CashFlow\StaffAdvance::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->whereNull('voided_at')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['amount', 'pool_id']);
+
+        foreach ($advances as $adv) {
+            if (isset($balances[$adv->pool_id])) {
+                $balances[$adv->pool_id] -= (float) $adv->amount;
+                $staffAdvancesTotal += (float) $adv->amount;
+            }
+        }
+
+        // Step 7: Staff returns (credit pools)
+        $staffReturnsTotal = 0.0;
+        $returns = \App\Models\CashFlow\StaffReturn::where('account_id', $accountId)
+            ->whereNull('deleted_at')
+            ->whereNull('voided_at')
+            ->where('system_created_at', '>=', $goLiveDate)
+            ->get(['amount', 'pool_id']);
+
+        foreach ($returns as $ret) {
+            if (isset($balances[$ret->pool_id])) {
+                $balances[$ret->pool_id] += (float) $ret->amount;
+                $staffReturnsTotal += (float) $ret->amount;
+            }
+        }
+
+        $calculatedTotal = 0.0;
+        $perPool = [];
+        foreach ($pools as $pool) {
+            $calculated = round($balances[$pool->id] ?? (float) $pool->opening_balance, 2);
+            $perPool[] = [
+                'pool_id' => $pool->id,
+                'pool_name' => $pool->name,
+                'cached_balance' => (float) $pool->cached_balance,
+                'calculated_balance' => $calculated,
+                'diff' => round((float) $pool->cached_balance - $calculated, 2),
+            ];
+            $calculatedTotal += $calculated;
+        }
+
+        return [
+            'per_pool' => $perPool,
+            'total' => round($calculatedTotal, 2),
+            'breakdown' => [
+                'opening_balances' => $openingTotal,
+                'patient_payments' => $patientPayments,
+                'patient_refunds' => $patientRefunds,
+                'total_expenses' => $totalExpenses,
+                'staff_advances' => $staffAdvancesTotal,
+                'staff_returns' => $staffReturnsTotal,
+            ],
+        ];
+    }
+
     private function clearCache(int $accountId): void
     {
         Cache::forget("cashflow_pools_{$accountId}");
