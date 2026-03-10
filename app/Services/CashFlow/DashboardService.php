@@ -158,6 +158,28 @@ class DashboardService
             ->pluck('total', 'date')
             ->toArray();
 
+        // Refunds by day (subtract from inflows)
+        $refundQuery = PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+
+        if ($goLiveDate) {
+            $refundQuery->where('created_at', '>=', $goLiveDate);
+        }
+
+        if ($branchId) {
+            $refundQuery->where('location_id', $branchId);
+        }
+
+        $refunds = $refundQuery
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(cash_amount) as total'))
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->pluck('total', 'date')
+            ->toArray();
+
         // Build day-by-day array
         $days = [];
         $current = Carbon::parse($dateFrom);
@@ -167,7 +189,7 @@ class DashboardService
             $d = $current->toDateString();
             $days[] = [
                 'date' => $d,
-                'inflows' => (float) ($inflows[$d] ?? 0),
+                'inflows' => (float) ($inflows[$d] ?? 0) - (float) ($refunds[$d] ?? 0),
                 'outflows' => (float) ($outflows[$d] ?? 0),
             ];
             $current->addDay();
@@ -603,6 +625,7 @@ class DashboardService
 
     /**
      * Get total inflows (patient payments) for a period.
+     * Net inflows = patient payments IN − patient refunds OUT
      */
     private function getInflows(int $accountId, string $dateFrom, string $dateTo, ?int $branchId, ?string $goLiveDate): float
     {
@@ -620,7 +643,27 @@ class DashboardService
             $query->where('location_id', $branchId);
         }
 
-        return (float) $query->sum('cash_amount');
+        $payments = (float) $query->sum('cash_amount');
+
+        // Subtract refunds (cash_flow = 'out', is_refund = 1) for same period
+        $refundQuery = PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')
+            ->where('is_refund', 1)
+            ->where('is_cancel', 0)
+            ->whereNull('deleted_at')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+
+        if ($goLiveDate) {
+            $refundQuery->where('created_at', '>=', $goLiveDate);
+        }
+
+        if ($branchId) {
+            $refundQuery->where('location_id', $branchId);
+        }
+
+        $refunds = (float) $refundQuery->sum('cash_amount');
+
+        return $payments - $refunds;
     }
 
     /**
