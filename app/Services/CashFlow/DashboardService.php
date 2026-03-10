@@ -90,15 +90,15 @@ class DashboardService
     public function getPendingActions(int $accountId): array
     {
         // Staff advances outstanding = total advances - expenses by staff - returns
-        $totalAdvances = (float) StaffAdvance::where('account_id', $accountId)->whereNull('deleted_at')->sum('amount');
-        $totalReturns = (float) StaffReturn::where('account_id', $accountId)->whereNull('deleted_at')->sum('amount');
+        $totalAdvances = (float) StaffAdvance::where('account_id', $accountId)->whereNull('deleted_at')->whereNull('voided_at')->sum('amount');
+        $totalReturns = (float) StaffReturn::where('account_id', $accountId)->whereNull('deleted_at')->whereNull('voided_at')->sum('amount');
         $staffExpenses = (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereNotNull('staff_id')->sum('amount');
         $advancesOutstanding = max(0, $totalAdvances - $staffExpenses - $totalReturns);
 
         return [
             'pending_expenses' => Expense::forAccount($accountId)->where('status', 'pending')->whereNull('voided_at')->count(),
             'flagged_entries' => Expense::forAccount($accountId)->where('is_flagged', true)->whereNull('voided_at')->count(),
-            'no_receipt_count' => Expense::forAccount($accountId)->whereNull('voided_at')->whereNull('attachment_url')->count(),
+            'no_receipt_count' => Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereNull('attachment_url')->count(),
             'today_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereDate('expense_date', Carbon::today())->sum('amount'),
             'mtd_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereBetween('expense_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::today()->toDateString()])->sum('amount'),
             'advances_outstanding' => $advancesOutstanding,
@@ -417,11 +417,13 @@ class DashboardService
                 DB::raw('SUM(staff_advances.amount) as total_advances')
             )
             ->whereNull('staff_advances.deleted_at')
+            ->whereNull('staff_advances.voided_at')
             ->groupBy('staff_advances.user_id', 'users.name')
             ->get();
 
         $returns = StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->whereNull('voided_at')
             ->select('user_id', DB::raw('SUM(amount) as total_returns'))
             ->groupBy('user_id')
             ->pluck('total_returns', 'user_id');
@@ -435,9 +437,10 @@ class DashboardService
             ->groupBy('staff_id')
             ->pluck('total_expenses', 'staff_id');
 
-        // Last advance date for aging
+        // Last advance date for aging (only non-voided advances)
         $lastAdvanceDates = StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')
+            ->whereNull('voided_at')
             ->select('user_id', DB::raw('MAX(created_at) as last_advance'))
             ->groupBy('user_id')
             ->pluck('last_advance', 'user_id');
@@ -533,87 +536,32 @@ class DashboardService
 
     /**
      * Reconciliation check: compare cached vs calculated balances.
-     * Sum(Pool Balances) = Patient Payments - Expenses + Opening Balances - Staff Advances + Staff Returns
+     * Uses the same per-pool replay logic as PoolService::recalculatePoolBalances
+     * to guarantee identical results.
      */
     public function reconciliationCheck(int $accountId): array
     {
-        $goLiveDate = $this->settingService->getGoLiveDate($accountId);
+        $poolService = app(PoolService::class);
+        $expected = $poolService->calculateExpectedBalances($accountId);
 
-        // Cached pool balance total
-        $cachedTotal = (float) CashPool::forAccount($accountId)->active()->sum('cached_balance');
-
-        // Opening balances
-        $openingTotal = (float) CashPool::forAccount($accountId)->sum('opening_balance');
-
-        // Patient payments (inflows) since go-live
-        $patientPayments = 0.0;
-        if ($goLiveDate) {
-            $patientPayments = (float) PackageAdvances::where('account_id', $accountId)
-                ->where('cash_flow', 'in')
-                ->where('is_cancel', 0)
-                ->whereNull('deleted_at')
-                ->where('system_created_at', '>=', $goLiveDate)
-                ->sum('cash_amount');
-        }
-
-        // Expenses (outflows) since go-live
-        $expenses = 0.0;
-        if ($goLiveDate) {
-            $expenses = (float) Expense::forAccount($accountId)
-                ->whereNull('voided_at')
-                ->where('status', '!=', 'rejected')
-                ->where('system_created_at', '>=', $goLiveDate)
-                ->sum('amount');
-        }
-
-        // Staff advances (outflows from pools) since go-live
-        $staffAdvances = 0.0;
-        if ($goLiveDate) {
-            $staffAdvances = (float) StaffAdvance::where('account_id', $accountId)
-                ->whereNull('deleted_at')
-                ->whereNull('voided_at')
-                ->where('system_created_at', '>=', $goLiveDate)
-                ->sum('amount');
-        }
-
-        // Staff returns (inflows to pools) since go-live
-        $staffReturns = 0.0;
-        if ($goLiveDate) {
-            $staffReturns = (float) StaffReturn::where('account_id', $accountId)
-                ->whereNull('deleted_at')
-                ->whereNull('voided_at')
-                ->where('system_created_at', '>=', $goLiveDate)
-                ->sum('amount');
-        }
-
-        // Patient refunds (outflows from pools)
-        $patientRefunds = 0.0;
-        if ($goLiveDate) {
-            $patientRefunds = (float) PackageAdvances::where('account_id', $accountId)
-                ->where('cash_flow', 'out')
-                ->where('is_refund', 1)
-                ->where('is_cancel', 0)
-                ->whereNull('deleted_at')
-                ->where('system_created_at', '>=', $goLiveDate)
-                ->sum('cash_amount');
-        }
-
-        // Expected = Opening + Patient Payments - Refunds - Expenses - Staff Advances + Staff Returns
-        $expectedTotal = $openingTotal + $patientPayments - $patientRefunds - $expenses - $staffAdvances + $staffReturns;
+        $cachedTotal = (float) CashPool::forAccount($accountId)->sum('cached_balance');
+        $expectedTotal = $expected['total'];
+        $breakdown = $expected['breakdown'];
 
         $discrepancy = round($cachedTotal - $expectedTotal, 2);
 
         return [
             'cached_total' => $cachedTotal,
             'calculated_total' => $expectedTotal,
-            'opening_balances' => $openingTotal,
-            'patient_payments' => $patientPayments,
-            'patient_refunds' => $patientRefunds,
-            'total_expenses' => $expenses,
-            'staff_advances' => $staffAdvances,
-            'staff_returns' => $staffReturns,
+            'opening_balances' => $breakdown['opening_balances'],
+            'patient_payments' => $breakdown['patient_payments'],
+            'patient_refunds' => $breakdown['patient_refunds'],
+            'total_expenses' => $breakdown['total_expenses'],
+            'staff_advances' => $breakdown['staff_advances'],
+            'staff_returns' => $breakdown['staff_returns'],
+            'per_pool' => $expected['per_pool'],
             'discrepancy' => $discrepancy,
-            'is_balanced' => abs($discrepancy) < 1, // Allow < 1 PKR rounding
+            'is_balanced' => abs($discrepancy) < 1,
         ];
     }
 
