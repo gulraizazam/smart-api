@@ -2,12 +2,14 @@
 @section('title', 'Cash Flow - Vendors')
 @push('styles')
 <style>
-    .select2-selection.is-invalid-select2 {
+    .vendor-toggle-hidden { display: none !important; }
+    .select2-container.is-invalid-select2 .select2-selection,
+    .is-invalid-select2 .select2-selection {
         border: 1px solid #F64E60 !important;
-        border-radius: 0.42rem;
     }
-    .select2-selection.is-invalid-select2 .select2-selection__rendered {
-        color: #F64E60;
+    .is-invalid-select2-direct {
+        border: 1px solid #F64E60 !important;
+        border-radius: 0.42rem !important;
     }
 </style>
 @endpush
@@ -171,9 +173,7 @@
                                             @if(Gate::allows('cashflow_vendor_edit'))
                                                 <button class="btn btn-sm btn-light-primary mr-2" id="btn-edit-current-vendor" title="Edit Vendor"><i class="la la-edit"></i></button>
                                             @endif
-                                            @if(Gate::allows('cashflow_vendor_toggle'))
-                                                <button class="btn btn-sm btn-light-warning" id="btn-toggle-current-vendor" title="Activate / Deactivate"><i class="la la-toggle-on"></i></button>
-                                            @endif
+                                            
                                         </div>
                                     </div>
                                 </div>
@@ -339,7 +339,7 @@
                                     <small class="text-muted">Prior outstanding balance before system start</small>
                                 </div>
                             </div>
-                            <div class="col-6 d-flex align-items-center" id="vendor-active-toggle-wrap" style="display:none!important;">
+                            <div class="col-6 d-flex align-items-center vendor-toggle-hidden" id="vendor-active-toggle-wrap">
                                 <div class="form-group mb-3 w-100">
                                     <label class="font-size-sm font-weight-bold mb-1 d-block">Status</label>
                                     <div class="d-flex align-items-center">
