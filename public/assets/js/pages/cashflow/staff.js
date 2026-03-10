@@ -106,6 +106,57 @@ var CashflowStaff = (function () {
                 $('#staff-list').html('<div class="text-center text-danger py-3">Failed to load.</div>');
             }
         });
+
+        loadRecentActivity();
+    }
+
+    function loadRecentActivity() {
+        $.ajax({
+            url: apiBase + 'staff/recent-activity', type: 'GET',
+            success: function (res) {
+                if (res.success) {
+                    renderRecentList('#overview-recent-advances', res.data.advances, 'danger');
+                    renderRecentList('#overview-recent-returns', res.data.returns, 'success');
+                }
+            },
+            error: function () {
+                $('#overview-recent-advances').html('<div class="text-center text-danger font-size-sm py-2">Failed to load.</div>');
+                $('#overview-recent-returns').html('<div class="text-center text-danger font-size-sm py-2">Failed to load.</div>');
+            }
+        });
+    }
+
+    function renderRecentList(selector, items, amtColor) {
+        var container = $(selector).empty();
+
+        if (!items || items.length === 0) {
+            container.html('<div class="text-center text-muted font-size-sm py-3">No records yet.</div>');
+            return;
+        }
+
+        var html = '';
+        $.each(items, function (i, item) {
+            var desc = item.description || '—';
+            var sub = esc(item.staff_name || '') + (item.date ? ' · ' + fdShort(item.date) : '');
+            html +=
+                '<div class="d-flex justify-content-between align-items-start py-2' + (i < items.length - 1 ? ' border-bottom' : '') + '">' +
+                    '<div style="min-width:0;">' +
+                        '<div class="font-weight-bold font-size-sm text-truncate">' + esc(desc) + '</div>' +
+                        '<div class="text-muted font-size-xs mt-1">' + sub + '</div>' +
+                    '</div>' +
+                    '<div class="ml-3 flex-shrink-0 font-weight-bolder font-size-sm text-' + amtColor + '">PKR ' + nf(item.amount) + '</div>' +
+                '</div>';
+        });
+
+        container.html(html);
+    }
+
+    function fdShort(d) {
+        if (!d) return '';
+        var parts = String(d).substring(0, 10).split('-');
+        if (parts.length < 3) return d;
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return parseInt(parts[2]) + ' ' + (months[parseInt(parts[1]) - 1] || parts[1]) + ' ' + parts[0];
     }
 
     function renderStaffList(items) {

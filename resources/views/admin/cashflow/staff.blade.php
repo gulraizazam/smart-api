@@ -66,7 +66,7 @@
                                 </div>
                             </div>
 
-                            <div class="card card-custom">
+                            <div class="card card-custom mb-4">
                                 <div class="card-header py-3" style="min-height:auto;">
                                     <div class="card-title mb-0">
                                         <h3 class="card-label font-size-h6 mb-0"><i class="la la-sort-amount-desc mr-1 text-danger"></i>Top Outstanding</h3>
@@ -75,8 +75,38 @@
                                 <div class="card-body py-3 px-4">
                                     <div id="overview-top-outstanding">
                                         <div class="text-center text-muted py-4">
-                                            <i class="la la-mouse-pointer" style="font-size:32px;opacity:0.3;"></i>
-                                            <p class="mt-2 mb-0 font-size-sm">Loading...</p>
+                                            <div class="spinner spinner-primary spinner-sm"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card card-custom">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0">
+                                                <h3 class="card-label font-size-h6 mb-0">
+                                                    <i class="la la-arrow-up mr-1 text-danger"></i>Recent Advances
+                                                </h3>
+                                            </div>
+                                        </div>
+                                        <div class="card-body py-3 px-4" id="overview-recent-advances">
+                                            <div class="text-center text-muted py-3"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card card-custom">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0">
+                                                <h3 class="card-label font-size-h6 mb-0">
+                                                    <i class="la la-arrow-down mr-1 text-success"></i>Recent Returns
+                                                </h3>
+                                            </div>
+                                        </div>
+                                        <div class="card-body py-3 px-4" id="overview-recent-returns">
+                                            <div class="text-center text-muted py-3"><div class="spinner spinner-primary spinner-sm"></div></div>
                                         </div>
                                     </div>
                                 </div>

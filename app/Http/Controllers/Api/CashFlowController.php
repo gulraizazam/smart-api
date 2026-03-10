@@ -1227,6 +1227,26 @@ class CashFlowController extends Controller
     }
 
     /**
+     * Get recent staff advances and returns (for overview activity cards).
+     */
+    public function staffRecentActivity(): JsonResponse
+    {
+        try {
+            if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance'])) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
+            $accountId = Auth::user()->account_id;
+
+            return response()->json([
+                'success' => true,
+                'data' => $this->staffAdvanceService->getRecentActivity($accountId),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Get staff ledger (advances + returns for one staff member).
      */
     public function staffLedger(int $userId): JsonResponse
