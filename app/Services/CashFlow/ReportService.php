@@ -82,6 +82,7 @@ class ReportService
         // Expenses by branch
         $expensesByBranch = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->select('for_branch_id', DB::raw('SUM(amount) as total'), DB::raw('COUNT(*) as count'))
             ->groupBy('for_branch_id')
@@ -141,6 +142,7 @@ class ReportService
 
         return Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
             ->select(
@@ -190,6 +192,7 @@ class ReportService
 
         $staffExpenses = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereNotNull('staff_id')
             ->select('staff_id', DB::raw('SUM(amount) as total_expenses'))
             ->groupBy('staff_id')
@@ -235,6 +238,7 @@ class ReportService
         // Expenses (outflows)
         $expenseQuery = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereBetween('expense_date', [$dateFrom, $dateTo]);
         if ($poolId) $expenseQuery->where('paid_from_pool_id', $poolId);
 
@@ -329,6 +333,7 @@ class ReportService
         // Last transaction date per vendor
         $lastActivity = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereNotNull('vendor_id')
             ->select('vendor_id', DB::raw('MAX(expense_date) as last_date'))
             ->groupBy('vendor_id')
@@ -382,6 +387,7 @@ class ReportService
         // Outflows before dateFrom
         $outflowQuery = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->where('expense_date', '<', $dateFrom);
 
         if ($branchId) $outflowQuery->where('for_branch_id', $branchId);
@@ -426,6 +432,7 @@ class ReportService
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id');
 
