@@ -616,8 +616,22 @@ var CashflowExpenses = (function () {
             });
             form.find('[name="category_id"]').html(catHtml).val(btn.data('category') || '');
 
-            // Populate pool dropdown from create form options (includes staff optgroup)
-            var poolHtml = $('[name="paid_from_pool_id"]', '#form-expense').html();
+            // Populate pool dropdown from cached formData (includes staff optgroup)
+            var poolHtml = '<option value="">Select pool or staff</option>';
+            if (formData && formData.pools) {
+                poolHtml += '<optgroup label="Cash Pools">';
+                $.each(formData.pools, function (i, pool) {
+                    poolHtml += '<option value="' + pool.id + '" data-type="' + (pool.type || '') + '">' + escapeHtml(pool.name) + '</option>';
+                });
+                poolHtml += '</optgroup>';
+            }
+            if (formData && formData.staff && formData.staff.length) {
+                poolHtml += '<optgroup label="Staff Advances">';
+                $.each(formData.staff, function (i, s) {
+                    poolHtml += '<option value="staff_' + s.id + '" data-type="staff">' + escapeHtml(s.name) + '</option>';
+                });
+                poolHtml += '</optgroup>';
+            }
             var poolVal = btn.data('pool') || '';
             var staffVal = btn.data('staff') || '';
             if (!poolVal && staffVal) {
