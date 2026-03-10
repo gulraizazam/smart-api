@@ -143,7 +143,7 @@ class ExpenseService
                 'expense_date' => $data['expense_date'],
                 'amount' => $data['amount'],
                 'category_id' => $data['category_id'],
-                'paid_from_pool_id' => $data['paid_from_pool_id'],
+                'paid_from_pool_id' => $data['paid_from_pool_id'] ?? null,
                 'for_branch_id' => !empty($data['is_for_general']) ? null : ($data['for_branch_id'] ?? null),
                 'payment_method_id' => $data['payment_method_id'],
                 'vendor_id' => $data['vendor_id'] ?? null,
