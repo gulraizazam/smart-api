@@ -6,9 +6,9 @@
         <div class="d-flex flex-column-fluid">
             <div class="container">
 
-                <!-- Balance Cards Row -->
+                <!-- Live Balance Card (Full Width) -->
                 <div class="row mb-5">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="card card-custom" id="fdm-balance-card">
                             <div class="card-body text-center py-6">
                                 <div class="text-muted font-weight-bold mb-1" id="fdm-branch-name">Loading...</div>
@@ -17,20 +17,20 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="card card-custom" id="fdm-opening-card">
-                            <div class="card-body text-center py-6">
-                                <div class="text-muted font-weight-bold mb-1">Opening Balance</div>
-                                <div class="font-weight-bolder display-4 mb-1" id="fdm-opening-balance">PKR 0</div>
-                                <div class="text-muted font-size-sm" id="fdm-week-label"><i class="la la-cog" style="font-size:10px;vertical-align:middle;"></i> From Pool Settings</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Summary Totals Row -->
                 <div class="row mb-5">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="card card-custom border-left border-primary" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Opening Balance</div>
+                                <div class="font-weight-bolder font-size-h3 text-primary" id="fdm-opening-balance">PKR 0</div>
+                                <div class="text-muted font-size-xs" id="fdm-week-label">as of Sunday</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="card card-custom border-left border-danger" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Expenses Total</div>
@@ -39,7 +39,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card card-custom border-left border-info" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Cash Transfers Total</div>
@@ -48,7 +48,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card card-custom border-left border-warning" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Staff Advances Total</div>
