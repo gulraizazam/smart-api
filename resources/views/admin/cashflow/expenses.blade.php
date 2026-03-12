@@ -542,6 +542,6 @@
                 userId: {{ auth()->id() }}
             };
         </script>
-        <script src="{{ asset('assets/js/pages/cashflow/expenses.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/cashflow/expenses.js') }}?v={{ time() }}"></script>
     @endpush
 @endsection
