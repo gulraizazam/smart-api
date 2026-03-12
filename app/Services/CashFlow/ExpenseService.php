@@ -75,6 +75,11 @@ class ExpenseService
             }
         }
 
+        // Pool filter (paid from)
+        if (!empty($filters['pool_id'])) {
+            $query->where('paid_from_pool_id', $filters['pool_id']);
+        }
+
         // Category filter
         if (!empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
