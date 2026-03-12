@@ -253,6 +253,7 @@
                 </div>
 
                 <!--begin::Audit Trail Card-->
+                @can('cashflow_audit_view')
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
                         <div class="card-title">
@@ -300,6 +301,7 @@
                         </div>
                     </div>
                 </div>
+                @endcan
 
             </div>
         </div>
