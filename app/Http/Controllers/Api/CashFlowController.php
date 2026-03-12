@@ -1741,13 +1741,17 @@ class CashFlowController extends Controller
             $poolIds = $pools->pluck('id')->toArray();
             $currentBalance = (float) $pools->sum('cached_balance');
 
-            // Week range: Sunday (start) to today
+            // Week range: Sunday (start) to today - for opening balance calculation
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
             $sundayStart = $sunday . ' 00:00:00';
             $nowEnd = $today . ' 23:59:59';
 
-            // ---- Individual records for the week ----
+            // Last 7 days range - for transaction records display
+            $sevenDaysAgo = \Carbon\Carbon::now()->subDays(6)->toDateString(); // 7 days including today
+            $sevenDaysAgoStart = $sevenDaysAgo . ' 00:00:00';
+
+            // ---- Individual records for the last 7 days ----
 
             // Cash Transfers (involving these pools)
             $transfers = [];
@@ -1758,7 +1762,7 @@ class CashFlowController extends Controller
                         $q->whereIn('from_pool_id', $poolIds)
                           ->orWhereIn('to_pool_id', $poolIds);
                     })
-                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->whereBetween('transfer_date', [$sevenDaysAgo, $today])
                     ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name'])
                     ->orderBy('transfer_date', 'desc')
                     ->get()
@@ -1785,7 +1789,7 @@ class CashFlowController extends Controller
                     ->whereNull('voided_at')
                     ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
-                    ->whereBetween('expense_date', [$sunday, $today])
+                    ->whereBetween('expense_date', [$sevenDaysAgo, $today])
                     ->with(['category:id,name', 'paidFromPool:id,name'])
                     ->orderBy('expense_date', 'desc')
                     ->get()
@@ -1808,7 +1812,7 @@ class CashFlowController extends Controller
                 $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$sundayStart, $nowEnd])
+                    ->whereBetween('created_at', [$sevenDaysAgoStart, $nowEnd])
                     ->with(['staffUser:id,name', 'pool:id,name'])
                     ->orderBy('created_at', 'desc')
                     ->get()
@@ -1911,6 +1915,8 @@ class CashFlowController extends Controller
                     'pool_balance' => $currentBalance,
                     'opening_balance' => round($openingBalance, 2),
                     'week_start' => $sunday,
+                    'records_period_start' => $sevenDaysAgo,
+                    'records_period_end' => $today,
                     'transfers' => $transfers,
                     'expenses' => $expenses,
                     'staff_advances' => $staffAdvances,
