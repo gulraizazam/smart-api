@@ -1736,62 +1736,11 @@ class CashFlowController extends Controller
 
             $poolIds = $pools->pluck('id')->toArray();
             $currentBalance = (float) $pools->sum('cached_balance');
+            $openingBalance = (float) $pools->sum('opening_balance');
 
             // Week range: Sunday (start) to today
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
-            $goLiveDate = $this->settingService->getGoLiveDate($accountId);
-
-            // ---- Calculate opening balance as of Sunday ----
-            // Current balance = opening + inflows - outflows since Sunday
-            // So opening = current - inflows + outflows since Sunday
-            $weekInflows = 0;
-            $weekOutflows = 0;
-
-            if ($goLiveDate && !empty($branchIds)) {
-                $weekInflows += (float) \App\Models\PackageAdvances::where('account_id', $accountId)
-                    ->where('cash_flow', 'in')
-                    ->where('is_cancel', 0)
-                    ->whereNull('deleted_at')
-                    ->whereIn('location_id', $branchIds)
-                    ->where('created_at', '>=', $goLiveDate)
-                    ->whereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$sunday, $today])
-                    ->sum('cash_amount');
-            }
-
-            if (!empty($poolIds)) {
-                $weekOutflows += (float) \App\Models\CashFlow\Expense::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->where('status', '!=', 'rejected')
-                    ->whereIn('paid_from_pool_id', $poolIds)
-                    ->whereBetween('expense_date', [$sunday, $today])
-                    ->sum('amount');
-
-                $transfersOutSum = (float) \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('from_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$sunday, $today])
-                    ->sum('amount');
-
-                $transfersInSum = (float) \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('to_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$sunday, $today])
-                    ->sum('amount');
-
-                $weekInflows += $transfersInSum;
-                $weekOutflows += $transfersOutSum;
-
-                $staffAdvancesSum = (float) \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
-                    ->whereNull('voided_at')
-                    ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$sunday . ' 00:00:00', $today . ' 23:59:59'])
-                    ->sum('amount');
-
-                $weekOutflows += $staffAdvancesSum;
-            }
-
-            $openingBalance = $currentBalance - $weekInflows + $weekOutflows;
 
             // ---- Individual records for the week ----
 
