@@ -40,6 +40,22 @@
                 renderTransfers(d.transfers);
                 renderExpenses(d.expenses);
                 renderAdvances(d.staff_advances);
+
+                // Summary totals
+                var expTotal = 0;
+                $.each(d.expenses || [], function (i, e) { expTotal += parseFloat(e.amount) || 0; });
+                $('#fdm-total-expenses').text('PKR ' + nf(expTotal));
+                $('#fdm-total-expenses-count').text((d.expenses || []).length + ' records');
+
+                var trfTotal = 0;
+                $.each(d.transfers || [], function (i, t) { trfTotal += parseFloat(t.amount) || 0; });
+                $('#fdm-total-transfers').text('PKR ' + nf(trfTotal));
+                $('#fdm-total-transfers-count').text((d.transfers || []).length + ' records');
+
+                var advTotal = 0;
+                $.each(d.staff_advances || [], function (i, a) { advTotal += parseFloat(a.amount) || 0; });
+                $('#fdm-total-advances').text('PKR ' + nf(advTotal));
+                $('#fdm-total-advances-count').text((d.staff_advances || []).length + ' records');
             },
             error: function (xhr) {
                 $('#fdm-branch-name').text('Error');
