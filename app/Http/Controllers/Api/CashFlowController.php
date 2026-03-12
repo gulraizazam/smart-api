@@ -1710,7 +1710,7 @@ class CashFlowController extends Controller
     // ===================== FDM (Phase 4) =====================
 
     /**
-     * FDM Cash View data — read-only, own branch only.
+     * FDM Cash View data — read-only, shows all assigned branches.
      */
     public function fdmData(Request $request): JsonResponse
     {
@@ -1722,31 +1722,33 @@ class CashFlowController extends Controller
                 return response()->json(['success' => false, 'message' => 'No branch assigned.'], 403);
             }
 
-            // FDM sees only their own branch
-            $branchId = $userBranches->first()->id;
-            $branchName = $userBranches->first()->name;
+            $branchIds = $userBranches->pluck('id')->toArray();
+            $branchName = $userBranches->count() === 1
+                ? $userBranches->first()->name
+                : 'All Centres';
 
-            // Get pool for this branch
-            $pool = \App\Models\CashFlow\CashPool::forAccount($accountId)
-                ->where('location_id', $branchId)
+            // Get branch cash pools for all assigned branches
+            $pools = \App\Models\CashFlow\CashPool::forAccount($accountId)
+                ->whereIn('location_id', $branchIds)
                 ->where('type', 'branch_cash')
-                ->first();
+                ->get();
 
-            $balance = $pool ? (float) $pool->cached_balance : 0;
+            $poolIds = $pools->pluck('id')->toArray();
+            $balance = (float) $pools->sum('cached_balance');
 
             // Last 10 days of cash movements
             $tenDaysAgo = \Carbon\Carbon::now()->subDays(10)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
             $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
-            // Inflows (patient payments at this branch)
+            // Inflows (patient payments at assigned branches)
             $inflows = [];
             if ($goLiveDate) {
                 $inflows = \App\Models\PackageAdvances::where('account_id', $accountId)
                     ->where('cash_flow', 'in')
                     ->where('is_cancel', 0)
                     ->whereNull('deleted_at')
-                    ->where('location_id', $branchId)
+                    ->whereIn('location_id', $branchIds)
                     ->where('created_at', '>=', $goLiveDate)
                     ->whereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$tenDaysAgo, $today])
                     ->select(\Illuminate\Support\Facades\DB::raw('DATE(created_at) as date'), \Illuminate\Support\Facades\DB::raw('SUM(cash_amount) as total'))
@@ -1755,12 +1757,13 @@ class CashFlowController extends Controller
                     ->toArray();
             }
 
-            // Outflows (expenses paid from this branch pool)
+            // Outflows (expenses paid from any of these branch pools)
             $outflows = [];
-            if ($pool) {
+            if (!empty($poolIds)) {
                 $outflows = \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
-                    ->where('paid_from_pool_id', $pool->id)
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
                     ->whereBetween('expense_date', [$tenDaysAgo, $today])
                     ->select('expense_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
                     ->groupBy('expense_date')
@@ -1768,12 +1771,13 @@ class CashFlowController extends Controller
                     ->toArray();
             }
 
-            // Transfers out from this pool
+            // Transfers out/in from these pools
             $transfersOut = [];
             $transfersIn = [];
-            if ($pool) {
+            if (!empty($poolIds)) {
                 $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->where('from_pool_id', $pool->id)
+                    ->whereNull('voided_at')
+                    ->whereIn('from_pool_id', $poolIds)
                     ->whereBetween('transfer_date', [$tenDaysAgo, $today])
                     ->select('transfer_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
                     ->groupBy('transfer_date')
@@ -1781,7 +1785,8 @@ class CashFlowController extends Controller
                     ->toArray();
 
                 $transfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
-                    ->where('to_pool_id', $pool->id)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
                     ->whereBetween('transfer_date', [$tenDaysAgo, $today])
                     ->select('transfer_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
                     ->groupBy('transfer_date')
@@ -1791,11 +1796,8 @@ class CashFlowController extends Controller
 
             // Build day-by-day array with running balance
             $days = [];
-            $runningBalance = $balance; // Work backwards
-            $current = \Carbon\Carbon::parse($today);
-            $end = \Carbon\Carbon::parse($tenDaysAgo);
+            $runningBalance = $balance; // Work backwards from current balance
 
-            // First build forward, then reverse for running balance
             $dayList = [];
             $c = \Carbon\Carbon::parse($tenDaysAgo)->copy();
             while ($c->lte(\Carbon\Carbon::parse($today))) {
@@ -1827,10 +1829,8 @@ class CashFlowController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    'branch_id' => $branchId,
                     'branch_name' => $branchName,
                     'pool_balance' => $balance,
-                    'pool_name' => $pool ? $pool->name : 'N/A',
                     'movements' => $days,
                 ],
             ]);
