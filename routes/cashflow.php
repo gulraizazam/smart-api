@@ -30,9 +30,6 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::post('toggle-eligibility', [CashFlowController::class, 'toggleStaffEligibility'])->name('toggle_eligibility');
     });
 
-    // Audit Logs
-    Route::get('audit-logs', [CashFlowController::class, 'auditLogs'])->name('audit_logs')->middleware('permission:cashflow_audit_view');
-
     // Pools
     Route::prefix('pools')->name('pools.')->middleware('permission:cashflow_pool_manage')->group(function () {
         Route::get('/', [CashFlowController::class, 'poolsIndex'])->name('index');
