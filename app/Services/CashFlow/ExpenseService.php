@@ -306,7 +306,7 @@ class ExpenseService
     }
 
     /**
-     * Resubmit a rejected expense.
+     * Resubmit a rejected expense (with optional edits).
      */
     public function resubmit(int $expenseId, array $data, int $accountId): Expense
     {
@@ -317,6 +317,7 @@ class ExpenseService
         }
 
         $oldValues = $expense->toArray();
+        $oldVendorId = $expense->vendor_id;
 
         $updateData = [
             'status' => Expense::STATUS_PENDING,
@@ -324,29 +325,76 @@ class ExpenseService
             'rejection_reason' => null,
         ];
 
-        // Allow updating details on resubmit
-        foreach (['description', 'reference_no', 'attachment_url', 'notes'] as $field) {
-            if (isset($data[$field])) {
+        // Allow updating all editable fields on resubmit
+        $allowed = ['expense_date', 'amount', 'category_id', 'paid_from_pool_id', 'payment_method_id', 'description', 'reference_no', 'attachment_url', 'notes'];
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== '' && $data[$field] !== null) {
                 $updateData[$field] = $data[$field];
             }
         }
 
-        return DB::transaction(function () use ($expense, $updateData, $oldValues, $accountId) {
-            $expense->update($updateData);
+        // Handle merged branch/general field
+        if (!empty($data['is_for_general'])) {
+            $updateData['is_for_general'] = true;
+            $updateData['for_branch_id'] = null;
+        } elseif (isset($data['for_branch_id'])) {
+            $updateData['is_for_general'] = false;
+            $updateData['for_branch_id'] = $data['for_branch_id'] ?: null;
+        }
 
-            // Re-create vendor transaction if vendor exists and no active transaction
-            if ($expense->vendor_id && !$expense->vendorTransaction) {
+        // Handle vendor_id (allow clearing)
+        if (array_key_exists('vendor_id', $data)) {
+            $updateData['vendor_id'] = $data['vendor_id'] ?: null;
+        }
+
+        // Handle staff_id (allow clearing when switching to pool)
+        if (array_key_exists('staff_id', $data)) {
+            $updateData['staff_id'] = $data['staff_id'] ?: null;
+        }
+        if (!empty($data['staff_id'])) {
+            $updateData['paid_from_pool_id'] = null;
+        }
+
+        return DB::transaction(function () use ($expense, $updateData, $oldValues, $oldVendorId, $accountId) {
+            // Update fields first (before status change triggers observer pool debit)
+            $fieldsOnly = $updateData;
+            unset($fieldsOnly['status'], $fieldsOnly['verified_by'], $fieldsOnly['rejection_reason']);
+            if (!empty($fieldsOnly)) {
+                $expense->updateQuietly($fieldsOnly);
+                $expense->refresh();
+            }
+
+            // Now set status to pending — observer will re-debit pool with updated amount/pool
+            $expense->update([
+                'status' => Expense::STATUS_PENDING,
+                'verified_by' => null,
+                'rejection_reason' => null,
+            ]);
+
+            $freshExpense = $expense->fresh();
+            $newVendorId = $freshExpense->vendor_id;
+
+            // Sync vendor transaction
+            $existingVendorTx = VendorTransaction::where('expense_id', $expense->id)->whereNull('deleted_at')->first();
+
+            if ($oldVendorId && !$newVendorId) {
+                // Vendor removed: delete any leftover transaction (balance was already reversed on rejection)
+                if ($existingVendorTx) {
+                    $existingVendorTx->delete();
+                }
+            } elseif ($newVendorId && !$existingVendorTx) {
+                // Vendor exists but no transaction (was deleted on rejection): re-create
                 VendorTransaction::create([
                     'account_id' => $accountId,
-                    'vendor_id' => $expense->vendor_id,
+                    'vendor_id' => $newVendorId,
                     'type' => VendorTransaction::TYPE_PAYMENT,
-                    'amount' => $expense->amount,
+                    'amount' => $freshExpense->amount,
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
-                    'reference_no' => $expense->reference_no,
-                    'transaction_date' => $expense->expense_date->format('Y-m-d'),
-                    'for_branch_id' => $expense->for_branch_id,
-                    'is_for_general' => $expense->is_for_general ? 1 : 0,
+                    'reference_no' => $freshExpense->reference_no,
+                    'transaction_date' => $freshExpense->expense_date->format('Y-m-d'),
+                    'for_branch_id' => $freshExpense->for_branch_id,
+                    'is_for_general' => $freshExpense->is_for_general ? 1 : 0,
                     'created_by' => Auth::id(),
                 ]);
             }
@@ -356,12 +404,12 @@ class ExpenseService
                 CashflowAuditLog::ENTITY_EXPENSE,
                 $expense->id,
                 $oldValues,
-                $expense->fresh()->toArray()
+                $freshExpense->toArray()
             );
 
-            $this->notificationService->notifyExpensePending($expense->fresh(), $accountId);
+            $this->notificationService->notifyExpensePending($freshExpense, $accountId);
 
-            return $expense->fresh();
+            return $freshExpense;
         });
     }
 
