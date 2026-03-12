@@ -56,6 +56,6 @@
     </div>
 
     @push('js')
-        <script src="{{ asset('assets/js/pages/cashflow/reports.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/cashflow/reports.js') }}?v={{ time() }}"></script>
     @endpush
 @endsection
