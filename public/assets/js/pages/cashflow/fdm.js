@@ -27,9 +27,6 @@
                 $('#fdm-branch-name').text(d.branch_name || 'Unknown Branch');
                 $('#fdm-balance').text('PKR ' + nf(d.pool_balance));
                 $('#fdm-opening-balance').text('PKR ' + nf(d.opening_balance));
-                if (d.week_start) {
-                    $('#fdm-week-label').html('<i class="la la-calendar" style="font-size:10px;vertical-align:middle;"></i> As of ' + d.week_start + ' (Sunday)');
-                }
 
                 // Color the balance card
                 colorCard('#fdm-balance-card', d.pool_balance);

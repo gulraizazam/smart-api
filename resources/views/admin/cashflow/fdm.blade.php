@@ -22,7 +22,7 @@
                             <div class="card-body text-center py-6">
                                 <div class="text-muted font-weight-bold mb-1">Opening Balance</div>
                                 <div class="font-weight-bolder display-4 mb-1" id="fdm-opening-balance">PKR 0</div>
-                                <div class="text-muted font-size-sm" id="fdm-week-label"><i class="la la-calendar" style="font-size:10px;vertical-align:middle;"></i> Since Sunday</div>
+                                <div class="text-muted font-size-sm" id="fdm-week-label"><i class="la la-cog" style="font-size:10px;vertical-align:middle;"></i> From Pool Settings</div>
                             </div>
                         </div>
                     </div>
