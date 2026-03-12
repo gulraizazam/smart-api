@@ -504,7 +504,19 @@ var CashflowExpenses = (function () {
 
         // Resubmit (rejected entries)
         if (perms.canResubmit && exp.status === 'rejected' && !exp.voided_at) {
-            btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" title="Resubmit"><i class="la la-redo text-info"></i></button>';
+            btns += '<button class="btn btn-sm btn-clean btn-icon btn-resubmit" data-id="' + exp.id + '" ' +
+                'data-date="' + ((exp.expense_date || '').substring(0, 10)) + '" ' +
+                'data-amount="' + (parseInt(exp.amount) || 0) + '" ' +
+                'data-category="' + exp.category_id + '" ' +
+                'data-pool="' + (exp.paid_from_pool_id || '') + '" ' +
+                'data-staff="' + (exp.staff_id || '') + '" ' +
+                'data-payment="' + (exp.payment_method_id || '') + '" ' +
+                'data-branch="' + (exp.for_branch_id || '') + '" ' +
+                'data-general="' + (exp.is_for_general ? 1 : 0) + '" ' +
+                'data-vendor="' + (exp.vendor_id || '') + '" ' +
+                'data-description="' + escapeHtml(exp.description) + '" ' +
+                'data-attachment="' + escapeHtml(exp.attachment_url || '') + '" ' +
+                'title="Edit & Resubmit"><i class="la la-redo text-info"></i></button>';
         }
 
         // Admin Edit (non-voided, admin only — Sec 5.7)
@@ -591,20 +603,82 @@ var CashflowExpenses = (function () {
         });
 
         $('.btn-resubmit').off('click').on('click', function () {
-            var id = $(this).data('id');
-            if (!confirm('Resubmit this expense for approval?')) return;
-            $.ajax({
-                url: apiBase + 'expenses/' + id + '/resubmit',
-                type: 'POST',
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                success: function (res) {
-                    toastr.success(res.message || 'Expense resubmitted.');
-                    loadExpenses();
-                },
-                error: function (xhr) {
-                    toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed to resubmit.');
+            var btn = $(this);
+            var form = $('#form-admin-edit');
+
+            // Mark as resubmit mode
+            form.data('resubmit-mode', true);
+            form.find('[name="expense_id"]').val(btn.data('id'));
+            form.find('[name="expense_date"]').val(btn.data('date') || '');
+            form.find('[name="amount"]').val(btn.data('amount'));
+            form.find('[name="description"]').val(btn.data('description'));
+            form.find('[name="attachment_url"]').val(btn.data('attachment'));
+
+            // Populate category dropdown
+            var catHtml = '<option value="">Select category</option>';
+            $('[name="category_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) {
+                    catHtml += '<option value="' + $(this).val() + '" data-vendor="' + ($(this).data('vendor') || '') + '">' + $(this).text() + '</option>';
                 }
             });
+            form.find('[name="category_id"]').html(catHtml).val(btn.data('category') || '');
+
+            // Populate pool dropdown
+            var poolHtml = '<option value="">Select pool or staff</option>';
+            if (formData && formData.pools) {
+                poolHtml += '<optgroup label="Cash Pools">';
+                $.each(formData.pools, function (i, pool) {
+                    poolHtml += '<option value="' + pool.id + '" data-type="' + (pool.type || '') + '">' + escapeHtml(pool.name) + '</option>';
+                });
+                poolHtml += '</optgroup>';
+            }
+            if (formData && formData.staff && formData.staff.length) {
+                poolHtml += '<optgroup label="Staff Advances">';
+                $.each(formData.staff, function (i, s) {
+                    poolHtml += '<option value="staff_' + s.id + '" data-type="staff">' + escapeHtml(s.name) + '</option>';
+                });
+                poolHtml += '</optgroup>';
+            }
+            var poolVal = btn.data('pool') || '';
+            var staffVal = btn.data('staff') || '';
+            if (!poolVal && staffVal) poolVal = 'staff_' + staffVal;
+            form.find('[name="paid_from_pool_id"]').html(poolHtml).val(poolVal);
+
+            // Populate payment method dropdown
+            var pmHtml = '<option value="">Select method</option>';
+            $('[name="payment_method_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) pmHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+            });
+            form.find('[name="payment_method_id"]').html(pmHtml).val(btn.data('payment') || '');
+
+            // Populate branch dropdown
+            var branchHtml = '<option value="">Select</option>';
+            $('[name="for_branch_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) branchHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+            });
+            if (btn.data('general') == 1) {
+                form.find('[name="for_branch_id"]').html(branchHtml).val('general');
+            } else {
+                form.find('[name="for_branch_id"]').html(branchHtml).val(btn.data('branch') || '');
+            }
+
+            // Populate vendor dropdown
+            var vendorHtml = '<option value="">Select vendor (optional)</option><option value="0">-- No Vendor --</option>';
+            $('[name="vendor_id"]', '#form-expense').find('option').each(function () {
+                if ($(this).val()) vendorHtml += '<option value="' + $(this).val() + '">' + $(this).text() + '</option>';
+            });
+            form.find('[name="vendor_id"]').html(vendorHtml).val(btn.data('vendor') || '');
+
+            // Clear validation
+            form.find('.is-invalid').removeClass('is-invalid');
+            form.find('.select2-container').css('border', '').css('border-radius', '');
+
+            // Hide edit reason field, update modal title & button
+            form.find('[name="edit_reason"]').closest('.form-group').hide();
+            $('#modal_admin_edit .modal-title').text('Edit & Resubmit Expense');
+            $('#btn-submit-admin-edit').text('Resubmit');
+
+            $('#modal_admin_edit').modal('show');
         });
 
         $('.btn-admin-edit').off('click').on('click', function () {
@@ -683,6 +757,12 @@ var CashflowExpenses = (function () {
             // Clear validation highlights
             form.find('.is-invalid').removeClass('is-invalid');
             form.find('.select2-container').css('border', '').css('border-radius', '');
+
+            // Set admin-edit mode (not resubmit)
+            form.data('resubmit-mode', false);
+            form.find('[name="edit_reason"]').closest('.form-group').show();
+            $('#modal_admin_edit .modal-title').text('Edit Expense (Admin)');
+            $('#btn-submit-admin-edit').text('Save Changes');
 
             $('#modal_admin_edit').modal('show');
         });
@@ -1097,7 +1177,9 @@ var CashflowExpenses = (function () {
         // Highlight missing required fields (same as add expense)
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.select2-container').css('border', '').css('border-radius', '');
-        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'description', 'for_branch_id', 'edit_reason'];
+        var isResubmit = form.data('resubmit-mode') === true;
+        var requiredFields = ['expense_date', 'amount', 'category_id', 'payment_method_id', 'description', 'for_branch_id'];
+        if (!isResubmit) requiredFields.push('edit_reason');
         var missing = [];
         $.each(requiredFields, function (i, name) {
             var val = (name === 'for_branch_id') ? form.find('[name="for_branch_id"]').val() : data[name];
@@ -1116,8 +1198,8 @@ var CashflowExpenses = (function () {
             missing.push('paid_from_pool_id');
         }
 
-        // Edit reason min length
-        if (data.edit_reason && data.edit_reason.length < 5) {
+        // Edit reason min length (admin edit only)
+        if (!isResubmit && data.edit_reason && data.edit_reason.length < 5) {
             form.find('[name="edit_reason"]').addClass('is-invalid');
             if (missing.indexOf('edit_reason') === -1) missing.push('edit_reason');
         }
@@ -1149,14 +1231,16 @@ var CashflowExpenses = (function () {
         var btn = $(this);
         btn.prop('disabled', true);
 
+        var endpoint = isResubmit ? apiBase + 'expenses/' + id + '/resubmit' : apiBase + 'expenses/' + id + '/edit';
+
         $.ajax({
-            url: apiBase + 'expenses/' + id + '/edit',
+            url: endpoint,
             type: 'POST',
             data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
                 if (res.success) {
-                    toastr.success(res.message);
+                    toastr.success(res.message || (isResubmit ? 'Expense resubmitted.' : 'Changes saved.'));
                     $('#modal_admin_edit').modal('hide');
                     loadExpenses();
                 } else {
