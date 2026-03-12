@@ -28,6 +28,33 @@
                     </div>
                 </div>
 
+                <!-- Expenses -->
+                <div class="card card-custom mb-5">
+                    <div class="card-header py-3">
+                        <div class="card-title"><h3 class="card-label"><i class="la la-receipt mr-2 text-danger"></i>Expenses <span class="text-muted font-size-sm ml-2" id="fdm-expenses-period"></span></h3></div>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div class="table-responsive">
+                            <table class="table table-head-custom mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Category</th>
+                                        <th>Paid From</th>
+                                        <th class="text-right">Amount</th>
+                                        <th>Status</th>
+                                        <th class="text-center" style="width:50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fdm-expenses-tbody">
+                                    <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Cash Transfers -->
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
@@ -47,32 +74,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="fdm-transfers-tbody">
-                                    <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Expenses -->
-                <div class="card card-custom mb-5">
-                    <div class="card-header py-3">
-                        <div class="card-title"><h3 class="card-label"><i class="la la-receipt mr-2 text-danger"></i>Expenses <span class="text-muted font-size-sm ml-2" id="fdm-expenses-period"></span></h3></div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-head-custom mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Description</th>
-                                        <th>Category</th>
-                                        <th>Paid From</th>
-                                        <th class="text-right">Amount</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="fdm-expenses-tbody">
                                     <tr><td colspan="6" class="text-center text-muted py-4">Loading...</td></tr>
                                 </tbody>
                             </table>
@@ -105,6 +106,31 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Detail Modal -->
+    <div class="modal fade" id="modal_fdm_expense" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header py-3">
+                    <h5 class="modal-title"><i class="la la-receipt text-danger mr-2"></i>Expense Detail</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr><td class="text-muted" style="width:120px;">Date</td><td class="font-weight-bold" id="fdm-exp-date"></td></tr>
+                        <tr><td class="text-muted">Description</td><td id="fdm-exp-desc"></td></tr>
+                        <tr><td class="text-muted">Category</td><td id="fdm-exp-category"></td></tr>
+                        <tr><td class="text-muted">Paid From</td><td id="fdm-exp-pool"></td></tr>
+                        <tr><td class="text-muted">Amount</td><td class="font-weight-bold text-danger" id="fdm-exp-amount"></td></tr>
+                        <tr><td class="text-muted">Status</td><td id="fdm-exp-status"></td></tr>
+                    </table>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>

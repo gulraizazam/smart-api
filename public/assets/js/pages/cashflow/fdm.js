@@ -84,24 +84,45 @@
         });
     }
 
+    var expenseCache = [];
+
     function renderExpenses(expenses) {
+        expenseCache = expenses || [];
         var tbody = $('#fdm-expenses-tbody').empty();
         if (!expenses || !expenses.length) {
-            tbody.html('<tr><td colspan="6" class="text-center text-muted py-4">No expenses this week.</td></tr>');
+            tbody.html('<tr><td colspan="7" class="text-center text-muted py-4">No expenses this week.</td></tr>');
             return;
         }
         $.each(expenses, function (i, e) {
             var statusBadge = getStatusBadge(e.status);
+            var shortDesc = e.description && e.description.length > 40
+                ? e.description.substring(0, 40) + '...'
+                : (e.description || '');
             tbody.append(
                 '<tr>' +
                 '<td>' + esc(e.date) + '</td>' +
-                '<td>' + esc(e.description) + '</td>' +
+                '<td title="' + esc(e.description) + '">' + esc(shortDesc) + '</td>' +
                 '<td>' + esc(e.category) + '</td>' +
                 '<td>' + esc(e.pool) + '</td>' +
                 '<td class="text-right text-danger font-weight-bold">-PKR ' + nf(e.amount) + '</td>' +
                 '<td>' + statusBadge + '</td>' +
+                '<td class="text-center"><button class="btn btn-sm btn-clean btn-icon btn-fdm-view-exp" data-idx="' + i + '" title="View"><i class="la la-eye text-primary"></i></button></td>' +
                 '</tr>'
             );
+        });
+
+        // Bind view buttons
+        tbody.find('.btn-fdm-view-exp').on('click', function () {
+            var idx = $(this).data('idx');
+            var exp = expenseCache[idx];
+            if (!exp) return;
+            $('#fdm-exp-date').text(exp.date);
+            $('#fdm-exp-desc').text(exp.description || '—');
+            $('#fdm-exp-category').text(exp.category || '—');
+            $('#fdm-exp-pool').text(exp.pool || '—');
+            $('#fdm-exp-amount').text('PKR ' + nf(exp.amount));
+            $('#fdm-exp-status').html(getStatusBadge(exp.status));
+            $('#modal_fdm_expense').modal('show');
         });
     }
 
