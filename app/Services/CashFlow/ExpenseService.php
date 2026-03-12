@@ -356,7 +356,7 @@ class ExpenseService
             $updateData['paid_from_pool_id'] = null;
         }
 
-        return DB::transaction(function () use ($expense, $updateData, $oldValues, $oldVendorId, $accountId) {
+        return DB::transaction(function () use ($expense, $updateData, $oldValues, $oldVendorId, $accountId, $auditRelations) {
             // Update fields first (before status change triggers observer pool debit)
             $fieldsOnly = $updateData;
             unset($fieldsOnly['status'], $fieldsOnly['verified_by'], $fieldsOnly['rejection_reason']);
