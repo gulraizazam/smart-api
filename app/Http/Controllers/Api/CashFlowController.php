@@ -1711,6 +1711,7 @@ class CashFlowController extends Controller
 
     /**
      * FDM Cash View data — read-only, shows all assigned branches.
+     * Returns: current balance, opening balance (Sunday), transfers, expenses, staff advances for the current week.
      */
     public function fdmData(Request $request): JsonResponse
     {
@@ -1734,104 +1735,151 @@ class CashFlowController extends Controller
                 ->get();
 
             $poolIds = $pools->pluck('id')->toArray();
-            $balance = (float) $pools->sum('cached_balance');
+            $currentBalance = (float) $pools->sum('cached_balance');
 
-            // Last 10 days of cash movements
-            $tenDaysAgo = \Carbon\Carbon::now()->subDays(10)->toDateString();
+            // Week range: Sunday (start) to today
+            $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
             $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
-            // Inflows (patient payments at assigned branches)
-            $inflows = [];
-            if ($goLiveDate) {
-                $inflows = \App\Models\PackageAdvances::where('account_id', $accountId)
+            // ---- Calculate opening balance as of Sunday ----
+            // Current balance = opening + inflows - outflows since Sunday
+            // So opening = current - inflows + outflows since Sunday
+            $weekInflows = 0;
+            $weekOutflows = 0;
+
+            if ($goLiveDate && !empty($branchIds)) {
+                $weekInflows += (float) \App\Models\PackageAdvances::where('account_id', $accountId)
                     ->where('cash_flow', 'in')
                     ->where('is_cancel', 0)
                     ->whereNull('deleted_at')
                     ->whereIn('location_id', $branchIds)
                     ->where('created_at', '>=', $goLiveDate)
-                    ->whereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$tenDaysAgo, $today])
-                    ->select(\Illuminate\Support\Facades\DB::raw('DATE(created_at) as date'), \Illuminate\Support\Facades\DB::raw('SUM(cash_amount) as total'))
-                    ->groupBy(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'))
-                    ->pluck('total', 'date')
-                    ->toArray();
+                    ->whereBetween(\Illuminate\Support\Facades\DB::raw('DATE(created_at)'), [$sunday, $today])
+                    ->sum('cash_amount');
             }
 
-            // Outflows (expenses paid from any of these branch pools)
-            $outflows = [];
             if (!empty($poolIds)) {
-                $outflows = \App\Models\CashFlow\Expense::forAccount($accountId)
+                $weekOutflows += (float) \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
-                    ->whereBetween('expense_date', [$tenDaysAgo, $today])
-                    ->select('expense_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
-                    ->groupBy('expense_date')
-                    ->pluck('total', 'date')
-                    ->toArray();
-            }
+                    ->whereBetween('expense_date', [$sunday, $today])
+                    ->sum('amount');
 
-            // Transfers out/in from these pools
-            $transfersOut = [];
-            $transfersIn = [];
-            if (!empty($poolIds)) {
-                $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                $transfersOutSum = (float) \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('from_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$tenDaysAgo, $today])
-                    ->select('transfer_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
-                    ->groupBy('transfer_date')
-                    ->pluck('total', 'date')
-                    ->toArray();
+                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->sum('amount');
 
-                $transfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                $transfersInSum = (float) \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('to_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [$tenDaysAgo, $today])
-                    ->select('transfer_date as date', \Illuminate\Support\Facades\DB::raw('SUM(amount) as total'))
-                    ->groupBy('transfer_date')
-                    ->pluck('total', 'date')
-                    ->toArray();
+                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->sum('amount');
+
+                $weekInflows += $transfersInSum;
+                $weekOutflows += $transfersOutSum;
+
+                $staffAdvancesSum = (float) \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sunday . ' 00:00:00', $today . ' 23:59:59'])
+                    ->sum('amount');
+
+                $weekOutflows += $staffAdvancesSum;
             }
 
-            // Build day-by-day array with running balance
-            $days = [];
-            $runningBalance = $balance; // Work backwards from current balance
+            $openingBalance = $currentBalance - $weekInflows + $weekOutflows;
 
-            $dayList = [];
-            $c = \Carbon\Carbon::parse($tenDaysAgo)->copy();
-            while ($c->lte(\Carbon\Carbon::parse($today))) {
-                $dayList[] = $c->toDateString();
-                $c->addDay();
+            // ---- Individual records for the week ----
+
+            // Cash Transfers (involving these pools)
+            $transfers = [];
+            if (!empty($poolIds)) {
+                $transfers = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where(function ($q) use ($poolIds) {
+                        $q->whereIn('from_pool_id', $poolIds)
+                          ->orWhereIn('to_pool_id', $poolIds);
+                    })
+                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name'])
+                    ->orderBy('transfer_date', 'desc')
+                    ->get()
+                    ->map(function ($t) use ($poolIds) {
+                        $direction = in_array($t->from_pool_id, $poolIds) ? 'out' : 'in';
+                        return [
+                            'id' => $t->id,
+                            'date' => $t->transfer_date->format('Y-m-d'),
+                            'amount' => (float) $t->amount,
+                            'direction' => $direction,
+                            'from_pool' => $t->fromPool ? $t->fromPool->name : 'N/A',
+                            'to_pool' => $t->toPool ? $t->toPool->name : 'N/A',
+                            'description' => $t->description,
+                            'method' => $t->method,
+                            'created_by' => $t->creator ? $t->creator->name : 'N/A',
+                        ];
+                    })->toArray();
             }
 
-            foreach (array_reverse($dayList) as $d) {
-                $dayInflow = (float) ($inflows[$d] ?? 0) + (float) ($transfersIn[$d] ?? 0);
-                $dayOutflow = (float) ($outflows[$d] ?? 0) + (float) ($transfersOut[$d] ?? 0);
-
-                // Only include days that have actual activity
-                if ($dayInflow > 0 || $dayOutflow > 0) {
-                    $days[] = [
-                        'date' => $d,
-                        'inflows' => $dayInflow,
-                        'outflows' => $dayOutflow,
-                        'balance' => $runningBalance,
-                    ];
-                }
-
-                // Working backwards: add outflows and subtract inflows to get previous balance
-                $runningBalance = $runningBalance + $dayOutflow - $dayInflow;
+            // Expenses (paid from these pools)
+            $expenses = [];
+            if (!empty($poolIds)) {
+                $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [$sunday, $today])
+                    ->with(['category:id,name', 'paidFromPool:id,name'])
+                    ->orderBy('expense_date', 'desc')
+                    ->get()
+                    ->map(function ($e) {
+                        return [
+                            'id' => $e->id,
+                            'date' => $e->expense_date->format('Y-m-d'),
+                            'amount' => (float) $e->amount,
+                            'description' => $e->description,
+                            'category' => $e->category ? $e->category->name : 'N/A',
+                            'pool' => $e->paidFromPool ? $e->paidFromPool->name : 'N/A',
+                            'status' => $e->status,
+                        ];
+                    })->toArray();
             }
 
-            // Reverse so oldest first
-            $days = array_reverse($days);
+            // Staff Advances (from these pools)
+            $staffAdvances = [];
+            if (!empty($poolIds)) {
+                $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sunday . ' 00:00:00', $today . ' 23:59:59'])
+                    ->with(['staffUser:id,name', 'pool:id,name'])
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->map(function ($a) {
+                        return [
+                            'id' => $a->id,
+                            'date' => $a->created_at->format('Y-m-d'),
+                            'amount' => (float) $a->amount,
+                            'staff_name' => $a->staffUser ? $a->staffUser->name : 'N/A',
+                            'pool' => $a->pool ? $a->pool->name : 'N/A',
+                            'description' => $a->description,
+                        ];
+                    })->toArray();
+            }
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'branch_name' => $branchName,
-                    'pool_balance' => $balance,
-                    'movements' => $days,
+                    'pool_balance' => $currentBalance,
+                    'opening_balance' => $openingBalance,
+                    'week_start' => $sunday,
+                    'transfers' => $transfers,
+                    'expenses' => $expenses,
+                    'staff_advances' => $staffAdvances,
                 ],
             ]);
         } catch (\Exception $e) {
