@@ -1378,7 +1378,10 @@ var CashflowExpenses = (function () {
         }
 
         function formatVal(field, val, values) {
-            if (val === null || val === undefined || val === '') return '(empty)';
+            if (val === null || val === undefined || val === '') {
+                if (field === 'for_branch_id' && values['is_for_general']) return 'General / Company-wide';
+                return '(empty)';
+            }
             var relName = getRelName(values, field);
             if (relName) return relName;
             if (field === 'expense_date') { var d = String(val).substring(0, 10); return d || '(empty)'; }
