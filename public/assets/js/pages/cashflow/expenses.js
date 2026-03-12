@@ -316,6 +316,7 @@ var CashflowExpenses = (function () {
         // Init Select2 on page-level filter selects (after options are populated)
         $('#filter-status').select2();
         $('#filter-branch').select2();
+        $('#filter-pool').select2();
         $('#filter-category').select2();
     }
 
