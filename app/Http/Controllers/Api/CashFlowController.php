@@ -407,7 +407,7 @@ class CashFlowController extends Controller
             $accountId = Auth::user()->account_id;
 
             $filters = $request->only([
-                'status', 'branch_id', 'category_id', 'date_from', 'date_to',
+                'status', 'branch_id', 'pool_id', 'category_id', 'date_from', 'date_to',
                 'flagged', 'voided', 'search',
             ]);
 

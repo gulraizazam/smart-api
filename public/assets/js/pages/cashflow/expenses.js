@@ -64,6 +64,7 @@ var CashflowExpenses = (function () {
         $('#btn-reset-filters').on('click', function () {
             $('#filter-status').val('').trigger('change');
             $('#filter-branch').val('').trigger('change');
+            $('#filter-pool').val('').trigger('change');
             $('#filter-category').val('').trigger('change');
             $('#filter-search').val('');
             var picker = $('#filter-date-range').data('daterangepicker');
@@ -266,6 +267,13 @@ var CashflowExpenses = (function () {
         });
         $('#filter-branch').html(html);
 
+        // Filter pools (paid from)
+        html = '<option value="">All Pools</option>';
+        $.each(data.pools, function (i, pool) {
+            html += '<option value="' + pool.id + '">' + escapeHtml(pool.name) + '</option>';
+        });
+        $('#filter-pool').html(html);
+
         // Payment modes (exclude 'card' type)
         html = '<option value="">Select method</option>';
         $.each(data.payment_modes, function (i, pm) {
@@ -386,6 +394,7 @@ var CashflowExpenses = (function () {
             per_page: 25,
             status: $('#filter-status').val(),
             branch_id: $('#filter-branch').val(),
+            pool_id: $('#filter-pool').val(),
             category_id: $('#filter-category').val(),
             date_from: dr.date_from,
             date_to: dr.date_to,
