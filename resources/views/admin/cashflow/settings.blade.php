@@ -252,68 +252,6 @@
                     </div>
                 </div>
 
-                <!--begin::Audit Trail Card-->
-                @can('cashflow_audit_view')
-                <div class="card card-custom mb-5">
-                    <div class="card-header py-3">
-                        <div class="card-title">
-                            <h3 class="card-label"><i class="la la-history mr-2"></i>Audit Trail</h3>
-                        </div>
-                        <div class="card-toolbar flex-wrap">
-                            <select id="audit-entity-filter" class="form-control form-control-sm mr-2 mb-1" style="width:150px;">
-                                <option value="">All Types</option>
-                                <option value="expense">Expenses</option>
-                                <option value="transfer">Transfers</option>
-                                <option value="vendor">Vendors</option>
-                                <option value="vendor_transaction">Vendor Txn</option>
-                                <option value="vendor_request">Vendor Request</option>
-                                <option value="staff_advance">Advances</option>
-                                <option value="staff_return">Returns</option>
-                                <option value="cash_pool">Pools</option>
-                                <option value="category">Categories</option>
-                                <option value="category_request">Category Request</option>
-                                <option value="settings">Settings</option>
-                                <option value="period_lock">Period Lock</option>
-                            </select>
-                            <select id="audit-action-filter" class="form-control form-control-sm mr-2 mb-1" style="width:130px;">
-                                <option value="">All Actions</option>
-                                <option value="created">Created</option>
-                                <option value="updated">Updated</option>
-                                <option value="voided">Voided</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="resubmitted">Resubmitted</option>
-                                <option value="deleted">Deleted</option>
-                                <option value="locked">Locked</option>
-                                <option value="unlocked">Unlocked</option>
-                            </select>
-                            <button id="btn-load-audit" class="btn btn-light-primary mb-1"><i class="la la-search"></i> Load</button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-head-custom mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="px-4" style="width:150px;">Time</th>
-                                        <th class="px-4" style="width:140px;">User</th>
-                                        <th class="px-4">Description</th>
-                                        <th class="px-4" style="width:80px;">Details</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="audit-trail-tbody">
-                                    <tr><td colspan="4" class="text-center text-muted py-4">Select filters and click Load</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center px-4 py-3">
-                            <span class="text-muted font-size-sm" id="audit-info"></span>
-                            <div id="audit-pagination"></div>
-                        </div>
-                    </div>
-                </div>
-                @endcan
-
             </div>
         </div>
     </div>
