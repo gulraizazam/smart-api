@@ -1587,6 +1587,10 @@ class CashFlowController extends Controller
                 $query->where('entity_type', $request->input('entity_type'));
             }
 
+            if ($request->filled('action')) {
+                $query->where('action', $request->input('action'));
+            }
+
             $perPage = min((int) $request->input('per_page', 25), 100);
             $logs = $query->paginate($perPage);
 

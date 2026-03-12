@@ -9,6 +9,7 @@ var CashflowSettings = (function () {
 
         // Init Select2 on page-level filter selects
         $('#audit-entity-filter').select2();
+        $('#audit-action-filter').select2();
     }
 
     function bindEvents() {
@@ -602,21 +603,59 @@ var CashflowSettings = (function () {
 
     // ===================== AUDIT TRAIL VIEWER =====================
 
+    var entityLabels = {
+        expense: 'Expense', transfer: 'Cash Transfer', vendor: 'Vendor',
+        vendor_transaction: 'Vendor Transaction', vendor_request: 'Vendor Request',
+        staff_advance: 'Staff Advance', staff_return: 'Staff Return',
+        cash_pool: 'Cash Pool', category: 'Category', category_request: 'Category Request',
+        settings: 'Settings', period_lock: 'Period Lock', module: 'Module'
+    };
+    var actionColors = {
+        created: 'success', updated: 'primary', voided: 'danger', approved: 'success',
+        rejected: 'danger', resubmitted: 'warning', deleted: 'danger', locked: 'dark',
+        unlocked: 'info', deactivated: 'secondary', auto_created: 'info', reset: 'danger'
+    };
+    var actionIcons = {
+        created: 'la-plus-circle', updated: 'la-edit', voided: 'la-ban', approved: 'la-check-circle',
+        rejected: 'la-times-circle', resubmitted: 'la-redo', deleted: 'la-trash', locked: 'la-lock',
+        unlocked: 'la-unlock', deactivated: 'la-power-off', auto_created: 'la-robot', reset: 'la-undo'
+    };
+
+    // Fields to show in human-readable summary per entity type
+    var entityKeyFields = {
+        expense: ['description', 'amount', 'expense_date', 'status'],
+        transfer: ['amount', 'transfer_date', 'method'],
+        vendor: ['name', 'payment_terms'],
+        vendor_transaction: ['amount', 'type', 'description', 'transaction_date'],
+        vendor_request: ['name'],
+        staff_advance: ['amount', 'description'],
+        staff_return: ['amount', 'description'],
+        cash_pool: ['name', 'type', 'cached_balance'],
+        category: ['name'],
+        category_request: ['name'],
+        settings: ['key', 'value'],
+        period_lock: ['month', 'year']
+    };
+
+    // Fields to skip in change details (internal/noisy)
+    var skipFields = ['id', 'account_id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'verified_by', 'voided_by', 'user_id', 'pivot'];
+
     function loadAuditTrail(page) {
         var entityType = $('#audit-entity-filter').val();
+        var actionType = $('#audit-action-filter').val();
         var tbody = $('#audit-trail-tbody');
-        tbody.html('<tr><td colspan="7" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div> Loading...</td></tr>');
+        tbody.html('<tr><td colspan="4" class="text-center py-3"><div class="spinner spinner-primary spinner-sm"></div> Loading...</td></tr>');
 
         $.ajax({
             url: apiBase + 'audit-logs',
             type: 'GET',
-            data: { entity_type: entityType, page: page || 1, per_page: 25 },
+            data: { entity_type: entityType, action: actionType, page: page || 1, per_page: 25 },
             success: function (res) {
-                if (!res.success) { tbody.html('<tr><td colspan="7" class="text-center text-danger">Failed to load.</td></tr>'); return; }
+                if (!res.success) { tbody.html('<tr><td colspan="4" class="text-center text-danger">Failed to load.</td></tr>'); return; }
                 tbody.empty();
                 var logs = res.data;
                 if (!logs || !logs.length) {
-                    tbody.html('<tr><td colspan="7" class="text-center text-muted py-4">No audit logs found.</td></tr>');
+                    tbody.html('<tr><td colspan="4" class="text-center text-muted py-4">No audit logs found.</td></tr>');
                     $('#audit-info').text('');
                     $('#audit-pagination').empty();
                     return;
@@ -625,32 +664,196 @@ var CashflowSettings = (function () {
                 $.each(logs, function (i, log) {
                     var ts = log.created_at ? new Date(log.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                     var userName = log.user ? escapeHtml(log.user.name) : '<em class="text-muted">System</em>';
-                    var actionBadge = '<span class="label label-light-primary label-inline">' + escapeHtml(log.action || '') + '</span>';
+                    var color = actionColors[log.action] || 'secondary';
+                    var icon = actionIcons[log.action] || 'la-circle';
+                    var entLabel = entityLabels[log.entity_type] || log.entity_type;
+                    var actionLabel = (log.action || '').charAt(0).toUpperCase() + (log.action || '').slice(1);
+
+                    // Build description
+                    var desc = '<span class="label label-' + color + ' label-inline mr-2"><i class="la ' + icon + ' mr-1"></i>' + escapeHtml(actionLabel) + '</span>';
+                    desc += '<span class="font-weight-bold">' + escapeHtml(entLabel) + '</span>';
+                    desc += ' <span class="text-muted">#' + (log.entity_id || '?') + '</span>';
+
+                    // Add a brief context from new_values
+                    var brief = buildBrief(log);
+                    if (brief) desc += '<span class="text-muted ml-2">— ' + brief + '</span>';
+
+                    // Reason
+                    if (log.reason) {
+                        desc += '<div class="font-size-xs text-muted mt-1"><i class="la la-comment-alt mr-1"></i>' + escapeHtml(log.reason) + '</div>';
+                    }
+
+                    // IP
+                    desc += '<div class="font-size-xs text-muted mt-1"><i class="la la-globe mr-1"></i>' + escapeHtml(log.ip_address || '') + '</div>';
+
+                    // Check if there are meaningful changes to show
+                    var hasDetails = (log.old_values && log.new_values && log.action !== 'created') || (log.action === 'created' && log.new_values);
+                    var detailBtn = hasDetails ? '<button class="btn btn-sm btn-light-primary btn-icon btn-audit-detail" data-idx="' + i + '" title="View Changes"><i class="la la-eye"></i></button>' : '<span class="text-muted">—</span>';
+
                     tbody.append(
                         '<tr>' +
-                        '<td class="px-4 font-size-sm">' + ts + '</td>' +
-                        '<td class="px-4">' + userName + '</td>' +
-                        '<td class="px-4">' + actionBadge + '</td>' +
-                        '<td class="px-4">' + escapeHtml(log.entity_type || '') + '</td>' +
-                        '<td class="px-4">' + (log.entity_id || '-') + '</td>' +
-                        '<td class="px-4 font-size-sm">' + escapeHtml(log.reason || '') + '</td>' +
-                        '<td class="px-4 font-size-xs text-muted">' + escapeHtml(log.ip_address || '') + '</td>' +
+                        '<td class="px-4 font-size-sm text-nowrap align-top">' + ts + '</td>' +
+                        '<td class="px-4 align-top">' + userName + '</td>' +
+                        '<td class="px-4">' + desc + '</td>' +
+                        '<td class="px-4 text-center align-top">' + detailBtn + '</td>' +
                         '</tr>'
                     );
+
+                    // Hidden detail row
+                    if (hasDetails) {
+                        var changeHtml = buildChangeDetails(log);
+                        tbody.append('<tr class="audit-detail-row d-none" data-idx="' + i + '"><td colspan="4" class="px-4 py-3 bg-light">' + changeHtml + '</td></tr>');
+                    }
+                });
+
+                // Toggle detail rows
+                tbody.find('.btn-audit-detail').off('click').on('click', function () {
+                    var idx = $(this).data('idx');
+                    var row = tbody.find('.audit-detail-row[data-idx="' + idx + '"]');
+                    row.toggleClass('d-none');
+                    $(this).find('i').toggleClass('la-eye la-eye-slash');
                 });
 
                 // Pagination
                 if (res.meta) {
                     $('#audit-info').text('Page ' + res.meta.current_page + ' of ' + res.meta.last_page + ' (' + res.meta.total + ' logs)');
                     var links = '';
-                    if (res.meta.current_page > 1) links += '<button class="btn btn-sm btn-outline-primary mr-1 btn-audit-pg" data-page="' + (res.meta.current_page - 1) + '">&laquo;</button>';
-                    if (res.meta.current_page < res.meta.last_page) links += '<button class="btn btn-sm btn-outline-primary btn-audit-pg" data-page="' + (res.meta.current_page + 1) + '">&raquo;</button>';
+                    if (res.meta.current_page > 1) links += '<button class="btn btn-sm btn-outline-primary mr-1 btn-audit-pg" data-page="' + (res.meta.current_page - 1) + '">&laquo; Prev</button>';
+                    if (res.meta.current_page < res.meta.last_page) links += '<button class="btn btn-sm btn-outline-primary btn-audit-pg" data-page="' + (res.meta.current_page + 1) + '">Next &raquo;</button>';
                     $('#audit-pagination').html(links);
                     $('.btn-audit-pg').off('click').on('click', function () { loadAuditTrail($(this).data('page')); });
                 }
             },
-            error: function () { tbody.html('<tr><td colspan="7" class="text-center text-danger">Failed to load audit trail.</td></tr>'); }
+            error: function () { tbody.html('<tr><td colspan="4" class="text-center text-danger">Failed to load audit trail.</td></tr>'); }
         });
+    }
+
+    function buildBrief(log) {
+        var vals = log.new_values || log.old_values;
+        if (!vals) return '';
+        var keys = entityKeyFields[log.entity_type] || [];
+        var parts = [];
+        for (var k = 0; k < keys.length && parts.length < 2; k++) {
+            var field = keys[k];
+            // Check nested relation name (e.g. category.name, paid_from_pool.name)
+            var v = vals[field];
+            if (v === undefined || v === null || v === '') continue;
+            if (field === 'amount') {
+                parts.push('PKR ' + Number(parseFloat(v) || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 }));
+            } else if (typeof v === 'string' && v.length > 40) {
+                parts.push(escapeHtml(v.substring(0, 40)) + '...');
+            } else {
+                parts.push(escapeHtml(String(v)));
+            }
+        }
+        return parts.join(', ');
+    }
+
+    function buildChangeDetails(log) {
+        if (log.action === 'created' && log.new_values) {
+            return buildCreatedDetails(log.new_values, log.entity_type);
+        }
+        if (!log.old_values || !log.new_values) return '<span class="text-muted">No change details available.</span>';
+
+        var oldV = log.old_values;
+        var newV = log.new_values;
+        var changes = [];
+
+        // Collect all keys
+        var allKeys = {};
+        for (var k in oldV) allKeys[k] = true;
+        for (var k in newV) allKeys[k] = true;
+
+        for (var field in allKeys) {
+            if (skipFields.indexOf(field) !== -1) continue;
+            // Skip nested relation objects (arrays/objects)
+            if (typeof oldV[field] === 'object' && oldV[field] !== null && !Array.isArray(oldV[field])) continue;
+            if (typeof newV[field] === 'object' && newV[field] !== null && !Array.isArray(newV[field])) continue;
+
+            var oldVal = oldV[field];
+            var newVal = newV[field];
+
+            // Normalize for comparison
+            var oldStr = (oldVal === null || oldVal === undefined) ? '' : String(oldVal);
+            var newStr = (newVal === null || newVal === undefined) ? '' : String(newVal);
+
+            if (oldStr !== newStr) {
+                var label = formatFieldName(field);
+                var oldDisplay = formatFieldValue(field, oldVal, oldV);
+                var newDisplay = formatFieldValue(field, newVal, newV);
+                changes.push({ field: label, from: oldDisplay, to: newDisplay });
+            }
+        }
+
+        if (!changes.length) return '<span class="text-muted">No visible changes detected.</span>';
+
+        var html = '<table class="table table-sm table-bordered mb-0" style="font-size:12px;"><thead><tr><th style="width:25%;">Field</th><th style="width:37%;">Old Value</th><th style="width:37%;">New Value</th></tr></thead><tbody>';
+        for (var c = 0; c < changes.length; c++) {
+            html += '<tr><td class="font-weight-bold">' + escapeHtml(changes[c].field) + '</td>' +
+                '<td class="text-danger">' + escapeHtml(changes[c].from || '(empty)') + '</td>' +
+                '<td class="text-success">' + escapeHtml(changes[c].to || '(empty)') + '</td></tr>';
+        }
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function buildCreatedDetails(vals, entityType) {
+        var keys = entityKeyFields[entityType] || Object.keys(vals).slice(0, 8);
+        var html = '<div class="font-size-sm"><strong>Created with:</strong><ul class="mb-0 pl-4 mt-1">';
+        for (var k = 0; k < keys.length; k++) {
+            var field = typeof keys === 'object' ? keys[k] : keys;
+            var v = vals[field];
+            if (v === undefined || v === null || v === '') continue;
+            html += '<li><strong>' + escapeHtml(formatFieldName(field)) + ':</strong> ' + escapeHtml(formatFieldValue(field, v, vals)) + '</li>';
+        }
+        html += '</ul></div>';
+        return html;
+    }
+
+    function formatFieldName(field) {
+        // Convert snake_case to Title Case
+        return field.replace(/_id$/, '').replace(/_/g, ' ').replace(/\b\w/g, function (l) { return l.toUpperCase(); });
+    }
+
+    function formatFieldValue(field, val, context) {
+        if (val === null || val === undefined) return '(empty)';
+
+        // Resolve _id fields by looking for relation name in context
+        if (field.endsWith('_id')) {
+            var relName = field.replace(/_id$/, '');
+            // Try common relation patterns
+            var patterns = [relName, relName.replace(/_/g, ''), toCamelCase(relName)];
+            for (var p = 0; p < patterns.length; p++) {
+                if (context[patterns[p]] && typeof context[patterns[p]] === 'object' && context[patterns[p]].name) {
+                    return context[patterns[p]].name + ' (#' + val + ')';
+                }
+            }
+            // Special cases
+            if (field === 'category_id' && context.category && context.category.name) return context.category.name + ' (#' + val + ')';
+            if (field === 'paid_from_pool_id' && context.paid_from_pool && context.paid_from_pool.name) return context.paid_from_pool.name + ' (#' + val + ')';
+            if (field === 'payment_method_id' && context.payment_method && context.payment_method.name) return context.payment_method.name + ' (#' + val + ')';
+            if (field === 'for_branch_id' && context.for_branch && context.for_branch.name) return context.for_branch.name + ' (#' + val + ')';
+            if (field === 'vendor_id' && context.vendor && context.vendor.name) return context.vendor.name + ' (#' + val + ')';
+            if (field === 'from_pool_id' && context.from_pool && context.from_pool.name) return context.from_pool.name + ' (#' + val + ')';
+            if (field === 'to_pool_id' && context.to_pool && context.to_pool.name) return context.to_pool.name + ' (#' + val + ')';
+            if (field === 'pool_id' && context.pool && context.pool.name) return context.pool.name + ' (#' + val + ')';
+            if (field === 'staff_id' && context.staff && context.staff.name) return context.staff.name + ' (#' + val + ')';
+            if (field === 'user_id' && context.staff_user && context.staff_user.name) return context.staff_user.name + ' (#' + val + ')';
+        }
+
+        if (field === 'amount' || field === 'cached_balance' || field === 'opening_balance' || field === 'cash_amount') {
+            return 'PKR ' + Number(parseFloat(val) || 0).toLocaleString('en-PK', { maximumFractionDigits: 0 });
+        }
+
+        if (field === 'is_for_general') return val ? 'Yes (General / Company-wide)' : 'No';
+        if (field === 'is_active') return val ? 'Active' : 'Inactive';
+        if (field === 'is_flagged') return val ? 'Flagged' : 'Not Flagged';
+
+        return String(val);
+    }
+
+    function toCamelCase(str) {
+        return str.replace(/_([a-z])/g, function (m, c) { return c.toUpperCase(); });
     }
 
     // ===================== HELPERS =====================
