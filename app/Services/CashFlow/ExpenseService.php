@@ -310,7 +310,8 @@ class ExpenseService
      */
     public function resubmit(int $expenseId, array $data, int $accountId): Expense
     {
-        $expense = Expense::forAccount($accountId)->findOrFail($expenseId);
+        $auditRelations = ['category:id,name', 'paidFromPool:id,name', 'paymentMethod:id,name', 'forBranch:id,name', 'vendor:id,name', 'staff:id,name'];
+        $expense = Expense::forAccount($accountId)->with($auditRelations)->findOrFail($expenseId);
 
         if (!$expense->isRejected()) {
             throw new CashflowException('Only rejected expenses can be resubmitted.');
@@ -371,7 +372,7 @@ class ExpenseService
                 'rejection_reason' => null,
             ]);
 
-            $freshExpense = $expense->fresh();
+            $freshExpense = Expense::with($auditRelations)->find($expense->id);
             $newVendorId = $freshExpense->vendor_id;
 
             // Sync vendor transaction
