@@ -941,10 +941,17 @@ var CustomResourceCalendar = function() {
                         return;
                     }
 
-                    // Skip if not a working day
+                    // Skip if not a working day (considering exceptions)
                     var dayOfWeek = rotaDate.day();
                     var dayName = dayNames[dayOfWeek];
-                    if (!workingDaysConfig[dayName]) {
+                    var rotaException = exceptions.find(function(e) { return e.date === rota.date; });
+                    var rotaIsWorkingDay;
+                    if (rotaException) {
+                        rotaIsWorkingDay = rotaException.is_working === true;
+                    } else {
+                        rotaIsWorkingDay = workingDaysConfig[dayName] === true;
+                    }
+                    if (!rotaIsWorkingDay) {
                         return;
                     }
 
