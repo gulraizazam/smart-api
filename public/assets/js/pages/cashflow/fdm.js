@@ -35,8 +35,13 @@
                 var sundayLabel = d.week_start ? moment(d.week_start).format('ddd, MMM D') : 'Sunday';
                 $('#fdm-week-label').text('as of ' + sundayLabel);
 
-                // Period label
-                var period = d.week_start + ' — Today';
+                // Period label for transaction records (last 7 days)
+                var period = 'Last 7 days';
+                if (d.records_period_start && d.records_period_end) {
+                    var startDate = moment(d.records_period_start).format('MMM D');
+                    var endDate = moment(d.records_period_end).format('MMM D');
+                    period = startDate + ' — ' + endDate;
+                }
                 $('#fdm-transfers-period, #fdm-expenses-period, #fdm-advances-period').text('(' + period + ')');
 
                 // Render tables
