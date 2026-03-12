@@ -46,6 +46,9 @@ class ExportService
                 case 'flagged-entries':
                     $this->writeFlaggedEntriesCsv($handle, $data);
                     break;
+                case 'daily-movement':
+                    $this->writeDailyMovementCsv($handle, $data);
+                    break;
                 case 'dormant-vendors':
                     $this->writeDormantVendorsCsv($handle, $data);
                     break;
@@ -80,6 +83,8 @@ class ExportService
                 return $this->reportService->transferLog($accountId, $filters);
             case 'flagged-entries':
                 return $this->reportService->flaggedEntries($accountId, $filters);
+            case 'daily-movement':
+                return $this->reportService->dailyMovement($accountId, $filters);
             case 'dormant-vendors':
                 return $this->reportService->dormantVendors($accountId);
             default:
@@ -117,9 +122,10 @@ class ExportService
         fputcsv($handle, []);
 
         fputcsv($handle, ['F. Pool Breakdown']);
-        fputcsv($handle, ['Pool', 'Type', 'Balance']);
+        fputcsv($handle, ['Pool', 'Branch', 'Type', 'Opening Balance', 'Current Balance']);
         foreach (($data['pool_breakdown'] ?? []) as $pool) {
-            fputcsv($handle, [$pool['name'] ?? '', $pool['type'] ?? '', number_format($pool['cached_balance'] ?? 0)]);
+            $branchName = $pool['location']['name'] ?? '—';
+            fputcsv($handle, [$pool['name'] ?? '', $branchName, $pool['type'] ?? '', number_format($pool['opening_balance'] ?? 0), number_format($pool['cached_balance'] ?? 0)]);
         }
     }
 
@@ -178,7 +184,7 @@ class ExportService
 
     private function writeTransferLogCsv($handle, array $data): void
     {
-        fputcsv($handle, ['Date', 'Amount', 'From Pool', 'To Pool', 'Method', 'Reference', 'Created By']);
+        fputcsv($handle, ['Date', 'Amount', 'From Pool', 'To Pool', 'Method', 'Reference', 'Created By', 'Status']);
         foreach ($data as $row) {
             fputcsv($handle, [
                 $row['transfer_date'] ?? '',
@@ -188,19 +194,23 @@ class ExportService
                 $row['method'] ?? '',
                 $row['reference_no'] ?? '',
                 $row['creator']['name'] ?? '',
+                ($row['is_voided'] ?? false) ? 'Voided' : 'Active',
             ]);
         }
     }
 
     private function writeFlaggedEntriesCsv($handle, array $data): void
     {
-        fputcsv($handle, ['Date', 'Amount', 'Category', 'Pool', 'Vendor', 'Flag Reason', 'Status', 'Created By']);
+        fputcsv($handle, ['Date', 'Description', 'Amount', 'Category', 'Branch', 'Pool', 'Vendor', 'Flag Reason', 'Status', 'Created By']);
         foreach ($data as $row) {
+            $branchName = $row['for_branch']['name'] ?? (($row['is_for_general'] ?? false) ? 'General / Company-wide' : '');
             fputcsv($handle, [
                 $row['expense_date'] ?? '',
+                $row['description'] ?? '',
                 number_format($row['amount'] ?? 0),
                 $row['category']['name'] ?? '',
-                $row['pool']['name'] ?? '',
+                $branchName,
+                $row['paid_from_pool']['name'] ?? '',
                 $row['vendor']['name'] ?? '',
                 $row['flag_reason'] ?? '',
                 $row['status'] ?? '',
@@ -219,6 +229,23 @@ class ExportService
                 $row['last_activity'] ?? 'Never',
                 $row['days_inactive'] ?? 'N/A',
             ]);
+        }
+    }
+
+    private function writeDailyMovementCsv($handle, array $data): void
+    {
+        fputcsv($handle, ['Date', 'Pool', 'Type', 'Amount']);
+        foreach (($data['expenses'] ?? []) as $row) {
+            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Expense', number_format($row['total'] ?? 0)]);
+        }
+        foreach (($data['transfers_out'] ?? []) as $row) {
+            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer Out', number_format($row['total'] ?? 0)]);
+        }
+        foreach (($data['transfers_in'] ?? []) as $row) {
+            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer In', number_format($row['total'] ?? 0)]);
+        }
+        foreach (($data['staff_advances'] ?? []) as $row) {
+            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Staff Advance', number_format($row['total'] ?? 0)]);
         }
     }
 
