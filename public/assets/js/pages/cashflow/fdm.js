@@ -28,9 +28,12 @@
                 $('#fdm-balance').text('PKR ' + nf(d.pool_balance));
                 $('#fdm-opening-balance').text('PKR ' + nf(d.opening_balance));
 
-                // Color the balance card
+                // Color the live balance card
                 colorCard('#fdm-balance-card', d.pool_balance);
-                colorCard('#fdm-opening-card', d.opening_balance);
+
+                // Week label for opening balance
+                var sundayLabel = d.week_start ? moment(d.week_start).format('ddd, MMM D') : 'Sunday';
+                $('#fdm-week-label').text('as of ' + sundayLabel);
 
                 // Period label
                 var period = d.week_start + ' — Today';
@@ -60,7 +63,7 @@
             error: function (xhr) {
                 $('#fdm-branch-name').text('Error');
                 $('#fdm-balance').text('—');
-                $('#fdm-opening-balance').text('—');
+                $('#fdm-opening-balance').text('PKR 0');
                 var msg = xhr.responseJSON ? xhr.responseJSON.message : 'Failed to load FDM data.';
                 showError('fdm-transfers-tbody', 6, msg);
                 showError('fdm-expenses-tbody', 6, msg);

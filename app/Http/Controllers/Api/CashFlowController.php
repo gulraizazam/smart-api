@@ -1740,11 +1740,12 @@ class CashFlowController extends Controller
 
             $poolIds = $pools->pluck('id')->toArray();
             $currentBalance = (float) $pools->sum('cached_balance');
-            $openingBalance = (float) $pools->sum('opening_balance');
 
             // Week range: Sunday (start) to today
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
+            $sundayStart = $sunday . ' 00:00:00';
+            $nowEnd = $today . ' 23:59:59';
 
             // ---- Individual records for the week ----
 
@@ -1807,7 +1808,7 @@ class CashFlowController extends Controller
                 $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$sunday . ' 00:00:00', $today . ' 23:59:59'])
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd])
                     ->with(['staffUser:id,name', 'pool:id,name'])
                     ->orderBy('created_at', 'desc')
                     ->get()
@@ -1823,12 +1824,92 @@ class CashFlowController extends Controller
                     })->toArray();
             }
 
+            // ---- Calculate dynamic opening balance at Sunday ----
+            // Start from current cached_balance and reverse all transactions since Sunday
+            $openingBalance = $currentBalance;
+
+            if (!empty($poolIds)) {
+                // Reverse expenses: they debited pools, so add back
+                $weekExpenseSum = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [$sunday, $today])
+                    ->sum('amount');
+                $openingBalance += (float) $weekExpenseSum;
+
+                // Reverse transfers: outbound debited pool (add back), inbound credited pool (subtract)
+                $weekTransfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('from_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->sum('amount');
+                $openingBalance += (float) $weekTransfersOut;
+
+                $weekTransfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [$sunday, $today])
+                    ->sum('amount');
+                $openingBalance -= (float) $weekTransfersIn;
+
+                // Reverse staff advances: they debited pools, so add back
+                $weekAdvanceSum = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd])
+                    ->sum('amount');
+                $openingBalance += (float) $weekAdvanceSum;
+
+                // Reverse staff returns: they credited pools, so subtract
+                $weekReturnSum = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd])
+                    ->sum('amount');
+                $openingBalance -= (float) $weekReturnSum;
+
+                // Reverse patient payments (inflows credited pool, so subtract)
+                $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
+                $cashModeIds = \App\Models\PaymentModes::where('active', 1)
+                    ->get()
+                    ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+                    ->pluck('id')
+                    ->toArray();
+
+                if (!empty($cashModeIds)) {
+                    $weekPaymentsIn = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'in')
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereDate('system_created_at', '>=', $sunday)
+                        ->whereDate('system_created_at', '<=', $today)
+                        ->sum('cash_amount');
+                    $openingBalance -= (float) $weekPaymentsIn;
+
+                    // Reverse patient refunds (outflows debited pool, so add back)
+                    $weekRefundsOut = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'out')
+                        ->where('is_refund', 1)
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereDate('system_created_at', '>=', $sunday)
+                        ->whereDate('system_created_at', '<=', $today)
+                        ->sum('cash_amount');
+                    $openingBalance += (float) $weekRefundsOut;
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'branch_name' => $branchName,
                     'pool_balance' => $currentBalance,
-                    'opening_balance' => $openingBalance,
+                    'opening_balance' => round($openingBalance, 2),
                     'week_start' => $sunday,
                     'transfers' => $transfers,
                     'expenses' => $expenses,
