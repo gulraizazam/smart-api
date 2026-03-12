@@ -28,6 +28,37 @@
                     </div>
                 </div>
 
+                <!-- Summary Totals Row -->
+                <div class="row mb-5">
+                    <div class="col-md-4">
+                        <div class="card card-custom border-left border-danger" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Expenses Total</div>
+                                <div class="font-weight-bolder font-size-h3 text-danger" id="fdm-total-expenses">PKR 0</div>
+                                <div class="text-muted font-size-xs" id="fdm-total-expenses-count">0 records</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card card-custom border-left border-info" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Cash Transfers Total</div>
+                                <div class="font-weight-bolder font-size-h3 text-info" id="fdm-total-transfers">PKR 0</div>
+                                <div class="text-muted font-size-xs" id="fdm-total-transfers-count">0 records</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card card-custom border-left border-warning" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Staff Advances Total</div>
+                                <div class="font-weight-bolder font-size-h3 text-warning" id="fdm-total-advances">PKR 0</div>
+                                <div class="text-muted font-size-xs" id="fdm-total-advances-count">0 records</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Expenses -->
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
