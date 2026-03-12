@@ -352,6 +352,7 @@ var ConsultancyCalendar = function() {
                         thursday: true, friday: true, saturday: true, sunday: false
                     };
                     var dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    var workingDayExceptions = response.working_day_exceptions || [];
                     
                     $.each(response.rotas[0].doctor_rotas, function(id, rota) {
                         if (rota.active == '1') {
@@ -365,8 +366,17 @@ var ConsultancyCalendar = function() {
                                 return; // Skip this rota day
                             }
                             
+                            // Check for working day exception first (overrides default config)
+                            var exception = workingDayExceptions.find(function(e) { return e.date === rotaDate; });
+                            var isWorkingDay;
+                            if (exception) {
+                                isWorkingDay = exception.is_working === true;
+                            } else {
+                                isWorkingDay = workingDays[dayName] === true;
+                            }
+                            
                             // Skip if not a working day
-                            if (!workingDays[dayName]) {
+                            if (!isWorkingDay) {
                                 return; // Skip this rota day
                             }
                             

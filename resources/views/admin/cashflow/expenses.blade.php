@@ -135,12 +135,12 @@
                                     <option value="my_rejected">My Rejected</option>
                                 </select>
                             </div>
-                            <div class="col">
+                            {{-- <div class="col">
                                 <select id="filter-branch" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Branches</option>
                                     <option value="general">General</option>
                                 </select>
-                            </div>
+                            </div> --}}
                             <div class="col">
                                 <select id="filter-pool" class="form-control form-control-sm kt-select2-general">
                                     <option value="">All Pools</option>
