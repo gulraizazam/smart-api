@@ -259,21 +259,35 @@
                         <div class="card-title">
                             <h3 class="card-label"><i class="la la-history mr-2"></i>Audit Trail</h3>
                         </div>
-                        <div class="card-toolbar">
-                            <select id="audit-entity-filter" class="form-control form-control-sm kt-select2-general mr-2" style="width:150px;">
+                        <div class="card-toolbar flex-wrap">
+                            <select id="audit-entity-filter" class="form-control form-control-sm mr-2 mb-1" style="width:150px;">
                                 <option value="">All Types</option>
                                 <option value="expense">Expenses</option>
                                 <option value="transfer">Transfers</option>
                                 <option value="vendor">Vendors</option>
                                 <option value="vendor_transaction">Vendor Txn</option>
+                                <option value="vendor_request">Vendor Request</option>
                                 <option value="staff_advance">Advances</option>
                                 <option value="staff_return">Returns</option>
                                 <option value="cash_pool">Pools</option>
                                 <option value="category">Categories</option>
+                                <option value="category_request">Category Request</option>
                                 <option value="settings">Settings</option>
                                 <option value="period_lock">Period Lock</option>
                             </select>
-                            <button id="btn-load-audit" class="btn btn-light-primary"><i class="la la-search"></i> Load</button>
+                            <select id="audit-action-filter" class="form-control form-control-sm mr-2 mb-1" style="width:130px;">
+                                <option value="">All Actions</option>
+                                <option value="created">Created</option>
+                                <option value="updated">Updated</option>
+                                <option value="voided">Voided</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="resubmitted">Resubmitted</option>
+                                <option value="deleted">Deleted</option>
+                                <option value="locked">Locked</option>
+                                <option value="unlocked">Unlocked</option>
+                            </select>
+                            <button id="btn-load-audit" class="btn btn-light-primary mb-1"><i class="la la-search"></i> Load</button>
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -281,17 +295,14 @@
                             <table class="table table-sm table-head-custom mb-0">
                                 <thead>
                                     <tr>
-                                        <th class="px-4">Time</th>
-                                        <th class="px-4">User</th>
-                                        <th class="px-4">Action</th>
-                                        <th class="px-4">Entity</th>
-                                        <th class="px-4">ID</th>
-                                        <th class="px-4">Reason</th>
-                                        <th class="px-4">IP</th>
+                                        <th class="px-4" style="width:150px;">Time</th>
+                                        <th class="px-4" style="width:140px;">User</th>
+                                        <th class="px-4">Description</th>
+                                        <th class="px-4" style="width:80px;">Details</th>
                                     </tr>
                                 </thead>
                                 <tbody id="audit-trail-tbody">
-                                    <tr><td colspan="7" class="text-center text-muted py-4">Select a type and click Load</td></tr>
+                                    <tr><td colspan="4" class="text-center text-muted py-4">Select filters and click Load</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -418,6 +429,6 @@
     </div>
 
     @push('js')
-        <script src="{{ asset('assets/js/pages/cashflow/settings.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/cashflow/settings.js') }}?v={{ time() }}"></script>
     @endpush
 @endsection
