@@ -15,6 +15,11 @@
     function bindEvents() {
         $('#btn-refresh-dash').on('click', loadDashboard);
         $('#btn-reconcile').on('click', runReconciliation);
+        
+        // Modal cleanup on close
+        $('#modal_preview').on('hidden.bs.modal', function () {
+            $('#preview-iframe').attr('src', '');
+        });
     }
 
     function getDateRange() {
@@ -294,7 +299,7 @@
                 dateStr = ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + '/' + d.getFullYear();
             }
             var attachIcon = exp.attachment_url
-                ? '<i class="la la-paperclip text-success" title="Has attachment"></i>'
+                ? '<a href="javascript:;" class="btn-preview-dash" data-url="' + esc(exp.attachment_url) + '"><i class="la la-paperclip text-success" title="Has attachment"></i></a>'
                 : '<i class="la la-times text-danger" title="No attachment"></i>';
             var actions = '<button class="btn btn-xs btn-light-success mr-1 btn-dash-approve" data-id="' + exp.id + '" data-attach="' + (exp.attachment_url ? '1' : '0') + '"><i class="la la-check"></i></button>' +
                 '<button class="btn btn-xs btn-light-danger btn-dash-reject" data-id="' + exp.id + '"><i class="la la-times"></i></button>';
@@ -338,6 +343,20 @@
                 success: function (res) { toastr.success(res.message || 'Rejected.'); loadDashboard(); },
                 error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); }
             });
+        });
+
+        // Bind attachment preview
+        $('.btn-preview-dash').off('click').on('click', function () {
+            var url = $(this).data('url');
+            if (!url) return;
+            var previewUrl = getDrivePreviewUrl(url);
+            if (previewUrl) {
+                $('#preview-iframe').attr('src', previewUrl);
+                $('#preview-open-new').attr('href', url);
+                $('#modal_preview').modal('show');
+            } else {
+                window.open(url, '_blank');
+            }
         });
     }
 
@@ -461,5 +480,19 @@
     function esc(s) { return $('<span>').text(s || '').html(); }
     function formatDate(d) { if (!d) return '-'; if (typeof d === 'string') { var p = d.split(/[-T]/); return p[2] + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(p[1],10)-1] + ' ' + p[0]; } return d.toISOString().split('T')[0]; }
     function truncate(s, n) { return s && s.length > n ? s.substring(0, n) + '...' : (s || ''); }
+    
+    function getDrivePreviewUrl(url) {
+        if (!url) return null;
+        var match;
+        // https://drive.google.com/file/d/{ID}/...
+        match = url.match(/drive\.google\.com\/file\/d\/([^\/\?]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        // https://drive.google.com/open?id={ID}
+        match = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+        if (match) return 'https://drive.google.com/file/d/' + match[1] + '/preview';
+        // https://docs.google.com/...
+        if (/docs\.google\.com/.test(url)) return url.replace(/\/edit.*$/, '/preview');
+        return null;
+    }
 
 })();

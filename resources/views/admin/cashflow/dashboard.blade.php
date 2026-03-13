@@ -225,6 +225,24 @@
         </div>
     </div>
 
+    <!-- Attachment Preview Modal -->
+    <div class="modal fade" id="modal_preview" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-3" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-paperclip text-primary mr-2"></i>Attachment Preview</h5>
+                    <div>
+                        <a id="preview-open-new" href="#" target="_blank" class="btn btn-sm btn-light-primary mr-2"><i class="la la-external-link-alt"></i> Open in Drive</a>
+                        <button type="button" class="close ml-2" data-dismiss="modal" aria-label="Close"><i class="la la-times"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0">
+                    <iframe id="preview-iframe" src="" style="width:100%;height:75vh;border:none;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('js')
         <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
         <script src="{{ asset('assets/js/pages/cashflow/dashboard.js') }}"></script>
