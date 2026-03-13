@@ -1001,7 +1001,8 @@ class InvoiceGenerationService
                 $taxableAmount += $this->unplacedExemptPerPatient[$patientId];
             }
 
-            if ($taxableAmount < 1) {
+            // Skip if taxable amount is less than 1000 (minimum threshold)
+            if ($taxableAmount < 1000) {
                 continue;
             }
 
@@ -1020,22 +1021,17 @@ class InvoiceGenerationService
             $invoiceAmounts = [];
             $remainingAmount = $taxableAmount;
 
-            if ($taxableAmount < 1000) {
-                $invoiceAmounts[] = round($taxableAmount, 2);
-            } else {
-                // For amounts >= 1000, generate random invoices between 1000-10000
-                while ($remainingAmount >= 1000) {
-                    $maxAmount = min(10000, $remainingAmount);
-                    $amount = rand(1000, (int)$maxAmount);
+            while ($remainingAmount >= 1000) {
+                $maxAmount = min(10000, $remainingAmount);
+                $amount = rand(1000, (int)$maxAmount);
 
-                    // If this would leave less than 1000, add it to this invoice
-                    if ($remainingAmount - $amount < 1000) {
-                        $amount = $remainingAmount;
-                    }
-
-                    $invoiceAmounts[] = round($amount, 2);
-                    $remainingAmount -= $amount;
+                // If this would leave less than 1000, add it to this invoice
+                if ($remainingAmount - $amount < 1000) {
+                    $amount = $remainingAmount;
                 }
+
+                $invoiceAmounts[] = round($amount, 2);
+                $remainingAmount -= $amount;
             }
 
             // If there's still a small remainder, add it to the last invoice
