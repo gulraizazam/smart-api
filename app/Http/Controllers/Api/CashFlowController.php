@@ -1743,14 +1743,14 @@ class CashFlowController extends Controller
             $currentBalance = (float) $pools->sum('cached_balance');
             
             // Add inventory cash sales since March 8th to current balance
-            $march8th = '2024-03-08';
+            $march8th = '2026-03-08';
             $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
             
             $inventorySalesSinceMarch8 = Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
                 ->where('payment_mode', 1) // Cash payment mode
                 ->whereIn('location_id', array_keys($branchPoolMap))
-                ->whereDate('created_at', '>', $march8th)
+                ->where('created_at', '>=', $march8th . ' 00:00:00')
                 ->sum('total_price');
             
             $currentBalance += (float) $inventorySalesSinceMarch8;
