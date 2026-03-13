@@ -1912,26 +1912,31 @@ class CashFlowController extends Controller
             // ---- Calculate cash inflows for current week ----
             // Services cash inflows (package_advances) for current week
             $servicesCashInflows = 0;
+            $servicesCashInflowsCount = 0;
             if (!empty($cashModeIds)) {
-                $servicesCashInflows = \App\Models\PackageAdvances::where('account_id', $accountId)
+                $servicesQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
                     ->where('cash_flow', 'in')
                     ->where('is_cancel', 0)
                     ->whereNull('deleted_at')
                     ->whereIn('payment_mode_id', $cashModeIds)
                     ->whereIn('location_id', array_keys($branchPoolMap))
                     ->whereDate('system_created_at', '>=', $sunday)
-                    ->whereDate('system_created_at', '<=', $today)
-                    ->sum('cash_amount');
+                    ->whereDate('system_created_at', '<=', $today);
+                
+                $servicesCashInflows = $servicesQuery->sum('cash_amount');
+                $servicesCashInflowsCount = $servicesQuery->count();
             }
 
             // Inventory cash inflows (orders) for current week
-            $inventoryCashInflows = Order::where('account_id', $accountId)
+            $inventoryQuery = Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
                 ->where('payment_mode', 1) // Cash payment mode
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->whereDate('created_at', '>=', $sunday)
-                ->whereDate('created_at', '<=', $today)
-                ->sum('total_price');
+                ->whereDate('created_at', '<=', $today);
+            
+            $inventoryCashInflows = $inventoryQuery->sum('total_price');
+            $inventoryCashInflowsCount = $inventoryQuery->count();
 
             return response()->json([
                 'success' => true,
@@ -1943,7 +1948,9 @@ class CashFlowController extends Controller
                     'records_period_start' => $sevenDaysAgo,
                     'records_period_end' => $today,
                     'services_cash_inflows' => (float) $servicesCashInflows,
+                    'services_cash_inflows_count' => $servicesCashInflowsCount,
                     'inventory_cash_inflows' => (float) $inventoryCashInflows,
+                    'inventory_cash_inflows_count' => $inventoryCashInflowsCount,
                     'transfers' => $transfers,
                     'expenses' => $expenses,
                     'staff_advances' => $staffAdvances,

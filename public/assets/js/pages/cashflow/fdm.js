@@ -31,6 +31,8 @@
                 // Cash inflow cards
                 $('#fdm-services-cash').text('PKR ' + nf(d.services_cash_inflows || 0));
                 $('#fdm-inventory-cash').text('PKR ' + nf(d.inventory_cash_inflows || 0));
+                $('#fdm-services-cash-count').text((d.services_cash_inflows_count || 0) + ' records');
+                $('#fdm-inventory-cash-count').text((d.inventory_cash_inflows_count || 0) + ' records');
 
                 // Color the live balance card
                 colorCard('#fdm-balance-card', d.pool_balance);
