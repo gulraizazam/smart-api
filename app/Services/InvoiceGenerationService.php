@@ -97,6 +97,11 @@ class InvoiceGenerationService
         // Step 9: Generate taxable invoices (includes unplaced exempt amounts)
         $taxableInvoices = $this->generateTaxableInvoices($distribution);
 
+        // Step 9b: Apply mixing rule if maxInvoicesPerDay > 2
+        if ($this->maxInvoicesPerDay > 2) {
+            list($exemptInvoices, $taxableInvoices) = $this->redistributeInvoicesForMixing($exemptInvoices, $taxableInvoices);
+        }
+
         // Step 10: Calculate final summary
         $summary = $this->calculateSummary($distribution, $exemptInvoices, $taxableInvoices, $pool);
 
@@ -1334,5 +1339,176 @@ class InvoiceGenerationService
                 'match' => abs($pool['total'] - ($totalExemptInvoiced + $totalTaxableInvoiced + $exemptRemainder + $taxableRemainder)) < 1,
             ],
         ];
+    }
+
+    /**
+     * Redistribute invoices to ensure mixing when maxInvoicesPerDay > 2
+     * Ensures no patient has more than 2 consecutive invoices of the same type on any day
+     * 
+     * @param array $exemptInvoices
+     * @param array $taxableInvoices
+     * @return array [$exemptInvoices, $taxableInvoices]
+     */
+    protected function redistributeInvoicesForMixing(array $exemptInvoices, array $taxableInvoices): array
+    {
+        // Group invoices by patient and date
+        $patientDayInvoices = [];
+        
+        // Add exempt invoices
+        foreach ($exemptInvoices as $index => $invoice) {
+            $key = $invoice['patient_id'] . '_' . $invoice['invoice_date'];
+            if (!isset($patientDayInvoices[$key])) {
+                $patientDayInvoices[$key] = [
+                    'patient_id' => $invoice['patient_id'],
+                    'date' => $invoice['invoice_date'],
+                    'invoices' => []
+                ];
+            }
+            $patientDayInvoices[$key]['invoices'][] = [
+                'type' => 'exempt',
+                'index' => $index,
+                'invoice' => $invoice
+            ];
+        }
+        
+        // Add taxable invoices
+        foreach ($taxableInvoices as $index => $invoice) {
+            $key = $invoice['patient_id'] . '_' . $invoice['invoice_date'];
+            if (!isset($patientDayInvoices[$key])) {
+                $patientDayInvoices[$key] = [
+                    'patient_id' => $invoice['patient_id'],
+                    'date' => $invoice['invoice_date'],
+                    'invoices' => []
+                ];
+            }
+            $patientDayInvoices[$key]['invoices'][] = [
+                'type' => 'taxable',
+                'index' => $index,
+                'invoice' => $invoice
+            ];
+        }
+        
+        // Check each patient-day combination
+        foreach ($patientDayInvoices as $key => $dayData) {
+            $invoices = $dayData['invoices'];
+            $count = count($invoices);
+            
+            // Only process if there are 3+ invoices on this day
+            if ($count < 3) {
+                continue;
+            }
+            
+            // Check if all invoices are of the same type
+            $types = array_column($invoices, 'type');
+            $uniqueTypes = array_unique($types);
+            
+            if (count($uniqueTypes) === 1) {
+                // All invoices are same type - need to redistribute
+                $patientId = $dayData['patient_id'];
+                $currentDate = $dayData['date'];
+                
+                // Find alternative dates for some invoices
+                $invoicesToMove = [];
+                $consecutiveCount = 0;
+                $lastType = null;
+                
+                // Identify which invoices need to be moved (every 3rd of same type)
+                foreach ($invoices as $inv) {
+                    if ($inv['type'] === $lastType) {
+                        $consecutiveCount++;
+                    } else {
+                        $consecutiveCount = 1;
+                        $lastType = $inv['type'];
+                    }
+                    
+                    if ($consecutiveCount > 2) {
+                        $invoicesToMove[] = $inv;
+                        $consecutiveCount = 0; // Reset after moving
+                    }
+                }
+                
+                // Try to move invoices to adjacent days
+                foreach ($invoicesToMove as $invToMove) {
+                    $moved = false;
+                    $invoice = $invToMove['invoice'];
+                    
+                    // Try next working days first
+                    foreach ($this->workingDays as $workingDay) {
+                        $altDate = $workingDay->format('Y-m-d');
+                        
+                        // Skip current date and past dates
+                        if ($altDate <= $currentDate) {
+                            continue;
+                        }
+                        
+                        // Check if this patient has capacity on alternative date
+                        $altKey = $patientId . '_' . $altDate;
+                        $altDayCount = isset($patientDayInvoices[$altKey]) ? count($patientDayInvoices[$altKey]['invoices']) : 0;
+                        
+                        if ($altDayCount < $this->maxInvoicesPerDay) {
+                            // Check budget availability
+                            $amount = $invoice['amount'];
+                            if ($this->getDailyBudgetRemaining($altDate) >= $amount) {
+                                // Move invoice to this date
+                                $invoice['invoice_date'] = $altDate;
+                                
+                                if ($invToMove['type'] === 'exempt') {
+                                    $exemptInvoices[$invToMove['index']] = $invoice;
+                                } else {
+                                    $taxableInvoices[$invToMove['index']] = $invoice;
+                                }
+                                
+                                $moved = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If couldn't move forward, try previous working days
+                    if (!$moved) {
+                        foreach (array_reverse($this->workingDays) as $workingDay) {
+                            $altDate = $workingDay->format('Y-m-d');
+                            
+                            // Skip current date and future dates
+                            if ($altDate >= $currentDate) {
+                                continue;
+                            }
+                            
+                            // Check if this patient has capacity on alternative date
+                            $altKey = $patientId . '_' . $altDate;
+                            $altDayCount = isset($patientDayInvoices[$altKey]) ? count($patientDayInvoices[$altKey]['invoices']) : 0;
+                            
+                            if ($altDayCount < $this->maxInvoicesPerDay) {
+                                // Check budget availability
+                                $amount = $invoice['amount'];
+                                if ($this->getDailyBudgetRemaining($altDate) >= $amount) {
+                                    // Move invoice to this date
+                                    $invoice['invoice_date'] = $altDate;
+                                    
+                                    if ($invToMove['type'] === 'exempt') {
+                                        $exemptInvoices[$invToMove['index']] = $invoice;
+                                    } else {
+                                        $taxableInvoices[$invToMove['index']] = $invoice;
+                                    }
+                                    
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Re-sort invoices by date
+        usort($exemptInvoices, function ($a, $b) {
+            return strcmp($a['invoice_date'], $b['invoice_date']);
+        });
+        
+        usort($taxableInvoices, function ($a, $b) {
+            return strcmp($a['invoice_date'], $b['invoice_date']);
+        });
+        
+        return [$exemptInvoices, $taxableInvoices];
     }
 }
