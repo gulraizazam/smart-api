@@ -17,7 +17,7 @@ class StoreStaffAdvanceRequest extends FormRequest
         return [
             'user_id' => 'required|exists:users,id',
             'pool_id' => 'required|exists:cash_pools,id',
-            'amount' => 'required|numeric|min:1|max:99999999|integer',
+            'amount' => 'required|numeric|max:99999999|integer',
             'description' => 'nullable|string|max:500',
         ];
     }
