@@ -37,7 +37,7 @@ class AppointmentCheckesWidget
             'resource_id' => $resource_id->id,
             'location_id' => $request->location_id,
             'active' => 1,
-            'is_consultancy' => 1
+            
         ])->get();
         foreach ($resource_rota as $resourceroata) {
             // Check if rota has a valid day record for this date (more reliable than checking parent date range)
