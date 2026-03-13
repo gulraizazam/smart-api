@@ -66,7 +66,7 @@
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Services Cash Inflows</div>
                                 <div class="font-weight-bolder font-size-h3 text-success" id="fdm-services-cash">PKR 0</div>
-                                <div class="text-muted font-size-xs">Package Advances since Mar 8</div>
+                                <div class="text-muted font-size-xs" id="fdm-services-cash-count">0 records</div>
                             </div>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Inventory Cash Inflows</div>
                                 <div class="font-weight-bolder font-size-h3 text-success" id="fdm-inventory-cash">PKR 0</div>
-                                <div class="text-muted font-size-xs">Orders since Mar 8</div>
+                                <div class="text-muted font-size-xs" id="fdm-inventory-cash-count">0 records</div>
                             </div>
                         </div>
                     </div>
