@@ -456,7 +456,7 @@ var CashflowExpenses = (function () {
                 '<td>' + formatDate(exp.expense_date) + '</td>' +
                 '<td>' + 
                     (exp.description.length > 50 ? 
-                        '<span class="expense-description" data-toggle="tooltip" data-placement="top" title="' + escapeHtml(exp.description) + '">' + escapeHtml(truncate(exp.description, 50)) + '</span>' :
+                        '<span class="expense-description" title="' + escapeHtml(exp.description) + '">' + escapeHtml(truncate(exp.description, 50)) + '</span>' :
                         escapeHtml(exp.description)
                     ) +
                     (exp.attachment_url ? ' <a href="javascript:;" class="btn-preview" data-url="' + escapeHtml(exp.attachment_url) + '" title="Preview attachment"><i class="la la-paperclip text-primary"></i></a>' : '') +
@@ -475,9 +475,6 @@ var CashflowExpenses = (function () {
         tbody.html(html);
 
         bindActionButtons();
-        
-        // Initialize tooltips for truncated descriptions
-        $('[data-toggle="tooltip"]').tooltip();
     }
 
     function getStatusBadge(exp) {
