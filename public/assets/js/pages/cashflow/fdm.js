@@ -27,10 +27,6 @@
                 $('#fdm-branch-name').text(d.branch_name || 'Unknown Branch');
                 $('#fdm-balance').text('PKR ' + nf(d.pool_balance));
                 $('#fdm-opening-balance').text('PKR ' + nf(d.opening_balance));
-                
-                // New cash inflow cards
-                $('#fdm-services-cash').text('PKR ' + nf(d.services_cash_inflows || 0));
-                $('#fdm-inventory-cash').text('PKR ' + nf(d.inventory_cash_inflows || 0));
 
                 // Color the live balance card
                 colorCard('#fdm-balance-card', d.pool_balance);

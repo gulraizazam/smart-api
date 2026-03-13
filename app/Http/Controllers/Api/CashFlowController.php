@@ -33,7 +33,6 @@ use App\Services\CashFlow\ReportService;
 use App\Services\CashFlow\ExportService;
 use App\Services\CashFlow\PeriodLockService;
 use App\Services\CashFlow\FlaggingService;
-use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -1742,20 +1741,6 @@ class CashFlowController extends Controller
             $poolIds = $pools->pluck('id')->toArray();
             $currentBalance = (float) $pools->sum('cached_balance');
 
-            // ---- Add inventory cash sales to current balance ----
-            $march8th = '2024-03-08';
-            $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
-            
-            // Add inventory cash sales since March 8th to current balance
-            $inventorySalesSinceMarch8 = Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->where('payment_mode', 1) // Cash payment mode
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->whereDate('created_at', '>', $march8th)
-                ->sum('total_price');
-            
-            $currentBalance += (float) $inventorySalesSinceMarch8;
-
             // Week range: Sunday (start) to today - for opening balance calculation
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
@@ -1923,32 +1908,6 @@ class CashFlowController extends Controller
                 }
             }
 
-            // ---- Calculate cash inflows since March 8th ----
-            $march8th = '2024-03-08';
-            
-            // Services cash inflows (package_advances) since March 8th
-            $servicesCashInflows = 0;
-            if (!empty($cashModeIds)) {
-                $servicesCashInflows = \App\Models\PackageAdvances::where('account_id', $accountId)
-                    ->where('cash_flow', 'in')
-                    ->where('is_cancel', 0)
-                    ->whereNull('deleted_at')
-                    ->whereIn('payment_mode_id', $cashModeIds)
-                    ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereDate('system_created_at', '>', $march8th)
-                    ->sum('cash_amount');
-            }
-
-            // Inventory cash inflows (orders) since March 8th
-            $inventoryCashInflows = Order::where('account_id', $accountId)
-                ->where('order_type', 'sale')
-                ->where('payment_mode', 1) // Cash payment mode
-                ->whereIn('location_id', array_keys($branchPoolMap))
-                ->whereDate('created_at', '>', $march8th)
-                ->sum('total_price');
-
-            // Total cash inflows
-            $totalCashInflows = (float) $servicesCashInflows + (float) $inventoryCashInflows;
 
             return response()->json([
                 'success' => true,
@@ -1959,9 +1918,6 @@ class CashFlowController extends Controller
                     'week_start' => $sunday,
                     'records_period_start' => $sevenDaysAgo,
                     'records_period_end' => $today,
-                    'services_cash_inflows' => (float) $servicesCashInflows,
-                    'inventory_cash_inflows' => (float) $inventoryCashInflows,
-                    'total_cash_inflows' => $totalCashInflows,
                     'transfers' => $transfers,
                     'expenses' => $expenses,
                     'staff_advances' => $staffAdvances,
