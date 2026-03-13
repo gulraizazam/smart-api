@@ -21,7 +21,7 @@
 
                 <!-- Summary Totals Row -->
                 <div class="row mb-5">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card card-custom border-left border-primary" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Opening Balance</div>
@@ -30,7 +30,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card card-custom border-left border-danger" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Expenses Total</div>
@@ -39,7 +39,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card card-custom border-left border-info" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Cash Transfers Total</div>
@@ -48,7 +48,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="card card-custom border-left border-warning" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Staff Advances Total</div>
@@ -57,11 +57,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Cash Inflows Row -->
-                <div class="row mb-5">
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="card card-custom border-left border-success" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Services Cash Inflows</div>
@@ -70,7 +66,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
+                     <div class="col-md-2">
                         <div class="card card-custom border-left border-success" style="border-left-width:4px !important;">
                             <div class="card-body py-4 px-5">
                                 <div class="text-muted font-size-sm font-weight-bold">Inventory Cash Inflows</div>
@@ -80,6 +76,9 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Cash Inflows Row -->
+               
 
                 <!-- Expenses -->
                 <div class="card card-custom mb-5">
