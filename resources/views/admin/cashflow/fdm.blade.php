@@ -59,6 +59,28 @@
                     </div>
                 </div>
 
+                <!-- Cash Inflows Row -->
+                <div class="row mb-5">
+                    <div class="col-md-6">
+                        <div class="card card-custom border-left border-success" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Services Cash Inflows</div>
+                                <div class="font-weight-bolder font-size-h3 text-success" id="fdm-services-cash">PKR 0</div>
+                                <div class="text-muted font-size-xs">Package Advances since Mar 8</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-custom border-left border-success" style="border-left-width:4px !important;">
+                            <div class="card-body py-4 px-5">
+                                <div class="text-muted font-size-sm font-weight-bold">Inventory Cash Inflows</div>
+                                <div class="font-weight-bolder font-size-h3 text-success" id="fdm-inventory-cash">PKR 0</div>
+                                <div class="text-muted font-size-xs">Orders since Mar 8</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Expenses -->
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
