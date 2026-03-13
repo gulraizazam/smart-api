@@ -1742,6 +1742,20 @@ class CashFlowController extends Controller
             $poolIds = $pools->pluck('id')->toArray();
             $currentBalance = (float) $pools->sum('cached_balance');
 
+            // ---- Add inventory cash sales to current balance ----
+            $march8th = '2024-03-08';
+            $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
+            
+            // Add inventory cash sales since March 8th to current balance
+            $inventorySalesSinceMarch8 = Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->where('payment_mode', 1) // Cash payment mode
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->whereDate('created_at', '>', $march8th)
+                ->sum('total_price');
+            
+            $currentBalance += (float) $inventorySalesSinceMarch8;
+
             // Week range: Sunday (start) to today - for opening balance calculation
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
             $today = \Carbon\Carbon::now()->toDateString();
