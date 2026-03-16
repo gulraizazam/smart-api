@@ -1,0 +1,481 @@
+﻿CUTERA CRM
+Doctor Performance Dashboard
+Functional & UX Specification — v1.1
+Prepared for: Cutera CRM Development Team
+Stack: Laravel Blade + ApexCharts
+Date: 13 March 2026
+1. Overview & Purpose
+The Doctor Performance Dashboard is a dedicated, role-aware dashboard within the Cutera CRM system. It replaces the standard dashboard for any user whose role has been granted the 'Doctor Dashboard' permission. Its primary purpose is to give doctors a comprehensive, real-time view of their own clinical and commercial performance — covering revenue generation, patient engagement, upselling, membership sales, procedure averages, patient feedback, and Google review counts.
+The dashboard is built around a motivational philosophy: every metric is shown alongside the best-in-network anonymous benchmark so doctors are aware of where they stand relative to all peers nationwide. Personal bests, streak tracking, and goal progress bars reinforce a culture of performance and healthy self-improvement.
+This is the first of three planned role-specific dashboards (Doctor, Frontdesk Manager, Management). The permission routing system built here serves as the scalable foundation for all future dashboards.
+The dashboard loads data in real-time on every page visit. There are no scheduled background refreshes or push notifications — all data is current as of the moment the page loads.
+Note: No alerts or notifications are shown on this dashboard. It is a read-only, informational display. No actions can be taken from this dashboard.
+2. Access & Permission Routing
+2.1 How Dashboard Routing Works
+On login, the CRM checks whether the user's role has a specific dashboard permission. If the role has the 'Doctor Dashboard' permission, the Doctor Performance Dashboard loads instead of the standard dashboard. This routing is permission-based and role-agnostic — any role assigned this permission sees this dashboard, regardless of role name.
+2.2 Permission Setup
+A new permission named 'Doctor Dashboard' is added to the existing CRM permissions module.
+Assigned to roles via the existing role management interface.
+Users with no specific dashboard permission see the standard CRM dashboard as before.
+The routing logic must support multiple dashboard permission types from the start, to accommodate future Frontdesk and Management dashboards.
+Note: Future dashboards (Frontdesk, Management) each get their own permission. The routing system must be built to handle all three without structural changes.
+2.3 Data Scope per Doctor
+Each doctor sees only their own performance data.
+Multi-branch doctors see combined data from all their assigned branches — no branch switcher, all data merged.
+Best-in-network benchmarks are always calculated from all currently active doctors across all branches nationwide.
+3. Tech Stack & Implementation Notes
+Frontend: Laravel Blade templating engine
+Charts: ApexCharts (consistent with existing CRM dashboards)
+Navigation: Sits inside the existing CRM navigation shell — same nav and sidebar as all other CRM pages
+Language: English only
+Color Theme: Existing CRM color palette throughout — no new colors introduced. Reference existing CRM stylesheet for all colors, card styles, and component patterns.
+Date filter behavior: Replicate exactly how the existing CRM dashboard handles filter changes — same mechanism, same reload behavior.
+Appointment statuses: All status labels, colors, and identifiers pulled from the existing appointment statuses module. No hardcoded statuses anywhere.
+Data freshness: Dashboard data is real-time — loaded fresh on every page visit.
+Note: All conversion rate calculations, revenue attribution, average conversion value, upsell revenue, and membership attribution must use existing CRM algorithms exactly as implemented. Do not redefine these rules — reference and reuse existing logic only.
+4. Page Layout & Structure
+4.1 Desktop Layout
+The dashboard follows a two-column layout on desktop:
+Left/main column: sticky header, hero motivational strip, 4 KPI groups, 8 trend charts.
+Right column (sidebar): today's appointment list — responsive width based on screen size.
+All sections must have consistent comfortable padding on all four sides. No content should touch the edge of any section or card.
+4.2 Mobile Layout
+MOBILE IS THE PRIMARY USAGE CONTEXT: Most doctors will always log in on mobile devices. Mobile experience is not an afterthought — it is the primary design target. Every layout and interaction decision must be validated against mobile usability first.
+Single-column flow — no two-column structure.
+Section order: sticky header → hero strip → KPI groups → trend charts → appointments sidebar (at bottom).
+KPI cards: 2-column grid on mobile.
+Trend charts: 2 columns x 4 rows on mobile.
+Sidebar moves to bottom of page on mobile.
+4.3 Section Order (Top to Bottom)
+Sticky auto-hide header
+Hero motivational strip
+KPI Group 1: Revenue Performance
+KPI Group 2: Patient Engagement
+KPI Group 3: Upselling & Memberships
+KPI Group 4: Procedures & Quality
+8 Trend Charts (4x2 desktop / 2x4 mobile)
+Today's Appointments Sidebar (bottom on mobile)
+5. Sticky Header
+5.1 Contents
+Doctor's profile photo — circular crop
+Doctor's full name
+Branch name (or combined branch names for multi-branch doctors)
+Greeting text: 'Welcome back, Dr. [Name]'
+Date filter control — use the existing CRM date selection component exactly as used elsewhere in the CRM. Do not build a new one.
+5.2 Behavior
+Sticky and auto-hiding: slides out of view on scroll down, instantly reappears on scroll up.
+Applies on both desktop and mobile.
+Date filter applies to all metrics and charts — with exceptions documented in Section 6.3.
+5.3 Doctor Photo Fallback
+If no photo is uploaded: show initials in a colored circle, generated consistently from the doctor's name (same doctor always gets same color).
+6. Date Filters
+6.1 Available Filters
+Today
+This Week
+This Month — default on page load
+Custom Range — maximum 3 months back from today
+vs Last Month — activates dual-line comparison mode on all trend charts
+6.2 Filter Behavior
+All KPI cards and trend charts respect the selected date filter, except metrics listed in Section 6.3.
+Filter change behavior: replicate exactly how the existing CRM dashboard handles filter changes — same mechanism.
+Use the same date selection UI component already in the CRM.
+6.3 Metrics NOT Affected by Date Filter
+Goal Progress Bar — always shows current month data regardless of filter selected.
+Streak — always reflects the current rolling week calculation, not filter period.
+Avg Procedures per Patient — always calculated on a rolling 6-month basis.
+Google Reviews KPI card — always shows last month's data (see Section 8.4).
+Today's Appointments Sidebar — always shows today only, completely independent.
+Year-over-year comparison is NOT supported. The dashboard does not compare current data against the same period in a previous year. Month-over-month (vs Last Month) is the only comparison mode available.
+7. Hero Motivational Strip
+The hero strip sits directly below the sticky header and above the KPI groups. It has a darker/contrasting background using an existing CRM palette shade to visually distinguish it. It is always fully visible regardless of which date filter is selected.
+7.1 Goal Progress Bar
+What It Shows
+This doctor's revenue contribution toward the current branch's monthly revenue target.
+Formula: (This Doctor's Revenue This Month ÷ Branch Monthly Target) x 100
+Display: visual bar + percentage + days remaining in current month
+Multi-Branch Doctor Rule
+If a doctor works at multiple branches, the goal progress bar uses the target of the branch where the doctor has generated the most revenue in the current month (i.e. their most active branch this month).
+Color Rules
+Green: contribution is >= 90% of branch target
+Orange: contribution is between 80% and 90% of branch target
+Red: contribution is below 80% of branch target
+Target Fallback Rules
+If the current month's branch target has not been set: automatically fall back to last month's branch target.
+If no target exists at all (no current month, no previous month): hide the progress bar entirely and show: 'No branch target set yet.'
+Note: The branch monthly revenue target is set per branch per month in the new admin Targets section (see Section 16). It is not a per-doctor target. All doctors at the same branch contribute toward the same branch target.
+7.2 Streak
+Definition
+A streak counts consecutive weeks (Sunday to Saturday) in which the doctor achieved a conversion rate of 50% or above.
+Conversion rate is calculated in real-time using the existing CRM conversion algorithm.
+The 50% threshold is fixed system-wide — no management configuration required.
+Streak Rules
+Week = Sunday to Saturday.
+Doctor achieves >= 50% conversion in a week with consultations: streak continues.
+Doctor achieves < 50% conversion in a week with consultations: streak resets to 0.
+Doctor has no consultation appointments in a week (leave, no bookings, or all no-shows): streak pauses — neither continues nor resets. Resumes from where it left off the following qualifying week.
+Display
+Badge in the hero strip showing: current streak count in weeks + longest streak in last 6 months.
+Example: '4 Week Streak | Best: 9 Weeks (Last 6 Months)'
+7.3 Personal Best Highlights
+Tracked Metrics
+Highest revenue month — highest monthly revenue from patients this doctor consulted
+Highest conversion rate month
+Highest upsell amount month
+Most patients seen in a single day — consultations + treatment arrived appointments combined
+Longest streak ever — most consecutive qualifying weeks
+Highest feedback score month
+Most 5-star Google reviews in a single month
+Calculation Period
+All personal bests are calculated on a rolling last 6 months basis — consistent with streak and all other historical calculations.
+Normal Display State
+Always visible in the hero strip as a compact single row.
+Each item shows: icon + metric name + best value achieved in last 6 months.
+Example: 'Best Revenue: PKR 245,000 | Best Conversion: 78% | ...'
+Record-Breaking State
+When the doctor is currently on track to break one or more personal bests, a banner expands below the hero strip with a smooth slide-up animation.
+If multiple records are being broken simultaneously, all are shown within one single expanded banner — not separate banners.
+The banner stays visible for the entire session. The doctor can manually dismiss it.
+The banner clearly names each record being broken with current value vs previous best.
+Example: 'You are breaking 2 personal bests! Revenue: PKR 198,000 (Best: PKR 180,000) | Conversion: 80% (Best: 75%)'
+8. KPI Metrics — Complete Definitions
+There are 14 metrics in 4 groups. Each KPI card displays: large metric value at top, metric name below, month-over-month change (arrow + % in green/red), and best-in-network benchmark at the bottom in smaller text. All metrics respect the selected date filter except where noted.
+Note: Revenue attribution, conversion rate, average conversion value, upsell revenue, and membership attribution all use existing CRM logic as-is. Do not redefine.
+8.1 Group 1: Revenue Performance
+Metric
+Formula / Source
+Notes & Rules
+Total Revenue
+Revenue from patients this doctor consulted. Existing CRM revenue attribution logic.
+Respects date filter. Multi-branch doctors see combined revenue from all their branches.
+Conversion Rate
+% of arrived consultation appointments that resulted in a paid invoice. Existing CRM conversion algorithm.
+Respects date filter. Same doctor, same patient, 2 consultations in one month = 2 separate conversion opportunities. Revenue attribution between them follows existing CRM logic.
+Avg Conversion Value
+Average value of invoices paid following a consultation. Existing CRM avg conversion value logic.
+Uses existing CRM definition exactly as-is. Respects date filter.
+Product Revenue
+Total revenue from products where this doctor is selected in the 'Prescribed By' field on the ordering screen.
+Attribution via 'Prescribed By' field — existing CRM logic. Respects date filter.
+8.2 Group 2: Patient Engagement
+Metric
+Formula / Source
+Notes & Rules
+Patients Seen
+Total arrived appointments (consultation + treatment) for this doctor.
+Respects date filter. Last status of appointment is source of truth.
+Patient Return Rate
+% of patients this doctor treated who arrived for at least one more treatment appointment within 45 days.
+Return visit can be with any doctor, at any of this doctor's branches. Must be a treatment appointment with arrived status. Last status is source of truth. Respects date filter.
+No-show Rate
+% of this doctor's treatment appointments where the patient did not show up.
+Treatment appointments only. Last status is source of truth. Respects date filter. Benchmark direction: lowest no-show rate = best in network.
+8.3 Group 3: Upselling & Memberships
+Metric
+Formula / Source
+Notes & Rules
+Upsell Rate
+Upsold Patients / Unique Treated Patients x 100
+Counts unique patients seen for treatment appointments who received at least one additional upsold procedure. Respects date filter.
+Upsell Revenue
+Total revenue from upsold procedures. Existing CRM upsell revenue logic.
+Respects date filter. Existing CRM logic.
+Upsell Average
+Upsell Revenue / Number of Upsold Patients
+Respects date filter. Benchmark direction: highest average = best in network.
+Gold Memberships Sold
+Count of Gold memberships sold attributed to this doctor in the selected period.
+Attribution uses existing CRM membership attribution logic. Respects date filter. KPI card only — no trend chart. Benchmark: highest count = best in network.
+Note: The upselling target is a static value defined once in the system. It does not change monthly. It is used as the benchmark threshold for upsell-related personal best tracking. IMPLEMENTATION NOTE: The location and mechanism for setting this static upselling target was not explicitly defined during spec discussions. The development team must confirm whether this value already exists somewhere in the current CRM configuration, or whether a new admin setting needs to be created for it before implementation begins.
+8.4 Group 4: Procedures & Quality
+Metric
+Formula / Source
+Notes & Rules
+Avg Procedures per Patient
+Total procedures (by any doctor) on patients this doctor consulted in last 6 months / Unique patients consulted by this doctor in last 6 months.
+Always rolling 6 months — NOT affected by date filter. If another doctor re-consults a patient, that patient moves to the new doctor's pool. Only arrived treatment appointments count as procedures.
+Feedback Score
+Average monthly score of patient ratings given to this doctor after treatment. Existing CRM feedback scoring scale.
+Uses existing CRM feedback scale as-is. Shows monthly average. Respects date filter.
+Google Reviews (5-Star)
+Count of 5-star Google reviews manually attributed to this doctor for the month by authorized admin users.
+Always shows LAST MONTH's data regardless of date filter — current month is incomplete until month ends. Card shows a 'Last Month' label. Card hidden entirely until first entry exists for that doctor for that month.
+9. Best-in-Network Benchmarks
+9.1 Rules
+Every metric shows an anonymous best-in-network benchmark value below the doctor's own value on each KPI card.
+Pool: all currently active doctors across all branches nationwide. Inactive or former doctors excluded.
+Benchmark is based on current month's best — not all-time.
+The viewing doctor's own value is included in the pool — they could be the best-in-network themselves.
+9.2 Benchmark Direction
+For most metrics: highest value = best in network (revenue, conversion rate, upsell rate, upsell revenue, upsell average, avg procedures, feedback score, Google reviews, memberships, product revenue, return rate, patients seen).
+Exception — No-show Rate: lowest value = best in network. The benchmark shown is the lowest no-show rate among all active doctors this month.
+9.3 Display on KPI Card
+Shown at the bottom of each KPI card in smaller text.
+Example: 'Network Best: 72%' or for no-show: 'Network Best (Lowest): 5%'
+If the doctor IS the current best-in-network: card shows a glowing border + trophy icon in the top corner.
+9.4 Tooltip (Desktop) / Always Visible (Mobile)
+Desktop: hovering over the benchmark value shows a tooltip with the value + dynamic encouraging message.
+Mobile: benchmark + encouraging message always visible below metric value — no tooltip needed.
+Message tone is dynamic based on gap between doctor's value and network best:
+Gap within 10%: 'You are almost there! Push a little harder to reach the top.'
+Gap 10-30%: 'You are improving! Stay focused on your targets.'
+Gap over 30%: 'Every step forward counts. Stay consistent and results will follow.'
+10. KPI Card Design & Interactions
+10.1 Card Internal Layout
+Line 1: Metric value — large, bold, prominent
+Line 2: Metric name — medium weight
+Line 3: Month-over-month change — up/down arrow + % change in green (improvement) or red (decline)
+Line 4: Best-in-network benchmark — smaller text
+10.2 Card Visual Style
+Slightly rounded corners
+Comfortable padding on all sides
+Same card colors as existing CRM but with the redesigned layout described above
+Each of the 4 KPI groups has a distinct accent color from the existing CRM palette — used for group section header left-border accent and subtle card highlights
+Group section headers: bold text with a colored left-border accent
+All 4 KPI groups are always fully expanded on both desktop and mobile — they are NOT collapsible. Doctors see all metrics at all times without needing to expand any section.
+10.3 Hover Interaction — Desktop
+Hovering over a KPI card flips it to reveal a sparkline chart on the back.
+Sparkline always shows current month's data day by day — regardless of which date filter is selected.
+On mobile: tap the card to flip. Tap again to flip back.
+10.4 Best-in-Network Trophy State
+If the doctor is currently best-in-network for a metric: glowing border + trophy icon in top corner of the card.
+10.5 Page Load States
+While data is loading: skeleton loader shown in place of all cards and charts.
+After data loads: KPI card values animate by counting up from 0 to their final value.
+11. Trend Charts
+11.1 The 8 Trend Charts
+Revenue
+Conversion Rate
+Upsell Amount
+Feedback Score
+Google Reviews (5-star monthly count — shows historical monthly trend, one data point per month)
+Product Revenue
+Patient Return Rate
+Gold Memberships Sold (monthly count — shows historical monthly trend, one data point per month)
+Note: No-show Rate is a KPI card only — no trend chart. Google Reviews and Gold Memberships charts show month-by-month historical counts since these are monthly count-based metrics.
+11.2 Layout
+Desktop: 4 columns x 2 rows — all 8 charts visible at once
+Mobile: 2 columns x 4 rows
+Comfortable padding around and between all charts
+11.3 Chart Style
+Type: gradient filled area chart
+Color: existing CRM brand color — consistent across all 8 charts
+Historical data period: Charts show data for the selected date filter period. For the standard metrics (Revenue, Conversion Rate, Upsell Amount, Feedback Score, Product Revenue, Patient Return Rate), data points reflect the selected period week by week. For Google Reviews and Gold Memberships, charts always show month-by-month historical counts regardless of selected filter since these are monthly entry-based metrics.
+X-axis granularity: always week by week regardless of selected date range. EXCEPTION: Google Reviews and Gold Memberships charts use a monthly X-axis (one data point per month) because they are monthly count metrics that do not have weekly breakdowns — data is entered and tracked per month only. All other 6 charts use the week-by-week X-axis.
+Hover tooltip: shows exact value on hover
+Data labels: always visible on key data points (peaks and troughs)
+11.4 vs Last Month Mode
+When 'vs Last Month' filter is selected, each chart shows two lines:
+This month: solid line
+Last month: dashed line
+Both lines use the same brand color, differentiated by line style only.
+12. Today's Appointments Sidebar
+12.1 Overview
+Shows TODAY'S appointments for THIS DOCTOR ONLY — scoped strictly to the logged-in doctor's own consultations and treatments. It does not show all clinic appointments or other doctors' patients. Completely independent of the date filter selected in the header.
+Desktop: right column alongside main content, responsive width based on screen size. The sidebar scrolls with the page — it is NOT a fixed/sticky panel. As the doctor scrolls down the main content, the sidebar scrolls with it.
+Mobile: moves to the bottom of the page, below the trend charts.
+12.2 Two Tabs
+Tab 1: 'Treatments' — selected by default on page load
+Tab 2: 'Consultations'
+Each tab shows its own independent sorted list.
+Summary line in sidebar header updates per active tab. Example: '5 treatment appointments today, 2 arrived'
+12.3 Appointment Row Design
+Each row: appointment type icon + colored left border (by status) + patient name + appointment time + status label
+Status colors and labels: pulled from existing CRM appointment statuses module — never hardcoded. Reference color mappings confirmed during spec discussions: Green border = Arrived, Blue border = Scheduled, Red border = No-show, Grey border = Cancelled. All other statuses (e.g. not-interested) use their respective colors from the existing module.
+12.4 Sorting Order Within Each Tab
+1. Arrived appointments — at top. IMPORTANT: Sorting is by STATUS not by appointment time. This is intentional — if a patient is marked arrived mid-day, their row must float immediately to the top of the list, not remain in their original time slot. This ensures the doctor always sees who is currently present at a glance without scanning the full list.
+2. Scheduled appointments — chronological by time
+3. Other non-arrived, non-cancelled statuses (e.g. not-interested) — after scheduled
+4. Cancelled appointments — at bottom, greyed out
+No-show appointments — shown in the sidebar with their no-show status label and status color from the existing module. They appear in the non-arrived, non-cancelled group (position 3 in the sort order above), not at the bottom with cancelled.
+12.5 Status Source of Truth
+All appointment statuses — including 'not-interested' and all others — pulled from the existing appointment statuses module.
+The last recorded status is always the source of truth.
+Example: appointment marked 'arrived' then changed to 'cancelled' = treated as cancelled everywhere.
+12.6 Micro-Animations
+When an appointment is marked as arrived: a subtle pulse animation plays on that row.
+12.7 Empty States
+Treatments tab — no appointments: 'No treatment appointments today'
+Consultations tab — no appointments: 'No consultation appointments today'
+Each tab handles its empty state independently.
+13. Edge Cases & Data Rules
+13.1 Last Status = Source of Truth
+The last recorded status of any appointment is the source of truth for ALL metric calculations.
+Example: consultation marked 'arrived' then changed to 'cancelled' — treated as cancelled. Not counted as patient seen, not a conversion opportunity.
+13.2 New Doctor — No Historical Data
+If no data exists for the selected period: KPI cards show an encouraging 'No data yet — let's get started!' message instead of 0 values.
+Charts show an empty state with no lines drawn.
+13.3 Multi-Branch Doctors
+Combined data from all assigned branches shown on one dashboard — no branch switcher.
+Goal progress bar uses the branch target where the doctor generated the most revenue in the current month.
+13.4 Google Reviews — No Entry Yet
+Google Reviews KPI card is hidden entirely until management has made at least one entry for that doctor for the relevant month.
+Once an entry exists, the card appears and always shows last month's data with a 'Last Month' label.
+13.5 Branch Target — Not Set
+Current month target not set: automatically fall back to last month's branch target.
+No target exists at all: hide goal progress bar and show 'No branch target set yet.'
+13.6 Streak Edge Cases
+Week with no consultations: streak pauses. Resumes from same count next qualifying week.
+Week with consultations, conversion < 50%: streak resets to 0.
+Week with consultations, conversion >= 50%: streak continues.
+Streak always calculated Sunday to Saturday — never daily.
+13.7 Avg Procedures Per Patient — Pool Rules
+If another doctor re-consults a patient, that patient is removed from the original doctor's pool and added to the new doctor's pool.
+Always rolling 6 months regardless of date filter.
+13.8 Conversion — Multiple Consultations Same Month
+Same doctor, same patient, 2 consultations in one month, both resulting in paid invoices = 2 conversions.
+Revenue attribution between them follows existing CRM logic.
+13.9 Cancelled After Arrived
+Appointment marked arrived then later changed to cancelled = treated as cancelled. The 'arrived' status is considered a data entry error that was corrected.
+13.10 No Alerts or Notifications
+This dashboard has no real-time alerts, push notifications, or warning banners of any kind.
+It is a read-only informational display. No actions can be taken from within the dashboard.
+14. UX & Design Specifications
+14.1 Color & Theme
+Existing CRM color palette throughout — no new colors.
+The dashboard uses a LIGHT theme — the same light background used across the existing CRM. A dark theme was explicitly considered and rejected. The only darker area is the hero motivational strip which uses a contrasting shade from the existing palette.
+Reference existing CRM stylesheet for all colors, typography, and components.
+Hero strip: darker/contrasting shade from existing palette — visually distinct from the page.
+4 KPI groups: each has a distinct accent color from the existing palette for group header left-border accent and subtle card highlights.
+14.2 Typography & Spacing
+Font: existing CRM font family.
+Comfortable padding on all sides of all sections and cards.
+Card corners: slightly rounded.
+Section headers: bold text with colored left-border accent — no horizontal rule dividers.
+14.3 Loading States
+Skeleton loader for all cards and charts while data loads.
+After load: KPI values count up from 0 to final value.
+14.4 Sticky Header
+Auto-hides on scroll down, reappears instantly on scroll up.
+Same behavior on desktop and mobile.
+14.5 Personal Best Banner
+Expands below hero strip with smooth slide-up animation when a record is being broken.
+If multiple records are being broken simultaneously: all shown in one single expanded banner.
+Stays visible for the entire session — doctor can manually dismiss it.
+14.6 Mobile-Specific UX
+Card flip: triggered by tap, tap again to flip back (replaces hover).
+Benchmark + encouraging message: always visible below metric value on mobile — no tooltip.
+KPI cards: 2-column grid.
+Charts: 2x4 grid.
+Sidebar: moves to bottom of page.
+Sticky header: same auto-hide behavior as desktop.
+14.7 Sidebar Appointment Row Details
+Each row: appointment type icon + colored left border (status color from existing module) + patient name + appointment time + status label.
+Arrived rows: subtle pulse animation.
+Cancelled rows: greyed out, at bottom of list.
+14.8 Goal Progress Bar Colors
+Green: >= 90% of target achieved
+Orange: 80-90% of target achieved
+Red: below 80% of target achieved
+15. New Admin Panel Features
+15.1 Targets Section
+A new dedicated 'Targets' section in the CRM admin panel allows authorized users to set and manage monthly revenue targets per branch.
+Set a monthly revenue target per branch per month.
+Revisable at any time during the month — not locked once set.
+If current month target is not set: dashboard automatically uses last month's target as fallback.
+Permission-based: a new CRM permission must be created for managing branch targets.
+The section displays all branches with their current month target and last month target for easy reference and management.
+15.2 Google Reviews Entry Section
+A separate admin panel section allows authorized users to manually enter the count of 5-star Google reviews attributed to each doctor per month.
+Entry is per doctor per month.
+Count resets each month — entries are monthly, not cumulative.
+Dashboard always shows last month's entry regardless of current date filter selected.
+Permission-based: a new CRM permission must be created for this section.
+Section displays all active doctors with their current and last month review counts for easy management.
+The Google Reviews KPI card on the dashboard is hidden until at least one entry exists for that doctor for the relevant month.
+15.3 Doctor Dashboard Permission
+New permission named 'Doctor Dashboard' added to existing CRM permissions module.
+When assigned to a role: users with that role see this dashboard on login instead of the standard dashboard.
+Routing logic must support multiple dashboard permissions simultaneously — to accommodate future Frontdesk and Management dashboards without structural changes.
+16. Complete Metric Reference Table
+Quick reference for all 14 metrics across the dashboard:
+Metric
+Group
+Filter Applies?
+Benchmark?
+Personal Best?
+Trend Chart?
+Total Revenue
+Revenue
+Yes
+Yes (highest)
+Yes
+Yes
+Conversion Rate
+Revenue
+Yes
+Yes (highest)
+Yes
+Yes
+Avg Conversion Value
+Revenue
+Yes
+Yes (highest)
+No
+No
+Product Revenue
+Revenue
+Yes
+Yes (highest)
+No
+Yes
+Patients Seen
+Engagement
+Yes
+Yes (highest)
+Yes (best day)
+No
+Patient Return Rate
+Engagement
+Yes
+Yes (highest)
+No
+Yes
+No-show Rate
+Engagement
+Yes
+Yes (lowest=best)
+No
+No — KPI card only
+Upsell Rate
+Upselling
+Yes
+Yes (highest)
+No
+No
+Upsell Revenue
+Upselling
+Yes
+Yes (highest)
+Yes
+Yes
+Upsell Average
+Upselling
+Yes
+Yes (highest)
+No
+No
+Gold Memberships
+Upselling
+Yes
+Yes (highest)
+No
+Yes (monthly count)
+Avg Procedures/Patient
+Quality
+No — 6mo rolling
+Yes (highest)
+No
+No
+Feedback Score
+Quality
+Yes
+Yes (highest)
+Yes
+Yes
+Google Reviews
+Quality
+No — last month
+Yes (highest)
+Yes
+Yes (monthly trend)
+Cutera CRM — Doctor Dashboard Specification v1.1 | Confidential | redsignal.net
