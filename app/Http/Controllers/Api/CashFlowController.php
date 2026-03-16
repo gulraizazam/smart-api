@@ -3741,14 +3741,13 @@ class CashFlowController extends Controller
                 $openingBalance += (float) $inventorySales;
                 
                 // Subtract expenses
-                $expenses = 0;
-                $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+                $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
                     ->whereBetween('expense_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
                     ->sum('amount');
-                $openingBalance -= (float) $expenses;
+                $openingBalance -= (float) $obExpenses;
                 
                 // Handle transfers
                 $transfersOut = 0;
@@ -3768,22 +3767,20 @@ class CashFlowController extends Controller
                 $openingBalance += (float) $transfersIn;
                 
                 // Subtract staff advances
-                $staffAdvances = 0;
-                $staffReturns = 0;
-                $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                $obStaffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
                     ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
                     ->sum('amount');
-                $openingBalance -= (float) $staffAdvances;
-                
+                $openingBalance -= (float) $obStaffAdvances;
+
                 // Add staff returns
-                $staffReturns = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                $obStaffReturns = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
                     ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
                     ->sum('amount');
-                $openingBalance += (float) $staffReturns;
+                $openingBalance += (float) $obStaffReturns;
                 
                 // Debug opening balance calculation
                 $debugInfo['opening_balance_calc'] = [
@@ -3791,11 +3788,11 @@ class CashFlowController extends Controller
                     'services_in' => (float) $servicesIn,
                     'services_out' => (float) $servicesOut,
                     'inventory_sales' => (float) $inventorySales,
-                    'expenses' => (float) $expenses,
+                    'expenses' => (float) $obExpenses,
                     'transfers_out' => (float) $transfersOut,
                     'transfers_in' => (float) $transfersIn,
-                    'staff_advances' => (float) $staffAdvances,
-                    'staff_returns' => (float) $staffReturns,
+                    'staff_advances' => (float) $obStaffAdvances,
+                    'staff_returns' => (float) $obStaffReturns,
                     'calculated_opening' => $openingBalance,
                     'last_saturday' => $lastSaturday->toDateTimeString(),
                 ];
