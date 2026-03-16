@@ -219,29 +219,79 @@
     }
 
     // ===================== Render Appointments =====================
-    function renderAppointments(data) {
-        document.getElementById('ddApptCount').textContent = data.total;
-        var listEl = document.getElementById('ddApptList');
+    var appointmentsData = null;
+    var activeApptTab = 'treatments';
 
-        if (!data.list || data.list.length === 0) {
-            listEl.innerHTML = '<li class="dd-appt-empty">No appointments today</li>';
+    function renderAppointments(data) {
+        appointmentsData = data;
+        document.getElementById('ddApptCount').textContent = data.total;
+
+        // Render both lists
+        renderApptList('ddApptListTreatments', data.treatments.list, 'No treatment appointments today');
+        renderApptList('ddApptListConsultations', data.consultations.list, 'No consultation appointments today');
+
+        // Update summary for active tab
+        updateApptSummary();
+
+        // Bind tab clicks
+        document.querySelectorAll('.dd-appt-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.dd-appt-tab').forEach(function (t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                activeApptTab = this.dataset.tab;
+
+                document.getElementById('ddApptTabTreatments').style.display = activeApptTab === 'treatments' ? '' : 'none';
+                document.getElementById('ddApptTabConsultations').style.display = activeApptTab === 'consultations' ? '' : 'none';
+                updateApptSummary();
+            });
+        });
+    }
+
+    function updateApptSummary() {
+        var summaryEl = document.getElementById('ddApptSummary');
+        if (!appointmentsData || !summaryEl) return;
+        var tab = appointmentsData[activeApptTab];
+        var label = activeApptTab === 'treatments' ? 'treatment' : 'consultation';
+        summaryEl.textContent = tab.count + ' ' + label + ' appointment' + (tab.count !== 1 ? 's' : '') + ' today, ' + tab.arrived + ' arrived';
+    }
+
+    function renderApptList(listId, list, emptyMsg) {
+        var listEl = document.getElementById(listId);
+        if (!listEl) return;
+
+        if (!list || list.length === 0) {
+            listEl.innerHTML = '<li class="dd-appt-empty">' + escHtml(emptyMsg) + '</li>';
             return;
         }
 
         var html = '';
-        data.list.forEach(function (apt) {
-            var typeClass = apt.type === 'Consultation' ? 'consultation' : 'treatment';
-            html += '<li class="dd-appt-item">' +
-                '<div class="dd-appt-type ' + typeClass + '"></div>' +
+        list.forEach(function (apt) {
+            var statusClass = getStatusClass(apt);
+            var badgeClass = 'badge-' + statusClass.replace('status-', '');
+            var rowClass = 'dd-appt-item';
+            if (apt.is_cancelled) rowClass += ' is-cancelled';
+            if (apt.is_arrived) rowClass += ' is-arrived';
+
+            html += '<li class="' + rowClass + '">' +
+                '<div class="dd-appt-status-bar ' + statusClass + '"></div>' +
                 '<div class="dd-appt-info">' +
                 '<div class="dd-appt-patient">' + escHtml(apt.patient) + '</div>' +
                 '<div class="dd-appt-service">' + escHtml(apt.service) + '</div>' +
                 '</div>' +
                 '<span class="dd-appt-time">' + escHtml(apt.time) + '</span>' +
-                '<span class="dd-appt-status">' + escHtml(apt.status) + '</span>' +
+                '<span class="dd-appt-status ' + badgeClass + '">' + escHtml(apt.status) + '</span>' +
                 '</li>';
         });
         listEl.innerHTML = html;
+    }
+
+    function getStatusClass(apt) {
+        if (apt.is_arrived) return 'status-arrived';
+        if (apt.is_cancelled) return 'status-cancelled';
+        var s = (apt.status || '').toLowerCase();
+        if (s === 'no show' || s === 'no-show' || s === 'noshow') return 'status-noshow';
+        if (s === 'scheduled' || s === 'confirmed') return 'status-scheduled';
+        return 'status-other';
     }
 
     // ===================== Render Benchmark Indicators =====================

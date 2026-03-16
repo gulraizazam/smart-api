@@ -500,11 +500,21 @@
     margin-bottom: 12px;
 }
 
-/* --- Today's Appointments --- */
-.dd-appt-section {
+/* --- Two-Column Layout --- */
+.dd-two-col {
+    display: flex;
+    flex-direction: column;
+}
+.dd-main-col {
+    flex: 1;
+    min-width: 0;
+}
+.dd-sidebar-col {
     padding: 0 16px;
     margin-bottom: 24px;
 }
+
+/* --- Today's Appointments Sidebar --- */
 .dd-appt-card {
     background: #fff;
     border-radius: 14px;
@@ -516,7 +526,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 .dd-appt-title {
     font-size: 1rem;
@@ -534,10 +544,52 @@
     text-align: center;
     box-shadow: 0 2px 8px rgba(54,153,255,0.3);
 }
+
+/* Tabs */
+.dd-appt-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #eef0f8;
+    margin-bottom: 10px;
+}
+.dd-appt-tab {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #6c7293;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+.dd-appt-tab.active {
+    color: #3699ff;
+    border-bottom-color: #3699ff;
+}
+.dd-appt-tab:hover:not(.active) {
+    color: #1a1a2e;
+}
+
+/* Summary line */
+.dd-appt-summary {
+    font-size: 0.78rem;
+    color: #a1a5b7;
+    margin-bottom: 10px;
+    font-weight: 500;
+    padding: 0 2px;
+}
+
+/* List */
 .dd-appt-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    max-height: 500px;
+    overflow-y: auto;
 }
 .dd-appt-item {
     display: flex;
@@ -549,20 +601,26 @@
 .dd-appt-item:last-child {
     border-bottom: none;
 }
-.dd-appt-type {
-    width: 5px;
+
+/* Status-colored left border (replaces type-based coloring) */
+.dd-appt-status-bar {
+    width: 4px;
     height: 36px;
     border-radius: 3px;
     flex-shrink: 0;
 }
-.dd-appt-type.consultation { background: linear-gradient(180deg, #3699ff, #2b7de9); }
-.dd-appt-type.treatment { background: linear-gradient(180deg, #1bc5bd, #0bb783); }
+.dd-appt-status-bar.status-arrived { background: #0bb783; }
+.dd-appt-status-bar.status-scheduled { background: #3699ff; }
+.dd-appt-status-bar.status-noshow { background: #f64e60; }
+.dd-appt-status-bar.status-cancelled { background: #b5b5c3; }
+.dd-appt-status-bar.status-other { background: #ffa800; }
+
 .dd-appt-info {
     flex: 1;
     min-width: 0;
 }
 .dd-appt-patient {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: #1a1a2e;
     white-space: nowrap;
@@ -570,7 +628,7 @@
     text-overflow: ellipsis;
 }
 .dd-appt-service {
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #6c7293;
     white-space: nowrap;
     overflow: hidden;
@@ -578,25 +636,46 @@
     font-weight: 500;
 }
 .dd-appt-time {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #3699ff;
     flex-shrink: 0;
 }
 .dd-appt-status {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     padding: 3px 10px;
     border-radius: 6px;
     background: #eef0f8;
     color: #6c7293;
     flex-shrink: 0;
     font-weight: 600;
+    white-space: nowrap;
 }
+/* Status badge colors */
+.dd-appt-status.badge-arrived { background: #e8fff3; color: #0bb783; }
+.dd-appt-status.badge-scheduled { background: #e1f0ff; color: #3699ff; }
+.dd-appt-status.badge-noshow { background: #ffe2e5; color: #f64e60; }
+.dd-appt-status.badge-cancelled { background: #f0f0f0; color: #b5b5c3; }
+.dd-appt-status.badge-other { background: #fff4de; color: #ffa800; }
+
+/* Cancelled row greyed out */
+.dd-appt-item.is-cancelled {
+    opacity: 0.5;
+}
+/* Arrived row pulse */
+.dd-appt-item.is-arrived {
+    animation: dd-arrived-pulse 2s ease-in-out 1;
+}
+@keyframes dd-arrived-pulse {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(11,183,131,0.06); }
+}
+
 .dd-appt-empty {
     text-align: center;
     padding: 32px;
     color: #a1a5b7;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
 }
 
@@ -648,6 +727,29 @@
     }
 }
 @media (min-width: 992px) {
+    .dd-two-col {
+        flex-direction: row;
+        gap: 20px;
+        padding: 0 8px;
+    }
+    .dd-main-col {
+        flex: 1;
+        min-width: 0;
+    }
+    .dd-sidebar-col {
+        width: 320px;
+        flex-shrink: 0;
+        padding: 0;
+        margin-bottom: 0;
+        position: relative;
+    }
+    .dd-sidebar-col .dd-appt-card {
+        position: sticky;
+        top: 80px;
+    }
+    .dd-appt-list {
+        max-height: calc(100vh - 300px);
+    }
     .dd-hero {
         padding: 28px 28px;
     }
@@ -657,7 +759,9 @@
     .dd-chart-section {
         padding: 0 24px;
     }
-    .dd-appt-section {
-        padding: 0 24px;
+}
+@media (min-width: 1200px) {
+    .dd-sidebar-col {
+        width: 360px;
     }
 }
