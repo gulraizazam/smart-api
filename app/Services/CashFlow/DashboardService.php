@@ -11,6 +11,7 @@ use App\Models\CashFlow\StaffReturn;
 use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorRequest;
 use App\Models\CashFlow\CategoryRequest;
+use App\Models\Order;
 use App\Models\PackageAdvances;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -72,16 +73,40 @@ class DashboardService
 
     /**
      * Pool balance cards.
+     * For branch_cash pools, adds inventory cash sales since go-live to cached_balance for display.
      */
     public function getPoolBalances(int $accountId): array
     {
-        return CashPool::forAccount($accountId)
+        $pools = CashPool::forAccount($accountId)
             ->active()
             ->with('location:id,name')
             ->orderByRaw("CASE WHEN type = 'bank_account' THEN 1 ELSE 0 END")
             ->orderBy('name')
-            ->get(['id', 'name', 'type', 'cached_balance', 'location_id'])
-            ->toArray();
+            ->get(['id', 'name', 'type', 'cached_balance', 'location_id']);
+
+        // Get go-live date
+        $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId);
+        if ($goLiveDate) {
+            $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
+            if ($branchPools->isNotEmpty()) {
+                $locationIds = $branchPools->pluck('location_id')->toArray();
+                $inventorySales = Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', $locationIds)
+                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->selectRaw('location_id, SUM(total_price) as total')
+                    ->groupBy('location_id')
+                    ->pluck('total', 'location_id');
+
+                foreach ($branchPools as $pool) {
+                    $inventoryAmount = (float) ($inventorySales[$pool->location_id] ?? 0);
+                    $pool->cached_balance = (float) $pool->cached_balance + $inventoryAmount;
+                }
+            }
+        }
+
+        return $pools->toArray();
     }
 
     /**
