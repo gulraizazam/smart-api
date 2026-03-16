@@ -273,7 +273,7 @@ class DoctorDashboardService
         }
 
         $percentage = $target > 0 ? round(($doctorRevenue / $target) * 100, 1) : 0;
-        $daysRemaining = Carbon::now()->daysUntil(Carbon::now()->endOfMonth()) + 1;
+        $daysRemaining = Carbon::now()->diffInDays(Carbon::now()->endOfMonth()) + 1;
 
         // Color rules
         $color = 'red';

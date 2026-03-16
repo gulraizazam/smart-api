@@ -44,13 +44,27 @@ class SystemTarget extends Model
     }
 
     /**
+     * Key-to-label mapping for system targets.
+     */
+    public static array $labels = [
+        'conversion_pct' => 'Conversion Rate Target (%)',
+        'avg_conversion_revenue' => 'Avg Conversion Revenue',
+        'feedback_score' => 'Feedback Score Target',
+        'upselling_target' => 'Upselling Target',
+    ];
+
+    /**
      * Update or create a target value.
      */
     public static function setValue(string $key, float $value, int $accountId, ?int $updatedBy = null): self
     {
         return self::updateOrCreate(
             ['account_id' => $accountId, 'target_key' => $key],
-            ['target_value' => $value, 'updated_by' => $updatedBy]
+            [
+                'target_value' => $value,
+                'label' => self::$labels[$key] ?? $key,
+                'updated_by' => $updatedBy,
+            ]
         );
     }
 }

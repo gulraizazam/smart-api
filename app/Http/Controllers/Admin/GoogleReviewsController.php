@@ -98,19 +98,20 @@ class GoogleReviewsController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            DoctorGoogleReview::updateOrCreate(
-                [
-                    'account_id' => $accountId,
-                    'doctor_id' => $request->doctor_id,
-                    'month' => $request->month,
-                    'year' => $request->year,
-                ],
-                [
-                    'review_count' => $request->review_count,
-                    'created_by' => Auth::id(),
-                    'updated_by' => Auth::id(),
-                ]
-            );
+            $review = DoctorGoogleReview::firstOrNew([
+                'account_id' => $accountId,
+                'doctor_id' => $request->doctor_id,
+                'month' => $request->month,
+                'year' => $request->year,
+            ]);
+
+            if (!$review->exists) {
+                $review->created_by = Auth::id();
+            }
+
+            $review->review_count = $request->review_count;
+            $review->updated_by = Auth::id();
+            $review->save();
 
             return ApiHelper::apiResponse($this->success, 'Review count saved', true);
         } catch (\Exception $e) {
