@@ -309,6 +309,13 @@
                         </a>
                     </li>
                     @endif
+                    @if(Gate::allows('centre_targets_manage'))
+                    <li class="nav-item start {{ $request->segment(2) == 'google_reviews' ? 'active active-sub' : '' }}">
+                        <a href="{{ route('admin.google_reviews.index') }}">
+                            <span class="title">Google Reviews</span>
+                        </a>
+                    </li>
+                    @endif
                     @if(Gate::allows('lead_sources_manage'))
                     <li class="nav-item start {{ $request->segment(2) == 'lead_sources' || $request->segment(2) == 'lead_sources_sort' ? 'active active-sub' : '' }}">
                         <a href="{{ route('admin.lead_sources.index') }}">

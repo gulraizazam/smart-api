@@ -68,6 +68,12 @@ class HomeController extends Controller
      */
     public function index(Request $request)
     {
+        // Permission routing: doctors with doctor_dashboard permission land on doctor dashboard
+        $user = Auth::user();
+        if ($user->can('doctor_dashboard') && $user->hasAnyRole(['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant'])) {
+            return redirect()->route('admin.doctor_dashboard');
+        }
+
         $userCentres = DashboardHelper::getUserCentres();
         $dateTimeInfo = DashboardHelper::getDateTimeInfo();
         

@@ -513,6 +513,7 @@
 
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
+                        'admin.google_reviews.index',
 
                         'admin.packagesadvances.index',
                         'admin.resourcerotas.calender-view',
@@ -784,6 +785,22 @@
                                 </a>
                             </li>
 
+                        </ul>
+                    </div>
+                    @endcan
+
+                    @can('centre_targets_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.google_reviews.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.google_reviews.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Google Reviews</span>
+                                </a>
+                            </li>
                         </ul>
                     </div>
                     @endcan

@@ -368,4 +368,53 @@ class CentreTargetsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+
+    /**
+     * Get all system-wide targets.
+     */
+    public function getSystemTargets()
+    {
+        try {
+            $accountId = Auth::user()->account_id;
+            $targets = \App\Models\SystemTarget::where('account_id', $accountId)
+                ->get()
+                ->map(function ($t) {
+                    return [
+                        'key' => $t->target_key,
+                        'value' => (float) $t->target_value,
+                        'label' => $t->label,
+                    ];
+                });
+
+            return ApiHelper::apiResponse($this->success, 'System targets loaded', true, $targets);
+        } catch (\Exception $e) {
+            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+        }
+    }
+
+    /**
+     * Save a single system-wide target (immediate save).
+     */
+    public function saveSystemTarget(\Illuminate\Http\Request $request)
+    {
+        try {
+            $request->validate([
+                'key' => 'required|string|max:50',
+                'value' => 'required|numeric|min:0',
+            ]);
+
+            $accountId = Auth::user()->account_id;
+
+            \App\Models\SystemTarget::setValue(
+                $request->key,
+                (float) $request->value,
+                $accountId,
+                Auth::id()
+            );
+
+            return ApiHelper::apiResponse($this->success, 'Target saved', true);
+        } catch (\Exception $e) {
+            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+        }
+    }
 }

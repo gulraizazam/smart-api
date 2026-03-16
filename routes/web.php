@@ -194,6 +194,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+        Route::get('/doctor-dashboard', [App\Http\Controllers\DoctorDashboardController::class, 'index'])->name('doctor_dashboard');
         Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
         // MIGRATED TO API: /api/dashboard/collection-by-centre
         // Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
@@ -319,6 +320,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         //Centre Target
         Route::resource('centre_targets', CentreTargetsController::class)->only('index');
+
+        //Google Reviews
+        Route::get('google_reviews', [\App\Http\Controllers\Admin\GoogleReviewsController::class, 'index'])->name('google_reviews.index');
 
         //Package Advance route start
         Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');

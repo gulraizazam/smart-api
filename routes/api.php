@@ -98,6 +98,26 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::get('doctor-upselling-data', [\App\Http\Controllers\Api\DashboardController::class, 'doctorUpsellingData'])->name('doctor_upselling_data');
     });
 
+    // Doctor Dashboard API Routes
+    Route::prefix('doctor-dashboard')->name('doctor_dashboard.')->group(function () {
+        Route::get('kpis', [\App\Http\Controllers\DoctorDashboardController::class, 'getKpis'])->name('kpis');
+        Route::get('hero', [\App\Http\Controllers\DoctorDashboardController::class, 'getHeroData'])->name('hero');
+        Route::get('appointments', [\App\Http\Controllers\DoctorDashboardController::class, 'getTodaysAppointments'])->name('appointments');
+        Route::get('benchmarks', [\App\Http\Controllers\DoctorDashboardController::class, 'getBenchmarks'])->name('benchmarks');
+    });
+
+    // Google Reviews API Routes
+    Route::prefix('google-reviews')->name('google_reviews.')->group(function () {
+        Route::get('data', [\App\Http\Controllers\Admin\GoogleReviewsController::class, 'getData'])->name('data');
+        Route::post('save', [\App\Http\Controllers\Admin\GoogleReviewsController::class, 'save'])->name('save');
+    });
+
+    // System Targets API Routes
+    Route::prefix('system-targets')->name('system_targets.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CentreTargetsController::class, 'getSystemTargets'])->name('index');
+        Route::post('save', [\App\Http\Controllers\Admin\CentreTargetsController::class, 'saveSystemTarget'])->name('save');
+    });
+
     // Treatments API Routes (Optimized)
     Route::prefix('treatments')->name('treatments.')->group(function () {
         Route::post('datatable', [\App\Http\Controllers\Api\TreatmentsController::class, 'datatable'])->name('datatable');

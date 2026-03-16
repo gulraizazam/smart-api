@@ -12,6 +12,42 @@
             <!--begin::Container-->
             <div class="container">
 
+                <!--begin::System Targets Card-->
+                <div class="card card-custom mb-6" id="systemTargetsCard">
+                    <div class="card-header py-3">
+                        <div class="card-title">
+                            <span class="card-icon">
+                                <i class="la la-bullseye text-primary" style="font-size: 1.5rem;"></i>
+                            </span>
+                            <h3 class="card-label">System-Wide Targets</h3>
+                        </div>
+                        <div class="card-toolbar">
+                            <span class="text-muted font-size-sm" id="stSaveStatus"></span>
+                        </div>
+                    </div>
+                    <div class="card-body py-4">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <label class="font-weight-bold font-size-sm">Conversion Rate Target (%)</label>
+                                <input type="number" class="form-control form-control-sm st-input" data-key="conversion_pct" step="0.1" min="0" max="100" placeholder="50">
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <label class="font-weight-bold font-size-sm">Avg Conversion Revenue</label>
+                                <input type="number" class="form-control form-control-sm st-input" data-key="avg_conversion_revenue" step="100" min="0" placeholder="15000">
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <label class="font-weight-bold font-size-sm">Feedback Score Target</label>
+                                <input type="number" class="form-control form-control-sm st-input" data-key="feedback_score" step="0.1" min="0" max="10" placeholder="9.5">
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-4">
+                                <label class="font-weight-bold font-size-sm">Upselling Target</label>
+                                <input type="number" class="form-control form-control-sm st-input" data-key="upselling_target" step="100" min="0" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--end::System Targets Card-->
+
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
@@ -112,6 +148,64 @@
 
     @push('js')
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/centre_targets.js')}}"></script>
+        <script>
+            (function() {
+                var stRoutes = {
+                    index: "{{ route('admin.system_targets.index') }}",
+                    save: "{{ route('admin.system_targets.save') }}"
+                };
+                var csrfToken = document.querySelector('meta[name="csrf-token"]');
+                csrfToken = csrfToken ? csrfToken.getAttribute('content') : '';
+
+                function loadSystemTargets() {
+                    fetch(stRoutes.index, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                        .then(function(r) { return r.json(); })
+                        .then(function(res) {
+                            if (res.status && res.data) {
+                                res.data.forEach(function(t) {
+                                    var input = document.querySelector('.st-input[data-key="' + t.key + '"]');
+                                    if (input) input.value = t.value;
+                                });
+                            }
+                        })
+                        .catch(function(err) { console.error('System targets load error:', err); });
+                }
+
+                function saveTarget(input) {
+                    var key = input.dataset.key;
+                    var value = parseFloat(input.value) || 0;
+                    var statusEl = document.getElementById('stSaveStatus');
+                    statusEl.textContent = 'Saving...';
+
+                    fetch(stRoutes.save, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify({ key: key, value: value })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        statusEl.textContent = res.status ? 'Saved ✓' : 'Error';
+                        setTimeout(function() { statusEl.textContent = ''; }, 2000);
+                    })
+                    .catch(function() {
+                        statusEl.textContent = 'Error saving';
+                        setTimeout(function() { statusEl.textContent = ''; }, 2000);
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    loadSystemTargets();
+                    document.querySelectorAll('.st-input').forEach(function(input) {
+                        input.addEventListener('change', function() { saveTarget(this); });
+                    });
+                });
+            })();
+        </script>
     @endpush
 
 @endsection

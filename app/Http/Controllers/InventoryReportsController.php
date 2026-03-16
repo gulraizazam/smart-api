@@ -194,7 +194,7 @@ class InventoryReportsController extends Controller
                             'product_id' => $detail->product_id,
                             'product_name' => $detail->product->name ?? 'Unknown Product',
                             'total_quantity' => $detail->quantity,
-                            'subtotal' => $detail->quantity * ($detail->product->sale_price ?? 0),
+                            'subtotal' => $detail->quantity * ($detail->sale_price ?? $detail->product->sale_price ?? 0),
                             'order_date' => $order->created_at->format('d M Y'), // Adding order date
                         ];
                     });
