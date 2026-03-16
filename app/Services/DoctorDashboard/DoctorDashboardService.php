@@ -351,6 +351,8 @@ class DoctorDashboardService
                 'a.scheduled_time',
                 'a.appointment_status_id',
                 'ast.name as status_name',
+                'ast.is_arrived',
+                'ast.is_cancelled',
                 'p.name as patient_name',
                 's.name as service_name',
                 'l.name as location_name'
@@ -358,24 +360,53 @@ class DoctorDashboardService
             ->orderBy('a.scheduled_time')
             ->get();
 
-        $consultations = $appointments->where('appointment_type_id', 1);
+        $mapRow = function ($apt) {
+            // Determine sort priority: 1=arrived, 2=scheduled(default), 3=other, 4=cancelled
+            $sortPriority = 2;
+            if ($apt->is_arrived) $sortPriority = 1;
+            elseif ($apt->is_cancelled) $sortPriority = 4;
+            elseif (!$apt->is_arrived && !$apt->is_cancelled && $apt->status_name && !in_array(strtolower($apt->status_name), ['scheduled', 'confirmed'])) $sortPriority = 3;
+
+            return [
+                'id' => $apt->id,
+                'type' => $apt->appointment_type_id == 1 ? 'Consultation' : 'Treatment',
+                'time' => $apt->scheduled_time ? Carbon::parse($apt->scheduled_time)->format('h:i A') : 'Unscheduled',
+                'time_raw' => $apt->scheduled_time,
+                'patient' => $apt->patient_name ?? 'N/A',
+                'service' => $apt->service_name ?? 'N/A',
+                'location' => $apt->location_name ?? 'N/A',
+                'status' => $apt->status_name ?? 'N/A',
+                'is_arrived' => (bool) $apt->is_arrived,
+                'is_cancelled' => (bool) $apt->is_cancelled,
+                'sort_priority' => $sortPriority,
+            ];
+        };
+
+        $sortList = function ($list) {
+            return collect($list)->sortBy([
+                ['sort_priority', 'asc'],
+                ['time_raw', 'asc'],
+            ])->values()->toArray();
+        };
+
         $treatments = $appointments->where('appointment_type_id', 2);
+        $consultations = $appointments->where('appointment_type_id', 1);
+
+        $treatmentsList = $sortList($treatments->map($mapRow));
+        $consultationsList = $sortList($consultations->map($mapRow));
 
         return [
             'total' => $appointments->count(),
-            'consultations' => $consultations->count(),
-            'treatments' => $treatments->count(),
-            'list' => $appointments->map(function ($apt) {
-                return [
-                    'id' => $apt->id,
-                    'type' => $apt->appointment_type_id == 1 ? 'Consultation' : 'Treatment',
-                    'time' => $apt->scheduled_time ? Carbon::parse($apt->scheduled_time)->format('h:i A') : 'Unscheduled',
-                    'patient' => $apt->patient_name ?? 'N/A',
-                    'service' => $apt->service_name ?? 'N/A',
-                    'location' => $apt->location_name ?? 'N/A',
-                    'status' => $apt->status_name ?? 'N/A',
-                ];
-            })->values()->toArray(),
+            'treatments' => [
+                'count' => $treatments->count(),
+                'arrived' => $treatments->where('is_arrived', 1)->count(),
+                'list' => $treatmentsList,
+            ],
+            'consultations' => [
+                'count' => $consultations->count(),
+                'arrived' => $consultations->where('is_arrived', 1)->count(),
+                'list' => $consultationsList,
+            ],
         ];
     }
 
