@@ -306,6 +306,41 @@ class VendorService
     }
 
     /**
+     * Mark an "ordered" purchase as "delivered", optionally attaching a Drive URL.
+     * This is a restricted update — only status and attachment_url can change.
+     * Gated by the create (cashflow_vendor_transaction) permission at controller level.
+     */
+    public function deliverTransaction(int $transactionId, ?string $attachmentUrl, int $accountId): VendorTransaction
+    {
+        $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
+
+        if ($tx->type !== VendorTransaction::TYPE_PURCHASE) {
+            throw new CashflowException('Only purchase records can be marked as delivered.');
+        }
+        if ($tx->status === VendorTransaction::STATUS_DELIVERED) {
+            throw new CashflowException('This purchase is already marked as delivered.');
+        }
+
+        $oldValues = $tx->toArray();
+
+        $tx->update([
+            'status'         => VendorTransaction::STATUS_DELIVERED,
+            'attachment_url' => $attachmentUrl ?: $tx->attachment_url,
+        ]);
+
+        $this->auditService->log(
+            CashflowAuditLog::ACTION_UPDATED,
+            CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
+            $tx->id,
+            $oldValues,
+            $tx->fresh()->toArray()
+        );
+
+        $this->clearCache($accountId);
+        return $tx->fresh();
+    }
+
+    /**
      * Update a standalone purchase transaction (not linked to an expense).
      */
     public function updateTransaction(int $transactionId, array $data, int $accountId): VendorTransaction

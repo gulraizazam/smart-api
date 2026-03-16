@@ -477,6 +477,45 @@
     </div>
     @endif
 
+    <!-- Mark as Delivered Modal -->
+    @if(Gate::allows('cashflow_vendor_transaction'))
+    <div class="modal fade" id="modal_deliver" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-check-circle text-success mr-2"></i>Mark as Delivered</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="form-deliver">
+                    <input type="hidden" name="deliver_tx_id" value="" />
+                    <input type="hidden" name="deliver_vendor_id" value="" />
+                    <div class="modal-body">
+                        <div class="alert alert-custom alert-light-info alert-dismissible mb-4 py-3 px-4" style="border-radius:0.42rem;">
+                            <div class="alert-icon"><i class="la la-info-circle text-info" style="font-size:18px;"></i></div>
+                            <div class="alert-text font-size-sm">
+                                You are marking this purchase as <strong>Delivered</strong>. Please attach the invoice/receipt from Google Drive.
+                            </div>
+                        </div>
+                        <div class="mb-3 font-size-sm">
+                            <span class="text-muted">Purchase:</span>
+                            <span class="font-weight-bold ml-1" id="deliver-tx-desc"></span>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold">Google Drive Link <span class="text-danger">*</span></label>
+                            <input type="url" name="attachment_url" id="deliver-attachment-url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" required />
+                            <small class="text-muted">Paste the shareable link to the invoice/receipt.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                        <button type="button" id="btn-submit-deliver" class="btn btn-success btn-sm"><i class="la la-check mr-1"></i>Confirm Delivery</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Attachment Preview Modal -->
     <div class="modal fade" id="modal_preview" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
