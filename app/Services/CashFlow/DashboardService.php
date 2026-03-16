@@ -194,6 +194,26 @@ class DashboardService
             ->pluck('total', 'date')
             ->toArray();
 
+        // Inventory cash sales by day
+        $inventoryQuery = Order::where('account_id', $accountId)
+            ->where('order_type', 'sale')
+            ->where('payment_mode', 1)
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+
+        if ($goLiveDate) {
+            $inventoryQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+        }
+
+        if ($branchId) {
+            $inventoryQuery->where('location_id', $branchId);
+        }
+
+        $inventorySales = $inventoryQuery
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_price) as total'))
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->pluck('total', 'date')
+            ->toArray();
+
         // Build day-by-day array
         $days = [];
         $current = Carbon::parse($dateFrom);
@@ -203,7 +223,7 @@ class DashboardService
             $d = $current->toDateString();
             $days[] = [
                 'date' => $d,
-                'inflows' => (float) ($inflows[$d] ?? 0) - (float) ($refunds[$d] ?? 0),
+                'inflows' => (float) ($inflows[$d] ?? 0) - (float) ($refunds[$d] ?? 0) + (float) ($inventorySales[$d] ?? 0),
                 'outflows' => (float) ($outflows[$d] ?? 0),
             ];
             $current->addDay();
@@ -736,7 +756,22 @@ class DashboardService
 
         $refunds = (float) $refundQuery->sum('cash_amount');
 
-        return $payments - $refunds;
+        // Add inventory cash sales
+        $inventoryQuery = Order::where('account_id', $accountId)
+            ->where('order_type', 'sale')
+            ->where('payment_mode', 1);
+
+        if ($goLiveDate) {
+            $inventoryQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+        }
+
+        if ($branchId) {
+            $inventoryQuery->where('location_id', $branchId);
+        }
+
+        $inventorySales = (float) $inventoryQuery->sum('total_price');
+
+        return $payments - $refunds + $inventorySales;
     }
 
     /**

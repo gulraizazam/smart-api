@@ -4,12 +4,41 @@
     var apiBase = '/api/cashflow/';
 
     $(document).ready(function () {
+        initBranchFilter();
         loadFdmData();
     });
 
-    function loadFdmData() {
+    function initBranchFilter() {
+        var $filter = $('#fdm-branch-filter');
+        $filter.select2({
+            placeholder: 'All Centres',
+            allowClear: true,
+            width: '100%'
+        });
+
+        // Load branches
         $.ajax({
-            url: apiBase + 'fdm/data', type: 'GET',
+            url: apiBase + 'fdm/data?branches_only=1', type: 'GET',
+            success: function (res) {
+                if (res.success && res.data && res.data.branches) {
+                    $.each(res.data.branches, function (i, b) {
+                        $filter.append(new Option(b.name, b.id, false, false));
+                    });
+                    $filter.trigger('change.select2');
+                }
+            }
+        });
+
+        $filter.on('change', function () {
+            loadFdmData();
+        });
+    }
+
+    function loadFdmData() {
+        var branchId = $('#fdm-branch-filter').val();
+        var params = branchId ? { branch_id: branchId } : {};
+        $.ajax({
+            url: apiBase + 'fdm/data', type: 'GET', data: params,
             success: function (res) {
                 if (!res.success) {
                     $('#fdm-branch-name').text('Access Denied');
