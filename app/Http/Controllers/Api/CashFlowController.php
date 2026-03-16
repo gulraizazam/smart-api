@@ -2096,6 +2096,52 @@ class CashFlowController extends Controller
 
     /**
 
+     * Mark an ordered purchase as delivered (attach Drive URL). Gated by create permission.
+
+     */
+
+    public function vendorsTransactionDeliver(Request $request, int $vendorId, int $txId): JsonResponse
+
+    {
+
+        try {
+
+            if (!Auth::user()->can('cashflow_vendor_transaction')) {
+
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+
+            }
+
+            $request->validate([
+                'attachment_url' => 'required|url|max:500',
+            ]);
+
+            $accountId = Auth::user()->account_id;
+
+            $tx = $this->vendorService->deliverTransaction($txId, $request->input('attachment_url'), $accountId);
+
+            return response()->json(['success' => true, 'data' => $tx, 'message' => 'Purchase marked as delivered.']);
+
+        } catch (CashflowException $e) {
+
+            return $e->render(request());
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json(['success' => false, 'message' => 'A valid Google Drive URL is required to mark as delivered.', 'errors' => $e->errors()], 422);
+
+        } catch (\Exception $e) {
+
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+
+        }
+
+    }
+
+
+
+    /**
+
      * Delete a standalone vendor transaction (purchase).
 
      */

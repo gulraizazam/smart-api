@@ -91,6 +91,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
         Route::get('{id}/ledger', [CashFlowController::class, 'vendorsLedger'])->name('ledger');
         Route::post('{id}/purchase', [CashFlowController::class, 'vendorsPurchase'])->name('purchase');
         Route::post('{id}/transactions/{txId}/update', [CashFlowController::class, 'vendorsTransactionUpdate'])->name('transaction.update');
+        Route::post('{id}/transactions/{txId}/deliver', [CashFlowController::class, 'vendorsTransactionDeliver'])->name('transaction.deliver');
         Route::post('{id}/transactions/{txId}/delete', [CashFlowController::class, 'vendorsTransactionDelete'])->name('transaction.delete');
         Route::get('{id}/transactions/{txId}/audit', [CashFlowController::class, 'vendorsTransactionAudit'])->name('transaction.audit');
         Route::get('{id}/ledger/export', [CashFlowController::class, 'vendorsLedgerExport'])->name('ledger.export');

@@ -125,6 +125,13 @@ var CashflowVendors = (function () {
             updatePurchaseStatusUi($(this).val());
         });
 
+        // Deliver modal
+        $('#btn-submit-deliver').on('click', function () { submitDeliver(); });
+        $('#modal_deliver').on('hidden.bs.modal', function () {
+            $('#form-deliver')[0].reset();
+            $('#deliver-attachment-url').removeClass('is-invalid');
+        });
+
         $('#modal_purchase').on('hidden.bs.modal', function () {
             $('#form-purchase')[0].reset();
             $('#form-purchase [name="transaction_id"]').val('');
@@ -531,9 +538,13 @@ var CashflowVendors = (function () {
                 descHtml = '<span class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:260px;display:inline-block;">' + esc(desc) + '</span>';
             }
 
-            // Edit/Delete actions for standalone purchase entries (no expense_id)
+            // Edit/Delete/Deliver actions for standalone purchase entries (no expense_id)
             var actions = '';
             if (!tx.expense_id && typeof cfPerms !== 'undefined') {
+                // Mark as Delivered CTA: shown for ordered purchases to anyone who can create purchases
+                if (isPurchase && txStatus === 'ordered' && cfPerms.canTransaction) {
+                    actions += '<a href="javascript:;" class="btn-deliver-tx text-hover-success ml-2" title="Mark as Delivered" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-truck font-size-sm text-warning"></i></a>';
+                }
                 if (cfPerms.canTransactionEdit) {
                     actions += '<a href="javascript:;" class="btn-edit-tx text-hover-primary ml-2" title="Edit" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-edit font-size-sm text-muted"></i></a>';
                 }
@@ -582,6 +593,12 @@ var CashflowVendors = (function () {
         });
 
         // Bind edit/delete actions
+        container.find('.btn-deliver-tx').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var tx = $(this).data('tx');
+            if (typeof tx === 'string') tx = JSON.parse(tx);
+            openDeliverModal(tx);
+        });
         container.find('.btn-edit-tx').off('click').on('click', function (e) {
             e.stopPropagation();
             var tx = $(this).data('tx');
@@ -853,6 +870,56 @@ var CashflowVendors = (function () {
             },
             error: function (xhr) {
                 toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.');
+            }
+        });
+    }
+
+    // ===================== MARK AS DELIVERED =====================
+
+    function openDeliverModal(tx) {
+        var form = $('#form-deliver');
+        form.find('[name="deliver_tx_id"]').val(tx.id);
+        form.find('[name="deliver_vendor_id"]').val(tx.vendor_id || currentVendorId);
+        $('#deliver-tx-desc').text((tx.description || '—') + ' — PKR ' + nf(tx.amount));
+        $('#deliver-attachment-url').val(tx.attachment_url || '').removeClass('is-invalid');
+        $('#modal_deliver').modal('show');
+    }
+
+    function submitDeliver() {
+        var url = $('#deliver-attachment-url');
+        var urlVal = url.val().trim();
+        url.removeClass('is-invalid');
+        if (!urlVal) {
+            url.addClass('is-invalid');
+            toastr.warning('Please provide the Google Drive URL.');
+            return;
+        }
+
+        var txId = $('#form-deliver [name="deliver_tx_id"]').val();
+        var vendorId = $('#form-deliver [name="deliver_vendor_id"]').val() || currentVendorId;
+        var btn = $('#btn-submit-deliver');
+        btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');
+
+        $.ajax({
+            url: apiBase + 'vendors/' + vendorId + '/transactions/' + txId + '/deliver',
+            type: 'POST',
+            data: { attachment_url: urlVal },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                if (res.success) {
+                    toastr.success(res.message || 'Marked as delivered.');
+                    $('#modal_deliver').modal('hide');
+                    loadLedger(currentVendorId || vendorId);
+                    loadVendors();
+                } else {
+                    toastr.error(res.message || 'Failed.');
+                }
+            },
+            error: function (xhr) {
+                toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.');
+            },
+            complete: function () {
+                btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>Confirm Delivery');
             }
         });
     }
