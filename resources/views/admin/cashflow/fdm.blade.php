@@ -6,6 +6,15 @@
         <div class="d-flex flex-column-fluid">
             <div class="container">
 
+                <!-- Branch Filter -->
+                <div class="row mb-4">
+                    <div class="col-md-3 ml-auto">
+                        <select id="fdm-branch-filter" class="form-control" style="width:100%;">
+                            <option value="">All Centres</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Live Balance Card (Full Width) -->
                 <div class="row mb-5">
                     <div class="col-md-12">

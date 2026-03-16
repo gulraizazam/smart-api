@@ -3448,34 +3448,36 @@ class CashFlowController extends Controller
 
             $userBranches = CashflowHelper::getUserBranches();
 
-
-
             if ($userBranches->isEmpty()) {
-
                 return response()->json(['success' => false, 'message' => 'No branch assigned.'], 403);
-
             }
 
+            // Return branches list for dropdown if requested
+            if ($request->has('branches_only')) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'branches' => $userBranches->map(fn($b) => ['id' => $b->id, 'name' => $b->name])->values(),
+                    ],
+                ]);
+            }
 
+            // Filter by single branch if provided
+            $filterBranchId = $request->input('branch_id');
+            if ($filterBranchId && $userBranches->pluck('id')->contains((int) $filterBranchId)) {
+                $branchIds = [(int) $filterBranchId];
+                $branchName = $userBranches->firstWhere('id', (int) $filterBranchId)->name;
+            } else {
+                $branchIds = $userBranches->pluck('id')->toArray();
+                $branchName = $userBranches->count() === 1
+                    ? $userBranches->first()->name
+                    : 'All Centres';
+            }
 
-            $branchIds = $userBranches->pluck('id')->toArray();
-
-            $branchName = $userBranches->count() === 1
-
-                ? $userBranches->first()->name
-
-                : 'All Centres';
-
-
-
-            // Get branch cash pools for all assigned branches
-
+            // Get branch cash pools for selected branches
             $pools = \App\Models\CashFlow\CashPool::forAccount($accountId)
-
                 ->whereIn('location_id', $branchIds)
-
                 ->where('type', 'branch_cash')
-
                 ->get();
 
 
