@@ -3501,9 +3501,13 @@ class CashFlowController extends Controller
                 ->where('created_at', '>=', $march8th . ' 00:00:00')
                 ->sum('total_price');
 
-            
-
             $currentBalance += (float) $inventorySalesSinceMarch8;
+
+            // Week range: Sunday (start) to today - for opening balance calculation
+            $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
+            $today = \Carbon\Carbon::now()->toDateString();
+            $sundayStart = $sunday . ' 00:00:00';
+            $nowEnd = $today . ' 23:59:59';
             
             // Debug information
             $debugInfo = [
@@ -3511,21 +3515,10 @@ class CashFlowController extends Controller
                 'inventory_sales_since_march8' => (float) $inventorySalesSinceMarch8,
                 'total_current_balance' => $currentBalance,
                 'static_opening_balance' => (float) $pools->sum('opening_balance'),
+                'current_date' => \Carbon\Carbon::now()->toDateTimeString(),
+                'calculated_sunday' => $sunday,
+                'calculated_today' => $today,
             ];
-
-
-
-            // Week range: Sunday (start) to today - for opening balance calculation
-
-            $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
-
-            $today = \Carbon\Carbon::now()->toDateString();
-
-            $sundayStart = $sunday . ' 00:00:00';
-
-            $nowEnd = $today . ' 23:59:59';
-
-
 
             // Last 7 days range - for transaction records display
             $sevenDaysAgo = \Carbon\Carbon::now()->subDays(6)->toDateString(); // 7 days including today
