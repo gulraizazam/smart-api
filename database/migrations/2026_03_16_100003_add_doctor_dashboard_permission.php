@@ -22,6 +22,27 @@ class AddDoctorDashboardPermission extends Migration
                 'updated_at' => now(),
             ]);
         }
+
+        // Assign permission to doctor roles
+        $permissionId = DB::table('permissions')->where('name', 'doctor_dashboard')->value('id');
+        $roleIds = DB::table('roles')
+            ->whereIn('name', ['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant'])
+            ->pluck('id')
+            ->toArray();
+
+        foreach ($roleIds as $roleId) {
+            $alreadyAssigned = DB::table('role_has_permissions')
+                ->where('permission_id', $permissionId)
+                ->where('role_id', $roleId)
+                ->exists();
+
+            if (!$alreadyAssigned) {
+                DB::table('role_has_permissions')->insert([
+                    'permission_id' => $permissionId,
+                    'role_id' => $roleId,
+                ]);
+            }
+        }
     }
 
     /**
