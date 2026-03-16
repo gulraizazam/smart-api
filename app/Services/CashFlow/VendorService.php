@@ -323,10 +323,16 @@ class VendorService
 
         $oldValues = $tx->toArray();
 
-        $tx->update([
-            'status'         => VendorTransaction::STATUS_DELIVERED,
-            'attachment_url' => $attachmentUrl ?: $tx->attachment_url,
-        ]);
+        DB::transaction(function () use ($tx, $attachmentUrl) {
+            $tx->update([
+                'status'         => VendorTransaction::STATUS_DELIVERED,
+                'attachment_url' => $attachmentUrl ?: $tx->attachment_url,
+            ]);
+            // Ordered purchases were excluded from balance at create time — add now
+            DB::table('cashflow_vendors')
+                ->where('id', $tx->vendor_id)
+                ->increment('cached_balance', $tx->amount);
+        });
 
         $this->auditService->log(
             CashflowAuditLog::ACTION_UPDATED,
@@ -371,21 +377,36 @@ class VendorService
                 $updateData['is_for_general'] = 0;
             }
 
+            $oldStatus = $tx->status;
             $tx->update($updateData);
+            $fresh = $tx->fresh();
+            $newAmount = (float) $fresh->amount;
+            $newStatus = $fresh->status;
 
-            // Adjust vendor cached_balance if amount changed
-            $newAmount = (float) $tx->fresh()->amount;
-            if ($oldAmount != $newAmount) {
-                $diff = $newAmount - $oldAmount;
-                if ($tx->type === 'purchase') {
-                    // Purchase increases balance
+            if ($tx->type === 'purchase') {
+                $oldDelivered = ($oldStatus === VendorTransaction::STATUS_DELIVERED);
+                $newDelivered = ($newStatus === VendorTransaction::STATUS_DELIVERED);
+
+                if (!$oldDelivered && $newDelivered) {
+                    // ordered → delivered: add full new amount to balance
+                    DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $newAmount);
+                } elseif ($oldDelivered && !$newDelivered) {
+                    // delivered → ordered: remove old amount from balance
+                    DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $oldAmount);
+                } elseif ($oldDelivered && $newDelivered && $oldAmount != $newAmount) {
+                    // delivered → delivered, amount changed: adjust by diff
+                    $diff = $newAmount - $oldAmount;
                     if ($diff > 0) {
                         DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $diff);
                     } else {
                         DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', abs($diff));
                     }
-                } else {
-                    // Payment decreases balance
+                }
+                // ordered → ordered: no balance change regardless of amount
+            } else {
+                // Payment: balance adjustment is always active (not status-gated)
+                if ($oldAmount != $newAmount) {
+                    $diff = $newAmount - $oldAmount;
                     if ($diff > 0) {
                         DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $diff);
                     } else {
@@ -394,7 +415,7 @@ class VendorService
                 }
             }
 
-            return $tx->fresh();
+            return $fresh;
         });
 
         $this->auditService->log(
@@ -425,7 +446,10 @@ class VendorService
         DB::transaction(function () use ($tx) {
             // Reverse vendor cached_balance
             if ($tx->type === 'purchase') {
-                DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $tx->amount);
+                // Only reverse balance for delivered purchases (ordered ones never touched the balance)
+                if ($tx->status === VendorTransaction::STATUS_DELIVERED) {
+                    DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $tx->amount);
+                }
             } else {
                 DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $tx->amount);
             }

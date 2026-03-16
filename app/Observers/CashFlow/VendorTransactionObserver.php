@@ -17,9 +17,12 @@ class VendorTransactionObserver
     {
         try {
             if ($transaction->type === VendorTransaction::TYPE_PURCHASE) {
-                DB::table('cashflow_vendors')
-                    ->where('id', $transaction->vendor_id)
-                    ->increment('cached_balance', $transaction->amount);
+                // Only count delivered purchases in outstanding balance
+                if ($transaction->status === VendorTransaction::STATUS_DELIVERED) {
+                    DB::table('cashflow_vendors')
+                        ->where('id', $transaction->vendor_id)
+                        ->increment('cached_balance', $transaction->amount);
+                }
             } elseif ($transaction->type === VendorTransaction::TYPE_PAYMENT) {
                 DB::table('cashflow_vendors')
                     ->where('id', $transaction->vendor_id)
