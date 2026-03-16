@@ -55,21 +55,15 @@
                 renderExpenses(d.expenses);
                 renderAdvances(d.staff_advances);
 
-                // Summary totals
-                var expTotal = 0;
-                $.each(d.expenses || [], function (i, e) { expTotal += parseFloat(e.amount) || 0; });
-                $('#fdm-total-expenses').text('PKR ' + nf(expTotal));
-                $('#fdm-total-expenses-count').text((d.expenses || []).length + ' records');
+                // Summary totals - use week totals for cards
+                $('#fdm-total-expenses').text('PKR ' + nf(d.week_expenses_total || 0));
+                $('#fdm-total-expenses-count').text((d.week_expenses_count || 0) + ' records');
 
-                var trfTotal = 0;
-                $.each(d.transfers || [], function (i, t) { trfTotal += parseFloat(t.amount) || 0; });
-                $('#fdm-total-transfers').text('PKR ' + nf(trfTotal));
-                $('#fdm-total-transfers-count').text((d.transfers || []).length + ' records');
+                $('#fdm-total-transfers').text('PKR ' + nf(d.week_transfers_total || 0));
+                $('#fdm-total-transfers-count').text((d.week_transfers_count || 0) + ' records');
 
-                var advTotal = 0;
-                $.each(d.staff_advances || [], function (i, a) { advTotal += parseFloat(a.amount) || 0; });
-                $('#fdm-total-advances').text('PKR ' + nf(advTotal));
-                $('#fdm-total-advances-count').text((d.staff_advances || []).length + ' records');
+                $('#fdm-total-advances').text('PKR ' + nf(d.week_advances_total || 0));
+                $('#fdm-total-advances-count').text((d.week_advances_count || 0) + ' records');
             },
             error: function (xhr) {
                 $('#fdm-branch-name').text('Error');

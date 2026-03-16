@@ -3520,9 +3520,7 @@ class CashFlowController extends Controller
 
 
             // Last 7 days range - for transaction records display
-
             $sevenDaysAgo = \Carbon\Carbon::now()->subDays(6)->toDateString(); // 7 days including today
-
             $sevenDaysAgoStart = $sevenDaysAgo . ' 00:00:00';
 
 
@@ -3681,11 +3679,98 @@ class CashFlowController extends Controller
 
 
 
-            // ---- Get static opening balance from pools ----
-
-            // This is the opening balance set on March 8th
-
-            $openingBalance = (float) $pools->sum('opening_balance');
+            // ---- Calculate opening balance (last week's closing balance) ----
+            // If we're in the first week (March 8-14, 2026), use the static opening balance
+            // Otherwise, calculate what the balance was at the end of last Saturday
+            $march8th = '2026-03-08';
+            $lastSaturday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->subDay()->endOfDay();
+            
+            if ($lastSaturday->lt(\Carbon\Carbon::parse($march8th))) {
+                // We're in the first week, use static opening balance
+                $openingBalance = (float) $pools->sum('opening_balance');
+            } else {
+                // Calculate balance at end of last Saturday
+                // Start with static opening balance
+                $openingBalance = (float) $pools->sum('opening_balance');
+                
+                // Add all transactions from March 8th to end of last Saturday
+                $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
+                
+                // Add package advances (services cash inflows)
+                if (!empty($cashModeIds)) {
+                    // Services inflows
+                    $servicesIn = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'in')
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereBetween('system_created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                        ->sum('cash_amount');
+                    $openingBalance += (float) $servicesIn;
+                    
+                    // Services refunds (outflows)
+                    $servicesOut = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'out')
+                        ->where('is_refund', 1)
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereBetween('system_created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                        ->sum('cash_amount');
+                    $openingBalance -= (float) $servicesOut;
+                }
+                
+                // Add inventory sales
+                $inventorySales = Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->where('payment_mode', 1) // Cash payment mode
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->sum('total_price');
+                $openingBalance += (float) $inventorySales;
+                
+                // Subtract expenses
+                $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance -= (float) $expenses;
+                
+                // Handle transfers
+                $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('from_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance -= (float) $transfersOut;
+                
+                $transfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance += (float) $transfersIn;
+                
+                // Subtract staff advances
+                $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->sum('amount');
+                $openingBalance -= (float) $staffAdvances;
+                
+                // Add staff returns
+                $staffReturns = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->sum('amount');
+                $openingBalance += (float) $staffReturns;
+            }
 
 
 
@@ -3761,6 +3846,44 @@ class CashFlowController extends Controller
 
 
 
+            // ---- Calculate current week totals for cards ----
+            $weekExpensesTotal = 0;
+            $weekExpensesCount = 0;
+            if (!empty($poolIds)) {
+                $weekExpensesQuery = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [$sunday, $today]);
+                $weekExpensesTotal = $weekExpensesQuery->sum('amount');
+                $weekExpensesCount = $weekExpensesQuery->count();
+            }
+            
+            $weekTransfersTotal = 0;
+            $weekTransfersCount = 0;
+            if (!empty($poolIds)) {
+                $weekTransfersQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where(function ($q) use ($poolIds) {
+                        $q->whereIn('from_pool_id', $poolIds)
+                          ->orWhereIn('to_pool_id', $poolIds);
+                    })
+                    ->whereBetween('transfer_date', [$sunday, $today]);
+                $weekTransfersTotal = $weekTransfersQuery->sum('amount');
+                $weekTransfersCount = $weekTransfersQuery->count();
+            }
+            
+            $weekAdvancesTotal = 0;
+            $weekAdvancesCount = 0;
+            if (!empty($poolIds)) {
+                $weekAdvancesQuery = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
+                $weekAdvancesTotal = $weekAdvancesQuery->sum('amount');
+                $weekAdvancesCount = $weekAdvancesQuery->count();
+            }
+
             return response()->json([
 
                 'success' => true,
@@ -3786,6 +3909,18 @@ class CashFlowController extends Controller
                     'inventory_cash_inflows' => (float) $inventoryCashInflows,
 
                     'inventory_cash_inflows_count' => $inventoryCashInflowsCount,
+
+                    'week_expenses_total' => (float) $weekExpensesTotal,
+
+                    'week_expenses_count' => $weekExpensesCount,
+
+                    'week_transfers_total' => (float) $weekTransfersTotal,
+
+                    'week_transfers_count' => $weekTransfersCount,
+
+                    'week_advances_total' => (float) $weekAdvancesTotal,
+
+                    'week_advances_count' => $weekAdvancesCount,
 
                     'transfers' => $transfers,
 
