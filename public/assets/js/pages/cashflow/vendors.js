@@ -571,7 +571,7 @@ var CashflowVendors = (function () {
                                 '<div class="text-muted font-size-xs mt-1">' +
                                     '<span class="mr-2">' + dateStr + '</span>' +
                                     '<span class="label label-' + (isPurchase ? 'light-danger' : 'light-success') + ' label-inline font-size-xs py-0 px-2">' + typeLabel + '</span>' +
-                                    (txStatus === 'ordered' ? ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2 ml-1"><i class="la la-clock-o mr-1"></i>Ordered</span>' : (txStatus === 'delivered' ? ' <span class="label label-light-success label-inline font-size-xs py-0 px-2 ml-1"><i class="la la-check-circle mr-1"></i>Delivered</span>' : '')) +
+                                    (txStatus === 'ordered' ? ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2 ml-1" style="vertical-align:middle;"><i class="la la-clock-o mr-1"></i>Ordered</span>' : (txStatus === 'delivered' ? ' <span class="label label-light-success label-inline font-size-xs py-0 px-2 ml-1" style="vertical-align:middle;"><i class="la la-check-circle mr-1"></i>Delivered</span>' : '')) +
                                     branchLabel +
                                     (tx.reference_no ? ' <span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
                                 '</div>' +
@@ -730,6 +730,10 @@ var CashflowVendors = (function () {
             : 'Drive attachment is optional for ordered purchases.');
         // Asterisk on attachment label
         $('#attachment-required-star').toggle(isDelivered);
+        // Clear validation error on attachment when switching to ordered
+        if (!isDelivered) {
+            $('[name="attachment_url"]').removeClass('is-invalid');
+        }
     }
 
     function openPurchaseModal(tx) {
@@ -776,7 +780,10 @@ var CashflowVendors = (function () {
         var data = {};
         form.find('input, select, textarea').each(function () {
             var n = $(this).attr('name');
-            if (n && n !== 'transaction_id') data[n] = $(this).val();
+            if (!n || n === 'transaction_id') return;
+            // Skip unchecked radios — only take the checked one
+            if ($(this).is('[type="radio"]') && !$(this).is(':checked')) return;
+            data[n] = $(this).val();
         });
 
         // Handle branch/general

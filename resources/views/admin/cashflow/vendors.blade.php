@@ -463,7 +463,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label id="attachment-url-label">Attachment (Google Drive URL) <span class="text-danger" id="attachment-required-star">*</span></label>
+                            <label id="attachment-url-label">Attachment (Google Drive URL) <span class="text-danger" id="attachment-required-star" style="display:none;">*</span></label>
                             <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
                         </div>
                     </form>
