@@ -3798,65 +3798,53 @@ class CashFlowController extends Controller
                 ];
             }
 
-            // ---- Calculate cash inflows for current week ----
+            // ---- Calculate current week card totals (all NET values) ----
 
-            // Services cash inflows (package_advances) for current week
-
+            // Services Cash Inflows: NET = inflows - refunds
             $servicesCashInflows = 0;
-
             $servicesCashInflowsCount = 0;
-
             if (!empty($cashModeIds)) {
-
-                $servicesQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
-
+                // Inflows
+                $svcInQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
                     ->where('cash_flow', 'in')
-
                     ->where('is_cancel', 0)
-
                     ->whereNull('deleted_at')
-
+                    ->where('cash_amount', '>', 0)
                     ->whereIn('payment_mode_id', $cashModeIds)
-
                     ->whereIn('location_id', array_keys($branchPoolMap))
-
                     ->whereDate('system_created_at', '>=', $sunday)
-
                     ->whereDate('system_created_at', '<=', $today);
+                $svcIn = (float) $svcInQuery->sum('cash_amount');
+                $svcInCount = $svcInQuery->count();
 
-                
+                // Refunds (outflows)
+                $svcOutQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
+                    ->where('cash_flow', 'out')
+                    ->where('is_refund', 1)
+                    ->where('is_cancel', 0)
+                    ->whereNull('deleted_at')
+                    ->whereIn('payment_mode_id', $cashModeIds)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereDate('system_created_at', '>=', $sunday)
+                    ->whereDate('system_created_at', '<=', $today);
+                $svcOut = (float) $svcOutQuery->sum('cash_amount');
+                $svcOutCount = $svcOutQuery->count();
 
-                $servicesCashInflows = $servicesQuery->sum('cash_amount');
-
-                $servicesCashInflowsCount = $servicesQuery->count();
-
+                $servicesCashInflows = $svcIn - $svcOut;
+                $servicesCashInflowsCount = $svcInCount + $svcOutCount;
             }
 
-
-
-            // Inventory cash inflows (orders) for current week
-
+            // Inventory Cash Inflows
             $inventoryQuery = Order::where('account_id', $accountId)
-
                 ->where('order_type', 'sale')
-
-                ->where('payment_mode', 1) // Cash payment mode
-
+                ->where('payment_mode', 1)
                 ->whereIn('location_id', array_keys($branchPoolMap))
-
                 ->whereDate('created_at', '>=', $sunday)
-
                 ->whereDate('created_at', '<=', $today);
-
-            
-
-            $inventoryCashInflows = $inventoryQuery->sum('total_price');
-
+            $inventoryCashInflows = (float) $inventoryQuery->sum('total_price');
             $inventoryCashInflowsCount = $inventoryQuery->count();
 
-
-
-            // ---- Calculate current week totals for cards ----
+            // Expenses Total (current week)
             $weekExpensesTotal = 0;
             $weekExpensesCount = 0;
             if (!empty($poolIds)) {
@@ -3865,34 +3853,63 @@ class CashFlowController extends Controller
                     ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
                     ->whereBetween('expense_date', [$sunday, $today]);
-                $weekExpensesTotal = $weekExpensesQuery->sum('amount');
+                $weekExpensesTotal = (float) $weekExpensesQuery->sum('amount');
                 $weekExpensesCount = $weekExpensesQuery->count();
             }
-            
+
+            // Cash Transfers Total: NET = out - in (current week)
             $weekTransfersTotal = 0;
             $weekTransfersCount = 0;
             if (!empty($poolIds)) {
-                $weekTransfersQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                // Transfers OUT of branch pools
+                $trfOutQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
-                    ->where(function ($q) use ($poolIds) {
-                        $q->whereIn('from_pool_id', $poolIds)
-                          ->orWhereIn('to_pool_id', $poolIds);
-                    })
+                    ->whereIn('from_pool_id', $poolIds)
                     ->whereBetween('transfer_date', [$sunday, $today]);
-                $weekTransfersTotal = $weekTransfersQuery->sum('amount');
-                $weekTransfersCount = $weekTransfersQuery->count();
+                $trfOut = (float) $trfOutQuery->sum('amount');
+                $trfOutCount = $trfOutQuery->count();
+
+                // Transfers IN to branch pools
+                $trfInQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [$sunday, $today]);
+                $trfIn = (float) $trfInQuery->sum('amount');
+                $trfInCount = $trfInQuery->count();
+
+                $weekTransfersTotal = $trfOut - $trfIn;
+                $weekTransfersCount = $trfOutCount + $trfInCount;
             }
-            
+
+            // Staff Advances Total: NET = advances - returns (current week)
             $weekAdvancesTotal = 0;
             $weekAdvancesCount = 0;
             if (!empty($poolIds)) {
-                $weekAdvancesQuery = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                $advQuery = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
                     ->whereBetween('created_at', [$sundayStart, $nowEnd]);
-                $weekAdvancesTotal = $weekAdvancesQuery->sum('amount');
-                $weekAdvancesCount = $weekAdvancesQuery->count();
+                $advOut = (float) $advQuery->sum('amount');
+                $advOutCount = $advQuery->count();
+
+                $retQuery = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
+                $retIn = (float) $retQuery->sum('amount');
+                $retInCount = $retQuery->count();
+
+                $weekAdvancesTotal = $advOut - $retIn;
+                $weekAdvancesCount = $advOutCount + $retInCount;
             }
+
+            // ---- Live Cash Balance = Opening + Services + Inventory - Expenses - Transfers - Advances ----
+            $liveCashBalance = round($openingBalance, 2)
+                + $servicesCashInflows
+                + $inventoryCashInflows
+                - $weekExpensesTotal
+                - $weekTransfersTotal
+                - $weekAdvancesTotal;
 
             return response()->json([
 
@@ -3902,7 +3919,7 @@ class CashFlowController extends Controller
 
                     'branch_name' => $branchName,
 
-                    'pool_balance' => $currentBalance,
+                    'pool_balance' => round($liveCashBalance, 2),
 
                     'opening_balance' => round($openingBalance, 2),
 
@@ -3938,7 +3955,17 @@ class CashFlowController extends Controller
 
                     'staff_advances' => $staffAdvances,
                     
-                    'debug' => $debugInfo,
+                    'debug' => array_merge($debugInfo, [
+                        'live_balance_formula' => [
+                            'opening_balance' => round($openingBalance, 2),
+                            'services_net' => $servicesCashInflows,
+                            'inventory' => $inventoryCashInflows,
+                            'expenses' => $weekExpensesTotal,
+                            'transfers_net' => $weekTransfersTotal,
+                            'advances_net' => $weekAdvancesTotal,
+                            'live_cash_balance' => round($liveCashBalance, 2),
+                        ],
+                    ]),
 
                 ],
 
