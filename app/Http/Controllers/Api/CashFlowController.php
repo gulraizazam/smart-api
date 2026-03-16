@@ -3504,6 +3504,14 @@ class CashFlowController extends Controller
             
 
             $currentBalance += (float) $inventorySalesSinceMarch8;
+            
+            // Debug information
+            $debugInfo = [
+                'cached_balance' => (float) $pools->sum('cached_balance'),
+                'inventory_sales_since_march8' => (float) $inventorySalesSinceMarch8,
+                'total_current_balance' => $currentBalance,
+                'static_opening_balance' => (float) $pools->sum('opening_balance'),
+            ];
 
 
 
@@ -3677,7 +3685,12 @@ class CashFlowController extends Controller
 
             }
 
-
+            // Get cash payment mode IDs (needed for opening balance calculation)
+            $cashModeIds = \App\Models\PaymentModes::where('active', 1)
+                ->get()
+                ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+                ->pluck('id')
+                ->toArray();
 
             // ---- Calculate opening balance (last week's closing balance) ----
             // If we're in the first week (March 8-14, 2026), use the static opening balance
@@ -3697,6 +3710,8 @@ class CashFlowController extends Controller
                 $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
                 
                 // Add package advances (services cash inflows)
+                $servicesIn = 0;
+                $servicesOut = 0;
                 if (!empty($cashModeIds)) {
                     // Services inflows
                     $servicesIn = \App\Models\PackageAdvances::where('account_id', $accountId)
@@ -3723,6 +3738,7 @@ class CashFlowController extends Controller
                 }
                 
                 // Add inventory sales
+                $inventorySales = 0;
                 $inventorySales = Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
                     ->where('payment_mode', 1) // Cash payment mode
@@ -3732,6 +3748,7 @@ class CashFlowController extends Controller
                 $openingBalance += (float) $inventorySales;
                 
                 // Subtract expenses
+                $expenses = 0;
                 $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->where('status', '!=', 'rejected')
@@ -3741,6 +3758,8 @@ class CashFlowController extends Controller
                 $openingBalance -= (float) $expenses;
                 
                 // Handle transfers
+                $transfersOut = 0;
+                $transfersIn = 0;
                 $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('from_pool_id', $poolIds)
@@ -3756,6 +3775,8 @@ class CashFlowController extends Controller
                 $openingBalance += (float) $transfersIn;
                 
                 // Subtract staff advances
+                $staffAdvances = 0;
+                $staffReturns = 0;
                 $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
@@ -3770,23 +3791,22 @@ class CashFlowController extends Controller
                     ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
                     ->sum('amount');
                 $openingBalance += (float) $staffReturns;
+                
+                // Debug opening balance calculation
+                $debugInfo['opening_balance_calc'] = [
+                    'static_opening' => (float) $pools->sum('opening_balance'),
+                    'services_in' => (float) $servicesIn,
+                    'services_out' => (float) $servicesOut,
+                    'inventory_sales' => (float) $inventorySales,
+                    'expenses' => (float) $expenses,
+                    'transfers_out' => (float) $transfersOut,
+                    'transfers_in' => (float) $transfersIn,
+                    'staff_advances' => (float) $staffAdvances,
+                    'staff_returns' => (float) $staffReturns,
+                    'calculated_opening' => $openingBalance,
+                    'last_saturday' => $lastSaturday->toDateTimeString(),
+                ];
             }
-
-
-
-            // Get cash payment mode IDs
-
-            $cashModeIds = \App\Models\PaymentModes::where('active', 1)
-
-                ->get()
-
-                ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
-
-                ->pluck('id')
-
-                ->toArray();
-
-
 
             // ---- Calculate cash inflows for current week ----
 
@@ -3927,6 +3947,8 @@ class CashFlowController extends Controller
                     'expenses' => $expenses,
 
                     'staff_advances' => $staffAdvances,
+                    
+                    'debug' => $debugInfo,
 
                 ],
 
