@@ -321,7 +321,7 @@ class VendorService
 
         $tx = DB::transaction(function () use ($tx, $data, $oldAmount) {
             $updateData = [];
-            $allowed = ['description', 'amount', 'reference_no', 'attachment_url', 'transaction_date', 'for_branch_id', 'is_for_general'];
+            $allowed = ['description', 'amount', 'reference_no', 'attachment_url', 'transaction_date', 'for_branch_id', 'is_for_general', 'status'];
             foreach ($allowed as $field) {
                 if (array_key_exists($field, $data)) {
                     $updateData[$field] = $data[$field];
@@ -481,6 +481,7 @@ class VendorService
                 'account_id' => $accountId,
                 'vendor_id' => $data['vendor_id'],
                 'type' => $data['type'],
+                'status' => $data['status'] ?? VendorTransaction::STATUS_DELIVERED,
                 'amount' => $data['amount'],
                 'expense_id' => $data['expense_id'] ?? null,
                 'description' => $data['description'] ?? null,

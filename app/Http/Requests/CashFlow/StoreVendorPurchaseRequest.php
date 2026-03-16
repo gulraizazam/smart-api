@@ -18,14 +18,17 @@ class StoreVendorPurchaseRequest extends FormRequest
 
     public function rules(): array
     {
+        $isDelivered = $this->input('status', 'delivered') === 'delivered';
+
         return [
-            'amount' => 'required|numeric|min:1|max:99999999|integer',
-            'description' => 'required|string|min:3|max:100',
-            'reference_no' => 'nullable|string|max:100',
-            'attachment_url' => 'required|url|max:500',
+            'amount'           => 'required|numeric|min:1|max:99999999|integer',
+            'description'      => 'required|string|min:3|max:100',
+            'reference_no'     => 'nullable|string|max:100',
+            'attachment_url'   => $isDelivered ? 'required|url|max:500' : 'nullable|url|max:500',
             'transaction_date' => 'required|date|before_or_equal:today|after_or_equal:' . now()->subDays(7)->toDateString(),
-            'for_branch_id' => 'nullable',
-            'is_for_general' => 'nullable|boolean',
+            'for_branch_id'    => 'nullable',
+            'is_for_general'   => 'nullable|boolean',
+            'status'           => 'required|in:ordered,delivered',
         ];
     }
 

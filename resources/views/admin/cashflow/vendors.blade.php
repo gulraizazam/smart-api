@@ -406,6 +406,21 @@
                 <div class="modal-body">
                     <form id="form-purchase">
                         <input type="hidden" name="transaction_id" value="" />
+                        {{-- Status Toggle --}}
+                        <div class="form-group mb-4">
+                            <label class="d-block font-weight-bold mb-2">Purchase Status <span class="text-danger">*</span></label>
+                            <div class="btn-group btn-group-toggle w-100" id="purchase-status-toggle" style="border:1px solid #E4E6EF;border-radius:0.42rem;overflow:hidden;">
+                                <label class="btn btn-sm purchase-status-btn active" id="btn-status-ordered" style="flex:1;margin:0;border-radius:0;border:none;">
+                                    <input type="radio" name="status" value="ordered" autocomplete="off" checked />
+                                    <i class="la la-clock-o mr-1"></i>Ordered
+                                </label>
+                                <label class="btn btn-sm purchase-status-btn" id="btn-status-delivered" style="flex:1;margin:0;border-radius:0;border:none;border-left:1px solid #E4E6EF;">
+                                    <input type="radio" name="status" value="delivered" autocomplete="off" />
+                                    <i class="la la-check-circle mr-1"></i>Delivered
+                                </label>
+                            </div>
+                            <small class="text-muted" id="purchase-status-hint">Drive attachment is optional for ordered purchases.</small>
+                        </div>
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
                             <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required maxlength="100" />
@@ -448,8 +463,8 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Attachment (Google Drive URL) <span class="text-danger">*</span></label>
-                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" required />
+                            <label id="attachment-url-label">Attachment (Google Drive URL) <span class="text-danger" id="attachment-required-star">*</span></label>
+                            <input type="url" name="attachment_url" class="form-control" placeholder="https://drive.google.com/..." maxlength="500" />
                         </div>
                     </form>
                 </div>
