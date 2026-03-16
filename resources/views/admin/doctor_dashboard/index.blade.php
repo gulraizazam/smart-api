@@ -1,20 +1,27 @@
 @extends('admin.layouts.master')
 @section('title', 'Doctor Dashboard')
 @section('content')
-<link rel="stylesheet" href="{{ asset('assets/css/doctor-dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/doctor-dashboard.css') }}?v={{ time() }}">
 
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
     {{-- Sticky Header --}}
     <div class="dd-header" id="ddHeader">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <div>
+            <div class="dd-doctor-profile">
+                @if(!empty($doctorInfo['image_src']))
+                    <img src="{{ asset($doctorInfo['image_src']) }}" alt="" class="dd-avatar">
+                @else
+                    @php
+                        $initials = collect(explode(' ', $doctorInfo['name'] ?? 'D'))
+                            ->filter(fn($w) => strlen($w) > 0)
+                            ->map(fn($w) => strtoupper($w[0]))
+                            ->take(2)
+                            ->implode('');
+                    @endphp
+                    <div class="dd-avatar dd-avatar-initials">{{ $initials }}</div>
+                @endif
                 <h4 class="dd-doctor-name">{{ $doctorInfo['name'] ?? 'Doctor' }}</h4>
-                <p class="dd-doctor-branches">
-                    @foreach($doctorInfo['locations'] ?? [] as $loc)
-                        {{ $loc->name ?? $loc['name'] }}@if(!$loop->last) &middot; @endif
-                    @endforeach
-                </p>
             </div>
             <div class="dd-toggle-wrap">
                 <div class="dd-pill-toggle" id="ddPeriodToggle">
@@ -94,7 +101,7 @@
     </div>
 
     {{-- KPI Section: Revenue & Conversion --}}
-    <div class="dd-kpi-section">
+    <div class="dd-kpi-section dd-section-revenue">
         <div class="dd-kpi-section-title">Revenue & Conversion</div>
         <div class="dd-kpi-grid">
             <div class="dd-kpi-card" data-kpi="total_revenue">
@@ -134,7 +141,7 @@
     </div>
 
     {{-- KPI Section: Upselling & Memberships --}}
-    <div class="dd-kpi-section">
+    <div class="dd-kpi-section dd-section-upsell">
         <div class="dd-kpi-section-title">Upselling & Memberships</div>
         <div class="dd-kpi-grid">
             <div class="dd-kpi-card" data-kpi="upsell_revenue">
@@ -159,7 +166,7 @@
     </div>
 
     {{-- KPI Section: Patient Experience --}}
-    <div class="dd-kpi-section">
+    <div class="dd-kpi-section dd-section-experience">
         <div class="dd-kpi-section-title">Patient Experience</div>
         <div class="dd-kpi-grid">
             <div class="dd-kpi-card" data-kpi="feedback_score">
@@ -195,7 +202,7 @@
     </div>
 
     {{-- KPI Section: Activity --}}
-    <div class="dd-kpi-section">
+    <div class="dd-kpi-section dd-section-activity">
         <div class="dd-kpi-section-title">Activity</div>
         <div class="dd-kpi-grid">
             <div class="dd-kpi-card" data-kpi="patients_seen">
@@ -257,5 +264,5 @@
     };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script src="{{ asset('assets/js/pages/doctor_dashboard/dashboard.js') }}"></script>
+<script src="{{ asset('assets/js/pages/doctor_dashboard/dashboard.js') }}?v={{ time() }}"></script>
 @endsection

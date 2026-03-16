@@ -39,7 +39,6 @@ class MembershipCalculator
             ->where('p.plan_type', 'membership')
             ->whereIn('pb.membership_type_id', $goldTypeIds)
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNull('ps.deleted_at')
             ->whereNull('pb.deleted_at')
             ->distinct('p.id')
             ->count('p.id');
@@ -111,7 +110,6 @@ class MembershipCalculator
             ->where('p.plan_type', 'membership')
             ->whereIn('pb.membership_type_id', $goldTypeIds)
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNull('ps.deleted_at')
             ->whereNull('pb.deleted_at')
             ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT p.id) as cnt'))
             ->groupBy('ps.sold_by')

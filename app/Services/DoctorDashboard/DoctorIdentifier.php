@@ -92,7 +92,7 @@ class DoctorIdentifier
      */
     public function getDoctorInfo(int $doctorId): array
     {
-        $doctor = User::select('id', 'name', 'email', 'active')
+        $doctor = User::select('id', 'name', 'email', 'active', 'image_src')
             ->find($doctorId);
 
         if (!$doctor) {
@@ -111,6 +111,7 @@ class DoctorIdentifier
             'name' => $doctor->name,
             'email' => $doctor->email,
             'active' => $doctor->active,
+            'image_src' => $doctor->image_src,
             'locations' => $locations->toArray(),
             'location_ids' => $locations->pluck('id')->toArray(),
         ];
