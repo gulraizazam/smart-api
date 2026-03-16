@@ -7,6 +7,7 @@ use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\PeriodLock;
 use App\Models\Locations;
+use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -22,14 +23,42 @@ class PoolService
 
     /**
      * Get all pools for account with location info.
+     * For branch_cash pools, adds inventory cash sales since go-live to cached_balance for display.
      */
     public function getAllPools(int $accountId)
     {
-        return CashPool::forAccount($accountId)
+        $pools = CashPool::forAccount($accountId)
             ->with('location:id,name')
             ->orderByRaw("FIELD(type, 'branch_cash', 'head_office_cash', 'bank_account')")
             ->orderBy('name')
             ->get();
+
+        // Get go-live date
+        $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId);
+        if (!$goLiveDate) {
+            return $pools;
+        }
+
+        // Add inventory cash sales since go-live to branch pool balances (display only)
+        $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
+        if ($branchPools->isNotEmpty()) {
+            $locationIds = $branchPools->pluck('location_id')->toArray();
+            $inventorySales = Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', $locationIds)
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->selectRaw('location_id, SUM(total_price) as total')
+                ->groupBy('location_id')
+                ->pluck('total', 'location_id');
+
+            foreach ($branchPools as $pool) {
+                $inventoryAmount = (float) ($inventorySales[$pool->location_id] ?? 0);
+                $pool->cached_balance = (float) $pool->cached_balance + $inventoryAmount;
+            }
+        }
+
+        return $pools;
     }
 
     /**
