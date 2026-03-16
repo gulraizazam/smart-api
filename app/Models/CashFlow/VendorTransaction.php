@@ -13,7 +13,7 @@ class VendorTransaction extends Model
     protected $table = 'vendor_transactions';
 
     protected $fillable = [
-        'account_id', 'vendor_id', 'type', 'amount',
+        'account_id', 'vendor_id', 'type', 'status', 'amount',
         'expense_id', 'description', 'reference_no', 'attachment_url',
         'transaction_date', 'for_branch_id', 'is_for_general',
         'created_by',
@@ -28,6 +28,10 @@ class VendorTransaction extends Model
     // Type constants
     const TYPE_PURCHASE = 'purchase';
     const TYPE_PAYMENT = 'payment';
+
+    // Status constants (for purchase transactions)
+    const STATUS_ORDERED = 'ordered';
+    const STATUS_DELIVERED = 'delivered';
 
     /**
      * Vendor this transaction belongs to.

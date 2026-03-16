@@ -120,12 +120,20 @@ var CashflowVendors = (function () {
             $('#vendor-active-switch').toggleClass('switch-primary', checked);
         });
         $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
+        // Status toggle UX — drive link required only for delivered
+        $(document).on('change', '#form-purchase [name="status"]', function () {
+            updatePurchaseStatusUi($(this).val());
+        });
+
         $('#modal_purchase').on('hidden.bs.modal', function () {
             $('#form-purchase')[0].reset();
             $('#form-purchase [name="transaction_id"]').val('');
             $('#form-purchase .is-invalid').removeClass('is-invalid');
             $('#purchase-modal-title').html('<i class="la la-shopping-cart mr-1"></i>Record Purchase — <span id="purchase-vendor-name" class="text-primary"></span>');
             $('#btn-submit-purchase').html('<i class="la la-check mr-1"></i>Record Purchase');
+            // Reset status toggle to default (ordered)
+            $('#form-purchase [name="status"][value="ordered"]').prop('checked', true);
+            updatePurchaseStatusUi('ordered');
         });
     }
 
@@ -484,6 +492,7 @@ var CashflowVendors = (function () {
         $.each(txs, function (i, tx) {
             var isPurchase = tx.type === 'purchase';
             var typeIcon = isPurchase ? 'la-arrow-up text-danger' : 'la-arrow-down text-success';
+            var txStatus = (isPurchase && tx.status) ? tx.status : null;
             var typeLabel = isPurchase ? 'Purchase' : 'Payment';
             var amtClass = isPurchase ? 'text-danger' : 'text-success';
             var amtPrefix = isPurchase ? '+' : '-';
@@ -551,6 +560,7 @@ var CashflowVendors = (function () {
                                 '<div class="text-muted font-size-xs mt-1">' +
                                     '<span class="mr-2">' + dateStr + '</span>' +
                                     '<span class="label label-' + (isPurchase ? 'light-danger' : 'light-success') + ' label-inline font-size-xs py-0 px-2">' + typeLabel + '</span>' +
+                                    (txStatus === 'ordered' ? ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2 ml-1"><i class="la la-clock-o mr-1"></i>Ordered</span>' : (txStatus === 'delivered' ? ' <span class="label label-light-success label-inline font-size-xs py-0 px-2 ml-1"><i class="la la-check-circle mr-1"></i>Delivered</span>' : '')) +
                                     branchLabel +
                                     (tx.reference_no ? ' <span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
                                 '</div>' +
@@ -692,6 +702,19 @@ var CashflowVendors = (function () {
 
     // ===================== RECORD / EDIT PURCHASE =====================
 
+    function updatePurchaseStatusUi(status) {
+        var isDelivered = (status === 'delivered');
+        // Toggle button active styles
+        $('#btn-status-ordered').toggleClass('active btn-warning', !isDelivered).toggleClass('btn-success', false);
+        $('#btn-status-delivered').toggleClass('active btn-success', isDelivered).toggleClass('btn-warning', false);
+        // Hint text
+        $('#purchase-status-hint').text(isDelivered
+            ? 'Drive attachment is required for delivered purchases.'
+            : 'Drive attachment is optional for ordered purchases.');
+        // Asterisk on attachment label
+        $('#attachment-required-star').toggle(isDelivered);
+    }
+
     function openPurchaseModal(tx) {
         var form = $('#form-purchase');
         form[0].reset();
@@ -702,12 +725,16 @@ var CashflowVendors = (function () {
 
         if (tx) {
             // Edit mode
+            var txStatus = tx.status || 'delivered';
             form.find('[name="transaction_id"]').val(tx.id);
             form.find('[name="description"]').val(tx.description || '');
             form.find('[name="amount"]').val(Math.round(parseFloat(tx.amount)));
             form.find('[name="transaction_date"]').val(tx.transaction_date ? tx.transaction_date.substring(0, 10) : '');
             form.find('[name="reference_no"]').val(tx.reference_no || '');
             form.find('[name="attachment_url"]').val(tx.attachment_url || '');
+            // Status toggle
+            form.find('[name="status"][value="' + txStatus + '"]').prop('checked', true);
+            updatePurchaseStatusUi(txStatus);
             // Branch/general
             if (tx.is_for_general) {
                 form.find('[name="for_branch_id"]').val('general');
@@ -717,7 +744,9 @@ var CashflowVendors = (function () {
             $('#purchase-modal-title').html('<i class="la la-edit mr-1"></i>Edit Purchase — <span id="purchase-vendor-name" class="text-primary">' + esc(currentVendorData ? currentVendorData.name : '') + '</span>');
             $('#btn-submit-purchase').html('<i class="la la-check mr-1"></i>Update Purchase');
         } else {
-            // New mode
+            // New mode — default to 'ordered'
+            form.find('[name="status"][value="ordered"]').prop('checked', true);
+            updatePurchaseStatusUi('ordered');
             form.find('[name="transaction_date"]').val(getTodayStr());
         }
 
@@ -744,7 +773,9 @@ var CashflowVendors = (function () {
         // Validate
         form.find('.is-invalid').removeClass('is-invalid');
         var missing = [];
-        var requiredFields = ['description', 'amount', 'transaction_date', 'attachment_url'];
+        var isDelivered = (data.status === 'delivered');
+        var requiredFields = ['description', 'amount', 'transaction_date'];
+        if (isDelivered) requiredFields.push('attachment_url');
         $.each(requiredFields, function (i, name) {
             if (!data[name]) { form.find('[name="' + name + '"]').addClass('is-invalid'); missing.push(name); }
         });
@@ -899,9 +930,16 @@ var CashflowVendors = (function () {
             $.each(data.recent_purchases, function (i, tx) {
                 var vendorName = tx.vendor ? tx.vendor.name : '—';
                 var dateStr = fd(tx.transaction_date || tx.created_at);
+                var txStatus = tx.status || null;
+                var statusBadge = txStatus === 'ordered'
+                    ? ' <span class="label label-light-warning label-inline font-size-xs py-0 px-1"><i class="la la-clock-o"></i></span>'
+                    : (txStatus === 'delivered' ? ' <span class="label label-light-success label-inline font-size-xs py-0 px-1"><i class="la la-check-circle"></i></span>' : '');
+                var editBtn = (!tx.expense_id && typeof cfPerms !== 'undefined' && cfPerms.canTransactionEdit)
+                    ? '<a href="javascript:;" class="ov-edit-tx btn-edit-tx text-hover-primary ml-2" data-vendor-id="' + tx.vendor_id + '" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\' title="Edit"><i class="la la-edit font-size-sm text-muted"></i></a>'
+                    : '';
                 purchHtml += '<div class="d-flex align-items-center justify-content-between py-2' + (i < data.recent_purchases.length - 1 ? ' border-bottom' : '') + '">' +
                     '<div class="min-w-0">' +
-                        '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:200px;">' + esc(tx.description || '—') + '</div>' +
+                        '<div class="font-weight-bold font-size-sm text-dark-75 text-truncate" style="max-width:190px;">' + esc(tx.description || '—') + statusBadge + editBtn + '</div>' +
                         '<div class="text-muted font-size-xs">' + esc(vendorName) + ' &middot; ' + dateStr + '</div>' +
                     '</div>' +
                     '<span class="font-weight-bolder text-danger font-size-sm flex-shrink-0 ml-2">PKR ' + nf(tx.amount) + '</span>' +
@@ -911,6 +949,29 @@ var CashflowVendors = (function () {
             purchHtml = '<div class="text-center text-muted py-3 font-size-sm">No recent purchases</div>';
         }
         $('#ov-recent-purchases').html(purchHtml);
+
+        // Bind edit clicks from overview recent purchases
+        $('#ov-recent-purchases').find('.ov-edit-tx').off('click').on('click', function (e) {
+            e.stopPropagation();
+            var tx = $(this).data('tx');
+            if (typeof tx === 'string') tx = JSON.parse(tx);
+            var vendorId = parseInt($(this).data('vendor-id'));
+            if (currentVendorId === vendorId && currentVendorData) {
+                openPurchaseModal(tx);
+            } else {
+                // Fetch vendor via ledger (vendor data is embedded in ledger response)
+                $.ajax({
+                    url: apiBase + 'vendors/' + vendorId + '/ledger', type: 'GET', data: { per_page: 1 },
+                    success: function (res) {
+                        if (res.success && res.data && res.data.vendor) {
+                            currentVendorId = vendorId;
+                            currentVendorData = res.data.vendor;
+                            openPurchaseModal(tx);
+                        }
+                    }
+                });
+            }
+        });
 
         // Recent payments
         var payHtml = '';
@@ -1008,6 +1069,7 @@ var CashflowVendors = (function () {
             description: 'Description',
             reference_no: 'Reference No',
             attachment_url: 'Attachment',
+            status: 'Status',
             for_branch_id: 'Branch',
             is_for_general: 'General/Company-wide'
         };
@@ -1027,6 +1089,7 @@ var CashflowVendors = (function () {
             if (field === 'amount') return 'PKR ' + parseInt(val).toLocaleString();
             if (field === 'is_for_general') return val ? 'Yes' : 'No';
             if (field === 'attachment_url') return val ? 'Attached' : '(none)';
+            if (field === 'status') return val === 'ordered' ? 'Ordered' : (val === 'delivered' ? 'Delivered' : esc(String(val)));
             return esc(String(val));
         }
 
