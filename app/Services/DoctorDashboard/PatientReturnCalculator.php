@@ -28,8 +28,10 @@ class PatientReturnCalculator
     public function calculate(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
         $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
+        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
 
-        if (!$arrivedStatusId) {
+        if (empty($statusIds)) {
             return $this->emptyResult();
         }
 
@@ -37,7 +39,7 @@ class PatientReturnCalculator
         $treatments = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->where('appointment_status_id', $arrivedStatusId)
+            ->whereIn('base_appointment_status_id', $statusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->select('id', 'patient_id', 'scheduled_date')
             ->get();
@@ -66,7 +68,7 @@ class PatientReturnCalculator
                 $returnExists = DB::table('appointments')
                     ->where('patient_id', $patientId)
                     ->where('appointment_type_id', 2)
-                    ->where('appointment_status_id', $arrivedStatusId)
+                    ->whereIn('base_appointment_status_id', $statusIds)
                     ->where('id', '!=', $treatment->id)
                     ->where('scheduled_date', '>', $treatment->scheduled_date)
                     ->where('scheduled_date', '<=', $windowEnd)
@@ -113,10 +115,17 @@ class PatientReturnCalculator
             return ['avg_procedures' => 0, 'total_procedures' => 0, 'unique_patients' => 0];
         }
 
+        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
+        if (empty($statusIds)) {
+            return ['avg_procedures' => 0, 'total_procedures' => 0, 'unique_patients' => 0];
+        }
+
         $result = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->where('appointment_status_id', $arrivedStatusId)
+            ->whereIn('base_appointment_status_id', $statusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->select(
                 DB::raw('COUNT(*) as total_procedures'),
