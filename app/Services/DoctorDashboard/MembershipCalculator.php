@@ -22,28 +22,45 @@ class MembershipCalculator
      */
     public function calculate(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $goldTypeIds = $this->getGoldMembershipTypeIds($accountId);
+        $goldTypeIds     = $this->getGoldMembershipTypeIds($accountId);
+        $goldServiceIds  = $this->getGoldMembershipServiceIds($accountId);
 
-        if (empty($goldTypeIds)) {
+        if (empty($goldTypeIds) && empty($goldServiceIds)) {
             return $this->emptyResult();
         }
 
-        // Count Gold memberships sold by this doctor.
-        // Join via the correct FK: package_services.package_bundle_id → package_bundles.id
-        // Do NOT filter on packages.plan_type — it's unreliable for old records (defaults to 'plan').
-        // Instead filter on package_bundles.membership_type_id IN goldTypeIds.
-        // Count DISTINCT pb.id (each bundle row = one membership sold).
-        $count = DB::table('package_services as ps')
-            ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
-            ->where('ps.sold_by', $doctorId)
-            ->whereIn('pb.membership_type_id', $goldTypeIds)
-            ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNull('pb.deleted_at')
-            ->distinct()
-            ->count('pb.id');
+        $start = $startDate . ' 00:00:00';
+        $end   = $endDate   . ' 23:59:59';
+
+        // NEW flow: package_bundles.membership_type_id is populated
+        $newCount = 0;
+        if (!empty($goldTypeIds)) {
+            $newCount = DB::table('package_services as ps')
+                ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
+                ->where('ps.sold_by', $doctorId)
+                ->whereIn('pb.membership_type_id', $goldTypeIds)
+                ->whereBetween('ps.created_at', [$start, $end])
+                ->whereNull('pb.deleted_at')
+                ->distinct()
+                ->count('ps.id');
+        }
+
+        // OLD flow: membership sold as a service (service_id matches Gold Membership service)
+        $oldCount = 0;
+        if (!empty($goldServiceIds)) {
+            $oldCount = DB::table('package_services as ps')
+                ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
+                ->where('ps.sold_by', $doctorId)
+                ->whereIn('ps.service_id', $goldServiceIds)
+                ->whereNull('pb.membership_type_id')
+                ->whereBetween('ps.created_at', [$start, $end])
+                ->whereNull('pb.deleted_at')
+                ->distinct()
+                ->count('ps.id');
+        }
 
         return [
-            'gold_memberships_sold' => $count,
+            'gold_memberships_sold' => $newCount + $oldCount,
         ];
     }
 
@@ -96,23 +113,72 @@ class MembershipCalculator
      */
     public function calculateForDoctors(array $doctorIds, string $startDate, string $endDate, int $accountId): array
     {
-        $goldTypeIds = $this->getGoldMembershipTypeIds($accountId);
+        $goldTypeIds    = $this->getGoldMembershipTypeIds($accountId);
+        $goldServiceIds = $this->getGoldMembershipServiceIds($accountId);
 
-        if (empty($goldTypeIds) || empty($doctorIds)) {
+        if ((empty($goldTypeIds) && empty($goldServiceIds)) || empty($doctorIds)) {
             return [];
         }
+        $start = $startDate . ' 00:00:00';
+        $end   = $endDate   . ' 23:59:59';
 
-        return DB::table('package_services as ps')
-            ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
-            ->whereIn('ps.sold_by', $doctorIds)
-            ->whereIn('pb.membership_type_id', $goldTypeIds)
-            ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereNull('pb.deleted_at')
-            ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT pb.id) as cnt'))
-            ->groupBy('ps.sold_by')
-            ->pluck('cnt', 'doctor_id')
-            ->map(fn($v) => (int) $v)
-            ->toArray();
+        $results = [];
+
+        // NEW flow: package_bundles.membership_type_id populated
+        if (!empty($goldTypeIds)) {
+            $rows = DB::table('package_services as ps')
+                ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
+                ->whereIn('ps.sold_by', $doctorIds)
+                ->whereIn('pb.membership_type_id', $goldTypeIds)
+                ->whereBetween('ps.created_at', [$start, $end])
+                ->whereNull('pb.deleted_at')
+                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT ps.id) as cnt'))
+                ->groupBy('ps.sold_by')
+                ->pluck('cnt', 'doctor_id')
+                ->toArray();
+            foreach ($rows as $docId => $cnt) {
+                $results[$docId] = ($results[$docId] ?? 0) + (int) $cnt;
+            }
+        }
+
+        // OLD flow: Gold Membership sold as a service
+        if (!empty($goldServiceIds)) {
+            $rows = DB::table('package_services as ps')
+                ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
+                ->whereIn('ps.sold_by', $doctorIds)
+                ->whereIn('ps.service_id', $goldServiceIds)
+                ->whereNull('pb.membership_type_id')
+                ->whereBetween('ps.created_at', [$start, $end])
+                ->whereNull('pb.deleted_at')
+                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT ps.id) as cnt'))
+                ->groupBy('ps.sold_by')
+                ->pluck('cnt', 'doctor_id')
+                ->toArray();
+            foreach ($rows as $docId => $cnt) {
+                $results[$docId] = ($results[$docId] ?? 0) + (int) $cnt;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get service IDs that represent Gold Membership (old plan flow where membership
+     * was added as a service in a plan rather than via membership_type_id).
+     *
+     * @param int $accountId
+     * @return array
+     */
+    public function getGoldMembershipServiceIds(int $accountId): array
+    {
+        return Cache::remember("gold_membership_service_ids_{$accountId}", 3600, function () use ($accountId) {
+            return DB::table('services')
+                ->where('account_id', $accountId)
+                ->where('name', 'LIKE', '%Gold%')
+                ->whereNull('deleted_at')
+                ->pluck('id')
+                ->toArray();
+        });
     }
 
     /**
