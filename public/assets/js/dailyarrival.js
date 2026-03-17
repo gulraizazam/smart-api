@@ -81,11 +81,12 @@ $('#date_range_ratings').daterangepicker({
 
         'Today': [moment(), moment()],
         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-        'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
-        'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
-       'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last 7 Days': [moment().subtract(7, 'days'), moment().subtract(1, 'days')],
+        'Last 30 Days': [moment().subtract(30, 'days'), moment().subtract(1, 'days')],
+       'This Month': [moment().startOf('month'), moment().subtract(1, 'days')],
+       'This Week': [moment().startOf('week'), moment().subtract(1, 'days')],
        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-         'This Year': [moment().startOf('year'), moment().endOf('year')],
+        'This Year': [moment().startOf('year'), moment().subtract(1, 'days')],
     },
     startDate: moment().subtract(1, 'month').startOf('month'),
     endDate: moment().subtract(1, 'month').endOf('month')
