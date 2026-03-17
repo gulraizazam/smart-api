@@ -63,10 +63,7 @@ class FeedbacksReportController extends Controller
         ->when($locationId, fn($q) => $q->where('location_id', $locationId))
         ->when($serviceId, fn($q) => $q->where('service_id', $serviceId))
         ->when($doctorId, fn($q) => $q->where('doctor_id', $doctorId))
-       ->whereHas('appointment', function ($q) use ($startDate, $endDate) {
-            $q->whereBetween('scheduled_date', [$startDate, $endDate]);
-        });
-       // ->whereBetween('created_at', [$startDate, $endDate]);
+        ->whereBetween('created_at', [$startDate, $endDate]);
 
     // CASE LOGIC
     if ($locationId && !$serviceId && !$doctorId) {
