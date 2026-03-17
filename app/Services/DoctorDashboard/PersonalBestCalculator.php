@@ -139,24 +139,25 @@ class PersonalBestCalculator
     private function mostPatientsSingleDay(int $doctorId, int $accountId): ?array
     {
         $startDate = Carbon::now()->subMonths(self::LOOKBACK_MONTHS)->startOfMonth()->format('Y-m-d');
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
-        if (!$arrivedStatusId) {
-            return null;
-        }
-
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        // Count unique patients per day (consultations type=1 arrived + treatments type=2 arrived)
+        // Count appointments per day: consultations (status 2,16) + treatments (status 2)
         $result = DB::table('appointments')
             ->where('doctor_id', $doctorId)
-            ->whereIn('appointment_type_id', [1, 2])
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->where(function ($q) use ($consultationStatusIds, $treatmentStatusIds) {
+                $q->where(function ($q2) use ($consultationStatusIds) {
+                    $q2->where('appointment_type_id', 1)
+                        ->whereIn('appointment_status_id', $consultationStatusIds);
+                })->orWhere(function ($q3) use ($treatmentStatusIds) {
+                    $q3->where('appointment_type_id', 2)
+                        ->whereIn('appointment_status_id', $treatmentStatusIds);
+                });
+            })
             ->where('scheduled_date', '>=', $startDate)
             ->select(
                 'scheduled_date',
-                DB::raw('COUNT(DISTINCT patient_id) as patient_count')
+                DB::raw('COUNT(*) as patient_count')
             )
             ->groupBy('scheduled_date')
             ->orderByDesc('patient_count')

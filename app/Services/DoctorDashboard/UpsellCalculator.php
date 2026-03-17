@@ -21,13 +21,7 @@ class UpsellCalculator
      */
     public function calculate(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        if (empty($statusIds)) {
-            return $this->emptyResult();
-        }
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
         // Upsell revenue: services sold by this doctor where the appointment's doctor is different
         // This means the patient was consulting/treated by another doctor, and this doctor sold them a service
@@ -52,7 +46,7 @@ class UpsellCalculator
         $uniqueTreatedPatients = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->distinct('patient_id')
             ->count('patient_id');

@@ -56,14 +56,7 @@ class RevenueCalculator
      */
     public function getDoctorPatientPool(int $doctorId, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-
-        if (!$arrivedStatusId) {
-            return [];
-        }
-
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
 
         // Find each patient's last consulting doctor using a subquery
         // For each patient, get the consultation with the latest scheduled_date + scheduled_time
@@ -72,7 +65,7 @@ class RevenueCalculator
             ->joinSub(
                 DB::table('appointments')
                     ->where('appointment_type_id', 1)
-                    ->whereIn('base_appointment_status_id', $statusIds)
+                    ->whereIn('appointment_status_id', $consultationStatusIds)
                     ->select('patient_id', DB::raw('MAX(CONCAT(scheduled_date, " ", COALESCE(scheduled_time, "00:00:00"))) as max_datetime'))
                     ->groupBy('patient_id'),
                 'latest',
@@ -82,7 +75,7 @@ class RevenueCalculator
                 }
             )
             ->where('a.appointment_type_id', 1)
-            ->whereIn('a.base_appointment_status_id', $statusIds)
+            ->whereIn('a.appointment_status_id', $consultationStatusIds)
             ->where('a.doctor_id', $doctorId)
             ->distinct()
             ->pluck('a.patient_id')

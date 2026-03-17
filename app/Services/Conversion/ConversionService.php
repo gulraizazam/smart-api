@@ -2,6 +2,7 @@
 
 namespace App\Services\Conversion;
 
+use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\Invoices;
@@ -308,12 +309,7 @@ class ConversionService
         $query = Appointments::with($eagerLoad)
             ->leftJoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 1)
-            ->where(function ($q) use ($arrivedStatusId, $convertedStatusId) {
-                $q->where('appointments.base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $q->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
-                }
-            })
+            ->whereIn('appointments.appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds())
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
@@ -352,12 +348,7 @@ class ConversionService
         $query = Appointments::whereIn('location_id', $locations)
             ->where('appointment_type_id', 1)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->where(function ($q) use ($arrivedStatusId, $convertedStatusId) {
-                $q->where('base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $q->orWhere('base_appointment_status_id', $convertedStatusId);
-                }
-            });
+            ->whereIn('appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds());
 
         if ($doctorIds !== null) {
             $query->whereIn('doctor_id', $doctorIds);
@@ -394,12 +385,7 @@ class ConversionService
         $query = Appointments::whereIn('location_id', $locations)
             ->where('appointment_type_id', 1)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->where(function ($q) use ($arrivedStatusId, $convertedStatusId) {
-                $q->where('base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $q->orWhere('base_appointment_status_id', $convertedStatusId);
-                }
-            });
+            ->whereIn('appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds());
 
         if ($doctorIds !== null) {
             $query->whereIn('doctor_id', $doctorIds);
@@ -438,12 +424,7 @@ class ConversionService
     ): Collection {
         $query = Appointments::join('services', 'appointments.service_id', '=', 'services.id')
             ->where('appointments.appointment_type_id', 1)
-            ->where(function ($q) use ($arrivedStatusId, $convertedStatusId) {
-                $q->where('appointments.base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $q->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
-                }
-            })
+            ->whereIn('appointments.appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds())
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereIn('appointments.location_id', $locations)
             ->whereBetween('appointments.scheduled_date', [$startDate, $endDate]);
@@ -476,13 +457,13 @@ class ConversionService
             return $this->emptyDoctorResult();
         }
 
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
 
         // Total arrived consultations
         $totalArrived = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 1)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $consultationStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->count();
 

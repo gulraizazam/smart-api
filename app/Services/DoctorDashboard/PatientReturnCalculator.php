@@ -27,19 +27,13 @@ class PatientReturnCalculator
      */
     public function calculate(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        if (empty($statusIds)) {
-            return $this->emptyResult();
-        }
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
         // Get all arrived treatments by this doctor in the date range
         $treatments = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->select('id', 'patient_id', 'scheduled_date')
             ->get();
@@ -68,7 +62,7 @@ class PatientReturnCalculator
                 $returnExists = DB::table('appointments')
                     ->where('patient_id', $patientId)
                     ->where('appointment_type_id', 2)
-                    ->whereIn('base_appointment_status_id', $statusIds)
+                    ->whereIn('appointment_status_id', $treatmentStatusIds)
                     ->where('id', '!=', $treatment->id)
                     ->where('scheduled_date', '>', $treatment->scheduled_date)
                     ->where('scheduled_date', '<=', $windowEnd)
@@ -109,23 +103,12 @@ class PatientReturnCalculator
      */
     public function calculateAvgProcedures(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-
-        if (!$arrivedStatusId) {
-            return ['avg_procedures' => 0, 'total_procedures' => 0, 'unique_patients' => 0];
-        }
-
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        if (empty($statusIds)) {
-            return ['avg_procedures' => 0, 'total_procedures' => 0, 'unique_patients' => 0];
-        }
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
         $result = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->select(
                 DB::raw('COUNT(*) as total_procedures'),
