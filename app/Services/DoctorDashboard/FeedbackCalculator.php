@@ -28,12 +28,12 @@ class FeedbackCalculator
             ->where('doctor_id', $doctorId)
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select(
-                DB::raw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating'),
+                DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'),
                 DB::raw('COUNT(*) as total_feedback')
             )
             ->first();
 
-        $avgRating = $result && $result->avg_rating ? round((float) $result->avg_rating, 2) : 0;
+        $avgRating = $result && $result->avg_rating ? (float) $result->avg_rating : 0;
         $totalFeedback = $result ? (int) $result->total_feedback : 0;
 
         return [
@@ -65,10 +65,10 @@ class FeedbackCalculator
         return DB::table('feedback')
             ->whereIn('doctor_id', $doctorIds)
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select('doctor_id', DB::raw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating'))
+            ->select('doctor_id', DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'))
             ->groupBy('doctor_id')
             ->pluck('avg_rating', 'doctor_id')
-            ->map(fn($v) => round((float) $v, 2))
+            ->map(fn($v) => (float) $v)
             ->toArray();
     }
 
@@ -92,7 +92,7 @@ class FeedbackCalculator
             ->select(
                 DB::raw('YEAR(created_at) as yr'),
                 DB::raw('MONTH(created_at) as mn'),
-                DB::raw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating'),
+                DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'),
                 DB::raw('COUNT(*) as total_feedback')
             )
             ->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))
@@ -107,7 +107,7 @@ class FeedbackCalculator
         return [
             'year' => (int) $result->yr,
             'month' => (int) $result->mn,
-            'avg_rating' => round((float) $result->avg_rating, 2),
+            'avg_rating' => (float) $result->avg_rating,
             'total_feedback' => (int) $result->total_feedback,
         ];
     }

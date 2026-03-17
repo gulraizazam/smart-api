@@ -22,7 +22,7 @@ class FeedbacksReportController extends Controller
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $services = Services::where('parent_id', 0)->where('active', 1)->get();
         $feedbacks = Feedback::with('doctor', 'service')->select('doctor_id')
-        ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+        ->selectRaw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating, COUNT(*) as total_feedbacks')
         ->groupBy('doctor_id')
         ->with('doctor')
         ->get();
@@ -78,7 +78,7 @@ class FeedbacksReportController extends Controller
 
         // CASE 1: Only centre → Avg rating of all doctors in that centre
         $result = $feedbacks->select('doctor_id')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('doctor_id')
             ->with('doctor')
             ->get();
@@ -87,16 +87,16 @@ class FeedbacksReportController extends Controller
 
         // CASE 2: Only doctor → Avg rating per service
         $result = $feedbacks->select('service_id')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('service_id')
             ->with('service')
             ->get();
 
     } elseif ($serviceId && !$doctorId && !$locationId) {
 
-        // CASE 3: Only service → All doctors’ rating against that service
+        // CASE 3: Only service → All doctors' rating against that service
         $result = $feedbacks->select('doctor_id')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('doctor_id')
             ->with('doctor')
             ->get();
@@ -105,16 +105,16 @@ class FeedbacksReportController extends Controller
 
         // CASE 4: location + doctor → That doctor's rating per service in that location
         $result = $feedbacks->select('service_id', 'doctor_id')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('service_id')
             ->with('service', 'doctor')
             ->get();
 
     } elseif ($locationId && $serviceId && !$doctorId) {
 
-        // CASE 5: location + service → All doctors’ rating in that location for that service
+        // CASE 5: location + service → All doctors' rating in that location for that service
         $result = $feedbacks->select('doctor_id')
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('doctor_id')
             ->with('doctor')
             ->get();
@@ -122,9 +122,8 @@ class FeedbacksReportController extends Controller
     } elseif ($serviceId && $doctorId && !$locationId) {
 
         // CASE 6: service + doctor → Rating for that doctor + service
-       // CASE 6: service + doctor → Rating for that doctor + service
     $record = $feedbacks->select('doctor_id', 'service_id')
-        ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+        ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
         ->with('doctor', 'service')
         ->first();
 
@@ -134,7 +133,8 @@ class FeedbacksReportController extends Controller
         $feedback = Feedback::where('location_id', $locationId)
         ->where('doctor_id', $doctorId)
         ->where('service_id', $serviceId)
-        ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+        ->whereBetween('created_at', [$startDate, $endDate])
+        ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
         ->first();
 
         $result = $feedback ? [$feedback] : [];
@@ -143,7 +143,7 @@ class FeedbacksReportController extends Controller
 
         // Default: fallback to full feedback list if no logic matched
        $result = $feedbacks->select('doctor_id')
-    ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+    ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
     ->groupBy('doctor_id')
     ->with('doctor')
     ->get();

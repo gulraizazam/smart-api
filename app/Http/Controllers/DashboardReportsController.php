@@ -491,7 +491,7 @@ class DashboardReportsController extends Controller
 
         // Get aggregated stats per doctor in single query
         $feedbackStats = $feedbackQuery
-            ->select('feedback.doctor_id', DB::raw('AVG(feedback.rating) as avg_rating'), DB::raw('COUNT(*) as total_feedbacks'))
+            ->select('feedback.doctor_id', DB::raw('ROUND(AVG(CAST(feedback.rating AS DECIMAL(4,2))), 2) as avg_rating'), DB::raw('COUNT(*) as total_feedbacks'))
             ->groupBy('feedback.doctor_id')
             ->get()
             ->keyBy('doctor_id');
@@ -502,7 +502,7 @@ class DashboardReportsController extends Controller
             $stats = $feedbackStats->get($doctorId);
             $doctorRatings[] = [
                 'name' => $doctor->name,
-                'rating' => round($stats->avg_rating ?? 0, 2),
+                'rating' => (float) ($stats->avg_rating ?? 0),
                 'total' => $stats->total_feedbacks ?? 0,
             ];
         }
