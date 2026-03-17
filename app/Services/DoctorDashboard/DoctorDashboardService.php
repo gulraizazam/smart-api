@@ -452,41 +452,25 @@ class DoctorDashboardService
      */
     private function getPatientsSeen(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        if (empty($statusIds)) {
-            return ['total' => 0, 'consultations' => 0, 'treatments' => 0];
-        }
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
         $consultations = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 1)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $consultationStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->distinct('patient_id')
-            ->count('patient_id');
+            ->count();
 
         $treatments = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->distinct('patient_id')
-            ->count('patient_id');
-
-        // Total unique patients across both types
-        $total = DB::table('appointments')
-            ->where('doctor_id', $doctorId)
-            ->whereIn('appointment_type_id', [1, 2])
-            ->whereIn('base_appointment_status_id', $statusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->distinct('patient_id')
-            ->count('patient_id');
+            ->count();
 
         return [
-            'total' => $total,
+            'total' => $consultations + $treatments,
             'consultations' => $consultations,
             'treatments' => $treatments,
         ];
@@ -497,19 +481,13 @@ class DoctorDashboardService
      */
     private function getNewVsReturning(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $arrivedStatusId = DoctorDashboardHelper::getArrivedStatusId($accountId);
-        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
-        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
-
-        if (empty($statusIds)) {
-            return ['new' => 0, 'returning' => 0, 'total' => 0];
-        }
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
 
         // Get consultation patients in the period
         $patients = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 1)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $consultationStatusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->distinct()
             ->pluck('patient_id')
@@ -527,7 +505,7 @@ class DoctorDashboardService
         $firstConsultations = DB::table('appointments')
             ->whereIn('patient_id', $patients)
             ->where('appointment_type_id', 1)
-            ->whereIn('base_appointment_status_id', $statusIds)
+            ->whereIn('appointment_status_id', $consultationStatusIds)
             ->select('patient_id', DB::raw('MIN(scheduled_date) as first_date'))
             ->groupBy('patient_id')
             ->pluck('first_date', 'patient_id')

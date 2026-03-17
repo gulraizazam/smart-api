@@ -72,6 +72,38 @@ class DoctorDashboardHelper
     }
 
     /**
+     * Appointment status IDs for consultation appointments (type=1).
+     * Status 2 = Arrived, Status 16 = Converted.
+     */
+    const CONSULTATION_STATUS_IDS = [2, 16];
+
+    /**
+     * Appointment status IDs for treatment appointments (type=2).
+     * Status 2 = Arrived.
+     */
+    const TREATMENT_STATUS_IDS = [2];
+
+    /**
+     * Get appointment_status_id values for arrived/converted consultations.
+     *
+     * @return array
+     */
+    public static function getConsultationStatusIds(): array
+    {
+        return self::CONSULTATION_STATUS_IDS;
+    }
+
+    /**
+     * Get appointment_status_id values for arrived treatments.
+     *
+     * @return array
+     */
+    public static function getTreatmentStatusIds(): array
+    {
+        return self::TREATMENT_STATUS_IDS;
+    }
+
+    /**
      * Format currency value for display.
      *
      * @param float|int $value
