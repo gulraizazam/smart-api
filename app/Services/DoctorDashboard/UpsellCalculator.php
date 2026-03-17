@@ -29,8 +29,11 @@ class UpsellCalculator
             ->join('packages as p', 'ps.package_id', '=', 'p.id')
             ->join('appointments as a', 'p.appointment_id', '=', 'a.id')
             ->where('ps.sold_by', $doctorId)
-            ->where('a.doctor_id', '!=', $doctorId)
-            ->where('a.appointment_type_id', '!=', 1) // exclude self-consultation
+            // Exclude only self-consultation sales (type=1 where this doctor is both seller and consulting doctor)
+            ->where(function ($q) use ($doctorId) {
+                $q->where('a.appointment_type_id', '!=', 1)
+                  ->orWhere('a.doctor_id', '!=', $doctorId);
+            })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select(
                 DB::raw('SUM(ps.tax_including_price) as total_upsell_revenue'),
@@ -87,8 +90,11 @@ class UpsellCalculator
             ->join('packages as p', 'ps.package_id', '=', 'p.id')
             ->join('appointments as a', 'p.appointment_id', '=', 'a.id')
             ->whereIn('ps.sold_by', $doctorIds)
-            ->whereColumn('ps.sold_by', '!=', 'a.doctor_id')
-            ->where('a.appointment_type_id', '!=', 1)
+            // Exclude only self-consultation sales (type=1 where seller == consulting doctor)
+            ->where(function ($q) {
+                $q->where('a.appointment_type_id', '!=', 1)
+                  ->orWhereColumn('a.doctor_id', '!=', 'ps.sold_by');
+            })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select('ps.sold_by as doctor_id', DB::raw('SUM(ps.tax_including_price) as total'))
             ->groupBy('ps.sold_by')
