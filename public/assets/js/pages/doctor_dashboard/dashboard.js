@@ -296,13 +296,26 @@
 
     // ===================== Render Benchmark Indicators =====================
     function renderBenchmarkIndicators(bench) {
-        if (!kpiData || !bench || bench.doctor_count === 0) return;
+        if (!bench || bench.doctor_count === 0) return;
 
-        var kpis = kpiData.kpis;
-        setBenchDot('kpiTotalRevenueBench', kpis.total_revenue.value, bench.total_revenue.avg);
-        setBenchDot('kpiConvRateBench', kpis.conversion_rate.value, bench.conversion_rate.avg);
-        setBenchDot('kpiAvgClientBench', kpis.avg_client_value.value, bench.avg_client_value.avg);
-        setBenchDot('kpiFeedbackBench', kpis.feedback_score.value, bench.feedback_score.avg);
+        var map = {
+            'kpiTotalRevenueBench':  { data: bench.total_revenue,       fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiConvRateBench':      { data: bench.conversion_rate,     fmt: function(v) { return v + '%'; } },
+            'kpiAvgClientBench':     { data: bench.avg_client_value,    fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiProductRevBench':    { data: bench.product_revenue,     fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiUpsellRevBench':     { data: bench.upsell_revenue,      fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiUpsellRateBench':    { data: bench.upsell_rate,         fmt: function(v) { return v + '%'; } },
+            'kpiGoldMemBench':       { data: bench.gold_memberships,    fmt: function(v) { return v; } },
+            'kpiFeedbackBench':      { data: bench.feedback_score,      fmt: function(v) { return v; } },
+            'kpiGoogleRevBench':     { data: bench.google_reviews,      fmt: function(v) { return v; } },
+            'kpiReturnRateBench':    { data: bench.patient_return_rate, fmt: function(v) { return v + '%'; } },
+            'kpiAvgProcBench':       { data: bench.avg_procedures,      fmt: function(v) { return v; } },
+            'kpiPatientsSeenBench':  { data: bench.patients_seen,       fmt: function(v) { return v; } }
+        };
+
+        Object.keys(map).forEach(function(id) {
+            setBenchNetwork(id, map[id].data, map[id].fmt);
+        });
     }
 
     // ===================== Render Charts =====================
@@ -444,20 +457,40 @@
             (met ? '✓' : '✗') + '</span>';
     }
 
-    function setBenchDot(id, value, avg) {
+    function setBenchNetwork(id, data, formatter) {
         var el = document.getElementById(id);
-        if (!el) return;
-        if (value > avg * 1.05) {
-            el.className = 'dd-kpi-bench above';
-            el.title = 'Above avg (' + numberFormat(avg) + ')';
-        } else if (value < avg * 0.95) {
-            el.className = 'dd-kpi-bench below';
-            el.title = 'Below avg (' + numberFormat(avg) + ')';
-        } else {
-            el.className = 'dd-kpi-bench at';
-            el.title = 'At avg (' + numberFormat(avg) + ')';
+        if (!el || !data) return;
+
+        var card = el.closest('.dd-kpi-card');
+        var bestVal = data.best_value;
+        var isBest = data.is_best;
+        var message = data.message || '';
+
+        // Build benchmark text
+        var html = '<span class="dd-bench-label">Network Best: </span>' +
+                   '<span class="dd-bench-value">' + formatter(bestVal) + '</span>';
+
+        // Add trophy if doctor is the best
+        if (isBest) {
+            html = '<i class="la la-trophy dd-bench-trophy"></i> ' + html;
         }
+
+        // Add encouraging message (always visible on mobile, tooltip on desktop)
+        if (message) {
+            html += '<span class="dd-bench-msg" title="' + escHtml(message) + '">' + escHtml(message) + '</span>';
+        }
+
+        el.innerHTML = html;
         el.style.display = 'block';
+
+        // Toggle glowing border + trophy on card
+        if (card) {
+            if (isBest) {
+                card.classList.add('dd-kpi-best');
+            } else {
+                card.classList.remove('dd-kpi-best');
+            }
+        }
     }
 
     function setPb(key, data, formatter) {

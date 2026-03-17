@@ -116,7 +116,7 @@
                         <div class="dd-kpi-sub" id="kpiTotalRevenueSub"></div>
                         <div class="dd-kpi-mom" id="kpiTotalRevenueMom"></div>
                         <div class="dd-kpi-last-month" id="kpiTotalRevenueLast"></div>
-                        <div class="dd-kpi-bench" id="kpiTotalRevenueBench"></div>
+                        <div class="dd-kpi-bench-network" id="kpiTotalRevenueBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="conversion_rate">
                         <div class="dd-kpi-label"><i class="la la-exchange-alt"></i> Conversion Rate</div>
@@ -125,7 +125,7 @@
                         <div class="dd-kpi-mom" id="kpiConvRateMom"></div>
                         <div class="dd-kpi-last-month" id="kpiConvRateLast"></div>
                         <div class="dd-kpi-target" id="kpiConvRateTarget"></div>
-                        <div class="dd-kpi-bench" id="kpiConvRateBench"></div>
+                        <div class="dd-kpi-bench-network" id="kpiConvRateBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="avg_client_value">
                         <div class="dd-kpi-label"><i class="la la-user-tag"></i> Avg Client Value</div>
@@ -134,7 +134,7 @@
                         <div class="dd-kpi-mom" id="kpiAvgClientMom"></div>
                         <div class="dd-kpi-last-month" id="kpiAvgClientLast"></div>
                         <div class="dd-kpi-target" id="kpiAvgClientTarget"></div>
-                        <div class="dd-kpi-bench" id="kpiAvgClientBench"></div>
+                        <div class="dd-kpi-bench-network" id="kpiAvgClientBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="product_revenue">
                         <div class="dd-kpi-label"><i class="la la-box"></i> Product Revenue</div>
@@ -142,6 +142,7 @@
                         <div class="dd-kpi-sub" id="kpiProductRevSub"></div>
                         <div class="dd-kpi-mom" id="kpiProductRevMom"></div>
                         <div class="dd-kpi-last-month" id="kpiProductRevLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiProductRevBench"></div>
                     </div>
                 </div>
             </div>
@@ -155,18 +156,21 @@
                         <div class="dd-kpi-value currency dd-skeleton" style="height:24px;width:70px;" id="kpiUpsellRev">&nbsp;</div>
                         <div class="dd-kpi-mom" id="kpiUpsellRevMom"></div>
                         <div class="dd-kpi-last-month" id="kpiUpsellRevLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiUpsellRevBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="upsell_rate">
                         <div class="dd-kpi-label"><i class="la la-percent"></i> Upsell Rate</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:50px;" id="kpiUpsellRate">&nbsp;</div>
                         <div class="dd-kpi-sub" id="kpiUpsellRateSub"></div>
                         <div class="dd-kpi-last-month" id="kpiUpsellRateLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiUpsellRateBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="gold_memberships">
                         <div class="dd-kpi-label"><i class="la la-medal"></i> Gold Memberships</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:40px;" id="kpiGoldMem">&nbsp;</div>
                         <div class="dd-kpi-mom" id="kpiGoldMemMom"></div>
                         <div class="dd-kpi-last-month" id="kpiGoldMemLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiGoldMemBench"></div>
                     </div>
                 </div>
             </div>
@@ -182,13 +186,14 @@
                         <div class="dd-kpi-mom" id="kpiFeedbackMom"></div>
                         <div class="dd-kpi-last-month" id="kpiFeedbackLast"></div>
                         <div class="dd-kpi-target" id="kpiFeedbackTarget"></div>
-                        <div class="dd-kpi-bench" id="kpiFeedbackBench"></div>
+                        <div class="dd-kpi-bench-network" id="kpiFeedbackBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="google_reviews">
                         <div class="dd-kpi-label"><i class="la la-google"></i> Google Reviews</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:40px;" id="kpiGoogleRev">&nbsp;</div>
                         <div class="dd-kpi-mom" id="kpiGoogleRevMom"></div>
                         <div class="dd-kpi-last-month" id="kpiGoogleRevLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiGoogleRevBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="patient_return_rate">
                         <div class="dd-kpi-label"><i class="la la-redo"></i> Return Rate</div>
@@ -196,6 +201,7 @@
                         <div class="dd-kpi-sub" id="kpiReturnRateSub"></div>
                         <div class="dd-kpi-mom" id="kpiReturnRateMom"></div>
                         <div class="dd-kpi-last-month" id="kpiReturnRateLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiReturnRateBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="avg_procedures">
                         <div class="dd-kpi-label"><i class="la la-syringe"></i> Avg Procedures</div>
@@ -203,6 +209,7 @@
                         <div class="dd-kpi-sub" id="kpiAvgProcSub"></div>
                         <div class="dd-kpi-mom" id="kpiAvgProcMom"></div>
                         <div class="dd-kpi-last-month" id="kpiAvgProcLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiAvgProcBench"></div>
                     </div>
                 </div>
             </div>
@@ -217,6 +224,7 @@
                         <div class="dd-kpi-sub" id="kpiPatientsSeenSub"></div>
                         <div class="dd-kpi-mom" id="kpiPatientsSeenMom"></div>
                         <div class="dd-kpi-last-month" id="kpiPatientsSeenLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiPatientsSeenBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="new_vs_returning">
                         <div class="dd-kpi-label"><i class="la la-user-plus"></i> New vs Returning</div>

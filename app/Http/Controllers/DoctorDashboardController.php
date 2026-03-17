@@ -114,7 +114,7 @@ class DoctorDashboardController extends Controller
                 $endDate = now()->format('Y-m-d');
             }
 
-            $data = $this->dashboardService->getBenchmarks($startDate, $endDate, $user->account_id);
+            $data = $this->dashboardService->getBenchmarks($user->id, $startDate, $endDate, $user->account_id);
 
             return ApiHelper::apiResponse($this->success, 'Benchmark data loaded', true, $data);
         } catch (\Exception $e) {
