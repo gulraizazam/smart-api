@@ -53,11 +53,19 @@ class FeedbacksReportController extends Controller
     $doctorId = $doctorId === '' ? null : $doctorId;
     $serviceId = $serviceId === '' ? null : $serviceId;
 
-    // Parse date range
+    // Parse date range - exclude today to match dashboard behavior
      $period = $request->date_range;
     $dates = explode(' - ', $request->input('date_range'));
     $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+    
+    // If end date is today, use yesterday instead to exclude today
+    $endDateParsed = date('Y-m-d', strtotime($dates[1]));
+    $today = date('Y-m-d');
+    if ($endDateParsed === $today) {
+        $endDate = date('Y-m-d 23:59:59', strtotime('yesterday'));
+    } else {
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+    }
 
     $feedbacks = Feedback::query()
         ->when($locationId, fn($q) => $q->where('location_id', $locationId))
