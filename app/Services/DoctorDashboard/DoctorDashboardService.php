@@ -60,7 +60,11 @@ class DoctorDashboardService
     public function getKpiData(int $doctorId, int $accountId, ?string $period = 'this_month'): array
     {
         [$startDate, $endDate] = $this->getDateRange($period);
+        // Full last calendar month — for ratio/rate KPIs (conversion, feedback, return rate, etc.)
         [$lastStartDate, $lastEndDate] = DoctorDashboardHelper::getLastMonthRange();
+        // Same-date window in last month — for accumulating KPIs (revenue, counts)
+        // e.g. if current = Mar 1–17 → last = Feb 1–17 (fair like-for-like)
+        [$lastSameDateStart, $lastSameDateEnd] = DoctorDashboardHelper::getLastMonthSameDateRange($startDate, $endDate);
 
         // Current period KPIs
         $conversion = $this->conversionCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
@@ -81,17 +85,21 @@ class DoctorDashboardService
         );
 
         // Last month KPIs for MoM comparison
-        $lastConversion = $this->conversionCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastRevenue = $this->revenueCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastUpsell = $this->upsellCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastMembership = $this->membershipCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastFeedback = $this->feedbackCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
-        $lastProductRevenue = $this->productRevenueCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
-        $lastPatientReturn = $this->patientReturnCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastAvgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $lastStartDate, $lastEndDate, $accountId);
-        $lastGoogleReviews = $this->getGoogleReviews($doctorId, $lastStartDate, $accountId);
-        $lastPatientsSeen = $this->getPatientsSeen($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        // Ratios: use full last calendar month
+        $lastConversion     = $this->conversionCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastFeedback       = $this->feedbackCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
+        $lastPatientReturn  = $this->patientReturnCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastAvgProcedures  = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastGoogleReviews  = $this->getGoogleReviews($doctorId, $lastStartDate, $accountId);
 
+        // Accumulators: use same-date window in last month (e.g. Mar 1–17 vs Feb 1–17)
+        $lastRevenue        = $this->revenueCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
+        $lastUpsell         = $this->upsellCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
+        $lastMembership     = $this->membershipCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
+        $lastProductRevenue = $this->productRevenueCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd);
+        $lastPatientsSeen   = $this->getPatientsSeen($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
+
+        // avg_client_value uses same-date revenue but full-month conversion (ratio)
         $lastAvgClientValue = $this->revenueCalculator->calculateAvgClientValue(
             $lastRevenue['total_revenue'],
             $lastConversion['total_converted']

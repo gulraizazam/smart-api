@@ -158,7 +158,8 @@ class DoctorDashboardHelper
     }
 
     /**
-     * Get date range for "last month" period.
+     * Get date range for "last month" period (full calendar month).
+     * Used for ratio/rate KPIs (conversion rate, feedback, return rate, etc.)
      *
      * @return array [startDate, endDate]
      */
@@ -168,5 +169,32 @@ class DoctorDashboardHelper
             now()->subMonth()->startOfMonth()->format('Y-m-d'),
             now()->subMonth()->endOfMonth()->format('Y-m-d'),
         ];
+    }
+
+    /**
+     * Get same-date range in the previous month for fair like-for-like comparison.
+     * Used for accumulating KPIs (revenue, counts) so partial current month
+     * is compared against the same partial window last month.
+     *
+     * Example: current = Mar 1–17 → last = Feb 1–17
+     * If last month is shorter (e.g. Feb has 28 days and current day is 31),
+     * clamps to the last day of that month.
+     *
+     * @param string $currentStart  e.g. '2026-03-01'
+     * @param string $currentEnd    e.g. '2026-03-17'
+     * @return array [startDate, endDate]
+     */
+    public static function getLastMonthSameDateRange(string $currentStart, string $currentEnd): array
+    {
+        $start = \Carbon\Carbon::parse($currentStart)->subMonth()->startOfMonth()->format('Y-m-d');
+
+        $currentEndDay  = (int) \Carbon\Carbon::parse($currentEnd)->format('d');
+        $lastMonthEnd   = \Carbon\Carbon::parse($currentEnd)->subMonth();
+        $lastMonthDays  = (int) $lastMonthEnd->daysInMonth;
+        $clampedDay     = min($currentEndDay, $lastMonthDays);
+
+        $end = $lastMonthEnd->startOfMonth()->addDays($clampedDay - 1)->format('Y-m-d');
+
+        return [$start, $end];
     }
 }
