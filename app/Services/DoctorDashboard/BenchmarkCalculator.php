@@ -235,8 +235,11 @@ class BenchmarkCalculator
             ->join('packages as p', 'ps.package_id', '=', 'p.id')
             ->join('appointments as a', 'p.appointment_id', '=', 'a.id')
             ->whereIn('ps.sold_by', $doctorIds)
-            ->whereColumn('ps.sold_by', '!=', 'a.doctor_id')
-            ->where('a.appointment_type_id', '!=', 1)
+            // Exclude only self-consultation sales (type=1 where seller == consulting doctor)
+            ->where(function ($q) {
+                $q->where('a.appointment_type_id', '!=', 1)
+                  ->orWhereColumn('a.doctor_id', '!=', 'ps.sold_by');
+            })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT a.patient_id) as cnt'))
             ->groupBy('ps.sold_by')
@@ -456,9 +459,9 @@ class BenchmarkCalculator
      */
     private function buildCacheKey(string $startDate, int $accountId): string
     {
-        // Cache per month + account
+        // Cache per month + account. Version suffix forces cache invalidation after logic changes.
         $yearMonth = substr($startDate, 0, 7); // e.g. "2026-03"
-        return "doctor_benchmark_{$accountId}_{$yearMonth}";
+        return "doctor_benchmark_v2_{$accountId}_{$yearMonth}";
     }
 
     /**
