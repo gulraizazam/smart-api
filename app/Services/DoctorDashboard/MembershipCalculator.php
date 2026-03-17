@@ -33,6 +33,7 @@ class MembershipCalculator
         $end   = $endDate   . ' 23:59:59';
 
         // NEW flow: package_bundles.membership_type_id is populated
+        // One bundle row = one membership sold → COUNT(DISTINCT pb.id)
         $newCount = 0;
         if (!empty($goldTypeIds)) {
             $newCount = DB::table('package_services as ps')
@@ -41,11 +42,12 @@ class MembershipCalculator
                 ->whereIn('pb.membership_type_id', $goldTypeIds)
                 ->whereBetween('ps.created_at', [$start, $end])
                 ->whereNull('pb.deleted_at')
-                ->distinct()
-                ->count('ps.id');
+                ->distinct('pb.id')
+                ->count('pb.id');
         }
 
-        // OLD flow: membership sold as a service (service_id matches Gold Membership service)
+        // OLD flow: membership sold as a service inside a plan
+        // One package = one membership sold → COUNT(DISTINCT ps.package_id)
         $oldCount = 0;
         if (!empty($goldServiceIds)) {
             $oldCount = DB::table('package_services as ps')
@@ -55,8 +57,8 @@ class MembershipCalculator
                 ->whereNull('pb.membership_type_id')
                 ->whereBetween('ps.created_at', [$start, $end])
                 ->whereNull('pb.deleted_at')
-                ->distinct()
-                ->count('ps.id');
+                ->distinct('ps.package_id')
+                ->count('ps.package_id');
         }
 
         return [
@@ -124,7 +126,7 @@ class MembershipCalculator
 
         $results = [];
 
-        // NEW flow: package_bundles.membership_type_id populated
+        // NEW flow: one bundle = one membership → COUNT(DISTINCT pb.id)
         if (!empty($goldTypeIds)) {
             $rows = DB::table('package_services as ps')
                 ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
@@ -132,7 +134,7 @@ class MembershipCalculator
                 ->whereIn('pb.membership_type_id', $goldTypeIds)
                 ->whereBetween('ps.created_at', [$start, $end])
                 ->whereNull('pb.deleted_at')
-                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT ps.id) as cnt'))
+                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT pb.id) as cnt'))
                 ->groupBy('ps.sold_by')
                 ->pluck('cnt', 'doctor_id')
                 ->toArray();
@@ -141,7 +143,7 @@ class MembershipCalculator
             }
         }
 
-        // OLD flow: Gold Membership sold as a service
+        // OLD flow: one package = one membership → COUNT(DISTINCT ps.package_id)
         if (!empty($goldServiceIds)) {
             $rows = DB::table('package_services as ps')
                 ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
@@ -150,7 +152,7 @@ class MembershipCalculator
                 ->whereNull('pb.membership_type_id')
                 ->whereBetween('ps.created_at', [$start, $end])
                 ->whereNull('pb.deleted_at')
-                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT ps.id) as cnt'))
+                ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT ps.package_id) as cnt'))
                 ->groupBy('ps.sold_by')
                 ->pluck('cnt', 'doctor_id')
                 ->toArray();
