@@ -411,16 +411,49 @@ class DoctorDashboardService
     }
 
     /**
-     * Get benchmark data.
+     * Get benchmark data with gap/message relative to the viewing doctor.
      *
+     * @param int $doctorId
      * @param string $startDate
      * @param string $endDate
      * @param int $accountId
      * @return array
      */
-    public function getBenchmarks(string $startDate, string $endDate, int $accountId): array
+    public function getBenchmarks(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        return $this->benchmarkCalculator->calculate($startDate, $endDate, $accountId);
+        // Compute the doctor's own KPI values for gap calculation
+        $conversion = $this->conversionCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        $revenue = $this->revenueCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        $upsell = $this->upsellCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        $membership = $this->membershipCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        $feedback = $this->feedbackCalculator->calculate($doctorId, $startDate, $endDate);
+        $productRevenue = $this->productRevenueCalculator->calculate($doctorId, $startDate, $endDate);
+        $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $startDate, $endDate, $accountId);
+        $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
+        $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
+
+        $avgClientValue = $this->revenueCalculator->calculateAvgClientValue(
+            $revenue['total_revenue'],
+            $conversion['total_converted']
+        );
+
+        $doctorKpis = [
+            'total_revenue'      => $revenue['total_revenue'],
+            'conversion_rate'    => $conversion['conversion_rate'],
+            'avg_client_value'   => $avgClientValue,
+            'product_revenue'    => $productRevenue['product_revenue'],
+            'upsell_revenue'     => $upsell['upsell_revenue'],
+            'upsell_rate'        => $upsell['upsell_rate'] ?? 0,
+            'gold_memberships'   => $membership['gold_memberships_sold'],
+            'feedback_score'     => $feedback['avg_rating'],
+            'google_reviews'     => $googleReviews,
+            'patient_return_rate' => $patientReturn['return_rate'],
+            'avg_procedures'     => $avgProcedures['avg_procedures'],
+            'patients_seen'      => $patientsSeen['total'],
+        ];
+
+        return $this->benchmarkCalculator->calculate($doctorId, $doctorKpis, $startDate, $endDate, $accountId);
     }
 
     /**
