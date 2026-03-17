@@ -378,7 +378,7 @@ class DashboardChartService
         // Build feedback query - if period is 'all', don't apply date filter (lifetime data)
         $feedbackQuery = Feedback::whereIn('doctor_id', $doctorIds)
             ->whereIn('location_id', $locationIds)
-            ->select('doctor_id', DB::raw('AVG(rating) as avg_rating'), DB::raw('COUNT(*) as total_feedback'))
+            ->select('doctor_id', DB::raw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating'), DB::raw('COUNT(*) as total_feedback'))
             ->groupBy('doctor_id');
 
         // Only apply date filter if period is not 'all' (lifetime)

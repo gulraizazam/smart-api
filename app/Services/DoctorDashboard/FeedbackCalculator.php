@@ -62,6 +62,7 @@ class FeedbackCalculator
 
     /**
      * Get the highest feedback score month in the last N months.
+     * Excludes today to match dashboard and reports behavior.
      *
      * @param int $doctorId
      * @param int $months
@@ -70,10 +71,12 @@ class FeedbackCalculator
     public function getHighestScoreMonth(int $doctorId, int $months = 6): ?array
     {
         $startDate = now()->subMonths($months)->startOfMonth()->format('Y-m-d');
+        // Exclude today - use yesterday as the end date
+        $endDate = now()->subDay()->format('Y-m-d');
 
         $result = DB::table('feedback')
             ->where('doctor_id', $doctorId)
-            ->where('created_at', '>=', $startDate . ' 00:00:00')
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->select(
                 DB::raw('YEAR(created_at) as yr'),
                 DB::raw('MONTH(created_at) as mn'),
