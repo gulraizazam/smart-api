@@ -789,7 +789,7 @@
                     </div>
                     @endcan
 
-                    @can('centre_targets_manage')
+                    @can('google_reviews_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">

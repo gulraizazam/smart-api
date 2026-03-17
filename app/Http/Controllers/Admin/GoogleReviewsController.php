@@ -19,6 +19,7 @@ class GoogleReviewsController extends Controller
 
     public function __construct(DoctorIdentifier $doctorIdentifier)
     {
+        $this->middleware('can:google_reviews_manage');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->doctorIdentifier = $doctorIdentifier;
@@ -29,7 +30,7 @@ class GoogleReviewsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('centre_targets_manage')) {
+        if (!Gate::allows('google_reviews_manage')) {
             return abort(401);
         }
 

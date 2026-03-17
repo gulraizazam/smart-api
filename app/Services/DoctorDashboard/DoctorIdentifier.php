@@ -104,6 +104,7 @@ class DoctorIdentifier
             ->where('doctor_has_locations.user_id', $doctorId)
             ->where('doctor_has_locations.is_allocated', 1)
             ->select('locations.id', 'locations.name')
+            ->distinct()
             ->get();
 
         return [
