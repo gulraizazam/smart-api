@@ -18,6 +18,12 @@ class FeedbackCalculator
      */
     public function calculate(int $doctorId, string $startDate, string $endDate): array
     {
+        // Exclude today: if endDate is today or later, use yesterday
+        $today = now()->format('Y-m-d');
+        if ($endDate >= $today) {
+            $endDate = now()->subDay()->format('Y-m-d');
+        }
+
         $result = DB::table('feedback')
             ->where('doctor_id', $doctorId)
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
@@ -48,6 +54,12 @@ class FeedbackCalculator
     {
         if (empty($doctorIds)) {
             return [];
+        }
+
+        // Exclude today: if endDate is today or later, use yesterday
+        $today = now()->format('Y-m-d');
+        if ($endDate >= $today) {
+            $endDate = now()->subDay()->format('Y-m-d');
         }
 
         return DB::table('feedback')
