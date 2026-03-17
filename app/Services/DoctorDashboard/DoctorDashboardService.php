@@ -471,7 +471,7 @@ class DoctorDashboardService
         $treatments = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->where('appointment_type_id', 2)
-            ->where('appointment_status_id', $arrivedStatusId)
+            ->whereIn('base_appointment_status_id', $statusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->distinct('patient_id')
             ->count('patient_id');
@@ -480,15 +480,7 @@ class DoctorDashboardService
         $total = DB::table('appointments')
             ->where('doctor_id', $doctorId)
             ->whereIn('appointment_type_id', [1, 2])
-            ->where(function ($q) use ($statusIds, $arrivedStatusId) {
-                $q->where(function ($q2) use ($statusIds) {
-                    $q2->where('appointment_type_id', 1)
-                        ->whereIn('base_appointment_status_id', $statusIds);
-                })->orWhere(function ($q3) use ($arrivedStatusId) {
-                    $q3->where('appointment_type_id', 2)
-                        ->where('appointment_status_id', $arrivedStatusId);
-                });
-            })
+            ->whereIn('base_appointment_status_id', $statusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->distinct('patient_id')
             ->count('patient_id');
