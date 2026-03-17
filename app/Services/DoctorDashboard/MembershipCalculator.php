@@ -28,20 +28,19 @@ class MembershipCalculator
             return $this->emptyResult();
         }
 
-        // Count memberships sold by this doctor
-        // package_services.sold_by = doctor
-        // packages.plan_type = 'membership'
-        // package_bundles.membership_type_id IN gold type IDs
+        // Count Gold memberships sold by this doctor.
+        // Join via the correct FK: package_services.package_bundle_id → package_bundles.id
+        // Do NOT filter on packages.plan_type — it's unreliable for old records (defaults to 'plan').
+        // Instead filter on package_bundles.membership_type_id IN goldTypeIds.
+        // Count DISTINCT pb.id (each bundle row = one membership sold).
         $count = DB::table('package_services as ps')
-            ->join('packages as p', 'ps.package_id', '=', 'p.id')
-            ->join('package_bundles as pb', 'pb.package_id', '=', 'p.id')
+            ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
             ->where('ps.sold_by', $doctorId)
-            ->where('p.plan_type', 'membership')
             ->whereIn('pb.membership_type_id', $goldTypeIds)
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNull('pb.deleted_at')
-            ->distinct('p.id')
-            ->count('p.id');
+            ->distinct()
+            ->count('pb.id');
 
         return [
             'gold_memberships_sold' => $count,
@@ -104,14 +103,12 @@ class MembershipCalculator
         }
 
         return DB::table('package_services as ps')
-            ->join('packages as p', 'ps.package_id', '=', 'p.id')
-            ->join('package_bundles as pb', 'pb.package_id', '=', 'p.id')
+            ->join('package_bundles as pb', 'ps.package_bundle_id', '=', 'pb.id')
             ->whereIn('ps.sold_by', $doctorIds)
-            ->where('p.plan_type', 'membership')
             ->whereIn('pb.membership_type_id', $goldTypeIds)
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->whereNull('pb.deleted_at')
-            ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT p.id) as cnt'))
+            ->select('ps.sold_by as doctor_id', DB::raw('COUNT(DISTINCT pb.id) as cnt'))
             ->groupBy('ps.sold_by')
             ->pluck('cnt', 'doctor_id')
             ->map(fn($v) => (int) $v)
