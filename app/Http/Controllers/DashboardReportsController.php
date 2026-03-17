@@ -483,11 +483,10 @@ class DashboardReportsController extends Controller
             $feedbackQuery->where('feedback.location_id', $centreId);
         }
 
-        // Apply date range filter via join instead of whereHas for better performance
+        // Apply date range filter using feedback.created_at (consistent with all other feedback queries)
         if ($dateRange) {
-            $feedbackQuery->join('appointments', 'feedback.appointment_id', '=', 'appointments.id')
-                ->where('appointments.scheduled_date', '>=', $dateRange['start_date'] . ' 00:00:00')
-                ->where('appointments.scheduled_date', '<=', $dateRange['end_date'] . ' 23:59:59');
+            $feedbackQuery->where('feedback.created_at', '>=', $dateRange['start_date'] . ' 00:00:00')
+                ->where('feedback.created_at', '<=', $dateRange['end_date'] . ' 23:59:59');
         }
 
         // Get aggregated stats per doctor in single query
