@@ -617,11 +617,33 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get doctor upselling data - proxies to UpsellingReportController
+     * Get doctor upselling data for dashboard chart.
+     * Uses centralized UpsellingService (single source of truth).
      */
     public function doctorUpsellingData(Request $request)
     {
-        $controller = app(\App\Http\Controllers\UpsellingReportController::class);
-        return $controller->getDoctorUpsellingData($request);
+        try {
+            $centreId = $request->centre_id;
+            $period = $request->period ?: 'thismonth';
+
+            $upsellingService = app(\App\Services\Upselling\UpsellingService::class);
+            [$startDate, $endDate] = \App\Services\Upselling\UpsellingService::resolvePeriodDates($period);
+
+            $data = $upsellingService->getDoctorUpsellingData($centreId, $startDate, $endDate);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Doctor upselling data retrieved successfully.',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Doctor Upselling Data Error: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error retrieving doctor upselling data.',
+                'data' => [],
+            ], 500);
+        }
     }
 }
