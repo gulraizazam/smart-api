@@ -10,9 +10,14 @@ use Illuminate\Support\Facades\DB;
 class PersonalBestCalculator
 {
     /**
-     * Rolling lookback period in months.
+     * Rolling lookback period in months for personal bests.
      */
-    const LOOKBACK_MONTHS = 6;
+    const LOOKBACK_MONTHS = 3;
+
+    /**
+     * Streak lookback uses a longer window for meaningful history.
+     */
+    const STREAK_LOOKBACK_MONTHS = 6;
 
     private ConversionCalculator $conversionCalculator;
     private RevenueCalculator $revenueCalculator;
@@ -35,13 +40,13 @@ class PersonalBestCalculator
     }
 
     /**
-     * Calculate all 7 personal bests for a doctor (rolling last 6 months).
+     * Calculate all 7 personal bests for a doctor (rolling last 3 months, streaks use 6 months).
      *
      * 1. Highest revenue month
      * 2. Highest conversion rate month
      * 3. Highest upsell amount month
      * 4. Most patients seen in a single day
-     * 5. Longest streak ever (in last 6 months)
+     * 5. Longest streak ever (in last 6 months — uses longer window)
      * 6. Highest feedback score month
      * 7. Most Google reviews in a single month
      *
@@ -61,11 +66,12 @@ class PersonalBestCalculator
             'longest_streak' => $this->longestStreak($doctorId, $accountId),
             'highest_feedback' => $this->feedbackCalculator->getHighestScoreMonth($doctorId, self::LOOKBACK_MONTHS),
             'most_google_reviews' => $this->mostGoogleReviewsMonth($doctorId, $accountId),
+            'lookback_months' => self::LOOKBACK_MONTHS,
         ];
     }
 
     /**
-     * Highest revenue month in last 6 months.
+     * Highest revenue month in last 3 months.
      */
     private function highestRevenueMonth(int $doctorId, array $months, int $accountId): ?array
     {
@@ -134,7 +140,7 @@ class PersonalBestCalculator
     }
 
     /**
-     * Most patients seen in a single day (consultations + treatments arrived) in last 6 months.
+     * Most patients seen in a single day (consultations + treatments arrived) in last 3 months.
      */
     private function mostPatientsSingleDay(int $doctorId, int $accountId): ?array
     {
@@ -175,7 +181,7 @@ class PersonalBestCalculator
     }
 
     /**
-     * Longest streak in last 6 months.
+     * Longest streak in last 6 months (uses STREAK_LOOKBACK_MONTHS via StreakCalculator).
      */
     private function longestStreak(int $doctorId, int $accountId): ?array
     {
@@ -192,7 +198,7 @@ class PersonalBestCalculator
     }
 
     /**
-     * Most Google reviews in a single month in last 6 months.
+     * Most Google reviews in a single month in last 3 months.
      */
     private function mostGoogleReviewsMonth(int $doctorId, int $accountId): ?array
     {

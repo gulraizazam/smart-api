@@ -63,10 +63,11 @@
                         <i class="la la-fire"></i>
                         <span id="ddStreakCount">0</span> Week Streak
                     </div>
-                    <span class="dd-streak-best">Best: <span id="ddStreakBest">0</span> Weeks (6 Mo)</span>
+                    <span class="dd-streak-best">Best: <span id="ddStreakBest">0</span> Weeks</span>
                 </div>
 
-                {{-- Personal Bests --}}
+                {{-- Personal Bests (Last 3 Months) --}}
+                <div class="dd-pb-section-label">Personal Bests <span class="dd-pb-period">(Last 3 Months)</span></div>
                 <div class="dd-pb-row" id="ddPersonalBests">
                     <div class="dd-pb-item">
                         <div class="dd-pb-icon"><i class="la la-chart-line"></i></div>

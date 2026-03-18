@@ -240,6 +240,20 @@
 }
 
 /* Personal Bests */
+.dd-pb-section-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0.85;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.dd-pb-period {
+    font-weight: 400;
+    opacity: 0.6;
+    font-size: 0.72rem;
+    text-transform: none;
+}
 .dd-pb-row {
     display: flex;
     gap: 10px;
@@ -446,27 +460,35 @@
 /* Network Best benchmark display */
 .dd-kpi-bench-network {
     display: none;
-    margin-top: 6px;
-    font-size: 0.72rem;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, #f8f4e8 0%, #fef9ed 100%);
+    border: 1px solid rgba(255,199,0,0.25);
+    border-radius: 8px;
+    font-size: 0.76rem;
     color: #6c7293;
     font-weight: 500;
     line-height: 1.4;
 }
+.dd-bench-crown {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
 .dd-bench-label {
-    color: #a1a5b7;
+    color: #8a7340;
+    font-weight: 600;
 }
 .dd-bench-value {
-    font-weight: 700;
-    color: #1a1a2e;
-}
-.dd-bench-trophy {
-    color: #ffc700;
-    font-size: 0.85rem;
-    filter: drop-shadow(0 0 3px rgba(255,199,0,0.5));
-    margin-right: 2px;
+    font-weight: 800;
+    color: #5c4a1e;
+    font-size: 0.82rem;
 }
 .dd-bench-msg {
     display: block;
+    width: 100%;
     font-size: 0.68rem;
     color: #a1a5b7;
     font-style: italic;

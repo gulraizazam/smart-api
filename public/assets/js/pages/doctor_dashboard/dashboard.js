@@ -207,11 +207,11 @@
         document.getElementById('ddStreakCount').textContent = streak.current_streak;
         document.getElementById('ddStreakBest').textContent = streak.best_streak;
 
-        // Personal Bests
+        // Personal Bests (use short format for compact hero tiles)
         var pb = data.personal_bests;
-        setPb('highest_revenue', pb.highest_revenue, function (v) { return formatCurrency(v.value); });
+        setPb('highest_revenue', pb.highest_revenue, function (v) { return formatCurrencyShort(v.value); });
         setPb('highest_conversion', pb.highest_conversion, function (v) { return v.value + '%'; });
-        setPb('highest_upsell', pb.highest_upsell, function (v) { return formatCurrency(v.value); });
+        setPb('highest_upsell', pb.highest_upsell, function (v) { return formatCurrencyShort(v.value); });
         setPb('most_patients_day', pb.most_patients_day, function (v) { return v.value; });
         setPb('longest_streak', pb.longest_streak, function (v) { return v.value + 'W'; });
         setPb('highest_feedback', pb.highest_feedback, function (v) { return v.avg_rating; });
@@ -299,11 +299,11 @@
         if (!bench || bench.doctor_count === 0) return;
 
         var map = {
-            'kpiTotalRevenueBench':  { data: bench.total_revenue,       fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiTotalRevenueBench':  { data: bench.total_revenue,       fmt: function(v) { return 'PKR ' + formatCurrencyShort(v); } },
             'kpiConvRateBench':      { data: bench.conversion_rate,     fmt: function(v) { return v + '%'; } },
-            'kpiAvgClientBench':     { data: bench.avg_client_value,    fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
-            'kpiProductRevBench':    { data: bench.product_revenue,     fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
-            'kpiUpsellRevBench':     { data: bench.upsell_revenue,      fmt: function(v) { return 'PKR ' + formatCurrency(v); } },
+            'kpiAvgClientBench':     { data: bench.avg_client_value,    fmt: function(v) { return 'PKR ' + formatCurrencyShort(v); } },
+            'kpiProductRevBench':    { data: bench.product_revenue,     fmt: function(v) { return 'PKR ' + formatCurrencyShort(v); } },
+            'kpiUpsellRevBench':     { data: bench.upsell_revenue,      fmt: function(v) { return 'PKR ' + formatCurrencyShort(v); } },
             'kpiUpsellRateBench':    { data: bench.upsell_rate,         fmt: function(v) { return v + '%'; } },
             'kpiGoldMemBench':       { data: bench.gold_memberships,    fmt: function(v) { return v; } },
             'kpiFeedbackBench':      { data: bench.feedback_score,      fmt: function(v) { return v; } },
@@ -466,14 +466,10 @@
         var isBest = data.is_best;
         var message = data.message || '';
 
-        // Build benchmark text
-        var html = '<span class="dd-bench-label">Network Best: </span>' +
+        // Build benchmark text with crown icon
+        var html = '<span class="dd-bench-crown">&#x1F451;</span>' +
+                   '<span class="dd-bench-label">Network Best: </span>' +
                    '<span class="dd-bench-value">' + formatter(bestVal) + '</span>';
-
-        // Add trophy if doctor is the best
-        if (isBest) {
-            html = '<i class="la la-trophy dd-bench-trophy"></i> ' + html;
-        }
 
         // Add encouraging message (always visible on mobile, tooltip on desktop)
         if (message) {
@@ -481,9 +477,9 @@
         }
 
         el.innerHTML = html;
-        el.style.display = 'block';
+        el.style.display = 'flex';
 
-        // Toggle glowing border + trophy on card
+        // Toggle glowing border on card when doctor is the best
         if (card) {
             if (isBest) {
                 card.classList.add('dd-kpi-best');
@@ -517,6 +513,12 @@
     }
 
     function formatCurrency(val) {
+        if (val === null || val === undefined) return '0';
+        val = parseFloat(val);
+        return numberFormat(val);
+    }
+
+    function formatCurrencyShort(val) {
         if (val === null || val === undefined) return '0';
         val = parseFloat(val);
         if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
