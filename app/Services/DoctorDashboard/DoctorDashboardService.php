@@ -19,7 +19,6 @@ class DoctorDashboardService
     private FeedbackCalculator $feedbackCalculator;
     private ProductRevenueCalculator $productRevenueCalculator;
     private PatientReturnCalculator $patientReturnCalculator;
-    private StreakCalculator $streakCalculator;
     private PersonalBestCalculator $personalBestCalculator;
     private BenchmarkCalculator $benchmarkCalculator;
 
@@ -32,7 +31,6 @@ class DoctorDashboardService
         FeedbackCalculator $feedbackCalculator,
         ProductRevenueCalculator $productRevenueCalculator,
         PatientReturnCalculator $patientReturnCalculator,
-        StreakCalculator $streakCalculator,
         PersonalBestCalculator $personalBestCalculator,
         BenchmarkCalculator $benchmarkCalculator
     ) {
@@ -44,7 +42,6 @@ class DoctorDashboardService
         $this->feedbackCalculator = $feedbackCalculator;
         $this->productRevenueCalculator = $productRevenueCalculator;
         $this->patientReturnCalculator = $patientReturnCalculator;
-        $this->streakCalculator = $streakCalculator;
         $this->personalBestCalculator = $personalBestCalculator;
         $this->benchmarkCalculator = $benchmarkCalculator;
     }
@@ -193,7 +190,7 @@ class DoctorDashboardService
     }
 
     /**
-     * Get hero strip data (goal progress, streak, personal bests).
+     * Get hero strip data (goal progress, personal bests).
      *
      * @param int $doctorId
      * @param int $accountId
@@ -206,15 +203,11 @@ class DoctorDashboardService
         // Goal progress bar
         $goalProgress = $this->getGoalProgress($doctorId, $startDate, $endDate, $accountId);
 
-        // Streak
-        $streak = $this->streakCalculator->calculate($doctorId, $accountId);
-
         // Personal bests
         $personalBests = $this->personalBestCalculator->calculate($doctorId, $accountId);
 
         return [
             'goal_progress' => $goalProgress,
-            'streak' => $streak,
             'personal_bests' => $personalBests,
         ];
     }

@@ -40,9 +40,8 @@ class DoctorDashboardController extends Controller
         }
 
         $doctorInfo = $this->doctorIdentifier->getDoctorInfo($doctorId);
-        $targets = $this->dashboardService->getTargets($accountId);
 
-        return view('admin.doctor_dashboard.index', compact('doctorInfo', 'targets'));
+        return view('admin.doctor_dashboard.index', compact('doctorInfo'));
     }
 
     /**

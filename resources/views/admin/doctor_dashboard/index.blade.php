@@ -57,15 +57,6 @@
                     </div>
                 </div>
 
-                {{-- Streak --}}
-                <div class="dd-streak" id="ddStreak">
-                    <div class="dd-streak-badge">
-                        <i class="la la-fire"></i>
-                        <span id="ddStreakCount">0</span> Week Streak
-                    </div>
-                    <span class="dd-streak-best">Best: <span id="ddStreakBest">0</span> Weeks</span>
-                </div>
-
                 {{-- Personal Bests (Last 3 Months) --}}
                 <div class="dd-pb-section-label">Personal Bests <span class="dd-pb-period">(Last 3 Months)</span></div>
                 <div class="dd-pb-row" id="ddPersonalBests">
@@ -88,11 +79,6 @@
                         <div class="dd-pb-icon"><i class="la la-users"></i></div>
                         <div class="dd-pb-value dd-skeleton" style="width:50px;height:16px;" data-pb="most_patients_day">&nbsp;</div>
                         <div class="dd-pb-label">Most Patients/Day</div>
-                    </div>
-                    <div class="dd-pb-item">
-                        <div class="dd-pb-icon"><i class="la la-fire-alt"></i></div>
-                        <div class="dd-pb-value dd-skeleton" style="width:50px;height:16px;" data-pb="longest_streak">&nbsp;</div>
-                        <div class="dd-pb-label">Longest Streak</div>
                     </div>
                     <div class="dd-pb-item">
                         <div class="dd-pb-icon"><i class="la la-star"></i></div>
@@ -125,7 +111,6 @@
                         <div class="dd-kpi-sub" id="kpiConvRateSub"></div>
                         <div class="dd-kpi-mom" id="kpiConvRateMom"></div>
                         <div class="dd-kpi-last-month" id="kpiConvRateLast"></div>
-                        <div class="dd-kpi-target" id="kpiConvRateTarget"></div>
                         <div class="dd-kpi-bench-network" id="kpiConvRateBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="avg_client_value">
@@ -134,7 +119,6 @@
                         <div class="dd-kpi-sub" id="kpiAvgClientSub"></div>
                         <div class="dd-kpi-mom" id="kpiAvgClientMom"></div>
                         <div class="dd-kpi-last-month" id="kpiAvgClientLast"></div>
-                        <div class="dd-kpi-target" id="kpiAvgClientTarget"></div>
                         <div class="dd-kpi-bench-network" id="kpiAvgClientBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="product_revenue">
@@ -186,7 +170,6 @@
                         <div class="dd-kpi-sub" id="kpiFeedbackSub"></div>
                         <div class="dd-kpi-mom" id="kpiFeedbackMom"></div>
                         <div class="dd-kpi-last-month" id="kpiFeedbackLast"></div>
-                        <div class="dd-kpi-target" id="kpiFeedbackTarget"></div>
                         <div class="dd-kpi-bench-network" id="kpiFeedbackBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="google_reviews">
@@ -291,7 +274,6 @@
             appointments: "{{ route('admin.doctor_dashboard.appointments') }}",
             benchmarks: "{{ route('admin.doctor_dashboard.benchmarks') }}"
         },
-        targets: @json($targets ?? [])
     };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
