@@ -40,6 +40,11 @@
                                         <option value="1">Active</option>
                                         <option value="0">Inactive</option>
                                     </select>
+                                    <select id="filter-sort" class="form-control form-control-sm mr-2" style="width:120px;">
+                                        <option value="name">Sort: Name</option>
+                                        <option value="outstanding_desc">Sort: Outstanding &darr;</option>
+                                        <option value="outstanding_asc">Sort: Outstanding &uarr;</option>
+                                    </select>
                                     <div class="input-group input-group-sm">
                                         <input type="text" id="filter-search" class="form-control" placeholder="Search..." />
                                         <div class="input-group-append">
@@ -117,36 +122,34 @@
                                 </div>
                             </div>
 
-                            {{-- Top Outstanding Vendors --}}
+                            {{-- Recent Purchases (full width, paginated) --}}
                             <div class="card card-custom mb-4">
                                 <div class="card-header py-3" style="min-height:auto;">
-                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-sort-amount-down mr-1 text-danger"></i>Top Outstanding Vendors</h3></div>
+                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
                                 </div>
-                                <div class="card-body py-3 px-5" id="ov-top-vendors">
+                                <div class="card-body py-2 px-4" id="ov-recent-purchases">
                                     <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                </div>
+                                <div class="card-footer py-2 px-4">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted" id="ov-purchases-pagination-info"></small>
+                                        <div id="ov-purchases-pagination-links"></div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Recent Transactions --}}
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card card-custom mb-4">
-                                        <div class="card-header py-3" style="min-height:auto;">
-                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
-                                        </div>
-                                        <div class="card-body py-2 px-5" id="ov-recent-purchases">
-                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
-                                        </div>
-                                    </div>
+                            {{-- Recent Payments (full width, paginated) --}}
+                            <div class="card card-custom mb-4">
+                                <div class="card-header py-3" style="min-height:auto;">
+                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="card card-custom mb-4">
-                                        <div class="card-header py-3" style="min-height:auto;">
-                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
-                                        </div>
-                                        <div class="card-body py-2 px-5" id="ov-recent-payments">
-                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
-                                        </div>
+                                <div class="card-body py-2 px-4" id="ov-recent-payments">
+                                    <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                </div>
+                                <div class="card-footer py-2 px-4">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted" id="ov-payments-pagination-info"></small>
+                                        <div id="ov-payments-pagination-links"></div>
                                     </div>
                                 </div>
                             </div>
@@ -406,21 +409,8 @@
                 <div class="modal-body">
                     <form id="form-purchase">
                         <input type="hidden" name="transaction_id" value="" />
-                        {{-- Status Toggle --}}
-                        <div class="form-group mb-4">
-                            <label class="d-block font-weight-bold mb-2">Purchase Status <span class="text-danger">*</span></label>
-                            <div class="btn-group btn-group-toggle w-100" id="purchase-status-toggle" style="border:1px solid #E4E6EF;border-radius:0.42rem;overflow:hidden;">
-                                <label class="btn btn-sm purchase-status-btn active" id="btn-status-ordered" style="flex:1;margin:0;border-radius:0;border:none;">
-                                    <input type="radio" name="status" value="ordered" autocomplete="off" checked />
-                                    <i class="la la-clock-o mr-1"></i>Ordered
-                                </label>
-                                <label class="btn btn-sm purchase-status-btn" id="btn-status-delivered" style="flex:1;margin:0;border-radius:0;border:none;border-left:1px solid #E4E6EF;">
-                                    <input type="radio" name="status" value="delivered" autocomplete="off" />
-                                    <i class="la la-check-circle mr-1"></i>Delivered
-                                </label>
-                            </div>
-                            <small class="text-muted" id="purchase-status-hint">Drive attachment is optional for ordered purchases.</small>
-                        </div>
+                        {{-- Status: always ordered (hidden) --}}
+                        <input type="hidden" name="status" value="ordered" />
                         <div class="form-group">
                             <label>Description <span class="text-danger">*</span></label>
                             <input type="text" name="description" class="form-control" placeholder="e.g. Medical consumables - syringes, gloves" required maxlength="100" />

@@ -30,8 +30,21 @@ class VendorService
     public function getVendors(int $accountId, array $filters = [], int $perPage = 25)
     {
         $query = Vendor::forAccount($accountId)
-            ->with('creator:id,name')
-            ->orderBy('name');
+            ->with('creator:id,name');
+
+        // Sort
+        $sort = $filters['sort'] ?? 'name';
+        switch ($sort) {
+            case 'outstanding_desc':
+                $query->orderByDesc('cached_balance');
+                break;
+            case 'outstanding_asc':
+                $query->orderBy('cached_balance');
+                break;
+            default:
+                $query->orderBy('name');
+                break;
+        }
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -42,7 +55,7 @@ class VendorService
             });
         }
 
-        if (isset($filters['is_active'])) {
+        if (isset($filters['is_active']) && $filters['is_active'] !== '') {
             $query->where('is_active', $filters['is_active']);
         }
 
@@ -133,7 +146,7 @@ class VendorService
     /**
      * Get vendors overview dashboard data: summary stats, top outstanding, recent transactions.
      */
-    public function getVendorsOverview(int $accountId): array
+    public function getVendorsOverview(int $accountId, array $params = []): array
     {
         $vendors = Vendor::forAccount($accountId)->where('is_active', true)->get();
 
@@ -162,29 +175,23 @@ class VendorService
         $monthPurchases = (clone $monthBase)->where('type', 'purchase')->sum('amount');
         $monthPayments = (clone $monthBase)->where('type', 'payment')->sum('amount');
 
-        // Top 5 vendors by outstanding balance
-        $topVendors = Vendor::forAccount($accountId)
-            ->where('is_active', true)
-            ->where('cached_balance', '>', 0)
-            ->orderByDesc('cached_balance')
-            ->limit(5)
-            ->get(['id', 'name', 'cached_balance', 'payment_terms']);
+        $perPage = 20;
 
-        // Recent 10 purchases
+        // Paginated recent purchases (full data with relations for ledger-style display)
+        $purchasePage = (int) ($params['purchase_page'] ?? 1);
         $recentPurchases = VendorTransaction::forAccount($accountId)
             ->where('type', 'purchase')
-            ->with(['vendor:id,name'])
+            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC")
-            ->limit(10)
-            ->get(['id', 'vendor_id', 'amount', 'description', 'transaction_date', 'created_at']);
+            ->paginate($perPage, ['*'], 'purchase_page', $purchasePage);
 
-        // Recent 10 payments
+        // Paginated recent payments (full data with relations for ledger-style display)
+        $paymentPage = (int) ($params['payment_page'] ?? 1);
         $recentPayments = VendorTransaction::forAccount($accountId)
             ->where('type', 'payment')
-            ->with(['vendor:id,name', 'expense:id,description'])
+            ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC")
-            ->limit(10)
-            ->get(['id', 'vendor_id', 'expense_id', 'amount', 'description', 'transaction_date', 'created_at']);
+            ->paginate($perPage, ['*'], 'payment_page', $paymentPage);
 
         return [
             'total_opening_balance' => round((float) $totalOpeningBalance, 2),
@@ -193,7 +200,6 @@ class VendorService
             'vendors_with_balance' => $vendorsWithBalance,
             'month_purchases' => round((float) $monthPurchases, 2),
             'month_payments' => round((float) $monthPayments, 2),
-            'top_vendors' => $topVendors,
             'recent_purchases' => $recentPurchases,
             'recent_payments' => $recentPayments,
         ];
