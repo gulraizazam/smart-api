@@ -595,12 +595,18 @@ class VendorService
     public function createVendorRequest(array $data, int $accountId): VendorRequest
     {
         $request = VendorRequest::create([
-            'account_id' => $accountId,
-            'name' => $data['name'],
-            'phone' => $data['phone'] ?? null,
-            'note' => $data['note'] ?? null,
-            'requested_by' => Auth::id(),
-            'status' => VendorRequest::STATUS_PENDING,
+            'account_id'     => $accountId,
+            'name'           => $data['name'],
+            'contact_person' => $data['contact_person'] ?? null,
+            'phone'          => $data['phone'] ?? null,
+            'email'          => $data['email'] ?? null,
+            'payment_terms'  => $data['payment_terms'] ?? null,
+            'category_id'    => $data['category_id'] ?? null,
+            'opening_balance'=> $data['opening_balance'] ?? 0,
+            'address'        => $data['address'] ?? null,
+            'note'           => $data['notes'] ?? ($data['note'] ?? null),
+            'requested_by'   => Auth::id(),
+            'status'         => VendorRequest::STATUS_PENDING,
         ]);
 
         $this->auditService->log(
@@ -633,9 +639,15 @@ class VendorService
 
         return DB::transaction(function () use ($vendorRequest, $accountId) {
             $vendor = $this->createVendor([
-                'name' => $vendorRequest->name,
-                'phone' => $vendorRequest->phone,
-                'notes' => 'Created from vendor request #' . $vendorRequest->id,
+                'name'            => $vendorRequest->name,
+                'contact_person'  => $vendorRequest->contact_person,
+                'phone'           => $vendorRequest->phone,
+                'email'           => $vendorRequest->email,
+                'payment_terms'   => $vendorRequest->payment_terms ?? 'upfront',
+                'category_id'     => $vendorRequest->category_id,
+                'opening_balance' => $vendorRequest->opening_balance ?? 0,
+                'address'         => $vendorRequest->address,
+                'notes'           => 'Created from vendor request #' . $vendorRequest->id . ($vendorRequest->note ? "\n" . $vendorRequest->note : ''),
             ], $accountId);
 
             $vendorRequest->update([

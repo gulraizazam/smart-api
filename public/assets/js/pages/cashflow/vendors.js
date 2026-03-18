@@ -32,7 +32,11 @@ var CashflowVendors = (function () {
         });
         $('#filter-sort').on('change', function () { currentPage = 1; loadVendors(); });
         $('#btn-submit-vendor').on('click', submitVendor);
-        $('#btn-submit-request').on('click', submitVendorRequest);
+
+        // Request vendor — reuses the vendor modal in request mode
+        $('#btn-open-vendor-request').on('click', function () {
+            openVendorModalAsRequest();
+        });
 
         // Ledger type filter
         $('#ledger-type-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
@@ -110,11 +114,13 @@ var CashflowVendors = (function () {
             $('#form-vendor .is-invalid').removeClass('is-invalid');
             $('#form-vendor .is-invalid-select2-direct').removeClass('is-invalid-select2-direct');
             $('#form-vendor [name="vendor_id"]').val('');
+            $('#form-vendor [name="_request_mode"]').val('');
             $('#vendor-is-active').prop('checked', true);
             $('#vendor-active-label').text('Active');
             $('#vendor-active-switch').addClass('switch-primary');
             $('#vendor-active-toggle-wrap').addClass('vendor-toggle-hidden');
             $('#vendor-modal-title').html('<i class="la la-store mr-1"></i>Add Vendor');
+            $('#btn-submit-vendor').html('<i class="la la-check mr-1"></i>Save Vendor');
         });
 
         // Active toggle label + color update
@@ -123,7 +129,6 @@ var CashflowVendors = (function () {
             $('#vendor-active-label').text(checked ? 'Active' : 'Inactive');
             $('#vendor-active-switch').toggleClass('switch-primary', checked);
         });
-        $('#modal_vendor_request').on('hidden.bs.modal', function () { $('#form-vendor-request')[0].reset(); });
         // Deliver modal
         $('#btn-submit-deliver').on('click', function () { submitDeliver(); });
         $('#modal_deliver').on('hidden.bs.modal', function () {
@@ -358,9 +363,22 @@ var CashflowVendors = (function () {
         $('#modal_vendor').modal('show');
     }
 
+    function openVendorModalAsRequest() {
+        var form = $('#form-vendor');
+        form[0].reset();
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('[name="vendor_id"]').val('');
+        form.find('[name="_request_mode"]').val('1');
+        $('#vendor-active-toggle-wrap').addClass('vendor-toggle-hidden');
+        $('#vendor-modal-title').html('<i class="la la-inbox mr-1"></i>Request New Vendor');
+        $('#btn-submit-vendor').html('<i class="la la-check mr-1"></i>Submit Request');
+        $('#modal_vendor').modal('show');
+    }
+
     function submitVendor() {
         var form = $('#form-vendor');
         var vendorId = form.find('[name="vendor_id"]').val();
+        var isRequestMode = form.find('[name="_request_mode"]').val() === '1';
 
         // Clear previous errors
         form.find('.is-invalid').removeClass('is-invalid');
@@ -369,10 +387,10 @@ var CashflowVendors = (function () {
         var data = {};
         form.find('input:not([type="checkbox"]), select, textarea').each(function () {
             var n = $(this).attr('name');
-            if (n && n !== 'vendor_id') data[n] = $(this).val();
+            if (n && n !== 'vendor_id' && n !== '_request_mode') data[n] = $(this).val();
         });
         // Active toggle (only sent on edit)
-        if (vendorId) {
+        if (vendorId && !isRequestMode) {
             data.is_active = $('#vendor-is-active').is(':checked') ? 1 : 0;
         }
 
@@ -404,21 +422,33 @@ var CashflowVendors = (function () {
 
         var btn = $('#btn-submit-vendor');
         btn.prop('disabled', true).html('<i class="spinner spinner-white spinner-sm mr-1"></i> Saving...');
-        var url = vendorId ? apiBase + 'vendors/' + vendorId + '/update' : apiBase + 'vendors/store';
+
+        var url, successAction;
+        if (isRequestMode) {
+            url = apiBase + 'vendor-requests/store';
+            successAction = function () {
+                loadVendorRequests();
+            };
+        } else {
+            url = vendorId ? apiBase + 'vendors/' + vendorId + '/update' : apiBase + 'vendors/store';
+            successAction = function (res) {
+                loadVendors();
+                if (vendorId && currentVendorId == vendorId) {
+                    currentVendorData = res.data;
+                    $('#ledger-vendor-name').text(res.data.name);
+                    loadLedger(currentVendorId);
+                }
+            };
+        }
 
         $.ajax({
             url: url, type: 'POST', data: data,
             headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             success: function (res) {
                 if (res.success) {
-                    toastr.success(res.message);
+                    toastr.success(res.message || (isRequestMode ? 'Request submitted.' : 'Saved.'));
                     $('#modal_vendor').modal('hide');
-                    loadVendors();
-                    if (vendorId && currentVendorId == vendorId) {
-                        currentVendorData = res.data;
-                        $('#ledger-vendor-name').text(res.data.name);
-                        loadLedger(currentVendorId);
-                    }
+                    successAction(res);
                 } else toastr.error(res.message);
             },
             error: function (xhr) {
@@ -430,7 +460,9 @@ var CashflowVendors = (function () {
                     });
                 } else toastr.error(r ? r.message : 'Failed.');
             },
-            complete: function () { btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>Save Vendor'); }
+            complete: function () {
+                btn.prop('disabled', false).html('<i class="la la-check mr-1"></i>' + (isRequestMode ? 'Submit Request' : 'Save Vendor'));
+            }
         });
     }
 
@@ -456,20 +488,14 @@ var CashflowVendors = (function () {
                 $('#ledger-opening').text('PKR ' + nf(d.opening_balance));
                 $('#ledger-opening-date').text(fd(d.date_from));
 
-                // Outstanding (overall current balance)
-                $('#ledger-balance').text('PKR ' + nf(bal));
-                var borderColor = bal > 0 ? '#F64E60' : (bal < 0 ? '#1BC5BD' : '#FFA800');
-                $('#ledger-balance-card').css('border-left-color', borderColor);
-                $('#ledger-balance').toggleClass('text-danger', bal > 0).toggleClass('text-success', bal < 0);
-
-                // Period stats
+                // Period stats in cards
                 var stats = d.period_stats || {};
-                $('#ledger-count').text(stats.count || 0);
                 $('#ledger-stat-purchases').text('PKR ' + nf(stats.total_purchases));
                 $('#ledger-stat-payments').text('PKR ' + nf(stats.total_payments));
-                var net = parseFloat(stats.net) || 0;
-                $('#ledger-stat-net').text((net >= 0 ? '+' : '') + 'PKR ' + nf(net))
-                    .toggleClass('text-danger', net > 0).toggleClass('text-success', net < 0).toggleClass('text-muted', net === 0);
+
+                // Outstanding (overall current balance)
+                $('#ledger-balance').text('PKR ' + nf(bal));
+                $('#ledger-balance').toggleClass('text-danger', bal > 0).toggleClass('text-success', bal < 0);
 
                 var txData = d.transactions.data || d.transactions;
                 renderLedger(txData);
@@ -538,8 +564,8 @@ var CashflowVendors = (function () {
             // Edit/Delete/Deliver actions for standalone purchase entries (no expense_id)
             var actions = '';
             if (!tx.expense_id && typeof cfPerms !== 'undefined') {
-                // Mark as Delivered CTA: shown for ordered purchases to anyone who can create purchases
-                if (isPurchase && txStatus === 'ordered' && cfPerms.canTransaction) {
+                // Mark as Delivered CTA: shown for ordered purchases to users with deliver permission
+                if (isPurchase && txStatus === 'ordered' && cfPerms.canDeliver) {
                     actions += '<a href="javascript:;" class="btn-deliver-tx text-hover-success ml-2" title="Mark as Delivered" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-truck font-size-sm text-warning"></i></a>';
                 }
                 if (cfPerms.canTransactionEdit) {
@@ -697,22 +723,6 @@ var CashflowVendors = (function () {
         });
     }
 
-    function submitVendorRequest() {
-        var form = $('#form-vendor-request');
-        var data = {};
-        form.find('input, textarea').each(function () { var n = $(this).attr('name'); if (n) data[n] = $(this).val(); });
-        if (!data.name) { toastr.warning('Vendor name is required.'); return; }
-
-        var btn = $(this); btn.prop('disabled', true);
-
-        $.ajax({
-            url: apiBase + 'vendor-requests/store', type: 'POST', data: data,
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: function (res) { if (res.success) { toastr.success(res.message); $('#modal_vendor_request').modal('hide'); loadVendorRequests(); } else toastr.error(res.message); },
-            error: function (xhr) { toastr.error(xhr.responseJSON ? xhr.responseJSON.message : 'Failed.'); },
-            complete: function () { btn.prop('disabled', false); }
-        });
-    }
 
     // ===================== RECORD / EDIT PURCHASE =====================
 
@@ -1040,7 +1050,7 @@ var CashflowVendors = (function () {
             // Actions
             var actions = '';
             if (!tx.expense_id && typeof cfPerms !== 'undefined') {
-                if (isPurchase && txStatus === 'ordered' && cfPerms.canTransaction) {
+                if (isPurchase && txStatus === 'ordered' && cfPerms.canDeliver) {
                     actions += '<a href="javascript:;" class="ov-deliver-tx text-hover-success ml-2" title="Mark as Delivered" data-vendor-id="' + tx.vendor_id + '" data-tx=\'' + JSON.stringify(tx).replace(/'/g, '&#39;') + '\'><i class="la la-truck font-size-sm text-warning"></i></a>';
                 }
                 if (cfPerms.canTransactionEdit) {
@@ -1054,27 +1064,32 @@ var CashflowVendors = (function () {
                 actions += '<a href="javascript:;" class="ov-audit-tx text-hover-info ml-1" data-vendor-id="' + tx.vendor_id + '" data-id="' + tx.id + '" title="Audit Trail"><i class="la la-history font-size-sm text-muted"></i></a>';
             }
 
+            // Creator info
+            var creatorName = tx.creator ? tx.creator.name : '';
+
             container.append(
-                '<div class="d-flex align-items-center py-2" style="border-bottom:1px solid #F3F6F9;">' +
-                    '<div class="flex-shrink-0 mr-3">' +
-                        '<div style="width:32px;height:32px;border-radius:50%;background:' + (isPurchase ? '#FFF5F8' : '#E8FFF3') + ';display:flex;align-items:center;justify-content:center;">' +
-                            '<i class="la ' + typeIcon + '" style="font-size:16px;"></i>' +
+                '<div class="d-flex align-items-start py-2" style="border-bottom:1px solid #F3F6F9;">' +
+                    '<div class="flex-shrink-0 mr-2 mt-1">' +
+                        '<div style="width:28px;height:28px;border-radius:50%;background:' + (isPurchase ? '#FFF5F8' : '#E8FFF3') + ';display:flex;align-items:center;justify-content:center;">' +
+                            '<i class="la ' + typeIcon + '" style="font-size:14px;"></i>' +
                         '</div>' +
                     '</div>' +
                     '<div class="flex-grow-1 min-w-0">' +
                         '<div class="d-flex justify-content-between align-items-start">' +
                             '<div class="min-w-0">' +
-                                '<div>' + descHtml + attachIcon + actions + '</div>' +
+                                '<div class="font-size-sm">' + descHtml + attachIcon + '</div>' +
                                 '<div class="text-muted font-size-xs mt-1">' +
                                     '<span class="mr-2">' + esc(vendorName) + '</span>' +
                                     '<span class="mr-2">' + dateStr + '</span>' +
-                                    (txStatus === 'ordered' ? ' <span class="label label-light-warning label-inline font-size-xs py-0 px-2" style="vertical-align:middle;"><i class="la la-clock-o mr-1"></i>Ordered</span>' : (txStatus === 'delivered' ? ' <span class="label label-light-success label-inline font-size-xs py-0 px-2" style="vertical-align:middle;"><i class="la la-check-circle mr-1"></i>Delivered</span>' : '')) +
+                                    (txStatus === 'ordered' ? '<span class="label label-light-warning label-inline font-size-xs py-0 px-2" style="vertical-align:middle;"><i class="la la-clock-o mr-1"></i>Ordered</span> ' : (txStatus === 'delivered' ? '<span class="label label-light-success label-inline font-size-xs py-0 px-2" style="vertical-align:middle;"><i class="la la-check-circle mr-1"></i>Delivered</span> ' : '')) +
                                     branchLabel +
-                                    (tx.reference_no ? ' <span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
+                                    (tx.reference_no ? '<span class="ml-1 text-muted">Ref: ' + esc(tx.reference_no) + '</span>' : '') +
                                 '</div>' +
-                            '</div>' +
-                            '<div class="flex-shrink-0 ml-3 text-right" style="min-width:80px;">' +
-                                '<div class="font-weight-bolder font-size-sm ' + amtClass + '">PKR ' + nf(tx.amount) + '</div>' +
+                                '<div class="font-size-xs mt-1">' +
+                                    '<span class="font-weight-bolder ' + amtClass + '">PKR ' + nf(tx.amount) + '</span>' +
+                                    (creatorName ? ' <span class="text-muted ml-2">by ' + esc(creatorName) + '</span>' : '') +
+                                    actions +
+                                '</div>' +
                             '</div>' +
                         '</div>' +
                     '</div>' +
