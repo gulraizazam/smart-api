@@ -1786,7 +1786,7 @@ class CashFlowController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $filters = $request->only(['search', 'is_active']);
+            $filters = $request->only(['search', 'is_active', 'sort']);
 
             $vendors = $this->vendorService->getVendors($accountId, $filters, $request->input('per_page', 25));
 
@@ -1962,7 +1962,7 @@ class CashFlowController extends Controller
 
      */
 
-    public function vendorsOverview(): JsonResponse
+    public function vendorsOverview(Request $request): JsonResponse
 
     {
 
@@ -1970,7 +1970,9 @@ class CashFlowController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $data = $this->vendorService->getVendorsOverview($accountId);
+            $params = $request->only(['purchase_page', 'payment_page']);
+
+            $data = $this->vendorService->getVendorsOverview($accountId, $params);
 
             return response()->json(['success' => true, 'data' => $data]);
 
