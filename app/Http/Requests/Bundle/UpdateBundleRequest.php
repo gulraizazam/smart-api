@@ -28,7 +28,7 @@ class UpdateBundleRequest extends FormRequest
             'start' => 'nullable|date',
             'end' => 'nullable|date|after_or_equal:start',
             'apply_discount' => 'nullable|boolean',
-            'tax_treatment_type_id' => 'nullable|integer|exists:tax_treatment_types,id',
+            'tax_treatment_type_id' => 'nullable|integer|exists:tax_treatment_type,id',
             'service_id' => 'required|array|min:1',
             'service_id.*' => 'required|integer|exists:services,id',
             'service_price' => 'required|array|min:1',
