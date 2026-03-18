@@ -135,6 +135,19 @@ class Bundles extends BaseModal
             }
         }
 
+        // Last-session absorption: adjust last service so SUM(calculated_price) == $price exactly
+        $price = floatval(str_replace(',', '', $price));
+        if (count($services) > 1) {
+            $sumWithoutLast = 0;
+            $lastKey = array_key_last($services);
+            foreach ($services as $key => $service) {
+                if ($key !== $lastKey) {
+                    $sumWithoutLast += $services[$key]['calculated_price'];
+                }
+            }
+            $services[$lastKey]['calculated_price'] = round($price - $sumWithoutLast, 2);
+        }
+
         return $services;
     }
 
