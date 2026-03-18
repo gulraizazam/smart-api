@@ -209,36 +209,6 @@
     font-weight: 500;
 }
 
-/* Streak */
-.dd-streak {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-}
-.dd-streak-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, rgba(255,168,0,0.25), rgba(255,199,0,0.15));
-    border: 1px solid rgba(255,168,0,0.3);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-.dd-streak-badge i {
-    color: #ffc700;
-    font-size: 1.2rem;
-    filter: drop-shadow(0 0 4px rgba(255,199,0,0.6));
-}
-.dd-streak-best {
-    font-size: 0.8rem;
-    opacity: 0.7;
-    font-weight: 500;
-}
-
 /* Personal Bests */
 .dd-pb-section-label {
     font-size: 0.82rem;
@@ -512,21 +482,6 @@
     50% { box-shadow: 0 0 0 2px rgba(255,199,0,0.35), 0 0 24px rgba(255,199,0,0.25), 0 4px 12px rgba(0,0,0,0.06); }
 }
 
-/* Target indicator */
-.dd-kpi-target {
-    font-size: 0.72rem;
-    color: #a1a5b7;
-    margin-top: 4px;
-    font-weight: 500;
-}
-.dd-kpi-target .target-met {
-    color: #0bb783;
-    font-weight: 700;
-}
-.dd-kpi-target .target-missed {
-    color: #d9214e;
-    font-weight: 700;
-}
 
 /* N/A state */
 .dd-kpi-value.na {

@@ -113,12 +113,10 @@
         setKpiSub('kpiConvRateSub', kpis.conversion_rate.total_converted + '/' + kpis.conversion_rate.total_arrived + ' converted');
         setKpiMom('kpiConvRateMom', kpis.conversion_rate.mom);
         setKpiLastMonth('kpiConvRateLast', kpis.conversion_rate.last_month + '%');
-        setKpiTarget('kpiConvRateTarget', kpis.conversion_rate.value, DD_CONFIG.targets.conversion_pct || 50, '%');
 
         setKpi('kpiAvgClient', formatCurrency(kpis.avg_client_value.value), 'currency');
         setKpiMom('kpiAvgClientMom', kpis.avg_client_value.mom);
         setKpiLastMonth('kpiAvgClientLast', 'PKR ' + formatCurrency(kpis.avg_client_value.last_month));
-        setKpiTarget('kpiAvgClientTarget', kpis.avg_client_value.value, DD_CONFIG.targets.avg_conversion_revenue || 15000);
 
         setKpi('kpiProductRev', formatCurrency(kpis.product_revenue.value), 'currency');
         setKpiSub('kpiProductRevSub', kpis.product_revenue.total_orders + ' orders');
@@ -148,7 +146,6 @@
         setKpiSub('kpiFeedbackSub', kpis.feedback_score.total_feedback + ' reviews');
         setKpiMom('kpiFeedbackMom', kpis.feedback_score.mom);
         setKpiLastMonth('kpiFeedbackLast', kpis.feedback_score.last_month ? kpis.feedback_score.last_month.toFixed(1) : '0');
-        setKpiTarget('kpiFeedbackTarget', kpis.feedback_score.value, DD_CONFIG.targets.feedback_score || 9.5);
 
         setKpi('kpiGoogleRev', kpis.google_reviews.value);
         setKpiMom('kpiGoogleRevMom', kpis.google_reviews.mom);
@@ -202,18 +199,12 @@
             daysEl.textContent = '';
         }
 
-        // Streak
-        var streak = data.streak;
-        document.getElementById('ddStreakCount').textContent = streak.current_streak;
-        document.getElementById('ddStreakBest').textContent = streak.best_streak;
-
         // Personal Bests (use short format for compact hero tiles)
         var pb = data.personal_bests;
         setPb('highest_revenue', pb.highest_revenue, function (v) { return formatCurrencyShort(v.value); });
         setPb('highest_conversion', pb.highest_conversion, function (v) { return v.value + '%'; });
         setPb('highest_upsell', pb.highest_upsell, function (v) { return formatCurrencyShort(v.value); });
         setPb('most_patients_day', pb.most_patients_day, function (v) { return v.value; });
-        setPb('longest_streak', pb.longest_streak, function (v) { return v.value + 'W'; });
         setPb('highest_feedback', pb.highest_feedback, function (v) { return v.avg_rating; });
         setPb('most_google_reviews', pb.most_google_reviews, function (v) { return v.value; });
     }
@@ -376,14 +367,7 @@
             plotOptions: { bar: { borderRadius: 4, columnWidth: '35%' } },
             legend: { position: 'bottom' },
             dataLabels: { enabled: true },
-            annotations: {
-                yaxis: [{
-                    y: DD_CONFIG.targets.conversion_pct ? (DD_CONFIG.targets.conversion_pct / 100 * kpis.conversion_rate.total_arrived) : 0,
-                    borderColor: '#f64e60',
-                    strokeDashArray: 4,
-                    label: { text: 'Target', style: { color: '#f64e60', background: 'transparent' } }
-                }]
-            }
+            annotations: {}
         };
 
         if (chartConversion) chartConversion.destroy();
@@ -447,15 +431,6 @@
         if (el) el.textContent = 'Last month: ' + text;
     }
 
-    function setKpiTarget(id, value, target, suffix) {
-        var el = document.getElementById(id);
-        if (!el || !target) return;
-        suffix = suffix || '';
-        var met = value >= target;
-        el.innerHTML = 'Target: ' + target + suffix +
-            ' <span class="' + (met ? 'target-met' : 'target-missed') + '">' +
-            (met ? '✓' : '✗') + '</span>';
-    }
 
     function setBenchNetwork(id, data, formatter) {
         var el = document.getElementById(id);

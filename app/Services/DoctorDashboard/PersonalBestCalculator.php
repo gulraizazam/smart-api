@@ -14,41 +14,32 @@ class PersonalBestCalculator
      */
     const LOOKBACK_MONTHS = 3;
 
-    /**
-     * Streak lookback uses a longer window for meaningful history.
-     */
-    const STREAK_LOOKBACK_MONTHS = 6;
-
     private ConversionCalculator $conversionCalculator;
     private RevenueCalculator $revenueCalculator;
     private UpsellCalculator $upsellCalculator;
     private FeedbackCalculator $feedbackCalculator;
-    private StreakCalculator $streakCalculator;
 
     public function __construct(
         ConversionCalculator $conversionCalculator,
         RevenueCalculator $revenueCalculator,
         UpsellCalculator $upsellCalculator,
-        FeedbackCalculator $feedbackCalculator,
-        StreakCalculator $streakCalculator
+        FeedbackCalculator $feedbackCalculator
     ) {
         $this->conversionCalculator = $conversionCalculator;
         $this->revenueCalculator = $revenueCalculator;
         $this->upsellCalculator = $upsellCalculator;
         $this->feedbackCalculator = $feedbackCalculator;
-        $this->streakCalculator = $streakCalculator;
     }
 
     /**
-     * Calculate all 7 personal bests for a doctor (rolling last 3 months, streaks use 6 months).
+     * Calculate all 6 personal bests for a doctor (rolling last 3 months).
      *
      * 1. Highest revenue month
      * 2. Highest conversion rate month
      * 3. Highest upsell amount month
      * 4. Most patients seen in a single day
-     * 5. Longest streak ever (in last 6 months — uses longer window)
-     * 6. Highest feedback score month
-     * 7. Most Google reviews in a single month
+     * 5. Highest feedback score month
+     * 6. Most Google reviews in a single month
      *
      * @param int $doctorId
      * @param int $accountId
@@ -63,7 +54,6 @@ class PersonalBestCalculator
             'highest_conversion' => $this->highestConversionMonth($doctorId, $months, $accountId),
             'highest_upsell' => $this->highestUpsellMonth($doctorId, $months, $accountId),
             'most_patients_day' => $this->mostPatientsSingleDay($doctorId, $accountId),
-            'longest_streak' => $this->longestStreak($doctorId, $accountId),
             'highest_feedback' => $this->feedbackCalculator->getHighestScoreMonth($doctorId, self::LOOKBACK_MONTHS),
             'most_google_reviews' => $this->mostGoogleReviewsMonth($doctorId, $accountId),
             'lookback_months' => self::LOOKBACK_MONTHS,
@@ -177,23 +167,6 @@ class PersonalBestCalculator
             'value' => (int) $result->patient_count,
             'label' => Carbon::parse($result->scheduled_date)->format('d M Y'),
             'date' => $result->scheduled_date,
-        ];
-    }
-
-    /**
-     * Longest streak in last 6 months (uses STREAK_LOOKBACK_MONTHS via StreakCalculator).
-     */
-    private function longestStreak(int $doctorId, int $accountId): ?array
-    {
-        $streakData = $this->streakCalculator->calculate($doctorId, $accountId);
-
-        if ($streakData['best_streak'] === 0) {
-            return null;
-        }
-
-        return [
-            'value' => $streakData['best_streak'],
-            'label' => $streakData['best_streak'] . ' Weeks',
         ];
     }
 
