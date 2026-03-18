@@ -7,6 +7,7 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
 use App\Models\PackageAdvances;
+use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PaymentModes;
 use App\Models\User;
@@ -192,6 +193,8 @@ class PackageAdvancesController extends Controller
             $package_advances = PackageAdvances::createRecord_onlyadvances($data);
 
             if ($package_advances) {
+                // Update plan_name after payment added
+                $this->updatePlanNameForPackage($request->package_id);
                 return ApiHelper::apiResponse($this->success, 'Record saved successfully.');
             }
 
@@ -448,6 +451,9 @@ class PackageAdvancesController extends Controller
 
             $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
 
+            // Update plan_name after payment updated
+            $this->updatePlanNameForPackage($request->package_id);
+
             return response()->json([
                 'status' => true,
             ]);
@@ -470,7 +476,15 @@ class PackageAdvancesController extends Controller
             return abort(401);
         }
 
+        $advance = PackageAdvances::find($id);
+        $packageId = $advance ? $advance->package_id : null;
+
         PackageAdvances::deleteRecord($id);
+
+        // Update plan_name after payment deleted
+        if ($packageId) {
+            $this->updatePlanNameForPackage($packageId);
+        }
 
         return redirect()->route('admin.packagesadvances.index');
 
@@ -501,6 +515,62 @@ class PackageAdvancesController extends Controller
         $advance_cancel = PackageAdvances::createRecord_onlyadvances($package_advnaces);
 
         return redirect()->route('admin.packagesadvances.index');
+    }
+
+    /**
+     * Update plan_name in packages table based on its bundles/services/memberships.
+     */
+    private function updatePlanNameForPackage(int $packageId): void
+    {
+        $package = Packages::find($packageId);
+        if (!$package) {
+            return;
+        }
+
+        if ($package->plan_type === 'membership') {
+            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('membership_types.name')
+                ->toArray();
+
+            if (!empty($membershipNames)) {
+                $planName = implode(', ', $membershipNames);
+                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
+            }
+            return;
+        }
+
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
+        }
+
+        if (empty($names)) {
+            return;
+        }
+
+        $planName = implode(', ', $names);
+
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
+
+        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
     }
 
     /*

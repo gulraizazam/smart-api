@@ -5480,19 +5480,13 @@ class AppointmentsController extends Controller
     }
 
     /**
-     * Update plan_name in packages table based on consumed services
-     * Generates name from first two bundle names (comma separated)
-     * For plan type: adds '...' if more than 2 bundles
+     * Update plan_name in packages table based on its bundles/services/memberships.
+     * Always overwrites plan_name (no empty-guard).
      */
     private function updatePlanNameForPackage(int $packageId): void
     {
         $package = Packages::find($packageId);
         if (!$package) {
-            return;
-        }
-
-        // Only update plan_name if it's currently empty
-        if (!empty($package->plan_name)) {
             return;
         }
 
@@ -5512,20 +5506,29 @@ class AppointmentsController extends Controller
         }
 
         $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
-        
-        $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
-            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-            ->orderBy('package_bundles.id', 'asc')
-            ->limit(2)
-            ->pluck('bundles.name')
-            ->toArray();
 
-        if (empty($packageBundles)) {
+        if ($package->plan_type === 'plan') {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('services.name')
+                ->toArray();
+        } else {
+            $names = PackageBundles::where('package_bundles.package_id', $package->id)
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->orderBy('package_bundles.id', 'asc')
+                ->limit(2)
+                ->pluck('bundles.name')
+                ->toArray();
+        }
+
+        if (empty($names)) {
             return;
         }
 
-        $planName = implode(', ', $packageBundles);
-        
+        $planName = implode(', ', $names);
+
         if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
             $planName .= '...';
         }
