@@ -1596,6 +1596,14 @@ class PackagesController extends Controller
             }
         }
 
+        // Update plan_name after service removal
+        if ($packageService->package_id) {
+            $pkg = Packages::find($packageService->package_id);
+            if ($pkg) {
+                $this->updatePlanNameForPackage($pkg);
+            }
+        }
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'total' => $total,
             'id' => $request->id,
@@ -1631,6 +1639,14 @@ class PackagesController extends Controller
             if ($packageService->package_id) {
                 // Only update total_price without touching updated_at (deleting service should not update timestamp)
                 Packages::where('id', $packageService->package_id)->update(['total_price' => $total]);
+            }
+        }
+
+        // Update plan_name after configurable service removal
+        if ($packageService->package_id) {
+            $pkg = Packages::find($packageService->package_id);
+            if ($pkg) {
+                $this->updatePlanNameForPackage($pkg);
             }
         }
 
@@ -3125,6 +3141,8 @@ class PackagesController extends Controller
             $pkg = Packages::where('random_id', $request->random_id)->first();
             if ($pkg) {
                 $grand_total = (float) PackageBundles::where('package_id', $pkg->id)->sum('tax_including_price');
+                // Update plan_name after configurable service added
+                $this->updatePlanNameForPackage($pkg);
             } else {
                 $grand_total = (float) PackageBundles::where('random_id', $request->random_id)->sum('tax_including_price');
             }
@@ -3233,6 +3251,12 @@ class PackagesController extends Controller
             'net_amount'    => $packagebundle->net_amount,
             'total'         => $total,
         ];
+
+        // Update plan_name after simple service added
+        $pkgForName = Packages::where('random_id', $request->random_id)->first();
+        if ($pkgForName) {
+            $this->updatePlanNameForPackage($pkgForName);
+        }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'is_configurable' => false,
