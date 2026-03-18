@@ -2092,6 +2092,7 @@ class PlanService
                 $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
                 // Prepare all services for bulk insert
+                $bundleServiceStartIndex = count($allPackageServices);
                 foreach ($calculatedServicesPrices as $calculatedServicePrice) {
                     $serviceInfo = $servicesInfo->get($calculatedServicePrice['service_id']);
                     
@@ -2119,6 +2120,20 @@ class PlanService
                     );
 
                     $allPackageServices[] = array_merge($dataService, $taxData);
+                }
+
+                // Last-session absorption: adjust last service's tax_including_price
+                // so SUM(tax_including_price) == bundle's Total exactly
+                $bundleTotal = floatval(str_replace(',', '', $packageBundle['Total']));
+                $bundleServiceCount = count($allPackageServices) - $bundleServiceStartIndex;
+                if ($bundleServiceCount > 1) {
+                    $sumWithoutLast = 0;
+                    for ($i = $bundleServiceStartIndex; $i < count($allPackageServices) - 1; $i++) {
+                        $sumWithoutLast += $allPackageServices[$i]['tax_including_price'];
+                    }
+                    $lastIdx = count($allPackageServices) - 1;
+                    $allPackageServices[$lastIdx]['tax_including_price'] = round($bundleTotal - $sumWithoutLast, 2);
+                    $allPackageServices[$lastIdx]['price'] = $allPackageServices[$lastIdx]['tax_including_price'];
                 }
             }
         }

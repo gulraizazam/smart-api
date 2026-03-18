@@ -16,8 +16,9 @@ function checkConsumptionLock(packageservice, totalPlanPayments, totalConsumedVa
     var servicePrice = parseFloat(packageservice.tax_including_price) || 0;
 
     // Normal services (consumption_order = 0) only check payment coverage
+    // Skip if plan is fully paid — rounding may cause SUM(services) to slightly exceed actual payment
     if (consumptionOrder === 0) {
-        if (servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
+        if (!isPlanFullyPaid && servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
             var shortfall = Math.ceil((totalConsumedValue + servicePrice) - totalPlanPayments);
             return 'Insufficient payment. Collect Rs. ' + shortfall.toLocaleString() + ' first.';
         }
@@ -44,7 +45,8 @@ function checkConsumptionLock(packageservice, totalPlanPayments, totalConsumedVa
     }
 
     // Payment coverage check (skip for free services)
-    if (servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
+    // Skip if plan is fully paid — rounding may cause SUM(services) to slightly exceed actual payment
+    if (!isPlanFullyPaid && servicePrice > 0 && totalPlanPayments < (totalConsumedValue + servicePrice)) {
         var shortfall = Math.ceil((totalConsumedValue + servicePrice) - totalPlanPayments);
         return 'Insufficient payment. Collect Rs. ' + shortfall.toLocaleString() + ' first.';
     }

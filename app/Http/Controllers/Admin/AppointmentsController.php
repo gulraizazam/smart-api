@@ -3270,9 +3270,10 @@ class AppointmentsController extends Controller
         }
 
         // Check if plan is fully paid (total payments >= total plan value)
+        // Allow 1-rupee tolerance for rounding (e.g. 3 × 6996.67 = 20990.01 vs 20990 payment)
         $totalPlanValue = PackageService::where('package_id', $package->id)
             ->sum('tax_including_price');
-        $isPlanFullyPaid = ($totalPlanPayments >= $totalPlanValue);
+        $isPlanFullyPaid = ($totalPlanPayments >= ($totalPlanValue - 1));
 
         return response()->json([
             'status' => true,
@@ -3524,7 +3525,8 @@ class AppointmentsController extends Controller
             $totalPlanValue = PackageService::where('package_id', $request->package_id)
                 ->sum('tax_including_price');
 
-            $isPlanFullyPaid = ($totalPlanPayments >= $totalPlanValue);
+            // Allow 1-rupee tolerance for rounding (e.g. 3 × 6996.67 = 20990.01 vs 20990 payment)
+            $isPlanFullyPaid = ($totalPlanPayments >= ($totalPlanValue - 1));
 
             // Ordering check: enforce BUY-before-GET within configurable discount groups
             // Skip ordering if the plan is fully paid (safe because plan is locked after first consumption)
@@ -3548,7 +3550,8 @@ class AppointmentsController extends Controller
             }
 
             // Payment coverage check (for any service with price > 0)
-            if ($packageService && $packageService->tax_including_price > 0) {
+            // Skip if plan is fully paid — rounding may cause SUM(services) to slightly exceed actual payment
+            if (!$isPlanFullyPaid && $packageService && $packageService->tax_including_price > 0) {
                 $totalConsumedValue = PackageService::where('package_id', $request->package_id)
                     ->where('is_consumed', 1)
                     ->sum('tax_including_price');
