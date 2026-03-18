@@ -68,6 +68,8 @@ class CashflowPermissionsSeeder extends Seeder
                 ['name' => 'cashflow_vendor_transaction', 'title' => 'Record Vendor Purchases'],
                 ['name' => 'cashflow_vendor_transaction_edit', 'title' => 'Edit Vendor Purchases'],
                 ['name' => 'cashflow_vendor_transaction_delete', 'title' => 'Delete Vendor Purchases'],
+                ['name' => 'cashflow_vendor_deliver', 'title' => 'Mark Vendor Purchases Delivered'],
+                ['name' => 'cashflow_vendor_request', 'title' => 'Request Vendor'],
 
                 // Staff Advances
                 ['name' => 'cashflow_staff_advance_view', 'title' => 'View Staff Advances'],

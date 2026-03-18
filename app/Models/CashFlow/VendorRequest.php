@@ -10,7 +10,8 @@ class VendorRequest extends Model
     protected $table = 'vendor_requests';
 
     protected $fillable = [
-        'account_id', 'name', 'phone', 'note',
+        'account_id', 'name', 'contact_person', 'phone', 'email',
+        'payment_terms', 'category_id', 'opening_balance', 'address', 'note',
         'requested_by', 'status', 'admin_notes', 'vendor_id',
     ];
 

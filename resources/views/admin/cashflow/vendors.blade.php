@@ -35,7 +35,7 @@
                             </div>
                             <div class="card-body py-3 px-4">
                                 <div class="d-flex mb-3">
-                                    <select id="filter-active" class="form-control form-control-sm mr-2" style="width:100px;">
+                                    <select id="filter-active" class="form-control form-control-sm mr-2" style="width:80px;">
                                         <option value="">All</option>
                                         <option value="1">Active</option>
                                         <option value="0">Inactive</option>
@@ -68,7 +68,9 @@
                             <div class="card-header py-3" style="min-height:auto;">
                                 <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-inbox mr-1"></i>Vendor Requests</h3></div>
                                 <div class="card-toolbar">
-                                    <button class="btn btn-sm btn-info" data-toggle="modal" data-target="#modal_vendor_request"><i class="la la-plus"></i> Request</button>
+                                    @if(Gate::allows('cashflow_vendor_request'))
+                                        <button class="btn btn-sm btn-info" id="btn-open-vendor-request"><i class="la la-plus"></i> Request</button>
+                                    @endif
                                 </div>
                             </div>
                             <div class="card-body py-3 px-4">
@@ -96,15 +98,6 @@
                                     </div>
                                 </div>
                                 <div class="col-6 col-md-3">
-                                    <div class="card card-custom" style="border-left:4px solid #F64E60;">
-                                        <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Outstanding</div>
-                                            <div class="font-size-h5 font-weight-bolder mt-1" id="ov-outstanding">—</div>
-                                            <div class="text-muted font-size-xs" id="ov-with-balance">—</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-6 col-md-3">
                                     <div class="card card-custom" style="border-left:4px solid #FFA800;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">This Month Purchases</div>
@@ -120,36 +113,49 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            {{-- Recent Purchases (full width, paginated) --}}
-                            <div class="card card-custom mb-4">
-                                <div class="card-header py-3" style="min-height:auto;">
-                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
-                                </div>
-                                <div class="card-body py-2 px-4" id="ov-recent-purchases">
-                                    <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
-                                </div>
-                                <div class="card-footer py-2 px-4">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted" id="ov-purchases-pagination-info"></small>
-                                        <div id="ov-purchases-pagination-links"></div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #F64E60;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Outstanding</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1" id="ov-outstanding">—</div>
+                                            <div class="text-muted font-size-xs" id="ov-with-balance">—</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Recent Payments (full width, paginated) --}}
-                            <div class="card card-custom mb-4">
-                                <div class="card-header py-3" style="min-height:auto;">
-                                    <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
+                            {{-- Recent Purchases & Payments side by side --}}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card card-custom mb-4">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
+                                        </div>
+                                        <div class="card-body py-2 px-3" id="ov-recent-purchases">
+                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                        </div>
+                                        <div class="card-footer py-2 px-3">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted" id="ov-purchases-pagination-info"></small>
+                                                <div id="ov-purchases-pagination-links"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="card-body py-2 px-4" id="ov-recent-payments">
-                                    <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
-                                </div>
-                                <div class="card-footer py-2 px-4">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <small class="text-muted" id="ov-payments-pagination-info"></small>
-                                        <div id="ov-payments-pagination-links"></div>
+                                <div class="col-md-6">
+                                    <div class="card card-custom mb-4">
+                                        <div class="card-header py-3" style="min-height:auto;">
+                                            <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
+                                        </div>
+                                        <div class="card-body py-2 px-3" id="ov-recent-payments">
+                                            <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
+                                        </div>
+                                        <div class="card-footer py-2 px-3">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <small class="text-muted" id="ov-payments-pagination-info"></small>
+                                                <div id="ov-payments-pagination-links"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -182,9 +188,9 @@
                                 </div>
                             </div>
 
-                            {{-- Balance Summary --}}
+                            {{-- Balance Summary — 4 cards matching dashboard style --}}
                             <div class="row mb-3">
-                                <div class="col-4">
+                                <div class="col-6 col-md-3">
                                     <div class="card card-custom" style="border-left:4px solid #3699FF;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">Balance on <span id="ledger-opening-date"></span></div>
@@ -192,28 +198,30 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-4">
-                                    <div class="card card-custom" id="ledger-balance-card" style="border-left:4px solid #FFA800;">
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #FFA800;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Purchases</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1 text-danger" id="ledger-stat-purchases">PKR 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" style="border-left:4px solid #1BC5BD;">
+                                        <div class="card-body py-3 px-4">
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Payments</div>
+                                            <div class="font-size-h5 font-weight-bolder mt-1 text-success" id="ledger-stat-payments">PKR 0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="card card-custom" id="ledger-balance-card" style="border-left:4px solid #F64E60;">
                                         <div class="card-body py-3 px-4">
                                             <div class="text-muted font-size-xs text-uppercase font-weight-bold">Outstanding Balance</div>
                                             <div class="font-size-h5 font-weight-bolder mt-1" id="ledger-balance">PKR 0</div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-4">
-                                    <div class="card card-custom" style="border-left:4px solid #8950FC;">
-                                        <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Transactions</div>
-                                            <div class="font-size-h5 font-weight-bolder mt-1" id="ledger-count">0</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {{-- Period Summary Stats --}}
-                            <div class="d-flex align-items-center mb-4 px-1" style="gap:20px;">
-                                <span class="font-size-sm"><span class="text-muted">Purchases:</span> <span class="font-weight-bold text-danger" id="ledger-stat-purchases">PKR 0</span></span>
-                                <span class="font-size-sm"><span class="text-muted">Payments:</span> <span class="font-weight-bold text-success" id="ledger-stat-payments">PKR 0</span></span>
-                                <span class="font-size-sm"><span class="text-muted">Net:</span> <span class="font-weight-bold" id="ledger-stat-net">PKR 0</span></span>
                             </div>
 
                             {{-- Ledger Transactions --}}
@@ -264,6 +272,7 @@
                 <div class="modal-body py-4 px-5">
                     <form id="form-vendor">
                         <input type="hidden" name="vendor_id" />
+                        <input type="hidden" name="_request_mode" value="" />
 
                         {{-- Name + Contact Person --}}
                         <div class="row">
@@ -380,22 +389,6 @@
         </div>
     </div>
 
-    <!-- Vendor Request Modal -->
-    <div class="modal fade" id="modal_vendor_request" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Request New Vendor</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div>
-                <div class="modal-body">
-                    <form id="form-vendor-request">
-                        <div class="form-group"><label>Vendor Name <span class="text-danger">*</span></label><input type="text" name="name" class="form-control" required /></div>
-                        <div class="form-group"><label>Phone</label><input type="text" name="phone" class="form-control" /></div>
-                        <div class="form-group"><label>Note</label><textarea name="note" class="form-control" rows="2"></textarea></div>
-                    </form>
-                </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button><button type="button" id="btn-submit-request" class="btn btn-primary">Submit Request</button></div>
-            </div>
-        </div>
-    </div>
 
     <!-- Record Purchase Modal -->
     @if(Gate::allows('cashflow_vendor_transaction'))
@@ -468,7 +461,7 @@
     @endif
 
     <!-- Mark as Delivered Modal -->
-    @if(Gate::allows('cashflow_vendor_transaction'))
+    @if(Gate::allows('cashflow_vendor_deliver'))
     <div class="modal fade" id="modal_deliver" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
             <div class="modal-content">
@@ -553,9 +546,11 @@
                 canTransaction: {{ Gate::allows('cashflow_vendor_transaction') ? 'true' : 'false' }},
                 canTransactionEdit: {{ Gate::allows('cashflow_vendor_transaction_edit') ? 'true' : 'false' }},
                 canTransactionDelete: {{ Gate::allows('cashflow_vendor_transaction_delete') ? 'true' : 'false' }},
+                canDeliver: {{ Gate::allows('cashflow_vendor_deliver') ? 'true' : 'false' }},
                 canLedgerExport: {{ Gate::allows('cashflow_vendor_ledger_export') ? 'true' : 'false' }},
                 canExpenseCreate: {{ Gate::allows('cashflow_expense_create') ? 'true' : 'false' }},
-                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }}
+                canAudit: {{ Gate::allows('cashflow_audit_view') ? 'true' : 'false' }},
+                canRequest: {{ Gate::allows('cashflow_vendor_request') ? 'true' : 'false' }}
             };
         </script>
         <script src="{{ asset('assets/js/pages/cashflow/vendors.js') }}"></script>

@@ -9,15 +9,21 @@ class StoreVendorSuggestionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Auth::check();
+        return Auth::user()->can('cashflow_vendor_request');
     }
 
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'note' => 'nullable|string|max:500',
+            'name'           => 'required|string|max:255',
+            'contact_person' => 'required|string|max:255',
+            'phone'          => 'required|string|max:50',
+            'email'          => 'nullable|email|max:255',
+            'payment_terms'  => 'required|in:upfront,net_7,net_15,net_30,custom',
+            'category_id'    => 'required|integer|exists:expense_categories,id',
+            'opening_balance'=> 'nullable|numeric|min:0',
+            'address'        => 'nullable|string|max:500',
+            'notes'          => 'nullable|string|max:500',
         ];
     }
 }
