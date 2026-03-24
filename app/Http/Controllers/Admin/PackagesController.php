@@ -3525,9 +3525,10 @@ class PackagesController extends Controller
     public function updatepackages(Request $request)
     {
         $request->validate([
-            'appointment_id' => ['required', 'exists:appointments,id']
+            'random_id'      => ['required'],
+            'appointment_id' => ['nullable', 'exists:appointments,id'],
         ], [
-            'appointment_id.required' => 'Please select appointment',
+            'random_id.required'    => 'Package identifier is required',
             'appointment_id.exists' => 'Appointment not found',
         ]);
 
