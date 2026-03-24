@@ -42,7 +42,9 @@ class Resources extends BaseModal
             ->where('resource_has_rota.resource_type_id', '=', config('constants.resource_room_type_id'))
             ->where('resource_has_rota_days.date', '>', $start)
             ->where('resource_has_rota_days.date', '<', $end)
-            ->min(DB::raw('time(resource_has_rota_days.start_timestamp)'));
+            ->selectRaw('time(resource_has_rota_days.start_timestamp) as min_time')
+            ->orderBy('min_time')
+            ->value('min_time');
     }
 
     /**
@@ -58,7 +60,9 @@ class Resources extends BaseModal
             ->where('resources.external_id', '=', $doctor_id)
             ->where('resource_has_rota_days.date', '>', $start)
             ->where('resource_has_rota_days.date', '<', $end)
-            ->min(DB::raw('time(resource_has_rota_days.start_timestamp)'));
+            ->selectRaw('time(resource_has_rota_days.start_timestamp) as min_time')
+            ->orderBy('min_time')
+            ->value('min_time');
     }
 
     /*
@@ -296,7 +300,7 @@ class Resources extends BaseModal
         $account_id = Auth::User()->account_id;
         $resource_type_id = self::getResourceType('Machine');
         $location_id = $location_id;
-        $resources = DB::select(DB::raw("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' "));
+        $resources = DB::select("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' ");
         $resources_array = [];
         foreach ($resources as $r) {
             $r = $r->id;
@@ -316,7 +320,7 @@ class Resources extends BaseModal
     {
         $account_id = Auth::User()->account_id;
         $resource_type_id = self::getResourceType('Machine');
-        $resources = DB::select(DB::raw("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.id = '$machine_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' "));
+        $resources = DB::select("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.id = '$machine_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' ");
         $resources_array = [];
         foreach ($resources as $r) {
             $r = $r->id;

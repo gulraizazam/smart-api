@@ -2777,7 +2777,7 @@ class AppointmentsController extends Controller
                          'editable' => true,
                          'overlap' => false,
                          'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0] ?? 0)->addMinutes($dutation[1] ?? 0)->format('H:i'),
+                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours((int)($dutation[0] ?? 0))->addMinutes((int)($dutation[1] ?? 0))->format('H:i'),
                          'color' => $appointment?->service?->color ?? '#fff',
                          'resourceId' => $appointment->doctor_id,
                      ];
@@ -4099,7 +4099,7 @@ class AppointmentsController extends Controller
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours((int)($dutation[0] ?? 0))->addMinutes((int)($dutation[1] ?? 0))->format('H:i'),
                         'color' => $appointment->service->color, // Use exact service color
                         'resourceId' => $appointment->doctor_id, // Use doctor_id for resource calendar view
                     ];
@@ -4117,7 +4117,7 @@ class AppointmentsController extends Controller
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
-                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
+                        'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours((int)($dutation[0] ?? 0))->addMinutes((int)($dutation[1] ?? 0))->format('H:i'),
                         'color' => $appointment->service->color,
                         'resourceId' => $appointment->doctor_id, // Use doctor_id for resource calendar view
                     ];
@@ -5116,6 +5116,7 @@ class AppointmentsController extends Controller
             }
 
             $rota = $this->checkRota($appointment, $request);
+            
             if ($rota['status']) {
                 $updateData = [
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format('Y-m-d'),
@@ -5173,23 +5174,30 @@ class AppointmentsController extends Controller
         // Always prefer scheduled_date and scheduled_time if available (from form)
         // Otherwise fall back to start (from calendar click)
         if ($request->has('scheduled_date') && $request->has('scheduled_time')) {
+         
             $object->start = $request->scheduled_date.'T'.\Illuminate\Support\Carbon::parse($request->scheduled_time)->format('H:i:s');
         } elseif ($request->scheduled_date && $request->scheduled_time) {
             $object->start = $request->scheduled_date.'T'.\Illuminate\Support\Carbon::parse($request->scheduled_time)->format('H:i:s');
-        } else {
+       
+            } else {
+           
             $object->start = $request->start;
         }
+        
         $object->city_id = $request->city_id ?? '';
         $object->doctor_id = $request->doctor_id;
         $object->location_id = $request->location_id;
         $object->appointment_type = $appointment->appointment_type_id == 1 ? 'consulting' : 'treatment';
         if ($appointment->appointment_type_id == config('constants.appointment_type_consultancy')) {
-            $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+       
+        $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
         } else {
+           
             $object->machine_id = $appointment->resource_id;
+            
             $rota = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($object);
         }
-
+ 
         return $rota;
     }
 

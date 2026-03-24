@@ -49,10 +49,15 @@ class LeadsController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         try {
+            \Log::info('Leads Datatable - Start', ['request_all' => $request->all()]);
+            
             $filters = getFilters($request->all());
+            \Log::info('Leads Datatable - Filters extracted', ['filters' => $filters]);
+            
             $leadType = $request->get('type');
             $filename = $leadType ? 'junk_leads' : 'leads';
             $accountId = Auth::user()->account_id;
+            \Log::info('Leads Datatable - Basic params', ['leadType' => $leadType, 'filename' => $filename, 'accountId' => $accountId]);
 
             // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
@@ -61,8 +66,12 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Records deleted successfully.', true);
             }
 
+            \Log::info('Leads Datatable - Calling getDatatableData');
             $datatableData = $this->leadService->getDatatableData($filters, $leadType);
+            \Log::info('Leads Datatable - getDatatableData returned', ['total' => $datatableData['total']]);
+            
             [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $datatableData['total']);
+            \Log::info('Leads Datatable - Pagination calculated', ['displayLength' => $displayLength, 'displayStart' => $displayStart]);
 
             // Execute query with pagination - select only needed columns
             $query = $datatableData['query'];
@@ -71,6 +80,7 @@ class LeadsController extends Controller
                 $query->where('leads.active', 1);
             }
 
+            \Log::info('Leads Datatable - Executing query');
             $leads = $query->select([
                     'leads.id',
                     'leads.name',
@@ -89,15 +99,38 @@ class LeadsController extends Controller
                 ->orderBy($datatableData['orderBy'], $datatableData['order'])
                 ->get();
 
-            // Get lookup data with caching
-            $users = $this->getCachedUsers($accountId);
-            $regions = $this->getCachedRegions($accountId);
-            $leadStatuses = $this->getCachedLeadStatuses($accountId);
+            \Log::info('Leads Datatable - Query executed', ['count' => $leads->count()]);
+
+            // Get lookup data - only for the current page (no caching to avoid memory issues)
+            \Log::info('Leads Datatable - Getting lookups for current page');
+            $userIds = $leads->pluck('created_by')->unique()->filter()->toArray();
+            $regionIds = $leads->pluck('region_id')->unique()->filter()->toArray();
+            $statusIds = $leads->pluck('lead_status_id')->unique()->filter()->toArray();
+            
+            $users = User::whereIn('id', $userIds)
+                ->select('id', 'name')
+                ->get()
+                ->keyBy('id')
+                ->toArray();
+            
+            $regions = Regions::whereIn('id', $regionIds)
+                ->select('id', 'name')
+                ->get()
+                ->keyBy('id')
+                ->toArray();
+            
+            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)
+                ->select('id', 'name', 'parent_id')
+                ->get()
+                ->keyBy('id')
+                ->toArray();
 
             // Transform data
+            \Log::info('Leads Datatable - Transforming data');
             $records = $this->transformLeadsForDatatable($leads, $users, $regions, $leadStatuses);
 
             // Add filter data (cached)
+            \Log::info('Leads Datatable - Getting filter data');
             $filterData = $this->leadService->getFilterData($filename);
             $records['filter_values'] = $filterData['filter_values'];
             $records['active_filters'] = $filterData['active_filters'];
@@ -115,8 +148,15 @@ class LeadsController extends Controller
             // Add permissions (cached)
             $records['permissions'] = $this->getPermissions();
 
+            \Log::info('Leads Datatable - Success, returning data');
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
+            \Log::error('Leads Datatable - Exception caught', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return ApiHelper::apiException($e);
         }
     }
@@ -126,15 +166,26 @@ class LeadsController extends Controller
      */
     protected function getCachedUsers(int $accountId): array
     {
-        return \Illuminate\Support\Facades\Cache::remember(
-            "datatable_users_{$accountId}",
-            300, // 5 minutes
-            fn() => User::where('account_id', $accountId)
-                ->select('id', 'name')
-                ->get()
-                ->keyBy('id')
-                ->toArray()
-        );
+        try {
+            \Log::info('Leads Datatable - getCachedUsers start', ['accountId' => $accountId]);
+            $result = \Illuminate\Support\Facades\Cache::remember(
+                "datatable_users_{$accountId}",
+                300, // 5 minutes
+                fn() => User::where('account_id', $accountId)
+                    ->select('id', 'name')
+                    ->get()
+                    ->keyBy('id')
+                    ->toArray()
+            );
+            \Log::info('Leads Datatable - getCachedUsers success', ['count' => count($result)]);
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Leads Datatable - getCachedUsers failed', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
+            throw $e;
+        }
     }
 
     /**

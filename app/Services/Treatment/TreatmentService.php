@@ -300,8 +300,7 @@ class TreatmentService
             })
             ->where('appointments.appointment_type_id', '=', $treatmentTypeId)
             ->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres())
-            ->where('appointment_type_id', config('constants.appointment_type_service'));
+            ->whereIn('appointments.location_id', ACL::getUserCentres());
 
         $this->applyFiltersToQuery($query, $where, $filters);
 
@@ -340,8 +339,7 @@ class TreatmentService
                 }
             ])
             ->where('appointments.appointment_type_id', '=', $treatmentTypeId)
-            ->whereIn('appointments.location_id', ACL::getUserCentres())
-            ->where('appointment_type_id', config('constants.appointment_type_service'));
+            ->whereIn('appointments.location_id', ACL::getUserCentres());
 
         $this->applyFiltersToQuery($query, $where, $filters);
 
@@ -584,10 +582,8 @@ class TreatmentService
      */
     protected function getTreatmentTypeId(): int
     {
-        return Cache::remember('treatment_type_id', self::CACHE_TTL, function () {
-            $treatmentType = AppointmentTypes::where('slug', 'treatment')->first();
-            return $treatmentType ? $treatmentType->id : 0;
-        });
+        // Use config constant directly instead of database query
+        return config('constants.appointment_type_service');
     }
 
     /**
@@ -608,7 +604,6 @@ class TreatmentService
         $accountId = Auth::user()->account_id;
         Cache::forget("treatment_lookup_data_{$accountId}");
         Cache::forget("treatment_filter_values_{$accountId}_" . md5(json_encode(ACL::getUserCentres())));
-        Cache::forget('treatment_type_id');
         Cache::forget('paid_invoice_status');
     }
 
@@ -1138,39 +1133,17 @@ class TreatmentService
             return false;
         }
 
-        $start = Carbon::parse($startDateTime)->format('Y-m-d');
         $startedTime = Carbon::parse($startDateTime)->format('Y-m-d H:i:s');
 
-        $resourceDoctor = Resources::where('external_id', $doctorId)->first();
-        if (!$resourceDoctor) {
-            return false;
-        }
+        $record = Resources::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
+            ->where('resources.external_id', $doctorId)
+            ->where('resource_has_rota.location_id', $locationId)
+            ->where('resource_has_rota_days.start_timestamp', '<=', $startedTime)
+            ->where('resource_has_rota_days.end_timestamp', '>', $startedTime)
+            ->exists();
 
-        $resourceRotas = ResourceHasRota::where([
-            ['resource_id', '=', $resourceDoctor->id],
-            ['location_id', '=', $locationId]
-        ])->get();
-
-        $activeRota = null;
-        foreach ($resourceRotas as $rota) {
-            $rotaStart = Carbon::parse($rota->created_at)->format('Y-m-d');
-            if ($start >= $rotaStart && $start <= $rota->end) {
-                $activeRota = $rota;
-                break;
-            }
-        }
-
-        if (!$activeRota) {
-            return false;
-        }
-
-        return ResourceHasRotaDays::where([
-            ['resource_has_rota_id', '=', $activeRota->id],
-            ['date', '=', $start],
-            ['active', '=', '1'],
-            ['start_timestamp', '<=', $startedTime],
-            ['end_timestamp', '>', $startedTime],
-        ])->exists();
+        return $record;
     }
 
     /**

@@ -515,6 +515,26 @@ class ResourceHasRotaDays extends Model
             }
         }
 
+        // Fallback: look up the rota day directly by date across all active rotas for this resource,
+        // in case the rota's start/end range was not properly set (e.g. created via storeShifts fallback).
+        $query = self::join('resource_has_rota', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
+            ->whereDate('resource_has_rota_days.date', '=', $date)
+            ->where('resource_has_rota.resource_id', '=', $resource_id)
+            ->where('resource_has_rota.account_id', '=', $account_id)
+            ->where('resource_has_rota.active', '=', 1)
+            ->where('resource_has_rota_days.active', '=', 1)
+            ->whereNull('resource_has_rota_days.deleted_at');
+
+        if ($location_id) {
+            $query->where('resource_has_rota.location_id', '=', $location_id);
+        }
+
+        $fallback_day = $query->select('resource_has_rota_days.*')->first();
+
+        if ($fallback_day) {
+            return $fallback_day->toArray();
+        }
+
         return [];
     }
 }

@@ -861,7 +861,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     // Consultancy API Routes (Optimized)
     Route::prefix('consultancy')->name('consultancy.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('index');
+        Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('api_index');
         Route::post('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'store'])->name('store');
         Route::put('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'update'])->name('update');
         Route::delete('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'destroy'])->name('destroy');
@@ -873,7 +873,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     // Treatment API Routes (Optimized)
     Route::prefix('treatment')->name('treatment.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('index');
+        Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('api_index');
         Route::post('/', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
         Route::put('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'update'])->name('update');
         Route::get('scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'scheduled'])->name('scheduled');

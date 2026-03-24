@@ -583,7 +583,7 @@ class PackagesController extends Controller
                     $membershipRecord = Membership::find($membershipCodeId);
                     if ($membershipRecord) {
                         $membershipType = MembershipType::find($packageBundle->membership_type_id);
-                        $durationDays = $membershipType->period ?? 365;
+                        $durationDays = (int)($membershipType->period ?? 365);
 
                         $startDate = now()->toDateString();
                         $endDate = now()->addDays($durationDays)->toDateString();

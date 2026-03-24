@@ -16,26 +16,30 @@ class ConsultancyService extends AppointmentService
     public function __construct()
     {
         parent::__construct();
-        $this->consultancyTypeId = $this->getConsultancyTypeId();
     }
 
     protected function getConsultancyTypeId()
     {
-        $cacheKey = "consultancy_type_id_{$this->account_id}";
+        if ($this->consultancyTypeId === null) {
+            $accountId = $this->getAccountId();
+            $cacheKey = "consultancy_type_id_{$accountId}";
 
-        return Cache::remember($cacheKey, 3600, function () {
-            $type = AppointmentTypes::where([
-                'account_id' => $this->account_id,
-                'slug' => 'consultancy'
-            ])->first();
+            $this->consultancyTypeId = Cache::remember($cacheKey, 3600, function () use ($accountId) {
+                $type = AppointmentTypes::where([
+                    'account_id' => $accountId,
+                    'slug' => 'consultancy'
+                ])->first();
 
-            return $type ? $type->id : null;
-        });
+                return $type ? $type->id : null;
+            });
+        }
+
+        return $this->consultancyTypeId;
     }
 
     public function getConsultancyList($filters)
     {
-        if (!$this->consultancyTypeId) {
+        if (!$this->getConsultancyTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -44,11 +48,11 @@ class ConsultancyService extends AppointmentService
 
     public function createConsultancy(array $data)
     {
-        if (!$this->consultancyTypeId) {
+        if (!$this->getConsultancyTypeId()) {
             throw AppointmentException::invalidType();
         }
 
-        $data['appointment_type_id'] = $this->consultancyTypeId;
+        $data['appointment_type_id'] = $this->getConsultancyTypeId();
         $data['consultancy_type'] = $data['consultancy_type'] ?? 'in_person';
         
         unset($data['resource_id']);
@@ -58,7 +62,7 @@ class ConsultancyService extends AppointmentService
         if (!isset($data['appointment_status_id'])) {
             // Get default status for this account (not filtered by appointment_type_id)
             $defaultStatus = \App\Models\AppointmentStatuses::where([
-                'account_id' => $this->account_id,
+                'account_id' => $this->getAccountId(),
                 'is_default' => 1
             ])->first();
             
@@ -80,8 +84,8 @@ class ConsultancyService extends AppointmentService
     {
         $appointment = Appointments::where([
             'id' => $id,
-            'account_id' => $this->account_id,
-            'appointment_type_id' => $this->consultancyTypeId
+            'account_id' => $this->getAccountId(),
+            'appointment_type_id' => $this->getConsultancyTypeId()
         ])->first();
 
         if (!$appointment) {
@@ -97,7 +101,7 @@ class ConsultancyService extends AppointmentService
 
     public function getScheduledConsultancies($filters)
     {
-        if (!$this->consultancyTypeId) {
+        if (!$this->getConsultancyTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -107,7 +111,7 @@ class ConsultancyService extends AppointmentService
 
     public function getNonScheduledConsultancies($filters)
     {
-        if (!$this->consultancyTypeId) {
+        if (!$this->getConsultancyTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -117,7 +121,7 @@ class ConsultancyService extends AppointmentService
 
     public function getConsultancyStatistics($filters = [])
     {
-        if (!$this->consultancyTypeId) {
+        if (!$this->getConsultancyTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -130,7 +134,7 @@ class ConsultancyService extends AppointmentService
         $appointment = Appointments::where([
             'id' => $id,
             'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->consultancyTypeId
+            'appointment_type_id' => $this->getConsultancyTypeId()
         ])->first();
 
         if (!$appointment) {
@@ -145,7 +149,7 @@ class ConsultancyService extends AppointmentService
         $appointment = Appointments::where([
             'id' => $id,
             'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->consultancyTypeId
+            'appointment_type_id' => $this->getConsultancyTypeId()
         ])->first();
 
         if (!$appointment) {

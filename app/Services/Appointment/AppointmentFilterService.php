@@ -206,12 +206,8 @@ class AppointmentFilterService
      */
     public function buildBaseQuery()
     {
-        // Cache appointment types
-        static $consultancyType, $treatmentType;
-        if (!$consultancyType) {
-            $consultancyType = AppointmentTypes::where('slug', 'consultancy')->first();
-            $treatmentType = AppointmentTypes::where('slug', 'treatment')->first();
-        }
+        // Use config constant for consultancy type ID (same as TreatmentService approach)
+        $consultancyTypeId = config('constants.appointment_type_consultancy');
 
         // Cache permissions
         $canViewConsultancy = Gate::allows('appointments_consultancy');
@@ -223,7 +219,7 @@ class AppointmentFilterService
         })
         //->whereIn('appointments.city_id', ACL::getUserCities())
         ->whereIn('appointments.location_id', ACL::getUserCentres())
-        ->where('appointments.appointment_type_id', $consultancyType->id); // Always filter for consultancy only
+        ->where('appointments.appointment_type_id', $consultancyTypeId); // Always filter for consultancy only
 
         return $query;
     }

@@ -75,7 +75,7 @@ class MembershipRenewalService
             }
 
             $startDate = $options['start_date'] ?? Carbon::parse($currentMembership->end_date)->addDay()->format('Y-m-d');
-            $endDate = $options['end_date'] ?? Carbon::parse($startDate)->addMonths($renewalType->period)->format('Y-m-d');
+            $endDate = $options['end_date'] ?? Carbon::parse($startDate)->addMonths((int)$renewalType->period)->format('Y-m-d');
 
             $newMembership->update([
                 'patient_id' => $patientId,

@@ -18,26 +18,30 @@ class TreatmentService extends AppointmentService
     public function __construct()
     {
         parent::__construct();
-        $this->treatmentTypeId = $this->getTreatmentTypeId();
     }
 
     protected function getTreatmentTypeId()
     {
-        $cacheKey = "treatment_type_id_{$this->account_id}";
+        if ($this->treatmentTypeId === null) {
+            $accountId = $this->getAccountId();
+            $cacheKey = "treatment_type_id_{$accountId}";
 
-        return Cache::remember($cacheKey, 3600, function () {
-            $type = AppointmentTypes::where([
-                'account_id' => $this->account_id,
-                'slug' => 'treatment'
-            ])->first();
+            $this->treatmentTypeId = Cache::remember($cacheKey, 3600, function () use ($accountId) {
+                $type = AppointmentTypes::where([
+                    'account_id' => $accountId,
+                    'slug' => 'treatment'
+                ])->first();
 
-            return $type ? $type->id : null;
-        });
+                return $type ? $type->id : null;
+            });
+        }
+
+        return $this->treatmentTypeId;
     }
 
     public function getTreatmentList($filters)
     {
-        if (!$this->treatmentTypeId) {
+        if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -46,11 +50,11 @@ class TreatmentService extends AppointmentService
 
     public function createTreatment(array $data)
     {
-        if (!$this->treatmentTypeId) {
+        if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
-        $data['appointment_type_id'] = $this->treatmentTypeId;
+        $data['appointment_type_id'] = $this->getTreatmentTypeId();
 
         if (isset($data['service_id'])) {
             $service = Services::find($data['service_id']);
@@ -62,7 +66,7 @@ class TreatmentService extends AppointmentService
         if (!isset($data['appointment_status_id'])) {
             // Get default status for this account
             $defaultStatus = \App\Models\AppointmentStatuses::where([
-                'account_id' => $this->account_id,
+                'account_id' => $this->getAccountId(),
                 'is_default' => 1
             ])->first();
             
@@ -84,8 +88,8 @@ class TreatmentService extends AppointmentService
     {
         $appointment = Appointments::where([
             'id' => $id,
-            'account_id' => $this->account_id,
-            'appointment_type_id' => $this->treatmentTypeId
+            'account_id' => $this->getAccountId(),
+            'appointment_type_id' => $this->getTreatmentTypeId()
         ])->first();
 
         if (!$appointment) {
@@ -97,7 +101,7 @@ class TreatmentService extends AppointmentService
 
     public function getScheduledTreatments($filters)
     {
-        if (!$this->treatmentTypeId) {
+        if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -107,7 +111,7 @@ class TreatmentService extends AppointmentService
 
     public function getNonScheduledTreatments($filters)
     {
-        if (!$this->treatmentTypeId) {
+        if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -117,7 +121,7 @@ class TreatmentService extends AppointmentService
 
     public function getTreatmentStatistics($filters = [])
     {
-        if (!$this->treatmentTypeId) {
+        if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
@@ -127,11 +131,11 @@ class TreatmentService extends AppointmentService
 
     public function getAvailableResources($location_id, $service_id = null)
     {
-        $cacheKey = "treatment_resources_{$this->account_id}_{$location_id}_{$service_id}";
+        $cacheKey = "treatment_resources_{$this->getAccountId()}_{$location_id}_{$service_id}";
 
         return Cache::remember($cacheKey, 1800, function () use ($location_id, $service_id) {
             $query = Resources::where([
-                'account_id' => $this->account_id,
+                'account_id' => $this->getAccountId(),
                 'location_id' => $location_id,
                 'active' => 1
             ]);
@@ -148,12 +152,12 @@ class TreatmentService extends AppointmentService
 
     public function getServicesByLocation($location_id)
     {
-        $cacheKey = "treatment_services_location_{$this->account_id}_{$location_id}";
+        $cacheKey = "treatment_services_location_{$this->getAccountId()}_{$location_id}";
 
         return Cache::remember($cacheKey, 3600, function () use ($location_id) {
             return Services::whereHas('locations', function ($q) use ($location_id) {
                 $q->where('location_id', $location_id);
-            })->where('account_id', $this->account_id)
+            })->where('account_id', $this->getAccountId())
               ->where('active', 1)
               ->orderBy('name')
               ->get();

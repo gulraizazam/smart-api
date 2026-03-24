@@ -157,6 +157,7 @@ class AppointmentsController extends Controller
 
     public function updateSchedule(Request $request)
     {
+       
         return $this->schedule($request);
     }
 
@@ -232,7 +233,7 @@ class AppointmentsController extends Controller
                     'editable' => true,
                     'overlap' => false,
                     'start' => \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d') . ' ' . \Carbon\Carbon::parse($appointment->scheduled_time)->format('H:i'),
-                    'end' => \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d') . ' ' . \Carbon\Carbon::parse($appointment->scheduled_time)->addHours($duration[0] ?? 0)->addMinutes($duration[1] ?? 0)->format('H:i'),
+                    'end' => \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d') . ' ' . \Carbon\Carbon::parse($appointment->scheduled_time)->addHours((int)($duration[0] ?? 0))->addMinutes((int)($duration[1] ?? 0))->format('H:i'),
                     'color' => $appointment->service->color ?? '#fff',
                     'resourceId' => $appointment->doctor_id,
                 ];

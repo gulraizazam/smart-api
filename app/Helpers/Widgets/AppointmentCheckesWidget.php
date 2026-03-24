@@ -198,19 +198,28 @@ class AppointmentCheckesWidget
 
         $resource_rota_doctor = ResourceHasRota::where([
             ['resource_id', '=', $resource_id_doctor->id],
-            ['location_id', '=', $request->location_id]
+            ['location_id', '=', $request->location_id],
+            ['active', '=', 1],
         ])->get();
-
+      
         foreach ($resource_rota_doctor as $resourceroata) {
-            if (($start >= Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
+            $hasRotaDay = ResourceHasRotaDays::where('resource_has_rota_id', $resourceroata->id)
+                ->whereDate('date', $start)
+                ->where('active', 1)
+                ->exists();
+
+            if ($hasRotaDay) {
                 $continue_rota_doctor[0] = $resourceroata;
+                break;
             }
         }
 
         $started_time = \Carbon\Carbon::parse($request->start)->format('Y-m-d H:i:s');
+       
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
-
+ 
         if (count($continue_rota_doctor) > 0) {
+          
             // Get ALL rota days for this date (supports multiple shifts per day)
             $all_rota_days = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota_doctor[0]->id],
