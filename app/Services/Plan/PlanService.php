@@ -2865,16 +2865,16 @@ class PlanService
                 throw new PlanException('Plan is already settled. You cannot add further treatment in this plan.', 400);
             }
 
-            // Handle appointment creation/update
-            $appointmentId = $this->handleAppointmentForUpdate($data, $package);
-            
-            if (!$appointmentId) {
-                throw new PlanException('Appointment ID is required', 400);
-            }
-
             // Check if new services or payment
             $hasNewServices = isset($data['package_bundles']) && !empty($data['package_bundles']);
             $hasPayment = !empty($data['cash_amount']) && $data['cash_amount'] != '0';
+
+            // Handle appointment creation/update (only required when adding services or payment)
+            $appointmentId = $this->handleAppointmentForUpdate($data, $package);
+
+            if (!$appointmentId && ($hasNewServices || $hasPayment)) {
+                throw new PlanException('Appointment ID is required', 400);
+            }
 
             // Update package if needed
             if ($hasNewServices || $hasPayment) {
