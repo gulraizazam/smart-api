@@ -896,6 +896,34 @@ class AppointmentService
                 $updateData['resource_id'] = $data['resource_id'];
             }
 
+            // Resolve resource_id and resource_has_rota_day_id from the doctor's rota for the scheduled date
+            $resolvedDoctorId = $updateData['doctor_id'] ?? $appointment->doctor_id;
+            $resolvedDate = $scheduleData['scheduled_date'] ?? null;
+            $resolvedLocationId = $data['location_id'] ?? $appointment->location_id;
+
+            if ($resolvedDoctorId && $resolvedDate) {
+                $resource = \App\Models\Resources::where([
+                    'external_id' => $resolvedDoctorId,
+                    'resource_type_id' => \Illuminate\Support\Facades\Config::get('constants.resource_doctor_type_id'),
+                    'account_id' => $accountId,
+                ])->first();
+
+                if ($resource) {
+                    $updateData['resource_id'] = $resource->id;
+
+                    $rotaDay = \App\Models\ResourceHasRotaDays::getSingleDayRotaWithResourceID(
+                        $resource->id,
+                        $resolvedDate,
+                        $accountId,
+                        $resolvedLocationId
+                    );
+
+                    if (!empty($rotaDay)) {
+                        $updateData['resource_has_rota_day_id'] = $rotaDay['id'];
+                    }
+                }
+            }
+
             if (isset($data['reschedule']) && $data['reschedule']) {
                 $updateData['converted_by'] = $this->getUserId();
             }

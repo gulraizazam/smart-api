@@ -1861,7 +1861,7 @@ class PlanService
                     if ($isFullyPaid) {
                         // Fully consume: set patient_id, dates, and mark as active
                         $membershipType = MembershipType::find($membership['membershipId'] ?? $membershipRecord->membership_type_id);
-                        $durationDays = $membershipType->period ?? 365; // Default 365 days (1 year) if not set
+                        $durationDays = (int)($membershipType->period ?? 365); // Default 365 days (1 year) if not set
                         
                         $startDate = now()->toDateString();
                         $endDate = now()->addDays($durationDays)->toDateString();

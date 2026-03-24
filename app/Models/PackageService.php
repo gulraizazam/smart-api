@@ -157,7 +157,7 @@ class PackageService extends Model
 
         $parent_id = $packagebundle->id;
 
-        DB::select(DB::raw("UPDATE package_services SET package_id = '$packagebundle->package_id' WHERE random_id = '$packagebundle->random_id' AND package_bundle_id = '$packagebundle->id'"));
+        DB::statement("UPDATE package_services SET package_id = '$packagebundle->package_id' WHERE random_id = '$packagebundle->random_id' AND package_bundle_id = '$packagebundle->id'");
 
         //  I use that code to perform update but it update updated_at col so that s why I use Raw query
         //        self::where([

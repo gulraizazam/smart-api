@@ -43,7 +43,7 @@ class TreatmentController extends Controller
                 $treatments = $query->paginate($perPage);
             }
 
-            return ApiHelper::apiResponse(200, 'Treatments retrieved successfully.', $treatments);
+            return ApiHelper::apiResponse(200, 'Treatments retrieved successfully.', true, $treatments);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -61,7 +61,7 @@ class TreatmentController extends Controller
 
             $treatment = $this->treatmentService->createTreatment($request->validated());
 
-            return ApiHelper::apiResponse(200, 'Treatment created successfully.', $treatment);
+            return ApiHelper::apiResponse(200, 'Treatment created successfully.', true, $treatment);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -103,7 +103,7 @@ class TreatmentController extends Controller
 
             $treatments = $this->treatmentService->getScheduledTreatments($filters);
 
-            return ApiHelper::apiResponse(200, 'Scheduled treatments retrieved successfully.', $treatments);
+            return ApiHelper::apiResponse(200, 'Scheduled treatments retrieved successfully.', true, $treatments);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -125,7 +125,7 @@ class TreatmentController extends Controller
 
             $treatments = $this->treatmentService->getNonScheduledTreatments($filters);
 
-            return ApiHelper::apiResponse(200, 'Non-scheduled treatments retrieved successfully.', $treatments);
+            return ApiHelper::apiResponse(200, 'Non-scheduled treatments retrieved successfully.', true, $treatments);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -148,7 +148,7 @@ class TreatmentController extends Controller
 
             $statistics = $this->treatmentService->getTreatmentStatistics($filters);
 
-            return ApiHelper::apiResponse(200, 'Treatment statistics retrieved successfully.', $statistics);
+            return ApiHelper::apiResponse(200, 'Treatment statistics retrieved successfully.', true, $statistics);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -174,7 +174,7 @@ class TreatmentController extends Controller
                 $request->service_id
             );
 
-            return ApiHelper::apiResponse(200, 'Available resources retrieved successfully.', $resources);
+            return ApiHelper::apiResponse(200, 'Available resources retrieved successfully.', true, $resources);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -196,7 +196,7 @@ class TreatmentController extends Controller
 
             $services = $this->treatmentService->getServicesByLocation($request->location_id);
 
-            return ApiHelper::apiResponse(200, 'Services retrieved successfully.', $services);
+            return ApiHelper::apiResponse(200, 'Services retrieved successfully.', true, $services);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {

@@ -43,7 +43,7 @@ class ConsultancyController extends Controller
                 $consultancies = $query->paginate($perPage);
             }
 
-            return ApiHelper::apiResponse(200, 'Consultancies retrieved successfully.', $consultancies);
+            return ApiHelper::apiResponse(200, 'Consultancies retrieved successfully.', true, $consultancies);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -61,7 +61,7 @@ class ConsultancyController extends Controller
 
             $consultancy = $this->consultancyService->createConsultancy($request->validated());
 
-            return ApiHelper::apiResponse(200, 'Consultancy created successfully.', $consultancy);
+            return ApiHelper::apiResponse(200, 'Consultancy created successfully.', true, $consultancy);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -79,7 +79,7 @@ class ConsultancyController extends Controller
 
             $consultancy = $this->consultancyService->updateConsultancy($id, $request->validated());
 
-            return ApiHelper::apiResponse(200, 'Consultancy updated successfully.', $consultancy);
+            return ApiHelper::apiResponse(200, 'Consultancy updated successfully.', true, $consultancy);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -102,7 +102,7 @@ class ConsultancyController extends Controller
 
             $consultancies = $this->consultancyService->getScheduledConsultancies($filters);
 
-            return ApiHelper::apiResponse(200, 'Scheduled consultancies retrieved successfully.', $consultancies);
+            return ApiHelper::apiResponse(200, 'Scheduled consultancies retrieved successfully.', true, $consultancies);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -124,7 +124,7 @@ class ConsultancyController extends Controller
 
             $consultancies = $this->consultancyService->getNonScheduledConsultancies($filters);
 
-            return ApiHelper::apiResponse(200, 'Non-scheduled consultancies retrieved successfully.', $consultancies);
+            return ApiHelper::apiResponse(200, 'Non-scheduled consultancies retrieved successfully.', true, $consultancies);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -147,7 +147,7 @@ class ConsultancyController extends Controller
 
             $statistics = $this->consultancyService->getConsultancyStatistics($filters);
 
-            return ApiHelper::apiResponse(200, 'Consultancy statistics retrieved successfully.', $statistics);
+            return ApiHelper::apiResponse(200, 'Consultancy statistics retrieved successfully.', true, $statistics);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
@@ -190,7 +190,7 @@ class ConsultancyController extends Controller
 
             $consultancy = $this->consultancyService->scheduleConsultancy($id, $data);
 
-            return ApiHelper::apiResponse(200, 'Consultancy scheduled successfully.', $consultancy);
+            return ApiHelper::apiResponse(200, 'Consultancy scheduled successfully.', true, $consultancy);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {

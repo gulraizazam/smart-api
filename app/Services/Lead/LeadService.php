@@ -961,12 +961,12 @@ class LeadService
             Filters::put($userId, $filename, $key, $value);
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, $key);
-        } elseif (Filters::get($userId, $filename, $key)) {
-            $value = Filters::get($userId, $filename, $key);
-            if ($cleanNumber) {
-                $value = GeneralFunctions::cleanNumber($value);
+        } else {
+            $storedValue = Filters::get($userId, $filename, $key);
+            if ($storedValue) {
+                $value = $cleanNumber ? GeneralFunctions::cleanNumber($storedValue) : $storedValue;
+                $where[] = [$column, $operator, $prefix . $value . $suffix];
             }
-            $where[] = [$column, $operator, $prefix . $value . $suffix];
         }
 
         return $where;
@@ -985,8 +985,11 @@ class LeadService
             Filters::put($userId, $filename, 'service_id', $filters['service_id']);
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, 'service_id');
-        } elseif (Filters::get($userId, $filename, 'service_id')) {
-            $where[] = ['service_id', '=', Filters::get($userId, $filename, 'service_id')];
+        } else {
+            $storedValue = Filters::get($userId, $filename, 'service_id');
+            if ($storedValue) {
+                $where[] = ['service_id', '=', $storedValue];
+            }
         }
 
         return $where;
@@ -998,7 +1001,8 @@ class LeadService
     protected function getOrderParams(array $filters, string $filename, int $userId): array
     {
         if (isset($filters['sort'])) {
-            [$orderBy, $order] = getSortBy(['sort' => $filters['sort']], 'leads.created_at', 'DESC');
+            $orderBy = $filters['sort']['field'] ?? 'leads.created_at';
+            $order = $filters['sort']['sort'] ?? 'DESC';
             Filters::put($userId, $filename, 'order_by', $orderBy);
             Filters::put($userId, $filename, 'order', $order);
         } else {
@@ -1090,6 +1094,15 @@ class LeadService
     // =========================================================================
     // BUSINESS LOGIC MOVED FROM LEADS MODEL
     // =========================================================================
+
+    /**
+     * Search leads by phone (alias for searchLeadsByPhone)
+     * Used by API controller phoneSearch endpoint
+     */
+    public function searchByPhone(string $phone, int $accountId): Collection
+    {
+        return $this->searchLeadsByPhone($phone, $accountId);
+    }
 
     /**
      * Search leads by phone (optimized)

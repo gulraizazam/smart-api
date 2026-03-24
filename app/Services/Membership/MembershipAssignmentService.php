@@ -59,7 +59,7 @@ class MembershipAssignmentService
             }
 
             $startDate = $options['start_date'] ?? Carbon::today()->format('Y-m-d');
-            $endDate = $options['end_date'] ?? Carbon::parse($startDate)->addMonths($membershipType->period)->format('Y-m-d');
+            $endDate = $options['end_date'] ?? Carbon::parse($startDate)->addMonths((int)$membershipType->period)->format('Y-m-d');
 
             if (Carbon::parse($startDate) > Carbon::parse($endDate)) {
                 throw new MembershipException("Start date must be before end date.");
