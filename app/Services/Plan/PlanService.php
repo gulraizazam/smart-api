@@ -2221,28 +2221,31 @@ class PlanService
 
         // Get total count of bundles for this package
         $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
-        
-        // For plan type 'plan': bundle_id contains service_id, join with services table
-        // For plan type 'bundle': bundle_id contains bundle_id, join with bundles table
-        if ($package->plan_type === 'plan') {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('services.name')
-                ->toArray();
-        } else {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('bundles.name')
-                ->toArray();
-        }
+
+        // Use source_type (not plan_type) to determine what bundle_id references.
+        // plan_type defaults to 'plan' for all old records, so it cannot be trusted.
+        // source_type = 'service' → bundle_id holds a services.id
+        // source_type = 'bundle'  → bundle_id holds a bundles.id
+        $names = PackageBundles::where('package_bundles.package_id', $package->id)
+            ->leftJoin('services', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'services.id')
+                     ->where('package_bundles.source_type', '=', 'service');
+            })
+            ->leftJoin('bundles', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'bundles.id')
+                     ->where('package_bundles.source_type', '=', 'bundle');
+            })
+            ->orderBy('package_bundles.id', 'asc')
+            ->limit(2)
+            ->selectRaw('COALESCE(services.name, bundles.name) as name')
+            ->pluck('name')
+            ->filter()
+            ->values()
+            ->toArray();
 
         $planName = !empty($names) ? implode(', ', $names) : '-';
-        
-        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+
+        if ($totalBundleCount > 2) {
             $planName .= '...';
         }
 
@@ -2865,16 +2868,16 @@ class PlanService
                 throw new PlanException('Plan is already settled. You cannot add further treatment in this plan.', 400);
             }
 
-            // Handle appointment creation/update
-            $appointmentId = $this->handleAppointmentForUpdate($data, $package);
-            
-            if (!$appointmentId) {
-                throw new PlanException('Appointment ID is required', 400);
-            }
-
             // Check if new services or payment
             $hasNewServices = isset($data['package_bundles']) && !empty($data['package_bundles']);
             $hasPayment = !empty($data['cash_amount']) && $data['cash_amount'] != '0';
+
+            // Handle appointment creation/update (only required when adding services or payment)
+            $appointmentId = $this->handleAppointmentForUpdate($data, $package);
+
+            if (!$appointmentId && ($hasNewServices || $hasPayment)) {
+                throw new PlanException('Appointment ID is required', 400);
+            }
 
             // Update package if needed
             if ($hasNewServices || $hasPayment) {
