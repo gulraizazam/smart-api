@@ -66,7 +66,7 @@ class StaffAdvanceService
                 'total_expenses' => (float) $totalExpenses,
                 'outstanding' => $this->getOutstanding($user->id, $accountId),
             ];
-        })->filter(fn($item) => $item['total_advances'] > 0 || $item['total_returns'] > 0 || $item['total_expenses'] > 0)
+        })->filter(fn($item) => $item['total_advances'] != 0 || $item['total_returns'] != 0 || $item['total_expenses'] != 0)
           ->values();
     }
 
