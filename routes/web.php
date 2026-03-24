@@ -7,7 +7,6 @@ use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
-use Facade\Ignition\Support\Packagist\Package;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ApplicationUserController;
