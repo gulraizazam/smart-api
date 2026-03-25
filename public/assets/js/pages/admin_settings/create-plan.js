@@ -3227,7 +3227,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
-
+        alert("Please add services through Add Service button");
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
