@@ -113,7 +113,7 @@ function actions(data) {
     return '';
 }
 
-// View plan display - copied from main plans module (create-plan1.js)
+// View plan display - copied from main plans module (create-plan.js)
 function viewPlan($route) {
     $("#modal_display").modal("show");
 
@@ -133,7 +133,7 @@ function viewPlan($route) {
     });
 }
 
-// Display plan data - copied from main plans module (create-plan1.js)
+// Display plan data - copied from main plans module (create-plan.js)
 function displayData(response) {
 
     try {
@@ -274,7 +274,7 @@ function toggle(id) {
     $('.' + id).toggle();
 }
 
-// Edit plan row - copied from main plans module (create-plan1.js)
+// Edit plan row - copied from main plans module (create-plan.js)
 function editPlanRow(url) {
     total_amountArray = [];
     edit_amountArray = [];
@@ -3489,7 +3489,7 @@ function checkpaymentMode() {
     }
 }
 
-// Bind input event for cash amount field to update grand total (matching create-plan1.js behavior)
+// Bind input event for cash amount field to update grand total (matching create-plan.js behavior)
 // Using event delegation since modal content is loaded dynamically
 $(document).on('input', '#edit_cash_amount_1', function () {
     let val = $(this).val();

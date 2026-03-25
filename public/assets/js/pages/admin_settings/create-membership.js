@@ -1941,7 +1941,7 @@ function editMembershipSoldBy(packageBundleId, locationId) {
 /*
  * Handle sold by update callback for membership modal
  * This overrides the default page reload behavior
- * NOTE: This handler must run BEFORE the one in create-plan1.js
+ * NOTE: This handler must run BEFORE the one in create-plan.js
  */
 $(document).on('click.membership', '#update_sold_by_btn', function(e) {
     // Check if this is from membership edit modal

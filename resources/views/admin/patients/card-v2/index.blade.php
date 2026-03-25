@@ -190,12 +190,12 @@
     
     @if($section == 'plans')
         <script>
-            // Pass data to JS - these variables trigger patient-specific filtering in create-plan1.js
+            // Pass data to JS - these variables trigger patient-specific filtering in create-plan.js
             window.isPatientCardContext = true;
             window.patientCardPatientId = {{ $patientId }};
             // Note: 'permissions' is already declared in row-details.js, will be set from API response
             
-            // Stub functions - not needed in patient card context but called by create-plan1.js
+            // Stub functions - not needed in patient card context but called by create-plan.js
             function getUserCity() { /* Not needed - patient card doesn't use city filters */ }
             function getUserCentre() { /* Not needed - patient card doesn't use centre filters */ }
             function setFilters() { /* Not needed - patient card doesn't use filters */ }
@@ -215,7 +215,7 @@
         {{-- Use the SAME JS files as main plans module --}}
         <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
         <script src="{{ asset('assets/js/pages/patients/plan-form.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/admin_settings/create-plan1.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-plan1.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-plan.js')) }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-membership.js') }}"></script>
