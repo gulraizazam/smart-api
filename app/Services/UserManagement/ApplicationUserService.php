@@ -293,7 +293,8 @@ class ApplicationUserService
         // Assign roles
         $roles = $data['roles'] ?? [];
         if (!empty($roles)) {
-            $user->assignRole($roles);
+            $roleModels = Role::whereIn('id', $roles)->get();
+            $user->assignRole($roleModels);
             $this->syncRoleHasUsers($user, $roles);
         }
         
@@ -368,7 +369,8 @@ class ApplicationUserService
         // Sync roles
         $roles = $data['roles'] ?? [];
         if (!empty($roles)) {
-            $user->syncRoles($roles);
+            $roleModels = Role::whereIn('id', $roles)->get();
+            $user->syncRoles($roleModels);
             $user->role_has_users()->forceDelete();
             $this->syncRoleHasUsers($user, $roles);
         }
