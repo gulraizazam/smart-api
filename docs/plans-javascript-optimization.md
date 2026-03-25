@@ -10,12 +10,12 @@ As part of the plans module optimization, the JavaScript files were also optimiz
 
 **Reason:**
 - File was not being used by any blade template
-- Contained duplicate code from `create-plan1.js`
+- Contained duplicate code from `create-plan.js`
 - Created confusion during maintenance
 - Caused unnecessary work updating both files
 
 ### 2. Consolidated to Single File
-**Active File:** `public/assets/js/pages/admin_settings/create-plan1.js` (3,702 lines)
+**Active File:** `public/assets/js/pages/admin_settings/create-plan.js` (3,702 lines)
 
 **Used By:**
 - `resources/views/admin/packages/index.blade.php`
@@ -35,7 +35,7 @@ As part of the plans module optimization, the JavaScript files were also optimiz
 
 ### 3. Added Optimized API Integration
 
-**Updated in create-plan1.js:**
+**Updated in create-plan.js:**
 
 #### Line 305: Optimized Datatable URL
 ```javascript
@@ -104,7 +104,7 @@ $(document).ready(function () {
 
 ```
 public/assets/js/pages/admin_settings/
-├── create-plan1.js          ✅ Active (3,702 lines)
+├── create-plan.js          ✅ Active (3,702 lines)
 └── plans.js                ❌ Deleted (was duplicate)
 ```
 
@@ -113,7 +113,7 @@ public/assets/js/pages/admin_settings/
 ### Blade Templates
 ```php
 @push('js')
-    <script src="{{ asset('assets/js/pages/admin_settings/create-plan1.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
 @endpush
 ```
 
@@ -170,7 +170,7 @@ route('admin.packages.display', { id: id })
 ### Recommended Refactoring
 ```javascript
 // Current structure (all in one file)
-create-plan1.js (3,702 lines)
+create-plan.js (3,702 lines)
 
 // Suggested structure
 plans/

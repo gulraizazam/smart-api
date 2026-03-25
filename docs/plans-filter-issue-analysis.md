@@ -6,7 +6,7 @@ Filters are not working in the optimized plans datatable.
 ## Root Cause Analysis
 
 ### 1. Frontend Filter Submission
-**File:** `public/assets/js/pages/admin_settings/create-plan1.js` - Lines 1140-1158
+**File:** `public/assets/js/pages/admin_settings/create-plan.js` - Lines 1140-1158
 
 ```javascript
 function applyFilters(datatable) {
