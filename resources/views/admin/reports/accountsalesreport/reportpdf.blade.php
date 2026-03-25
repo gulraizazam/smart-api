@@ -62,7 +62,7 @@
                 <table>
                     <tr>
                         <td>
-                            <img class="logo" src="https://crm3.cutera.pk/assets/media/new_logo.png"
+                            <img class="logo" src="{{ public_path('assets/media/new_logo.png') }}"
                                  class="img-responsive" alt=""/>
                         </td>
                     </tr>
