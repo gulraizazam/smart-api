@@ -25,7 +25,7 @@ use App\Models\Services;
 use App\Models\Settings;
 use App\Models\User;
 use App\Reports\Finanaces;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;

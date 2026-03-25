@@ -12,7 +12,7 @@ use App\Models\Measurement;
 use App\Models\Medical;
 use App\Models\Patients;
 use App\Models\User;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Illuminate\Http\Request;

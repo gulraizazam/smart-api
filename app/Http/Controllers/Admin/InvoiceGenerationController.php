@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Locations;
 use App\Models\User;
 use App\Services\InvoiceGenerationService;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
