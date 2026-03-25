@@ -161,7 +161,9 @@
     <table>
         <tr>
             <td style="float:left">
-                <img style="margin-bottom: 10px;" class="logo" src="https://crm3.cutera.pk/assets/media/new_logo.png" class="img-responsive" alt=""/>
+                <img style="margin-bottom: 10px;" class="logo" 
+     src="{{ public_path('assets/media/new_logo.png') }}" 
+     class="img-responsive" alt=""/>
                 <p class="logo_caption">{{$location_info->address}}.</p>
                 <p class="logo_caption logo_caption2">Phone. {{$location_info->fdo_phone}} &nbsp;| &nbsp; Email. {{$account_info->email}}  &nbsp; | &nbsp;  www.cuteraesthetics.com  &nbsp; | &nbsp; NTN. {{$location_info->ntn}} &nbsp; | &nbsp; STN. {{$location_info->stn}}</p>
             </td>
