@@ -1973,6 +1973,7 @@ class PlanService
                     'discount_id' => $discountId,
                     'config_group_id' => !empty($packageBundle['config_group_id']) ? $packageBundle['config_group_id'] : null,
                     'bundle_id' => $serviceId, // Store service_id in bundle_id column
+                    'source_type' => 'service',
                     'package_id' => $package->id,
                     'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
                     'tax_percentage' => 1,
@@ -2059,6 +2060,7 @@ class PlanService
                     'net_amount' => str_replace(',', '', $packageBundle['RegularPrice']),
                     'discount_id' => $discountId,
                     'bundle_id' => $bundleId,
+                    'source_type' => 'bundle',
                     'package_id' => $package->id,
                     'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
                     'tax_percentage' => 1,
