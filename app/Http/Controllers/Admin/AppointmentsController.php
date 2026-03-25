@@ -1219,8 +1219,17 @@ class AppointmentsController extends Controller
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
             if ($doctors_no_final) {
+                $lifestyleConsultantIds = User::whereIn('id', $doctors_no_final->keys()->toArray())
+                    ->whereHas('user_roles', function ($q) {
+                        $q->whereIn('name', ['Consultant', 'Lifestyle Consultant']);
+                    })
+                    ->pluck('id')
+                    ->toArray();
 
                 foreach ($doctors_no_final as $key => $doctor) {
+                    if (in_array($key, $lifestyleConsultantIds)) {
+                        continue;
+                    }
                     $resource = Resources::where('external_id', '=', $key)->first();
                     $doctor_rota = ResourceHasRota::where([
                         ['resource_id', '=', $resource?->id],
