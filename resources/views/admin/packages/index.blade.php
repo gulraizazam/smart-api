@@ -118,12 +118,12 @@
     @include('admin.packages.modals')
 
     @push('js')
-        <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/admin_settings/create-membership.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}?v={{ filemtime(public_path('assets/js/pages/appointments/referred-by-patient-search.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-plan.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-bundle.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-membership.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-membership.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/edit-bundle.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}?v={{ filemtime(public_path('assets/js/pages/crud/forms/validation/admin_settings/refunds.js')) }}"></script>
 
         <script>
             function getUserCentre() {
