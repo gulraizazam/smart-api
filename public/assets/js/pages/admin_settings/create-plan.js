@@ -3402,7 +3402,7 @@ jQuery(document).ready(function () {
                 $("#add_plan_location_id").prop("disabled", true);
             }
             if (rowCount > 0) {
-                $("#add_patient_id").prop("disabled", true).trigger("change");
+                $("#add_patient_id").prop("disabled", true).trigger("change.select2");
             }
 
             // Reset form fields after successful addition
@@ -3866,6 +3866,18 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
+    // Prevent opening/clearing patient search once treatments have been added to preview
+    $('#add_patient_id').on('select2:opening', function (e) {
+        if ($('#plan_services tr').length > 0) {
+            e.preventDefault();
+        }
+    });
+    $('#add_patient_id').on('select2:unselecting', function (e) {
+        if ($('#plan_services tr').length > 0) {
+            e.preventDefault();
+        }
+    });
+
     // Handle patient selection from Select2 dropdown
     $('#add_patient_id').on('select2:select', function (e) {
         var patientId = $(this).val();
@@ -3981,7 +3993,7 @@ function deleteConfigurablePlanRows(btn) {
             
             if (remainingRows === 0) {
                 $("#add_plan_location_id").prop("disabled", false);
-                $("#add_patient_id").prop("disabled", false).trigger("change");
+                $("#add_patient_id").prop("disabled", false).trigger("change.select2");
             }
         }
     });
@@ -4120,7 +4132,7 @@ function deletePlanRowTem(btn) {
         $("#add_plan_location_id").prop("disabled", false);
     }
     if (remainingRows === 0) {
-        $("#add_patient_id").prop("disabled", false).trigger("change");
+        $("#add_patient_id").prop("disabled", false).trigger("change.select2");
     }
 }
 
