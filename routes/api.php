@@ -616,6 +616,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('appointments/load-consultant-doctors', [AppointmentsController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
+    Route::get('appointments/getpackageprice', [AppointmentsController::class, 'getpackageprice'])->name('appointments.getpackageprice');
     Route::resource('appointments', AppointmentsController::class);
     Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
@@ -901,7 +902,6 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
-    Route::get('appointments/getpackageprice', [AppointmentsController::class, 'getpackageprice'])->name('appointments.getpackageprice');
     Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
     Route::get('appointments/invoice-consultancy/{id}/{type?}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
     Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
