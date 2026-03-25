@@ -333,7 +333,8 @@ class DoctorService
         if ($user) {
             // Assign roles
             $roles = $data['roles'] ?? [];
-            $user->assignRole($roles);
+            $roleModels = Role::whereIn('id', $roles)->get();
+            $user->assignRole($roleModels);
             
             // Create role_has_users records
             if (!empty($roles) && is_array($roles)) {
@@ -384,7 +385,8 @@ class DoctorService
         
         // Sync roles
         $roles = $data['roles'] ?? [];
-        $user->syncRoles($roles);
+        $roleModels = Role::whereIn('id', $roles)->get();
+        $user->syncRoles($roleModels);
         
         // Update role_has_users records
         if (!empty($roles) && is_array($roles)) {
