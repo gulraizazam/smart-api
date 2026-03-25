@@ -3121,6 +3121,7 @@ function deletePlan(id, type) {
                 var rows = $('#plan_services tr.HR_' + $('#random_id_1').val()).length;
                 if (rows <= 1) {
                     $("#add_plan_location_id").prop("disabled", false);
+                    $("#add_patient_id").prop("disabled", false).trigger("change.select2");
                     $("#edit_plan_location_id").prop("disabled", false);
                 }
 
@@ -3181,6 +3182,7 @@ function deleteConfPlan(id, type) {
                 var rows = $('#plan_services tr.HR_' + $('#random_id_1').val()).length;
                 if (rows <= 1) {
                     $("#add_plan_location_id").prop("disabled", false);
+                    $("#add_patient_id").prop("disabled", false).trigger("change.select2");
                     $("#edit_plan_location_id").prop("disabled", false);
                 }
 
@@ -3398,10 +3400,8 @@ jQuery(document).ready(function () {
 
             keyfunction_grandtotal();
             var rowCount = $('#plan_services tr').length;
-            if (rowCount >= 3) {
-                $("#add_plan_location_id").prop("disabled", true);
-            }
             if (rowCount > 0) {
+                $("#add_plan_location_id").prop("disabled", true);
                 $("#add_patient_id").prop("disabled", true).trigger("change.select2");
             }
 
@@ -3869,11 +3869,13 @@ jQuery(document).ready(function () {
     // Prevent opening/clearing patient search once treatments have been added to preview
     $('#add_patient_id').on('select2:opening', function (e) {
         if ($('#plan_services tr').length > 0) {
+            alert('You cannot change the patient once you have added services to the plan. Please remove all services before changing the patient.');
             e.preventDefault();
         }
     });
     $('#add_patient_id').on('select2:unselecting', function (e) {
         if ($('#plan_services tr').length > 0) {
+            alert('You cannot clear the patient once you have added services to the plan. Please remove all services before clearing the patient.');
             e.preventDefault();
         }
     });
@@ -4126,12 +4128,10 @@ function deletePlanRowTem(btn) {
     jQuery('.modal.show #payment_mode_id_1').val('').change();
     jQuery('#cash_amount_1').val('');
     
-    // Re-enable location if fewer than 3 rows
+    // Re-enable location and patient if no services remain
     var remainingRows = $('#plan_services tr[id="table_1"]').length;
-    if (remainingRows < 3) {
-        $("#add_plan_location_id").prop("disabled", false);
-    }
     if (remainingRows === 0) {
+        $("#add_plan_location_id").prop("disabled", false);
         $("#add_patient_id").prop("disabled", false).trigger("change.select2");
     }
 }
