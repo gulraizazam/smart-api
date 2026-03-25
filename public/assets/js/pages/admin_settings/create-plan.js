@@ -3401,6 +3401,9 @@ jQuery(document).ready(function () {
             if (rowCount >= 3) {
                 $("#add_plan_location_id").prop("disabled", true);
             }
+            if (rowCount > 0) {
+                $("#add_patient_id").prop("disabled", true).trigger("change");
+            }
 
             // Reset form fields after successful addition
             $('#configurable_preview').remove();
@@ -3978,6 +3981,7 @@ function deleteConfigurablePlanRows(btn) {
             
             if (remainingRows === 0) {
                 $("#add_plan_location_id").prop("disabled", false);
+                $("#add_patient_id").prop("disabled", false).trigger("change");
             }
         }
     });
@@ -4114,6 +4118,9 @@ function deletePlanRowTem(btn) {
     var remainingRows = $('#plan_services tbody tr[id="table_1"]').length;
     if (remainingRows < 3) {
         $("#add_plan_location_id").prop("disabled", false);
+    }
+    if (remainingRows === 0) {
+        $("#add_patient_id").prop("disabled", false).trigger("change");
     }
 }
 
