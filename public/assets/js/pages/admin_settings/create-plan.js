@@ -3118,7 +3118,7 @@ function deletePlan(id, type) {
                 }
 
 
-                var rows = $('#plan_services tbody tr.HR_' + $('#random_id_1').val()).length;
+                var rows = $('#plan_services tr.HR_' + $('#random_id_1').val()).length;
                 if (rows <= 1) {
                     $("#add_plan_location_id").prop("disabled", false);
                     $("#edit_plan_location_id").prop("disabled", false);
@@ -3178,7 +3178,7 @@ function deleteConfPlan(id, type) {
                 }
 
 
-                var rows = $('#plan_services tbody tr.HR_' + $('#random_id_1').val()).length;
+                var rows = $('#plan_services tr.HR_' + $('#random_id_1').val()).length;
                 if (rows <= 1) {
                     $("#add_plan_location_id").prop("disabled", false);
                     $("#edit_plan_location_id").prop("disabled", false);
@@ -3397,7 +3397,7 @@ jQuery(document).ready(function () {
             }
 
             keyfunction_grandtotal();
-            var rowCount = $('#plan_services tbody tr').length;
+            var rowCount = $('#plan_services tr').length;
             if (rowCount >= 3) {
                 $("#add_plan_location_id").prop("disabled", true);
             }
@@ -3965,7 +3965,7 @@ function deleteConfigurablePlanRows(btn) {
             }
             
             // Recalculate totals
-            var remainingRows = $('#plan_services tbody tr[id="table_1"]').length;
+            var remainingRows = $('#plan_services tr[id="table_1"]').length;
             var sum = 0;
             if (remainingRows > 0 && total_amountArray.length > 0) {
                 sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -4115,7 +4115,7 @@ function deletePlanRowTem(btn) {
     jQuery('#cash_amount_1').val('');
     
     // Re-enable location if fewer than 3 rows
-    var remainingRows = $('#plan_services tbody tr[id="table_1"]').length;
+    var remainingRows = $('#plan_services tr[id="table_1"]').length;
     if (remainingRows < 3) {
         $("#add_plan_location_id").prop("disabled", false);
     }
