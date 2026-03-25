@@ -3120,6 +3120,8 @@ function deletePlan(id, type) {
 
                 var rows = $('#plan_services tr.HR_' + $('#random_id_1').val()).length;
                 if (rows <= 1) {
+
+                    
                     $("#add_plan_location_id").prop("disabled", false).trigger("change.select2");
                     $("#add_patient_id").prop("disabled", false).trigger("change.select2");
                     $("#edit_plan_location_id").prop("disabled", false);
