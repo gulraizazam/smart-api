@@ -16,7 +16,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\Appointments;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Excel;
 use Illuminate\Http\Request;
