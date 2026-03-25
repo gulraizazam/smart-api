@@ -156,7 +156,7 @@
     </div>
 
     @push('js')
-        <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-plan.js')) }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-plan1.js') }}?v={{ filemtime(public_path('assets/js/pages/admin_settings/create-plan1.js')) }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
 
         <script>
