@@ -1,6 +1,6 @@
 <div class="modal-content">
     <div class="modal-header" id="kt_modal_password_header">
-        <h2 class="fw-bolder">Add Procedures</h2>
+        <h2 class="fw-bolder">Add Procedures12</h2>
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
      data-kt-users-modal-action="close" 
      onclick="resetVoucherAdd(event); return false;">
