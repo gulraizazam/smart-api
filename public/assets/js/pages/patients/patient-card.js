@@ -208,7 +208,7 @@ function loadDataTable(page_id, loadScript = true) {
         let url;
         
         if (page_id === 'plan-form') {
-            // Load patient-specific table_url first, then shared create-plan.js
+            // Load patient-specific table_url first, then shared create-plan1.js
             window.isPatientCardContext = true;
             window.patientCardPatientId = patientCardID;
             
@@ -219,8 +219,8 @@ function loadDataTable(page_id, loadScript = true) {
                 // Load patient-specific plan-form.js to set table_url and table_columns
                 let patientUrl = asset_url + "assets/js/pages/patients/plan-form.js?v=" + Date.now();
                 $.getScript(patientUrl, function() {
-                    // Then load shared create-plan.js for actions/functions
-                    let sharedUrl = asset_url + "assets/js/pages/admin_settings/create-plan.js?v=" + Date.now();
+                    // Then load shared create-plan1.js for actions/functions
+                    let sharedUrl = asset_url + "assets/js/pages/admin_settings/create-plan1.js?v=" + Date.now();
                     $.getScript(sharedUrl, function() {
                         // Also load bundle JS files
                         $.getScript(asset_url + "assets/js/pages/admin_settings/create-bundle.js");
