@@ -2,471 +2,299 @@
 
 namespace App\Services\Dashboard;
 
+use App\Enums\DashboardPeriod;
 use App\Helpers\DashboardHelper;
 use App\Models\Invoices;
 use App\Models\Locations;
+use App\Models\PackageAdvances;
 use App\Models\Services;
 use App\Reports\dashboardreport;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Carbon;
-use App\Models\PackageAdvances;
 
-/**
- * Dashboard Revenue Service
- * 
- * Handles all dashboard revenue and collection related operations including:
- * - Collection by centre
- * - Revenue by centre
- * - Revenue by service
- * - Collection by service category
- */
 class DashboardRevenueService
 {
-    /**
-     * Get collection statistics for dashboard
-     *
-     * @param array|null $userCentres
-     * @param string $period
-     * @param object $request
-     * @return array
-     */
-    public function getCollectionStats($userCentres = null, $period = 'today', $request = null)
-    {
-        $data = [
-            'collection' => 0,
-            'todaycollection' => [],
-        ];
-        
+    private const EMPTY_PERIODS = [
+        'today' => [], 'yesterday' => [], 'last7days' => [],
+        'week' => [], 'thismonth' => [], 'lastmonth' => [],
+    ];
+
+    private const CHART_HEADER = [['Task', 'Hours per Day']];
+
+    private const VALID_PAYMENT_MODES = ['Cash', 'Card', 'Bank/Wire Transfer'];
+
+    public function getCollectionStats(
+        ?array $userCentres = null,
+        ?string $period = 'today',
+        ?Request $request = null,
+    ): array {
         if (!Gate::allows('dashboard_states')) {
-            $data['collection'] = null;
-            return $data;
+            return ['collection' => null, 'todaycollection' => []];
         }
 
-        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
-        $mappedPeriod = DashboardHelper::mapPeriod($period);
-        
-        [$total] = dashboardreport::collectionbycenter($userCentres, Auth::User()->account_id, $mappedPeriod, $request);
-        
-        $data['todaycollection'][] = $total;
-        
-        return $data;
+        $userCentres ??= DashboardHelper::getUserCentres();
+        $reportPeriod = DashboardPeriod::fromRequest($period)->toReportPeriod();
+
+        [$total] = dashboardreport::collectionbycenter(
+            $userCentres,
+            Auth::user()?->account_id,
+            $reportPeriod,
+            $request,
+        );
+
+        return ['collection' => 0, 'todaycollection' => [$total]];
     }
 
-    /**
-     * Get sales by centre statistics
-     *
-     * @param array|null $userCentres
-     * @param string $start_date
-     * @param string $end_date
-     * @return array
-     */
-    public function getSalesByCentre($userCentres = null, $start_date = null, $end_date = null)
-    {
+    public function getSalesByCentre(
+        ?array $userCentres = null,
+        ?string $startDate = null,
+        ?string $endDate = null,
+    ): array {
         if (!Gate::allows('dashboard_states')) {
             return ['revenue' => null];
         }
 
-        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        $userCentres ??= DashboardHelper::getUserCentres();
         $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
 
-        if (!$start_date || !$end_date) {
-            [$start_date, $end_date] = DashboardHelper::getDateRange('today');
+        if (!$startDate || !$endDate) {
+            [$startDate, $endDate] = DashboardPeriod::Today->dateRange();
         }
 
-        $revenue = Invoices::whereIn('location_id', $userCentres)
+        $revenue = Invoices::query()
+            ->whereIn('location_id', $userCentres)
             ->where('invoice_status_id', $invoiceStatusId)
-            ->whereBetween('created_at', [$start_date . ' 00:00:00', $end_date . ' 23:59:59'])
+            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
             ->sum('total_price');
 
         return ['revenue' => $revenue ?? 0];
     }
 
-    /**
-     * Get collection by centre for different periods
-     *
-     * @param string $type Period type (today, yesterday, last7days, week, thismonth, lastmonth)
-     * @param object|null $request
-     * @return array
-     */
-    public function getCollectionByCentre($type = '', $request = null)
+    public function getCollectionByCentre(string $type = '', ?Request $request = null): array
     {
-        $data = [
-            'today' => [],
-            'yesterday' => [],
-            'last7days' => [],
-            'week' => [],
-            'thismonth' => [],
-            'lastmonth' => [],
-        ];
+        $data = self::EMPTY_PERIODS;
 
         if (!Gate::allows('dashboard_collection_by_centre')) {
             return ['data' => $data, 'total' => 0];
         }
 
+        $period = DashboardPeriod::fromRequest($type);
+        $dataKey = $period->value;
         $locationInfo = DashboardHelper::getUserCentres();
-        
-        // Map request type to report period parameter
-        $periodMap = [
-            '' => 'today',
-            'today' => 'today',
-            'yesterday' => 'yesterday',
-            'last7days' => 'last7day',
-            'week' => 'week',
-            'thismonth' => 'thisMonth',
-            'lastmonth' => 'lastMonth',
-        ];
 
-        $dataKey = $type ?: 'today';
-        $period = $periodMap[$type] ?? 'today';
-        
-        [$report_data, $total] = dashboardreport::collectionByRevenueWidgets($locationInfo, Auth::User()->account_id, $period, $request);
-        $data[$dataKey] = $report_data;
+        [$reportData, $total] = dashboardreport::collectionByRevenueWidgets(
+            $locationInfo,
+            Auth::user()?->account_id,
+            $period->toReportPeriod(),
+            $request,
+        );
 
-        return [
-            'data' => $data,
-            'total' => $total,
-        ];
+        $data[$dataKey] = $reportData;
+
+        return ['data' => $data, 'total' => $total];
     }
 
-    /**
-     * Get my collection by centre for different periods
-     *
-     * @param string $type Period type
-     * @param object|null $request
-     * @return array
-     */
-    public function getMyCollectionByCentre($type = '', $request = null)
+    public function getMyCollectionByCentre(string $type = '', ?Request $request = null): array
     {
-        $data = [
-            'today' => [],
-            'yesterday' => [],
-            'last7days' => [],
-            'week' => [],
-            'thismonth' => [],
-            'lastmonth' => [],
-        ];
+        $data = self::EMPTY_PERIODS;
 
         if (!Gate::allows('dashboard_my_collection_by_centre')) {
             return ['data' => $data, 'total' => 0];
         }
 
+        $period = DashboardPeriod::fromRequest($type);
+        $dataKey = $period->value;
         $locationInfo = Locations::getActiveSorted(DashboardHelper::getUserCentres());
 
-        // Map request type to report period parameter
-        $periodMap = [
-            '' => 'today',
-            'today' => 'today',
-            'yesterday' => 'yesterday',
-            'last7days' => 'last7day',
-            'week' => 'week',
-            'thismonth' => 'thisMonth',
-            'lastmonth' => 'lastMonth',
-        ];
+        [$reportData, $total] = dashboardreport::MyCollectionByRevenueWidgets(
+            $locationInfo,
+            Auth::user()?->account_id,
+            $period->toReportPeriod(),
+            $request,
+        );
 
-        $dataKey = $type ?: 'today';
-        $period = $periodMap[$type] ?? 'today';
-        
-        [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($locationInfo, Auth::User()->account_id, $period, $request);
-        $data[$dataKey] = $report_data;
-
-        return [
-            'data' => $data,
-            'total' => $total,
-        ];
-    }
-
-    /**
-     * Get revenue by centre
-     *
-     * @param string $type Period type
-     * @param object|null $request
-     * @return array
-     */
-    public function getRevenueByCentre($type = '', $request = null)
-    {
-        $data = [['Task', 'Hours per Day']];
-        $total = 0;
-
-        if (!Gate::allows('dashboard_revenue_by_centre')) {
-            return ['data' => $data, 'total' => $total];
-        }
-
-        $locationIds = DashboardHelper::getUserCentres();
-        
-        if (empty($locationIds)) {
-            return ['data' => $data, 'total' => $total];
-        }
-
-        $locations = Locations::with('city')->whereIn('id', $locationIds)->get()->keyBy('id');
-        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-        [$start_date, $end_date] = DashboardHelper::getDateRange($type ?: 'today');
-
-        $query = Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
-            ->where('created_at', '<=', $end_date . ' 23:59:59')
-            ->whereIn('location_id', $locationIds)
-            ->where('invoice_status_id', $invoiceStatusId);
-
-        if ($request && $request->get('performance')) {
-            $query->where('created_by', Auth::User()->id);
-        }
-
-        $records = $query->select('location_id', DB::raw('SUM(total_price) AS total_price'))
-            ->groupBy('location_id')
-            ->get()
-            ->keyBy('location_id');
-
-        foreach ($locations as $location) {
-            $record = $records->get($location->id);
-            $locationTotal = $record ? $record->total_price : 0;
-            $total += $locationTotal;
-            $data[] = [$location->name, (int)$locationTotal];
-        }
+        $data[$dataKey] = $reportData;
 
         return ['data' => $data, 'total' => $total];
     }
 
-    /**
-     * Get my revenue by centre
-     *
-     * @param string $type Period type
-     * @param object|null $request
-     * @return array
-     */
-    public function getMyRevenueByCentre($type = '', $request = null)
+    public function getRevenueByCentre(string $type = '', ?Request $request = null): array
     {
-        $data = [['Task', 'Hours per Day']];
-        $total = 0;
-
-        if (!Gate::allows('dashboard_my_revenue_by_centre')) {
-            return ['data' => $data, 'total' => $total];
-        }
-
-        $locationIds = DashboardHelper::getUserCentres();
-        
-        if (empty($locationIds)) {
-            return ['data' => $data, 'total' => $total];
-        }
-
-        $locations = Locations::getActiveSortedLocations($locationIds);
-        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-        [$start_date, $end_date] = DashboardHelper::getDateRange($type ?: 'today');
-
-        $query = Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
-            ->where('created_at', '<=', $end_date . ' 23:59:59')
-            ->whereIn('location_id', $locationIds)
-            ->where('invoice_status_id', $invoiceStatusId);
-
-        if ($request && $request->get('performance')) {
-            $query->where('created_by', Auth::User()->id);
-        }
-
-        $records = $query->select('location_id', DB::raw('SUM(total_price) AS total_price'))
-            ->groupBy('location_id')
-            ->get()
-            ->keyBy('location_id');
-
-        foreach ($locations as $location) {
-            $record = $records->get($location->id);
-            $locationTotal = $record ? $record->total_price : 0;
-            $total += $locationTotal;
-            $data[] = [$location->name, (int)$locationTotal];
-        }
-
-        return ['data' => $data, 'total' => $total];
+        return $this->buildRevenueByLocation(
+            permission: 'dashboard_revenue_by_centre',
+            type: $type,
+            request: $request,
+            locationResolver: fn (array $ids) => Locations::with('city')->whereIn('id', $ids)->get()->keyBy('id'),
+        );
     }
 
-    /**
-     * Get revenue by service category
-     *
-     * @param string $type Period type
-     * @param object|null $request
-     * @return array
-     */
-    public function getRevenueByServiceCategory($type = '', $request = null)
+    public function getMyRevenueByCentre(string $type = '', ?Request $request = null): array
     {
-        $dataKey = $type ?: 'today';
-        $data = [];
-        $total = 0;
-        $chartData = [];
-        $colors = [];
+        return $this->buildRevenueByLocation(
+            permission: 'dashboard_my_revenue_by_centre',
+            type: $type,
+            request: $request,
+            locationResolver: fn (array $ids) => Locations::getActiveSortedLocations($ids),
+        );
+    }
+
+    public function getRevenueByServiceCategory(string $type = '', ?Request $request = null): array
+    {
+        $period = DashboardPeriod::fromRequest($type);
+        $dataKey = $period->value;
+        $emptyResult = ['data' => [], 'total' => 0, 'colors' => []];
 
         if (!Gate::allows('dashboard_revenue_by_service')) {
-            return ['data' => $data, 'total' => $total, 'colors' => $colors];
+            return $emptyResult;
         }
 
         $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
         $userCentres = DashboardHelper::getUserCentres();
-        [$start_date, $end_date] = DashboardHelper::getDateRange($dataKey);
+        [$startDate, $endDate] = $period->dateRange();
 
-        $query = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-            ->whereBetween('invoices.created_at', [$start_date . ' 00:00:00', $end_date . ' 23:59:59'])
+        $query = Invoices::query()
+            ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->whereBetween('invoices.created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
             ->where('invoices.invoice_status_id', $invoiceStatusId)
             ->whereIn('invoices.location_id', $userCentres);
 
-        if ($request && $request->get('performance')) {
-            $query->where('invoices.created_by', Auth::User()->id);
+        if ($request?->get('performance')) {
+            $query->where('invoices.created_by', Auth::id());
         }
 
-        $records = $query->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+        $records = $query
+            ->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
             ->groupBy('invoice_details.service_id')
             ->get();
 
         if ($records->isEmpty()) {
-            $data[$dataKey] = [['Task', 'Hours per Day']];
-            return ['data' => $data, 'total' => 0, 'colors' => $colors];
+            return ['data' => [$dataKey => self::CHART_HEADER], 'total' => 0, 'colors' => []];
         }
 
-        // Fetch all services with parent in ONE query
-        $serviceIds = $records->pluck('service_id')->filter()->toArray();
-        $services = Services::with('parent')->whereIn('id', $serviceIds)->get()->keyBy('id');
+        $services = Services::with('parent')
+            ->whereIn('id', $records->pluck('service_id')->filter())
+            ->get()
+            ->keyBy('id');
 
-        // Group by parent service category
-        $prepareData = [];
+        $grouped = [];
+        $total = 0;
+        $colors = [];
+
         foreach ($records as $record) {
             $service = $services->get($record->service_id);
             if (!$service) continue;
-            
-            $service_id = $service->parent ? $service->parent->id : $service->id;
-            $service_name = $service->parent ? $service->parent->name : $service->name;
-            $service_color = $service->parent ? $service->parent->color : $service->color;
 
-            if (isset($prepareData[$service_id])) {
-                $prepareData[$service_id]['total'] += $record->total_price;
-            } else {
-                $prepareData[$service_id] = [
-                    'id' => $service_id,
-                    'name' => $service_name,
-                    'total' => $record->total_price,
-                    'color' => $service_color,
-                ];
-            }
+            $parent = $service->parent ?? $service;
+            $grouped[$parent->id] ??= ['name' => $parent->name, 'total' => 0, 'color' => $parent->color];
+            $grouped[$parent->id]['total'] += $record->total_price;
             $total += $record->total_price;
         }
 
-        // Build chart data array
-        $chartData = [['Task', 'Hours per Day']];
-        foreach ($prepareData as $item) {
-            $chartData[] = [$item['name'], (int)$item['total']];
+        $chartData = self::CHART_HEADER;
+        foreach ($grouped as $item) {
+            $chartData[] = [$item['name'], (int) $item['total']];
             $colors[] = $item['color'];
         }
 
-        $data[$dataKey] = $chartData;
-
-        return ['data' => $data, 'total' => $total, 'colors' => $colors];
+        return ['data' => [$dataKey => $chartData], 'total' => $total, 'colors' => $colors];
     }
 
-    /**
-     * Get revenue by service (individual services, not grouped by category)
-     *
-     * @param string $type Period type
-     * @param object|null $request
-     * @param string $permission Permission to check
-     * @return array
-     */
-    public function getRevenueByService($type = '', $request = null, $permission = 'dashboard_revenue_by_service')
-    {
-        $dataKey = $type ?: 'today';
-        $data = [];
-        $total = 0;
-        $chartData = [];
-        $colors = [];
+    public function getRevenueByService(
+        string $type = '',
+        ?Request $request = null,
+        string $permission = 'dashboard_revenue_by_service',
+    ): array {
+        $period = DashboardPeriod::fromRequest($type);
+        $dataKey = $period->value;
+        $emptyResult = ['data' => [], 'total' => 0, 'colors' => []];
 
         if (!Gate::allows($permission)) {
-            return ['data' => $data, 'total' => $total, 'colors' => $colors];
+            return $emptyResult;
         }
 
         $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
         $userCentres = DashboardHelper::getUserCentres();
-        [$start_date, $end_date] = DashboardHelper::getDateRange($dataKey);
+        [$startDate, $endDate] = $period->dateRange();
 
-        $query = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-            ->whereBetween('invoices.created_at', [$start_date . ' 00:00:00', $end_date . ' 23:59:59'])
+        $query = Invoices::query()
+            ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->whereBetween('invoices.created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
             ->where('invoices.invoice_status_id', $invoiceStatusId)
             ->whereIn('invoices.location_id', $userCentres);
 
-        if ($request && $request->get('performance')) {
-            $query->where('invoices.created_by', Auth::User()->id);
+        if ($request?->get('performance')) {
+            $query->where('invoices.created_by', Auth::id());
         }
 
-        $records = $query->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+        $records = $query
+            ->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
             ->groupBy('invoice_details.service_id')
             ->get();
 
         if ($records->isEmpty()) {
-            $data[$dataKey] = [['Task', 'Hours per Day']];
-            return ['data' => $data, 'total' => 0, 'colors' => $colors];
+            return ['data' => [$dataKey => self::CHART_HEADER], 'total' => 0, 'colors' => []];
         }
 
-        // Fetch all services in ONE query
-        $serviceIds = $records->pluck('service_id')->filter()->toArray();
-        $services = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+        $services = Services::whereIn('id', $records->pluck('service_id')->filter())
+            ->get()
+            ->keyBy('id');
 
-        // Build chart data
-        $chartData = [['Task', 'Hours per Day']];
+        $chartData = self::CHART_HEADER;
+        $total = 0;
+        $colors = [];
+
         foreach ($records as $record) {
             $service = $services->get($record->service_id);
             if (!$service) continue;
-            
-            $chartData[] = [$service->name, (int)$record->total_price];
+
+            $chartData[] = [$service->name, (int) $record->total_price];
             $colors[] = $service->color;
             $total += $record->total_price;
         }
 
-        $data[$dataKey] = $chartData;
-
-        return ['data' => $data, 'total' => $total, 'colors' => $colors];
+        return ['data' => [$dataKey => $chartData], 'total' => $total, 'colors' => $colors];
     }
 
-    /**
-     * Get collection by service category (grouped by parent service)
-     * Optimized version - single method handles all time periods
-     *
-     * @param string $type Period type (today, yesterday, last7days, thismonth, lastmonth)
-     * @param object|null $request
-     * @return array
-     */
-    public function getCollectionByServiceCategory($type = '', $request = null)
+    public function getCollectionByServiceCategory(string $type = '', ?Request $request = null): array
     {
-        $dataKey = $type ?: 'today';
-        $data = [];
-        $total = 0;
-        $chartData = [];
-        $colors = [];
+        $period = DashboardPeriod::fromRequest($type);
+        $dataKey = $period->value;
+        $emptyResult = ['data' => [], 'total' => 0, 'colors' => []];
 
-        // Get parent services
-        $services = Services::where([
-            'account_id' => Auth::User()->account_id,
-            'active' => '1',
-            'parent_id' => '0',
+        $accountId = Auth::user()?->account_id;
+
+        $parentServices = Services::where([
+            'account_id' => $accountId,
+            'active'     => '1',
+            'parent_id'  => '0',
         ])->get();
 
-        if ($services->isEmpty()) {
-            return ['data' => $data, 'total' => 0, 'colors' => $colors];
+        if ($parentServices->isEmpty()) {
+            return $emptyResult;
         }
 
-        // Get date range
-        [$start_date, $end_date] = DashboardHelper::getDateRange($dataKey);
+        [$startDate, $endDate] = $period->dateRange();
 
-        // Get all child service IDs grouped by parent
+        // Collect all child IDs grouped by parent
         $parentChildMap = [];
         $allChildIds = [];
-        foreach ($services as $service) {
+        foreach ($parentServices as $service) {
             $childIds = Services::where('parent_id', $service->id)->pluck('id')->toArray();
             $parentChildMap[$service->id] = $childIds;
             $allChildIds = array_merge($allChildIds, $childIds);
         }
 
         if (empty($allChildIds)) {
-            return ['data' => $data, 'total' => 0, 'colors' => $colors];
+            return $emptyResult;
         }
 
-        // Fetch all package advances in ONE query with eager loading
-        $packagesAdvances = PackageAdvances::join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
+        $advancesByService = PackageAdvances::query()
+            ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
             ->with('paymentmode')
-            ->whereBetween('package_advances.created_at', [$start_date . ' 00:00:00', $end_date . ' 23:59:59'])
-            ->where('package_advances.account_id', Auth::User()->account_id)
+            ->whereBetween('package_advances.created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
+            ->where('package_advances.account_id', $accountId)
             ->whereIn('appointments.service_id', $allChildIds)
             ->where('package_advances.cash_flow', 'in')
             ->where('package_advances.is_adjustment', '0')
@@ -474,41 +302,84 @@ class DashboardRevenueService
             ->where('package_advances.is_cancel', '0')
             ->where('package_advances.cash_amount', '!=', 0)
             ->select('package_advances.*', 'appointments.service_id')
-            ->get();
+            ->get()
+            ->groupBy('service_id');
 
-        // Group advances by service_id
-        $advancesByService = $packagesAdvances->groupBy('service_id');
+        $chartData = self::CHART_HEADER;
+        $total = 0;
+        $colors = [];
 
-        // Calculate totals per parent service
-        $chartData[0] = ['Task', 'Hours per Day'];
-        
-        foreach ($services as $service) {
+        foreach ($parentServices as $service) {
             $serviceTotal = 0;
-            $childIds = $parentChildMap[$service->id] ?? [];
-            
-            foreach ($childIds as $childId) {
-                $advances = $advancesByService->get($childId, collect());
-                
-                foreach ($advances as $advance) {
-                    $paymentMode = $advance->paymentmode->name ?? '';
-                    
-                    if (in_array($paymentMode, ['Cash', 'Card', 'Bank/Wire Transfer'])) {
+
+            foreach ($parentChildMap[$service->id] ?? [] as $childId) {
+                foreach ($advancesByService->get($childId, collect()) as $advance) {
+                    if (in_array($advance->paymentmode?->name, self::VALID_PAYMENT_MODES, true)) {
                         $serviceTotal += $advance->cash_amount;
                     }
                 }
             }
-            
+
             if ($serviceTotal > 0) {
-                $chartData[] = [$service->name, (int)$serviceTotal];
+                $chartData[] = [$service->name, (int) $serviceTotal];
                 $colors[] = $service->color;
                 $total += $serviceTotal;
             }
         }
 
-        if (count($chartData) > 1) {
-            $data[$dataKey] = $chartData;
-        }
+        $data = count($chartData) > 1 ? [$dataKey => $chartData] : [];
 
         return ['data' => $data, 'total' => $total, 'colors' => $colors];
+    }
+
+    /**
+     * Shared logic for getRevenueByCentre / getMyRevenueByCentre.
+     */
+    private function buildRevenueByLocation(
+        string $permission,
+        string $type,
+        ?Request $request,
+        \Closure $locationResolver,
+    ): array {
+        $empty = ['data' => self::CHART_HEADER, 'total' => 0];
+
+        if (!Gate::allows($permission)) {
+            return $empty;
+        }
+
+        $locationIds = DashboardHelper::getUserCentres();
+        if (empty($locationIds)) {
+            return $empty;
+        }
+
+        $locations = $locationResolver($locationIds);
+        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+        [$startDate, $endDate] = DashboardHelper::getDateRange($type ?: 'today');
+
+        $query = Invoices::query()
+            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
+            ->whereIn('location_id', $locationIds)
+            ->where('invoice_status_id', $invoiceStatusId);
+
+        if ($request?->get('performance')) {
+            $query->where('created_by', Auth::id());
+        }
+
+        $records = $query
+            ->select('location_id', DB::raw('SUM(total_price) AS total_price'))
+            ->groupBy('location_id')
+            ->get()
+            ->keyBy('location_id');
+
+        $data = self::CHART_HEADER;
+        $total = 0;
+
+        foreach ($locations as $location) {
+            $locationTotal = $records->get($location->id)?->total_price ?? 0;
+            $total += $locationTotal;
+            $data[] = [$location->name, (int) $locationTotal];
+        }
+
+        return ['data' => $data, 'total' => $total];
     }
 }

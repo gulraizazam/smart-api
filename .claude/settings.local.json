@@ -1,18 +1,22 @@
 {
   "permissions": {
     "allow": [
-<<<<<<< HEAD
-      "Read(/C:\\laragon\\www\\cutera-upgradation1\\resources\\views\\admin/**)",
-      "Read(/C:\\laragon\\www\\cutera-upgradation1\\public\\assets\\js/**)"
-=======
+      "Bash(find C:laragonwwwcutera-upgradation1resourcesviews -type f -name *dashboard*)",
+      "Bash(find C:laragonwwwcutera-upgradation1appModels -type f -name *.php)",
+      "Bash(xargs grep:*)",
+      "Bash(find C:laragonwwwcutera-upgradation1appHttpControllersAdmin -type f -name *.php)",
+      "Bash(find C:laragonwwwcutera-upgradation1resourcesviews -name *dashboard* -o -name *doctor_dashboard*)",
+      "Bash(php -r \"echo PHP_VERSION;\")",
+      "Bash(composer show:*)",
+      "Bash(php -l app/Enums/DashboardPeriod.php)",
+      "Bash(php -l app/Helpers/DashboardHelper.php)",
+      "Bash(php -l app/Http/Controllers/HomeController.php)",
+      "Bash(php -l app/Services/Dashboard/DashboardStatsService.php)",
+      "Bash(php -l app/Services/Dashboard/DashboardRevenueService.php)",
+      "Bash(php -l app/Services/Dashboard/DashboardChartService.php)",
+      "Bash(php -l app/Http/Controllers/Api/DashboardController.php)",
+      "Bash(php -l app/Http/Controllers/DashboardReportsController.php)",
       "Bash(php artisan:*)"
->>>>>>> test
-    ],
-    "deny": [],
-    "ask": []
+    ]
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> test

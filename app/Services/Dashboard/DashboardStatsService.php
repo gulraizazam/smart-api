@@ -5,156 +5,105 @@ namespace App\Services\Dashboard;
 use App\Helpers\DashboardHelper;
 use App\Models\Appointments;
 use App\Models\Leads;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 
-/**
- * Dashboard Stats Service
- * 
- * Handles all dashboard statistics and counts including:
- * - Consultancy counts
- * - Treatment counts
- * - Lead counts
- * - Appointment breakdowns by status/type
- */
 class DashboardStatsService
 {
-    /**
-     * Get consultancy statistics
-     *
-     * @param string $start_date
-     * @param string $end_date
-     * @param array|null $userCentres
-     * @param array|null $statusIds
-     * @return array
-     */
-    public function getConsultancies($start_date, $end_date, $userCentres = null, $statusIds = null)
-    {
-        $data = [
-            'all_consultancies' => null,
-            'done_consultancies' => null,
-        ];
-
+    public function getConsultancies(
+        string $startDate,
+        string $endDate,
+        ?array $userCentres = null,
+        ?array $statusIds = null,
+    ): array {
         if (!Gate::allows('dashboard_states')) {
-            return $data;
+            return ['all_consultancies' => null, 'done_consultancies' => null];
         }
 
-        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
-        $statusIds = $statusIds ?? DashboardHelper::getArrivedAndConvertedStatusIds();
+        $userCentres ??= DashboardHelper::getUserCentres();
+        $statusIds ??= DashboardHelper::getArrivedAndConvertedStatusIds();
 
-        // Get both counts in single query using conditional aggregation
-        $counts = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date])
+        $counts = Appointments::query()
+            ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('location_id', $userCentres)
-            ->selectRaw('COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN (' . implode(',', $statusIds) . ') THEN 1 ELSE 0 END) as done_count')
+            ->selectRaw(
+                'COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN ('. implode(',', array_map('intval', $statusIds)) .') THEN 1 ELSE 0 END) as done_count'
+            )
             ->first();
 
-        $data['all_consultancies'] = $counts->all_count ?? 0;
-        $data['done_consultancies'] = $counts->done_count ?? 0;
-
-        return $data;
+        return [
+            'all_consultancies'  => $counts?->all_count ?? 0,
+            'done_consultancies' => $counts?->done_count ?? 0,
+        ];
     }
 
-    /**
-     * Get treatment statistics
-     *
-     * @param string $start_date
-     * @param string $end_date
-     * @param array|null $userCentres
-     * @return array
-     */
-    public function getTreatments($start_date, $end_date, $userCentres = null)
-    {
-        $data = [
-            'all_treatments' => null,
-            'done_treatments' => null,
-        ];
-
+    public function getTreatments(
+        string $startDate,
+        string $endDate,
+        ?array $userCentres = null,
+    ): array {
         if (!Gate::allows('dashboard_states')) {
-            return $data;
+            return ['all_treatments' => null, 'done_treatments' => null];
         }
 
-        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        $userCentres ??= DashboardHelper::getUserCentres();
         $arrivedStatusId = DashboardHelper::getArrivedStatusId();
 
-        // Get both counts in single query using conditional aggregation
-        $counts = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
-            ->whereBetween('scheduled_date', [$start_date, $end_date])
+        $counts = Appointments::query()
+            ->where('appointment_type_id', config('constants.appointment_type_service'))
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('location_id', $userCentres)
-            ->selectRaw('COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_count', [$arrivedStatusId])
+            ->selectRaw(
+                'COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_count',
+                [$arrivedStatusId],
+            )
             ->first();
 
-        $data['all_treatments'] = $counts->all_count ?? 0;
-        $data['done_treatments'] = $counts->done_count ?? 0;
-
-        return $data;
+        return [
+            'all_treatments'  => $counts?->all_count ?? 0,
+            'done_treatments' => $counts?->done_count ?? 0,
+        ];
     }
 
-    /**
-     * Get lead statistics
-     *
-     * @param string $start_date
-     * @param string $end_date
-     * @return array
-     */
-    public function getLeads($start_date, $end_date)
+    public function getLeads(string $startDate, string $endDate): array
     {
-        $data = [
-            'leads' => 0,
-            'totalLeads' => 0,
-        ];
-
         if (!Gate::allows('dashboard_states')) {
-            return $data;
+            return ['leads' => 0, 'totalLeads' => 0];
         }
 
         $userCities = DashboardHelper::getUserCities();
+        $patientTypeId = Config::get('constants.patient_id');
 
-        $where = [
-            ['leads.created_at', '>=', $start_date . ' 00:00:00'],
-            ['leads.created_at', '<=', $end_date . ' 23:59:59'],
+        $baseQuery = fn () => Leads::query()
+            ->join('users', 'users.id', '=', 'leads.patient_id')
+            ->where('users.user_type_id', $patientTypeId)
+            ->where(fn ($q) => $q
+                ->where('leads.active', 1)
+                ->whereIn('leads.city_id', $userCities)
+                ->orWhereNull('leads.city_id')
+            );
+
+        return [
+            'leads' => $baseQuery()
+                ->where('leads.created_at', '>=', $startDate . ' 00:00:00')
+                ->where('leads.created_at', '<=', $endDate . ' 23:59:59')
+                ->count(),
+            'totalLeads' => $baseQuery()->count(),
         ];
-
-        $query = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) use ($userCities) {
-                $query->where('leads.active', 1);
-                $query->whereIn('leads.city_id', $userCities);
-                $query->orWhereNull('leads.city_id');
-            });
-
-        $query->where($where);
-
-        $data['leads'] = $query->count();
-
-        $data['totalLeads'] = Leads::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) use ($userCities) {
-                $query->where('leads.active', 1);
-                $query->whereIn('leads.city_id', $userCities);
-                $query->orWhereNull('leads.city_id');
-            })->count();
-
-        return $data;
     }
 
-    /**
-     * Get all dashboard stats combined
-     *
-     * @param string $start_date
-     * @param string $end_date
-     * @param array|null $userCentres
-     * @return array
-     */
-    public function getAllStats($start_date, $end_date, $userCentres = null)
-    {
-        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
-        
-        $consultancies = $this->getConsultancies($start_date, $end_date, $userCentres);
-        $treatments = $this->getTreatments($start_date, $end_date, $userCentres);
-        $leads = $this->getLeads($start_date, $end_date);
+    public function getAllStats(
+        string $startDate,
+        string $endDate,
+        ?array $userCentres = null,
+    ): array {
+        $userCentres ??= DashboardHelper::getUserCentres();
 
-        return array_merge($consultancies, $treatments, $leads);
+        return array_merge(
+            $this->getConsultancies($startDate, $endDate, $userCentres),
+            $this->getTreatments($startDate, $endDate, $userCentres),
+            $this->getLeads($startDate, $endDate),
+        );
     }
 }
