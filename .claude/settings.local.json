@@ -53,7 +53,10 @@
       "Bash(php -l app/Models/LeadSources.php)",
       "Bash(php -l app/Models/LeadStatuses.php)",
       "Bash(php -l app/Models/LeadsServices.php)",
-      "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name \"*.php\" -exec grep -l '\\\\$lead\\\\|Leads::' {})"
+      "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name \"*.php\" -exec grep -l '\\\\$lead\\\\|Leads::' {})",
+      "Bash(php -l app/Http/Controllers/Api/LeadsController.php)",
+      "Bash(php -l app/Http/Resources/Lead/LeadResource.php)",
+      "Bash(php -l app/Services/Lead/LeadService.php)"
     ]
   }
 }
