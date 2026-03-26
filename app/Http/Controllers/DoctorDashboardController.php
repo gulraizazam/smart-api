@@ -5,36 +5,30 @@ namespace App\Http\Controllers;
 use App\HelperModule\ApiHelper;
 use App\Services\DoctorDashboard\DoctorDashboardService;
 use App\Services\DoctorDashboard\DoctorIdentifier;
-use App\Models\DoctorGoogleReview;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class DoctorDashboardController extends Controller
 {
-    private $success = 200;
-    private $error = 500;
-
-    private DoctorDashboardService $dashboardService;
-    private DoctorIdentifier $doctorIdentifier;
+    protected string $success;
+    protected string $error;
 
     public function __construct(
-        DoctorDashboardService $dashboardService,
-        DoctorIdentifier $doctorIdentifier
+        protected readonly DoctorDashboardService $dashboardService,
+        protected readonly DoctorIdentifier $doctorIdentifier,
     ) {
-        $this->dashboardService = $dashboardService;
-        $this->doctorIdentifier = $doctorIdentifier;
+        $this->success = config('constants.api_status.success');
+        $this->error = config('constants.api_status.error');
     }
 
-    /**
-     * Display the doctor dashboard view.
-     */
-    public function index()
+    public function index(): View
     {
         $user = Auth::user();
-        $accountId = $user->account_id;
         $doctorId = $user->id;
 
-        // Verify user is a doctor
         if (!$this->doctorIdentifier->isDoctor($doctorId)) {
             abort(403, 'Access denied. Doctor role required.');
         }
@@ -44,80 +38,69 @@ class DoctorDashboardController extends Controller
         return view('admin.doctor_dashboard.index', compact('doctorInfo'));
     }
 
-    /**
-     * Get all KPI data.
-     */
-    public function getKpis(Request $request)
+    public function getKpis(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
-            $doctorId = $user->id;
-            $accountId = $user->account_id;
             $period = $request->get('period', 'this_month');
 
-            $data = $this->dashboardService->getKpiData($doctorId, $accountId, $period);
+            $data = $this->dashboardService->getKpiData($user->id, $user->account_id, $period);
 
-            return ApiHelper::apiResponse($this->success, 'KPI data loaded', true, $data);
+            return ApiHelper::apiResponse($this->success, 'KPI data loaded.', true, $data);
         } catch (\Exception $e) {
-            \Log::error('Doctor Dashboard KPI Error: ' . $e->getMessage());
+            Log::error('Doctor Dashboard KPI Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
         }
     }
 
-    /**
-     * Get hero strip data (goal progress, streak, personal bests).
-     */
-    public function getHeroData()
+    public function getHeroData(): JsonResponse
     {
         try {
             $user = Auth::user();
             $data = $this->dashboardService->getHeroData($user->id, $user->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Hero data loaded', true, $data);
+            return ApiHelper::apiResponse($this->success, 'Hero data loaded.', true, $data);
         } catch (\Exception $e) {
-            \Log::error('Doctor Dashboard Hero Error: ' . $e->getMessage());
+            Log::error('Doctor Dashboard Hero Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
         }
     }
 
-    /**
-     * Get today's appointments.
-     */
-    public function getTodaysAppointments()
+    public function getTodaysAppointments(): JsonResponse
     {
         try {
             $user = Auth::user();
             $data = $this->dashboardService->getTodaysAppointments($user->id, $user->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Today\'s appointments loaded', true, $data);
+            return ApiHelper::apiResponse($this->success, "Today's appointments loaded.", true, $data);
         } catch (\Exception $e) {
-            \Log::error('Doctor Dashboard Appointments Error: ' . $e->getMessage());
+            Log::error('Doctor Dashboard Appointments Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
         }
     }
 
-    /**
-     * Get benchmark data.
-     */
-    public function getBenchmarks(Request $request)
+    public function getBenchmarks(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
             $period = $request->get('period', 'this_month');
 
-            if ($period === 'last_month') {
-                $startDate = now()->subMonth()->startOfMonth()->format('Y-m-d');
-                $endDate = now()->subMonth()->endOfMonth()->format('Y-m-d');
-            } else {
-                $startDate = now()->startOfMonth()->format('Y-m-d');
-                $endDate = now()->format('Y-m-d');
-            }
+            [$startDate, $endDate] = match ($period) {
+                'last_month' => [
+                    now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                    now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                ],
+                default => [
+                    now()->startOfMonth()->format('Y-m-d'),
+                    now()->format('Y-m-d'),
+                ],
+            };
 
             $data = $this->dashboardService->getBenchmarks($user->id, $startDate, $endDate, $user->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Benchmark data loaded', true, $data);
+            return ApiHelper::apiResponse($this->success, 'Benchmark data loaded.', true, $data);
         } catch (\Exception $e) {
-            \Log::error('Doctor Dashboard Benchmark Error: ' . $e->getMessage());
+            Log::error('Doctor Dashboard Benchmark Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
         }
     }

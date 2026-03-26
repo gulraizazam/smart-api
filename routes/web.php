@@ -524,7 +524,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('appointmentsmedical/{id}/export_pdf', [AppointmentMedicalController::class, 'exportPdf'])->name('appointmentsmedical.custom_form_feedbacks.export_pdf');
         /*Appointment Route end for medical history form*/
 
-        Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'GetCentreDoctors'])->name('getdoctors');
+        Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'getCentreDoctors'])->name('getdoctors');
 
         // Appointment Comments
         Route::get('appointments/comment-save', [AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
@@ -640,10 +640,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // MIGRATED TO API: /api/dashboard/doctor-upselling-data
         // Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
         Route::get('dashboard/doctore_wise_upselling', [DashboardReportsController::class, 'DoctoreWiseUpselling'])->name('dashboard.doctor_wise_upselling');
-        Route::get('dashboard/feedback/view/{id}', [DashboardReportsController::class, 'ViewFeedback'])->name('feedback.view');
-        Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
-        Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
-        Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
+        Route::get('dashboard/feedback/view/{id}', [DashboardReportsController::class, 'viewFeedback'])->name('feedback.view');
+        Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'allDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
+        Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'followUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
+        Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'followUpReportMonthly'])->name('reports.follow_up_month');
         Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
         Route::get('dashboard/patient-follow-up/download', [PatientFollowupController::class, 'patientFollowUpDownload'])->name('follow_up.download');
         Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
