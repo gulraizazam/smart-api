@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeadComments extends Model
@@ -15,18 +16,12 @@ class LeadComments extends Model
 
     protected $table = 'lead_comments';
 
-    /**
-     * Get the lead that owns the comments.
-     */
-    public function lead()
+    public function lead(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Leads');
+        return $this->belongsTo(Leads::class);
     }
 
-    /**
-     * Get the User that owns the Lead comment.
-     */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
