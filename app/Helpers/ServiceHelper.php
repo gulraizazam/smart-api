@@ -56,7 +56,7 @@ class ServiceHelper
         return Cache::remember('service_durations', self::CACHE_TTL * 24, function () {
             $durations = [];
             for ($hour = 0; $hour <= 4; $hour++) {
-                for ($min = 0; $min < 60; $min += 15) {
+                for ($min = 0; $min < 60; $min += 10) {
                     if ($hour == 0 && $min == 0) {
                         continue;
                     }
