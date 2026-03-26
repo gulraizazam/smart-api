@@ -4,6 +4,8 @@ $(document).keydown(function (event) {
         $('.modal').modal('hide');
     }
 });
+
+
 $(document).ready(function () {
     $(document).on('click', function (e) {
         if (!$(e.target).closest('.dropdown-menu').length) {
