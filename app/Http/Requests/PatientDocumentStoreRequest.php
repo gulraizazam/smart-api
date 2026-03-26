@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PatientRequest extends FormRequest
+class PatientDocumentStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,22 +18,17 @@ class PatientRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string',
-            'gender' => 'required|string',
-            'email' => 'sometimes|nullable|email|max:255',
-            'dob' => 'sometimes|nullable|date',
-            'address' => 'sometimes|nullable|string|max:500',
-            'cnic' => 'sometimes|nullable|string|max:20',
+            'file' => 'required|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
+            'patient_id' => 'required|integer|exists:users,id',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required' => 'The name field is required.',
-            'phone.required' => 'The phone field is required.',
-            'gender.required' => 'The gender field is required.',
-            'email.email' => 'Please provide a valid email address.',
+            'name.required' => 'The document name is required.',
+            'file.required' => 'No file was uploaded. Please select a file.',
+            'file.mimes' => 'File format not supported. Allowed: jpg, jpeg, png, pdf, docx, xlsx',
         ];
     }
 
