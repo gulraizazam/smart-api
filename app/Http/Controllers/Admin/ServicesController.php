@@ -6,6 +6,7 @@ use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\GroupsTree;
+use App\Helpers\ServiceHelper;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
 use App\Models\Appointments;
@@ -206,7 +207,7 @@ class ServicesController extends Controller
 
         $Services = GeneralFunctions::parentServices();
 
-        $durations = GeneralFunctions::duration();
+        $durations = ServiceHelper::getDurations();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'parent_services' => $Services,
@@ -289,7 +290,7 @@ class ServicesController extends Controller
 
         $Services = GeneralFunctions::parentServices();
 
-        $durations = GeneralFunctions::duration();
+        $durations = ServiceHelper::getDurations();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'parent_services' => $Services,
@@ -360,7 +361,7 @@ class ServicesController extends Controller
 
         $Services = GeneralFunctions::parentServices();
 
-        $durations = GeneralFunctions::duration();
+        $durations = ServiceHelper::getDurations();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'parent_services' => $Services,
