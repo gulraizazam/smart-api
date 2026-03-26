@@ -194,30 +194,15 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
         Route::get('/doctor-dashboard', [App\Http\Controllers\DoctorDashboardController::class, 'index'])->name('doctor_dashboard');
-        Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
-        // MIGRATED TO API: /api/dashboard/collection-by-centre
-        // Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
-        Route::get('/home/my-collection-by-centre', [App\Http\Controllers\HomeController::class, 'myCollectionByCentre'])->name('home.myCollectionByCentre');
-        // MIGRATED TO API: /api/dashboard/revenue-by-service-category
-        // Route::get('/home/revenue-by-service-category', [App\Http\Controllers\HomeController::class, 'RevenueByServiceCategory'])->name('home.RevenueByServiceCategory');
-        // MIGRATED TO API: /api/dashboard/revenue-by-centre
-        // Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
-        // MIGRATED TO API: /api/dashboard/collection-by-service-category
-        // Route::get('/home/collection-by-service-category', [App\Http\Controllers\HomeController::class, 'CollectionByServiceCategory'])->name('home.CollectionByServiceCategory');
-        Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
-        // MIGRATED TO API: /api/dashboard/revenue-by-service
-        // Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
-        Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
-        // MIGRATED TO API: /api/dashboard/stats
-        // Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
 
+        // Home dashboard chart endpoints (my-* variants for personal data)
+        Route::controller(App\Http\Controllers\HomeController::class)->prefix('home')->name('home.')->group(function () {
+            Route::get('my-collection-by-centre', 'myCollectionByCentre')->name('myCollectionByCentre');
+            Route::get('my-revenue-by-centre', 'myRevenueByCentre')->name('myRevenueByCentre');
+            Route::get('my-revenue-by-service', 'myRevenueByService')->name('myRevenueByService');
+        });
 
         //  ----------------- Dashboard and  Home Routes ----------------- //
-
-        // MIGRATED TO API: /api/dashboard/activities
-        // Route::prefix('home')->group(function () {
-        //     Route::get('getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
-        // });
 
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
 
