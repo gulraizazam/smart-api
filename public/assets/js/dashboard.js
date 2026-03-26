@@ -17,7 +17,7 @@
             type: 'GET',
             data: { type: requestType },
             success: function(response) {
-                if (response.success && response.data) {
+                if (response.status && response.data) {
                     const data = response.data;
                     
                     // Update Sales
@@ -107,21 +107,22 @@
                 $('#load-more-spinner').hide();
                 activitiesLoading = false;
                 
-                if (!response.success) {
+                if (!response.status) {
                     if (response.message === 'Unauthorized') {
                         $('#activities-unauthorized').show();
                     }
                     return;
                 }
-                
-                const activities = response.data;
-                activitiesHasMore = response.has_more;
-                activitiesPage = response.current_page;
-                
+
+                const activitiesData = response.data;
+                const activities = activitiesData.data;
+                activitiesHasMore = activitiesData.has_more;
+                activitiesPage = activitiesData.current_page;
+
                 // Update total count
-                $('#totalactivities').text(response.total + ' activities');
-                
-                if (activities.length === 0 && page === 1) {
+                $('#totalactivities').text(activitiesData.total + ' activities');
+
+                if (!activities || activities.length === 0 && page === 1) {
                     $('#activities-empty').show();
                     $('#activities-timeline').hide();
                     $('#load-more-container').hide();
