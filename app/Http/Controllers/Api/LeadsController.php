@@ -8,12 +8,13 @@ use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadStatusRequest;
 use App\Http\Requests\Lead\ImportLeadsRequest;
+use App\Http\Resources\Lead\LeadResource;
+use App\Http\Resources\Lead\LeadDetailResource;
+use App\Http\Resources\Lead\LeadCommentResource;
 use App\Exceptions\LeadException;
 use App\HelperModule\ApiHelper;
-use App\Helpers\GeneralFunctions;
 use App\Models\Leads;
 use App\Models\User;
-use App\Models\Regions;
 use App\Models\LeadStatuses;
 use App\Models\Services;
 use App\Models\Locations;
@@ -26,7 +27,7 @@ use Illuminate\Support\Facades\Config;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Rap2hpoutre\FastExcel\FastExcel;
-use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LeadsController extends Controller
 {
@@ -42,9 +43,6 @@ class LeadsController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    /**
-     * Get leads datatable data
-     */
     public function datatable(Request $request): JsonResponse
     {
         try {
@@ -52,7 +50,6 @@ class LeadsController extends Controller
             $leadType = $request->get('type');
             $filename = $leadType ? 'junk_leads' : 'leads';
 
-            // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->leadService->bulkDelete($ids);
@@ -79,41 +76,44 @@ class LeadsController extends Controller
                 ->orderBy($datatableData['orderBy'], $datatableData['order'])
                 ->get();
 
-            // Batch-load lookup data for current page only
-            $userIds = $leads->pluck('created_by')->unique()->filter()->toArray();
-            $regionIds = $leads->pluck('region_id')->unique()->filter()->toArray();
+            // Batch-load lookup data for LeadResource status resolution
             $statusIds = $leads->pluck('lead_status_id')->unique()->filter()->toArray();
+            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)
+                ->select('id', 'name', 'parent_id')
+                ->get()
+                ->keyBy('id')
+                ->toArray();
 
-            $users = User::whereIn('id', $userIds)->select('id', 'name')->get()->keyBy('id')->toArray();
-            $regions = Regions::whereIn('id', $regionIds)->select('id', 'name')->get()->keyBy('id')->toArray();
-            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)->select('id', 'name', 'parent_id')->get()->keyBy('id')->toArray();
+            // Also load parent statuses that aren't in the current set
+            $parentIds = collect($leadStatuses)->pluck('parent_id')->filter()->diff(array_keys($leadStatuses))->unique()->toArray();
+            if (!empty($parentIds)) {
+                $parentStatuses = LeadStatuses::whereIn('id', $parentIds)->select('id', 'name', 'parent_id')->get()->keyBy('id')->toArray();
+                $leadStatuses = array_replace($leadStatuses, $parentStatuses);
+            }
 
-            // Transform data
-            $records = $this->transformLeadsForDatatable($leads, $users, $regions, $leadStatuses);
+            LeadResource::$statusLookup = $leadStatuses;
 
-            // Filter data
             $filterData = $this->leadService->getFilterData($filename);
-            $records['filter_values'] = $filterData['filter_values'];
-            $records['active_filters'] = $filterData['active_filters'];
-            $records['meta'] = [
-                'field' => $datatableData['orderBy'],
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $displayLength,
-                'total' => $datatableData['total'],
-                'sort' => $datatableData['order'],
-            ];
-            $records['permissions'] = $this->getPermissions();
 
-            return ApiHelper::apiDataTable($records);
+            return ApiHelper::apiDataTable([
+                'data' => LeadResource::collection($leads),
+                'permissions' => $this->getPermissions(),
+                'active_filters' => $filterData['active_filters'],
+                'filter_values' => $filterData['filter_values'],
+                'meta' => [
+                    'field' => $datatableData['orderBy'],
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $displayLength,
+                    'total' => $datatableData['total'],
+                    'sort' => $datatableData['order'],
+                ],
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get form data for creating a lead
-     */
     public function create(): JsonResponse
     {
         if (!Gate::allows('leads_create')) {
@@ -129,7 +129,13 @@ class LeadsController extends Controller
                 'cities' => $formData['cities'],
                 'lead_sources' => $formData['lead_sources'],
                 'lead_statuses' => $formData['lead_statuses'],
-                'lead' => $this->getEmptyLeadObject(),
+                'lead' => [
+                    'id' => null,
+                    'name' => null,
+                    'email' => null,
+                    'phone' => null,
+                    'gender' => null,
+                ],
                 'leadServices' => null,
                 'employees' => $employees,
                 'edit_status' => 0,
@@ -140,9 +146,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Store a new lead
-     */
     public function store(StoreLeadRequest $request): JsonResponse
     {
         try {
@@ -155,9 +158,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Get lead detail
-     */
     public function detail(int $id): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
@@ -171,18 +171,14 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->error, 'Lead not found.', false);
             }
 
-            $lead->phone = GeneralFunctions::prepareNumber4Call($lead->phone);
-            $lead->gender = Config::get('constants.gender_array')[$lead->gender] ?? 'Unknown';
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, ['lead' => $lead]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'lead' => new LeadDetailResource($lead),
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get lead for editing
-     */
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('leads_edit')) {
@@ -208,7 +204,7 @@ class LeadsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'Services' => $formData['services'],
                 'child_services' => $childServices,
-                'lead' => $lead,
+                'lead' => new LeadDetailResource($lead),
                 'locations' => $locations,
                 'cities' => $formData['cities'],
                 'lead_sources' => $formData['lead_sources'],
@@ -222,9 +218,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Update lead
-     */
     public function update(UpdateLeadRequest $request, int $id): JsonResponse
     {
         try {
@@ -237,9 +230,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Delete lead
-     */
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('leads_destroy')) {
@@ -254,22 +244,18 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Toggle lead status
-     */
     public function status(Request $request): JsonResponse
     {
         try {
             $lead = $this->leadService->toggleStatus($request->id, $request->status);
-            return ApiHelper::apiResponse($this->success, 'Status Changed Successfully', true, ['lead' => $lead]);
+            return ApiHelper::apiResponse($this->success, 'Status Changed Successfully', true, [
+                'lead' => new LeadResource($lead),
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Show lead statuses for popup
-     */
     public function showLeadStatuses(Request $request): JsonResponse
     {
         if (!Gate::allows('leads_lead_status')) {
@@ -286,9 +272,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Store lead status update
-     */
     public function storeLeadStatuses(UpdateLeadStatusRequest $request): JsonResponse
     {
         try {
@@ -301,9 +284,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Load child services for a parent service
-     */
     public function loadChildServices(Request $request): JsonResponse
     {
         try {
@@ -319,9 +299,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Import leads from file
-     */
     public function uploadLeads(ImportLeadsRequest $request): JsonResponse
     {
         set_time_limit(300);
@@ -360,35 +337,28 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Search leads by ID or name
-     */
     public function getLeadId(Request $request): JsonResponse
     {
         try {
-            $leads = Leads::getLeadidAjax($request->search, Auth::user()->account_id);
+            $leads = $this->leadService->searchLeadsById($request->search, Auth::user()->account_id);
             return ApiHelper::apiResponse($this->success, 'Record found.', true, ['leads' => $leads]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get lead by ID
-     */
     public function getLeadNumber(Request $request): JsonResponse
     {
         try {
             $lead = Leads::find($request->lead_id);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, ['lead' => $lead]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'lead' => $lead ? new LeadResource($lead) : null,
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Search leads by phone
-     */
     public function phoneSearch(Request $request): JsonResponse
     {
         try {
@@ -399,9 +369,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Get lead service for editing
-     */
     public function editService(int $leadId, int $serviceId): JsonResponse
     {
         try {
@@ -422,27 +389,22 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Store lead comment
-     */
     public function storeComment(Request $request): JsonResponse
     {
         try {
             $comment = $this->leadService->addComment($request->lead_id, $request->comment);
+            $comment->load('user');
 
-            return response()->json([
+            return ApiHelper::apiResponse($this->success, 'Comment added.', true, [
                 'username' => Auth::user()->name,
-                'lead' => $comment,
-                'leadCommentDate' => Carbon::parse($comment->created_at)->format('D M, j Y h:i A'),
+                'lead' => new LeadCommentResource($comment),
+                'leadCommentDate' => $comment->created_at->format('D M, j Y h:i A'),
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get lead data for conversion
-     */
     public function convert(int $id): JsonResponse
     {
         if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
@@ -470,7 +432,7 @@ class LeadsController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'services' => $services,
-                'lead' => $lead,
+                'lead' => new LeadDetailResource($lead),
                 'employees' => $employees,
                 'cities' => $cities,
                 'lead_sources' => $leadSources,
@@ -483,10 +445,7 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Export leads to PDF
-     */
-    public function exportPdf(Request $request)
+    public function exportPdf(Request $request): BinaryFileResponse|JsonResponse
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
@@ -512,10 +471,7 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Export leads to Excel/CSV
-     */
-    public function exportDocs(Request $request)
+    public function exportDocs(Request $request): BinaryFileResponse
     {
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -523,37 +479,41 @@ class LeadsController extends Controller
         return Excel::download(new ExportLead($request), 'leads.' . $request->ext);
     }
 
-    /**
-     * Check lead status parent for popup
-     */
     public function leadStatusesPopCheck(Request $request): JsonResponse
     {
-        $leadStatus = LeadStatuses::find($request->id);
-        $childStatuses = LeadStatuses::where('parent_id', $leadStatus->id)->get();
+        try {
+            $leadStatus = LeadStatuses::find($request->id);
 
-        return response()->json([
-            'd' => $childStatuses,
-            'lead_status' => $leadStatus,
-        ]);
+            if (!$leadStatus) {
+                return ApiHelper::apiResponse($this->error, 'Status not found.', false);
+            }
+
+            $childStatuses = LeadStatuses::where('parent_id', $leadStatus->id)->get();
+
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'd' => $childStatuses,
+                'lead_status' => $leadStatus,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
-    /**
-     * Check lead status child for popup
-     */
     public function leadStatusChildPopCheck(Request $request): JsonResponse
     {
-        $childStatus = LeadStatuses::find($request->id);
-        $parentStatus = LeadStatuses::find($childStatus?->parent_id);
+        try {
+            $childStatus = LeadStatuses::find($request->id);
+            $parentStatus = $childStatus ? LeadStatuses::find($childStatus->parent_id) : null;
 
-        return response()->json([
-            'd' => $childStatus,
-            'lead_status2' => $parentStatus,
-        ]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+                'd' => $childStatus,
+                'lead_status2' => $parentStatus,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
-    /**
-     * Load lead statuses for dropdown
-     */
     public function loadLeadStatuses(): JsonResponse
     {
         $data = LeadStatuses::getActiveOnly()
@@ -563,9 +523,6 @@ class LeadsController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Load treatments for dropdown
-     */
     public function loadTreatments(): JsonResponse
     {
         $data = Services::getActiveOnly()
@@ -575,9 +532,6 @@ class LeadsController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Load lead sources for dropdown
-     */
     public function loadLeadSources(): JsonResponse
     {
         $data = \App\Models\LeadSources::getActiveOnly()
@@ -587,9 +541,6 @@ class LeadsController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Load cities for dropdown
-     */
     public function loadCities(): JsonResponse
     {
         if (!Gate::allows('leads_city')) {
@@ -603,9 +554,6 @@ class LeadsController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Save city for lead
-     */
     public function saveCity(Request $request): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
@@ -633,9 +581,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Load lead data for form
-     */
     public function loadLeadData(Request $request): JsonResponse
     {
         $data = $request->all();
@@ -650,7 +595,7 @@ class LeadsController extends Controller
             ? $request->input('old_phone')
             : $request->input('phone');
 
-        $phone = GeneralFunctions::cleanNumber($phone);
+        $phone = \App\Helpers\GeneralFunctions::cleanNumber($phone);
         $patient = \App\Models\Patients::getByPhone($phone, Auth::user()->account_id, $request->patient_id);
 
         if (!$patient) {
@@ -692,9 +637,6 @@ class LeadsController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Send SMS to lead
-     */
     public function sendSms(int $id): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
@@ -713,9 +655,6 @@ class LeadsController extends Controller
         }
     }
 
-    /**
-     * Remove lead from junk (set status to Open)
-     */
     public function removeFromJunk(int $id): JsonResponse
     {
         if (!Gate::allows('leads_convert')) {
@@ -757,66 +696,6 @@ class LeadsController extends Controller
     // Private Helpers
     // =========================================================================
 
-    /**
-     * Transform leads for datatable response
-     */
-    protected function transformLeadsForDatatable($leads, array $users, array $regions, array $leadStatuses): array
-    {
-        $records = ['data' => []];
-        $canViewContact = Gate::allows('contact');
-
-        foreach ($leads as $lead) {
-            $services = [];
-            $childServices = [];
-            $activeServices = [];
-
-            if ($lead->relationLoaded('lead_service')) {
-                foreach ($lead->lead_service as $ls) {
-                    $serviceName = $ls->service?->name;
-                    if ($serviceName && !in_array($serviceName, $services)) {
-                        $services[] = $serviceName;
-                    }
-                    if ($ls->status == 1) {
-                        $childServices[] = $ls->childservice?->name ?? '';
-                        $activeServices[] = $serviceName ?? '';
-                    }
-                }
-            }
-
-            $statusName = '';
-            if (isset($leadStatuses[$lead->lead_status_id])) {
-                $status = $leadStatuses[$lead->lead_status_id];
-                $parentId = $status['parent_id'] ?? 0;
-                $statusName = ($parentId == 0)
-                    ? ($status['name'] ?? '')
-                    : ($leadStatuses[$parentId]['name'] ?? $status['name'] ?? '');
-            }
-
-            $records['data'][] = [
-                'id' => $lead->id,
-                'lead_id' => $lead->id,
-                'name' => $lead->name,
-                'gender' => $lead->gender == 1 ? 'Male' : 'Female',
-                'active' => $lead->active,
-                'cityId' => $lead->city_id ?? 0,
-                'phone' => $canViewContact
-                    ? GeneralFunctions::prepareNumber4Call($lead->phone)
-                    : '***********',
-                'city_id' => $lead->city?->name ?? '',
-                'region_id' => $regions[$lead->region_id]['name'] ?? 'N/A',
-                'lead_status_id' => $statusName,
-                'service_id' => implode(',', $services),
-                'service_active' => implode(',', array_filter($activeServices)),
-                'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                'created_by' => $users[$lead->created_by]['name'] ?? 'N/A',
-                'location' => $lead->towns?->name ?? '',
-                'child_service' => implode(',', array_filter($childServices)),
-            ];
-        }
-
-        return $records;
-    }
-
     protected function getPermissions(): array
     {
         return [
@@ -829,17 +708,6 @@ class LeadsController extends Controller
             'contact' => Gate::allows('contact'),
             'update_status' => Gate::allows('leads_lead_status'),
         ];
-    }
-
-    protected function getEmptyLeadObject(): \stdClass
-    {
-        $lead = new \stdClass();
-        $lead->id = null;
-        $lead->name = null;
-        $lead->email = null;
-        $lead->phone = null;
-        $lead->gender = null;
-        return $lead;
     }
 
     protected function buildExportQuery(Request $request): \Illuminate\Database\Eloquent\Builder
@@ -877,10 +745,8 @@ class LeadsController extends Controller
         }
 
         $userCities = \App\Helpers\ACL::getUserCities();
-        $query = Leads::where('account_id', Auth::user()->account_id)
-            ->where(function ($q) use ($userCities) {
-                $q->whereIn('city_id', $userCities)->orWhereNull('city_id');
-            });
+        $query = Leads::forAccount()
+            ->forCities($userCities);
 
         if (!empty($where)) {
             $query->where($where);

@@ -269,7 +269,7 @@ class LeadService
     /**
      * Update lead
      */
-    public function updateLead($id, array $data): Leads
+    public function updateLead(int $id, array $data): Leads
     {
         return DB::transaction(function () use ($id, $data) {
             $lead = Leads::findOrFail($id);
@@ -364,7 +364,7 @@ class LeadService
     /**
      * Delete lead
      */
-    public function deleteLead($id): bool
+    public function deleteLead(int $id): bool
     {
         $lead = Leads::findOrFail($id);
         return $lead->delete();
@@ -381,7 +381,7 @@ class LeadService
     /**
      * Update lead status
      */
-    public function updateLeadStatus($leadId, array $data): Leads
+    public function updateLeadStatus(int $leadId, array $data): Leads
     {
         return DB::transaction(function () use ($leadId, $data) {
             $lead = Leads::findOrFail($leadId);
@@ -413,7 +413,7 @@ class LeadService
     /**
      * Toggle lead active status
      */
-    public function toggleStatus($id, $status): Leads
+    public function toggleStatus(int $id, int|string $status): Leads
     {
         $lead = Leads::findOrFail($id);
         $lead->update(['active' => $status]);
@@ -423,7 +423,7 @@ class LeadService
     /**
      * Get lead detail with all relations
      */
-    public function getLeadDetail($id): ?Leads
+    public function getLeadDetail(int $id): ?Leads
     {
         return Leads::with([
             'lead_comments.user:id,name',
@@ -439,7 +439,7 @@ class LeadService
     /**
      * Get lead for editing
      */
-    public function getLeadForEdit($id): ?Leads
+    public function getLeadForEdit(int $id): ?Leads
     {
         return Leads::with('lead_service')->where([
             'id' => $id,
@@ -450,7 +450,7 @@ class LeadService
     /**
      * Create lead service entry
      */
-    public function createLeadService($leadId, array $data, $accountId): LeadsServices
+    public function createLeadService(int $leadId, array $data, int $accountId): LeadsServices
     {
         $openStatus = $this->getDefaultLeadStatus($accountId);
         $metaLeadId = !empty($data['meta_lead_id']) ? trim($data['meta_lead_id']) : null;
@@ -1037,7 +1037,7 @@ class LeadService
     /**
      * Get child services for a parent service
      */
-    public function getChildServices($serviceId): \Illuminate\Support\Collection
+    public function getChildServices(int $serviceId): \Illuminate\Support\Collection
     {
         return Services::where([
             'parent_id' => $serviceId,
@@ -1048,7 +1048,7 @@ class LeadService
     /**
      * Add comment to lead
      */
-    public function addComment($leadId, string $comment): LeadComments
+    public function addComment(int $leadId, string $comment): LeadComments
     {
         return LeadComments::create([
             'lead_id' => $leadId,
@@ -1060,7 +1060,7 @@ class LeadService
     /**
      * Get lead statuses with children
      */
-    public function getLeadStatusesWithChildren($leadId): array
+    public function getLeadStatusesWithChildren(int $leadId): array
     {
         $lead = Leads::find($leadId);
         if (!$lead) {
