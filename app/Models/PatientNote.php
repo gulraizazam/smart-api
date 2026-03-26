@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PatientNote extends Model
@@ -22,18 +23,12 @@ class PatientNote extends Model
         'is_pinned' => 'boolean',
     ];
 
-    /**
-     * Get the patient that owns the note.
-     */
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
     }
 
-    /**
-     * Get the user who created the note.
-     */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

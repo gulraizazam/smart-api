@@ -37,7 +37,17 @@
       "Bash(php -l app/Http/Requests/Admin/PermissionDatatableRequest.php)",
       "Bash(php -l app/Http/Requests/Admin/RoleDatatableRequest.php)",
       "Bash(php -l app/Http/Requests/Admin/ApplicationUserDatatableRequest.php)",
-      "Bash(php -l app/Http/Requests/Admin/ApplicationUserRequest.php)"
+      "Bash(php -l app/Http/Requests/Admin/ApplicationUserRequest.php)",
+      "Bash(find /c/laragon/www/cutera-upgradation1/resources/views/admin/patients -type f -name *.php)",
+      "Bash(php -l app/Models/Patients.php)",
+      "Bash(php -l app/Models/PatientNote.php)",
+      "Bash(php -l app/Http/Requests/PatientRequest.php)",
+      "Bash(php -l app/Http/Requests/PatientNoteRequest.php)",
+      "Bash(php -l app/Http/Requests/PatientDocumentRequest.php)",
+      "Bash(php -l app/Http/Requests/PatientDocumentStoreRequest.php)",
+      "Bash(php -l app/Http/Controllers/Api/PatientController.php)",
+      "Bash(php -l app/Http/Controllers/Admin/PatientsController.php)",
+      "Bash(php -l app/Services/PatientManagement/PatientService.php)"
     ]
   }
 }
