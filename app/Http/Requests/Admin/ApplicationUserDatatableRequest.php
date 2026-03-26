@@ -42,12 +42,12 @@ class ApplicationUserDatatableRequest extends FormRequest
             'query.search.email' => 'nullable|string|max:255',
             'query.search.phone' => 'nullable|string|max:20',
             'query.search.gender' => 'nullable|string',
-            'query.search.commission' => 'nullable|string',
+
             'query.search.location_id' => 'nullable|string',
             'query.search.role_id' => 'nullable|string',
             'query.search.status' => 'nullable|string',
             'query.search.created_at' => 'nullable|string',
-            'query.search.delete' => 'nullable|string',
+
             'query.search.filter' => 'nullable|string',
             'sort.field' => 'nullable|string',
             'sort.sort' => 'nullable|string|in:asc,desc',
@@ -66,25 +66,13 @@ class ApplicationUserDatatableRequest extends FormRequest
             'email' => $this->input('query.search.email'),
             'phone' => $this->input('query.search.phone'),
             'gender' => $this->input('query.search.gender'),
-            'commission' => $this->input('query.search.commission'),
+
             'location_id' => $this->input('query.search.location_id'),
             'role_id' => $this->input('query.search.role_id'),
             'status' => $this->input('query.search.status'),
             'created_at' => $this->input('query.search.created_at'),
             'apply_filter' => $this->shouldApplyFilter(),
         ];
-    }
-
-    /**
-     * Get delete IDs from request
-     */
-    public function getDeleteIds(): array
-    {
-        $deleteString = $this->input('query.search.delete');
-        if (empty($deleteString)) {
-            return [];
-        }
-        return array_filter(explode(',', $deleteString));
     }
 
     /**

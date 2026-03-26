@@ -68,15 +68,6 @@
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Commission:</label>
-            <div class="input-group">
-                <input type="number" min="0" max="100" class="form-control filter-field" name="commission" placeholder="eg: 10" id="search_commission" >
-                <div class="input-group-append">
-                    <span class="input-group-text">%</span>
-                </div>
-            </div>
-        </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Email:</label>

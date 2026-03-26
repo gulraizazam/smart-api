@@ -12,22 +12,18 @@ use Illuminate\Support\Facades\Gate;
 
 class UserTypeController extends Controller
 {
-    private UserTypeService $userTypeService;
     private int $success;
     private int $error;
     private int $unauthorized;
 
-    public function __construct(UserTypeService $userTypeService)
-    {
-        $this->userTypeService = $userTypeService;
+    public function __construct(
+        private readonly UserTypeService $userTypeService,
+    ) {
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    /**
-     * Display a listing of the resource (datatable).
-     */
     public function index(Request $request): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
@@ -36,8 +32,7 @@ class UserTypeController extends Controller
 
         try {
             $filters = getFilters($request->all());
-            
-            // Handle bulk delete if requested
+
             if (!empty($filters['delete'])) {
                 $ids = array_filter(explode(',', $filters['delete']));
                 if (!empty($ids)) {
@@ -50,8 +45,7 @@ class UserTypeController extends Controller
             }
 
             [$orderBy, $order] = getSortBy($request);
-            
-            // Get params for service
+
             $params = [
                 'name' => $filters['name'] ?? null,
                 'type' => $filters['type'] ?? null,
@@ -60,18 +54,20 @@ class UserTypeController extends Controller
             ];
 
             // Get total for pagination
-            $totalParams = $params;
-            $totalParams['offset'] = 0;
-            $totalParams['limit'] = PHP_INT_MAX;
-            $totalResult = $this->userTypeService->getDatatableData($totalParams);
+            $totalResult = $this->userTypeService->getDatatableData([
+                ...$params,
+                'offset' => 0,
+                'limit' => PHP_INT_MAX,
+            ]);
             $iTotalRecords = $totalResult['total'];
 
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $params['offset'] = $iDisplayStart;
-            $params['limit'] = $iDisplayLength;
-
-            $result = $this->userTypeService->getDatatableData($params);
+            $result = $this->userTypeService->getDatatableData([
+                ...$params,
+                'offset' => $iDisplayStart,
+                'limit' => $iDisplayLength,
+            ]);
 
             return response()->json([
                 'data' => $result['data'],
@@ -92,9 +88,6 @@ class UserTypeController extends Controller
         }
     }
 
-    /**
-     * Get data for creating a new resource.
-     */
     public function create(): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
@@ -102,19 +95,14 @@ class UserTypeController extends Controller
         }
 
         try {
-            $types = $this->userTypeService->getAllForDropdown();
-
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'types' => $types,
+                'types' => $this->userTypeService->getAllForDropdown(),
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(UserTypeRequest $request): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
@@ -130,9 +118,6 @@ class UserTypeController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
@@ -142,21 +127,14 @@ class UserTypeController extends Controller
         try {
             $userType = $this->userTypeService->find($id);
 
-            if (!$userType) {
-                return ApiHelper::apiResponse($this->success, 'Record not found.', false);
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'usertype' => $userType,
-            ]);
+            return $userType
+                ? ApiHelper::apiResponse($this->success, 'Record found.', true, ['usertype' => $userType])
+                : ApiHelper::apiResponse($this->success, 'Record not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get data for editing the specified resource.
-     */
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
@@ -170,20 +148,15 @@ class UserTypeController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Record not found.', false);
             }
 
-            $types = $this->userTypeService->getTypeOptions();
-
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'usertype' => $userType,
-                'types' => $types,
+                'types' => $this->userTypeService->getTypeOptions(),
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UserTypeRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
@@ -193,19 +166,14 @@ class UserTypeController extends Controller
         try {
             $userType = $this->userTypeService->update($id, $request->validated());
 
-            if (!$userType) {
-                return ApiHelper::apiResponse($this->success, 'Record not found.', false);
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $userType
+                ? ApiHelper::apiResponse($this->success, 'Record has been updated successfully.')
+                : ApiHelper::apiResponse($this->success, 'Record not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_destroy')) {
@@ -215,19 +183,12 @@ class UserTypeController extends Controller
         try {
             $result = $this->userTypeService->delete($id);
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                $result['message'],
-                $result['success']
-            );
+            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Activate the specified resource.
-     */
     public function activate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_active')) {
@@ -237,19 +198,12 @@ class UserTypeController extends Controller
         try {
             $result = $this->userTypeService->activate($id);
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                $result['message'],
-                $result['success']
-            );
+            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Inactivate the specified resource.
-     */
     public function inactivate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_inactive')) {
@@ -259,42 +213,28 @@ class UserTypeController extends Controller
         try {
             $result = $this->userTypeService->inactivate($id);
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                $result['message'],
-                $result['success']
-            );
+            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get user types for dropdown (cached).
-     */
     public function dropdown(): JsonResponse
     {
         try {
-            $types = $this->userTypeService->getAllForDropdown();
-
             return ApiHelper::apiResponse($this->success, 'Records found.', true, [
-                'types' => $types,
+                'types' => $this->userTypeService->getAllForDropdown(),
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Get user types for doctors (consultant type).
-     */
     public function forDoctor(): JsonResponse
     {
         try {
-            $types = $this->userTypeService->getForDoctor();
-
             return ApiHelper::apiResponse($this->success, 'Records found.', true, [
-                'types' => $types,
+                'types' => $this->userTypeService->getForDoctor(),
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

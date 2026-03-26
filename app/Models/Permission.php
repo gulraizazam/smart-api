@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Permission extends \Spatie\Permission\Models\Permission
 {
@@ -22,37 +25,36 @@ class Permission extends \Spatie\Permission\Models\Permission
         'main_group' => 'boolean',
         'status' => 'boolean',
         'parent_id' => 'integer',
+        'sort_order' => 'integer',
     ];
 
-    /**
-     * Get the parent permission
-     */
-    public function parent()
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(static::class, 'parent_id');
     }
 
-    /**
-     * Get child permissions
-     */
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(static::class, 'parent_id');
     }
 
-    /**
-     * Scope for parent groups only
-     */
-    public function scopeParentGroups($query)
+    public function scopeParentGroups(Builder $query): Builder
     {
         return $query->where('main_group', 1);
     }
 
-    /**
-     * Scope for active permissions
-     */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 1);
+    }
+
+    public function scopeChildrenOf(Builder $query, int $parentId): Builder
+    {
+        return $query->where('parent_id', $parentId);
+    }
+
+    public function isParentGroup(): bool
+    {
+        return (bool) $this->main_group;
     }
 }

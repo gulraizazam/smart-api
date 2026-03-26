@@ -25,7 +25,7 @@ class ApplicationUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'roles' => 'required|array',
             'roles.*' => 'integer|exists:roles,id',
-            'commission' => 'required|numeric|min:0|max:100',
+
             'phone' => 'nullable|string|max:20',
             'gender' => 'nullable|in:1,2',
             'centers' => 'nullable|array',
@@ -60,7 +60,7 @@ class ApplicationUserRequest extends FormRequest
             'password.min' => 'Password must be at least 8 characters',
             'password.regex' => 'Password must be a combination of numbers, upper, lower, and special characters',
             'roles.required' => 'Role is required',
-            'commission.required' => 'Commission is required',
+
             'phone.required' => 'Phone field is required',
             'gender.required' => 'Gender field is required',
         ];

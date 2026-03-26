@@ -34,16 +34,6 @@
                             <h3 class="card-label">Users</h3>
                         </div>
                         <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-                            @if(Gate::allows('users_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                            @endif
-
                             @if(Gate::allows('users_create'))
                                 <a href="javascript:void(0);" onclick="createUsers('{{ route('admin.users.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_user">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->

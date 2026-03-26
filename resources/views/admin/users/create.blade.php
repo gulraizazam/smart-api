@@ -60,17 +60,7 @@
 
                 <div class="form-group">
                     <div class="row">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Commission <span class="text text-danger">*</span></label>
-                            <div class="input-group">
-                                <input style="padding-right: 8px !important;" id="add_user_commission" type="number" min="0" max="100" name="commission" class="form-control form-control-lg form-control-solid mb-2"/>
-                                <div class="input-group-append popup-percentage">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Password <span class="text text-danger">*</span></label>
                             <input id="add_user_password" type="password" name="password" class="form-control form-control-lg form-control-solid mb-2" />
 
@@ -91,14 +81,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row mt-10">
-                        <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse </label>
-                            <select id="add_user_warehouse" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="warehouse[]">
-
-                            </select>
-                        </div>
-                    </div>
+                   
                     <div class="row mt-10">
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>

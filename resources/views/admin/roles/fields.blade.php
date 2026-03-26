@@ -29,18 +29,12 @@
 
         <div class="card-body">
             <div class="form-group row ">
-                <div class="fv-row col-md-6 my-md-0">
+                <div class="fv-row col-md-12 my-md-0">
                     <label>Name <span class="text text-danger">*</span></label>
                     <input type="text" value="{{$role->name ?? ''}}" name="name" class="form-control custom-field" placeholder="Name"/>
                 </div>
 
-                <div class="fv-row col-md-6 my-md-0">
-                    <label>Commission <span class="text text-danger">*</span></label>
-                    <input style="width: 95%; padding-right: 12px;" type="number" value="{{$role->commission ?? ''}}" name="commission" min="0" max="100" class="form-control custom-field" placeholder="Commission" />
-                    <div class="input-group-append percentage-align">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
+                
 
             </div>
         </div>

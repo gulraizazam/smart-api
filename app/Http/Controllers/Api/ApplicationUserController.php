@@ -3,35 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplicationUserDatatableRequest;
 use App\Http\Requests\Admin\ApplicationUserRequest;
+use App\Http\Requests\Admin\ChangePasswordRequest;
 use App\Services\UserManagement\ApplicationUserService;
 use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class ApplicationUserController extends Controller
 {
-    private ApplicationUserService $userService;
     private int $success;
     private int $error;
     private int $unauthorized;
 
-    public function __construct(ApplicationUserService $userService)
-    {
-        $this->userService = $userService;
+    public function __construct(
+        private readonly ApplicationUserService $userService,
+    ) {
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    /**
-     * Display users listing page
-     */
     public function index()
     {
         if (!Gate::allows('users_manage')) {
@@ -41,29 +37,10 @@ class ApplicationUserController extends Controller
         return view('admin.users.index');
     }
 
-    /**
-     * Get paginated users for datatable
-     */
-    public function datatable(ApplicationUserDatatableRequest $request)
+    public function datatable(ApplicationUserDatatableRequest $request): JsonResponse
     {
         try {
-            // Handle bulk delete if requested
-            $deleteIds = $request->getDeleteIds();
-            if (!empty($deleteIds)) {
-                if (!Gate::allows('users_destroy')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete users.', false);
-                }
-                
-                $deleted = $this->userService->bulkDelete($deleteIds);
-                
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Records have been deleted successfully!',
-                ]);
-            }
-
-            $filters = $request->getFilters();
-            $params = array_merge($filters, [
+            $params = array_merge($request->getFilters(), [
                 'orderBy' => $request->getSortField(),
                 'order' => $request->getSortDirection(),
                 'offset' => $request->getOffset(),
@@ -72,7 +49,6 @@ class ApplicationUserController extends Controller
 
             $result = $this->userService->getDatatableData($params);
 
-            $page = $request->getPage();
             $perPage = $request->getPerPage();
             $total = $result['total'];
 
@@ -83,7 +59,7 @@ class ApplicationUserController extends Controller
                 'active_filters' => $this->userService->getActiveFilters(),
                 'meta' => [
                     'field' => $request->getSortField(),
-                    'page' => $page,
+                    'page' => $request->getPage(),
                     'pages' => $perPage > 0 ? ceil($total / $perPage) : 1,
                     'perpage' => $perPage,
                     'total' => $total,
@@ -95,28 +71,20 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * Get data for creating a new user
-     */
-    public function create()
+    public function create(): JsonResponse
     {
         try {
             if (!Gate::allows('users_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
-            $data = $this->userService->getCreateData();
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, $this->userService->getCreateData());
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Store a newly created user
-     */
-    public function store(ApplicationUserRequest $request)
+    public function store(ApplicationUserRequest $request): JsonResponse
     {
         try {
             if (!Gate::allows('users_create')) {
@@ -133,28 +101,20 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * Get user data for editing
-     */
-    public function edit(int $id)
+    public function edit(int $id): JsonResponse
     {
         try {
             if (!Gate::allows('users_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
-            $data = $this->userService->getEditData($id);
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, $this->userService->getEditData($id));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Update the specified user
-     */
-    public function update(ApplicationUserRequest $request, int $id)
+    public function update(ApplicationUserRequest $request, int $id): JsonResponse
     {
         try {
             if (!Gate::allows('users_edit')) {
@@ -171,10 +131,7 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * Remove the specified user
-     */
-    public function destroy(int $id)
+    public function destroy(int $id): JsonResponse
     {
         try {
             if (!Gate::allows('users_destroy')) {
@@ -191,10 +148,7 @@ class ApplicationUserController extends Controller
         }
     }
 
-    /**
-     * Change user status (active/inactive)
-     */
-    public function status(Request $request)
+    public function status(Request $request): JsonResponse
     {
         try {
             if (!Gate::allows('users_active')) {
@@ -203,19 +157,14 @@ class ApplicationUserController extends Controller
 
             $result = $this->userService->changeStatus($request->id, $request->status);
 
-            if ($result) {
-                return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $result
+                ? ApiHelper::apiResponse($this->success, 'Status has been changed successfully.')
+                : ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * Show change password form
-     */
     public function changePassword(int $id)
     {
         if (!Gate::allows('users_change_password')) {
@@ -223,7 +172,7 @@ class ApplicationUserController extends Controller
         }
 
         $user = $this->userService->findByAccountId($id);
-        
+
         if (!$user) {
             return view('error');
         }
@@ -231,54 +180,30 @@ class ApplicationUserController extends Controller
         return view('admin.users.change_password', compact('user'));
     }
 
-    /**
-     * Save new password
-     */
-    public function savePassword(Request $request)
+    public function savePassword(ChangePasswordRequest $request): JsonResponse
     {
         try {
             if (!Gate::allows('users_change_password')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
-            $validator = Validator::make($request->all(), [
-                'password' => 'required|confirmed|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/',
-            ], [
-                'password.required' => 'Password field is required',
-                'password.min' => 'Password must be at least 8 characters',
-                'password.regex' => 'Password must be a combination of numbers, upper, lower, and special characters',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 0,
-                    'message' => $validator->messages()->all(),
-                ]);
-            }
-
             try {
-                $id = decrypt($request->get('id'));
-            } catch (DecryptException $e) {
+                $id = decrypt($request->validated('id'));
+            } catch (DecryptException) {
                 return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
             }
 
-            $result = $this->userService->changePassword($id, $request->get('password'));
+            $result = $this->userService->changePassword($id, $request->validated('password'));
 
-            if ($result) {
-                return ApiHelper::apiResponse($this->success, 'Password has been changed successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
+            return $result
+                ? ApiHelper::apiResponse($this->success, 'Password has been changed successfully.')
+                : ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    /**
-     * OPTIMIZED Patient Search - 50-100X faster
-     * Use this for all new implementations
-     */
-    public function getpatientOptimized(Request $request)
+    public function getpatientOptimized(Request $request): JsonResponse
     {
         $patients = \App\Models\Patients::getPatientSearchOptimized($request->search, Auth::user()->account_id);
 
@@ -288,10 +213,9 @@ class ApplicationUserController extends Controller
     }
 
     /**
-     * LEGACY - Search patients by ID (OLD SLOW METHOD)
-     * Use getpatientOptimized() for new implementations
+     * @deprecated Use getpatientOptimized() for new implementations
      */
-    public function getpatientid(Request $request)
+    public function getpatientid(Request $request): JsonResponse
     {
         $patients = \App\Models\Patients::getPatientidAjax($request->search, Auth::user()->account_id);
 
@@ -300,10 +224,7 @@ class ApplicationUserController extends Controller
         ]);
     }
 
-    /**
-     * Search patients by ID for orders
-     */
-    public function getpatientidOrder(Request $request)
+    public function getpatientidOrder(Request $request): JsonResponse
     {
         $patients = \App\Models\Patients::getPatientidAjaxOrder($request->search, Auth::user()->account_id);
 
@@ -312,10 +233,7 @@ class ApplicationUserController extends Controller
         ]);
     }
 
-    /**
-     * Search patients by phone
-     */
-    public function phoneSearch(Request $request)
+    public function phoneSearch(Request $request): JsonResponse
     {
         $patients = \App\Models\Patients::getPatientPhoneAjax($request->search, Auth::user()->account_id);
 
@@ -324,10 +242,7 @@ class ApplicationUserController extends Controller
         ]);
     }
 
-    /**
-     * Get patient number/details
-     */
-    public function getpatientnumber(Request $request)
+    public function getpatientnumber(Request $request): JsonResponse
     {
         $patient = \App\Models\Patients::find($request->patient_id);
 
@@ -336,13 +251,11 @@ class ApplicationUserController extends Controller
         ]);
     }
 
-    /**
-     * Get user cities
-     */
-    public function getUserCities()
+    public function getUserCities(): JsonResponse
     {
         $cities = \App\Helpers\ACL::getUserCities();
-        if (count($cities) == 1) {
+
+        if (count($cities) === 1) {
             return ApiHelper::apiResponse($this->success, 'City found', true, [
                 'city' => $cities[0],
             ]);
@@ -351,22 +264,15 @@ class ApplicationUserController extends Controller
         return ApiHelper::apiResponse($this->success, 'City not found', false);
     }
 
-    /**
-     * Get user centers
-     */
-   public function getUserCenters()
+    public function getUserCenters(): JsonResponse
     {
         try {
             $planService = app(\App\Services\Plan\PlanService::class);
             $result = $planService->getUserDefaultCenter();
 
-            if ($result['status']) {
-                return ApiHelper::apiResponse($this->success, 'Center found', true, [
-                    'center' => $result['center'],
-                ]);
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Center not found', false);
+            return $result['status']
+                ? ApiHelper::apiResponse($this->success, 'Center found', true, ['center' => $result['center']])
+                : ApiHelper::apiResponse($this->success, 'Center not found', false);
         } catch (\Exception $e) {
             \Log::error('Get User Centers Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, 'Failed to get user centers.', false);
