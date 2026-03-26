@@ -169,7 +169,7 @@ class LeadStatusService
 
         $record->update(['active' => $status]);
 
-        $action = $status ? 'active' : 'Inactive';
+        $action = $status ? 'active' : 'inactive';
         AuditTrails::{$action . 'EventLogger'}(self::$table, $action, LeadStatuses::$_fillable, $id);
 
         $message = $status

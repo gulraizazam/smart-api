@@ -8,22 +8,18 @@ use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadStatusRequest;
 use App\Http\Requests\Lead\ImportLeadsRequest;
+use App\Http\Requests\Admin\StoreUpdateLeadCommentsRequest;
 use App\Http\Resources\Lead\LeadResource;
 use App\Http\Resources\Lead\LeadDetailResource;
 use App\Http\Resources\Lead\LeadCommentResource;
 use App\Exceptions\LeadException;
 use App\HelperModule\ApiHelper;
-use App\Models\Leads;
-use App\Models\User;
 use App\Models\LeadStatuses;
-use App\Models\Services;
-use App\Models\Locations;
 use App\Exports\ExportLead;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Config;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Rap2hpoutre\FastExcel\FastExcel;
@@ -76,22 +72,8 @@ class LeadsController extends Controller
                 ->orderBy($datatableData['orderBy'], $datatableData['order'])
                 ->get();
 
-            // Batch-load lookup data for LeadResource status resolution
-            $statusIds = $leads->pluck('lead_status_id')->unique()->filter()->toArray();
-            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)
-                ->select('id', 'name', 'parent_id')
-                ->get()
-                ->keyBy('id')
-                ->toArray();
-
-            // Also load parent statuses that aren't in the current set
-            $parentIds = collect($leadStatuses)->pluck('parent_id')->filter()->diff(array_keys($leadStatuses))->unique()->toArray();
-            if (!empty($parentIds)) {
-                $parentStatuses = LeadStatuses::whereIn('id', $parentIds)->select('id', 'name', 'parent_id')->get()->keyBy('id')->toArray();
-                $leadStatuses = array_replace($leadStatuses, $parentStatuses);
-            }
-
-            LeadResource::$statusLookup = $leadStatuses;
+            // Batch-load status lookup for LeadResource (avoids N+1)
+            LeadResource::$statusLookup = $this->leadService->batchLoadStatusLookup($leads->pluck('lead_status_id')->unique()->filter()->toArray());
 
             $filterData = $this->leadService->getFilterData($filename);
 
@@ -121,26 +103,9 @@ class LeadsController extends Controller
         }
 
         try {
-            $formData = $this->leadService->getFormLookupData();
-            $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
+            $formData = $this->leadService->getCreateFormData();
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'Services' => $formData['services'],
-                'cities' => $formData['cities'],
-                'lead_sources' => $formData['lead_sources'],
-                'lead_statuses' => $formData['lead_statuses'],
-                'lead' => [
-                    'id' => null,
-                    'name' => null,
-                    'email' => null,
-                    'phone' => null,
-                    'gender' => null,
-                ],
-                'leadServices' => null,
-                'employees' => $employees,
-                'edit_status' => 0,
-                'gender' => $formData['gender'],
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $formData);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -186,33 +151,13 @@ class LeadsController extends Controller
         }
 
         try {
-            $lead = $this->leadService->getLeadForEdit($id);
+            $editData = $this->leadService->getEditFormData($id);
 
-            if (!$lead) {
+            if (!$editData) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found', false);
             }
 
-            $formData = $this->leadService->getFormLookupData();
-            $locations = Locations::where(['active' => 1, 'city_id' => $lead->city_id])->pluck('name', 'id');
-            $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
-
-            $childServiceIds = $lead->lead_service->pluck('child_service_id')->toArray();
-            $childServices = Services::whereIn('id', $childServiceIds)
-                ->where(['slug' => 'custom', 'active' => 1])
-                ->pluck('name', 'id');
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'Services' => $formData['services'],
-                'child_services' => $childServices,
-                'lead' => new LeadDetailResource($lead),
-                'locations' => $locations,
-                'cities' => $formData['cities'],
-                'lead_sources' => $formData['lead_sources'],
-                'lead_statuses' => $formData['lead_statuses'],
-                'employees' => $employees,
-                'edit_status' => 1,
-                'gender' => $formData['gender'],
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $editData);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -287,13 +232,8 @@ class LeadsController extends Controller
     public function loadChildServices(Request $request): JsonResponse
     {
         try {
-            $childServices = $this->leadService->getChildServices($request->serviceId);
-            $lead = $request->leadId ? Leads::with('lead_service')->find($request->leadId) : null;
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'dropdown' => $childServices,
-                'lead_child_service' => $lead?->lead_service ?? '',
-            ]);
+            $data = $this->leadService->getChildServicesWithLead($request->serviceId, $request->leadId);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -350,7 +290,7 @@ class LeadsController extends Controller
     public function getLeadNumber(Request $request): JsonResponse
     {
         try {
-            $lead = Leads::find($request->lead_id);
+            $lead = $this->leadService->findLead((int) $request->lead_id);
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'lead' => $lead ? new LeadResource($lead) : null,
             ]);
@@ -372,24 +312,14 @@ class LeadsController extends Controller
     public function editService(int $leadId, int $serviceId): JsonResponse
     {
         try {
-            $leadService = \App\Models\LeadsServices::with('service', 'childservice')
-                ->where(['lead_id' => $leadId, 'service_id' => $serviceId])
-                ->get();
-
-            $services = Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])->pluck('name', 'id');
-            $childServices = Services::where(['slug' => 'custom', 'parent_id' => $serviceId, 'active' => 1])->pluck('name', 'id');
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'lead_service' => $leadService,
-                'Services' => $services,
-                'Child_service' => $childServices,
-            ]);
+            $data = $this->leadService->getEditServiceData($leadId, $serviceId);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-    public function storeComment(Request $request): JsonResponse
+    public function storeComment(StoreUpdateLeadCommentsRequest $request): JsonResponse
     {
         try {
             $comment = $this->leadService->addComment($request->lead_id, $request->comment);
@@ -412,34 +342,13 @@ class LeadsController extends Controller
         }
 
         try {
-            $lead = Leads::with(['lead_service', 'patient'])->where([
-                'id' => $id,
-                'account_id' => Auth::user()->account_id,
-            ])->first();
+            $data = $this->leadService->getConversionData($id);
 
-            if (!$lead) {
+            if (!$data) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
 
-            $accountId = Auth::user()->account_id;
-            $userInfo = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => $accountId])->first();
-            $employees = User::getAllActiveRecords($accountId)?->pluck('full_name', 'id') ?? [];
-            $cities = \App\Models\Cities::getActiveFeaturedOnly(\App\Helpers\ACL::getUserCities(), $accountId)
-                ->get()?->pluck('full_name', 'id') ?? collect();
-            $leadSources = \App\Models\LeadSources::getActiveSorted();
-            $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
-            $setting = \App\Models\Settings::where('slug', 'sys-virtual-consultancy')->first();
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'services' => $services,
-                'lead' => new LeadDetailResource($lead),
-                'employees' => $employees,
-                'cities' => $cities,
-                'lead_sources' => $leadSources,
-                'user_info' => $userInfo,
-                'setting' => $setting,
-                'consultancy_types' => Config::get('constants.consultancy_type_array'),
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -451,16 +360,7 @@ class LeadsController extends Controller
         set_time_limit(0);
 
         try {
-            $leads = $this->buildExportQuery($request)
-                ->with([
-                    'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
-                    'city:id,name',
-                    'towns:id,name',
-                    'region:id,name',
-                    'lead_status:id,name',
-                    'user:id,name',
-                ])
-                ->get();
+            $leads = $this->leadService->getExportData($request);
 
             $customPaper = [0, 0, 720, 1440];
             $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
@@ -482,18 +382,13 @@ class LeadsController extends Controller
     public function leadStatusesPopCheck(Request $request): JsonResponse
     {
         try {
-            $leadStatus = LeadStatuses::find($request->id);
+            $data = $this->leadService->getStatusWithChildren((int) $request->id);
 
-            if (!$leadStatus) {
+            if (!$data) {
                 return ApiHelper::apiResponse($this->error, 'Status not found.', false);
             }
 
-            $childStatuses = LeadStatuses::where('parent_id', $leadStatus->id)->get();
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'd' => $childStatuses,
-                'lead_status' => $leadStatus,
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -502,13 +397,8 @@ class LeadsController extends Controller
     public function leadStatusChildPopCheck(Request $request): JsonResponse
     {
         try {
-            $childStatus = LeadStatuses::find($request->id);
-            $parentStatus = $childStatus ? LeadStatuses::find($childStatus->parent_id) : null;
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'd' => $childStatus,
-                'lead_status2' => $parentStatus,
-            ]);
+            $data = $this->leadService->getChildStatusWithParent((int) $request->id);
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -525,7 +415,7 @@ class LeadsController extends Controller
 
     public function loadTreatments(): JsonResponse
     {
-        $data = Services::getActiveOnly()
+        $data = \App\Models\Services::getActiveOnly()
             ->map(fn($service) => ['value' => $service->id, 'text' => $service->name])
             ->toArray();
 
@@ -561,20 +451,14 @@ class LeadsController extends Controller
         }
 
         try {
-            $city = \App\Models\Cities::find($request->get('value'));
-            $lead = Leads::find($request->get('pk'));
+            $result = $this->leadService->updateLeadCity((int) $request->get('pk'), (int) $request->get('value'));
 
-            if (!$lead || !$city) {
+            if (!$result) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
 
-            $lead->update([
-                'city_id' => $city->id,
-                'region_id' => $city->region_id,
-            ]);
-
             return ApiHelper::apiResponse($this->success, 'City updated successfully.', true, [
-                'city' => $city->name,
+                'city' => $result['city_name'],
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -583,58 +467,12 @@ class LeadsController extends Controller
 
     public function loadLeadData(Request $request): JsonResponse
     {
-        $data = $request->all();
-        $data['status'] = 0;
-        $data['patient_id'] = 0;
-
-        if (!Gate::allows('leads_manage') || !$request->get('phone') || $request->get('lead_id')) {
+        try {
+            $data = $this->leadService->resolveLeadData($request->all());
             return response()->json($data);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-        $phone = $request->input('phone') === '***********'
-            ? $request->input('old_phone')
-            : $request->input('phone');
-
-        $phone = \App\Helpers\GeneralFunctions::cleanNumber($phone);
-        $patient = \App\Models\Patients::getByPhone($phone, Auth::user()->account_id, $request->patient_id);
-
-        if (!$patient) {
-            $data['status'] = 1;
-            $data['service_id'] = $request->get('service_id');
-            $data['phone'] = $request->get('phone');
-            $data['cnic'] = $request->get('cnic');
-            $data['dob'] = $request->get('dob');
-            $data['address'] = $request->get('address');
-            $data['referred_by'] = $request->get('referred_by');
-        } else {
-            $lead = Leads::where([
-                'patient_id' => $patient->id,
-                'service_id' => $request->get('service_id'),
-            ])->first();
-
-            if ($lead) {
-                $data['id'] = $lead->id;
-                $data['city_id'] = $lead->city_id;
-                $data['town_id'] = $lead->town_id;
-                $data['service_id'] = $lead->service_id;
-                $data['lead_source_id'] = $lead->lead_source_id;
-                $data['lead_status_id'] = $lead->lead_status_id;
-            } else {
-                $data['service_id'] = $request->get('service_id');
-            }
-
-            $data['patient_id'] = $patient->id;
-            $data['gender'] = $patient->gender;
-            $data['phone'] = $patient->phone;
-            $data['cnic'] = $patient->cnic;
-            $data['dob'] = $patient->dob;
-            $data['address'] = $patient->address;
-            $data['name'] = $patient->name;
-            $data['email'] = $patient->email;
-            $data['referred_by'] = $patient->referred_by;
-        }
-
-        return response()->json($data);
     }
 
     public function sendSms(int $id): JsonResponse
@@ -644,10 +482,9 @@ class LeadsController extends Controller
         }
 
         try {
-            $lead = Leads::findOrFail($id);
-            $response = $this->leadService->sendSMS($lead->id, $lead->phone);
+            $result = $this->leadService->sendSmsToLead($id);
 
-            return $response['status']
+            return $result['status']
                 ? ApiHelper::apiResponse($this->success, 'SMS has been sent successfully.')
                 : ApiHelper::apiResponse($this->error, 'SMS sending failed.');
         } catch (\Exception $e) {
@@ -662,31 +499,11 @@ class LeadsController extends Controller
         }
 
         try {
-            $lead = Leads::where([
-                'id' => $id,
-                'account_id' => Auth::user()->account_id,
-            ])->first();
+            $result = $this->leadService->removeLeadFromJunk($id);
 
-            if (!$lead) {
-                return ApiHelper::apiResponse($this->error, 'Lead not found.');
-            }
-
-            $openStatus = \App\Helpers\LeadHelper::getDefaultStatus(Auth::user()->account_id);
-
-            if (!$openStatus) {
-                return ApiHelper::apiResponse($this->error, 'Open status not found.');
-            }
-
-            $lead->update([
-                'lead_status_id' => $openStatus->id,
-                'updated_by' => Auth::id(),
-            ]);
-
-            \App\Models\LeadsServices::where('lead_id', $lead->id)
-                ->where('status', 1)
-                ->update(['lead_status_id' => $openStatus->id]);
-
-            return ApiHelper::apiResponse($this->success, 'Lead has been removed from junk.');
+            return $result['status']
+                ? ApiHelper::apiResponse($this->success, $result['message'])
+                : ApiHelper::apiResponse($this->error, $result['message']);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -708,62 +525,5 @@ class LeadsController extends Controller
             'contact' => Gate::allows('contact'),
             'update_status' => Gate::allows('leads_lead_status'),
         ];
-    }
-
-    protected function buildExportQuery(Request $request): \Illuminate\Database\Eloquent\Builder
-    {
-        $where = [];
-
-        if ($request->created_at) {
-            $dateRange = explode(' - ', $request->created_at);
-            $startDate = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-            $where[] = ['created_at', '>=', $startDate];
-            $where[] = ['created_at', '<=', $endDate];
-        }
-
-        $simpleFilters = [
-            'id' => 'id',
-            'lead_status_id' => 'lead_status_id',
-            'city_id' => 'city_id',
-            'location_id' => 'location_id',
-            'region_id' => 'region_id',
-            'created_by' => 'created_by',
-            'phone' => 'phone',
-            'gender_id' => 'gender',
-        ];
-
-        foreach ($simpleFilters as $requestKey => $column) {
-            $value = $request->$requestKey;
-            if ($value && $value !== 'undefined' && $value !== 'null') {
-                $where[] = [$column, '=', $value];
-            }
-        }
-
-        if ($request->name) {
-            $where[] = ['name', 'like', '%' . $request->name . '%'];
-        }
-
-        $userCities = \App\Helpers\ACL::getUserCities();
-        $query = Leads::forAccount()
-            ->forCities($userCities);
-
-        if (!empty($where)) {
-            $query->where($where);
-        }
-
-        if ($request->service_id) {
-            $serviceId = $request->service_id;
-            $query->with(['lead_service' => fn($q) => $q->where(['service_id' => $serviceId, 'status' => 1])->whereNotNull('service_id')]);
-        } else {
-            $query->with(['lead_service' => fn($q) => $q->where('status', 1)->whereNotNull('service_id')]);
-        }
-
-        return $query->select([
-            '*',
-            'leads.created_by as lead_created_by',
-            'leads.id as lead_id',
-            'leads.created_at as lead_created_at',
-        ])->orderByDesc('id')->latest();
     }
 }

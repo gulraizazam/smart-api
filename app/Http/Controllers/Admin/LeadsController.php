@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Auth;
 use App\Helpers\ACL;
 use App\Models\User;
 use App\Models\Towns;
@@ -11,7 +10,10 @@ use App\Models\Services;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 
 /**
  * Admin LeadsController - View Routes Only
@@ -25,11 +27,9 @@ class LeadsController extends Controller
     /**
      * Display leads listing page.
      */
-    public function index()
+    public function index(): View
     {
-        if (!Gate::allows('leads_manage')) {
-            return abort(401);
-        }
+        abort_unless(Gate::allows('leads_manage'), 401);
 
         return view('admin.leads.index');
     }
@@ -37,11 +37,9 @@ class LeadsController extends Controller
     /**
      * Display junk leads page.
      */
-    public function junk()
+    public function junk(): View
     {
-        if (!Gate::allows('leads_junk')) {
-            return abort(401);
-        }
+        abort_unless(Gate::allows('leads_junk'), 401);
 
         return view('admin.leads.junk');
     }
@@ -49,7 +47,7 @@ class LeadsController extends Controller
     /**
      * Display import leads page.
      */
-    public function importLeads()
+    public function importLeads(): View|RedirectResponse
     {
         if (!Gate::allows('leads_import')) {
             flash('You are not authorized to access this resource.')->error()->important();
@@ -62,11 +60,9 @@ class LeadsController extends Controller
     /**
      * Legacy popup for creating lead (used in appointments).
      */
-    public function make_pop()
+    public function make_pop(): View
     {
-        if (!Gate::allows('leads_create')) {
-            return abort(401);
-        }
+        abort_unless(Gate::allows('leads_create'), 401);
 
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
         $cities->prepend('Select a City', '');
@@ -80,33 +76,28 @@ class LeadsController extends Controller
         $lead_statuses = LeadStatuses::getLeadStatuses();
         $lead_statuses->prepend('Select a Lead Status', '');
 
-        $Services = Services::where([
-            ['slug', '=', 'custom'],
-            ['parent_id', '=', '0'],
-            ['active', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        $Services = Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])
+            ->pluck('name', 'id');
         $Services->prepend('Select Service', '');
 
-        $lead = new \stdClass();
-        $lead->id = null;
-        $lead->name = null;
-        $lead->email = null;
-        $lead->phone = null;
-        $lead->gender = null;
+        $lead = [
+            'id' => null,
+            'name' => null,
+            'email' => null,
+            'phone' => null,
+            'gender' => null,
+        ];
 
-        $employees = User::getAllActiveRecords(Auth::User()->account_id);
-        if ($employees) {
-            $employees = $employees->pluck('full_name', 'id');
+        $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? collect();
+        if ($employees->isNotEmpty()) {
             $employees->prepend('Select a Referrer', '');
-        } else {
-            $employees = [];
         }
 
         $edit_status = 0;
         $leadServices = null;
 
         return view('admin.leads.createTo', compact(
-            'Services', 'cities', 'lead_sources', 'lead_statuses', 
+            'Services', 'cities', 'lead_sources', 'lead_statuses',
             'lead', 'leadServices', 'employees', 'edit_status', 'towns'
         ));
     }
@@ -114,18 +105,13 @@ class LeadsController extends Controller
     /**
      * Update leads (legacy route).
      */
-    public function leadupdate()
+    public function leadupdate(): RedirectResponse
     {
-        // Legacy method - kept for backward compatibility
         return redirect()->route('admin.leads.index');
     }
 
-    /**
-     * Update lead statuses (legacy route).
-     */
-    public function leadstatusupdate()
+    public function leadstatusupdate(): RedirectResponse
     {
-        // Legacy method - kept for backward compatibility
         return redirect()->route('admin.leads.index');
     }
 }
