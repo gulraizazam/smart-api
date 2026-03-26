@@ -47,7 +47,13 @@
       "Bash(php -l app/Http/Requests/PatientDocumentStoreRequest.php)",
       "Bash(php -l app/Http/Controllers/Api/PatientController.php)",
       "Bash(php -l app/Http/Controllers/Admin/PatientsController.php)",
-      "Bash(php -l app/Services/PatientManagement/PatientService.php)"
+      "Bash(php -l app/Services/PatientManagement/PatientService.php)",
+      "Bash(php -l app/Models/Leads.php)",
+      "Bash(php -l app/Models/LeadComments.php)",
+      "Bash(php -l app/Models/LeadSources.php)",
+      "Bash(php -l app/Models/LeadStatuses.php)",
+      "Bash(php -l app/Models/LeadsServices.php)",
+      "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name \"*.php\" -exec grep -l '\\\\$lead\\\\|Leads::' {})"
     ]
   }
 }

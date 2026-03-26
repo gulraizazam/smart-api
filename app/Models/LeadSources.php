@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class LeadSources extends BaseModal
 {
@@ -13,164 +16,210 @@ class LeadSources extends BaseModal
 
     protected $fillable = ['name', 'account_id', 'sort_no', 'active', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['name', 'active'];
+    protected static array $_fillable = ['name', 'active'];
 
     protected $table = 'lead_sources';
 
-    protected static $_table = 'lead_sources';
+    protected static string $_table = 'lead_sources';
 
-    /**
-     * Get the Leads for Lead Source.
-     */
-    public function leads()
+    // =========================================================================
+    // Relationships
+    // =========================================================================
+
+    public function leads(): HasMany
     {
-        return $this->hasMany('App\Models\Leads', 'lead_source_id');
+        return $this->hasMany(Leads::class, 'lead_source_id');
     }
 
-    /**
-     * Get active and sorted data only.
-     */
-    public static function getActiveSorted()
+    // =========================================================================
+    // Query Helpers
+    // =========================================================================
+
+    public static function getActiveSorted(): \Illuminate\Support\Collection
     {
-        return self::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
-        ])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+        return self::where('account_id', Auth::user()->account_id)
+            ->where('active', 1)
+            ->orderBy('sort_no')
+            ->pluck('name', 'id');
     }
 
-    /**
-     * Get active and sorted data only.
-     */
-    public static function getActiveOnly()
+    public static function getActiveOnly(): \Illuminate\Database\Eloquent\Collection
     {
-        return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get();
+        return self::where('active', 1)->orderBy('sort_no')->get();
     }
 
-    /**
-     * Get Total Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
-     */
-    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getAllRecordsDictionary(int $account_id): array
     {
-        $where = self::lead_sources_filters($request, $account_id, $apply_filter);
+        return self::where('account_id', $account_id)->get()->getDictionary();
+    }
 
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
-                return self::where($where)->count();
-            } else {
-                return self::where($where)->where('active', 1)->count();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
-                return self::count();
-            } else {
-                return self::where('active', 1)->count();
-            }
+    // =========================================================================
+    // Datatable Methods
+    // =========================================================================
+
+    public static function getTotalRecords(Request $request, int|false $account_id = false, bool $apply_filter = false): int
+    {
+        return self::applyFiltersAndVisibility($request, $account_id, $apply_filter, 'view_inactive_leadsources')
+            ->count();
+    }
+
+    public static function getRecords(Request $request, int $offset, int $limit, int|false $account_id = false, bool $apply_filter = false): \Illuminate\Database\Eloquent\Collection
+    {
+        return self::applyFiltersAndVisibility($request, $account_id, $apply_filter, 'view_inactive_leadsources')
+            ->limit($limit)
+            ->offset($offset)
+            ->orderBy('sort_no')
+            ->get();
+    }
+
+    // =========================================================================
+    // CRUD Operations
+    // =========================================================================
+
+    public static function createRecord(Request $request, int $account_id): self
+    {
+        $data = $request->all();
+        $data['account_id'] = $account_id;
+
+        $record = self::create($data);
+        $record->update(['sort_no' => $record->id]);
+
+        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
+        return $record;
+    }
+
+    public static function updateRecord(int $id, Request $request, int $account_id): ?self
+    {
+        $record = self::where(['id' => $id, 'account_id' => $account_id])->first();
+
+        if (!$record) {
+            return null;
         }
+
+        $old_data = $record->toArray();
+        $data = $request->all();
+        $data['account_id'] = $account_id;
+
+        $record->update($data);
+
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
+
+        return $record;
     }
 
-    /**
-     * Get Records
-     *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
-     */
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function DeleteRecord(int $id): \Illuminate\Support\Collection
     {
-        $where = self::lead_sources_filters($request, $account_id, $apply_filter);
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
-                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            } else {
-                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_leadsources')) {
-                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            } else {
-                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('sort_no')->get();
-            }
+        $lead_source = self::getData($id);
+
+        if (!$lead_source) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
         }
+
+        if (self::isChildExists($id, Auth::user()->account_id)) {
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
+        }
+
+        $lead_source->delete();
+        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
+
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+    }
+
+    public static function InactiveRecord(int $id): \Illuminate\Support\Collection
+    {
+        $lead_source = self::getData($id);
+
+        if (!$lead_source) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
+        }
+
+        $lead_source->update(['active' => 0]);
+        AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
+
+        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
+    }
+
+    public static function activeRecord(int $id): \Illuminate\Support\Collection
+    {
+        $lead_source = self::getData($id);
+
+        if (!$lead_source) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
+        }
+
+        $lead_source->update(['active' => 1]);
+        AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
+
+        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
+    }
+
+    public static function isChildExists(int $id, int $account_id): bool
+    {
+        return false;
+    }
+
+    // =========================================================================
+    // Private Helpers
+    // =========================================================================
+
+    /**
+     * Build filtered query with active/inactive visibility check.
+     * Consolidates the duplicated filter + Gate check logic from getTotalRecords/getRecords.
+     */
+    protected static function applyFiltersAndVisibility(Request $request, int|false $account_id, bool $apply_filter, string $gateAbility): Builder
+    {
+        $where = self::buildFilters($request, $account_id, $apply_filter);
+
+        $query = self::query();
+
+        if (!empty($where)) {
+            $query->where($where);
+        }
+
+        if (!Gate::allows($gateAbility)) {
+            $query->where('active', 1);
+        }
+
+        return $query;
     }
 
     /**
-     * Get filters
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
-     * @return (mixed)
+     * Build filter conditions — consolidated from lead_sources_filters.
      */
-    public static function lead_sources_filters($request, $account_id, $apply_filter)
+    protected static function buildFilters(Request $request, int|false $account_id, bool $apply_filter): array
     {
         $where = [];
         $filters = getFilters($request->all());
-        if ($account_id) {
-            $where[] = [
-                'account_id',
-                '=',
-                $account_id,
-            ];
-            Filters::put(Auth::User()->id, 'lead_sources', 'account_id', $account_id);
-        } else {
+        $userId = Auth::id();
+        $filterKey = 'lead_sources';
 
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'lead_sources', 'account_id');
-            } else {
-                if (Filters::get(Auth::User()->id, 'lead_sources', 'account_id')) {
-                    $where[] = [
-                        'account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'lead_sources', 'account_id'),
-                    ];
-                }
-            }
-        }
+        // Account filter
+        $where = self::resolveFilter($where, $account_id, $filterKey, 'account_id', $userId, $apply_filter, 'account_id');
+
+        // Name filter (like)
         if (hasFilter($filters, 'name')) {
-            $where[] = [
-                'name',
-                'like',
-                '%'.$filters['name'].'%',
-            ];
-            Filters::put(Auth::User()->id, 'lead_sources', 'lead_status_name', $filters['name']);
+            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            Filters::put($userId, $filterKey, 'lead_status_name', $filters['name']);
+        } elseif ($apply_filter) {
+            Filters::forget($userId, $filterKey, 'lead_status_name');
         } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'lead_sources', 'lead_status_name');
-            } else {
-                if (Filters::get(Auth::User()->id, 'lead_sources', 'lead_status_name')) {
-                    $where[] = [
-                        'name',
-                        'like',
-                        '%'.Filters::get(Auth::User()->id, 'lead_sources', 'lead_status_name').'%',
-                    ];
-                }
+            $stored = Filters::get($userId, $filterKey, 'lead_status_name');
+            if ($stored) {
+                $where[] = ['name', 'like', '%' . $stored . '%'];
             }
         }
 
+        // Status filter
         if (hasFilter($filters, 'status')) {
-            $where[] = [
-                'active',
-                '=',
-                $filters['status'],
-            ];
-            Filters::put(Auth::user()->id, 'lead_sources', 'status', $filters['status']);
+            $where[] = ['active', '=', $filters['status']];
+            Filters::put($userId, $filterKey, 'status', $filters['status']);
+        } elseif ($apply_filter) {
+            Filters::forget($userId, $filterKey, 'status');
         } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, 'lead_sources', 'status');
-            } else {
-                if (Filters::get(Auth::user()->id, 'lead_sources', 'status') == 0 || Filters::get(Auth::user()->id, 'lead_sources', 'status') == 1) {
-                    if (Filters::get(Auth::user()->id, 'lead_sources', 'status') != null) {
-                        $where[] = [
-                            'active',
-                            '=',
-                            Filters::get(Auth::user()->id, 'lead_sources', 'status'),
-                        ];
-                    }
-                }
+            $stored = Filters::get($userId, $filterKey, 'status');
+            if ($stored !== null && in_array($stored, [0, 1, '0', '1'], true)) {
+                $where[] = ['active', '=', $stored];
             }
         }
 
@@ -178,133 +227,22 @@ class LeadSources extends BaseModal
     }
 
     /**
-     * Get All Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * Resolve a simple equality filter with Filters persistence.
      */
-    public static function getAllRecordsDictionary($account_id)
+    protected static function resolveFilter(array $where, mixed $value, string $filterKey, string $column, int $userId, bool $apply_filter, string $storedKey): array
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
-    }
-
-    /**
-     * Create Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function createRecord($request, $account_id)
-    {
-        $data = $request->all();
-        // Set Account ID
-        $data['account_id'] = $account_id;
-        $record = self::create($data);
-        $record->update(['sort_no' => $record->id]);
-        //log request for Create for Audit Trail
-        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-        return $record;
-    }
-
-    /**
-     * Delete Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function DeleteRecord($id)
-    {
-        $lead_source = LeadSources::getData($id);
-        if (! $lead_source) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);
-        }
-        // Check if child records exists or not, If exist then disallow to delete it.
-        if (LeadSources::isChildExists($id, Auth::User()->account_id)) {
-            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-        }
-        $record = $lead_source->delete();
-        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
-    }
-
-    /**
-     * inactive Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function InactiveRecord($id)
-    {
-        $lead_source = LeadSources::getData($id);
-        if (! $lead_source) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);
-        }
-        $record = $lead_source->update(['active' => 0]);
-        AuditTrails::inactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-        return collect(['status' => true, 'message' => 'Record has been inactivated successfully.']);
-    }
-
-    /**
-     * active Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function activeRecord($id)
-    {
-        $lead_source = LeadSources::getData($id);
-        if (! $lead_source) {
-            return collect(['status' => true, 'message' => 'Resource not found.']);
-        }
-        $record = $lead_source->update(['active' => 1]);
-        AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-        return collect(['status' => true, 'message' => 'Record has been activated successfully.']);
-    }
-
-    /**
-     * Update Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function updateRecord($id, $request, $account_id)
-    {
-        $old_data = (LeadSources::find($id))->toArray();
-
-        $data = $request->all();
-
-        // Set Account ID
-        $data['account_id'] = $account_id;
-
-        $record = self::where([
-            'id' => $id,
-            'account_id' => $account_id,
-        ])->first();
-
-        if (! $record) {
-            return null;
+        if ($value) {
+            $where[] = [$column, '=', $value];
+            Filters::put($userId, $filterKey, $storedKey, $value);
+        } elseif ($apply_filter) {
+            Filters::forget($userId, $filterKey, $storedKey);
+        } else {
+            $stored = Filters::get($userId, $filterKey, $storedKey);
+            if ($stored) {
+                $where[] = [$column, '=', $stored];
+            }
         }
 
-        $record->update($data);
-
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
-
-        return $record;
-
-    }
-
-    /**
-     * Check if child records exist
-     *
-     * @param  (int)  $id
-     * @return (boolean)
-     */
-    public static function isChildExists($id, $account_id)
-    {
-        return false;
+        return $where;
     }
 }

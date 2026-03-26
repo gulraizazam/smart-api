@@ -444,7 +444,7 @@ function createService($route) {
 }
 
 function setCreateData(response) {
-
+    console.log('res',response);
     try {
 
         let services = response.data.parent_services;

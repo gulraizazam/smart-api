@@ -30,34 +30,27 @@ use Carbon\Carbon;
 
 class LeadsController extends Controller
 {
-    protected LeadService $leadService;
     protected string $success;
     protected string $error;
     protected string $unauthorized;
 
-    public function __construct(LeadService $leadService)
-    {
-        $this->leadService = $leadService;
+    public function __construct(
+        protected readonly LeadService $leadService,
+    ) {
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
     /**
-     * Get leads datatable data (OPTIMIZED)
+     * Get leads datatable data
      */
     public function datatable(Request $request): JsonResponse
     {
         try {
-            \Log::info('Leads Datatable - Start', ['request_all' => $request->all()]);
-            
             $filters = getFilters($request->all());
-            \Log::info('Leads Datatable - Filters extracted', ['filters' => $filters]);
-            
             $leadType = $request->get('type');
             $filename = $leadType ? 'junk_leads' : 'leads';
-            $accountId = Auth::user()->account_id;
-            \Log::info('Leads Datatable - Basic params', ['leadType' => $leadType, 'filename' => $filename, 'accountId' => $accountId]);
 
             // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
@@ -66,76 +59,42 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Records deleted successfully.', true);
             }
 
-            \Log::info('Leads Datatable - Calling getDatatableData');
             $datatableData = $this->leadService->getDatatableData($filters, $leadType);
-            \Log::info('Leads Datatable - getDatatableData returned', ['total' => $datatableData['total']]);
-            
             [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $datatableData['total']);
-            \Log::info('Leads Datatable - Pagination calculated', ['displayLength' => $displayLength, 'displayStart' => $displayStart]);
 
-            // Execute query with pagination - select only needed columns
             $query = $datatableData['query'];
-            
+
             if (!Gate::allows('view_inactive_leads')) {
                 $query->where('leads.active', 1);
             }
 
-            \Log::info('Leads Datatable - Executing query');
             $leads = $query->select([
-                    'leads.id',
-                    'leads.name',
-                    'leads.phone',
-                    'leads.gender',
-                    'leads.active',
-                    'leads.city_id',
-                    'leads.region_id',
-                    'leads.location_id',
-                    'leads.lead_status_id',
-                    'leads.created_by',
-                    'leads.created_at',
+                    'leads.id', 'leads.name', 'leads.phone', 'leads.gender',
+                    'leads.active', 'leads.city_id', 'leads.region_id',
+                    'leads.location_id', 'leads.lead_status_id',
+                    'leads.created_by', 'leads.created_at',
                 ])
                 ->limit($displayLength)
                 ->offset($displayStart)
                 ->orderBy($datatableData['orderBy'], $datatableData['order'])
                 ->get();
 
-            \Log::info('Leads Datatable - Query executed', ['count' => $leads->count()]);
-
-            // Get lookup data - only for the current page (no caching to avoid memory issues)
-            \Log::info('Leads Datatable - Getting lookups for current page');
+            // Batch-load lookup data for current page only
             $userIds = $leads->pluck('created_by')->unique()->filter()->toArray();
             $regionIds = $leads->pluck('region_id')->unique()->filter()->toArray();
             $statusIds = $leads->pluck('lead_status_id')->unique()->filter()->toArray();
-            
-            $users = User::whereIn('id', $userIds)
-                ->select('id', 'name')
-                ->get()
-                ->keyBy('id')
-                ->toArray();
-            
-            $regions = Regions::whereIn('id', $regionIds)
-                ->select('id', 'name')
-                ->get()
-                ->keyBy('id')
-                ->toArray();
-            
-            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)
-                ->select('id', 'name', 'parent_id')
-                ->get()
-                ->keyBy('id')
-                ->toArray();
+
+            $users = User::whereIn('id', $userIds)->select('id', 'name')->get()->keyBy('id')->toArray();
+            $regions = Regions::whereIn('id', $regionIds)->select('id', 'name')->get()->keyBy('id')->toArray();
+            $leadStatuses = LeadStatuses::whereIn('id', $statusIds)->select('id', 'name', 'parent_id')->get()->keyBy('id')->toArray();
 
             // Transform data
-            \Log::info('Leads Datatable - Transforming data');
             $records = $this->transformLeadsForDatatable($leads, $users, $regions, $leadStatuses);
 
-            // Add filter data (cached)
-            \Log::info('Leads Datatable - Getting filter data');
+            // Filter data
             $filterData = $this->leadService->getFilterData($filename);
             $records['filter_values'] = $filterData['filter_values'];
             $records['active_filters'] = $filterData['active_filters'];
-
-            // Add meta
             $records['meta'] = [
                 'field' => $datatableData['orderBy'],
                 'page' => $page,
@@ -144,80 +103,12 @@ class LeadsController extends Controller
                 'total' => $datatableData['total'],
                 'sort' => $datatableData['order'],
             ];
-
-            // Add permissions (cached)
             $records['permissions'] = $this->getPermissions();
 
-            \Log::info('Leads Datatable - Success, returning data');
             return ApiHelper::apiDataTable($records);
         } catch (\Exception $e) {
-            \Log::error('Leads Datatable - Exception caught', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return ApiHelper::apiException($e);
         }
-    }
-
-    /**
-     * Get cached users lookup
-     */
-    protected function getCachedUsers(int $accountId): array
-    {
-        try {
-            \Log::info('Leads Datatable - getCachedUsers start', ['accountId' => $accountId]);
-            $result = \Illuminate\Support\Facades\Cache::remember(
-                "datatable_users_{$accountId}",
-                300, // 5 minutes
-                fn() => User::where('account_id', $accountId)
-                    ->select('id', 'name')
-                    ->get()
-                    ->keyBy('id')
-                    ->toArray()
-            );
-            \Log::info('Leads Datatable - getCachedUsers success', ['count' => count($result)]);
-            return $result;
-        } catch (\Exception $e) {
-            \Log::error('Leads Datatable - getCachedUsers failed', [
-                'error' => $e->getMessage(),
-                'line' => $e->getLine()
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Get cached regions lookup
-     */
-    protected function getCachedRegions(int $accountId): array
-    {
-        return \Illuminate\Support\Facades\Cache::remember(
-            "datatable_regions_{$accountId}",
-            300,
-            fn() => Regions::where('account_id', $accountId)
-                ->select('id', 'name')
-                ->get()
-                ->keyBy('id')
-                ->toArray()
-        );
-    }
-
-    /**
-     * Get cached lead statuses lookup
-     */
-    protected function getCachedLeadStatuses(int $accountId): array
-    {
-        return \Illuminate\Support\Facades\Cache::remember(
-            "datatable_lead_statuses_{$accountId}",
-            300,
-            fn() => LeadStatuses::where('account_id', $accountId)
-                ->select('id', 'name', 'parent_id')
-                ->get()
-                ->keyBy('id')
-                ->toArray()
-        );
     }
 
     /**
@@ -267,7 +158,7 @@ class LeadsController extends Controller
     /**
      * Get lead detail
      */
-    public function detail($id): JsonResponse
+    public function detail(int $id): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -275,7 +166,7 @@ class LeadsController extends Controller
 
         try {
             $lead = $this->leadService->getLeadDetail($id);
-            
+
             if (!$lead) {
                 return ApiHelper::apiResponse($this->error, 'Lead not found.', false);
             }
@@ -292,7 +183,7 @@ class LeadsController extends Controller
     /**
      * Get lead for editing
      */
-    public function edit($id): JsonResponse
+    public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('leads_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -300,7 +191,7 @@ class LeadsController extends Controller
 
         try {
             $lead = $this->leadService->getLeadForEdit($id);
-            
+
             if (!$lead) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found', false);
             }
@@ -309,7 +200,6 @@ class LeadsController extends Controller
             $locations = Locations::where(['active' => 1, 'city_id' => $lead->city_id])->pluck('name', 'id');
             $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
 
-            // Get child services
             $childServiceIds = $lead->lead_service->pluck('child_service_id')->toArray();
             $childServices = Services::whereIn('id', $childServiceIds)
                 ->where(['slug' => 'custom', 'active' => 1])
@@ -350,7 +240,7 @@ class LeadsController extends Controller
     /**
      * Delete lead
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('leads_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -442,31 +332,24 @@ class LeadsController extends Controller
             $file = $request->file('leads_file');
             $collections = (new FastExcel)->import($file);
 
-            // Normalize column names
-            $rows = [];
-            foreach ($collections as $collection) {
+            $rows = $collections->map(function ($collection) {
                 $data = [];
                 foreach ($collection as $key => $value) {
-                    $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
-                    $data[$convertedKey] = $value;
+                    $data[strtolower(str_replace(' ', '_', trim($key)))] = $value;
                 }
-                $rows[] = $data;
-            }
+                return $data;
+            })->toArray();
 
-            $options = [
+            $stats = $this->leadService->importLeads($rows, [
                 'update_records' => $request->update_records == '1',
                 'skip_lead_statuses' => $request->skip_lead_statuses == '1',
-            ];
+            ]);
 
-            $stats = $this->leadService->importLeads($rows, $options);
-
-            // Build response message
             $message = "Leads imported. Created: {$stats['created']}, Updated: {$stats['updated']}";
-            
+
             if (!empty($stats['invalid_phones'])) {
                 $message .= ". Invalid phones: " . count($stats['invalid_phones']);
             }
-            
             if (!empty($stats['invalid_services'])) {
                 $message .= ". Invalid services: " . implode(', ', $stats['invalid_services']);
             }
@@ -526,17 +409,8 @@ class LeadsController extends Controller
                 ->where(['lead_id' => $leadId, 'service_id' => $serviceId])
                 ->get();
 
-            $services = Services::where([
-                'slug' => 'custom',
-                'parent_id' => 0,
-                'active' => 1,
-            ])->pluck('name', 'id');
-
-            $childServices = Services::where([
-                'slug' => 'custom',
-                'parent_id' => $serviceId,
-                'active' => 1,
-            ])->pluck('name', 'id');
+            $services = Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])->pluck('name', 'id');
+            $childServices = Services::where(['slug' => 'custom', 'parent_id' => $serviceId, 'active' => 1])->pluck('name', 'id');
 
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'lead_service' => $leadService,
@@ -555,7 +429,7 @@ class LeadsController extends Controller
     {
         try {
             $comment = $this->leadService->addComment($request->lead_id, $request->comment);
-            
+
             return response()->json([
                 'username' => Auth::user()->name,
                 'lead' => $comment,
@@ -569,33 +443,27 @@ class LeadsController extends Controller
     /**
      * Get lead data for conversion
      */
-    public function convert($id): JsonResponse
+    public function convert(int $id): JsonResponse
     {
         if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         try {
-            // Load lead with patient relationship for conversion form
             $lead = Leads::with(['lead_service', 'patient'])->where([
                 'id' => $id,
                 'account_id' => Auth::user()->account_id,
             ])->first();
-            
+
             if (!$lead) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
             }
 
-            $userInfo = User::where([
-                'id' => $lead->patient_id,
-                'active' => 1,
-                'account_id' => Auth::user()->account_id,
-            ])->first();
-
-            $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
-            $cities = \App\Models\Cities::getActiveFeaturedOnly(\App\Helpers\ACL::getUserCities(), Auth::user()->account_id)
-                ->get()
-                ?->pluck('full_name', 'id') ?? collect();
+            $accountId = Auth::user()->account_id;
+            $userInfo = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => $accountId])->first();
+            $employees = User::getAllActiveRecords($accountId)?->pluck('full_name', 'id') ?? [];
+            $cities = \App\Models\Cities::getActiveFeaturedOnly(\App\Helpers\ACL::getUserCities(), $accountId)
+                ->get()?->pluck('full_name', 'id') ?? collect();
             $leadSources = \App\Models\LeadSources::getActiveSorted();
             $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
             $setting = \App\Models\Settings::where('slug', 'sys-virtual-consultancy')->first();
@@ -616,7 +484,7 @@ class LeadsController extends Controller
     }
 
     /**
-     * Export leads to PDF (OPTIMIZED)
+     * Export leads to PDF
      */
     public function exportPdf(Request $request)
     {
@@ -634,7 +502,7 @@ class LeadsController extends Controller
                     'user:id,name',
                 ])
                 ->get();
-                
+
             $customPaper = [0, 0, 720, 1440];
             $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
 
@@ -675,7 +543,7 @@ class LeadsController extends Controller
     public function leadStatusChildPopCheck(Request $request): JsonResponse
     {
         $childStatus = LeadStatuses::find($request->id);
-        $parentStatus = LeadStatuses::find($childStatus->parent_id);
+        $parentStatus = LeadStatuses::find($childStatus?->parent_id);
 
         return response()->json([
             'd' => $childStatus,
@@ -688,11 +556,9 @@ class LeadsController extends Controller
      */
     public function loadLeadStatuses(): JsonResponse
     {
-        $leadStatuses = LeadStatuses::getActiveOnly();
-        $data = $leadStatuses->map(fn($status) => [
-            'value' => $status->id,
-            'text' => $status->name,
-        ])->toArray();
+        $data = LeadStatuses::getActiveOnly()
+            ->map(fn($status) => ['value' => $status->id, 'text' => $status->name])
+            ->toArray();
 
         return response()->json($data);
     }
@@ -702,11 +568,9 @@ class LeadsController extends Controller
      */
     public function loadTreatments(): JsonResponse
     {
-        $services = Services::getActiveOnly();
-        $data = $services->map(fn($service) => [
-            'value' => $service->id,
-            'text' => $service->name,
-        ])->toArray();
+        $data = Services::getActiveOnly()
+            ->map(fn($service) => ['value' => $service->id, 'text' => $service->name])
+            ->toArray();
 
         return response()->json($data);
     }
@@ -716,11 +580,9 @@ class LeadsController extends Controller
      */
     public function loadLeadSources(): JsonResponse
     {
-        $leadSources = \App\Models\LeadSources::getActiveOnly();
-        $data = $leadSources->map(fn($source) => [
-            'value' => $source->id,
-            'text' => $source->name,
-        ])->toArray();
+        $data = \App\Models\LeadSources::getActiveOnly()
+            ->map(fn($source) => ['value' => $source->id, 'text' => $source->name])
+            ->toArray();
 
         return response()->json($data);
     }
@@ -734,11 +596,9 @@ class LeadsController extends Controller
             return response()->json([]);
         }
 
-        $cities = \App\Models\Cities::getActiveOnly(\App\Helpers\ACL::getUserCities(), Auth::user()->account_id);
-        $data = $cities->map(fn($city) => [
-            'value' => $city->id,
-            'text' => $city->name,
-        ])->toArray();
+        $data = \App\Models\Cities::getActiveOnly(\App\Helpers\ACL::getUserCities(), Auth::user()->account_id)
+            ->map(fn($city) => ['value' => $city->id, 'text' => $city->name])
+            ->toArray();
 
         return response()->json($data);
     }
@@ -786,10 +646,10 @@ class LeadsController extends Controller
             return response()->json($data);
         }
 
-        $phone = $request->input('phone') === '***********' 
-            ? $request->input('old_phone') 
+        $phone = $request->input('phone') === '***********'
+            ? $request->input('old_phone')
             : $request->input('phone');
-        
+
         $phone = GeneralFunctions::cleanNumber($phone);
         $patient = \App\Models\Patients::getByPhone($phone, Auth::user()->account_id, $request->patient_id);
 
@@ -833,103 +693,6 @@ class LeadsController extends Controller
     }
 
     /**
-     * Transform leads for datatable response (OPTIMIZED)
-     */
-    protected function transformLeadsForDatatable($leads, array $users, array $regions, array $leadStatuses): array
-    {
-        $records = ['data' => []];
-        $canViewContact = Gate::allows('contact');
-
-        foreach ($leads as $lead) {
-            $services = [];
-            $childServices = [];
-            $activeServices = [];
-
-            // Process lead services efficiently
-            if ($lead->relationLoaded('lead_service')) {
-                foreach ($lead->lead_service as $ls) {
-                    $serviceName = $ls->service->name ?? null;
-                    if ($serviceName && !in_array($serviceName, $services)) {
-                        $services[] = $serviceName;
-                    }
-                    if ($ls->status == 1) {
-                        $childServices[] = $ls->childservice->name ?? '';
-                        $activeServices[] = $serviceName ?? '';
-                    }
-                }
-            }
-
-            // Get lead status name (works with array format from cache)
-            $statusName = '';
-            if (isset($leadStatuses[$lead->lead_status_id])) {
-                $status = $leadStatuses[$lead->lead_status_id];
-                $parentId = $status['parent_id'] ?? 0;
-                if ($parentId == 0) {
-                    $statusName = $status['name'] ?? '';
-                } else {
-                    $statusName = isset($leadStatuses[$parentId]) 
-                        ? $leadStatuses[$parentId]['name'] 
-                        : ($status['name'] ?? '');
-                }
-            }
-
-            $records['data'][] = [
-                'id' => $lead->id,
-                'lead_id' => $lead->id,
-                'name' => $lead->name,
-                'gender' => $lead->gender == 1 ? 'Male' : 'Female',
-                'active' => $lead->active,
-                'cityId' => $lead->city_id ?? 0,
-                'phone' => $canViewContact 
-                    ? GeneralFunctions::prepareNumber4Call($lead->phone) 
-                    : '***********',
-                'city_id' => $lead->city->name ?? '',
-                'region_id' => $regions[$lead->region_id]['name'] ?? 'N/A',
-                'lead_status_id' => $statusName,
-                'service_id' => implode(',', $services),
-                'service_active' => implode(',', array_filter($activeServices)),
-                'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                'created_by' => $users[$lead->created_by]['name'] ?? 'N/A',
-                'location' => $lead->towns->name ?? '',
-                'child_service' => implode(',', array_filter($childServices)),
-            ];
-        }
-
-        return $records;
-    }
-
-    /**
-     * Get permissions for datatable
-     */
-    protected function getPermissions(): array
-    {
-        return [
-            'edit' => Gate::allows('leads_edit'),
-            'delete' => Gate::allows('leads_destroy'),
-            'active' => Gate::allows('leads_active'),
-            'inactive' => Gate::allows('leads_inactive'),
-            'create' => Gate::allows('leads_create'),
-            'convert' => Gate::allows('leads_convert'),
-            'contact' => Gate::allows('contact'),
-            'update_status' => Gate::allows('leads_lead_status'),
-        ];
-    }
-
-    /**
-     * Get empty lead object for create form
-     */
-    protected function getEmptyLeadObject(): \stdClass
-    {
-        $lead = new \stdClass();
-        $lead->id = null;
-        $lead->name = null;
-        $lead->email = null;
-        $lead->phone = null;
-        $lead->gender = null;
-        return $lead;
-    }
-
-    /**
      * Send SMS to lead
      */
     public function sendSms(int $id): JsonResponse
@@ -942,11 +705,9 @@ class LeadsController extends Controller
             $lead = Leads::findOrFail($id);
             $response = $this->leadService->sendSMS($lead->id, $lead->phone);
 
-            if ($response['status']) {
-                return ApiHelper::apiResponse($this->success, 'SMS has been sent successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->error, 'SMS sending failed.');
+            return $response['status']
+                ? ApiHelper::apiResponse($this->success, 'SMS has been sent successfully.')
+                : ApiHelper::apiResponse($this->error, 'SMS sending failed.');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -971,20 +732,17 @@ class LeadsController extends Controller
                 return ApiHelper::apiResponse($this->error, 'Lead not found.');
             }
 
-            // Get the Open status
             $openStatus = \App\Helpers\LeadHelper::getDefaultStatus(Auth::user()->account_id);
-            
+
             if (!$openStatus) {
                 return ApiHelper::apiResponse($this->error, 'Open status not found.');
             }
 
-            // Update lead status to Open
             $lead->update([
                 'lead_status_id' => $openStatus->id,
                 'updated_by' => Auth::id(),
             ]);
 
-            // Also update active lead service status
             \App\Models\LeadsServices::where('lead_id', $lead->id)
                 ->where('status', 1)
                 ->update(['lead_status_id' => $openStatus->id]);
@@ -995,10 +753,96 @@ class LeadsController extends Controller
         }
     }
 
+    // =========================================================================
+    // Private Helpers
+    // =========================================================================
+
     /**
-     * Build export query
+     * Transform leads for datatable response
      */
-    protected function buildExportQuery(Request $request)
+    protected function transformLeadsForDatatable($leads, array $users, array $regions, array $leadStatuses): array
+    {
+        $records = ['data' => []];
+        $canViewContact = Gate::allows('contact');
+
+        foreach ($leads as $lead) {
+            $services = [];
+            $childServices = [];
+            $activeServices = [];
+
+            if ($lead->relationLoaded('lead_service')) {
+                foreach ($lead->lead_service as $ls) {
+                    $serviceName = $ls->service?->name;
+                    if ($serviceName && !in_array($serviceName, $services)) {
+                        $services[] = $serviceName;
+                    }
+                    if ($ls->status == 1) {
+                        $childServices[] = $ls->childservice?->name ?? '';
+                        $activeServices[] = $serviceName ?? '';
+                    }
+                }
+            }
+
+            $statusName = '';
+            if (isset($leadStatuses[$lead->lead_status_id])) {
+                $status = $leadStatuses[$lead->lead_status_id];
+                $parentId = $status['parent_id'] ?? 0;
+                $statusName = ($parentId == 0)
+                    ? ($status['name'] ?? '')
+                    : ($leadStatuses[$parentId]['name'] ?? $status['name'] ?? '');
+            }
+
+            $records['data'][] = [
+                'id' => $lead->id,
+                'lead_id' => $lead->id,
+                'name' => $lead->name,
+                'gender' => $lead->gender == 1 ? 'Male' : 'Female',
+                'active' => $lead->active,
+                'cityId' => $lead->city_id ?? 0,
+                'phone' => $canViewContact
+                    ? GeneralFunctions::prepareNumber4Call($lead->phone)
+                    : '***********',
+                'city_id' => $lead->city?->name ?? '',
+                'region_id' => $regions[$lead->region_id]['name'] ?? 'N/A',
+                'lead_status_id' => $statusName,
+                'service_id' => implode(',', $services),
+                'service_active' => implode(',', array_filter($activeServices)),
+                'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                'created_by' => $users[$lead->created_by]['name'] ?? 'N/A',
+                'location' => $lead->towns?->name ?? '',
+                'child_service' => implode(',', array_filter($childServices)),
+            ];
+        }
+
+        return $records;
+    }
+
+    protected function getPermissions(): array
+    {
+        return [
+            'edit' => Gate::allows('leads_edit'),
+            'delete' => Gate::allows('leads_destroy'),
+            'active' => Gate::allows('leads_active'),
+            'inactive' => Gate::allows('leads_inactive'),
+            'create' => Gate::allows('leads_create'),
+            'convert' => Gate::allows('leads_convert'),
+            'contact' => Gate::allows('contact'),
+            'update_status' => Gate::allows('leads_lead_status'),
+        ];
+    }
+
+    protected function getEmptyLeadObject(): \stdClass
+    {
+        $lead = new \stdClass();
+        $lead->id = null;
+        $lead->name = null;
+        $lead->email = null;
+        $lead->phone = null;
+        $lead->gender = null;
+        return $lead;
+    }
+
+    protected function buildExportQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
         $where = [];
 
@@ -1023,7 +867,6 @@ class LeadsController extends Controller
 
         foreach ($simpleFilters as $requestKey => $column) {
             $value = $request->$requestKey;
-            // Skip empty, null, or "undefined" string values
             if ($value && $value !== 'undefined' && $value !== 'null') {
                 $where[] = [$column, '=', $value];
             }
@@ -1035,25 +878,19 @@ class LeadsController extends Controller
 
         $userCities = \App\Helpers\ACL::getUserCities();
         $query = Leads::where('account_id', Auth::user()->account_id)
-            ->where(function($q) use ($userCities) {
-                $q->whereIn('city_id', $userCities)
-                  ->orWhereNull('city_id');
+            ->where(function ($q) use ($userCities) {
+                $q->whereIn('city_id', $userCities)->orWhereNull('city_id');
             });
-        
+
         if (!empty($where)) {
             $query->where($where);
         }
 
         if ($request->service_id) {
             $serviceId = $request->service_id;
-            $query->with(['lead_service' => function ($q) use ($serviceId) {
-                $q->where(['service_id' => $serviceId, 'status' => 1])
-                  ->whereNotNull('service_id');
-            }]);
+            $query->with(['lead_service' => fn($q) => $q->where(['service_id' => $serviceId, 'status' => 1])->whereNotNull('service_id')]);
         } else {
-            $query->with(['lead_service' => function ($q) {
-                $q->where('status', 1)->whereNotNull('service_id');
-            }]);
+            $query->with(['lead_service' => fn($q) => $q->where('status', 1)->whereNotNull('service_id')]);
         }
 
         return $query->select([
@@ -1061,6 +898,6 @@ class LeadsController extends Controller
             'leads.created_by as lead_created_by',
             'leads.id as lead_id',
             'leads.created_at as lead_created_at',
-        ])->orderBy('id', 'DESC')->latest();
+        ])->orderByDesc('id')->latest();
     }
 }
