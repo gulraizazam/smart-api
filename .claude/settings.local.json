@@ -63,7 +63,9 @@
       "Bash(php -l app/Http/Resources/Lead/LeadDetailResource.php)",
       "Bash(for f:*)",
       "Bash(do php:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(find C:/laragon/www/cutera-upgradation1 -type f -name *.php -exec grep -l \"home.datatable\\\\|admin.home.datatable\" {})",
+      "Bash(2)"
     ]
   }
 }

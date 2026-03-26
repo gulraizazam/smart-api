@@ -1,5 +1,5 @@
 
-var table_url = route('admin.home.datatable');
+var table_url = route('admin.consultancy.datatable');
 var changePages = 10;
 var table_columns = [
 
