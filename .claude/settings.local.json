@@ -16,7 +16,28 @@
       "Bash(php -l app/Services/Dashboard/DashboardChartService.php)",
       "Bash(php -l app/Http/Controllers/Api/DashboardController.php)",
       "Bash(php -l app/Http/Controllers/DashboardReportsController.php)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(php -l app/Models/Permission.php)",
+      "Bash(php -l app/Models/User.php)",
+      "Bash(php -l app/Models/Doctors.php)",
+      "Bash(php -l app/Models/RoleHasUsers.php)",
+      "Bash(php -l app/Models/UserTypes.php)",
+      "Bash(php -v)",
+      "Bash(php -l app/Services/UserManagement/PermissionService.php)",
+      "Bash(php -l app/Services/UserManagement/RoleService.php)",
+      "Bash(php -l app/Services/UserManagement/ApplicationUserService.php)",
+      "Bash(php -l app/Services/UserManagement/DoctorService.php)",
+      "Bash(php -l app/Services/UserManagement/UserTypeService.php)",
+      "Bash(php -l app/Http/Controllers/Api/PermissionController.php)",
+      "Bash(php -l app/Http/Controllers/Api/RoleController.php)",
+      "Bash(php -l app/Http/Controllers/Api/ApplicationUserController.php)",
+      "Bash(php -l app/Http/Controllers/Api/DoctorController.php)",
+      "Bash(php -l app/Http/Controllers/Api/UserTypeController.php)",
+      "Bash(grep:*)",
+      "Bash(php -l app/Http/Requests/Admin/PermissionDatatableRequest.php)",
+      "Bash(php -l app/Http/Requests/Admin/RoleDatatableRequest.php)",
+      "Bash(php -l app/Http/Requests/Admin/ApplicationUserDatatableRequest.php)",
+      "Bash(php -l app/Http/Requests/Admin/ApplicationUserRequest.php)"
     ]
   }
 }

@@ -34,16 +34,6 @@
                             <h3 class="card-label">Roles</h3>
                         </div>
                         <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-                            @if(Gate::allows('roles_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                            @endif
-
                             @if(Gate::allows('roles_create'))
                                 <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
@@ -62,7 +52,7 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="col-md-6 my-md-0">
+                                        <div class="col-md-9 my-md-0">
                                             <div class="input-icon">
                                                 <input type="text" value="{{$filters['name'] ?? ''}}" class="form-control filter-field" placeholder="Name" id="search_name" />
                                                 <span>
@@ -71,14 +61,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-3 my-md-0">
-                                            <div class="input-icon">
-                                                <input type="text" oninput="phoneField(this);" value="{{$filters['commission'] ?? ''}}" class="form-control filter-field" placeholder="Commission" id="search_commission" />
-                                                <span>
-                                                    <i class="flaticon2-search-1 text-muted"></i>
-                                                </span>
-                                            </div>
-                                        </div>
+                                       
 
                                         <div class="col-md-3 ">
                                             @include('admin.partials.filter-buttons')

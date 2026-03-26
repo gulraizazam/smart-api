@@ -34,16 +34,6 @@
                             <h3 class="card-label">Permissions</h3>
                         </div>
                         <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-                            @if(Gate::allows('permissions_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span> &nbsp;&nbsp;
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                            @endif
-                            <!--end::Dropdown-->
                             <!--begin::Button-->
                             @if(Gate::allows('permissions_create'))
 

@@ -2,211 +2,162 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Doctors extends BaseModal
 {
-    protected $fillable = ['name', 'email', 'password', 'remember_token', 'mobile', 'main_account', 'gender', 'user_type_id', 'resource_type_id', 'account_id'];
+    protected $fillable = [
+        'name', 'email', 'password', 'remember_token',
+        'mobile', 'main_account', 'gender', 'user_type_id',
+        'resource_type_id', 'account_id',
+    ];
 
-    protected $USER_TYPE = 5;
-
-    protected static $USER_TYPE_STATIC = 5;
+    protected static int $USER_TYPE_STATIC = 5;
 
     protected $table = 'users';
 
-    /**
-     * Get the Location name with City Name.
-     */
-    public function getFullNameAttribute($value)
+    protected function fullName(): Attribute
     {
-        return ucfirst($this->name).' - '.strtolower($this->email);
+        return Attribute::get(
+            fn (): string => ucfirst($this->name) . ' - ' . strtolower($this->email)
+        );
+    }
+
+    public function city(): BelongsTo
+    {
+        return $this->belongsTo(Cities::class)->withTrashed();
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Regions::class)->withTrashed();
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Locations::class)->withTrashed();
+    }
+
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointments::class, 'doctor_id');
+    }
+
+    public function audit_field_before(): HasMany
+    {
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
+    }
+
+    public function audit_field_after(): HasMany
+    {
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
+    }
+
+    public static function getAll(int $accountId)
+    {
+        return static::where([
+            'user_type_id' => static::$USER_TYPE_STATIC,
+            'account_id' => $accountId,
+        ])->get();
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('active', 1);
+    }
+
+    public function scopeForAccount(Builder $query, int $accountId): Builder
+    {
+        return $query->where('account_id', $accountId);
+    }
+
+    public function scopeAllocatedToLocation(Builder $query, array $locationIds): Builder
+    {
+        return $query->join('doctor_has_locations', function ($join) {
+            $join->on('users.id', '=', 'doctor_has_locations.user_id')
+                ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+                ->where('users.active', '=', 1)
+                ->where('doctor_has_locations.is_allocated', '=', 1);
+        })->whereIn('doctor_has_locations.location_id', $locationIds);
     }
 
     /**
-     * Get the Doctors that owns the City.
+     * Get active doctors, optionally filtered by location, account, and doctor IDs.
      */
-    public function city()
-    {
-        return $this->belongsTo('App\Models\Cities')->withTrashed();
-    }
+    public static function getActiveOnly(
+        array|int|false $locationId = false,
+        int|false $accountId = false,
+        array|int|false $doctorId = false,
+        bool $pluckColumns = true,
+    ) {
+        $locationIds = match (true) {
+            $locationId === false => null,
+            is_array($locationId) => $locationId,
+            default => [$locationId],
+        };
 
-    /**
-     * Get the Doctors that owns the City.
-     */
-    public function region()
-    {
-        return $this->belongsTo('App\Models\Regions')->withTrashed();
-    }
+        $doctorIds = match (true) {
+            $doctorId === false => null,
+            is_array($doctorId) => $doctorId,
+            default => [$doctorId],
+        };
 
-    /**
-     * Get the Doctors that owns the City.
-     */
-    public static function getAll($account_id)
-    {
-        return self::where(['user_type_id' => self::$USER_TYPE_STATIC, 'account_id' => $account_id])->get();
-    }
+        $query = $locationIds
+            ? static::buildLocationQuery($locationIds, $accountId)
+            : static::buildBaseQuery($accountId);
 
-    /**
-     * Get the Doctors that owns the Location.
-     */
-    public function location()
-    {
-        return $this->belongsTo('App\Models\Locations')->withTrashed();
-    }
-
-    /**
-     * Get the Appointments for Doctors.
-     */
-    public function appointments()
-    {
-        return $this->hasMany('App\Models\Appointments', 'doctor_id');
-    }
-
-    /*Relation for audit trail*/
-    public function audit_field_before()
-    {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
-    }
-
-    public function audit_field_after()
-    {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
-    }
-
-    /*end*/
-    /**
-     * Get active and sorted data only.
-     */
-    public static function getActiveOnly($locationId = false, $account_id = false, $doctor_id = false, $pluck_columns = true)
-    {
-        if ($locationId && ! is_array($locationId)) {
-            $locationId = [$locationId];
+        if ($doctorIds) {
+            $column = $locationIds ? 'users.id' : 'users.id';
+            $query->whereIn($column, $doctorIds);
         }
-        if ($doctor_id && ! is_array($doctor_id)) {
-            $doctor_id = [$doctor_id];
+
+        $results = $query->get();
+
+        if ($pluckColumns) {
+            $pluckKey = $locationIds ? 'user_id' : 'id';
+            return $results->pluck('name', $pluckKey);
         }
 
-        if ($locationId) {
-            if ($account_id) {
-                if ($doctor_id) {
-                    $query = self::join('doctor_has_locations', function ($join) use ($account_id) {
-                        $join->on('users.id', '=', 'doctor_has_locations.user_id')
-                            ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                            ->where('users.active', '=', 1)
-                            ->where('doctor_has_locations.is_allocated', '=', 1)
-                            ->where('users.account_id', '=', $account_id);
-                    })
-                        ->whereIn('doctor_has_locations.location_id', $locationId)
-                        ->whereIn('users.id', $doctor_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'user_id');
-                    }
+        return $results;
+    }
 
-                    return $query;
-                } else {
-                    $query = self::join('doctor_has_locations', function ($join) use ($account_id) {
-                        $join->on('users.id', '=', 'doctor_has_locations.user_id')
-                            ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                            ->where('users.active', '=', 1)
-                            ->where('doctor_has_locations.is_allocated', '=', 1)
-                            ->where('users.account_id', '=', $account_id);
-                    })
-                        ->whereIn('doctor_has_locations.location_id', $locationId)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'user_id');
-                    }
+    private static function buildLocationQuery(array $locationIds, int|false $accountId): Builder
+    {
+        $query = static::join('doctor_has_locations', function ($join) use ($accountId) {
+            $join->on('users.id', '=', 'doctor_has_locations.user_id')
+                ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+                ->where('users.active', '=', 1)
+                ->where('doctor_has_locations.is_allocated', '=', 1);
 
-                    return $query;
-                }
+            if ($accountId) {
+                $join->where('users.account_id', '=', $accountId);
             }
+        })->whereIn('doctor_has_locations.location_id', $locationIds);
 
-            if ($doctor_id) {
-                $query = self::join('doctor_has_locations', function ($join) {
-                    $join->on('users.id', '=', 'doctor_has_locations.user_id')
-                        ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+        return $query;
+    }
 
-                        ->where('users.active', '=', 1);
-                })
-                    ->whereIn('users.id', $doctor_id)
-                    ->whereIn('doctor_has_locations.location_id', $locationId)
-                    ->where('doctor_has_locations.is_allocated', '=', 1)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'user_id');
-                }
+    private static function buildBaseQuery(int|false $accountId): Builder
+    {
+        $query = static::where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+            ->where('users.active', '=', 1);
 
-                return $query;
-            } else {
-                $query = self::join('doctor_has_locations', function ($join) {
-                    $join->on('users.id', '=', 'doctor_has_locations.user_id')
-                        ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                        ->where('users.active', '=', 1);
-                })
-                    ->whereIn('doctor_has_locations.location_id', $locationId)
-                    ->where('doctor_has_locations.is_allocated', '=', 1)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'user_id');
-                }
-
-                return $query;
-            }
-            //            return self::whereIn('location_id',$locationId)->get()->pluck('name','id');
-        } else {
-            if ($account_id) {
-                if ($doctor_id) {
-                    $query = self::where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                        ->where('users.active', '=', 1)
-                        ->where('users.account_id', '=', $account_id)
-                        ->whereIn('users.id', $doctor_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'id');
-                    }
-
-                    return $query;
-                } else {
-                    $query = self::where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                        ->where('users.active', '=', 1)
-                        ->where('users.account_id', '=', $account_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'id');
-                    }
-
-                    return $query;
-                }
-            }
-
-            if ($doctor_id) {
-                $query = self::where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                    ->where('users.active', '=', 1)
-                    ->whereIn('users.id', $doctor_id)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'id');
-                }
-
-                return $query;
-            } else {
-                $query = self::where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
-                    ->where('users.active', '=', 1)->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'id');
-                }
-
-                return $query;
-            }
-            //            return self::get()->pluck('name','id');
+        if ($accountId) {
+            $query->where('users.account_id', '=', $accountId);
         }
+
+        return $query;
     }
 
     /**
-     * Get Location based Doctors
+     * Get Location based Doctors grouped by location_id.
      */
-    public static function getLocationDoctors()
+    public static function getLocationDoctors(): array
     {
-        $doctors = self::join('doctor_has_locations', function ($join) {
+        $doctors = static::join('doctor_has_locations', function ($join) {
             $join->on('users.id', '=', 'doctor_has_locations.user_id')
                 ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
                 ->where('doctor_has_locations.is_allocated', '=', 1)
@@ -214,19 +165,8 @@ class Doctors extends BaseModal
         })->get();
 
         $data = [];
-
-        $locations = [];
-
-        if ($doctors) {
-            $doctors = $doctors->toArray();
-            foreach ($doctors as $doctor) {
-                if (! in_array($doctor['location_id'], $locations)) {
-                    $data[$doctor['location_id']][$doctor['user_id']] = $doctor;
-                    $locations[] = $doctor['location_id'];
-                } else {
-                    $data[$doctor['location_id']][$doctor['user_id']] = $doctor;
-                }
-            }
+        foreach ($doctors as $doctor) {
+            $data[$doctor['location_id']][$doctor['user_id']] = $doctor;
         }
 
         return $data;

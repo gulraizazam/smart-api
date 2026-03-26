@@ -7,40 +7,33 @@ use App\Models\User;
 use App\Models\UserTypes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class UserTypeService
 {
     private const CACHE_KEY_PREFIX = 'user_types_';
-    private const CACHE_TTL = 3600; // 1 hour
+    private const CACHE_TTL = 3600;
 
-    /**
-     * Get paginated user types for datatable
-     */
     public function getDatatableData(array $params): array
     {
-        $accountId = Auth::user()->account_id;
-        
         $query = UserTypes::query()
-            ->where('account_id', $accountId)
-            ->where('name', '!=', 'Administrator');
+            ->forAccount(Auth::user()->account_id)
+            ->excludeAdmin();
 
-        // Apply filters
-        $this->applyFilters($query, $params);
+        if (!empty($params['name'])) {
+            $query->searchByName($params['name']);
+        }
 
-        // Get total count before pagination
+        if (!empty($params['type'])) {
+            $query->ofType($params['type']);
+        }
+
         $total = $query->count();
 
-        // Apply sorting
-        $orderBy = $params['order_by'] ?? 'name';
-        $order = $params['order'] ?? 'asc';
-        $query->orderBy($orderBy, $order);
-
-        // Apply pagination
-        $offset = $params['offset'] ?? 0;
-        $limit = $params['limit'] ?? 30;
-        
-        $userTypes = $query->offset($offset)->limit($limit)->get();
+        $userTypes = $query
+            ->orderBy($params['order_by'] ?? 'name', $params['order'] ?? 'asc')
+            ->offset($params['offset'] ?? 0)
+            ->limit($params['limit'] ?? 30)
+            ->get();
 
         return [
             'data' => $userTypes,
@@ -48,113 +41,71 @@ class UserTypeService
         ];
     }
 
-    /**
-     * Apply filters to query
-     */
-    private function applyFilters($query, array $filters): void
-    {
-        if (!empty($filters['name'])) {
-            $query->where('name', 'like', '%' . $filters['name'] . '%');
-        }
-
-        if (!empty($filters['type'])) {
-            $query->where('type', '=', $filters['type']);
-        }
-    }
-
-    /**
-     * Get all user types for dropdown
-     */
     public function getAllForDropdown(): array
     {
         $accountId = Auth::user()->account_id;
-        $cacheKey = self::CACHE_KEY_PREFIX . 'dropdown_' . $accountId;
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId) {
-            return UserTypes::where('account_id', $accountId)
-                ->where('active', 1)
+        return Cache::remember(
+            self::CACHE_KEY_PREFIX . "dropdown_{$accountId}",
+            self::CACHE_TTL,
+            fn (): array => UserTypes::forAccount($accountId)
+                ->active()
                 ->orderBy('name')
                 ->get()
-                ->toArray();
-        });
+                ->toArray()
+        );
     }
 
-    /**
-     * Get user types for doctors (consultant type)
-     */
     public function getForDoctor(): array
     {
         $accountId = Auth::user()->account_id;
-        $cacheKey = self::CACHE_KEY_PREFIX . 'doctor_' . $accountId;
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId) {
-            return UserTypes::where('account_id', $accountId)
-                ->where('type', 'consultant')
+        return Cache::remember(
+            self::CACHE_KEY_PREFIX . "doctor_{$accountId}",
+            self::CACHE_TTL,
+            fn (): array => UserTypes::forAccount($accountId)
+                ->ofType('consultant')
                 ->pluck('name', 'id')
-                ->toArray();
-        });
+                ->all()
+        );
     }
 
-    /**
-     * Get available user type options from config
-     */
     public function getTypeOptions(): array
     {
         return config('constants.user_types', []);
     }
 
-    /**
-     * Find user type by ID
-     */
     public function find(int $id): ?UserTypes
     {
-        $accountId = Auth::user()->account_id;
-        
         return UserTypes::where('id', $id)
-            ->where('account_id', $accountId)
+            ->forAccount(Auth::user()->account_id)
             ->first();
     }
 
-    /**
-     * Create a new user type
-     */
     public function create(array $data): UserTypes
     {
-        $accountId = Auth::user()->account_id;
-        $userId = Auth::user()->id;
+        $user = Auth::user();
 
         $userType = UserTypes::create([
             'name' => $data['name'],
             'type' => $data['type'],
-            'account_id' => $accountId,
-            'created_by' => $userId,
-            'updated_by' => $userId,
+            'account_id' => $user->account_id,
+            'created_by' => $user->id,
+            'updated_by' => $user->id,
             'active' => 1,
         ]);
 
-        AuditTrails::addEventLogger(
-            'user_types',
-            'create',
-            $userType->toArray(),
-            ['name', 'type', 'active'],
-            $userType
-        );
+        AuditTrails::addEventLogger('user_types', 'create', $userType->toArray(), ['name', 'type', 'active'], $userType);
 
-        $this->clearCache($accountId);
+        $this->clearCache($user->account_id);
 
         return $userType;
     }
 
-    /**
-     * Update an existing user type
-     */
     public function update(int $id, array $data): ?UserTypes
     {
-        $accountId = Auth::user()->account_id;
-        $userId = Auth::user()->id;
-
         $userType = $this->find($id);
-        
+
         if (!$userType) {
             return null;
         }
@@ -164,181 +115,130 @@ class UserTypeService
         $userType->update([
             'name' => $data['name'],
             'type' => $data['type'],
-            'updated_by' => $userId,
+            'updated_by' => Auth::id(),
         ]);
 
-        AuditTrails::EditEventLogger(
-            'user_types',
-            'edit',
-            $userType->toArray(),
-            ['name', 'type', 'active'],
-            $oldData,
-            $id
-        );
+        AuditTrails::EditEventLogger('user_types', 'edit', $userType->toArray(), ['name', 'type', 'active'], $oldData, $id);
 
-        $this->clearCache($accountId);
+        $this->clearCache(Auth::user()->account_id);
 
         return $userType;
     }
 
-    /**
-     * Delete a user type
-     */
     public function delete(int $id): array
     {
-        $accountId = Auth::user()->account_id;
         $userType = $this->find($id);
 
         if (!$userType) {
             return ['success' => false, 'message' => 'Resource not found.'];
         }
 
-        if ($this->hasChildren($id, $accountId)) {
+        if ($this->hasChildren($id)) {
             return ['success' => false, 'message' => 'Child records exist, unable to delete resource.'];
         }
 
         $userType->delete();
-
-        AuditTrails::deleteEventLogger(
-            'user_types',
-            'delete',
-            ['name', 'type', 'active'],
-            $id
-        );
-
-        $this->clearCache($accountId);
+        AuditTrails::deleteEventLogger('user_types', 'delete', ['name', 'type', 'active'], $id);
+        $this->clearCache(Auth::user()->account_id);
 
         return ['success' => true, 'message' => 'Record has been deleted successfully.'];
     }
 
-    /**
-     * Bulk delete user types
-     */
     public function bulkDelete(array $ids): array
     {
         $accountId = Auth::user()->account_id;
         $deleted = 0;
         $skipped = 0;
 
-        $userTypes = UserTypes::where('account_id', $accountId)
+        UserTypes::forAccount($accountId)
             ->whereIn('id', $ids)
-            ->get();
-
-        foreach ($userTypes as $userType) {
-            if (!$this->hasChildren($userType->id, $accountId)) {
-                $userType->delete();
-                AuditTrails::deleteEventLogger(
-                    'user_types',
-                    'delete',
-                    ['name', 'type', 'active'],
-                    $userType->id
-                );
-                $deleted++;
-            } else {
-                $skipped++;
-            }
-        }
+            ->each(function (UserTypes $userType) use (&$deleted, &$skipped): void {
+                if (!$this->hasChildren($userType->id)) {
+                    $userType->delete();
+                    AuditTrails::deleteEventLogger('user_types', 'delete', ['name', 'type', 'active'], $userType->id);
+                    $deleted++;
+                } else {
+                    $skipped++;
+                }
+            });
 
         $this->clearCache($accountId);
 
-        return [
-            'deleted' => $deleted,
-            'skipped' => $skipped,
-        ];
+        return compact('deleted', 'skipped');
     }
 
-    /**
-     * Activate a user type
-     */
     public function activate(int $id): array
     {
-        $accountId = Auth::user()->account_id;
-        $userType = $this->find($id);
-
-        if (!$userType) {
-            return ['success' => false, 'message' => 'Resource not found.'];
-        }
-
-        $userType->update(['active' => 1]);
-
-        AuditTrails::activeEventLogger(
-            'user_types',
-            'active',
-            ['name', 'type', 'active'],
-            $id
-        );
-
-        $this->clearCache($accountId);
-
-        return ['success' => true, 'message' => 'Activated successfully.'];
+        return $this->toggleStatus($id, active: true, permission: 'active');
     }
 
-    /**
-     * Inactivate a user type
-     */
     public function inactivate(int $id): array
     {
-        $accountId = Auth::user()->account_id;
         $userType = $this->find($id);
 
         if (!$userType) {
             return ['success' => false, 'message' => 'Resource not found.'];
         }
 
-        if ($this->hasChildren($id, $accountId)) {
+        if ($this->hasChildren($id)) {
             return ['success' => false, 'message' => 'Child records exist, unable to inactivate resource.'];
         }
 
         $userType->update(['active' => 0]);
-
-        AuditTrails::InactiveEventLogger(
-            'user_types',
-            'inactive',
-            ['name', 'type', 'active'],
-            $id
-        );
-
-        $this->clearCache($accountId);
+        AuditTrails::InactiveEventLogger('user_types', 'inactive', ['name', 'type', 'active'], $id);
+        $this->clearCache(Auth::user()->account_id);
 
         return ['success' => true, 'message' => 'Inactivated successfully.'];
     }
 
-    /**
-     * Check if user type has child records (users)
-     */
+    private function toggleStatus(int $id, bool $active, string $permission): array
+    {
+        $userType = $this->find($id);
+
+        if (!$userType) {
+            return ['success' => false, 'message' => 'Resource not found.'];
+        }
+
+        $userType->update(['active' => (int) $active]);
+
+        match ($active) {
+            true => AuditTrails::activeEventLogger('user_types', 'active', ['name', 'type', 'active'], $id),
+            false => AuditTrails::InactiveEventLogger('user_types', 'inactive', ['name', 'type', 'active'], $id),
+        };
+
+        $this->clearCache(Auth::user()->account_id);
+
+        $label = $active ? 'Activated' : 'Inactivated';
+
+        return ['success' => true, 'message' => "{$label} successfully."];
+    }
+
     public function hasChildren(int $id, ?int $accountId = null): bool
     {
-        $accountId = $accountId ?? Auth::user()->account_id;
+        $accountId ??= Auth::user()->account_id;
 
         return User::where('user_type_id', $id)
             ->where('account_id', $accountId)
             ->exists();
     }
 
-    /**
-     * Get all records as dictionary
-     */
     public function getAllAsDictionary(): array
     {
         $accountId = Auth::user()->account_id;
-        $cacheKey = self::CACHE_KEY_PREFIX . 'dictionary_' . $accountId;
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId) {
-            return UserTypes::where('account_id', $accountId)
-                ->get()
-                ->getDictionary();
-        });
+        return Cache::remember(
+            self::CACHE_KEY_PREFIX . "dictionary_{$accountId}",
+            self::CACHE_TTL,
+            fn () => UserTypes::forAccount($accountId)->get()->getDictionary()
+        );
     }
 
-    /**
-     * Clear user types cache for account
-     */
     public function clearCache(?int $accountId = null): void
     {
-        $accountId = $accountId ?? Auth::user()->account_id;
+        $accountId ??= Auth::user()->account_id;
 
-        Cache::forget(self::CACHE_KEY_PREFIX . 'dropdown_' . $accountId);
-        Cache::forget(self::CACHE_KEY_PREFIX . 'doctor_' . $accountId);
-        Cache::forget(self::CACHE_KEY_PREFIX . 'dictionary_' . $accountId);
+        Cache::forget(self::CACHE_KEY_PREFIX . "dropdown_{$accountId}");
+        Cache::forget(self::CACHE_KEY_PREFIX . "doctor_{$accountId}");
+        Cache::forget(self::CACHE_KEY_PREFIX . "dictionary_{$accountId}");
     }
 }

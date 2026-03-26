@@ -8,27 +8,24 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleDatatableRequest;
 use App\Http\Requests\Admin\RoleRequest;
 use App\Services\UserManagement\RoleService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class RoleController extends Controller
 {
-    private RoleService $roleService;
     private int $success;
     private int $error;
     private int $unauthorized;
 
-    public function __construct(RoleService $roleService)
-    {
-        $this->roleService = $roleService;
+    public function __construct(
+        private readonly RoleService $roleService,
+    ) {
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    /**
-     * Display roles listing page
-     */
     public function index()
     {
         if (!Gate::allows('roles_manage')) {
@@ -40,38 +37,9 @@ class RoleController extends Controller
         return view('admin.roles.index', compact('filters'));
     }
 
-    /**
-     * Get paginated roles for datatable
-     */
-    public function datatable(RoleDatatableRequest $request)
+    public function datatable(RoleDatatableRequest $request): JsonResponse
     {
         try {
-            // Handle bulk delete if requested
-            $deleteIds = $request->getDeleteIds();
-            if (!empty($deleteIds)) {
-                if (!Gate::allows('roles_destroy')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete roles.', false);
-                }
-                
-                $result = $this->roleService->bulkDelete($deleteIds);
-                
-                if ($result['deleted'] > 0) {
-                    $message = 'Records have been deleted successfully!';
-                    if ($result['skipped'] > 0) {
-                        $message .= " ({$result['skipped']} roles with users were skipped)";
-                    }
-                    return response()->json([
-                        'status' => true,
-                        'message' => $message,
-                    ]);
-                } else {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'One or more records could not be deleted (roles have assigned users).',
-                    ]);
-                }
-            }
-
             $params = [
                 'name' => $request->getNameFilter(),
                 'commission' => $request->getCommissionFilter(),
@@ -83,7 +51,6 @@ class RoleController extends Controller
 
             $result = $this->roleService->getDatatableData($params);
 
-            $page = $request->getPage();
             $perPage = $request->getPerPage();
             $total = $result['total'];
 
@@ -92,7 +59,7 @@ class RoleController extends Controller
                 'permissions' => $this->roleService->getUserPermissions(),
                 'meta' => [
                     'field' => $params['orderBy'],
-                    'page' => $page,
+                    'page' => $request->getPage(),
                     'pages' => $perPage > 0 ? ceil($total / $perPage) : 1,
                     'perpage' => $perPage,
                     'total' => $total,
@@ -104,9 +71,6 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Get data for creating a new role
-     */
     public function create()
     {
         try {
@@ -128,10 +92,7 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Store a newly created role
-     */
-    public function store(RoleRequest $request)
+    public function store(RoleRequest $request): JsonResponse
     {
         try {
             if (!Gate::allows('roles_create')) {
@@ -148,9 +109,6 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Get role data for editing
-     */
     public function edit(int $id)
     {
         try {
@@ -174,10 +132,7 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Update the specified role
-     */
-    public function update(RoleRequest $request, int $id)
+    public function update(RoleRequest $request, int $id): JsonResponse
     {
         try {
             if (!Gate::allows('roles_edit')) {
@@ -194,9 +149,6 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Show duplicate role form
-     */
     public function duplicate(int $id)
     {
         try {
@@ -220,10 +172,7 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Store duplicated role
-     */
-    public function storeDuplicate(RoleRequest $request)
+    public function storeDuplicate(RoleRequest $request): JsonResponse
     {
         try {
             if (!Gate::allows('roles_duplicate')) {
@@ -240,10 +189,7 @@ class RoleController extends Controller
         }
     }
 
-    /**
-     * Remove the specified role
-     */
-    public function destroy(int $id)
+    public function destroy(int $id): JsonResponse
     {
         try {
             if (!Gate::allows('roles_destroy')) {

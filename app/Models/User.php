@@ -2,7 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,77 +22,78 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
 
-    protected static $PATIENT_GROUP = 3;
+    protected static int $PATIENT_GROUP = 3;
 
-    protected static $DOCTOR_GROUP = 5;
+    protected static int $DOCTOR_GROUP = 5;
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
+    protected $fillable = [
+        'name', 'email', 'password', 'phone', 'main_account', 'gender',
+        'dob', 'address', 'commission', 'can_perform_consultation',
+        'user_type_id', 'resource_type_id', 'referred_by', 'account_id',
+        'active', 'select_all', 'is_advance_eligible',
     ];
 
-    protected $fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'can_perform_consultation', 'user_type_id', 'resource_type_id', 'referred_by', 'account_id', 'active', 'select_all', 'is_advance_eligible'];
+    protected static array $_fillable = [
+        'name', 'email', 'password', 'phone', 'main_account', 'gender',
+        'dob', 'address', 'commission', 'can_perform_consultation',
+        'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all',
+    ];
 
-    protected static $_fillable = ['name', 'email', 'password', 'phone', 'main_account', 'gender', 'dob', 'address', 'commission', 'can_perform_consultation', 'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all'];
-
-    protected static $_table = 'users';
+    protected static string $_table = 'users';
 
     protected $hidden = [
         'password', 'remember_token',
     ];
 
-    /**
-     * Get the Location name with City Name.
-     */
-    public function getFullNameAttribute($value)
+    protected function casts(): array
     {
-        return ucfirst($this->name) . ' - ' . strtolower($this->email);
+        return [
+            'email_verified_at' => 'datetime',
+            'active' => 'integer',
+            'commission' => 'decimal:2',
+            'can_perform_consultation' => 'boolean',
+        ];
     }
-    public function membership()
+
+    protected function fullName(): Attribute
+    {
+        return Attribute::get(
+            fn (): string => ucfirst($this->name) . ' - ' . strtolower($this->email)
+        );
+    }
+
+    public function membership(): HasOne
     {
         return $this->hasOne(Membership::class, 'patient_id')->orderByDesc('id');
     }
-    public function scopeIsActive($query, $status = 1)
+
+    public function scopeIsActive(Builder $query, int $status = 1): Builder
     {
         return $query->where('active', $status);
     }
 
-    /**
-     * Get the refunds.
-     */
-    public function refund()
+    public function refund(): HasMany
     {
-        return $this->hasMany('App\Models\Refunds', 'patient_id');
+        return $this->hasMany(Refunds::class, 'patient_id');
     }
 
-    /**
-     * Get the invoice.
-     */
-    public function invoice()
+    public function invoice(): HasMany
     {
-        return $this->hasMany('App\Models\Invoices', 'patient_id');
+        return $this->hasMany(Invoices::class, 'patient_id');
     }
 
-    /**
-     * Get the package infornation.
-     */
-    public function package()
+    public function package(): HasMany
     {
-        return $this->hasMany('App\Models\Packages', 'patient_id');
+        return $this->hasMany(Packages::class, 'patient_id');
     }
 
-    /**
-     * Hash password
-     */
-    public function setPasswordAttribute($input)
+    protected function password(): Attribute
     {
-        if ($input) {
-            $this->attributes['password'] = app('hash')->needsRehash($input) ? Hash::make($input) : $input;
-        }
+        return Attribute::set(
+            fn (?string $value): ?string => $value
+                ? (app('hash')->needsRehash($value) ? Hash::make($value) : $value)
+                : null
+        );
     }
 
     public function role()
@@ -100,457 +106,319 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'role_has_users');
     }
 
-    public function getRoles()
+    public function getRoles(): string
     {
-
-        if ($this->user_roles()->count() > 0) {
-            return implode(',', $this->user_roles()->pluck('name')->toArray());
-        }
-
-        return '';
+        return $this->user_roles()->pluck('name')->implode(',');
     }
 
-    /**
-     * Get the Users.
-     */
-    public function doctorhaslocation()
+    public function doctorhaslocation(): HasMany
     {
-
-        return $this->hasMany('App\Models\DoctorHasLocations', 'user_id');
+        return $this->hasMany(DoctorHasLocations::class, 'user_id');
     }
 
-    /**
-     * Get the Doctors for User.
-     */
-    public function leads()
+    public function leads(): HasMany
     {
-        return $this->hasMany('App\Models\Leads', 'created_by');
+        return $this->hasMany(Leads::class, 'created_by');
     }
 
-    /**
-     * Get the Appointments for User.
-     */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'created_by');
+        return $this->hasMany(Appointments::class, 'created_by');
     }
-    public function appointmentsPatient()
+
+    public function appointmentsPatient(): HasMany
     {
         return $this->hasMany(Appointments::class, 'patient_id');
     }
-    public function appointmentsDoc()
+
+    public function appointmentsDoc(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'doctor_id');
-    }
-    public function account()
-    {
-        return $this->belongsTo('App\Models\Accounts');
+        return $this->hasMany(Appointments::class, 'doctor_id');
     }
 
-    public function audit()
+    public function account(): BelongsTo
     {
-        return $this->hasMany('App\Models\AuditTrails', 'user_id');
+        return $this->belongsTo(Accounts::class);
     }
 
-    /**
-     * Get the Patients for User.
-     */
-    public function patients()
+    public function audit(): HasMany
     {
-        return $this->hasMany('App\Models\Patients', 'created_by');
+        return $this->hasMany(AuditTrails::class, 'user_id');
     }
 
-    /*
-     * Get the name by whom patient is Referred by
-     * */
+    public function patients(): HasMany
+    {
+        return $this->hasMany(Patients::class, 'created_by');
+    }
 
-    public function referredBy()
+    public function referredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'referred_by')->withTrashed();
     }
 
-    /**
-     * Get the User Locations for User.
-     */
-    public function user_has_locations()
+    public function user_has_locations(): HasMany
     {
-        return $this->hasMany('App\Models\UserHasLocations', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(UserHasLocations::class, 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
-    /**
-     * Get the location for the user.
-     */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+        return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
 
-    public function user_has_warehouse()
+    public function user_has_warehouse(): HasMany
     {
-        return $this->hasMany('App\Models\UserHasWarehouse', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(UserHasWarehouse::class, 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
-    /**
-     * Get the role has users.
-     */
-    public function role_has_users()
+    public function role_has_users(): HasMany
     {
-        return $this->hasMany('App\Models\RoleHasUsers', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(RoleHasUsers::class, 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
-    /**
-     * Get the doctor service.
-     */
-    public function doctor_has_services()
+    public function doctor_has_services(): HasMany
     {
-        return $this->hasMany('App\Models\DoctorHasServices', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(DoctorHasServices::class, 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
-    /**
-     * Get the package advances.
-     */
-    public function packagesadvances()
+    public function packagesadvances(): HasMany
     {
-
-        return $this->hasMany('App\Models\PackageAdvances', 'patient_id');
+        return $this->hasMany(PackageAdvances::class, 'patient_id');
     }
 
-    /**
-     * Get the measurement for user.
-     */
-    public function measurement()
+    public function measurement(): HasMany
     {
-        return $this->hasMany('App\Models\Measurement', 'user_id');
+        return $this->hasMany(Measurement::class, 'user_id');
     }
 
-    /*Relation for audit trail*/
-    public function audit_field_before()
+    public function audit_field_before(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
     }
 
-    public function audit_field_after()
+    public function audit_field_after(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
     }
 
-    /*end*/
-    public static function getData($id)
+    public static function getData(int $id): ?static
     {
-
-        return self::where([
+        return static::where([
             ['id', '=', $id],
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->first();
     }
 
     public static function getUsers()
     {
-
-        return self::where('account_id', '=', Auth::User()->account_id)->whereNull('resource_type_id')->pluck('name', 'id');
+        return static::where('account_id', '=', Auth::user()->account_id)
+            ->whereNull('resource_type_id')
+            ->pluck('name', 'id');
     }
 
-    /**
-     * Check if user has child records (appointments, locations)
-     *
-     * @param id, account id
-     * @return bool
-     */
-    public static function isExists($id, $account_id)
+    public static function isExists(int $id, ?int $accountId = null): bool
     {
-        if (
-            DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $id])->count() ||
-            Appointments::where(['doctor_id' => $id])->count()
-        ) {
-            return true;
-        }
-
-        return false;
+        return DoctorHasLocations::where('is_allocated', 1)->where('user_id', $id)->exists()
+            || Appointments::where('doctor_id', $id)->exists();
     }
 
     /**
-     * Get patients
      * @deprecated Move to PatientService when optimizing Patients module
-     *
-     * @return (mixed)
      */
     public static function getPatients()
     {
-
-        return self::where([
-            ['user_type_id', '=', Config::get('constants.patient_id')],
-            ['account_id', '=', Auth::User()->account_id],
+        return static::where([
+            ['user_type_id', '=', config('constants.patient_id')],
+            ['account_id', '=', Auth::user()->account_id],
         ])->get();
     }
 
     /**
-     * Find user for patient profile and checkout account id
      * @deprecated Move to PatientService when optimizing Patients module
-     *
-     * @param id
-     *
-     * @return patient
      */
-    public static function finduser($id)
+    public static function finduser(int $id): ?static
     {
-        return self::where([
-            ['account_id', '=', Auth::User()->account_id],
+        return static::where([
+            ['account_id', '=', Auth::user()->account_id],
             ['id', '=', $id],
         ])->first();
     }
 
     /**
-     * Get All Records
      * @deprecated Move to appropriate service when optimizing related module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
      */
-    public static function getAllRecords($account_id)
+    public static function getAllRecords(int $accountId)
     {
-        return self::where(['account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
-    }
-
-    /**
-     * Get All Patient Records
-     * @deprecated Move to PatientService when optimizing Patients module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
-     */
-    public static function getAllPatientRecords($account_id, array $ids = [])
-    {
-        if (is_array($ids) && count($ids)) {
-            return self::where(['account_id' => $account_id])
-                ->whereIn('user_type_id', [self::$PATIENT_GROUP])
-                ->whereIn('id', $ids)
-                ->get();
-        }
-
-        return self::where(['account_id' => $account_id])
-            ->whereIn('user_type_id', [self::$PATIENT_GROUP])
+        return static::where('account_id', $accountId)
+            ->whereNotIn('user_type_id', [static::$PATIENT_GROUP])
             ->get();
     }
 
     /**
-     * Get All Active Records
-     * @deprecated Move to appropriate service when optimizing related module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Move to PatientService when optimizing Patients module
      */
-    public static function getAllActiveRecords($account_id, $locationId = false)
+    public static function getAllPatientRecords(int $accountId, array $ids = [])
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = [$locationId];
+        $query = static::where('account_id', $accountId)
+            ->whereIn('user_type_id', [static::$PATIENT_GROUP]);
+
+        if (!empty($ids)) {
+            $query->whereIn('id', $ids);
         }
 
-        if ($locationId) {
-            $query = self::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->where([
-                    ['users.user_type_id', '!=', self::$PATIENT_GROUP],
-                    ['users.active', '=', 1],
-                    ['users.account_id', '=', $account_id],
-                ])->whereIn('user_has_locations.location_id', $locationId)->get();
-
-            return $query;
-        } else {
-            return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
-        }
+        return $query->get();
     }
 
     /**
-     * Get All Active Records for employee
      * @deprecated Move to appropriate service when optimizing related module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
      */
-    public static function getAllActiveEmployeeRecords($account_id, $locationId = false)
+    public static function getAllActiveRecords(int $accountId, array|int|false $locationId = false)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = [$locationId];
+        $locationIds = match (true) {
+            $locationId === false => null,
+            is_array($locationId) => $locationId,
+            default => [$locationId],
+        };
+
+        if ($locationIds) {
+            return static::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->where('users.user_type_id', '!=', static::$PATIENT_GROUP)
+                ->where('users.active', 1)
+                ->where('users.account_id', $accountId)
+                ->whereIn('user_has_locations.location_id', $locationIds)
+                ->get();
         }
 
-        if ($locationId) {
-            $query = self::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
-                ->where([
-                    ['users.user_type_id', '!=', self::$PATIENT_GROUP],
-                    ['users.active', '=', 1],
-                    ['users.account_id', '=', $account_id],
-                ])->whereIn('user_has_locations.location_id', $locationId)
+        return static::where(['active' => 1, 'account_id' => $accountId])
+            ->whereNotIn('user_type_id', [static::$PATIENT_GROUP])
+            ->get();
+    }
+
+    /**
+     * @deprecated Move to appropriate service when optimizing related module
+     */
+    public static function getAllActiveEmployeeRecords(int $accountId, array|int|false $locationId = false)
+    {
+        $locationIds = match (true) {
+            $locationId === false => null,
+            is_array($locationId) => $locationId,
+            default => [$locationId],
+        };
+
+        if ($locationIds) {
+            return static::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
+                ->where('users.user_type_id', '!=', static::$PATIENT_GROUP)
+                ->where('users.active', 1)
+                ->where('users.account_id', $accountId)
+                ->whereIn('user_has_locations.location_id', $locationIds)
                 ->select('users.id', 'users.name')
                 ->get();
-
-            return $query;
-        } else {
-            return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
         }
+
+        return static::where(['active' => 1, 'account_id' => $accountId])
+            ->whereNotIn('user_type_id', [static::$PATIENT_GROUP])
+            ->get();
     }
 
     /**
-     * Get All Active Records for practitioners
      * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
      */
-    public static function getAllActivePractionersRecords($account_id, $locationId = false)
+    public static function getAllActivePractionersRecords(int $accountId, array|int|false $locationId = false)
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = [$locationId];
-        }
+        $locationIds = match (true) {
+            $locationId === false => null,
+            is_array($locationId) => $locationId,
+            default => [$locationId],
+        };
 
-        if ($locationId) {
-            $query = self::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
-                ->where([
-                    ['users.user_type_id', '!=', self::$PATIENT_GROUP],
-                    ['users.active', '=', 1],
-                    ['users.account_id', '=', $account_id],
-                ])->whereIn('doctor_has_locations.location_id', $locationId)
+        if ($locationIds) {
+            return static::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
+                ->where('users.user_type_id', '!=', static::$PATIENT_GROUP)
+                ->where('users.active', 1)
+                ->where('users.account_id', $accountId)
+                ->whereIn('doctor_has_locations.location_id', $locationIds)
                 ->select('users.id', 'users.name')
                 ->get();
-
-            return $query;
-        } else {
-            return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP])->get();
         }
+
+        return static::where(['active' => 1, 'account_id' => $accountId])
+            ->whereNotIn('user_type_id', [static::$PATIENT_GROUP])
+            ->get();
     }
 
     /**
-     * Get All System Users Active Records
      * @deprecated Move to appropriate service when optimizing related module
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
      */
-    public static function getAllSystemUsersActiveRecords($account_id)
+    public static function getAllSystemUsersActiveRecords(int $accountId)
     {
-        return self::where(['active' => 1, 'account_id' => $account_id])->whereNotIn('user_type_id', [self::$PATIENT_GROUP, self::$DOCTOR_GROUP])->get();
+        return static::where(['active' => 1, 'account_id' => $accountId])
+            ->whereNotIn('user_type_id', [static::$PATIENT_GROUP, static::$DOCTOR_GROUP])
+            ->get();
     }
 
     /**
-     * Get active and sorted data only.
      * @deprecated Move to appropriate service when optimizing related module
      */
-    public static function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
+    public static function getActiveOnly(
+        array|int|false $locationId = false,
+        int|false $accountId = false,
+        array|int|false $userId = false,
+        bool $pluckColumns = true,
+    ) {
+        $locationIds = match (true) {
+            $locationId === false => null,
+            is_array($locationId) => $locationId,
+            default => [$locationId],
+        };
+
+        $userIds = match (true) {
+            $userId === false => null,
+            is_array($userId) => $userId,
+            default => [$userId],
+        };
+
+        $query = $locationIds
+            ? static::buildLocationBasedQuery($locationIds, $accountId)
+            : static::buildDirectQuery($accountId);
+
+        if ($userIds) {
+            $query->whereIn('users.id', $userIds);
+        }
+
+        $results = $query->get();
+
+        if ($pluckColumns) {
+            $pluckKey = $locationIds ? 'user_id' : 'id';
+            return $results->pluck('name', $pluckKey);
+        }
+
+        return $results;
+    }
+
+    private static function buildLocationBasedQuery(array $locationIds, int|false $accountId): Builder
     {
-        if ($locationId && !is_array($locationId)) {
-            $locationId = [$locationId];
+        $query = static::join('user_has_locations', function ($join) use ($accountId) {
+            $join->on('users.id', '=', 'user_has_locations.user_id')
+                ->where('users.user_type_id', '=', config('constants.application_user_id'))
+                ->where('users.active', '=', 1);
+
+            if ($accountId) {
+                $join->where('users.account_id', '=', $accountId);
+            }
+        })->whereIn('user_has_locations.location_id', $locationIds);
+
+        return $query;
+    }
+
+    private static function buildDirectQuery(int|false $accountId): Builder
+    {
+        $query = static::where('users.user_type_id', '=', config('constants.application_user_id'))
+            ->where('users.active', '=', 1);
+
+        if ($accountId) {
+            $query->where('users.account_id', '=', $accountId);
         }
-        if ($user_id && !is_array($user_id)) {
-            $user_id = [$user_id];
-        }
 
-        if ($locationId) {
-            if ($account_id) {
-                if ($user_id) {
-                    $query = self::join('user_has_locations', function ($join) use ($account_id) {
-                        $join->on('users.id', '=', 'user_has_locations.user_id')
-                            ->where('users.user_type_id', '=', config('constants.application_user_id'))
-                            ->where('users.active', '=', 1)
-                            ->where('users.account_id', '=', $account_id);
-                    })
-                        ->whereIn('user_has_locations.location_id', $locationId)
-                        ->whereIn('users.id', $user_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'user_id');
-                    }
-
-                    return $query;
-                } else {
-                    $query = self::join('user_has_locations', function ($join) use ($account_id) {
-                        $join->on('users.id', '=', 'user_has_locations.user_id')
-                            ->where('users.user_type_id', '=', config('constants.application_user_id'))
-                            ->where('users.active', '=', 1)
-                            ->where('users.account_id', '=', $account_id);
-                    })
-                        ->whereIn('user_has_locations.location_id', $locationId)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'user_id');
-                    }
-
-                    return $query;
-                }
-            }
-
-            if ($user_id) {
-                $query = self::join('user_has_locations', function ($join) {
-                    $join->on('users.id', '=', 'user_has_locations.user_id')
-                        ->where('users.user_type_id', '=', config('constants.application_user_id'))
-                        ->where('users.active', '=', 1);
-                })
-                    ->whereIn('users.id', $user_id)
-                    ->whereIn('user_has_locations.location_id', $locationId)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'user_id');
-                }
-
-                return $query;
-            } else {
-                $query = self::join('user_has_locations', function ($join) {
-                    $join->on('users.id', '=', 'user_has_locations.user_id')
-                        ->where('users.user_type_id', '=', config('constants.application_user_id'))
-                        ->where('users.active', '=', 1);
-                })
-                    ->whereIn('user_has_locations.location_id', $locationId)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'user_id');
-                }
-
-                return $query;
-            }
-            //            $query = self::whereIn('location_id',$locationId)->get()->pluck('name','id');
-        } else {
-            if ($account_id) {
-                if ($user_id) {
-                    $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
-                        ->where('users.active', '=', 1)
-                        ->where('users.account_id', '=', $account_id)
-                        ->whereIn('users.id', $user_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'id');
-                    }
-
-                    return $query;
-                } else {
-                    $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
-                        ->where('users.active', '=', 1)
-                        ->where('users.account_id', '=', $account_id)
-                        ->get();
-                    if ($pluck_columns) {
-                        $query = $query->pluck('name', 'id');
-                    }
-
-                    return $query;
-                }
-            }
-
-            if ($user_id) {
-                $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
-                    ->where('users.active', '=', 1)
-                    ->whereIn('users.id', $user_id)
-                    ->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'id');
-                }
-
-                return $query;
-            } else {
-                $query = self::where('users.user_type_id', '=', config('constants.application_user_id'))
-                    ->where('users.active', '=', 1)->get();
-                if ($pluck_columns) {
-                    $query = $query->pluck('name', 'id');
-                }
-
-                return $query;
-            }
-            //            $query = self::get()->pluck('name','id');
-        }
+        return $query;
     }
 }

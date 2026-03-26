@@ -7,28 +7,26 @@ use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PermissionDatatableRequest;
 use App\Http\Requests\Admin\PermissionRequest;
+use App\Models\Permission;
 use App\Services\UserManagement\PermissionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class PermissionController extends Controller
 {
-    private PermissionService $permissionService;
     private int $success;
     private int $error;
     private int $unauthorized;
 
-    public function __construct(PermissionService $permissionService)
-    {
-        $this->permissionService = $permissionService;
+    public function __construct(
+        private readonly PermissionService $permissionService,
+    ) {
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    /**
-     * Display permissions listing page
-     */
     public function index()
     {
         if (!Gate::allows('permissions_manage')) {
@@ -40,29 +38,10 @@ class PermissionController extends Controller
         return view('admin.permissions.index', compact('filters'));
     }
 
-    /**
-     * Get paginated permissions for datatable
-     */
-    public function datatable(PermissionDatatableRequest $request)
+    public function datatable(PermissionDatatableRequest $request): JsonResponse
     {
         try {
-            // Handle bulk delete if requested
-            $deleteIds = $request->getDeleteIds();
-            if (!empty($deleteIds)) {
-                if (!Gate::allows('permissions_destroy')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete permissions.', false);
-                }
-                
-                $this->permissionService->bulkDelete($deleteIds);
-                
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Records have been deleted successfully!',
-                ]);
-            }
-
-            $user = auth()->user();
-            $isSuperAdmin = $user->hasRole('Super-Admin');
+            $isSuperAdmin = auth()->user()->hasRole('Super-Admin');
 
             $params = [
                 'search' => $request->getSearchTerm(),
@@ -75,7 +54,6 @@ class PermissionController extends Controller
 
             $result = $this->permissionService->getDatatableData($params, $isSuperAdmin);
 
-            $page = $request->getPage();
             $perPage = $request->getPerPage();
             $total = $result['total'];
 
@@ -84,7 +62,7 @@ class PermissionController extends Controller
                 'permissions' => $this->permissionService->getUserPermissions(),
                 'meta' => [
                     'field' => $params['orderBy'],
-                    'page' => $page,
+                    'page' => $request->getPage(),
                     'pages' => $perPage > 0 ? ceil($total / $perPage) : 1,
                     'perpage' => $perPage,
                     'total' => $total,
@@ -96,10 +74,7 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Get data for creating a new permission
-     */
-    public function create()
+    public function create(): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_manage')) {
@@ -114,10 +89,7 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Store a newly created permission
-     */
-    public function store(PermissionRequest $request)
+    public function store(PermissionRequest $request): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_create')) {
@@ -132,17 +104,12 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Get permission data for editing
-     */
-    public function edit(int $id)
+    public function edit(Permission $permission): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to edit permissions.', false);
             }
-
-            $permission = $this->permissionService->findOrFail($id);
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'permissions' => $this->permissionService->getParentGroups(),
@@ -153,17 +120,12 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Show a specific permission
-     */
-    public function show(int $id)
+    public function show(Permission $permission): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
-
-            $permission = $this->permissionService->findOrFail($id);
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'permission' => $permission->load('parent:id,name'),
@@ -173,10 +135,7 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Update the specified permission
-     */
-    public function update(PermissionRequest $request, int $id)
+    public function update(PermissionRequest $request, int $id): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_edit')) {
@@ -191,10 +150,7 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Remove the specified permission
-     */
-    public function destroy(int $id)
+    public function destroy(int $id): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_destroy')) {
@@ -209,10 +165,7 @@ class PermissionController extends Controller
         }
     }
 
-    /**
-     * Get all parent groups (for dropdowns)
-     */
-    public function parentGroups()
+    public function parentGroups(): JsonResponse
     {
         try {
             if (!Gate::allows('permissions_manage')) {

@@ -36,15 +36,6 @@ function loadParentPermissions() {
 
 var table_columns = [
     {
-    field: 'id',
-    sortable: false,
-        width: 'auto',
-        title: renderCheckbox(),
-        template: function (data) {
-            let id = data.id;
-            return childCheckbox(data);
-        }
-    }, {
         field: 'title',
         title: 'Title',
         width: 'auto',
@@ -205,7 +196,6 @@ function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
 
         let filters =  {
-            delete: '',
             search: $("#search_search").val(),
             parent_id: $("#search_parent_id").val(),
             filter: 'filter',
@@ -219,7 +209,6 @@ function resetAllFilters(datatable) {
 
     $('#reset-filters').on('click', function() {
         let filters =  {
-            delete: '',
             search: '',
             parent_id: '',
             filter: 'filter_cancel',

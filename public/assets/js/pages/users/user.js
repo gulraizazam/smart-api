@@ -3,15 +3,6 @@ var table_url = route('admin.users.datatable');
 var Clonepager = "";
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: 80,
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },
-    {
         field: 'name',
         title: 'Name',
         width: 80,
@@ -27,11 +18,7 @@ var table_columns = [
         field: 'gender',
         title: 'Gender',
         width: 80,
-    }, {
-        field: 'commission',
-        title: 'Commission',
-        width: 100,
-    }, {
+    },  {
         field: 'locations',
         title: 'centre',
         width: 'auto',
@@ -300,8 +287,6 @@ function setEditData(response) {
     $("#edit_user_name").val(user.name);
     $("#edit_user_email").val(user.email);
     $("#edit_user_gender").val(user.gender);
-    $("#edit_user_commission").val(user.commission);
-
     $("#edit_old_user_phone").val(user.phone);
 
     if (permissions.contact) {
@@ -326,14 +311,13 @@ function applyFilters(datatable) {
     $('#apply-filters').on('click', function () {
 
         let filters = {
-            delete: '',
             name: $("#search_name").val(),
             email: $("#search_email").val(),
             phone: $("#search_phone").val(),
             location_id: $("#search_center").val(),
             role_id: $("#search_role").val(),
             gender: $("#search_gender").val(),
-            commission: $("#search_commission").val(),
+
             status: $("#search_status").val(),
             created_at: $("#date_range").val(),
             filter: 'filter',
@@ -347,9 +331,8 @@ function resetAllFilters(datatable) {
 
     $('#reset-filters').on('click', function () {
         let filters = {
-            delete: '',
             name: '',
-            commission: '',
+
             email: '',
             phone: '',
             location_id: '',
@@ -395,7 +378,7 @@ function setFilters(filter_values, active_filters) {
     $("#search_name").val(active_filters.name);
     $("#search_phone").val(active_filters.phone);
     $("#search_gender").val(active_filters.gender);
-    $("#search_commission").val(active_filters.commission);
+
     $("#search_email").val(active_filters.email);
     $("#date_range").val(active_filters.created_at);
 
@@ -411,7 +394,7 @@ function setFilters(filter_values, active_filters) {
 function hideShowAdvanceFilters(active_filters) {
     if ((typeof active_filters.location_id !== 'undefined' && active_filters.location_id != '')
         || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
-        || (typeof active_filters.commission !== 'undefined' && active_filters.commission != '')
+
         || (typeof active_filters.email !== 'undefined' && active_filters.email != '')
         || (typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
         || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')

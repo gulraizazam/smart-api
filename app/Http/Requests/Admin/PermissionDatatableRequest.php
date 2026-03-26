@@ -21,7 +21,7 @@ class PermissionDatatableRequest extends FormRequest
     {
         return [
             'query.search.search' => 'nullable|string|max:255',
-            'query.search.delete' => 'nullable|string',
+
             'query.search.filter' => 'nullable|string|in:filter,filter_cancel',
             'query.search.parent_id' => 'nullable|string',
             'sort.field' => 'nullable|string|in:id,name,title,parent.name,created_at',
@@ -37,20 +37,6 @@ class PermissionDatatableRequest extends FormRequest
     public function getSearchTerm(): ?string
     {
         return $this->input('query.search.search');
-    }
-
-    /**
-     * Get delete IDs from request
-     */
-    public function getDeleteIds(): array
-    {
-        $deleteString = $this->input('query.search.delete');
-        
-        if (empty($deleteString)) {
-            return [];
-        }
-
-        return array_filter(array_map('intval', explode(',', $deleteString)));
     }
 
     /**

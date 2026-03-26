@@ -2,26 +2,10 @@
 var table_url = route('admin.roles.datatable');
 
 var table_columns = [ {
-    field: 'id',
-    sortable: false,
-    width: 'auto',
-    title: renderCheckbox(),
-        template: function (data) {
-            let id = data.id;
-            return childCheckbox(data);
-        }
-    }, {
         field: 'name',
         title: 'Name',
         width: 700,
-    }, {
-        field: 'commission',
-        title: 'Commission',
-        width: 200,
-        template: function (data) {
-            return data.commission + ' %';
-        }
-    },  {
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -117,7 +101,6 @@ function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
 
         let filters =  {
-            delete: '',
             name: $("#search_name").val(),
             commission: $("#search_commission").val(),
             filter: 'filter',
@@ -132,7 +115,6 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
 
         let filters =  {
-            delete: '',
             name: '',
             commission: '',
             filter: 'filter_cancel',

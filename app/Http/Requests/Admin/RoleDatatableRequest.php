@@ -22,7 +22,7 @@ class RoleDatatableRequest extends FormRequest
         return [
             'query.search.name' => 'nullable|string|max:255',
             'query.search.commission' => 'nullable|numeric',
-            'query.search.delete' => 'nullable|string',
+
             'query.search.filter' => 'nullable|string|in:filter,filter_cancel',
             'sort.field' => 'nullable|string|in:id,name,commission,created_at',
             'sort.sort' => 'nullable|string|in:asc,desc',
@@ -45,18 +45,6 @@ class RoleDatatableRequest extends FormRequest
     public function getCommissionFilter(): ?string
     {
         return $this->input('query.search.commission');
-    }
-
-    /**
-     * Get delete IDs from request
-     */
-    public function getDeleteIds(): array
-    {
-        $deleteString = $this->input('query.search.delete');
-        if (empty($deleteString)) {
-            return [];
-        }
-        return array_filter(explode(',', $deleteString));
     }
 
     /**
