@@ -2,834 +2,366 @@
 
 namespace App\Http\Controllers;
 
-use App;
-use Gate;
 use App\Helpers\DashboardHelper;
-use App\Models\User;
-use App\Models\Invoices;
-use App\Models\Patients;
-use App\Models\Services;
-use App\Models\Locations;
-use App\Models\Appointments;
-use App\Models\RoleHasUsers;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use App\HelperModule\ApiHelper;
-use App\Models\PackageAdvances;
-use App\Models\Packages;
-use App\Models\PackageBundles;
-use App\Models\PackageService;
-use App\Models\ResourceHasRota;
-use App\Models\AppointmentTypes;
-use App\Reports\dashboardreport;
 use App\Helpers\GeneralFunctions;
-use App\Models\DoctorHasLocations;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
-use App\Models\AppointmentStatuses;
-use Illuminate\Support\Facades\Auth;
-use App\Models\AppointmentsDailyStats;
-use App\Models\Feedback;
-use Illuminate\Support\Facades\Config;
-use App\Services\Dashboard\DashboardStatsService;
-use App\Services\Dashboard\DashboardRevenueService;
+use App\HelperModule\ApiHelper;
+use App\Models\Locations;
+use App\Models\Services;
+use App\Models\User;
 use App\Services\Dashboard\DashboardChartService;
+use App\Services\Dashboard\DashboardRevenueService;
+use App\Services\Dashboard\DashboardStatsService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class DashboardReportsController extends Controller
 {
-    public $success;
+    protected string $success;
+    protected string $error;
+    protected string $unauthorized;
 
-    public $error;
-
-    public $unauthorized;
-
-    protected $statsService;
-    protected $revenueService;
-    protected $chartService;
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct(
-        DashboardStatsService $statsService,
-        DashboardRevenueService $revenueService,
-        DashboardChartService $chartService
+        protected readonly DashboardStatsService $statsService,
+        protected readonly DashboardRevenueService $revenueService,
+        protected readonly DashboardChartService $chartService,
     ) {
-        $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
-        
-        $this->statsService = $statsService;
-        $this->revenueService = $revenueService;
-        $this->chartService = $chartService;
     }
 
-    public function collectionByCentre(Request $request)
+    public function collectionByCentre(Request $request): JsonResponse
     {
         $day = $request->type ?? 'today';
         $result = $this->revenueService->getCollectionByCentre($day, $request);
+
         $data = $result['data'];
-        $total = $result['total'];
-        
-        $dataArray = array_values($data[$day] ?? []);
+        $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        // Calculate percentage for each slice (skip header row at index 0)
-        if (count($dataArray) > 1) {
-            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
-            for ($i = 1; $i < count($dataArray); $i++) {
-                if (is_array($dataArray[$i]) && isset($dataArray[$i][0], $dataArray[$i][1])) {
-                    $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
-                    $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
-                }
-            }
-        }
-
-        $data[$day] = $dataArray;
-
-        return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
+        return ApiHelper::apiResponse($this->success, 'Pie chart data.', true, [
             'pie' => $data,
-            'total' => number_format($total ?? 0, 2),
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function CollectionByServiceCategory(Request $request)
+    public function collectionByServiceCategory(Request $request): JsonResponse
     {
-        $type = '';
-        if ($request->today) $type = 'today';
-        elseif ($request->yesterday) $type = 'yesterday';
-        elseif ($request->last7days) $type = 'last7days';
-        elseif ($request->thismonth) $type = 'thismonth';
-        elseif ($request->lastmonth) $type = 'lastmonth';
-        
+        $type = match (true) {
+            (bool) $request->today => 'today',
+            (bool) $request->yesterday => 'yesterday',
+            (bool) $request->last7days => 'last7days',
+            (bool) $request->thismonth => 'thismonth',
+            (bool) $request->lastmonth => 'lastmonth',
+            default => '',
+        };
+
         $result = $this->revenueService->getCollectionByServiceCategory($type, $request);
-        
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
+
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
             'pie' => $result['data'],
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function RevenueByServiceCategory(Request $request)
+    public function revenueByServiceCategory(Request $request): JsonResponse
     {
         $result = $this->revenueService->getRevenueByServiceCategory($request->type ?? '', $request);
-        $data = $result['data'];
-        $total = $result['total'];
-        $colors = $result['colors'];
-
         $day = $request->type ?: 'today';
-        $dataArray = $data[$day] ?? [];
 
-        // Calculate percentage for each slice
-        if (count($dataArray) > 1) {
-            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
-            for ($i = 1; $i < count($dataArray); $i++) {
-                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
-                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
-            }
-        }
+        $data = $result['data'];
+        $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        $data[$day] = $dataArray;
-
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
             'pie' => $data,
-            'colors' => $colors,
-            'total' => number_format($total ?? 0, 2),
+            'colors' => $result['colors'],
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function myCollectionByCentre(Request $request)
+    public function myCollectionByCentre(Request $request): JsonResponse
     {
         $result = $this->revenueService->getMyCollectionByCentre($request->type ?? '', $request);
-        
-        return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
+
+        return ApiHelper::apiResponse($this->success, 'Pie chart data.', true, [
             'pie' => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function revenueByCentre(Request $request)
+    public function revenueByCentre(Request $request): JsonResponse
     {
         $result = $this->revenueService->getRevenueByCentre($request->type ?? '', $request);
-        $data = $result['data'];
-        $total = $result['total'];
 
-        // Calculate percentages
-        if (count($data) > 1) {
-            $totalValue = array_sum(array_column(array_slice($data, 1), 1));
-            for ($i = 1; $i < count($data); $i++) {
-                $percentage = $totalValue != 0 ? ($data[$i][1] / $totalValue) * 100 : 0;
-                $data[$i][0] = $data[$i][0] . " (" . number_format($percentage, 1) . "%)";
-            }
-        }
-
-        return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
-            'pie' => $data,
-            'total' => number_format($total, 2),
+        return ApiHelper::apiResponse($this->success, 'Bar chart data.', true, [
+            'pie' => $this->appendPercentages($result['data']),
+            'total' => number_format($result['total'], 2),
         ]);
     }
 
-    public function myRevenueByCentre(Request $request)
+    public function myRevenueByCentre(Request $request): JsonResponse
     {
         $result = $this->revenueService->getMyRevenueByCentre($request->type ?? '', $request);
-        
-        return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
+
+        return ApiHelper::apiResponse($this->success, 'Bar chart data.', true, [
             'pie' => $result['data'],
             'total' => number_format($result['total'], 2),
         ]);
     }
 
-    public function revenueByService(Request $request)
+    public function revenueByService(Request $request): JsonResponse
     {
         $result = $this->revenueService->getRevenueByService($request->type ?? '', $request, 'dashboard_revenue_by_service');
-        $data = $result['data'];
-        $total = $result['total'];
-        $colors = $result['colors'];
-
         $day = $request->type ?: 'today';
-        $dataArray = $data[$day] ?? [];
 
-        // Calculate percentage for each slice
-        if (count($dataArray) > 1) {
-            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
-            for ($i = 1; $i < count($dataArray); $i++) {
-                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
-                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
-            }
-        }
+        $data = $result['data'];
+        $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        $data[$day] = $dataArray;
-
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
             'pie' => $data,
-            'colors' => $colors,
-            'total' => number_format($total ?? 0, 2),
+            'colors' => $result['colors'],
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function myRevenueByService(Request $request)
+    public function myRevenueByService(Request $request): JsonResponse
     {
         $result = $this->revenueService->getRevenueByService($request->period ?? '', $request, 'dashboard_my_revenue_by_service');
-        
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
+
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
             'pie' => $result['data'],
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
-    public function AppointmentByStatus(Request $request)
+    public function appointmentByStatus(Request $request): JsonResponse
     {
         $day = $request->period ?: 'today';
-        
+
         if (!Gate::allows('dashboard_appointment_by_status')) {
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'pie' => [],
-                'colors' => [],
-                'total' => 0,
+            return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+                'pie' => [], 'colors' => [], 'total' => 0,
             ]);
         }
 
         $result = $this->chartService->getAppointmentByStatus($day, $request->type, $request->get('performance'));
-        $chartData = $result['chartData'];
-        $colors = $result['colors'];
+        $chartData = $this->appendPercentages($result['chartData']);
 
-        // Calculate percentages
-        if (count($chartData) > 1) {
-            $totalValue = array_sum(array_column(array_slice($chartData, 1), 1));
-            for ($i = 1; $i < count($chartData); $i++) {
-                $percentage = $totalValue != 0 ? ($chartData[$i][1] / $totalValue) * 100 : 0;
-                $chartData[$i][0] = $chartData[$i][0] . " (" . number_format($percentage, 1) . "%)";
-            }
-        }
-
-        $data[$day] = $chartData;
-
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
-            'pie' => $data,
-            'colors' => $colors,
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+            'pie' => [$day => $chartData],
+            'colors' => $result['colors'],
             'total' => 0,
         ]);
     }
 
-    public function AppointmentByType(Request $request)
+    public function appointmentByType(Request $request): JsonResponse
     {
         $period = $request->period ?: 'today';
-        $result = $this->chartService->getAppointmentByType($period, $request->get('performance'));
-        
-        $data = [];
-        $data[$period] = $result['chartData'];
+        $result = $this->chartService->getAppointmentByType($period, null, $request->get('performance'));
 
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
-            'pie' => $data,
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+            'pie' => [$period => $result['chartData']],
             'colors' => $result['colors'] ?: ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'],
             'total' => $result['total'],
         ]);
     }
 
-    public function getChild(Request $request)
+    public function getChild(Request $request): JsonResponse
     {
-        if ($request->child_id) {
-            $service = Services::find($request->child_id);
+        $child = $request->child_id
+            ? (Services::find($request->child_id)?->name ?? 'N/A')
+            : 'N/A';
 
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'child' => $service->name ?? 'N/A',
+        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+            'child' => $child,
+        ]);
+    }
+
+    public function centreWiseArrival(Request $request): JsonResponse
+    {
+        try {
+            $result = $this->chartService->getCentreWiseArrival(
+                $request->period ?: 'thismonth',
+                $request->centre_id ?? 'All',
+            );
+
+            return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
+                'bar' => $result['labels'] ?? [],
+                'total' => $result['data']['total'] ?? [],
+                'arrived' => $result['data']['arrived'] ?? [],
+                'walkin' => $result['data']['walkin'] ?? [],
             ]);
-        } else {
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'child' => 'N/A',
+        } catch (\Exception $e) {
+            Log::error('CentreWiseArrival Error: ' . $e->getMessage());
+
+            return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
+                'bar' => [], 'total' => [], 'arrived' => [], 'walkin' => [],
             ]);
         }
     }
 
-    public function CentreWiseArrival(Request $request)
-{
-    $lables = [];
-    $total_apts = [];
-    $arrived_apts = [];
-    $walkin_apts = [];
-    
-    try {
-        $period = $request->period == '' ? 'thismonth' : $request->period;
-        $center_ids = $request->centre_id == 'All' ? DashboardHelper::getUserCentres() : [$request->centre_id];
-
-        // Fetch all locations in a single query and filter valid ones (ntn or stn not null)
-        $locations = Locations::whereIn('id', $center_ids)
-            ->where(function ($q) {
-                $q->whereNotNull('ntn')->orWhereNotNull('stn');
-            })
-            ->pluck('name', 'id')
-            ->toArray();
-        
-        // Get only valid center IDs
-        $validCenterIds = array_keys($locations);
-        
-        if (empty($validCenterIds)) {
-            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-                'bar' => [],
-                'total' => [],
-                'arrived' => [],
-                'walkin' => [],
-            ]);
-        }
-
-        // Get FDM role and users in optimized queries
-        $fdm_role = Role::where('name', 'FDM')->first();
-        $fdm_users = $fdm_role ? RoleHasUsers::where('role_id', $fdm_role->id)->pluck('user_id')->toArray() : [];
-
-        $periods = [
-            'today' => [
-                'start_date' => Carbon::now()->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
-            ],
-            'yesterday' => [
-                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'last7days' => [
-                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'week' => [
-                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'thismonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
-            ],
-        ];
-
-        // Get arrived and converted appointment status IDs
-        $accountId = Auth::User()->account_id;
-        $statusIds = \App\Models\AppointmentStatuses::where('account_id', $accountId)
-            ->where(function ($q) {
-                $q->where('is_arrived', 1)->orWhere('is_converted', 1);
-            })
-            ->pluck('id')
-            ->toArray();
-        
-        $arrivedStatusIds = !empty($statusIds) ? $statusIds : [2, 16];
-
-        // Build query with proper parameter binding
-        $query = AppointmentsDailyStats::select('centre_id')
-            ->selectRaw('COUNT(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', array_map('intval', $arrivedStatusIds)) . ') THEN 1 ELSE 0 END) as arrived')
-            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->whereIn('centre_id', $validCenterIds)
-            ->groupBy('centre_id');
-
-        // Add walkin calculation only if FDM users exist
-        if (!empty($fdm_users)) {
-            $fdmUserIds = implode(',', array_map('intval', $fdm_users));
-            $arrivedIds = implode(',', array_map('intval', $arrivedStatusIds));
-            $query->selectRaw("SUM(CASE WHEN appointment_status_id IN ({$arrivedIds}) AND user_id IN ({$fdmUserIds}) THEN 1 ELSE 0 END) as walkin");
-        } else {
-            $query->selectRaw('0 as walkin');
-        }
-
-        $stats = $query->get()->keyBy('centre_id')->toArray();
-
-        // Build result arrays using pre-fetched locations map
-        foreach ($validCenterIds as $centreId) {
-            $centreName = $locations[$centreId] ?? null;
-            if ($centreName) {
-                $lables[] = $centreName;
-                $total_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['total'] : 0;
-                $arrived_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['arrived'] : 0;
-                $walkin_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['walkin'] : 0;
-            }
-        }
-
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => $lables,
-            'total' => $total_apts,
-            'arrived' => $arrived_apts,
-            'walkin' => $walkin_apts,
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('CentreWiseArrival Error: ' . $e->getMessage());
-        
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => [],
-            'total' => [],
-            'arrived' => [],
-            'walkin' => [],
-        ]);
-    }
-}
-
-    public function CSRWiseArrival(Request $request)
+    public function csrWiseArrival(Request $request): JsonResponse
     {
-        $period = $request->period ?: 'thismonth';
-        $result = $this->chartService->getCSRWiseArrivalStats($period, $request->user_id ?? 'All');
+        $result = $this->chartService->getCSRWiseArrivalStats(
+            $request->period ?: 'thismonth',
+            $request->user_id ?? 'All',
+        );
 
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+        return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
             'bar' => $result['labels'],
             'total' => $result['total'],
             'arrived' => $result['arrived'],
         ]);
     }
 
-    public function CallWiseArrival(Request $request)
+    public function callWiseArrival(Request $request): JsonResponse
     {
-        $period = $request->period ?: 'today';
-        $result = $this->chartService->getCallWiseArrival($period, $request->user_id);
+        $result = $this->chartService->getCallWiseArrival($request->period ?: 'today', $request->user_id);
 
-        return ApiHelper::apiResponse($this->success, 'csr wise arrival data', true, [
+        return ApiHelper::apiResponse($this->success, 'CSR wise arrival data.', true, [
             'bar' => $result['labels'],
             'total' => $result['total'],
             'arrived' => $result['arrived'],
         ]);
     }
 
-    public function DoctoreWiseFeedback(Request $request)
+    public function doctorWiseFeedback(Request $request): JsonResponse
     {
-        $period = $request->period;
-        $centreId = $request->centre_id;
+        $result = $this->chartService->getDoctorWiseFeedback(
+            $request->period ?? 'today',
+            $request->centre_id ?? 'all',
+            $request->doc_id,
+        );
 
-        // Get date range from period
-        $dateRanges = GeneralFunctions::GetPeriods($period);
-        $dateRange = ($period == "all") ? null : ($dateRanges[$period] ?? null);
+        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data.', true, [
+            'labels' => $result['labels'] ?? [],
+            'rating' => $result['data']['rating'] ?? [],
+            'total' => $result['data']['total'] ?? [],
+        ]);
+    }
 
-        // Get relevant location IDs
-        $whereNot = ['All Centres', 'All South Region', 'All Central Region'];
-        if ($centreId === 'all') {
-            $locationIds = Locations::whereNotIn('name', $whereNot)
-                ->where('active', 1)
-                ->pluck('id')
-                ->toArray();
-        } else {
-            $locationIds = [$centreId];
-        }
+    public function allDoctorsWiseConversion(Request $request): JsonResponse
+    {
+        $result = $this->chartService->getDoctorWiseConversion(
+            $request->period ?? 'today',
+            $request->centre_id ?? 'All',
+            $request->doc_id,
+        );
 
-        // Get doctors assigned to those locations
-        $doctorIds = DoctorHasLocations::where('is_allocated', 1)
-            ->whereIn('location_id', $locationIds)
-            ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
-                return $query->where('user_id', $request->doc_id);
-            })
-            ->distinct()
-            ->pluck('user_id')
-            ->toArray();
+        // Build categories for table display
+        $categories = [];
+        $labels = $result['labels'] ?? [];
+        $appointmentsInfo = $result['appointments_info'] ?? [];
 
-        if (empty($doctorIds)) {
-            return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
-                'labels' => [],
-                'rating' => [],
-                'total' => []
-            ]);
-        }
-
-        // Get active doctors keyed by ID
-        $doctors = User::whereIn('id', $doctorIds)
-            ->where('active', 1)
-            ->get()
-            ->keyBy('id');
-
-        // Build single query for all doctors' feedback stats (fixes N+1)
-        $feedbackQuery = Feedback::whereIn('feedback.doctor_id', $doctorIds);
-        
-        // Apply location filter if specific centre
-        if ($centreId !== 'all') {
-            $feedbackQuery->where('feedback.location_id', $centreId);
-        }
-
-        // Apply date range filter using feedback.created_at (consistent with all other feedback queries)
-        if ($dateRange) {
-            $feedbackQuery->where('feedback.created_at', '>=', $dateRange['start_date'] . ' 00:00:00')
-                ->where('feedback.created_at', '<=', $dateRange['end_date'] . ' 23:59:59');
-        }
-
-        // Get aggregated stats per doctor in single query
-        $feedbackStats = $feedbackQuery
-            ->select('feedback.doctor_id', DB::raw('ROUND(AVG(CAST(feedback.rating AS DECIMAL(4,2))), 2) as avg_rating'), DB::raw('COUNT(*) as total_feedbacks'))
-            ->groupBy('feedback.doctor_id')
-            ->get()
-            ->keyBy('doctor_id');
-
-        // Build doctor ratings array
-        $doctorRatings = [];
-        foreach ($doctors as $doctorId => $doctor) {
-            $stats = $feedbackStats->get($doctorId);
-            $doctorRatings[] = [
-                'name' => $doctor->name,
-                'rating' => (float) ($stats->avg_rating ?? 0),
-                'total' => $stats->total_feedbacks ?? 0,
+        foreach ($appointmentsInfo as $index => $info) {
+            $categories[] = [
+                'service' => $labels[$index] ?? '',
+                'total_arrival' => $info['total'] ?? 0,
+                'total_conversion' => $info['converted'] ?? 0,
+                'avg' => ($info['converted'] ?? 0) > 0
+                    ? ($info['conversion_spend'] / $info['converted'])
+                    : 0,
             ];
         }
 
-        // Sort by rating descending
-        usort($doctorRatings, fn($a, $b) => $b['rating'] <=> $a['rating']);
-
-        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
-            'labels' => array_column($doctorRatings, 'name'),
-            'rating' => array_column($doctorRatings, 'rating'),
-            'total' => array_column($doctorRatings, 'total')
+        return ApiHelper::apiResponse($this->success, 'Doctor wise conversion data.', true, [
+            'labels' => $labels,
+            'total_appointments' => $result['data']['total_appointments'] ?? [],
+            'converted_appointments' => $result['data']['converted_appointments'] ?? [],
+            'categories' => $categories,
+            'category_total' => [],
+            'sum_val' => $result['sum_val'] ?? 0,
         ]);
     }
-    public function AllDoctorsWiseConversion(Request $request)
-    {
-        $total_apts = [];
-        $converted_apts = [];
-        $lables = [];
-        $appointments = array();
-        $total = 0;
-        $appointments_info = array();
-        $period = $request->period;
-        $returnCategoryData = [];
-        $total_arrived_appointments = 0;
-        $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
-        if ($request->centre_id == 'all') {
-            $locations = Locations::whereNotIn('name', $where_not)->where(['active' => 1])->pluck('id');
-        } else {
-            $locations = $request->centre_id;
-        }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null, function ($query) use ($request) {
-            return $query->whereIn('user_id', [$request->doc_id]);
-        })
-            ->distinct('user_id')
-            ->pluck('user_id');
 
-        $total_arrived_appointments = Appointments::with('location:id,name')
-            ->join('services', 'appointments.service_id', 'services.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
-            ->whereIn('appointments.doctor_id', $consultants)
-            ->whereIn('appointments.location_id', $locations)
-            ->selectRaw('count(*) as arrived, service_id,services.name')
-            ->whereBetween('appointments.scheduled_date', [
-                $periods[$period]['start_date'],
-                $periods[$period]['end_date']
-            ])
-            ->groupBy('service_id')
-            ->get();
-        foreach ($locations as $location) {
-            $location_name = Locations::find($location);
-            if ($location_name) {
-                array_push($lables, $location_name->name);
-            }
-
-            $converted_appointments =  Appointments::with('location:id,name')
-                ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-                ->where([
-                    'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                    'appointments.appointment_type_id' => 1
-                ])
-                ->whereIn('appointments.doctor_id', $consultants)
-                ->where(['appointments.location_id' => $location])
-                ->where('package_advances.cash_amount', '>', 0)
-                ->select('appointments.*')
-                ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
-                ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
-
-                ->get();
-
-            if (count($converted_appointments)) {
-                foreach ($converted_appointments as $appointment) {
-                    if (!in_array($appointment->id, $appointments)) {
-                        if(Gate::allows('contact')){
-                        $phoneNumber = $appointment->patient->phone;
-                        }else{
-                            $phoneNumber ='***********';
-                        }
-                        $appointments_info[$appointment->id] = array(
-                            'patient_id' => $appointment->patient_id,
-                            'appointment_id' => $appointment->id,
-                            'doctor_id' => $appointment->doctor_id,
-                            'doctor' => $appointment->doctor->name,
-                            'client' => $appointment->patient->name,
-                            'phone' =>$phoneNumber,
-                            'service' => $appointment->service->name,
-                            'service_id' => $appointment->service->id,
-                            'region' => $appointment->region->name,
-                            'city' => $appointment->city->name,
-                            'centre' => $appointment->location->name,
-                            'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
-                            'converted' => '',
-                            'conversion_spend' => '',
-                            'conversion_date' => '',
-                        );
-                    }
-                    $appointments[] = $appointment->id;
-                    $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
-                    if (count($package_info)) {
-                        $actual = 0;
-                        $revenue_in = 0;
-                        $out = 0;
-                        $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                            ->where(['cash_flow' => "in"])
-                            ->where('cash_amount', '>', 0)
-                            ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
-                            ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
-
-                            ->get();
-
-                        if (count($packagesadvances) > 0) {
-                            $first_advance = PackageAdvances::whereIn('id', $package_info)
-                                ->where('cash_amount', '>', 0)
-                                ->orderBy('created_at', 'asc')
-                                ->first();
-                            $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                            if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
-                                $appointments_info[$appointment->id]['converted'] = 'Yes';
-                                foreach ($packagesadvances as $packagesadvance) {
-                                    $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
-                                    if ($package_advance) {
-                                        $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
-                                        $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
-                                    }
-                                }
-                                $actual = $revenue_in - $out;
-                                $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                                $appointments_info[$appointment->id]['converted'] = 'Yes';
-                                $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
-                                $count[$appointment->location->id][] = 1;
-                                $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                                if ($appointment['converted'] != '') {
-                                    $arrived_count[$appointment->location->id][] = 1;
-                                    $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
-                                }
-                                $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
-                                $locationData[$appointment->location->name]['total'] = $total;
-                            }
-                        }
-                    }
-                }
-            }
-
-            $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2, 'appointments.location_id' => $location])
-                ->whereIn('appointments.doctor_id', $consultants)
-                ->count();
-
-            array_push($converted_apts, collect($appointments_info)
-                ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
-                ->where('conversion_spend', '!=', "")->count());
-            array_push($total_apts, $total_appointments);
-
-            $maxConversion = collect($appointments_info)->filter(function ($appointment) {
-                if ($appointment['conversion_spend'] > 0) {
-                    return $appointment;
-                }
-            });
-            $maxConversion = $maxConversion->groupBy('service_id');
-            $new_array = [];
-            $sum_conversion_spend2 = 0;
-            foreach ($maxConversion as $key => $conversions) {
-                $sum_conversion_total = 0;
-                $sum_conversion_spend = 0;
-                foreach ($conversions as $conversion) {
-                    $name = $conversion['service'];
-                    $sum_conversion_spend += $conversion['conversion_spend'];
-                    $sum_conversion_total++;
-                    $sum_conversion_spend2 += $conversion['conversion_spend'];
-                }
-                $avg_by_category = ($sum_conversion_spend / count($conversions));
-                $new_array[$name] = [
-                    'service' => $name,
-                    'total_conversion' => $sum_conversion_total,
-                    'avg' => $avg_by_category,
-                ];
-            }
-
-            foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
-                if (array_key_exists($arrive_category['name'], $new_array)) {
-                    $name = [$arrive_category['name']][0];
-
-                    $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
-                    $avg_valu = $new_array[$arrive_category['name']]['avg'];
-
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                        ->whereIn('appointments.location_id', $locations)
-                        // ->whereIn('appointments.doctor_id', $consultants)
-                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                        ->count();
-                } else {
-                    $name = [$arrive_category['name']][0];
-                    $sum_conversion_total = 0;
-                    $avg_valu = 0;
-
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                        ->whereIn('appointments.location_id', $locations)
-                        //->whereIn('appointments.doctor_id', $consultants)
-                        ->where('scheduled_date', '>=', $periods[$period]['start_date'])
-                        ->where('scheduled_date', '<=', $periods[$period]['end_date'])
-                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                        ->count();
-                }
-
-                $returnCategoryData[$key] = [
-                    'service' => $name,
-                    'total_arrival' => $category_total_records,
-                    'total_conversion' => $sum_conversion_total,
-                    'avg' => $avg_valu
-                ];
-            }
-        }
-
-
-        return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
-            'labels' => $lables,
-            'total_appointments' => $total_apts,
-            'converted_appointments' => $converted_apts,
-            'categories' => $returnCategoryData,
-            'category_total' => $total_arrived_appointments,
-            'sum_val' => $sum_conversion_spend2
-        ]);
-    }
-    public function GetCentreDoctors(Request $request)
+    public function getCentreDoctors(Request $request): JsonResponse
     {
         $consultants = $this->chartService->getCentreDoctors($request->centre_id ?? 'All');
-        return response()->json(['status' => 1, 'doctors' => $consultants]);
-    }
-    public function FollowUpReport()
-    {
-        $locations = Locations::getActiveRecordsByCity('', DashboardHelper::getUserCentres(), Auth::User()->account_id);
-        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        return view('admin.reports.followup', get_defined_vars());
+
+        return ApiHelper::apiResponse($this->success, 'Doctors loaded.', true, ['doctors' => $consultants]);
     }
 
-    public function FollowUpReportMonthly()
+    public function followUpReport(): View
     {
-        $locations = Locations::getActiveRecordsByCity('', DashboardHelper::getUserCentres(), Auth::User()->account_id);
-        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        return view('admin.reports.followupmonthly', get_defined_vars());
+        $accountId = Auth::user()->account_id;
+        $locations = Locations::getActiveRecordsByCity('', DashboardHelper::getUserCentres(), $accountId);
+        $Users = User::getAllRecords($accountId)->getDictionary();
+
+        return view('admin.reports.followup', compact('locations', 'Users'));
     }
-    public function loadFollowupReport(Request $request)
+
+    public function followUpReportMonthly(): View
     {
-        if (isset($request->date_range) && $request->date_range) {
-            $date_range = explode(' - ', $request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
+        $accountId = Auth::user()->account_id;
+        $locations = Locations::getActiveRecordsByCity('', DashboardHelper::getUserCentres(), $accountId);
+        $Users = User::getAllRecords($accountId)->getDictionary();
+
+        return view('admin.reports.followupmonthly', compact('locations', 'Users'));
+    }
+
+    public function loadFollowUpReport(Request $request): View
+    {
+        $startDate = null;
+        $endDate = null;
+
+        if ($request->date_range) {
+            $dateRange = explode(' - ', $request->date_range);
+            $startDate = date('Y-m-d', strtotime($dateRange[0]));
+            $endDate = date('Y-m-d', strtotime($dateRange[1]));
         }
-        if ($request->report_type == "monthly") {
-            $where = [];
-            if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
-                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
-            }
-            if ($request->patient_id) {
-                $where[] = ['patient_id', '=', $request->patient_id];
-            }
-            $data = $request->all();
+
+        $where = [];
+        if ($startDate && $endDate) {
+            $where[] = ['created_at', '>=', $startDate . ' 00:00:00'];
+            $where[] = ['created_at', '<=', $endDate . ' 23:59:00'];
+        }
+        if ($request->patient_id) {
+            $where[] = ['patient_id', '=', $request->patient_id];
+        }
+
+        $data = $request->all();
+
+        if ($request->report_type === 'monthly') {
             $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
-            return view('admin.reports.patients_follow_up_report_monthly', get_defined_vars());
-        } else {
-            $where = [];
-            if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
-                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
-            }
-            if ($request->patient_id) {
-                $where[] = ['patient_id', '=', $request->patient_id];
-            }
-            $data = $request->all();
-            $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);
-            return view('admin.reports.patients_follow_up_report', get_defined_vars());
-        }
-    }
-    public function ViewFeedback($doctorId)
-{
-    // Get all parent services (services without a parent_id)
-    $parentServices = Services::where('parent_id',0)->get();
-
-    $feedbackData = [];
-
-    foreach ($parentServices as $service) {
-        // Average rating directly on the parent service
-        $parentRating = Feedback::where('doctor_id', $doctorId)
-            ->where('service_id', $service->id)
-            ->avg('rating');
-
-        // Get child services of this parent
-        $children = Services::where('parent_id', $service->id)->get();
-
-        $childRatings = [];
-
-        foreach ($children as $child) {
-            $avgRating = Feedback::where('doctor_id', $doctorId)
-                ->where('treatment_id', $child->id)
-                ->avg('rating');
-
-            // Only include child if it has a rating
-            if ($avgRating !== null) {
-                $childRatings[] = [
-                    'id' => $child->id,
-                    'name' => $child->name,
-                    'color' => $child->color,
-                    'avg_rating' => round($avgRating, 2),
-                ];
-            }
+            return view('admin.reports.patients_follow_up_report_monthly', compact('patient_data', 'data', 'startDate', 'endDate'));
         }
 
-        // Include the parent only if it or at least one child has a rating
-        if ($parentRating !== null || count($childRatings) > 0) {
-            $feedbackData[] = [
-                'id' => $service->id,
-                'name' => $service->name,
-                'color' => $service->color,
-                'avg_rating' => $parentRating !== null ? round($parentRating, 2) : 0,
-                'treatments' => $childRatings
-            ];
-        }
+        $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);
+        return view('admin.reports.patients_follow_up_report', compact('patient_data', 'data', 'startDate', 'endDate'));
     }
 
-    return view('admin.reports.feedbackBarChart', compact('feedbackData'));
-}
+    public function viewFeedback(int $doctorId): View
+    {
+        $feedbackData = $this->chartService->getDoctorFeedbackByService($doctorId);
 
+        return view('admin.reports.feedbackBarChart', compact('feedbackData'));
+    }
+
+    // =========================================================================
+    // Private Helpers
+    // =========================================================================
+
+    protected function appendPercentages(array $dataArray): array
+    {
+        if (count($dataArray) <= 1) {
+            return array_values($dataArray);
+        }
+
+        $dataArray = array_values($dataArray);
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        for ($i = 1; $i < count($dataArray); $i++) {
+            if (isset($dataArray[$i][0], $dataArray[$i][1])) {
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+                $dataArray[$i][0] .= ' (' . number_format($percentage, 1) . '%)';
+            }
+        }
+
+        return $dataArray;
+    }
 }

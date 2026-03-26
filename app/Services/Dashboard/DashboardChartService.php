@@ -4,27 +4,21 @@ namespace App\Services\Dashboard;
 
 use App\Helpers\DashboardHelper;
 use App\Models\Appointments;
-use App\Models\Locations;
-use App\Models\User;
-use App\Models\DoctorHasLocations;
+use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
+use App\Models\AppointmentTypes;
+use App\Models\DoctorHasLocations;
 use App\Models\Feedback;
+use App\Models\Locations;
+use App\Models\RoleHasUsers;
 use App\Models\Services;
+use App\Models\User;
 use App\Services\Conversion\ConversionService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Role;
 
-/**
- * Dashboard Chart Service
- * 
- * Handles all dashboard chart data operations including:
- * - Centre wise arrival charts
- * - CSR wise arrival charts
- * - Doctor wise conversion charts
- * - Doctor wise feedback charts
- */
 class DashboardChartService
 {
     /**
@@ -34,7 +28,7 @@ class DashboardChartService
      * @param string|array $centreId
      * @return array
      */
-    public function getCentreWiseArrival($period, $centreId = 'All')
+    public function getCentreWiseArrival(string $period, string|int $centreId = 'All'): array
     {
         $labels = [];
         $totalApts = [];
@@ -74,10 +68,10 @@ class DashboardChartService
 
         // Get FDM role and users
         $fdmRole = DB::table('roles')->where('name', 'FDM')->first();
-        $fdmUsers = $fdmRole ? \App\Models\RoleHasUsers::where('role_id', $fdmRole->id)->pluck('user_id')->toArray() : [];
+        $fdmUsers = $fdmRole ? RoleHasUsers::where('role_id', $fdmRole->id)->pluck('user_id')->toArray() : [];
 
         // Get arrived and converted status IDs
-        $accountId = Auth::User()->account_id;
+        $accountId = Auth::user()->account_id;
         $statusIds = AppointmentStatuses::where('account_id', $accountId)
             ->where(function ($q) {
                 $q->where('is_arrived', 1)->orWhere('is_converted', 1);
@@ -88,7 +82,7 @@ class DashboardChartService
         $arrivedStatusIds = !empty($statusIds) ? $statusIds : [2, 16];
 
         // Fetch all records for set-based counting logic
-        $allRecords = \App\Models\AppointmentsDailyStats::select('id', 'centre_id', 'appointment_id', 'appointment_status_id', 'user_id')
+        $allRecords = AppointmentsDailyStats::select('id', 'centre_id', 'appointment_id', 'appointment_status_id', 'user_id')
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('centre_id', $validCenterIds)
             ->orderBy('centre_id')
@@ -194,7 +188,7 @@ class DashboardChartService
      * @param int|null $docId
      * @return array
      */
-    public function getDoctorWiseConversion($period, $centreId = 'All', $docId = null)
+    public function getDoctorWiseConversion(string $period, string|int $centreId = 'All', string|int|null $docId = null): array
     {
         $totalApts = [];
         $convertedApts = [];
@@ -347,7 +341,7 @@ class DashboardChartService
      * @param int|null $docId
      * @return array
      */
-    public function getDoctorWiseFeedback($period, $centreId = 'All', $docId = null)
+    public function getDoctorWiseFeedback(string $period, string|int $centreId = 'All', string|int|null $docId = null): array
     {
         if ($centreId === 'All' || $centreId === 'all' || $centreId === '' || $centreId == '30' || $centreId == 30 || empty($centreId)) {
             $locationIds = DashboardHelper::getUserCentres();
@@ -419,25 +413,23 @@ class DashboardChartService
         // Calculate feedback statistics: total treatments vs feedbacks recorded
         $treatmentStatusId = 2; // Treatment appointment status
         $treatmentTypeId = 2; // Treatment appointment type
-        
+
         // Get total treatments scheduled in the date range
         $treatmentsQuery = Appointments::whereIn('location_id', $locationIds)
             ->where('appointment_type_id', $treatmentTypeId)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->where('appointment_status_id', $treatmentStatusId);
-          
-        
+
         // Get feedbacks count for treatments in the date range
         $feedbacksCountQuery = Feedback::join('appointments', 'feedback.appointment_id', '=', 'appointments.id')
             ->whereIn('appointments.location_id', $locationIds)
             ->where('appointments.appointment_type_id', $treatmentTypeId)
             ->where('appointments.appointment_status_id', $treatmentStatusId);
-        
-        // Apply date filter based on period (using custom date range that excludes current date for specific filters)
+
+        // Apply date filter based on period (skip for 'all' = lifetime data)
         if ($period !== 'all' && $period !== 'All') {
-            [$startDate, $endDate] = $this->getFeedbackDateRange($period);
-            $treatmentsQuery->whereBetween('scheduled_date', [$startDate, $endDate]);
-            $feedbacksCountQuery->whereBetween('appointments.scheduled_date', [$startDate, $endDate]);
+            [$statsStartDate, $statsEndDate] = $this->getFeedbackDateRange($period);
+            $treatmentsQuery->whereBetween('scheduled_date', [$statsStartDate, $statsEndDate]);
+            $feedbacksCountQuery->whereBetween('appointments.scheduled_date', [$statsStartDate, $statsEndDate]);
         }
         
         $totalTreatments = $treatmentsQuery->count();
@@ -465,31 +457,23 @@ class DashboardChartService
      * @param string $period
      * @return array [start_date, end_date] in Y-m-d format
      */
-    private function getFeedbackDateRange($period)
+    private function getFeedbackDateRange(string $period): array
     {
-        switch ($period) {
-            case 'last7days':
-                // 7 days excluding today: yesterday minus 6 days to yesterday
-                $start_date = Carbon::now()->subDays(7)->format('Y-m-d');
-                $end_date = Carbon::now()->subDay()->format('Y-m-d');
-                break;
-            case 'week':
-                // This week excluding today
-                $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
-                $end_date = Carbon::now()->subDay()->format('Y-m-d');
-                break;
-            case 'month':
-            case 'thismonth':
-                // This month excluding today
-                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->subDay()->format('Y-m-d');
-                break;
-            default:
-                // For other periods (today, yesterday, lastmonth, etc.), use standard date range
-                return DashboardHelper::getDateRange($period);
-        }
-
-        return [$start_date, $end_date];
+        return match ($period) {
+            'last7days' => [
+                Carbon::now()->subDays(7)->format('Y-m-d'),
+                Carbon::now()->subDay()->format('Y-m-d'),
+            ],
+            'week' => [
+                Carbon::now()->startOfWeek()->format('Y-m-d'),
+                Carbon::now()->subDay()->format('Y-m-d'),
+            ],
+            'month', 'thismonth' => [
+                Carbon::now()->startOfMonth()->format('Y-m-d'),
+                Carbon::now()->subDay()->format('Y-m-d'),
+            ],
+            default => DashboardHelper::getDateRange($period),
+        };
     }
 
     /**
@@ -499,7 +483,7 @@ class DashboardChartService
      * @param string|array $centreId
      * @return array
      */
-    public function getCSRWiseArrival($period, $centreId = 'All')
+    public function getCSRWiseArrival(string $period, string|int $centreId = 'All'): array
     {
         $totalApts = [];
         $arrivedApts = [];
@@ -564,7 +548,7 @@ class DashboardChartService
      * @param string|array $centreId
      * @return array
      */
-    public function getCentreDoctors($centreId)
+    public function getCentreDoctors(string|int $centreId): \Illuminate\Database\Eloquent\Collection
     {
         if ($centreId === 'All' || $centreId === '' || $centreId === '30') {
             $locationIds = DashboardHelper::getUserCentres();
@@ -589,7 +573,7 @@ class DashboardChartService
      *
      * @return array
      */
-    private function emptyConversionResponse()
+    private function emptyConversionResponse(): array
     {
         return [
             'labels' => [],
@@ -610,7 +594,7 @@ class DashboardChartService
      * @param bool $performance
      * @return array
      */
-    public function getAppointmentByStatus($period, $appointmentTypeId, $performance = false)
+    public function getAppointmentByStatus(string $period, int|string|null $appointmentTypeId, bool|string|null $performance = false): array
     {
         $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
         $chartData = [['Task', 'Hours per Day']];
@@ -620,7 +604,7 @@ class DashboardChartService
 
         // Fetch appointment statuses keyed by ID
         $appointmentStatuses = AppointmentStatuses::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
             ['parent_id', '=', '0'],
         ])->where('id', '!=', $convertedStatusId)->get()->keyBy('id');
@@ -635,7 +619,7 @@ class DashboardChartService
             ->whereIn('location_id', $locationIds);
 
         if ($performance) {
-            $query->where('created_by', Auth::User()->id);
+            $query->where('created_by', Auth::id());
         }
 
         // Get records grouped by status
@@ -671,14 +655,14 @@ class DashboardChartService
      * @param bool $performance
      * @return array
      */
-    public function getAppointmentByType($period, $performance = false)
+    public function getAppointmentByType(string $period, int|string|null $appointmentTypeId = null, bool|string|null $performance = false): array
     {
         $chartData = [['Task', 'Hours per Day']];
         $colors = [];
         $total = 0;
 
-        $appointmentTypes = \App\Models\AppointmentTypes::where([
-            ['account_id', '=', Auth::User()->account_id],
+        $appointmentTypes = AppointmentTypes::where([
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
         ])->get();
 
@@ -693,7 +677,7 @@ class DashboardChartService
             ->whereIn('location_id', $locationIds);
 
         if ($performance) {
-            $query->where('created_by', Auth::User()->id);
+            $query->where('created_by', Auth::id());
         }
 
         $records = $query->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
@@ -720,7 +704,7 @@ class DashboardChartService
      * @param int|null $userId
      * @return array
      */
-    public function getCallWiseArrival($period, $userId = null)
+    public function getCallWiseArrival(string|null $period, string|int|null $userId = null): array
     {
         $labels = [];
         $totalApts = [];
@@ -729,10 +713,10 @@ class DashboardChartService
         [$startDate, $endDate] = DashboardHelper::getDateRange($period ?: 'today');
 
         // Get FDM users to exclude
-        $fdmRole = \Spatie\Permission\Models\Role::where('name', 'FDM')->first();
-        $fdmUsers = $fdmRole ? \App\Models\RoleHasUsers::where('role_id', $fdmRole->id)->pluck('user_id')->toArray() : [];
+        $fdmRole = Role::where('name', 'FDM')->first();
+        $fdmUsers = $fdmRole ? RoleHasUsers::where('role_id', $fdmRole->id)->pluck('user_id')->toArray() : [];
 
-        $query = \App\Models\AppointmentsDailyStats::select(
+        $query = AppointmentsDailyStats::select(
                 'user_id',
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
@@ -753,7 +737,7 @@ class DashboardChartService
 
         // Get user names in batch
         $userIds = $stats->pluck('user_id')->toArray();
-        $users = \App\Models\User::whereIn('id', $userIds)->where('active', 1)->pluck('name', 'id');
+        $users = User::whereIn('id', $userIds)->where('active', 1)->pluck('name', 'id');
 
         foreach ($stats as $stat) {
             $userName = $users->get($stat->user_id);
@@ -768,13 +752,65 @@ class DashboardChartService
     }
 
     /**
-     * Get CSR wise arrival chart data using AppointmentsDailyStats
-     *
-     * @param string $period
-     * @param mixed $userId
-     * @return array
+     * Get detailed feedback data by service for a specific doctor.
+     * Used on the feedback detail/bar chart view.
      */
-    public function getCSRWiseArrivalStats($period, $userId = 'All')
+    public function getDoctorFeedbackByService(int $doctorId): array
+    {
+        $parentServices = Services::where('parent_id', 0)->get();
+        $feedbackData = [];
+
+        // Pre-load all child services grouped by parent
+        $allChildren = Services::whereIn('parent_id', $parentServices->pluck('id'))
+            ->get()
+            ->groupBy('parent_id');
+
+        // Pre-load all feedback aggregations for this doctor in two queries
+        $parentRatings = Feedback::where('doctor_id', $doctorId)
+            ->whereIn('service_id', $parentServices->pluck('id'))
+            ->select('service_id', DB::raw('AVG(rating) as avg_rating'))
+            ->groupBy('service_id')
+            ->pluck('avg_rating', 'service_id');
+
+        $allChildIds = $allChildren->flatten()->pluck('id');
+        $childRatings = Feedback::where('doctor_id', $doctorId)
+            ->whereIn('treatment_id', $allChildIds)
+            ->select('treatment_id', DB::raw('AVG(rating) as avg_rating'))
+            ->groupBy('treatment_id')
+            ->pluck('avg_rating', 'treatment_id');
+
+        foreach ($parentServices as $service) {
+            $parentRating = $parentRatings[$service->id] ?? null;
+            $children = $allChildren[$service->id] ?? collect();
+
+            $childData = [];
+            foreach ($children as $child) {
+                $avgRating = $childRatings[$child->id] ?? null;
+                if ($avgRating !== null) {
+                    $childData[] = [
+                        'id' => $child->id,
+                        'name' => $child->name,
+                        'color' => $child->color,
+                        'avg_rating' => round($avgRating, 2),
+                    ];
+                }
+            }
+
+            if ($parentRating !== null || count($childData) > 0) {
+                $feedbackData[] = [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'color' => $service->color,
+                    'avg_rating' => $parentRating !== null ? round($parentRating, 2) : 0,
+                    'treatments' => $childData,
+                ];
+            }
+        }
+
+        return $feedbackData;
+    }
+
+    public function getCSRWiseArrivalStats(string $period, string|int $userId = 'All'): array
     {
         $labels = [];
         $totalApts = [];
@@ -783,13 +819,13 @@ class DashboardChartService
         [$startDate, $endDate] = DashboardHelper::getDateRange($period ?: 'thismonth');
 
         // Get CSR users
-        $csrUserIds = \App\Models\RoleHasUsers::whereIn('role_id', [2, 3, 24])->pluck('user_id')->toArray();
-        $csrUsers = \App\Models\User::whereIn('id', $csrUserIds)->where('active', 1)->pluck('id')->toArray();
+        $csrUserIds = RoleHasUsers::whereIn('role_id', [2, 3, 24])->pluck('user_id')->toArray();
+        $csrUsers = User::whereIn('id', $csrUserIds)->where('active', 1)->pluck('id')->toArray();
 
         $userIds = ($userId === 'All') ? $csrUsers : [$userId];
         $groupBy = ($userId === 'All') ? 'user_id' : 'cron_current_date';
 
-        $stats = \App\Models\AppointmentsDailyStats::select(
+        $stats = AppointmentsDailyStats::select(
                 $groupBy,
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
@@ -806,7 +842,7 @@ class DashboardChartService
 
         if ($groupBy === 'user_id') {
             $allUserIds = $stats->pluck('user_id')->toArray();
-            $users = \App\Models\User::whereIn('id', $allUserIds)->where('active', 1)->pluck('name', 'id');
+            $users = User::whereIn('id', $allUserIds)->where('active', 1)->pluck('name', 'id');
 
             foreach ($stats as $stat) {
                 $userName = $users->get($stat->user_id);
