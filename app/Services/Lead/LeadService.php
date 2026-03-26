@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Collection;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class LeadService
@@ -1172,7 +1173,7 @@ class LeadService
      * Prepare SMS content for delivery
      * Moved from Leads::prepareSMSContent
      */
-    public function prepareSMSContent($leadId, string $smsContent): string
+    public function prepareSMSContent(int|null $leadId, string $smsContent): string
     {
         if (!$leadId) {
             return $smsContent;
@@ -1268,7 +1269,7 @@ class LeadService
      * Update lead record with audit trail
      * Moved from Leads::updateRecord
      */
-    public function updateLeadRecord($id, array $data, bool $isAppointment = false): ?Leads
+    public function updateLeadRecord(int $id, array $data, bool $isAppointment = false): ?Leads
     {
         return DB::transaction(function () use ($id, $data, $isAppointment) {
             $record = Leads::find($id);
@@ -1547,5 +1548,416 @@ class LeadService
         
         return $response;
         */
+    }
+
+    // =========================================================================
+    // METHODS EXTRACTED FROM CONTROLLER (Service Layer compliance)
+    // =========================================================================
+
+    /**
+     * Batch-load lead statuses with parents for LeadResource lookup.
+     */
+    public function batchLoadStatusLookup(array $statusIds): array
+    {
+        if (empty($statusIds)) {
+            return [];
+        }
+
+        $leadStatuses = LeadStatuses::whereIn('id', $statusIds)
+            ->select('id', 'name', 'parent_id')
+            ->get()
+            ->keyBy('id')
+            ->toArray();
+
+        // Also load parent statuses not already in the set
+        $parentIds = collect($leadStatuses)
+            ->pluck('parent_id')
+            ->filter()
+            ->diff(array_keys($leadStatuses))
+            ->unique()
+            ->toArray();
+
+        if (!empty($parentIds)) {
+            $parentStatuses = LeadStatuses::whereIn('id', $parentIds)
+                ->select('id', 'name', 'parent_id')
+                ->get()
+                ->keyBy('id')
+                ->toArray();
+            $leadStatuses = array_replace($leadStatuses, $parentStatuses);
+        }
+
+        return $leadStatuses;
+    }
+
+    /**
+     * Find a single lead by ID.
+     */
+    public function findLead(int $id): ?Leads
+    {
+        return Leads::find($id);
+    }
+
+    /**
+     * Get create form data (lookup data + empty lead scaffold).
+     */
+    public function getCreateFormData(): array
+    {
+        $formData = $this->getFormLookupData();
+        $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
+
+        return [
+            'Services' => $formData['services'],
+            'cities' => $formData['cities'],
+            'lead_sources' => $formData['lead_sources'],
+            'lead_statuses' => $formData['lead_statuses'],
+            'lead' => [
+                'id' => null,
+                'name' => null,
+                'email' => null,
+                'phone' => null,
+                'gender' => null,
+            ],
+            'leadServices' => null,
+            'employees' => $employees,
+            'edit_status' => 0,
+            'gender' => $formData['gender'],
+        ];
+    }
+
+    /**
+     * Get edit form data for a specific lead.
+     */
+    public function getEditFormData(int $id): ?array
+    {
+        $lead = $this->getLeadForEdit($id);
+
+        if (!$lead) {
+            return null;
+        }
+
+        $formData = $this->getFormLookupData();
+        $locations = Locations::where(['active' => 1, 'city_id' => $lead->city_id])->pluck('name', 'id');
+        $employees = User::getAllActiveRecords(Auth::user()->account_id)?->pluck('full_name', 'id') ?? [];
+
+        $childServiceIds = $lead->lead_service->pluck('child_service_id')->toArray();
+        $childServices = Services::whereIn('id', $childServiceIds)
+            ->where(['slug' => 'custom', 'active' => 1])
+            ->pluck('name', 'id');
+
+        return [
+            'Services' => $formData['services'],
+            'child_services' => $childServices,
+            'lead' => $lead,
+            'locations' => $locations,
+            'cities' => $formData['cities'],
+            'lead_sources' => $formData['lead_sources'],
+            'lead_statuses' => $formData['lead_statuses'],
+            'employees' => $employees,
+            'edit_status' => 1,
+            'gender' => $formData['gender'],
+        ];
+    }
+
+    /**
+     * Get child services for dropdown with optional lead context.
+     */
+    public function getChildServicesWithLead(int $serviceId, ?int $leadId = null): array
+    {
+        $childServices = $this->getChildServices($serviceId);
+        $leadChildService = '';
+
+        if ($leadId) {
+            $lead = Leads::with('lead_service')->find($leadId);
+            $leadChildService = $lead?->lead_service ?? '';
+        }
+
+        return [
+            'dropdown' => $childServices,
+            'lead_child_service' => $leadChildService,
+        ];
+    }
+
+    /**
+     * Get lead service data for editing.
+     */
+    public function getEditServiceData(int $leadId, int $serviceId): array
+    {
+        $leadService = LeadsServices::with('service', 'childservice')
+            ->where(['lead_id' => $leadId, 'service_id' => $serviceId])
+            ->get();
+
+        $services = Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])->pluck('name', 'id');
+        $childServices = Services::where(['slug' => 'custom', 'parent_id' => $serviceId, 'active' => 1])->pluck('name', 'id');
+
+        return [
+            'lead_service' => $leadService,
+            'Services' => $services,
+            'Child_service' => $childServices,
+        ];
+    }
+
+    /**
+     * Get lead conversion data with all required lookups.
+     */
+    public function getConversionData(int $id): ?array
+    {
+        $accountId = Auth::user()->account_id;
+
+        $lead = Leads::with(['lead_service', 'patient'])->where([
+            'id' => $id,
+            'account_id' => $accountId,
+        ])->first();
+
+        if (!$lead) {
+            return null;
+        }
+
+        $userInfo = User::where(['id' => $lead->patient_id, 'active' => 1, 'account_id' => $accountId])->first();
+        $employees = User::getAllActiveRecords($accountId)?->pluck('full_name', 'id') ?? [];
+        $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), $accountId)
+            ->get()?->pluck('full_name', 'id') ?? collect();
+        $leadSources = LeadSources::getActiveSorted();
+        $services = Services::getGroupsActiveOnly()->pluck('name', 'id');
+        $setting = Settings::where('slug', 'sys-virtual-consultancy')->first();
+
+        return [
+            'services' => $services,
+            'lead' => $lead,
+            'employees' => $employees,
+            'cities' => $cities,
+            'lead_sources' => $leadSources,
+            'user_info' => $userInfo,
+            'setting' => $setting,
+            'consultancy_types' => \Illuminate\Support\Facades\Config::get('constants.consultancy_type_array'),
+        ];
+    }
+
+    /**
+     * Get export data with eager loading.
+     */
+    public function getExportData(Request $request): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->buildExportQuery($request)
+            ->with([
+                'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
+                'city:id,name',
+                'towns:id,name',
+                'region:id,name',
+                'lead_status:id,name',
+                'user:id,name',
+            ])
+            ->get();
+    }
+
+    /**
+     * Build export query with filters.
+     */
+    protected function buildExportQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        $where = [];
+
+        if ($request->created_at) {
+            $dateRange = explode(' - ', $request->created_at);
+            $startDate = date('Y-m-d H:i:s', strtotime($dateRange[0]));
+            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 0)->format('Y-m-d H:i:s');
+            $where[] = ['created_at', '>=', $startDate];
+            $where[] = ['created_at', '<=', $endDate];
+        }
+
+        $simpleFilters = [
+            'id' => 'id',
+            'lead_status_id' => 'lead_status_id',
+            'city_id' => 'city_id',
+            'location_id' => 'location_id',
+            'region_id' => 'region_id',
+            'created_by' => 'created_by',
+            'phone' => 'phone',
+            'gender_id' => 'gender',
+        ];
+
+        foreach ($simpleFilters as $requestKey => $column) {
+            $value = $request->$requestKey;
+            if ($value && $value !== 'undefined' && $value !== 'null') {
+                $where[] = [$column, '=', $value];
+            }
+        }
+
+        if ($request->name) {
+            $where[] = ['name', 'like', '%' . $request->name . '%'];
+        }
+
+        $userCities = ACL::getUserCities();
+        $query = Leads::forAccount()->forCities($userCities);
+
+        if (!empty($where)) {
+            $query->where($where);
+        }
+
+        if ($request->service_id) {
+            $serviceId = $request->service_id;
+            $query->with(['lead_service' => fn($q) => $q->where(['service_id' => $serviceId, 'status' => 1])->whereNotNull('service_id')]);
+        } else {
+            $query->with(['lead_service' => fn($q) => $q->where('status', 1)->whereNotNull('service_id')]);
+        }
+
+        return $query->select([
+            '*',
+            'leads.created_by as lead_created_by',
+            'leads.id as lead_id',
+            'leads.created_at as lead_created_at',
+        ])->orderByDesc('id')->latest();
+    }
+
+    /**
+     * Get lead status with its children for popup.
+     */
+    public function getStatusWithChildren(int $statusId): ?array
+    {
+        $leadStatus = LeadStatuses::find($statusId);
+
+        if (!$leadStatus) {
+            return null;
+        }
+
+        $childStatuses = LeadStatuses::where('parent_id', $leadStatus->id)->get();
+
+        return [
+            'd' => $childStatuses,
+            'lead_status' => $leadStatus,
+        ];
+    }
+
+    /**
+     * Get child status with parent for popup.
+     */
+    public function getChildStatusWithParent(int $childStatusId): array
+    {
+        $childStatus = LeadStatuses::find($childStatusId);
+        $parentStatus = $childStatus ? LeadStatuses::find($childStatus->parent_id) : null;
+
+        return [
+            'd' => $childStatus,
+            'lead_status2' => $parentStatus,
+        ];
+    }
+
+    /**
+     * Update lead city and resolve region.
+     */
+    public function updateLeadCity(int $leadId, int $cityId): ?array
+    {
+        $city = Cities::find($cityId);
+        $lead = Leads::find($leadId);
+
+        if (!$lead || !$city) {
+            return null;
+        }
+
+        $lead->update([
+            'city_id' => $city->id,
+            'region_id' => $city->region_id,
+        ]);
+
+        return ['city_name' => $city->name];
+    }
+
+    /**
+     * Resolve lead data from phone (patient matching logic).
+     */
+    public function resolveLeadData(array $requestData): array
+    {
+        $data = $requestData;
+        $data['status'] = 0;
+        $data['patient_id'] = 0;
+
+        if (!Gate::allows('leads_manage') || empty($requestData['phone']) || !empty($requestData['lead_id'])) {
+            return $data;
+        }
+
+        $phone = ($requestData['phone'] === '***********')
+            ? ($requestData['old_phone'] ?? '')
+            : $requestData['phone'];
+
+        $phone = GeneralFunctions::cleanNumber($phone);
+        $patient = Patients::getByPhone($phone, Auth::user()->account_id, $requestData['patient_id'] ?? null);
+
+        if (!$patient) {
+            $data['status'] = 1;
+            $data['service_id'] = $requestData['service_id'] ?? null;
+            $data['phone'] = $requestData['phone'] ?? null;
+            $data['cnic'] = $requestData['cnic'] ?? null;
+            $data['dob'] = $requestData['dob'] ?? null;
+            $data['address'] = $requestData['address'] ?? null;
+            $data['referred_by'] = $requestData['referred_by'] ?? null;
+        } else {
+            $lead = Leads::where([
+                'patient_id' => $patient->id,
+                'service_id' => $requestData['service_id'] ?? null,
+            ])->first();
+
+            if ($lead) {
+                $data['id'] = $lead->id;
+                $data['city_id'] = $lead->city_id;
+                $data['town_id'] = $lead->town_id;
+                $data['service_id'] = $lead->service_id;
+                $data['lead_source_id'] = $lead->lead_source_id;
+                $data['lead_status_id'] = $lead->lead_status_id;
+            } else {
+                $data['service_id'] = $requestData['service_id'] ?? null;
+            }
+
+            $data['patient_id'] = $patient->id;
+            $data['gender'] = $patient->gender;
+            $data['phone'] = $patient->phone;
+            $data['cnic'] = $patient->cnic;
+            $data['dob'] = $patient->dob;
+            $data['address'] = $patient->address;
+            $data['name'] = $patient->name;
+            $data['email'] = $patient->email;
+            $data['referred_by'] = $patient->referred_by;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Send SMS to a lead by ID.
+     */
+    public function sendSmsToLead(int $id): array
+    {
+        $lead = Leads::findOrFail($id);
+        return $this->sendSMS($lead->id, $lead->phone);
+    }
+
+    /**
+     * Remove lead from junk status back to default/open.
+     */
+    public function removeLeadFromJunk(int $id): array
+    {
+        $lead = Leads::where([
+            'id' => $id,
+            'account_id' => Auth::user()->account_id,
+        ])->first();
+
+        if (!$lead) {
+            return ['status' => false, 'message' => 'Lead not found.'];
+        }
+
+        $openStatus = \App\Helpers\LeadHelper::getDefaultStatus(Auth::user()->account_id);
+
+        if (!$openStatus) {
+            return ['status' => false, 'message' => 'Open status not found.'];
+        }
+
+        $lead->update([
+            'lead_status_id' => $openStatus->id,
+            'updated_by' => Auth::id(),
+        ]);
+
+        LeadsServices::where('lead_id', $lead->id)
+            ->where('status', 1)
+            ->update(['lead_status_id' => $openStatus->id]);
+
+        return ['status' => true, 'message' => 'Lead has been removed from junk.'];
     }
 }

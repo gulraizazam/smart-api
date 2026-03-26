@@ -56,7 +56,14 @@
       "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name \"*.php\" -exec grep -l '\\\\$lead\\\\|Leads::' {})",
       "Bash(php -l app/Http/Controllers/Api/LeadsController.php)",
       "Bash(php -l app/Http/Resources/Lead/LeadResource.php)",
-      "Bash(php -l app/Services/Lead/LeadService.php)"
+      "Bash(php -l app/Services/Lead/LeadService.php)",
+      "Bash(php -l app/Http/Controllers/Admin/LeadsController.php)",
+      "Bash(php -l app/Services/Lead/LeadStatusService.php)",
+      "Bash(php -l app/Http/Requests/Admin/StoreUpdateLeadCommentsRequest.php)",
+      "Bash(php -l app/Http/Resources/Lead/LeadDetailResource.php)",
+      "Bash(for f:*)",
+      "Bash(do php:*)",
+      "Bash(done)"
     ]
   }
 }

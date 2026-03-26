@@ -177,11 +177,11 @@ class LeadSourceService
         // Name filter
         if (hasFilter($filters, 'name')) {
             $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
-            Filters::put($userId, self::$filterKey, 'lead_status_name', $filters['name']);
+            Filters::put($userId, self::$filterKey, 'lead_source_name', $filters['name']);
         } elseif ($applyFilter) {
-            Filters::forget($userId, self::$filterKey, 'lead_status_name');
+            Filters::forget($userId, self::$filterKey, 'lead_source_name');
         } else {
-            $stored = Filters::get($userId, self::$filterKey, 'lead_status_name');
+            $stored = Filters::get($userId, self::$filterKey, 'lead_source_name');
             if ($stored) {
                 $where[] = ['name', 'like', '%' . $stored . '%'];
             }
