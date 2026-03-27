@@ -2100,7 +2100,7 @@ class AppointmentsController extends Controller
         ];
         if (Gate::allows('appointments_manage')) {
             $phone = GeneralFunctions::cleanNumber($request->phone);
-            $patient = Patients::getByPhone($phone, Auth::User()->account_id, $request->patient_id);
+            $patient = Patients::getByPhone($phone, Auth::User()->account_id, $request->patient_id ? (int) $request->patient_id : false);
             if (! $patient) {
                 $data['status'] = 1;
                 $data['service_id'] = $request->service_id;
