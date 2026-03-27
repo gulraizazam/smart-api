@@ -261,7 +261,7 @@
                                     </div>
                                 </div>
                                 <div class="card-body py-3 px-4">
-                                    <div id="ledger-transactions" style="max-height:calc(100vh - 480px);overflow-y:auto;">
+                                    <div id="ledger-transactions">
                                         <div class="text-center text-muted py-5">Loading...</div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center mt-2">
