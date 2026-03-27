@@ -203,7 +203,7 @@ class LeadsController extends Controller
     public function status(Request $request): JsonResponse
     {
         try {
-            $lead = $this->leadService->toggleStatus($request->id, $request->status);
+            $lead = $this->leadService->toggleStatus((int) $request->id, (int) $request->status);
             return ApiHelper::apiResponse($this->success, 'Status Changed Successfully', true, [
                 'lead' => new LeadResource($lead),
             ]);
@@ -235,7 +235,7 @@ class LeadsController extends Controller
     public function storeLeadStatuses(UpdateLeadStatusRequest $request): JsonResponse
     {
         try {
-            $this->leadService->updateLeadStatus($request->id, $request->validated());
+            $this->leadService->updateLeadStatus((int) $request->id, $request->validated());
             return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
         } catch (LeadException $e) {
             return ApiHelper::apiResponse($this->error, $e->getMessage());
