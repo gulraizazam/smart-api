@@ -116,7 +116,7 @@ var table_columns = [{
     field: 'gender',
     title: 'Gender',
     sortable: false,
-    width: 70,
+    width: 80,
     template: function (data) {
         return data.gender_label;
     }
@@ -124,12 +124,12 @@ var table_columns = [{
     field: 'created_by',
     title: 'Created By',
     sortable: false,
-    width: 70,
+    width: 80,
 },{
     field: 'actions',
     title: 'Actions',
     sortable: false,
-    width: 80,
+    width: 90,
     overflow: 'visible',
     autoHide: false,
     template: function(data) {
