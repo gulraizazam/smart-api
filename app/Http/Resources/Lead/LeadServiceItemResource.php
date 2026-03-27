@@ -30,9 +30,9 @@ class LeadServiceItemResource extends JsonResource
                     : null,
             ),
             'lead_status' => $this->when(
-                $this->relationLoaded('lead_status') || $this->relationLoaded('leadStatus'),
-                fn(): ?array => ($this->lead_status ?? $this->leadStatus)
-                    ? ['id' => ($this->lead_status ?? $this->leadStatus)->id, 'name' => ($this->lead_status ?? $this->leadStatus)->name]
+                $this->relationLoaded('leadStatus'),
+                fn(): ?array => $this->leadStatus
+                    ? ['id' => $this->leadStatus->id, 'name' => $this->leadStatus->name]
                     : null,
             ),
         ];
