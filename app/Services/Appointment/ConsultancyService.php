@@ -1,78 +1,100 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Appointment;
 
 use App\Exceptions\AppointmentException;
-use App\Helpers\AppointmentHelper;
 use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class ConsultancyService extends AppointmentService
 {
-    protected $consultancyTypeId;
+    private ?int $consultancyTypeId = null;
 
-    public function __construct()
+    private static array $resourceFields = [
+        'resource_id',
+        'resource_has_rota_day_id',
+        'resource_has_rota_day_id_for_machine',
+    ];
+
+    protected function getConsultancyTypeId(): ?int
     {
-        parent::__construct();
-    }
-
-    protected function getConsultancyTypeId()
-    {
-        if ($this->consultancyTypeId === null) {
-            $accountId = $this->getAccountId();
-            $cacheKey = "consultancy_type_id_{$accountId}";
-
-            $this->consultancyTypeId = Cache::remember($cacheKey, 3600, function () use ($accountId) {
-                $type = AppointmentTypes::where([
-                    'account_id' => $accountId,
-                    'slug' => 'consultancy'
-                ])->first();
-
-                return $type ? $type->id : null;
-            });
+        if ($this->consultancyTypeId !== null) {
+            return $this->consultancyTypeId;
         }
+
+        $accountId = $this->getAccountId();
+        $cacheKey = "consultancy_type_id_{$accountId}";
+
+        $this->consultancyTypeId = Cache::remember($cacheKey, 3600, fn () => AppointmentTypes::where([
+            'account_id' => $accountId,
+            'slug' => 'consultancy',
+        ])->value('id'));
 
         return $this->consultancyTypeId;
     }
 
-    public function getConsultancyList($filters)
+    private function ensureConsultancyTypeExists(): int
     {
-        if (!$this->getConsultancyTypeId()) {
+        $typeId = $this->getConsultancyTypeId();
+
+        if (!$typeId) {
             throw AppointmentException::invalidType();
         }
 
-        return $this->getAppointmentsList($filters, $this->consultancyTypeId);
+        return $typeId;
     }
 
-    public function createConsultancy(array $data)
+    private function findConsultancyOrFail(int $id): Appointments
     {
-        if (!$this->getConsultancyTypeId()) {
-            throw AppointmentException::invalidType();
+        $appointment = Appointments::where([
+            'id' => $id,
+            'account_id' => $this->getAccountId(),
+            'appointment_type_id' => $this->ensureConsultancyTypeExists(),
+        ])->first();
+
+        if (!$appointment) {
+            throw AppointmentException::notFound();
         }
 
-        $data['appointment_type_id'] = $this->getConsultancyTypeId();
-        $data['consultancy_type'] = $data['consultancy_type'] ?? 'in_person';
-        
-        unset($data['resource_id']);
-        unset($data['resource_has_rota_day_id']);
-        unset($data['resource_has_rota_day_id_for_machine']);
-        
+        return $appointment;
+    }
+
+    private function stripResourceFields(array $data): array
+    {
+        return array_diff_key($data, array_flip(self::$resourceFields));
+    }
+
+    public function getConsultancyList(array $filters): mixed
+    {
+        $typeId = $this->ensureConsultancyTypeExists();
+
+        return $this->getAppointmentsList($filters, $typeId);
+    }
+
+    public function createConsultancy(array $data): mixed
+    {
+        $typeId = $this->ensureConsultancyTypeExists();
+
+        $data = $this->stripResourceFields($data);
+        $data['appointment_type_id'] = $typeId;
+        $data['consultancy_type'] ??= 'in_person';
+
         if (!isset($data['appointment_status_id'])) {
-            // Get default status for this account (not filtered by appointment_type_id)
             $defaultStatus = \App\Models\AppointmentStatuses::where([
                 'account_id' => $this->getAccountId(),
-                'is_default' => 1
+                'is_default' => 1,
             ])->first();
-            
+
             if ($defaultStatus) {
                 $data['appointment_status_id'] = $defaultStatus->id;
                 $data['base_appointment_status_id'] = $defaultStatus->id;
             }
         }
-        
-        // Always ensure base_appointment_status_id is set when appointment_status_id exists
+
         if (isset($data['appointment_status_id']) && !isset($data['base_appointment_status_id'])) {
             $data['base_appointment_status_id'] = $data['appointment_status_id'];
         }
@@ -80,81 +102,52 @@ class ConsultancyService extends AppointmentService
         return $this->createAppointment($data);
     }
 
-    public function updateConsultancy($id, array $data)
+    public function updateConsultancy(int $id, array $data): mixed
     {
-        $appointment = Appointments::where([
-            'id' => $id,
-            'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->getConsultancyTypeId()
-        ])->first();
+        $this->findConsultancyOrFail($id);
 
-        if (!$appointment) {
-            throw AppointmentException::notFound();
-        }
-
-        unset($data['resource_id']);
-        unset($data['resource_has_rota_day_id']);
-        unset($data['resource_has_rota_day_id_for_machine']);
+        $data = $this->stripResourceFields($data);
 
         return $this->updateAppointment($id, $data);
     }
 
-    public function getScheduledConsultancies($filters)
+    public function getScheduledConsultancies(array $filters): mixed
     {
-        if (!$this->getConsultancyTypeId()) {
-            throw AppointmentException::invalidType();
-        }
+        $typeId = $this->ensureConsultancyTypeExists();
 
-        $filters['appointment_type_id'] = $this->consultancyTypeId;
+        $filters['appointment_type_id'] = $typeId;
+
         return $this->getScheduledAppointments($filters);
     }
 
-    public function getNonScheduledConsultancies($filters)
+    public function getNonScheduledConsultancies(array $filters): mixed
     {
-        if (!$this->getConsultancyTypeId()) {
-            throw AppointmentException::invalidType();
-        }
+        $typeId = $this->ensureConsultancyTypeExists();
 
-        $filters['appointment_type_id'] = $this->consultancyTypeId;
+        $filters['appointment_type_id'] = $typeId;
+
         return $this->getNonScheduledAppointments($filters);
     }
 
-    public function getConsultancyStatistics($filters = [])
+    public function getConsultancyStatistics(array $filters = []): mixed
     {
-        if (!$this->getConsultancyTypeId()) {
-            throw AppointmentException::invalidType();
-        }
+        $typeId = $this->ensureConsultancyTypeExists();
 
-        $filters['appointment_type_id'] = $this->consultancyTypeId;
+        $filters['appointment_type_id'] = $typeId;
+
         return $this->getAppointmentStatistics($filters);
     }
 
-    public function deleteConsultancy($id)
+    public function deleteConsultancy(int $id): mixed
     {
-        $appointment = Appointments::where([
-            'id' => $id,
-            'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->getConsultancyTypeId()
-        ])->first();
-
-        if (!$appointment) {
-            throw AppointmentException::notFound();
-        }
+        $this->findConsultancyOrFail($id);
 
         return $this->deleteAppointment($id);
     }
 
-    public function scheduleConsultancy($id, array $data)
+    public function scheduleConsultancy(int $id, array $data): mixed
     {
-        $appointment = Appointments::where([
-            'id' => $id,
-            'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->getConsultancyTypeId()
-        ])->first();
-
-        if (!$appointment) {
-            throw AppointmentException::notFound();
-        }
+        $this->findConsultancyOrFail($id);
 
         return $this->scheduleAppointment($id, $data);
     }
