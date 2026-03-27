@@ -526,6 +526,104 @@
         </div>
     </div>
 
+    <!-- View Expense Modal -->
+    <div class="modal fade" id="modal_view_expense" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#F3F6F9;border-bottom:2px solid #E4E6EF;">
+                    <h5 class="modal-title font-weight-bolder"><i class="la la-file-alt text-primary mr-2"></i>Expense Details</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Date</label>
+                            <div class="font-weight-bold" id="view-exp-date"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Amount</label>
+                            <div class="font-weight-bolder font-size-lg text-danger" id="view-exp-amount"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Status</label>
+                            <div id="view-exp-status"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Category</label>
+                            <div class="font-weight-bold" id="view-exp-category"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Payment Method</label>
+                            <div class="font-weight-bold" id="view-exp-payment-method"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Paid From</label>
+                            <div class="font-weight-bold" id="view-exp-paid-from"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">For</label>
+                            <div class="font-weight-bold" id="view-exp-branch"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Vendor</label>
+                            <div class="font-weight-bold" id="view-exp-vendor"></div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <label class="text-muted font-size-sm mb-0">Attachment</label>
+                            <div id="view-exp-attachment"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="text-muted font-size-sm mb-0">Description</label>
+                        <div class="font-weight-bold" id="view-exp-description"></div>
+                    </div>
+                    <div class="separator separator-dashed my-4"></div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Created By</label>
+                            <div class="font-weight-bold" id="view-exp-created-by"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Verified By</label>
+                            <div class="font-weight-bold" id="view-exp-verified-by"></div>
+                        </div>
+                    </div>
+                    <div class="row" id="view-exp-rejection-row" style="display:none;">
+                        <div class="col-12 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Rejection Reason</label>
+                            <div class="font-weight-bold text-danger" id="view-exp-rejection-reason"></div>
+                        </div>
+                    </div>
+                    <div class="row" id="view-exp-void-row" style="display:none;">
+                        <div class="col-12 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Void Reason</label>
+                            <div class="font-weight-bold text-danger" id="view-exp-void-reason"></div>
+                        </div>
+                    </div>
+                    <div class="row" id="view-exp-flag-row" style="display:none;">
+                        <div class="col-12 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Flag Reason</label>
+                            <div class="font-weight-bold text-warning" id="view-exp-flag-reason"></div>
+                        </div>
+                    </div>
+                    <div class="row" id="view-exp-edit-row" style="display:none;">
+                        <div class="col-12 mb-3">
+                            <label class="text-muted font-size-sm mb-0">Edit Reason</label>
+                            <div class="font-weight-bold" id="view-exp-edit-reason"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('js')
         <script>
             var cfPerms = {
