@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +23,15 @@ class PatientNote extends Model
 
     protected $casts = [
         'is_pinned' => 'boolean',
+        'patient_id' => 'integer',
+        'created_by' => 'integer',
     ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function patient(): BelongsTo
     {
