@@ -140,18 +140,6 @@ var table_columns = [{
     title: 'Created At',
     sortable: false,
     width: 'auto',
-}, {
-    field: 'child_service_id',
-    title: 'Treatment',
-    sortable: false,
-    width: 'auto',
-    template: function (data) {
-        if(data.child_service != ""){
-            return data.child_service;
-        }else{
-            return '<span class="text text-danger">Empty</span>';
-        }
-    }
 }];
 
 function editLeadStatus(lead_id) {
