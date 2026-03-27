@@ -68,7 +68,9 @@
       "Bash(2)",
       "Bash(php:*)",
       "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name *lead* -o -name *Lead*)",
-      "Bash(find /c/laragon/www/cutera-upgradation1/resources/views -path *leads* -type f)"
+      "Bash(find /c/laragon/www/cutera-upgradation1/resources/views -path *leads* -type f)",
+      "Bash(find C:/laragon/www/cutera-upgradation1/public/assets/js -name *leads* -o -name *datatable*)",
+      "Bash(find C:/laragon/www/cutera-upgradation1/public/assets -name *ktdatatable* -o -name *KTDatatable*)"
     ]
   }
 }
