@@ -30,9 +30,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LeadsController extends Controller
 {
-    protected string $success;
-    protected string $error;
-    protected string $unauthorized;
+    protected int $success;
+    protected int $error;
+    protected int $unauthorized;
 
     public function __construct(
         protected readonly LeadService $leadService,
