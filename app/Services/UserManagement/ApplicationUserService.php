@@ -141,9 +141,9 @@ class ApplicationUserService
             $locationIdsByUser[$user->id] = LocationsWidget::generatelocationArrayEdit($userHasLocations, $accountId, $user) ?: [];
         }
 
-        return ApplicationUserResource::collection($users)
-            ->additional(['location_ids' => $locationIdsByUser])
-            ->resolve();
+        ApplicationUserResource::$locationIdsByUser = $locationIdsByUser;
+
+        return ApplicationUserResource::collection($users)->resolve();
     }
 
     public function getUserPermissions(): array
