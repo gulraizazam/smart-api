@@ -130,6 +130,13 @@
                                     <div class="card card-custom mb-4">
                                         <div class="card-header py-3" style="min-height:auto;">
                                             <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-up mr-1 text-danger"></i>Recent Purchases</h3></div>
+                                            <div class="card-toolbar">
+                                                <select id="ov-purchase-status-filter" class="form-control form-control-sm" style="width:110px;">
+                                                    <option value="">All Status</option>
+                                                    <option value="ordered">Ordered</option>
+                                                    <option value="delivered">Delivered</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="card-body py-2 px-3" id="ov-recent-purchases">
                                             <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
@@ -146,6 +153,11 @@
                                     <div class="card card-custom mb-4">
                                         <div class="card-header py-3" style="min-height:auto;">
                                             <div class="card-title mb-0"><h3 class="card-label font-size-h6 mb-0"><i class="la la-arrow-down mr-1 text-success"></i>Recent Payments</h3></div>
+                                            <div class="card-toolbar">
+                                                <select id="ov-payment-vendor-filter" class="form-control form-control-sm" style="width:140px;">
+                                                    <option value="">All Vendors</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="card-body py-2 px-3" id="ov-recent-payments">
                                             <div class="text-center text-muted py-4"><div class="spinner spinner-primary spinner-sm"></div></div>
@@ -237,6 +249,11 @@
                                             <option value="">All Types</option>
                                             <option value="purchase">Purchases</option>
                                             <option value="payment">Payments</option>
+                                        </select>
+                                        <select id="ledger-status-filter" class="form-control form-control-sm" style="width:110px;">
+                                            <option value="">All Status</option>
+                                            <option value="ordered">Ordered</option>
+                                            <option value="delivered">Delivered</option>
                                         </select>
                                         @if(Gate::allows('cashflow_vendor_ledger_export'))
                                         <button class="btn btn-sm btn-outline-secondary py-1 px-2" id="btn-export-ledger" title="Export CSV"><i class="la la-download p-0"></i></button>

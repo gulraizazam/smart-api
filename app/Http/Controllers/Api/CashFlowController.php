@@ -1970,7 +1970,7 @@ class CashFlowController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $params = $request->only(['purchase_page', 'payment_page']);
+            $params = $request->only(['purchase_page', 'payment_page', 'purchase_status', 'payment_vendor_id']);
 
             $data = $this->vendorService->getVendorsOverview($accountId, $params);
 
@@ -2040,7 +2040,7 @@ class CashFlowController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $filters = $request->only(['type', 'date_from', 'date_to']);
+            $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
 
             $result = $this->vendorService->getVendorLedger($id, $accountId, $filters, $request->input('per_page', 50));
 
