@@ -496,6 +496,9 @@ var CashflowExpenses = (function () {
 
         var perms = window.cfPerms || {};
 
+        // View (always available)
+        btns += '<button class="btn btn-sm btn-clean btn-icon btn-view-expense" data-expense=\'' + JSON.stringify(exp).replace(/'/g, '&#39;') + '\' title="View"><i class="la la-eye text-dark-50"></i></button>';
+
         // Approve (pending, non-voided)
         if (perms.canApprove && exp.status === 'pending' && !exp.voided_at) {
             btns += '<button class="btn btn-sm btn-clean btn-icon btn-approve" data-id="' + exp.id + '" data-attachment="' + (exp.attachment_url ? '1' : '0') + '" title="Approve"><i class="la la-check-circle text-success"></i></button>';
@@ -578,6 +581,82 @@ var CashflowExpenses = (function () {
     }
 
     function bindActionButtons() {
+        // View expense detail
+        $('.btn-view-expense').off('click').on('click', function () {
+            var exp = $(this).data('expense');
+            if (typeof exp === 'string') exp = JSON.parse(exp);
+
+            var statusHtml = '';
+            if (exp.voided_at) {
+                statusHtml = '<span class="label label-danger label-inline">Voided</span>';
+            } else if (exp.status === 'approved') {
+                statusHtml = '<span class="label label-light-success label-inline">Approved</span>';
+            } else if (exp.status === 'pending') {
+                statusHtml = '<span class="label label-warning label-inline">Pending</span>';
+            } else if (exp.status === 'rejected') {
+                statusHtml = '<span class="label label-outline-danger label-inline">Rejected</span>';
+            }
+            if (exp.is_flagged) statusHtml += ' <span class="label label-light-warning label-inline">Flagged</span>';
+
+            $('#view-exp-date').text(formatDate(exp.expense_date));
+            $('#view-exp-amount').text('PKR ' + numberFormat(exp.amount));
+            $('#view-exp-category').text(exp.category ? exp.category.name : '-');
+            $('#view-exp-payment-method').text(exp.payment_method ? exp.payment_method.name : '-');
+            $('#view-exp-paid-from').text(exp.staff ? exp.staff.name : (exp.paid_from_pool ? exp.paid_from_pool.name : '-'));
+            $('#view-exp-branch').text(exp.is_for_general ? 'General' : (exp.for_branch ? exp.for_branch.name : '-'));
+            $('#view-exp-vendor').text(exp.vendor ? exp.vendor.name : '-');
+            $('#view-exp-description').text(exp.description || '-');
+            $('#view-exp-status').html(statusHtml);
+            $('#view-exp-created-by').text(exp.creator ? exp.creator.name : '-');
+            $('#view-exp-verified-by').text(exp.verifier ? exp.verifier.name : '-');
+
+            // Attachment
+            if (exp.attachment_url) {
+                var previewUrl = getDrivePreviewUrl(exp.attachment_url);
+                if (previewUrl) {
+                    $('#view-exp-attachment').html('<a href="javascript:;" class="btn-preview text-primary" data-url="' + escapeHtml(exp.attachment_url) + '"><i class="la la-paperclip mr-1"></i>View Attachment</a>');
+                } else {
+                    $('#view-exp-attachment').html('<a href="' + escapeHtml(exp.attachment_url) + '" target="_blank" class="text-primary"><i class="la la-paperclip mr-1"></i>View Attachment</a>');
+                }
+            } else {
+                $('#view-exp-attachment').text('-');
+            }
+
+            // Rejection reason
+            if (exp.status === 'rejected' && exp.rejection_reason) {
+                $('#view-exp-rejection-row').show();
+                $('#view-exp-rejection-reason').text(exp.rejection_reason);
+            } else {
+                $('#view-exp-rejection-row').hide();
+            }
+
+            // Void reason
+            if (exp.voided_at && exp.void_reason) {
+                $('#view-exp-void-row').show();
+                $('#view-exp-void-reason').text(exp.void_reason);
+            } else {
+                $('#view-exp-void-row').hide();
+            }
+
+            // Flag reason
+            if (exp.is_flagged && exp.flag_reason) {
+                $('#view-exp-flag-row').show();
+                $('#view-exp-flag-reason').text(exp.flag_reason);
+            } else {
+                $('#view-exp-flag-row').hide();
+            }
+
+            // Edit reason
+            if (exp.edit_reason) {
+                $('#view-exp-edit-row').show();
+                $('#view-exp-edit-reason').text(exp.edit_reason);
+            } else {
+                $('#view-exp-edit-row').hide();
+            }
+
+            $('#modal_view_expense').modal('show');
+        });
+
         $('.btn-approve').off('click').on('click', function () {
             var id = $(this).data('id');
             var hasAttachment = $(this).data('attachment');
