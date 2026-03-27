@@ -126,7 +126,7 @@ var table_columns = [{
     sortable: false,
     width: 70,
     template: function (data) {
-        return data.gender;
+        return data.gender_label;
     }
 },{
     field: 'created_by',
@@ -420,8 +420,8 @@ function setViewData(response) {
         $("#phone").text(phone);
         $("#dob").text(lead?.dob);
         let gender = 'N/A';
-        if(lead?.gender) {
-            gender = lead?.gender;
+        if(lead?.gender_label) {
+            gender = lead?.gender_label;
         }
         $("#gender").text(gender);
         let sms = 'Not Delivered';
