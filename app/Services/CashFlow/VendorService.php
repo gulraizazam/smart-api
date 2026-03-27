@@ -179,19 +179,34 @@ class VendorService
 
         // Paginated recent purchases (full data with relations for ledger-style display)
         $purchasePage = (int) ($params['purchase_page'] ?? 1);
-        $recentPurchases = VendorTransaction::forAccount($accountId)
+        $purchaseQuery = VendorTransaction::forAccount($accountId)
             ->where('type', 'purchase')
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
-            ->orderByRaw("{$dateExpr} DESC, created_at DESC")
-            ->paginate($perPage, ['*'], 'purchase_page', $purchasePage);
+            ->orderByRaw("{$dateExpr} DESC, created_at DESC");
+
+        if (!empty($params['purchase_status'])) {
+            $purchaseQuery->where('status', $params['purchase_status']);
+        }
+
+        $recentPurchases = $purchaseQuery->paginate($perPage, ['*'], 'purchase_page', $purchasePage);
 
         // Paginated recent payments (full data with relations for ledger-style display)
         $paymentPage = (int) ($params['payment_page'] ?? 1);
-        $recentPayments = VendorTransaction::forAccount($accountId)
+        $paymentQuery = VendorTransaction::forAccount($accountId)
             ->where('type', 'payment')
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
-            ->orderByRaw("{$dateExpr} DESC, created_at DESC")
-            ->paginate($perPage, ['*'], 'payment_page', $paymentPage);
+            ->orderByRaw("{$dateExpr} DESC, created_at DESC");
+
+        if (!empty($params['payment_vendor_id'])) {
+            $paymentQuery->where('vendor_id', $params['payment_vendor_id']);
+        }
+
+        $recentPayments = $paymentQuery->paginate($perPage, ['*'], 'payment_page', $paymentPage);
+
+        // Active vendors list for the payment vendor filter dropdown
+        $activeVendors = $vendors->map(function ($v) {
+            return ['id' => $v->id, 'name' => $v->name];
+        })->sortBy('name')->values();
 
         return [
             'total_opening_balance' => round((float) $totalOpeningBalance, 2),
@@ -202,6 +217,7 @@ class VendorService
             'month_payments' => round((float) $monthPayments, 2),
             'recent_purchases' => $recentPurchases,
             'recent_payments' => $recentPayments,
+            'active_vendors' => $activeVendors,
         ];
     }
 
@@ -245,6 +261,10 @@ class VendorService
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
         }
 
         // Period stats (on unfiltered-by-type query for the date range)

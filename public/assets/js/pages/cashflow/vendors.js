@@ -11,6 +11,7 @@ var CashflowVendors = (function () {
     var ledgerDateTo = null;
     var overviewPurchasePage = 1;
     var overviewPaymentPage = 1;
+    var overviewVendorsList = [];
 
     function init() {
         loadVendors();
@@ -38,8 +39,15 @@ var CashflowVendors = (function () {
             openVendorModalAsRequest();
         });
 
-        // Ledger type filter
+        // Ledger type & status filter
         $('#ledger-type-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
+        $('#ledger-status-filter').on('change', function () { ledgerPage = 1; loadLedger(currentVendorId); });
+
+        // Overview purchase status filter
+        $('#ov-purchase-status-filter').on('change', function () { overviewPurchasePage = 1; loadOverview(overviewPurchasePage, overviewPaymentPage); });
+
+        // Overview payment vendor filter
+        $('#ov-payment-vendor-filter').on('change', function () { overviewPaymentPage = 1; loadOverview(overviewPurchasePage, overviewPaymentPage); });
 
         // Record Purchase → open purchase modal (new)
         $('#btn-record-purchase').on('click', function () {
@@ -470,8 +478,10 @@ var CashflowVendors = (function () {
 
     function loadLedger(vendorId) {
         var typeFilter = $('#ledger-type-filter').val();
+        var statusFilter = $('#ledger-status-filter').val();
         var params = { page: ledgerPage, per_page: 50 };
         if (typeFilter) params.type = typeFilter;
+        if (statusFilter) params.status = statusFilter;
         if (ledgerDateFrom) params.date_from = ledgerDateFrom;
         if (ledgerDateTo) params.date_to = ledgerDateTo;
 
@@ -946,6 +956,10 @@ var CashflowVendors = (function () {
         var params = {};
         if (purchasePage) params.purchase_page = purchasePage;
         if (paymentPage) params.payment_page = paymentPage;
+        var purchaseStatus = $('#ov-purchase-status-filter').val();
+        if (purchaseStatus) params.purchase_status = purchaseStatus;
+        var paymentVendor = $('#ov-payment-vendor-filter').val();
+        if (paymentVendor) params.payment_vendor_id = paymentVendor;
 
         $.ajax({
             url: apiBase + 'vendors/overview',
@@ -971,6 +985,18 @@ var CashflowVendors = (function () {
         $('#ov-with-balance').text(data.vendors_with_balance + ' with balance');
         $('#ov-month-purchases').text('PKR ' + nf(data.month_purchases));
         $('#ov-month-payments').text('PKR ' + nf(data.month_payments));
+
+        // Populate vendor filter dropdown (only once or when list changes)
+        if (data.active_vendors && data.active_vendors.length) {
+            overviewVendorsList = data.active_vendors;
+            var sel = $('#ov-payment-vendor-filter');
+            var currentVal = sel.val();
+            sel.find('option:not(:first)').remove();
+            $.each(data.active_vendors, function (i, v) {
+                sel.append('<option value="' + v.id + '">' + esc(v.name) + '</option>');
+            });
+            sel.val(currentVal);
+        }
 
         // Recent Purchases (ledger-style with actions)
         renderOverviewTransactions(data.recent_purchases, '#ov-recent-purchases', 'purchase');
