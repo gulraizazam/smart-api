@@ -56,7 +56,7 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
                             <select id="edit_user_gender" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                                 <option value="">Select</option>
@@ -78,14 +78,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row mt-10">
-                        <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse </label>
-                            <select id="edit_user_warehouse" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="warehouse[]">
-
-                            </select>
-                        </div>
-                    </div>
+                    
 
 
                     <div class="row mt-10">
