@@ -870,6 +870,16 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         Route::get('scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'nonScheduled'])->name('non_scheduled');
         Route::get('statistics/data', [\App\Http\Controllers\Api\ConsultancyController::class, 'statistics'])->name('statistics');
+
+        // Consultancy Invoice API Routes
+        Route::prefix('invoice')->name('invoice.')->group(function () {
+            Route::get('{id}', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'show'])->name('show');
+            Route::post('/', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'store'])->name('store');
+            Route::post('calculate', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'calculate'])->name('calculate');
+            Route::post('calculate-custom', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'calculateCustomDiscount'])->name('calculate_custom');
+            Route::post('check-custom', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'checkCustomDiscount'])->name('check_custom');
+            Route::post('calculate-final', [\App\Http\Controllers\Api\ConsultancyInvoiceController::class, 'calculateFinal'])->name('calculate_final');
+        });
     });
 
     // Treatment API Routes (Optimized)

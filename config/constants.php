@@ -46,6 +46,10 @@ return [
     'appointment_type_consultancy' => 1,
     'appointment_type_service_string' => 'treatment',
     'appointment_type_service' => 2,
+
+    // All Centres location ID (used for business closure scoping)
+    'all_centres_location_id' => 30,
+
     //Constant for user type start
 
     // For invoice log

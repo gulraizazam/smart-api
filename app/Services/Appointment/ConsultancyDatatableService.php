@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Appointment;
 
+use App\Enums\ConsultancyType;
 use App\Helpers\ACL;
-use App\Helpers\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
@@ -14,73 +16,61 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ConsultancyDatatableService
 {
-    private $filterService;
-    private $userId;
-    private $accountId;
-    private $filename = 'appointments';
+    private readonly int $userId;
+    private readonly int $accountId;
+    private string $filename = 'appointments';
 
-    public function __construct(AppointmentFilterService $filterService)
-    {
-        $this->filterService = $filterService;
-        $this->userId = Auth::id();
-        $this->accountId = Auth::user()->account_id;
+    public function __construct(
+        private readonly AppointmentFilterService $filterService,
+    ) {
+        $this->userId = (int) Auth::id();
+        $this->accountId = (int) Auth::user()->account_id;
     }
 
     /**
-     * Get consultancy datatable data with optimized queries and filters
-     * Supports optional patient_id parameter for patient-specific filtering
+     * Get consultancy datatable data with optimized queries and filters.
+     *
+     * @return array<string, mixed>
      */
-    public function getDatatableData(Request $request, $patientId = null): array
+    public function getDatatableData(Request $request, ?int $patientId = null): array
     {
         $filters = getFilters($request->all());
-        
-        // If patient_id is provided (patient card context), add it to filters
+
         if ($patientId) {
             $filters['patient_id'] = $patientId;
         }
-        
-        // Handle sorting
+
         [$orderBy, $order] = $this->handleSorting($request);
-        
-        // Build base query with filters
-        $baseQuery = $this->buildBaseQuery();
-        
-        // Apply filters
+
+        $baseQuery = $this->filterService->buildBaseQuery();
+
         $countQuery = clone $baseQuery;
-        $this->applyFilters($countQuery, $filters);
-        
-        // Get total count - use distinct count on appointments.id to handle JOIN correctly
+        $this->filterService->buildFilters($countQuery, $filters);
         $totalRecords = $countQuery->distinct()->count('appointments.id');
+
         [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
-        
-        // Build result query
+
         $resultQuery = clone $baseQuery;
-        $this->applyFilters($resultQuery, $filters);
-        
-        // Fetch appointments with eager loading
+        $this->filterService->buildFilters($resultQuery, $filters);
+
         $appointments = $this->fetchAppointments($resultQuery, $displayLength, $displayStart, $orderBy, $order);
-        
-        // Build response
         $records = $this->buildRecordsArray($appointments, $orderBy, $order, $page, $pages, $displayLength, $totalRecords);
-        
-        // Handle delete operation
+
         if (hasFilter($filters, 'delete')) {
             $this->handleDelete($filters['delete'], $records);
         }
-        
-        // Add permissions
+
         $records['permissions'] = $this->getPermissions();
-        
+
         return $records;
     }
 
     /**
-     * Handle sorting logic
+     * @return array{string, string}
      */
     private function handleSorting(Request $request): array
     {
@@ -90,38 +80,21 @@ class ConsultancyDatatableService
             $orderBy = 'appointments.created_at';
             $order = 'desc';
         }
-        
+
         Filters::put($this->userId, 'appointments', 'order_by', $orderBy);
         Filters::put($this->userId, 'appointments', 'order', $order);
-        
+
         return [$orderBy, $order];
     }
 
-    /**
-     * Build base query with ACL and permissions
-     */
-    private function buildBaseQuery()
-    {
-        return $this->filterService->buildBaseQuery();
-    }
-
-    /**
-     * Apply all filters to query
-     */
-    private function applyFilters($query, array $filters): void
-    {
-        $this->filterService->buildFilters($query, $filters);
-    }
-
-    /**
-     * Fetch appointments with eager loading to prevent N+1 queries
-     */
-    private function fetchAppointments($query, int $limit, int $offset, string $orderBy, string $order)
-    {
-        // Adjust order by column if needed
-        if ($orderBy == 'name') {
-            $orderBy = 'appointments.name';
-        }
+    private function fetchAppointments(
+        mixed $query,
+        int $limit,
+        int $offset,
+        string $orderBy,
+        string $order,
+    ): mixed {
+        $orderBy = $orderBy === 'name' ? 'appointments.name' : $orderBy;
 
         return $query
             ->select(
@@ -131,7 +104,7 @@ class ConsultancyDatatableService
                 'appointments.id as app_id',
                 'appointments.created_by as app_created_by',
                 'appointments.updated_by as app_updated_by',
-                'appointments.created_at as app_created_at'
+                'appointments.created_at as app_created_at',
             )
             ->with([
                 'invoice:id,appointment_id,invoice_status_id',
@@ -142,7 +115,7 @@ class ConsultancyDatatableService
                 'appointment_type:id,name',
                 'appointment_status:id,name,parent_id',
                 'patient:id,phone',
-                'region:id,name'
+                'region:id,name',
             ])
             ->limit($limit)
             ->offset($offset)
@@ -151,43 +124,21 @@ class ConsultancyDatatableService
     }
 
     /**
-     * Build records array from appointments
+     * @return array<string, mixed>
      */
-    private function buildRecordsArray($appointments, string $orderBy, string $order, int $page, int $pages, int $perpage, int $total): array
-    {
-        $records = [];
-        $records['data'] = [];
+    private function buildRecordsArray(
+        mixed $appointments,
+        string $orderBy,
+        string $order,
+        int $page,
+        int $pages,
+        int $perpage,
+        int $total,
+    ): array {
+        $records = ['data' => []];
         $records = $this->getFiltersData($records);
-        
-        if ($appointments->isEmpty()) {
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $perpage,
-                'total' => $total,
-                'sort' => $order,
-            ];
-            return $records;
-        }
-        
-        // Load reference data once
-        $referenceData = $this->loadReferenceData($appointments);
-        
-        // Cache permission check
-        $canViewContact = Gate::allows('contact');
-        
-        // Build data rows
-        foreach ($appointments as $index => $appointment) {
-            $records['data'][$index] = $this->buildAppointmentRow(
-                $appointment,
-                $referenceData,
-                $canViewContact
-            );
-        }
-        
-        // Add metadata
-        $records['meta'] = [
+
+        $meta = [
             'field' => $orderBy,
             'page' => $page,
             'pages' => $pages,
@@ -195,34 +146,43 @@ class ConsultancyDatatableService
             'total' => $total,
             'sort' => $order,
         ];
-        
+
+        if ($appointments->isEmpty()) {
+            $records['meta'] = $meta;
+            return $records;
+        }
+
+        $referenceData = $this->loadReferenceData($appointments);
+        $canViewContact = Gate::allows('contact');
+
+        foreach ($appointments as $index => $appointment) {
+            $records['data'][$index] = $this->buildAppointmentRow($appointment, $referenceData, $canViewContact);
+        }
+
+        $records['meta'] = $meta;
+
         return $records;
     }
 
     /**
-     * Load reference data for appointments (users, statuses, etc.)
+     * @return array<string, mixed>
      */
-    private function loadReferenceData($appointments): array
+    private function loadReferenceData(mixed $appointments): array
     {
-        // Load invoice status
         $invoiceStatus = InvoiceStatuses::where('slug', 'paid')->first();
-        
-        // Load appointment statuses
         $unscheduledStatus = AppointmentStatuses::getUnScheduledStatusOnly($this->accountId, ['id']);
         $cancelledStatus = AppointmentStatuses::getCancelledStatusOnly($this->accountId);
-        
-        // Load users referenced in appointments
+
         $userIds = $appointments->pluck('app_created_by')
             ->merge($appointments->pluck('converted_by'))
             ->merge($appointments->pluck('app_updated_by'))
             ->unique()
             ->filter();
         $users = User::whereIn('id', $userIds)->pluck('name', 'id')->toArray();
-        
-        // Load parent appointment statuses
+
         $statusIds = $appointments->pluck('appointment_status.parent_id')->filter()->unique();
         $appointmentStatuses = AppointmentStatuses::whereIn('id', $statusIds)->pluck('name', 'id')->toArray();
-        
+
         return [
             'invoice_status' => $invoiceStatus,
             'unscheduled_status' => $unscheduledStatus,
@@ -233,44 +193,27 @@ class ConsultancyDatatableService
     }
 
     /**
-     * Build single appointment row
+     * @return array<string, mixed>
      */
-    private function buildAppointmentRow($appointment, array $referenceData, bool $canViewContact): array
+    private function buildAppointmentRow(mixed $appointment, array $referenceData, bool $canViewContact): array
     {
-        // Get invoice info
         $invoiceId = 0;
         $invoice = null;
-        if ($appointment->invoice && $appointment->invoice->invoice_status_id == $referenceData['invoice_status']->id) {
+        if ($appointment->invoice?->invoice_status_id === $referenceData['invoice_status']?->id) {
             $invoice = $appointment->invoice;
             $invoiceId = $invoice->id;
         }
-        
-        // Map consultancy type
-        $consultancyType = match($appointment->consultancy_type) {
-            'in_person' => 'In Person',
-            'virtual' => 'Virtual',
-            default => ''
-        };
-        
-        // Format phone number based on permission
+
+        $consultancyTypeLabel = ConsultancyType::tryFrom($appointment->consultancy_type)?->label() ?? '';
         $phoneNumber = $canViewContact ? $appointment->phone : '***********';
-        
-        // Format scheduled date
-        $scheduledDate = $appointment->scheduled_date 
-            ? Carbon::parse($appointment->scheduled_date)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time)->format('h:i A')
+
+        $scheduledDate = $appointment->scheduled_date
+            ? Carbon::parse($appointment->scheduled_date)->format('M j, Y')
+                . ' at ' . Carbon::parse($appointment->scheduled_time)->format('h:i A')
             : '-';
-        
-        // Get appointment status name
-        $statusName = '';
-        if ($appointment->appointment_status_id) {
-            if ($appointment->appointment_status->parent_id) {
-                $statusName = $referenceData['appointment_statuses'][$appointment->appointment_status->parent_id] 
-                    ?? $appointment->appointment_status->name;
-            } else {
-                $statusName = $appointment->appointment_status->name;
-            }
-        }
-        
+
+        $statusName = $this->resolveStatusName($appointment, $referenceData);
+
         return [
             'id' => $appointment->app_id,
             'patient_id' => $appointment->patient_id,
@@ -278,18 +221,18 @@ class ConsultancyDatatableService
             'name' => $appointment->patient_name ?: $appointment->name,
             'phone' => $phoneNumber,
             'scheduled_date' => $scheduledDate,
-            'doctor_id' => $appointment->doctor->name ?? 'N/A',
-            'doctorId' => $appointment->doctor->id ?? 0,
-            'region_id' => $appointment->region->name ?? 'N/A',
-            'city_id' => $appointment->city->name ?? 'N/A',
+            'doctor_id' => $appointment->doctor?->name ?? 'N/A',
+            'doctorId' => $appointment->doctor?->id ?? 0,
+            'region_id' => $appointment->region?->name ?? 'N/A',
+            'city_id' => $appointment->city?->name ?? 'N/A',
             'cityId' => $appointment->city_id ?? 0,
-            'location_id' => $appointment->location->name ?? 'N/A',
+            'location_id' => $appointment->location?->name ?? 'N/A',
             'locationId' => $appointment->location_id ?? 'N/A',
-            'service_id' => $appointment->service->name ?? 'N/A',
+            'service_id' => $appointment->service?->name ?? 'N/A',
             'resource_id' => $appointment->resource_id ?? 0,
-            'appointment_type_id' => $appointment->appointment_type->name ?? 'N/A',
-            'appointment_type' => $appointment->appointment_type->id ?? 0,
-            'consultancy_type' => $consultancyType,
+            'appointment_type_id' => $appointment->appointment_type?->name ?? 'N/A',
+            'appointment_type' => $appointment->appointment_type?->id ?? 0,
+            'consultancy_type' => $consultancyTypeLabel,
             'created_at' => Carbon::parse($appointment->app_created_at)->format('F j,Y h:i A'),
             'created_by' => $referenceData['users'][$appointment->app_created_by] ?? 'N/A',
             'converted_by' => $referenceData['users'][$appointment->converted_by] ?? 'N/A',
@@ -303,40 +246,48 @@ class ConsultancyDatatableService
         ];
     }
 
+    private function resolveStatusName(mixed $appointment, array $referenceData): string
+    {
+        if (!$appointment->appointment_status_id) {
+            return '';
+        }
+
+        if ($appointment->appointment_status?->parent_id) {
+            return $referenceData['appointment_statuses'][$appointment->appointment_status->parent_id]
+                ?? $appointment->appointment_status->name;
+        }
+
+        return $appointment->appointment_status?->name ?? '';
+    }
+
     /**
-     * Get filters data including dropdown values for frontend
+     * @return array<string, mixed>
      */
     private function getFiltersData(array $records): array
     {
-        // Get active filters
         $records['active_filters'] = Filters::all($this->userId, $this->filename);
-        
-        // Get filter dropdown values
+
         $regions = \App\Models\Regions::getActiveSorted(ACL::getUserRegions());
         $cities = \App\Models\Cities::getActiveSortedFeatured(ACL::getUserCities());
         $doctors = \App\Models\Doctors::getActiveOnly(ACL::getUserCentres(), $this->accountId);
         $locations = \App\Models\Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
-        
-        // Get appointment statuses
+
         $appointmentStatuses = AppointmentStatuses::getAllParentRecords($this->accountId);
-        if ($appointmentStatuses) {
-            $appointmentStatuses = $appointmentStatuses->pluck('name', 'id');
-        }
-        
-        // Get appointment types based on permissions
-        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')) {
-            $appointmentTypes = AppointmentTypes::get()->pluck('name', 'id');
-        } elseif (Gate::allows('appointments_consultancy')) {
-            $appointmentTypes = AppointmentTypes::where('slug', 'consultancy')->get()->pluck('name', 'id');
-        } elseif (Gate::allows('treatments_services')) {
-            $appointmentTypes = AppointmentTypes::where('slug', 'treatment')->get()->pluck('name', 'id');
-        } else {
-            $appointmentTypes = [];
-        }
-        
+        $appointmentStatuses = $appointmentStatuses?->pluck('name', 'id');
+
+        $appointmentTypes = match (true) {
+            Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')
+                => AppointmentTypes::pluck('name', 'id'),
+            Gate::allows('appointments_consultancy')
+                => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
+            Gate::allows('treatments_services')
+                => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
+            default => collect(),
+        };
+
         $users = User::getAllRecords($this->accountId)->where('active', 1)->pluck('name', 'id');
-        
+
         $records['filter_values'] = [
             'cities' => $cities,
             'regions' => $regions,
@@ -348,28 +299,29 @@ class ConsultancyDatatableService
             'appointment_types' => $appointmentTypes,
             'consultancy_types' => config('constants.consultancy_type_array'),
         ];
-        
+
         return $records;
     }
 
-    /**
-     * Handle delete operation
-     */
     private function handleDelete(string $deleteIds, array &$records): void
     {
-        $ids = explode(',', $deleteIds);
-        $appointments = Appointments::whereIn('id', $ids);
-        
-        if ($appointments) {
-            $appointments->delete();
+        if (!Gate::allows('appointments_destroy')) {
+            $records['status'] = false;
+            $records['message'] = 'You are not authorized to delete records.';
+            return;
         }
-        
+
+        $ids = array_filter(explode(',', $deleteIds), fn ($id) => is_numeric($id));
+        Appointments::where('account_id', $this->accountId)
+            ->whereIn('id', $ids)
+            ->delete();
+
         $records['status'] = true;
-        $records['message'] = 'Records has been deleted successfully!';
+        $records['message'] = 'Records have been deleted successfully!';
     }
 
     /**
-     * Get user permissions
+     * @return array<string, bool>
      */
     private function getPermissions(): array
     {
