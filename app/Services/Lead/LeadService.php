@@ -207,7 +207,7 @@ class LeadService
         }
 
         if (!empty($data['city_id'])) {
-            $data['region_id'] = $this->getRegionFromCity($data['city_id']);
+            $data['region_id'] = $this->getRegionFromCity((int) $data['city_id']);
         }
 
         $data['created_by'] = $userId;
