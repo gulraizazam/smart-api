@@ -74,6 +74,7 @@ class LeadsController extends Controller
                     'leads.location_id', 'leads.lead_status_id',
                     'leads.created_by', 'leads.created_at',
                 ])
+                ->with('user:id,name')
                 ->limit($displayLength)
                 ->offset($displayStart)
                 ->orderBy($datatableData['orderBy'], $datatableData['order'])
