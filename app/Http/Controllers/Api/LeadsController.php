@@ -223,7 +223,7 @@ class LeadsController extends Controller
         }
 
         try {
-            $data = $this->leadService->getLeadStatusesWithChildren($request->get('id'));
+            $data = $this->leadService->getLeadStatusesWithChildren((int) $request->get('id'));
             return ApiHelper::apiResponse($this->success, 'Record Found', true, $data);
         } catch (LeadException $e) {
             return ApiHelper::apiResponse($this->error, $e->getMessage());
