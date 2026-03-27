@@ -276,7 +276,7 @@ class LeadsController extends Controller
     public function loadChildServices(Request $request): JsonResponse
     {
         try {
-            $data = $this->leadService->getChildServicesWithLead($request->serviceId, $request->leadId);
+            $data = $this->leadService->getChildServicesWithLead((int) $request->serviceId, (int) $request->leadId);
             return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
