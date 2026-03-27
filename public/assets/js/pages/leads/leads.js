@@ -1217,7 +1217,8 @@ $(function () {
                 'comment': $('input[name=comment]').val(),
                 'lead_id': $('#comment_lead_id').val(),
             },
-            success: function(data) {
+            success: function(response) {
+                var data = response.data;
                 $('#commentsection').prepend(commentData(data.username, data.leadCommentDate, data.lead.comment));
             },
         });
