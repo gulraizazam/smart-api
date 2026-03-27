@@ -629,7 +629,7 @@ class DashboardChartService
             ->keyBy('appointment_status_id');
 
         // Get converted count to add to arrived
-        $convertedCount = $records->get($convertedStatusId)->total ?? 0;
+        $convertedCount = $records->get($convertedStatusId)?->total ?? 0;
 
         foreach ($appointmentStatuses as $statusId => $status) {
             $record = $records->get($statusId);

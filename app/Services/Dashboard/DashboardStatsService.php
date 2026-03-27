@@ -6,10 +6,64 @@ use App\Helpers\DashboardHelper;
 use App\Models\Appointments;
 use App\Models\Leads;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class DashboardStatsService
 {
+    /**
+     * Get consultancies AND treatments in a single query (was 2 separate queries).
+     * Returns combined array with all_consultancies, done_consultancies, all_treatments, done_treatments.
+     */
+    public function getAppointmentStats(
+        string $startDate,
+        string $endDate,
+        array $userCentres,
+    ): array {
+        if (!Gate::allows('dashboard_states')) {
+            return [
+                'all_consultancies' => null,
+                'done_consultancies' => null,
+                'all_treatments' => null,
+                'done_treatments' => null,
+            ];
+        }
+
+        $consultancyTypeId = (int) config('constants.appointment_type_consultancy');
+        $treatmentTypeId = (int) config('constants.appointment_type_service');
+        $arrivedStatusIds = DashboardHelper::getArrivedAndConvertedStatusIds();
+        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
+
+        $statusIdsList = implode(',', array_map('intval', $arrivedStatusIds));
+
+        $results = Appointments::query()
+            ->whereIn('appointment_type_id', [$consultancyTypeId, $treatmentTypeId])
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->whereIn('location_id', $userCentres)
+            ->select(
+                'appointment_type_id',
+                DB::raw('COUNT(*) as all_count'),
+                DB::raw("SUM(CASE WHEN appointment_status_id IN ({$statusIdsList}) THEN 1 ELSE 0 END) as done_arrived_converted"),
+                DB::raw("SUM(CASE WHEN appointment_status_id = {$arrivedStatusId} THEN 1 ELSE 0 END) as done_arrived_only"),
+            )
+            ->groupBy('appointment_type_id')
+            ->get()
+            ->keyBy('appointment_type_id');
+
+        $consultancy = $results->get($consultancyTypeId);
+        $treatment = $results->get($treatmentTypeId);
+
+        return [
+            'all_consultancies'  => $consultancy?->all_count ?? 0,
+            'done_consultancies' => $consultancy?->done_arrived_converted ?? 0,
+            'all_treatments'     => $treatment?->all_count ?? 0,
+            'done_treatments'    => $treatment?->done_arrived_only ?? 0,
+        ];
+    }
+
+    /**
+     * Get consultancies only (backward-compatible).
+     */
     public function getConsultancies(
         string $startDate,
         string $endDate,
@@ -38,6 +92,9 @@ class DashboardStatsService
         ];
     }
 
+    /**
+     * Get treatments only (backward-compatible).
+     */
     public function getTreatments(
         string $startDate,
         string $endDate,

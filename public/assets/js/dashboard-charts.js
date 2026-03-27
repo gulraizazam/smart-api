@@ -65,7 +65,7 @@
                 $('.loader-img-upselling').hide();
                 $('#doctor_upselling_chart').show();
                 
-                if (response.success && response.data.length > 0) {
+                if (response.status && response.data.length > 0) {
                     populateUpsellingTable(response.data);
                 } else {
                     showUpsellingNoDataMessage();

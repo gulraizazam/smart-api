@@ -65,7 +65,8 @@
       "Bash(do php:*)",
       "Bash(done)",
       "Bash(find C:/laragon/www/cutera-upgradation1 -type f -name *.php -exec grep -l \"home.datatable\\\\|admin.home.datatable\" {})",
-      "Bash(2)"
+      "Bash(2)",
+      "Bash(php:*)"
     ]
   }
 }
