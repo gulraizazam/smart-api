@@ -7,9 +7,8 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rules\Password;
 
-class ChangePasswordRequest extends FormRequest
+class ChangeUserStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,23 +18,18 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required',
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
-            ],
+            'id' => 'required|integer|exists:users,id',
+            'status' => 'required|integer|in:0,1',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'password.required' => 'Password field is required',
-            'password.confirmed' => 'Password confirmation does not match',
+            'id.required' => 'User ID is required.',
+            'id.exists' => 'The specified user does not exist.',
+            'status.required' => 'Status is required.',
+            'status.in' => 'Status must be either 0 or 1.',
         ];
     }
 

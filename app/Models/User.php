@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +17,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -96,12 +99,12 @@ class User extends Authenticatable
         );
     }
 
-    public function role()
+    public function role(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_user');
     }
 
-    public function user_roles()
+    public function user_roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_has_users');
     }

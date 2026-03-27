@@ -7,9 +7,8 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rules\Password;
 
-class ChangePasswordRequest extends FormRequest
+class UserVoucherStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,23 +18,21 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required',
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
-            ],
+            'patient_id' => 'required|integer|exists:users,id',
+            'voucher_id' => 'required|integer|exists:discounts,id',
+            'amount' => 'required|numeric|min:0',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'password.required' => 'Password field is required',
-            'password.confirmed' => 'Password confirmation does not match',
+            'patient_id.required' => 'Patient is required.',
+            'patient_id.exists' => 'The specified patient does not exist.',
+            'voucher_id.required' => 'Voucher type is required.',
+            'voucher_id.exists' => 'The specified voucher does not exist.',
+            'amount.required' => 'Amount is required.',
+            'amount.min' => 'Amount must be at least 0.',
         ];
     }
 

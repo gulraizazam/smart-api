@@ -7,9 +7,8 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rules\Password;
 
-class ChangePasswordRequest extends FormRequest
+class UserVoucherUpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,23 +18,15 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required',
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
-            ],
+            'total_amount' => 'required|numeric|min:0',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'password.required' => 'Password field is required',
-            'password.confirmed' => 'Password confirmation does not match',
+            'total_amount.required' => 'Total amount is required.',
+            'total_amount.min' => 'Total amount must be at least 0.',
         ];
     }
 

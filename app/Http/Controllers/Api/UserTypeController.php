@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserTypeRequest;
+use App\Http\Resources\User\UserTypeResource;
 use App\Services\UserManagement\UserTypeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,16 +15,16 @@ use Illuminate\Support\Facades\Gate;
 
 class UserTypeController extends Controller
 {
-    private int $success;
-    private int $error;
-    private int $unauthorized;
+    private readonly int $success;
+    private readonly int $error;
+    private readonly int $unauthorized;
 
     public function __construct(
         private readonly UserTypeService $userTypeService,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+        $this->success = (int) config('constants.api_status.success');
+        $this->error = (int) config('constants.api_status.error');
+        $this->unauthorized = (int) config('constants.api_status.unauthorized');
     }
 
     public function index(Request $request): JsonResponse
@@ -38,8 +41,9 @@ class UserTypeController extends Controller
                 if (!empty($ids)) {
                     $result = $this->userTypeService->bulkDelete($ids);
                     return response()->json([
-                        'status' => true,
+                        'success' => true,
                         'message' => "Deleted {$result['deleted']} records. Skipped {$result['skipped']} records with child dependencies.",
+                        'data' => $result,
                     ]);
                 }
             }
@@ -53,15 +57,9 @@ class UserTypeController extends Controller
                 'order' => $order,
             ];
 
-            // Get total for pagination
-            $totalResult = $this->userTypeService->getDatatableData([
-                ...$params,
-                'offset' => 0,
-                'limit' => PHP_INT_MAX,
-            ]);
-            $iTotalRecords = $totalResult['total'];
+            $countResult = $this->userTypeService->getDatatableCount($params);
 
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $countResult);
 
             $result = $this->userTypeService->getDatatableData([
                 ...$params,
@@ -70,7 +68,9 @@ class UserTypeController extends Controller
             ]);
 
             return response()->json([
-                'data' => $result['data'],
+                'success' => true,
+                'message' => 'Records retrieved successfully.',
+                'data' => UserTypeResource::collection($result['data']),
                 'permissions' => [
                     'edit' => Gate::allows('user_types_edit'),
                 ],
@@ -79,7 +79,7 @@ class UserTypeController extends Controller
                     'page' => $page,
                     'pages' => $pages,
                     'perpage' => $iDisplayLength,
-                    'total' => $iTotalRecords,
+                    'total' => $countResult,
                     'sort' => $order,
                 ],
             ]);
@@ -128,7 +128,7 @@ class UserTypeController extends Controller
             $userType = $this->userTypeService->find($id);
 
             return $userType
-                ? ApiHelper::apiResponse($this->success, 'Record found.', true, ['usertype' => $userType])
+                ? ApiHelper::apiResponse($this->success, 'Record found.', true, ['usertype' => new UserTypeResource($userType)])
                 : ApiHelper::apiResponse($this->success, 'Record not found.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -149,7 +149,7 @@ class UserTypeController extends Controller
             }
 
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'usertype' => $userType,
+                'usertype' => new UserTypeResource($userType),
                 'types' => $this->userTypeService->getTypeOptions(),
             ]);
         } catch (\Exception $e) {

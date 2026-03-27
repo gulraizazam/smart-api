@@ -1,70 +1,51 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserHasLocations extends Model
 {
     protected $fillable = ['user_id', 'region_id', 'location_id'];
 
-    protected static $_fillable = ['user_id', 'region_id', 'location_id'];
+    protected static array $_fillable = ['user_id', 'region_id', 'location_id'];
 
     protected $table = 'user_has_locations';
 
-    protected static $_table = 'user_has_locations';
+    protected static string $_table = 'user_has_locations';
 
     public $timestamps = false;
 
-    /**
-     * Get User locations belong to location.
-     */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id');
+        return $this->belongsTo(Locations::class, 'location_id');
     }
 
-    /**
-     * Get User locations belong to user.
-     */
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'user_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Create Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function createRecord($data, $parent_data)
+    public static function createRecord(array $data, mixed $parentData): bool
     {
-
         $record = self::insert($data);
 
-        $parent_id = $parent_data;
-
-        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
+        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parentData);
 
         return $record;
     }
 
-    /**
-     * update Record
-     *
-     * @param data ,parent_data
-     * @return (mixed)
-     */
-    public static function updateRecord($data, $parent_data)
+    public static function updateRecord(array $data, mixed $parentData): bool
     {
         $record = self::insert($data);
 
-        $parent_id = $parent_data->id;
+        $parentId = is_object($parentData) ? $parentData->id : $parentData;
+        $oldData = '0';
 
-        $old_data = '0';
-
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $record, $parent_id);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $oldData, $record, $parentId);
 
         return $record;
     }
