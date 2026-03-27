@@ -29,7 +29,8 @@ class LeadResource extends JsonResource
             'phone' => $canViewContact
                 ? GeneralFunctions::prepareNumber4Call($this->phone)
                 : '***********',
-            'gender' => $this->gender instanceof Gender ? $this->gender->label() : (Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown'),
+            'gender' => $this->resource->getAttributes()['gender'] ?? null,
+            'gender_label' => $this->gender instanceof Gender ? $this->gender->label() : (Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown'),
             'active' => $this->active,
             'city_id' => $this->city?->name ?? '',
             'cityId' => $this->city_id ?? 0,
