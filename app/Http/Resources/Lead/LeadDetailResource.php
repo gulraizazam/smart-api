@@ -29,6 +29,12 @@ class LeadDetailResource extends JsonResource
             'active' => $this->active,
             'meta_lead_id' => $this->meta_lead_id,
             'referred_by' => $this->referred_by,
+            'city_id' => $this->city_id,
+            'location_id' => $this->location_id,
+            'town_id' => $this->town_id ?? $this->location_id,
+            'lead_source_id' => $this->lead_source_id,
+            'lead_status_id' => $this->lead_status_id,
+            'service_id' => $this->service_id,
             'city' => $this->when(
                 $this->relationLoaded('city'),
                 fn(): ?array => $this->city ? ['id' => $this->city->id, 'name' => $this->city->name] : null,
@@ -37,7 +43,7 @@ class LeadDetailResource extends JsonResource
                 $this->relationLoaded('region'),
                 fn(): ?array => $this->region ? ['id' => $this->region->id, 'name' => $this->region->name] : null,
             ),
-            'location' => $this->when(
+            'towns' => $this->when(
                 $this->relationLoaded('towns') || $this->relationLoaded('location'),
                 fn(): ?array => ($this->location ?? $this->towns)
                     ? ['id' => ($this->location ?? $this->towns)->id, 'name' => ($this->location ?? $this->towns)->name]
@@ -59,10 +65,10 @@ class LeadDetailResource extends JsonResource
                     ? ['id' => ($this->leadSource ?? $this->lead_source)->id, 'name' => ($this->leadSource ?? $this->lead_source)->name]
                     : null,
             ),
-            'services' => LeadServiceItemResource::collection(
+            'lead_service' => LeadServiceItemResource::collection(
                 $this->whenLoaded('lead_service', default: $this->whenLoaded('leadServices'))
             ),
-            'comments' => LeadCommentResource::collection(
+            'lead_comments' => LeadCommentResource::collection(
                 $this->whenLoaded('lead_comments', default: $this->whenLoaded('leadComments'))
             ),
             'created_by' => $this->when(

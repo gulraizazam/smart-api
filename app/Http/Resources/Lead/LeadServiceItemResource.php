@@ -18,19 +18,22 @@ class LeadServiceItemResource extends JsonResource
             'status' => $this->status,
             'meta_lead_id' => $this->meta_lead_id,
             'lead_status_id' => $this->lead_status_id,
+            'created_at' => $this->created_at,
             'service' => $this->when(
                 $this->relationLoaded('service'),
                 fn(): ?array => $this->service ? ['id' => $this->service->id, 'name' => $this->service->name] : null,
             ),
-            'child_service' => $this->when(
+            'childservice' => $this->when(
                 $this->relationLoaded('childservice'),
                 fn(): ?array => $this->childservice
                     ? ['id' => $this->childservice->id, 'name' => $this->childservice->name]
                     : null,
             ),
             'lead_status' => $this->when(
-                $this->relationLoaded('leadStatus'),
-                fn(): ?array => $this->leadStatus ? ['id' => $this->leadStatus->id, 'name' => $this->leadStatus->name] : null,
+                $this->relationLoaded('lead_status') || $this->relationLoaded('leadStatus'),
+                fn(): ?array => ($this->lead_status ?? $this->leadStatus)
+                    ? ['id' => ($this->lead_status ?? $this->leadStatus)->id, 'name' => ($this->lead_status ?? $this->leadStatus)->name]
+                    : null,
             ),
         ];
     }
