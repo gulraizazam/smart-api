@@ -470,18 +470,6 @@ class ConversionService
 
         $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
 
-        // Total arrived consultations
-        $totalArrived = DB::table('appointments')
-            ->where('doctor_id', $doctorId)
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', $statusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->count();
-
-        if ($totalArrived === 0) {
-            return $this->emptyDoctorResult();
-        }
-
         // Get all locations where this doctor is allocated
         $locations = DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
@@ -497,6 +485,19 @@ class ConversionService
                 ->distinct()
                 ->pluck('location_id')
                 ->toArray();
+        }
+
+        // Total arrived consultations (filtered by allocated locations to match conversion report)
+        $totalArrived = DB::table('appointments')
+            ->where('doctor_id', $doctorId)
+            ->where('appointment_type_id', 1)
+            ->whereIn('appointment_status_id', $statusIds)
+            ->whereIn('location_id', $locations)
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->count();
+
+        if ($totalArrived === 0) {
+            return $this->emptyDoctorResult();
         }
 
         // Fetch candidate appointments using shared logic
