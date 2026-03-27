@@ -373,7 +373,7 @@ class LocationsWidget
             }
         }
 
-        $doctors = Doctors::getActiveOnly(null, $account_id, $doctor_array);
+        $doctors = Doctors::getActiveOnly(false, $account_id, $doctor_array);
 
         return $doctors;
     }
@@ -460,7 +460,7 @@ class LocationsWidget
             }
         }
 
-        $doctors = Doctors::getActiveOnly(null, $account_id, $doctor_array);
+        $doctors = Doctors::getActiveOnly(false, $account_id, $doctor_array);
 
         return $doctors;
     }
