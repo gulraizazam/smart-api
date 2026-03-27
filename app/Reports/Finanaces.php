@@ -2789,7 +2789,7 @@ class Finanaces
             $locations, $arrivedStatusId, $convertedStatusId, $start_date, $end_date, $filterDoctorIds, $extraWhere
         );
 
-        $converted_Records = collect($appointments_info)->where('conversion_spend', '!=', '')->count();
+        $converted_Records = collect($appointments_info)->where('conversion_spend', '!=', '')->where('conversion_spend', '>', 0)->count();
         array_push($converted_apts, $converted_Records);
         array_push($total_apts, $total_appointments);
 
