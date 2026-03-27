@@ -383,7 +383,7 @@ class Patients extends BaseModal
         return $record;
     }
 
-    public static function updateRecord(int $id, array $data, array|false $appointmentData = false, array|false $patientData = false): ?self
+    public static function updateRecord(int $id, array|false $data, array|false $appointmentData = false, array|false $patientData = false): ?self
     {
         if ($appointmentData) {
             if ($appointmentData['patient_id'] != 0) {
