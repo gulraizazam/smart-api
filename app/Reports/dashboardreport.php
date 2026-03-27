@@ -3,328 +3,215 @@
 namespace App\Reports;
 
 use App\Models\Locations;
-use App\Models\PackageAdvances;
-use Auth;
 use Carbon\Carbon;
-use Config;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class dashboardreport
 {
-    /*
-     * Collection by centre widgets calculation
+    private const VALID_PAYMENT_MODES = ['Cash', 'Card', 'Bank/Wire Transfer'];
+
+    private const CHART_HEADER = [['Task', 'Hours per Day']];
+
+    /**
+     * Collection by centre widgets — aggregate SQL instead of loading all rows.
      */
-
-    public static function CollectionByRevenueWidgets($location_informations, $account_id, $where, $request)
-    {
+    public static function CollectionByRevenueWidgets(
+        array $locationIds,
+        ?int $accountId,
+        string $period,
+        mixed $request = null,
+    ): array {
         $total = 0;
-        $report_data = [];
-        $report_data[] = [
-            'Task',
-            'Hours per Day',
-        ];
+        $reportData = self::CHART_HEADER;
 
-        if (empty($location_informations)) {
-            return [$report_data, $total];
+        if (empty($locationIds)) {
+            return [$reportData, $total];
         }
 
-        // Fetch all locations with city relationship in a single query
-        $locations = Locations::with('city')->whereIn('id', $location_informations)->get()->keyBy('id');
-
-        // Build date conditions based on $where parameter
-        $query = PackageAdvances::with('paymentmode')
-            ->where('account_id', $account_id)
-            ->whereIn('location_id', $location_informations);
-
-        // Use date range queries instead of whereDate for better index usage
-        switch ($where) {
-            case 'today':
-                $query->where('created_at', '>=', Carbon::today())
-                      ->where('created_at', '<', Carbon::tomorrow());
-                break;
-            case 'yesterday':
-                $query->where('created_at', '>=', Carbon::yesterday())
-                      ->where('created_at', '<', Carbon::today());
-                break;
-            case 'last7day':
-                $query->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
-                      ->where('created_at', '<', Carbon::tomorrow());
-                break;
-            case 'week':
-                $query->where('created_at', '>=', Carbon::now()->startOfWeek())
-                      ->where('created_at', '<', Carbon::now()->endOfWeek()->addDay());
-                break;
-            case 'thisMonth':
-                $query->where('created_at', '>=', Carbon::now()->startOfMonth())
-                      ->where('created_at', '<', Carbon::now()->endOfMonth()->addDay());
-                break;
-            case 'lastMonth':
-                $query->where('created_at', '>=', Carbon::now()->subMonth()->startOfMonth())
-                      ->where('created_at', '<', Carbon::now()->subMonth()->endOfMonth()->addDay());
-                break;
-        }
-
-        // Fetch all records in a single query
-        $allPackageAdvances = $query->get();
-
-        // Group by location_id for processing
-        $groupedByLocation = $allPackageAdvances->groupBy('location_id');
-
-        foreach ($location_informations as $location_id) {
-            $packagesadvances = $groupedByLocation->get($location_id, collect());
-            $location_single_info = $locations->get($location_id);
-
-            if (!$location_single_info) {
-                continue;
-            }
-
-            $total_revenue_cash_in = 0;
-            $total_revenue_card_in = 0;
-            $total_refund_out = 0;
-
-            foreach ($packagesadvances as $packagesadvance) {
-                if (
-                    ($packagesadvance->cash_flow == 'in' &&
-                    $packagesadvance->is_adjustment == '0' &&
-                    $packagesadvance->is_tax == '0' &&
-                    $packagesadvance->is_cancel == '0') ||
-                    ($packagesadvance->cash_flow == 'out' &&
-                    $packagesadvance->is_adjustment == '0' &&
-                    $packagesadvance->is_tax == '0' &&
-                    $packagesadvance->is_cancel == '0' &&
-                    $packagesadvance->is_refund == 1)
-                ) {
-                    if ($packagesadvance->cash_amount != 0) {
-                        if ($packagesadvance->cash_flow == 'in') {
-                            $paymentModeName = $packagesadvance->paymentmode->name ?? '';
-                            if ($paymentModeName == 'Cash') {
-                                $total_revenue_cash_in += $packagesadvance->cash_amount;
-                            } elseif ($paymentModeName == 'Card') {
-                                $total_revenue_card_in += $packagesadvance->cash_amount;
-                            } elseif ($paymentModeName == 'Bank/Wire Transfer') {
-                                $total_revenue_card_in += $packagesadvance->cash_amount;
-                            }
-                        } else {
-                            $total_refund_out += $packagesadvance->cash_amount;
-                        }
-                    }
-                }
-            }
-
-            $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-            $In_hand_balance = $total_revenue - $total_refund_out;
-
-            if ($In_hand_balance > 0) {
-                $cityName = $location_single_info->city->name ?? '';
-                $report_data[$location_id] = [
-                    $cityName . ' - ' . $location_single_info->name,
-                    $In_hand_balance,
-                ];
-                $total += $In_hand_balance;
-            }
-        }
-
-        return [
-            $report_data,
-            $total,
-        ];
-    }
-
-    public static function MyCollectionByRevenueWidgets($location_information, $account_id, $where, $request)
-    {
-        if (auth()->id() === 1) {
-            return self::CollectionByRevenueWidgets($location_information, $account_id, $where, $request);
-        }
-
-        $total = 0;
-        $report_data = [];
-        $report_data[] = [
-            'Task',
-            'Hours per Day',
-        ];
-
-        if (empty($location_information)) {
-            return [$report_data, $total];
-        }
-
-        // Get location IDs from the associative array
-        $locationIds = array_keys($location_information);
-
-        // Fetch all locations with city relationship in a single query
         $locations = Locations::with('city')->whereIn('id', $locationIds)->get()->keyBy('id');
+        [$startDate, $endDate] = self::resolveDateRange($period);
 
-        // Build date conditions based on $where parameter
-        $query = PackageAdvances::with('paymentmode')
-            ->where('account_id', $account_id)
-            ->whereIn('location_id', $locationIds)
-            ->where('created_by', Auth::User()->id);
+        $results = DB::table('package_advances as pa')
+            ->join('payment_modes as pm', 'pa.payment_mode_id', '=', 'pm.id')
+            ->whereIn('pa.location_id', $locationIds)
+            ->where('pa.account_id', $accountId)
+            ->where('pa.created_at', '>=', $startDate)
+            ->where('pa.created_at', '<', $endDate)
+            ->where('pa.is_adjustment', 0)
+            ->where('pa.is_tax', 0)
+            ->where('pa.is_cancel', 0)
+            ->where('pa.cash_amount', '!=', 0)
+            ->whereNull('pa.deleted_at')
+            ->select(
+                'pa.location_id',
+                DB::raw("SUM(CASE
+                    WHEN pa.cash_flow = 'in' AND pm.name IN ('Cash','Card','Bank/Wire Transfer')
+                    THEN pa.cash_amount ELSE 0 END) as revenue"),
+                DB::raw("SUM(CASE
+                    WHEN pa.cash_flow = 'out' AND pa.is_refund = 1
+                    THEN pa.cash_amount ELSE 0 END) as refunds"),
+            )
+            ->groupBy('pa.location_id')
+            ->get()
+            ->keyBy('location_id');
 
-        // Use date range queries instead of whereDate for better index usage
-        switch ($where) {
-            case 'today':
-                $query->where('created_at', '>=', Carbon::today())
-                      ->where('created_at', '<', Carbon::tomorrow());
-                break;
-            case 'yesterday':
-                $query->where('created_at', '>=', Carbon::yesterday())
-                      ->where('created_at', '<', Carbon::today());
-                break;
-            case 'last7day':
-                $query->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
-                      ->where('created_at', '<', Carbon::tomorrow());
-                break;
-            case 'thisMonth':
-                $query->where('created_at', '>=', Carbon::now()->startOfMonth())
-                      ->where('created_at', '<', Carbon::now()->endOfMonth()->addDay());
-                break;
-            case 'lastMonth':
-                $query->where('created_at', '>=', Carbon::now()->subMonth()->startOfMonth())
-                      ->where('created_at', '<', Carbon::now()->subMonth()->endOfMonth()->addDay());
-                break;
-        }
-
-        // Fetch all records in a single query
-        $allPackageAdvances = $query->get();
-
-        // Group by location_id for processing
-        $groupedByLocation = $allPackageAdvances->groupBy('location_id');
-
-        foreach ($locationIds as $location_id) {
-            $packagesadvances = $groupedByLocation->get($location_id, collect());
-            $location_single_info = $locations->get($location_id);
-
-            if (!$location_single_info) {
+        foreach ($locationIds as $locationId) {
+            $location = $locations->get($locationId);
+            if (!$location) {
                 continue;
             }
 
-            $total_revenue_cash_in = 0;
-            $total_revenue_card_in = 0;
-            $total_refund_out = 0;
+            $row = $results->get($locationId);
+            $balance = $row ? (float) $row->revenue - (float) $row->refunds : 0;
 
-            foreach ($packagesadvances as $packagesadvance) {
-                if (
-                    $packagesadvance->cash_flow == 'in' &&
-                    $packagesadvance->is_adjustment == '0' &&
-                    $packagesadvance->is_tax == '0' &&
-                    $packagesadvance->is_cancel == '0'
-                ) {
-                    if ($packagesadvance->cash_amount != 0) {
-                        $paymentModeName = $packagesadvance->paymentmode->name ?? '';
-                        if ($paymentModeName == 'Cash') {
-                            $total_revenue_cash_in += $packagesadvance->cash_amount;
-                        } elseif ($paymentModeName == 'Card') {
-                            $total_revenue_card_in += $packagesadvance->cash_amount;
-                        } elseif ($paymentModeName == 'Bank/Wire Transfer') {
-                            $total_revenue_card_in += $packagesadvance->cash_amount;
-                        }
-                    }
-                }
-            }
-
-            $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-            $In_hand_balance = $total_revenue - $total_refund_out;
-
-            if ($In_hand_balance > 0) {
-                $cityName = $location_single_info->city->name ?? '';
-                $report_data[] = [
-                    $cityName . ' - ' . $location_single_info->name,
-                    $In_hand_balance,
+            if ($balance > 0) {
+                $cityName = $location->city->name ?? '';
+                $reportData[$locationId] = [
+                    $cityName . ' - ' . $location->name,
+                    $balance,
                 ];
-                $total += $In_hand_balance;
+                $total += $balance;
             }
         }
 
-        return [
-            $report_data,
-            $total,
-        ];
+        return [$reportData, $total];
     }
 
-    public static function collectionbycenter($location_informations, $account_id, $where, $request)
-    {
+    /**
+     * My Collection by centre widgets — filtered by current user.
+     */
+    public static function MyCollectionByRevenueWidgets(
+        mixed $locationInformation,
+        ?int $accountId,
+        string $period,
+        mixed $request = null,
+    ): array {
+        // Extract location IDs from array keys or Collection
+        $locationIds = match (true) {
+            is_array($locationInformation) => array_keys($locationInformation),
+            $locationInformation instanceof \Illuminate\Support\Collection => $locationInformation->keys()->all(),
+            default => (array) $locationInformation,
+        };
+
+        if (auth()->id() === 1) {
+            return self::CollectionByRevenueWidgets($locationIds, $accountId, $period, $request);
+        }
+
         $total = 0;
-        
-        if (empty($location_informations)) {
-            return [$total];
+        $reportData = self::CHART_HEADER;
+
+        if (empty($locationIds)) {
+            return [$reportData, $total];
         }
 
-        // Build date conditions based on $where parameter
-        $query = PackageAdvances::with('paymentmode')
-            ->where('account_id', $account_id)
-            ->whereIn('location_id', $location_informations)
-            ->whereNull('deleted_at');
+        $locations = Locations::with('city')->whereIn('id', $locationIds)->get()->keyBy('id');
+        [$startDate, $endDate] = self::resolveDateRange($period);
 
-        switch ($where) {
-            case 'today':
-                $query->whereDate('created_at', '=', Carbon::now()->format('Y-m-d'));
-                break;
-            case 'yesterday':
-                $query->whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'));
-                break;
-            case 'last7days':
-                $query->whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'));
-                break;
-            case 'week':
-                $query->whereDate('created_at', '>=', Carbon::now()->startOfWeek())
-                      ->whereDate('created_at', '<=', Carbon::now()->endOfWeek());
-                break;
-            case 'thisMonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'));
-                break;
-            case 'lastmonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'));
-                break;
-        }
+        // My collection = only cash_flow 'in', no refunds, filtered by created_by
+        $results = DB::table('package_advances as pa')
+            ->join('payment_modes as pm', 'pa.payment_mode_id', '=', 'pm.id')
+            ->whereIn('pa.location_id', $locationIds)
+            ->where('pa.account_id', $accountId)
+            ->where('pa.created_by', Auth::id())
+            ->where('pa.created_at', '>=', $startDate)
+            ->where('pa.created_at', '<', $endDate)
+            ->where('pa.cash_flow', 'in')
+            ->where('pa.is_adjustment', 0)
+            ->where('pa.is_tax', 0)
+            ->where('pa.is_cancel', 0)
+            ->where('pa.cash_amount', '!=', 0)
+            ->whereNull('pa.deleted_at')
+            ->whereIn('pm.name', self::VALID_PAYMENT_MODES)
+            ->select(
+                'pa.location_id',
+                DB::raw('SUM(pa.cash_amount) as revenue'),
+            )
+            ->groupBy('pa.location_id')
+            ->get()
+            ->keyBy('location_id');
 
-        // Fetch all records in a single query
-        $allPackageAdvances = $query->get();
-
-        // Group by location_id for processing
-        $groupedByLocation = $allPackageAdvances->groupBy('location_id');
-
-        foreach ($location_informations as $location_id) {
-            $packagesadvances = $groupedByLocation->get($location_id, collect());
-            
-            $total_revenue_cash_in = 0;
-            $total_revenue_card_in = 0;
-            $total_refund_out = 0;
-
-            foreach ($packagesadvances as $packagesadvance) {
-                if (
-                    ($packagesadvance->cash_flow == 'in' &&
-                    $packagesadvance->is_adjustment == '0' &&
-                    $packagesadvance->is_tax == '0' &&
-                    $packagesadvance->is_cancel == '0') ||
-                    ($packagesadvance->cash_flow == 'out' &&
-                    $packagesadvance->is_adjustment == '0' &&
-                    $packagesadvance->is_tax == '0' &&
-                    $packagesadvance->is_cancel == '0' &&
-                    $packagesadvance->is_refund == 1)
-                ) {
-                    if ($packagesadvance->cash_amount != 0) {
-                        if ($packagesadvance->cash_flow == 'in') {
-                            $paymentModeName = $packagesadvance->paymentmode->name ?? '';
-                            if ($paymentModeName == 'Cash') {
-                                $total_revenue_cash_in += $packagesadvance->cash_amount;
-                            } elseif ($paymentModeName == 'Card') {
-                                $total_revenue_card_in += $packagesadvance->cash_amount;
-                            } elseif ($paymentModeName == 'Bank/Wire Transfer') {
-                                $total_revenue_card_in += $packagesadvance->cash_amount;
-                            }
-                        } else {
-                            $total_refund_out += $packagesadvance->cash_amount;
-                        }
-                    }
-                }
+        foreach ($locationIds as $locationId) {
+            $location = $locations->get($locationId);
+            if (!$location) {
+                continue;
             }
 
-            $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-            $In_hand_balance = $total_revenue - $total_refund_out;
-            $total += $In_hand_balance;
+            $balance = (float) ($results->get($locationId)?->revenue ?? 0);
+
+            if ($balance > 0) {
+                $cityName = $location->city->name ?? '';
+                $reportData[] = [
+                    $cityName . ' - ' . $location->name,
+                    $balance,
+                ];
+                $total += $balance;
+            }
         }
+
+        return [$reportData, $total];
+    }
+
+    /**
+     * Collection total across all centres — single aggregate query.
+     */
+    public static function collectionbycenter(
+        array $locationIds,
+        ?int $accountId,
+        string $period,
+        mixed $request = null,
+    ): array {
+        if (empty($locationIds)) {
+            return [0];
+        }
+
+        [$startDate, $endDate] = self::resolveDateRange($period);
+
+        $result = DB::table('package_advances as pa')
+            ->join('payment_modes as pm', 'pa.payment_mode_id', '=', 'pm.id')
+            ->whereIn('pa.location_id', $locationIds)
+            ->where('pa.account_id', $accountId)
+            ->where('pa.created_at', '>=', $startDate)
+            ->where('pa.created_at', '<', $endDate)
+            ->where('pa.is_adjustment', 0)
+            ->where('pa.is_tax', 0)
+            ->where('pa.is_cancel', 0)
+            ->where('pa.cash_amount', '!=', 0)
+            ->whereNull('pa.deleted_at')
+            ->select(
+                DB::raw("SUM(CASE
+                    WHEN pa.cash_flow = 'in' AND pm.name IN ('Cash','Card','Bank/Wire Transfer')
+                    THEN pa.cash_amount ELSE 0 END) as revenue"),
+                DB::raw("SUM(CASE
+                    WHEN pa.cash_flow = 'out' AND pa.is_refund = 1
+                    THEN pa.cash_amount ELSE 0 END) as refunds"),
+            )
+            ->first();
+
+        $total = (float) ($result?->revenue ?? 0) - (float) ($result?->refunds ?? 0);
 
         return [$total];
+    }
+
+    /**
+     * Resolve period string to [startDate, endDate] for range queries.
+     * Returns Carbon instances for >= start AND < end (exclusive end).
+     *
+     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     */
+    private static function resolveDateRange(string $period): array
+    {
+        return match ($period) {
+            'today'     => [Carbon::today(), Carbon::tomorrow()],
+            'yesterday' => [Carbon::yesterday(), Carbon::today()],
+            'last7day', 'last7days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::tomorrow()],
+            'week'      => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
+            'thisMonth' => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()->addDay()],
+            'lastMonth', 'lastmonth' => [
+                Carbon::now()->subMonth()->startOfMonth(),
+                Carbon::now()->subMonth()->endOfMonth()->addDay(),
+            ],
+            default     => [Carbon::today(), Carbon::tomorrow()],
+        };
     }
 }

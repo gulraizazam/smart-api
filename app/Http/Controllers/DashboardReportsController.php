@@ -10,7 +10,6 @@ use App\Models\Services;
 use App\Models\User;
 use App\Services\Dashboard\DashboardChartService;
 use App\Services\Dashboard\DashboardRevenueService;
-use App\Services\Dashboard\DashboardStatsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +24,6 @@ class DashboardReportsController extends Controller
     protected string $unauthorized;
 
     public function __construct(
-        protected readonly DashboardStatsService $statsService,
         protected readonly DashboardRevenueService $revenueService,
         protected readonly DashboardChartService $chartService,
     ) {

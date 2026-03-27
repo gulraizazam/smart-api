@@ -35,9 +35,9 @@ class DashboardController extends Controller
         $userCentres = DashboardHelper::getUserCentres();
         [$startDate, $endDate] = DashboardHelper::getDateRangeFromRequest($request);
 
+        // Single query for both consultancies + treatments (was 2 separate queries)
         $data = array_merge(
-            $this->statsService->getConsultancies($startDate, $endDate, $userCentres),
-            $this->statsService->getTreatments($startDate, $endDate, $userCentres),
+            $this->statsService->getAppointmentStats($startDate, $endDate, $userCentres),
             $this->revenueService->getSalesByCentre($userCentres, $startDate, $endDate),
             $this->revenueService->getCollectionStats($userCentres, $request->type, $request),
             DashboardHelper::getDateTimeInfo(),

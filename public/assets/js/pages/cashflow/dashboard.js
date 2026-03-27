@@ -43,7 +43,7 @@
         dashboardXhr = $.ajax({
             url: apiBase + 'dashboard/data', type: 'GET', data: params,
             success: function (res) {
-                if (!res.success) { toastr.error(res.message || 'Failed to load dashboard'); return; }
+                if (!res.status) { toastr.error(res.message || 'Failed to load dashboard'); return; }
                 var d = res.data;
 
                 renderPendingActions(d.pending_actions);
@@ -453,7 +453,7 @@
             url: apiBase + 'dashboard/reconciliation', type: 'GET',
             success: function (res) {
                 var $r = $('#reconcile-result').removeClass('d-none');
-                if (!res.success) { $r.html('<div class="alert alert-danger">' + esc(res.message) + '</div>'); return; }
+                if (!res.status) { $r.html('<div class="alert alert-danger">' + esc(res.message) + '</div>'); return; }
 
                 var d = res.data;
                 var cls = d.is_balanced ? 'alert-success' : 'alert-danger';
