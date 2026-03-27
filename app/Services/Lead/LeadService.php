@@ -420,7 +420,10 @@ class LeadService
 
     public function getLeadForEdit(int $id): ?Leads
     {
-        return Leads::with('lead_service')->where([
+        return Leads::with([
+            'lead_service.service:id,name',
+            'lead_service.childservice:id,name',
+        ])->where([
             'id' => $id,
             'account_id' => Auth::user()->account_id,
         ])->first();
