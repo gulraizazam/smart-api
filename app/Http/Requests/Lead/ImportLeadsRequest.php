@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Lead;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,9 +17,9 @@ class ImportLeadsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'leads_file' => 'required|file|max:2048|mimes:xls,xlsx,csv,txt',
-            'update_records' => 'nullable|in:0,1',
-            'skip_lead_statuses' => 'nullable|in:0,1',
+            'leads_file' => ['required', 'file', 'max:2048', 'mimes:xls,xlsx,csv,txt'],
+            'update_records' => ['nullable', 'in:0,1'],
+            'skip_lead_statuses' => ['nullable', 'in:0,1'],
         ];
     }
 

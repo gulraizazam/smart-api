@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
@@ -43,7 +45,6 @@ class LeadStatusesController extends Controller
             $accountId = Auth::user()->account_id;
             $filters = getFilters($request->all());
 
-            // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->service->bulkDelete($ids, $accountId);
@@ -60,7 +61,6 @@ class LeadStatusesController extends Controller
                 ->orderBy('sort_no')
                 ->get();
 
-            // Set all statuses context for parent name resolution in resource
             LeadStatusResource::$allStatuses = $datatableData['allStatuses'];
 
             return ApiHelper::apiDataTable([

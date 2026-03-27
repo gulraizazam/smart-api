@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Lead;
 
 use App\Enums\Gender;
@@ -30,56 +32,68 @@ class LeadResource extends JsonResource
                 ? GeneralFunctions::prepareNumber4Call($this->phone)
                 : '***********',
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
-            'gender_label' => $this->gender instanceof Gender ? $this->gender->label() : (Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown'),
+            'gender_label' => $this->resolveGenderLabel(),
             'active' => $this->active,
             'city_id' => $this->city?->name ?? '',
             'cityId' => $this->city_id ?? 0,
-            'region_id' => $this->whenLoaded('region', fn() => $this->region?->name ?? 'N/A', 'N/A'),
-            'location' => $this->towns?->name ?? '',
+            'region_id' => $this->whenLoaded('region', fn(): string => $this->region?->name ?? 'N/A', 'N/A'),
+            'location' => $this->whenLoaded('location', fn(): string => $this->location?->name ?? '', $this->towns?->name ?? ''),
             'lead_status_id' => $this->resolveStatusName(),
             'service_id' => $this->when(
-                $this->relationLoaded('lead_service'),
-                fn() => $this->resolveServiceNames()
+                $this->relationLoaded('lead_service') || $this->relationLoaded('leadServices'),
+                fn(): string => $this->resolveServiceNames()
             ),
             'service_active' => $this->when(
-                $this->relationLoaded('lead_service'),
-                fn() => $this->resolveActiveServiceNames()
+                $this->relationLoaded('lead_service') || $this->relationLoaded('leadServices'),
+                fn(): string => $this->resolveActiveServiceNames()
             ),
             'child_service' => $this->when(
-                $this->relationLoaded('lead_service'),
-                fn() => $this->resolveChildServiceNames()
+                $this->relationLoaded('lead_service') || $this->relationLoaded('leadServices'),
+                fn(): string => $this->resolveChildServiceNames()
             ),
             'lead_source' => $this->when(
-                $this->relationLoaded('lead_source'),
-                fn() => $this->lead_source?->name
+                $this->relationLoaded('lead_source') || $this->relationLoaded('leadSource'),
+                fn(): ?string => $this->leadSource?->name ?? $this->lead_source?->name
             ),
             'created_at' => Carbon::parse($this->created_at)->format('F j,Y h:i A'),
             'created_by' => $this->when(
                 $this->relationLoaded('user'),
-                fn() => $this->user?->name ?? 'N/A'
+                fn(): string => $this->user?->name ?? 'N/A'
             ),
-            'comments' => LeadCommentResource::collection($this->whenLoaded('lead_comments')),
-            'services' => LeadServiceItemResource::collection($this->whenLoaded('lead_service')),
+            'comments' => LeadCommentResource::collection($this->whenLoaded('lead_comments', default: $this->whenLoaded('leadComments'))),
+            'services' => LeadServiceItemResource::collection($this->whenLoaded('lead_service', default: $this->whenLoaded('leadServices'))),
         ];
+    }
+
+    protected function resolveGenderLabel(): string
+    {
+        if ($this->gender instanceof Gender) {
+            return $this->gender->label();
+        }
+
+        return Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown';
     }
 
     protected function resolveStatusName(): string
     {
-        // Use batch-loaded lookup if available (avoids N+1 in datatable)
         if (!empty(self::$statusLookup)) {
             $statusId = $this->lead_status_id;
             $status = self::$statusLookup[$statusId] ?? null;
+
             if (!$status) {
                 return '';
             }
+
             $parentId = $status['parent_id'] ?? 0;
+
             return ($parentId == 0)
                 ? ($status['name'] ?? '')
                 : (self::$statusLookup[$parentId]['name'] ?? $status['name'] ?? '');
         }
 
-        // Fallback: use eager-loaded relation
-        $status = $this->relationLoaded('lead_status') ? $this->lead_status : null;
+        $status = $this->relationLoaded('lead_status') ? $this->lead_status
+            : ($this->relationLoaded('leadStatus') ? $this->leadStatus : null);
+
         if (!$status) {
             return '';
         }
@@ -94,7 +108,9 @@ class LeadResource extends JsonResource
 
     protected function resolveServiceNames(): string
     {
-        return $this->lead_service
+        $services = $this->relationLoaded('leadServices') ? $this->leadServices : $this->lead_service;
+
+        return $services
             ->pluck('service.name')
             ->filter()
             ->unique()
@@ -103,7 +119,9 @@ class LeadResource extends JsonResource
 
     protected function resolveActiveServiceNames(): string
     {
-        return $this->lead_service
+        $services = $this->relationLoaded('leadServices') ? $this->leadServices : $this->lead_service;
+
+        return $services
             ->where('status', 1)
             ->pluck('service.name')
             ->filter()
@@ -112,7 +130,9 @@ class LeadResource extends JsonResource
 
     protected function resolveChildServiceNames(): string
     {
-        return $this->lead_service
+        $services = $this->relationLoaded('leadServices') ? $this->leadServices : $this->lead_service;
+
+        return $services
             ->where('status', 1)
             ->pluck('childservice.name')
             ->filter()

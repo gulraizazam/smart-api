@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Lead;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,11 +17,11 @@ class UpdateLeadStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => 'required|numeric|exists:leads,id',
-            'lead_status_parent_id' => 'required|numeric|exists:lead_statuses,id',
-            'lead_status_chalid_id' => 'nullable|numeric|exists:lead_statuses,id',
-            'comment1' => 'nullable|string|max:1000',
-            'comment2' => 'nullable|string|max:1000',
+            'id' => ['required', 'integer', 'exists:leads,id'],
+            'lead_status_parent_id' => ['required', 'integer', 'exists:lead_statuses,id'],
+            'lead_status_chalid_id' => ['nullable', 'integer', 'exists:lead_statuses,id'],
+            'comment1' => ['nullable', 'string', 'max:1000'],
+            'comment2' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

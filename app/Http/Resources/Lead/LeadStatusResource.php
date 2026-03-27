@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Lead;
 
 use Illuminate\Http\Request;
@@ -8,7 +10,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class LeadStatusResource extends JsonResource
 {
     /**
-     * Optional: dictionary of all statuses for parent name resolution.
+     * Dictionary of all statuses for parent name resolution.
      */
     public static ?array $allStatuses = null;
 
