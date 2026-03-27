@@ -2129,7 +2129,7 @@ class AppointmentsController extends Controller
                 $data['referred_by'] = $patient->referred_by;
                 $data['name'] = $patient->name;
                 $data['email'] = $patient->email;
-                $data['gender'] = $patient->gender;
+                $data['gender'] = $patient->gender !== null ? (string) $patient->gender : null;
             }
         }
 
