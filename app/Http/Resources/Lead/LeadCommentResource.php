@@ -19,6 +19,10 @@ class LeadCommentResource extends JsonResource
                 $this->relationLoaded('user'),
                 fn(): string => $this->user?->name ?? 'N/A'
             ),
+            'user' => $this->when(
+                $this->relationLoaded('user'),
+                fn(): ?array => $this->user ? ['id' => $this->user->id, 'name' => $this->user->name] : null
+            ),
             'created_at' => Carbon::parse($this->created_at)->format('D M, j Y h:i A'),
         ];
     }
