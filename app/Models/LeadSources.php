@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
@@ -11,13 +14,21 @@ class LeadSources extends BaseModal
 {
     use SoftDeletes;
 
+    protected $table = 'lead_sources';
+
+    public static string $_table = 'lead_sources';
+
     protected $fillable = ['name', 'account_id', 'sort_no', 'active', 'created_at', 'updated_at'];
 
     public static array $_fillable = ['name', 'active'];
 
-    protected $table = 'lead_sources';
-
-    public static string $_table = 'lead_sources';
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+            'sort_no' => 'integer',
+        ];
+    }
 
     // =========================================================================
     // Relationships
@@ -56,7 +67,7 @@ class LeadSources extends BaseModal
         return self::forAccount()->active()->sorted()->pluck('name', 'id');
     }
 
-    public static function getActiveOnly(): \Illuminate\Database\Eloquent\Collection
+    public static function getActiveOnly(): Collection
     {
         return self::active()->sorted()->get();
     }

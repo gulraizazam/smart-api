@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Lead;
 
 use Illuminate\Http\Request;
@@ -18,15 +20,17 @@ class LeadServiceItemResource extends JsonResource
             'lead_status_id' => $this->lead_status_id,
             'service' => $this->when(
                 $this->relationLoaded('service'),
-                fn() => ['id' => $this->service?->id, 'name' => $this->service?->name]
+                fn(): ?array => $this->service ? ['id' => $this->service->id, 'name' => $this->service->name] : null,
             ),
             'child_service' => $this->when(
                 $this->relationLoaded('childservice'),
-                fn() => ['id' => $this->childservice?->id, 'name' => $this->childservice?->name]
+                fn(): ?array => $this->childservice
+                    ? ['id' => $this->childservice->id, 'name' => $this->childservice->name]
+                    : null,
             ),
             'lead_status' => $this->when(
                 $this->relationLoaded('leadStatus'),
-                fn() => ['id' => $this->leadStatus?->id, 'name' => $this->leadStatus?->name]
+                fn(): ?array => $this->leadStatus ? ['id' => $this->leadStatus->id, 'name' => $this->leadStatus->name] : null,
             ),
         ];
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ACL;
@@ -17,16 +19,12 @@ use Illuminate\View\View;
 
 /**
  * Admin LeadsController - View Routes Only
- * 
- * All API/AJAX operations are handled by App\Http\Controllers\Api\LeadsController
+ *
+ * All API/AJAX operations are handled by App\Http\Controllers\Api\LeadsController.
  * This controller only handles view rendering and legacy popup functionality.
  */
 class LeadsController extends Controller
 {
-
-    /**
-     * Display leads listing page.
-     */
     public function index(): View
     {
         abort_unless(Gate::allows('leads_manage'), 401);
@@ -34,9 +32,6 @@ class LeadsController extends Controller
         return view('admin.leads.index');
     }
 
-    /**
-     * Display junk leads page.
-     */
     public function junk(): View
     {
         abort_unless(Gate::allows('leads_junk'), 401);
@@ -44,9 +39,6 @@ class LeadsController extends Controller
         return view('admin.leads.junk');
     }
 
-    /**
-     * Display import leads page.
-     */
     public function importLeads(): View|RedirectResponse
     {
         if (!Gate::allows('leads_import')) {
@@ -57,9 +49,6 @@ class LeadsController extends Controller
         return view('admin.leads.import');
     }
 
-    /**
-     * Legacy popup for creating lead (used in appointments).
-     */
     public function make_pop(): View
     {
         abort_unless(Gate::allows('leads_create'), 401);
@@ -93,18 +82,12 @@ class LeadsController extends Controller
             $employees->prepend('Select a Referrer', '');
         }
 
-        $edit_status = 0;
-        $leadServices = null;
-
         return view('admin.leads.createTo', compact(
             'Services', 'cities', 'lead_sources', 'lead_statuses',
-            'lead', 'leadServices', 'employees', 'edit_status', 'towns'
-        ));
+            'lead', 'employees', 'towns'
+        ))->with(['leadServices' => null, 'edit_status' => 0]);
     }
 
-    /**
-     * Update leads (legacy route).
-     */
     public function leadupdate(): RedirectResponse
     {
         return redirect()->route('admin.leads.index');

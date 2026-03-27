@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +13,10 @@ use Illuminate\Support\Facades\Auth;
 class LeadStatuses extends BaseModal
 {
     use SoftDeletes;
+
+    protected $table = 'lead_statuses';
+
+    public static string $_table = 'lead_statuses';
 
     protected $fillable = [
         'name', 'parent_id', 'account_id', 'is_comment', 'is_default',
@@ -22,9 +29,20 @@ class LeadStatuses extends BaseModal
         'is_booked', 'is_arrived', 'is_converted', 'is_junk',
     ];
 
-    protected $table = 'lead_statuses';
-
-    public static string $_table = 'lead_statuses';
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+            'is_comment' => 'boolean',
+            'is_default' => 'boolean',
+            'is_booked' => 'boolean',
+            'is_arrived' => 'boolean',
+            'is_converted' => 'boolean',
+            'is_junk' => 'boolean',
+            'parent_id' => 'integer',
+            'sort_no' => 'integer',
+        ];
+    }
 
     // =========================================================================
     // Relationships
@@ -85,7 +103,7 @@ class LeadStatuses extends BaseModal
         return $query->sorted()->pluck('name', 'id');
     }
 
-    public static function getActiveOnly(): \Illuminate\Database\Eloquent\Collection
+    public static function getActiveOnly(): Collection
     {
         return self::active()->sorted()->get();
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exceptions;
 
 use Exception;
@@ -27,7 +29,7 @@ class LeadException extends Exception
 
     public static function phoneAlreadyExists(string $phone): self
     {
-        return new self("A lead with phone number {$phone} already exists.", 409, ['phone' => $phone]);
+        return new self("A lead with this phone number already exists.", 409, ['phone_last4' => substr($phone, -4)]);
     }
 
     public static function statusChangeNotAllowed(string $currentStatus): self

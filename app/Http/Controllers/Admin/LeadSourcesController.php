@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
@@ -44,7 +46,6 @@ class LeadSourcesController extends Controller
             $accountId = Auth::user()->account_id;
             $filters = getFilters($request->all());
 
-            // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->service->bulkDelete($ids, $accountId);

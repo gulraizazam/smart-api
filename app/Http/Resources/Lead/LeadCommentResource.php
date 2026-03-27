@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Lead;
 
 use Illuminate\Http\Request;
@@ -15,7 +17,7 @@ class LeadCommentResource extends JsonResource
             'comment' => $this->comment,
             'created_by' => $this->when(
                 $this->relationLoaded('user'),
-                fn() => $this->user?->name ?? 'N/A'
+                fn(): string => $this->user?->name ?? 'N/A'
             ),
             'created_at' => Carbon::parse($this->created_at)->format('D M, j Y h:i A'),
         ];

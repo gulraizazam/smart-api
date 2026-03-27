@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\Gender;
@@ -13,6 +15,10 @@ class Leads extends BaseModal
 {
     use SoftDeletes;
 
+    protected $table = 'leads';
+
+    public static string $_table = 'leads';
+
     protected $fillable = [
         'patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id',
         'msg_count', 'active', 'created_by', 'updated_by', 'converted_by',
@@ -24,10 +30,6 @@ class Leads extends BaseModal
         'region_id', 'city_id', 'lead_status_id', 'lead_source_id',
         'msg_count', 'service_id', 'town_id',
     ];
-
-    protected $table = 'leads';
-
-    public static string $_table = 'leads';
 
     protected function casts(): array
     {
@@ -48,13 +50,13 @@ class Leads extends BaseModal
     // Relationships
     // =========================================================================
 
-    public function lead_service(): HasMany
+    public function leadServices(): HasMany
     {
         return $this->hasMany(LeadsServices::class, 'lead_id')
-            ->with('service:id,name,parent_id', 'childservice:id,name,parent_id', 'leadStatus:id,name');
+            ->with('service:id,name,parent_id', 'childService:id,name,parent_id', 'leadStatus:id,name');
     }
 
-    public function active_lead_service(): HasMany
+    public function activeLeadServices(): HasMany
     {
         return $this->hasMany(LeadsServices::class, 'lead_id')->where('status', 1);
     }
@@ -74,12 +76,12 @@ class Leads extends BaseModal
         return $this->belongsTo(Regions::class)->withTrashed();
     }
 
-    public function lead_status(): BelongsTo
+    public function leadStatus(): BelongsTo
     {
         return $this->belongsTo(LeadStatuses::class)->withTrashed();
     }
 
-    public function lead_source(): BelongsTo
+    public function leadSource(): BelongsTo
     {
         return $this->belongsTo(LeadSources::class)->withTrashed();
     }
@@ -89,7 +91,7 @@ class Leads extends BaseModal
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
-    public function lead_comments(): HasMany
+    public function leadComments(): HasMany
     {
         return $this->hasMany(LeadComments::class, 'lead_id')->orderByDesc('created_at');
     }
@@ -99,9 +101,43 @@ class Leads extends BaseModal
         return $this->hasMany(Appointments::class, 'lead_id');
     }
 
-    public function towns(): BelongsTo
+    public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
+    }
+
+    // =========================================================================
+    // Legacy Relationship Aliases (backward compatibility)
+    // =========================================================================
+
+    public function lead_service(): HasMany
+    {
+        return $this->leadServices();
+    }
+
+    public function active_lead_service(): HasMany
+    {
+        return $this->activeLeadServices();
+    }
+
+    public function lead_status(): BelongsTo
+    {
+        return $this->leadStatus();
+    }
+
+    public function lead_source(): BelongsTo
+    {
+        return $this->leadSource();
+    }
+
+    public function lead_comments(): HasMany
+    {
+        return $this->leadComments();
+    }
+
+    public function towns(): BelongsTo
+    {
+        return $this->location();
     }
 
     // =========================================================================
@@ -120,7 +156,7 @@ class Leads extends BaseModal
 
     public function scopeForCities(Builder $query, array $cityIds): Builder
     {
-        return $query->where(function (Builder $q) use ($cityIds) {
+        return $query->where(function (Builder $q) use ($cityIds): void {
             $q->whereIn('city_id', $cityIds)->orWhereNull('city_id');
         });
     }

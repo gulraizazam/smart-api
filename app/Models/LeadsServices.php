@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,10 +12,28 @@ class LeadsServices extends Model
 {
     use HasFactory;
 
+    protected $table = 'leads_services';
+
     protected $fillable = [
         'lead_id', 'service_id', 'child_service_id', 'status',
         'meta_lead_id', 'lead_status_id', 'consultancy_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'lead_id' => 'integer',
+            'service_id' => 'integer',
+            'child_service_id' => 'integer',
+            'status' => 'integer',
+            'lead_status_id' => 'integer',
+            'consultancy_id' => 'integer',
+        ];
+    }
+
+    // =========================================================================
+    // Relationships
+    // =========================================================================
 
     public function service(): BelongsTo
     {

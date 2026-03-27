@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources\Lead;
 
 use App\Enums\Gender;
@@ -23,36 +25,61 @@ class LeadDetailResource extends JsonResource
                 ? GeneralFunctions::prepareNumber4Call($this->phone)
                 : '***********',
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
-            'gender_label' => $this->gender instanceof Gender ? $this->gender->label() : (Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown'),
+            'gender_label' => $this->resolveGenderLabel(),
             'active' => $this->active,
             'meta_lead_id' => $this->meta_lead_id,
             'referred_by' => $this->referred_by,
-            'city' => $this->when($this->relationLoaded('city'), fn() => [
-                'id' => $this->city?->id,
-                'name' => $this->city?->name,
-            ]),
-            'region' => $this->when($this->relationLoaded('region'), fn() => [
-                'id' => $this->region?->id,
-                'name' => $this->region?->name,
-            ]),
-            'location' => $this->when($this->relationLoaded('towns'), fn() => [
-                'id' => $this->towns?->id,
-                'name' => $this->towns?->name,
-            ]),
-            'lead_status' => $this->when($this->relationLoaded('lead_status'), fn() => [
-                'id' => $this->lead_status?->id,
-                'name' => $this->lead_status?->name,
-                'parent_id' => $this->lead_status?->parent_id,
-            ]),
-            'lead_source' => $this->when($this->relationLoaded('lead_source'), fn() => [
-                'id' => $this->lead_source?->id,
-                'name' => $this->lead_source?->name,
-            ]),
-            'services' => LeadServiceItemResource::collection($this->whenLoaded('lead_service')),
-            'comments' => LeadCommentResource::collection($this->whenLoaded('lead_comments')),
-            'created_by' => $this->when($this->relationLoaded('user'), fn() => $this->user?->name),
+            'city' => $this->when(
+                $this->relationLoaded('city'),
+                fn(): ?array => $this->city ? ['id' => $this->city->id, 'name' => $this->city->name] : null,
+            ),
+            'region' => $this->when(
+                $this->relationLoaded('region'),
+                fn(): ?array => $this->region ? ['id' => $this->region->id, 'name' => $this->region->name] : null,
+            ),
+            'location' => $this->when(
+                $this->relationLoaded('towns') || $this->relationLoaded('location'),
+                fn(): ?array => ($this->location ?? $this->towns)
+                    ? ['id' => ($this->location ?? $this->towns)->id, 'name' => ($this->location ?? $this->towns)->name]
+                    : null,
+            ),
+            'lead_status' => $this->when(
+                $this->relationLoaded('lead_status') || $this->relationLoaded('leadStatus'),
+                fn(): ?array => ($this->leadStatus ?? $this->lead_status)
+                    ? [
+                        'id' => ($this->leadStatus ?? $this->lead_status)->id,
+                        'name' => ($this->leadStatus ?? $this->lead_status)->name,
+                        'parent_id' => ($this->leadStatus ?? $this->lead_status)->parent_id,
+                    ]
+                    : null,
+            ),
+            'lead_source' => $this->when(
+                $this->relationLoaded('lead_source') || $this->relationLoaded('leadSource'),
+                fn(): ?array => ($this->leadSource ?? $this->lead_source)
+                    ? ['id' => ($this->leadSource ?? $this->lead_source)->id, 'name' => ($this->leadSource ?? $this->lead_source)->name]
+                    : null,
+            ),
+            'services' => LeadServiceItemResource::collection(
+                $this->whenLoaded('lead_service', default: $this->whenLoaded('leadServices'))
+            ),
+            'comments' => LeadCommentResource::collection(
+                $this->whenLoaded('lead_comments', default: $this->whenLoaded('leadComments'))
+            ),
+            'created_by' => $this->when(
+                $this->relationLoaded('user'),
+                fn(): ?string => $this->user?->name,
+            ),
             'created_at' => Carbon::parse($this->created_at)->format('F j,Y h:i A'),
             'updated_at' => $this->updated_at?->format('F j,Y h:i A'),
         ];
+    }
+
+    protected function resolveGenderLabel(): string
+    {
+        if ($this->gender instanceof Gender) {
+            return $this->gender->label();
+        }
+
+        return Gender::tryFrom((int) $this->gender)?->label() ?? 'Unknown';
     }
 }
