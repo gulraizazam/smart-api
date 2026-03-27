@@ -306,12 +306,16 @@ class ConversionService
         array $extraWhere = [],
         array $eagerLoad = ['location:id,name']
     ): Collection {
+        // Build status IDs from dynamic lookup (avoid hardcoded [2, 16])
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
         $query = Appointments::with($eagerLoad)
             ->leftJoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 1)
-            ->whereIn('appointments.appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds())
+            ->whereIn('appointments.appointment_status_id', $statusIds)
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereIn('appointments.location_id', $locations)
+            ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
             ->where('package_advances.cash_amount', '>', 0)
             ->where('package_advances.created_at', '>=', $startDate . ' 00:00:00')
             ->where('package_advances.created_at', '<=', $endDate . ' 23:59:59')
@@ -345,10 +349,13 @@ class ConversionService
         ?array $doctorIds = null,
         array $extraWhere = []
     ): int {
+        // Build status IDs from dynamic lookup (avoid hardcoded [2, 16])
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
         $query = Appointments::whereIn('location_id', $locations)
             ->where('appointment_type_id', 1)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->whereIn('appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds());
+            ->whereIn('appointment_status_id', $statusIds);
 
         if ($doctorIds !== null) {
             $query->whereIn('doctor_id', $doctorIds);
@@ -382,10 +389,12 @@ class ConversionService
         ?array $doctorIds = null,
         array $extraWhere = []
     ): array {
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
         $query = Appointments::whereIn('location_id', $locations)
             ->where('appointment_type_id', 1)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->whereIn('appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds());
+            ->whereIn('appointment_status_id', $statusIds);
 
         if ($doctorIds !== null) {
             $query->whereIn('doctor_id', $doctorIds);
@@ -422,9 +431,11 @@ class ConversionService
         string $endDate,
         array $extraWhere = []
     ): Collection {
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
         $query = Appointments::join('services', 'appointments.service_id', '=', 'services.id')
             ->where('appointments.appointment_type_id', 1)
-            ->whereIn('appointments.appointment_status_id', DoctorDashboardHelper::getConsultationStatusIds())
+            ->whereIn('appointments.appointment_status_id', $statusIds)
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereIn('appointments.location_id', $locations)
             ->whereBetween('appointments.scheduled_date', [$startDate, $endDate]);
@@ -457,19 +468,7 @@ class ConversionService
             return $this->emptyDoctorResult();
         }
 
-        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
-
-        // Total arrived consultations
-        $totalArrived = DB::table('appointments')
-            ->where('doctor_id', $doctorId)
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', $consultationStatusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->count();
-
-        if ($totalArrived === 0) {
-            return $this->emptyDoctorResult();
-        }
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
 
         // Get all locations where this doctor is allocated
         $locations = DB::table('doctor_has_locations')
@@ -486,6 +485,19 @@ class ConversionService
                 ->distinct()
                 ->pluck('location_id')
                 ->toArray();
+        }
+
+        // Total arrived consultations (filtered by allocated locations to match conversion report)
+        $totalArrived = DB::table('appointments')
+            ->where('doctor_id', $doctorId)
+            ->where('appointment_type_id', 1)
+            ->whereIn('appointment_status_id', $statusIds)
+            ->whereIn('location_id', $locations)
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->count();
+
+        if ($totalArrived === 0) {
+            return $this->emptyDoctorResult();
         }
 
         // Fetch candidate appointments using shared logic
