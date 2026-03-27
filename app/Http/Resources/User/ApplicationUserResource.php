@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 class ApplicationUserResource extends JsonResource
 {
     public static array $locationLookup = [];
+    public static array $locationIdsByUser = [];
 
     public function toArray(Request $request): array
     {
@@ -45,7 +46,7 @@ class ApplicationUserResource extends JsonResource
 
     private function resolveLocations(): array
     {
-        $locationIds = $this->additional['location_ids'][$this->id] ?? [];
+        $locationIds = self::$locationIdsByUser[$this->id] ?? [];
 
         return collect($locationIds)
             ->filter(fn (int $id): bool => isset(self::$locationLookup[$id]))
