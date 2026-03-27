@@ -135,15 +135,22 @@ class ConsultancyInvoiceController extends Controller
     public function saveinvoice(Request $request): JsonResponse
     {
         if (!Gate::allows('appointments_manage')) {
-            return $this->errorResponse('You are not authorized to create invoices.', 403);
+            return response()->json(['status' => false, 'message' => 'You are not authorized to create invoices.'], 403);
         }
 
         try {
             $result = $this->invoiceService->saveInvoice($request->all());
 
-            return $this->successResponse('Invoice created successfully', $result);
+            // Legacy response format - JS checks resposne.status and resposne.data.invoice_id
+            return response()->json([
+                'status' => true,
+                'data' => $result,
+            ]);
         } catch (\Throwable $e) {
-            return $this->handleException($e, 'Error saving invoice');
+            return response()->json([
+                'status' => false,
+                'message' => config('app.debug') ? $e->getMessage() : 'Something went wrong, please try again later.',
+            ]);
         }
     }
 }
