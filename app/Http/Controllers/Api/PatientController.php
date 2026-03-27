@@ -491,6 +491,7 @@ class PatientController extends Controller
     private function respond(bool $success, string $message, mixed $data = null, int $httpCode = 200, array $errors = []): JsonResponse
     {
         return response()->json([
+            'status' => $success,
             'success' => $success,
             'message' => $message,
             'data' => $data,
