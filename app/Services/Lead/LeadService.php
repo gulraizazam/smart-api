@@ -413,7 +413,7 @@ class LeadService
             'lead_status:id,name,parent_id',
             'lead_service.service:id,name',
             'lead_service.childservice:id,name',
-            'lead_service.lead_status:id,name',
+            'lead_service.leadStatus:id,name',
             'user:id,name',
         ])->find($id);
     }
