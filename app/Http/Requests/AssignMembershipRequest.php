@@ -8,7 +8,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PatientDocumentRequest extends FormRequest
+class AssignMembershipRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,11 +18,15 @@ class PatientDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document_type' => 'required|string|in:consent_form,consultation_form,others',
-            'file' => $this->isMethod('POST')
-                ? 'required|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240'
-                : 'nullable|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
+            'patient_id' => 'sometimes|integer|exists:users,id',
+            'id' => 'sometimes|integer|exists:users,id',
+            'membership_code' => 'required|string|max:100',
         ];
+    }
+
+    public function patientId(): int
+    {
+        return (int) ($this->input('patient_id') ?? $this->input('id'));
     }
 
     protected function failedValidation(Validator $validator): void

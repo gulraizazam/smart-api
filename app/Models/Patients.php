@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
@@ -47,45 +49,33 @@ class Patients extends BaseModal
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Patient code in C-{id} format (e.g. C-1234).
-     */
     protected function patientCode(): Attribute
     {
         return Attribute::make(
-            get: fn() => "C-{$this->id}",
+            get: fn (): string => "C-{$this->id}",
         );
     }
 
-    /**
-     * Profile image URL with fallback to default avatar.
-     */
     protected function profileImageUrl(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->image_src
+            get: fn (): string => $this->image_src
                 ? asset('storage/patient_image/' . $this->image_src)
                 : asset('images/default-avatar.png'),
         );
     }
 
-    /**
-     * Formatted phone number for display.
-     */
     protected function formattedPhone(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->phone ? GeneralFunctions::prepareNumber4Call($this->phone) : null,
+            get: fn (): ?string => $this->phone ? GeneralFunctions::prepareNumber4Call($this->phone) : null,
         );
     }
 
-    /**
-     * Whether this patient is currently active.
-     */
     protected function isActive(): Attribute
     {
         return Attribute::make(
-            get: fn() => (bool) $this->active,
+            get: fn (): bool => (bool) $this->active,
         );
     }
 
@@ -193,12 +183,12 @@ class Patients extends BaseModal
     |--------------------------------------------------------------------------
     */
 
-    public static function getAll(int $account_id)
+    public static function getAll(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        return self::patientsOnly()->active()->forAccount($account_id)->get();
+        return self::patientsOnly()->active()->forAccount($accountId)->get();
     }
 
-    public static function getActiveOnly(int|array|false $patientId = false)
+    public static function getActiveOnly(int|array|false $patientId = false): \Illuminate\Database\Eloquent\Collection
     {
         $query = self::patientsOnly()->active();
 
@@ -209,15 +199,11 @@ class Patients extends BaseModal
         return $query->orderBy('name')->get();
     }
 
-    /**
-     * Optimized patient search with caching (50-100X faster than legacy methods).
-     * Use for all patient searches: referred_by, treatments, plans, etc.
-     */
-    public static function getPatientSearchOptimized(string $name, int $account_id)
+    public static function getPatientSearchOptimized(string $name, int $accountId): array
     {
-        $cacheKey = "patient_search_{$account_id}_" . md5($name);
+        $cacheKey = "patient_search_{$accountId}_" . md5($name);
 
-        return Cache::remember($cacheKey, 300, function () use ($name, $account_id) {
+        return Cache::remember($cacheKey, 300, function () use ($name, $accountId): array {
             $cleaned = strtr($name, [' ' => '', '-' => '', '+' => '', 'C-' => '', 'c-' => '']);
 
             if (ctype_digit($cleaned)) {
@@ -235,7 +221,7 @@ class Patients extends BaseModal
                          WHEN phone = ? THEN 1 WHEN phone = ? THEN 2 WHEN id = ? THEN 3 ELSE 4
                      END, id DESC
                      LIMIT 10",
-                    [$account_id, $phone, $phone.'%', $cleaned, $cleaned.'%', $cleaned, $phone, $cleaned, $cleaned]
+                    [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned, $phone, $cleaned, $cleaned]
                 );
             }
 
@@ -244,38 +230,33 @@ class Patients extends BaseModal
                  FROM users
                  WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
                  ORDER BY id DESC LIMIT 10",
-                [$account_id, $name.'%']
+                [$accountId, $name . '%']
             );
         });
     }
 
-    /**
-     * Ajax patient search by ID or name (with membership data for orders).
-     */
-    public static function getPatientidAjaxOrder(string $name, int $account_id)
+    public static function getPatientidAjaxOrder(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         $users = collect();
 
-        // Search by C-ID format
         if (stripos($name, 'C-') !== false) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
-            $users = self::patientsOnly()->active()->forAccount($account_id)
+            $users = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId)
                 ->select('name', 'id', 'phone')
                 ->get();
         } elseif (is_numeric($name)) {
-            $users = self::patientsOnly()->active()->forAccount($account_id)
+            $users = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $name)
                 ->select('name', 'id', 'phone')
                 ->get();
         }
 
-        // Fallback to name/phone search
         if ($users->isEmpty()) {
             $search = GeneralFunctions::patientSearch($name);
             $phoneNumeric = GeneralFunctions::clearnString($search);
 
-            $query = self::patientsOnly()->active()->forAccount($account_id);
+            $query = self::patientsOnly()->active()->forAccount($accountId);
 
             $users = is_numeric($phoneNumeric)
                 ? $query->where('phone', 'LIKE', '%' . GeneralFunctions::cleanNumber($search) . '%')
@@ -284,7 +265,6 @@ class Patients extends BaseModal
                     ->select('name', 'id', 'phone')->get();
         }
 
-        // Eager-load membership data to avoid N+1
         $patientIds = $users->pluck('id');
         $memberships = Membership::whereIn('patient_id', $patientIds)
             ->where('end_date', '>=', now())
@@ -304,21 +284,18 @@ class Patients extends BaseModal
         return $users;
     }
 
-    /**
-     * @deprecated Use getPatientSearchOptimized() instead
-     */
-    public static function getPatientidAjax(string $name, int $account_id)
+    public static function getPatientidAjax(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         if (stripos($name, 'C-') !== false) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
-            return self::patientsOnly()->active()->forAccount($account_id)
+            return self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId)
                 ->select('name', 'id', 'phone')
                 ->get();
         }
 
         if (is_numeric($name)) {
-            $users = self::patientsOnly()->active()->forAccount($account_id)
+            $users = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $name)
                 ->select('name', 'id', 'phone')
                 ->get();
@@ -330,7 +307,7 @@ class Patients extends BaseModal
         $search = GeneralFunctions::patientSearch($name);
         $phoneNumeric = GeneralFunctions::clearnString($search);
 
-        $query = self::patientsOnly()->active()->forAccount($account_id);
+        $query = self::patientsOnly()->active()->forAccount($accountId);
 
         if (is_numeric($phoneNumeric)) {
             $phone = GeneralFunctions::cleanNumber($search);
@@ -342,21 +319,21 @@ class Patients extends BaseModal
             ->select('name', 'id', 'phone')->get();
     }
 
-    public static function getPatientPhoneAjax(string $phone, int $account_id)
+    public static function getPatientPhoneAjax(string $phone, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        return self::patientsOnly()->active()->forAccount($account_id)
+        return self::patientsOnly()->active()->forAccount($accountId)
             ->where('phone', 'LIKE', "%{$phone}%")
             ->select('name', 'id', 'phone')
             ->get();
     }
 
-    public static function getByPhone(string $phone, int|false $account_id = false, int|false $patient_id = false): ?self
+    public static function getByPhone(string $phone, int|false $accountId = false, int|false $patientId = false): ?self
     {
         $query = self::where('phone', $phone)
             ->where('user_type_id', self::$USER_TYPE);
 
-        if ($patient_id) {
-            $query->where('id', $patient_id);
+        if ($patientId) {
+            $query->where('id', $patientId);
         }
 
         return $query->first();
@@ -442,34 +419,33 @@ class Patients extends BaseModal
     |--------------------------------------------------------------------------
     */
 
-    public static function isChildExists(int $id, int $account_id): bool
+    public static function isChildExists(int $id, int $accountId): bool
     {
-        return Leads::where(['patient_id' => $id, 'account_id' => $account_id])->exists()
-            || Appointments::where(['patient_id' => $id, 'account_id' => $account_id])->exists()
-            || CustomFormFeedbacks::where(['reference_id' => $id, 'account_id' => $account_id])->exists()
+        return Leads::where(['patient_id' => $id, 'account_id' => $accountId])->exists()
+            || Appointments::where(['patient_id' => $id, 'account_id' => $accountId])->exists()
+            || CustomFormFeedbacks::where(['reference_id' => $id, 'account_id' => $accountId])->exists()
             || Documents::where('user_id', $id)->exists()
-            || Packages::where(['patient_id' => $id, 'account_id' => $account_id])->exists()
+            || Packages::where(['patient_id' => $id, 'account_id' => $accountId])->exists()
             || Measurement::where('patient_id', $id)->exists()
             || Medical::where('patient_id', $id)->exists()
-            || Invoices::where(['patient_id' => $id, 'account_id' => $account_id])->exists();
+            || Invoices::where(['patient_id' => $id, 'account_id' => $accountId])->exists();
     }
 
-    public static function getChildRecordsDetails(int $id, int $account_id): array
+    public static function getChildRecordsDetails(int $id, int $accountId): array
     {
         $checks = [
-            'Leads' => Leads::where(['patient_id' => $id, 'account_id' => $account_id])->count(),
-            'Appointments' => Appointments::where(['patient_id' => $id, 'account_id' => $account_id])->count(),
-            'Custom Forms' => CustomFormFeedbacks::where(['reference_id' => $id, 'account_id' => $account_id])->count(),
+            'Leads' => Leads::where(['patient_id' => $id, 'account_id' => $accountId])->count(),
+            'Appointments' => Appointments::where(['patient_id' => $id, 'account_id' => $accountId])->count(),
+            'Custom Forms' => CustomFormFeedbacks::where(['reference_id' => $id, 'account_id' => $accountId])->count(),
             'Documents' => Documents::where('user_id', $id)->count(),
-            'Packages' => Packages::where(['patient_id' => $id, 'account_id' => $account_id])->count(),
+            'Packages' => Packages::where(['patient_id' => $id, 'account_id' => $accountId])->count(),
             'Measurements' => Measurement::where('patient_id', $id)->count(),
             'Medical Records' => Medical::where('patient_id', $id)->count(),
-            'Invoices' => Invoices::where(['patient_id' => $id, 'account_id' => $account_id])->count(),
+            'Invoices' => Invoices::where(['patient_id' => $id, 'account_id' => $accountId])->count(),
         ];
 
         return array_filter(
-            array_map(fn($label, $count) => $count > 0 ? "{$label} ({$count})" : null, array_keys($checks), $checks)
+            array_map(fn (string $label, int $count): ?string => $count > 0 ? "{$label} ({$count})" : null, array_keys($checks), $checks)
         );
     }
-
 }

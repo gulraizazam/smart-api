@@ -8,7 +8,7 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class PatientDocumentRequest extends FormRequest
+class PatientImageRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,10 +18,16 @@ class PatientDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document_type' => 'required|string|in:consent_form,consultation_form,others',
-            'file' => $this->isMethod('POST')
-                ? 'required|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240'
-                : 'nullable|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
+            'patient_id' => 'required|integer|exists:users,id',
+            'file' => 'required|file|mimes:jpg,jpeg,png,gif|max:5120',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'file.required' => 'Please provide a valid image.',
+            'file.mimes' => 'JPG, JPEG, PNG, GIF only allowed.',
         ];
     }
 
