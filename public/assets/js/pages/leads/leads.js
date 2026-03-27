@@ -3,14 +3,6 @@ if (typeof lead_type !== 'undefined' && lead_type != '') {
     table_url = route('admin.leads.datatable', {type: lead_type});
 }
 var table_columns = [{
-    field: 'id',
-    sortable: false,
-    width: 20,
-    title: renderCheckbox(),
-    template: function(data) {
-        return childCheckbox(data, data.lead_id);
-    }
-}, {
     field: 'lead_id',
     title: 'ID',
     sortable: false,
