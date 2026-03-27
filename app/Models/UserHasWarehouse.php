@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserHasWarehouse extends Model
 {
@@ -11,17 +14,13 @@ class UserHasWarehouse extends Model
 
     protected $fillable = ['user_id', 'warehouse_id'];
 
-    public static function createRecord($data, $parent_data)
+    public function user(): BelongsTo
     {
-        $record = self::insert($data);
-
-        return $record;
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    public static function updateRecord($data, $parent_data)
+    public function warehouse(): BelongsTo
     {
-        $record = self::insert($data);
-
-        return $record;
+        return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 }

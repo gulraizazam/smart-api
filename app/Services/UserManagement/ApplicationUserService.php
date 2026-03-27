@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\UserManagement;
 
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Http\Resources\User\ApplicationUserResource;
 use App\Models\AuditTrails;
 use App\Models\Locations;
+use App\Models\Patients;
 use App\Models\RoleHasUsers;
 use App\Models\User;
 use App\Models\UserHasLocations;
@@ -17,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Role;
 
 class ApplicationUserService
@@ -36,7 +41,7 @@ class ApplicationUserService
                 Config::get('constants.practitioner_id'),
                 Config::get('constants.patient_id'),
             ])
-            ->where('users.email', '!=', 'superadmin@redsignal.net')
+            ->where('users.email', '!=', config('constants.super_admin_email', 'superadmin@redsignal.net'))
             ->where('users.account_id', $user->account_id)
             ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1))
             ->groupBy('users.id');
@@ -49,6 +54,7 @@ class ApplicationUserService
 
         $users = (clone $baseQuery)
             ->select('users.*')
+            ->with(['user_has_locations', 'role_has_users'])
             ->orderBy($params['orderBy'] ?? 'users.name', $params['order'] ?? 'asc')
             ->offset($params['offset'] ?? 0)
             ->limit($params['limit'] ?? 30)
@@ -68,7 +74,6 @@ class ApplicationUserService
         $where = $this->addFilter($where, $params, 'name', 'users.name', 'like', $userId, $applyFilter);
         $where = $this->addFilter($where, $params, 'email', 'users.email', 'like', $userId, $applyFilter);
 
-        // Phone filter (needs number cleaning)
         if (!empty($params['phone'])) {
             $phone = GeneralFunctions::cleanNumber($params['phone']);
             $where[] = ['users.phone', 'like', "%{$phone}%"];
@@ -80,11 +85,9 @@ class ApplicationUserService
         }
 
         $where = $this->addFilter($where, $params, 'gender', 'users.gender', '=', $userId, $applyFilter);
-
         $where = $this->addFilter($where, $params, 'location_id', 'user_has_locations.location_id', '=', $userId, $applyFilter);
         $where = $this->addFilter($where, $params, 'role_id', 'role_has_users.role_id', '=', $userId, $applyFilter);
 
-        // Status filter - handle "0" as valid value
         if (isset($params['status']) && $params['status'] !== '' && $params['status'] !== null) {
             $where[] = ['users.active', '=', (int) $params['status']];
             Filters::put($userId, self::FILTER_KEY, 'status', (int) $params['status']);
@@ -97,7 +100,6 @@ class ApplicationUserService
             }
         }
 
-        // Date range filter
         if (!empty($params['created_at'])) {
             $dateRange = explode(' - ', $params['created_at']);
             $where[] = ['users.created_at', '>=', Carbon::parse($dateRange[0])->startOfDay()];
@@ -126,34 +128,22 @@ class ApplicationUserService
         return $where;
     }
 
-    private function formatDatatableData($users): array
+    private function formatDatatableData(Collection $users): array
     {
         $locations = Locations::all()->getDictionary();
         $accountId = Auth::user()->account_id;
 
-        return $users->map(function (User $user) use ($locations, $accountId): array {
+        ApplicationUserResource::$locationLookup = $locations;
+
+        $locationIdsByUser = [];
+        foreach ($users as $user) {
             $userHasLocations = $user->user_has_locations?->pluck('location_id') ?? collect();
-            $locationIds = LocationsWidget::generatelocationArrayEdit($userHasLocations, $accountId, $user);
+            $locationIdsByUser[$user->id] = LocationsWidget::generatelocationArrayEdit($userHasLocations, $accountId, $user) ?: [];
+        }
 
-            $userLocations = collect($locationIds ?? [])
-                ->filter(fn ($id) => isset($locations[$id]))
-                ->map(fn ($id) => $locations[$id]->name ?? '')
-                ->values()
-                ->all();
-
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => GeneralFunctions::contactStatus($user->phone),
-
-                'gender' => view('admin.users.genderselection', compact('user'))->render(),
-                'locations' => $userLocations,
-                'roles' => $user->user_roles()->pluck('name'),
-                'created_at' => Carbon::parse($user->created_at)->format('F j,Y h:i A'),
-                'active' => $user->active,
-            ];
-        })->all();
+        return ApplicationUserResource::collection($users)
+            ->additional(['location_ids' => $locationIdsByUser])
+            ->resolve();
     }
 
     public function getUserPermissions(): array
@@ -192,15 +182,11 @@ class ApplicationUserService
     {
         $accountId = Auth::user()->account_id;
 
-        $user = new \stdClass();
-        $user->gender = null;
-        $user->phone = null;
-
         return [
             'roles' => Role::where('name', '!=', 'Super-Admin')->get(),
             'locations' => LocationsWidget::generateDropDownArray($accountId),
             'warehouse' => Warehouse::where('active', 1)->get(),
-            'user' => $user,
+            'user' => (object) ['gender' => null, 'phone' => null],
         ];
     }
 
@@ -214,7 +200,6 @@ class ApplicationUserService
             'password' => $data['password'],
             'phone' => GeneralFunctions::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
-
             'account_id' => $accountId,
             'main_account' => '0',
             'user_type_id' => Config::get('constants.application_user_id'),
@@ -240,10 +225,14 @@ class ApplicationUserService
         return $user;
     }
 
-    public function getEditData(int $id): array
+    public function getEditData(int $id): ?array
     {
         $accountId = Auth::user()->account_id;
         $user = $this->findByAccountId($id, $accountId);
+
+        if (!$user) {
+            return null;
+        }
 
         $userHasLocations = $user->user_has_locations->pluck('location_id');
         $userHasLocations = LocationsWidget::generatelocationArrayEdit($userHasLocations, $accountId, $user) ?: [];
@@ -266,7 +255,6 @@ class ApplicationUserService
 
         $oldData = $user->makeVisible(['password'])->toArray();
 
-        // Handle masked phone
         if (($data['phone'] ?? null) === '***********' && isset($data['old_phone'])) {
             $data['phone'] = $data['old_phone'];
         }
@@ -276,7 +264,6 @@ class ApplicationUserService
             'name' => $data['name'],
             'phone' => GeneralFunctions::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
-
         ];
 
         $user->update($userData);
@@ -356,6 +343,11 @@ class ApplicationUserService
         return User::where('id', $id)
             ->where('account_id', $accountId)
             ->first();
+    }
+
+    public function searchPatientsOptimized(string $search, int $accountId): mixed
+    {
+        return Patients::getPatientSearchOptimized($search, $accountId);
     }
 
     private function syncRoleHasUsers(User $user, array $roles): void

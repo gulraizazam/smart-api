@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\UserManagement;
 
 use App\Models\AuditTrails;
 use App\Models\User;
 use App\Models\UserTypes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 
 class UserTypeService
@@ -13,7 +16,30 @@ class UserTypeService
     private const CACHE_KEY_PREFIX = 'user_types_';
     private const CACHE_TTL = 3600;
 
+    public function getDatatableCount(array $params): int
+    {
+        $query = $this->buildDatatableQuery($params);
+
+        return $query->count();
+    }
+
     public function getDatatableData(array $params): array
+    {
+        $query = $this->buildDatatableQuery($params);
+
+        $userTypes = $query
+            ->orderBy($params['order_by'] ?? 'name', $params['order'] ?? 'asc')
+            ->offset($params['offset'] ?? 0)
+            ->limit($params['limit'] ?? 30)
+            ->get();
+
+        return [
+            'data' => $userTypes,
+            'total' => $userTypes->count(),
+        ];
+    }
+
+    private function buildDatatableQuery(array $params): Builder
     {
         $query = UserTypes::query()
             ->forAccount(Auth::user()->account_id)
@@ -27,18 +53,7 @@ class UserTypeService
             $query->ofType($params['type']);
         }
 
-        $total = $query->count();
-
-        $userTypes = $query
-            ->orderBy($params['order_by'] ?? 'name', $params['order'] ?? 'asc')
-            ->offset($params['offset'] ?? 0)
-            ->limit($params['limit'] ?? 30)
-            ->get();
-
-        return [
-            'data' => $userTypes,
-            'total' => $total,
-        ];
+        return $query;
     }
 
     public function getAllForDropdown(): array

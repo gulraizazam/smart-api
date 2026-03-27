@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -17,10 +19,13 @@ class RoleHasUsers extends Model
 
     public $timestamps = false;
 
-    protected $casts = [
-        'role_id' => 'integer',
-        'user_id' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'role_id' => 'integer',
+            'user_id' => 'integer',
+        ];
+    }
 
     public function role(): BelongsTo
     {

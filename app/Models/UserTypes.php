@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Builder;
 
 class UserTypes extends BaseModal
 {
@@ -21,11 +23,14 @@ class UserTypes extends BaseModal
         'updated_by',
     ];
 
-    protected $casts = [
-        'active' => 'boolean',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
 
     /**
      * Users belonging to this user type

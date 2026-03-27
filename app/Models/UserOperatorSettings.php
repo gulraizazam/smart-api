@@ -1,195 +1,141 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserOperatorSettings extends BaseModal
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'operator_id', 'operator_name', 'url', 'username', 'password', 'mask', 'test_mode', 'string_1', 'string_2',
+        'operator_id', 'operator_name', 'url', 'username', 'password',
+        'mask', 'test_mode', 'string_1', 'string_2',
         'account_id', 'created_at', 'updated_at',
     ];
 
-    protected static $_fillable = ['operator_id', 'operator_name', 'url', 'username', 'password', 'mask', 'test_mode', 'string_1', 'string_2'];
+    protected static array $_fillable = [
+        'operator_id', 'operator_name', 'url', 'username', 'password',
+        'mask', 'test_mode', 'string_1', 'string_2',
+    ];
 
     protected $table = 'user_operator_settings';
 
-    protected static $_table = 'user_operator_settings';
+    protected static string $_table = 'user_operator_settings';
 
-    /**
-     * Get Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function getRecord($account_id, $data)
+    protected $hidden = ['password'];
+
+    protected function casts(): array
     {
-        return self::where([
-            ['account_id', '=', $account_id],
-            ['id', '=', $data],
-        ])->first();
+        return [
+            'test_mode' => 'integer',
+        ];
     }
 
     /**
-     * Get Operators
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use UserOperatorSettingsService::find() instead
      */
-    public static function getGlobalOperators()
+    public static function getRecord(int $accountId, int $id): ?static
+    {
+        return self::where('account_id', $accountId)
+            ->where('id', $id)
+            ->first();
+    }
+
+    /**
+     * @deprecated Use UserOperatorSettingsService::getGlobalOperator() instead
+     */
+    public static function getGlobalOperators(): \Illuminate\Support\Collection
     {
         return GlobalOperatorSettings::get()->pluck('operator_name', 'id');
     }
 
     /**
-     * Get Operators by ID
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use UserOperatorSettingsService::getGlobalOperator() instead
      */
-    public static function getGlobalOperator($operator_id)
+    public static function getGlobalOperator(int $operatorId): ?GlobalOperatorSettings
     {
-        return GlobalOperatorSettings::where(['id' => $operator_id])->first();
+        return GlobalOperatorSettings::find($operatorId);
     }
 
     /**
-     * Update Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use UserOperatorSettingsService::update() instead
      */
-    public static function updateRecord($id, $request, $account_id)
+    public static function updateRecord(int $id, mixed $request, int $accountId): ?static
     {
-        $old_data = (UserOperatorSettings::find($id))->toArray();
-        //        $map_array = array(
-        //            'operator_id', 'operator_name', 'url', 'username', 'password', 'mask', 'test_mode', 'string_1', 'string_2'
-        //        );
-        //
-        //        $GlobalOperatorSetting = UserOperatorSettings::getGlobalOperator($request->get('operator_id'));
-        //        if ($GlobalOperatorSetting) {
-        //            $GlobalOperatorSetting = $GlobalOperatorSetting->toArray();
-        //        }
-        //
-        $data = $request->all();
-        //
-        //        foreach ($map_array as $map_id) {
-        //            if (array_key_exists($map_id, $GlobalOperatorSetting) && $GlobalOperatorSetting[$map_id]) {
-        //                $data[$map_id] = $GlobalOperatorSetting[$map_id];
-        //            }
-        //        }
-        // Set Account ID
-        $data['account_id'] = $account_id;
+        $oldData = (self::find($id))?->toArray() ?? [];
 
-        $record = self::where([
-            'id' => $id,
-            'account_id' => $account_id,
-        ])->first();
+        $data = is_array($request) ? $request : $request->all();
+        $data['account_id'] = $accountId;
 
-        if (! $record) {
+        $record = self::where('id', $id)
+            ->where('account_id', $accountId)
+            ->first();
+
+        if (!$record) {
             return null;
         }
+
         $record->update($data);
 
-        AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
+        AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $oldData, $id);
 
         return $record;
     }
 
     /**
-     * Get Total Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Use UserOperatorSettingsService::getDatatableData() instead
      */
-    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(mixed $request, int|false $accountId = false, bool $applyFilter = false): int
     {
-        $where = self::operators_filters($request, $account_id, $apply_filter);
+        $where = self::operators_filters($request, $accountId, $applyFilter);
 
-        if (count($where)) {
-            return self::where($where)->count();
-        } else {
-            return self::count();
-        }
+        return count($where) > 0 ? self::where($where)->count() : self::count();
     }
 
     /**
-     * Get Records
-     *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Use UserOperatorSettingsService::getDatatableData() instead
      */
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(mixed $request, int $iDisplayStart, int $iDisplayLength, int|false $accountId = false, bool $applyFilter = false): \Illuminate\Database\Eloquent\Collection
     {
-        $where = self::operators_filters($request, $account_id, $apply_filter);
+        $where = self::operators_filters($request, $accountId, $applyFilter);
         [$orderBy, $order] = getSortBy($request);
 
-        return self::when(count($where), fn ($q) => $q->where($where))
+        return self::when(count($where) > 0, fn ($q) => $q->where($where))
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
-            ->when($orderBy != 'name', fn ($q) => $q->orderBy($orderBy, $order))
+            ->when($orderBy !== 'name', fn ($q) => $q->orderBy($orderBy, $order))
             ->get();
     }
 
     /**
-     * Get filters
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
-     * @return (mixed)
+     * @deprecated Filter logic moved to UserOperatorSettingsService
      */
-    public static function operators_filters($request, $account_id, $apply_filter)
+    public static function operators_filters(mixed $request, int|false $accountId, bool $applyFilter): array
     {
-
         $where = [];
         $filters = getFilters($request->all());
-        if ($account_id) {
-            $where[] = [
-                'account_id',
-                '=',
-                $account_id,
-            ];
-            Filters::put(Auth::User()->id, 'operators', 'account_id', $account_id);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'operators', 'account_id');
-            } else {
-                if (Filters::get(Auth::User()->id, 'operators', 'account_id')) {
-                    $where[] = [
-                        'account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'operators', 'account_id'),
-                    ];
-                }
-            }
+
+        if ($accountId) {
+            $where[] = ['account_id', '=', $accountId];
+            Filters::put(Auth::id(), 'operators', 'account_id', $accountId);
+        } elseif ($applyFilter) {
+            Filters::forget(Auth::id(), 'operators', 'account_id');
+        } elseif ($stored = Filters::get(Auth::id(), 'operators', 'account_id')) {
+            $where[] = ['account_id', '=', $stored];
         }
+
         if (hasFilter($filters, 'operator_name')) {
-            $where[] = [
-                'operator_name',
-                'like',
-                '%'.$filters['operator_name'].'%',
-            ];
-            Filters::put(Auth::User()->id, 'operators', 'operator_name', $filters['operator_name']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'operators', 'operator_name');
-            } else {
-                if (Filters::get(Auth::User()->id, 'operators', 'operator_name')) {
-                    $where[] = [
-                        'operator_name',
-                        'like',
-                        '%'.Filters::get(Auth::User()->id, 'operators', 'operator_name').'%',
-                    ];
-                }
-            }
+            $where[] = ['operator_name', 'like', '%' . $filters['operator_name'] . '%'];
+            Filters::put(Auth::id(), 'operators', 'operator_name', $filters['operator_name']);
+        } elseif ($applyFilter) {
+            Filters::forget(Auth::id(), 'operators', 'operator_name');
+        } elseif ($stored = Filters::get(Auth::id(), 'operators', 'operator_name')) {
+            $where[] = ['operator_name', 'like', '%' . $stored . '%'];
         }
 
         return $where;
