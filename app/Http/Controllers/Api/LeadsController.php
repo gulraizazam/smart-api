@@ -403,7 +403,7 @@ class LeadsController extends Controller
     public function storeComment(StoreUpdateLeadCommentsRequest $request): JsonResponse
     {
         try {
-            $comment = $this->leadService->addComment($request->lead_id, $request->comment);
+            $comment = $this->leadService->addComment((int) $request->lead_id, $request->comment);
             $comment->load('user');
 
             return ApiHelper::apiResponse($this->success, 'Comment added.', true, [
