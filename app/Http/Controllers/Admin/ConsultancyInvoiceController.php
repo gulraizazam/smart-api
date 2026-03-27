@@ -29,7 +29,7 @@ class ConsultancyInvoiceController extends Controller
     public function invoiceconsultancy(int $id, ?string $type = null): JsonResponse|View
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 403);
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         try {
@@ -62,6 +62,10 @@ class ConsultancyInvoiceController extends Controller
             // API response (no type param)
             return $this->successResponse('Data found.', $data);
         } catch (\Throwable $e) {
+            if ($type !== null) {
+                // For blade view requests, return error as JSON for the AJAX caller
+                return response()->json(['status' => false, 'message' => 'Error loading invoice details.'], 500);
+            }
             return $this->handleException($e, 'Error fetching invoice details');
         }
     }
@@ -69,7 +73,7 @@ class ConsultancyInvoiceController extends Controller
     public function getconsultancycalculation(Request $request): JsonResponse
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
-            return $this->errorResponse('You are not authorized to perform this action.', 403);
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         try {
@@ -77,14 +81,14 @@ class ConsultancyInvoiceController extends Controller
 
             return response()->json($result);
         } catch (\Throwable $e) {
-            return $this->handleException($e, 'Error calculating price');
+            return response()->json(['status' => false, 'message' => config('app.debug') ? $e->getMessage() : 'Error calculating price.']);
         }
     }
 
     public function getcustomcalculation(Request $request): JsonResponse
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
-            return $this->errorResponse('You are not authorized to perform this action.', 403);
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         try {
@@ -92,14 +96,14 @@ class ConsultancyInvoiceController extends Controller
 
             return response()->json($result);
         } catch (\Throwable $e) {
-            return $this->handleException($e, 'Error calculating custom discount');
+            return response()->json(['status' => false, 'message' => config('app.debug') ? $e->getMessage() : 'Error calculating discount.']);
         }
     }
 
     public function checkedcustom(Request $request): JsonResponse
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
-            return $this->errorResponse('You are not authorized to perform this action.', 403);
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         try {
@@ -108,27 +112,26 @@ class ConsultancyInvoiceController extends Controller
 
             return response()->json(['status' => $isCustom]);
         } catch (\Throwable $e) {
-            return $this->handleException($e, 'Error checking discount');
+            return response()->json(['status' => false]);
         }
     }
 
     public function getfinalcalculation(Request $request): JsonResponse
     {
         if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_invoice')) {
-            return $this->errorResponse('You are not authorized to perform this action.', 403);
+            return response()->json(['status' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         try {
             $result = $this->invoiceService->calculateFinal($request->all());
 
-            // Legacy response format for backward compatibility
             return response()->json([
                 'status' => $result['status'],
                 'outstdanding' => $result['outstanding'],
                 'settleamount' => $result['settle_amount'],
             ]);
         } catch (\Throwable $e) {
-            return $this->handleException($e, 'Error calculating final amounts');
+            return response()->json(['status' => false, 'message' => config('app.debug') ? $e->getMessage() : 'Error calculating amounts.']);
         }
     }
 

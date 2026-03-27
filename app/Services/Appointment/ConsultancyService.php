@@ -8,6 +8,7 @@ use App\Exceptions\AppointmentException;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 
 class ConsultancyService extends AppointmentService
@@ -68,14 +69,14 @@ class ConsultancyService extends AppointmentService
         return array_diff_key($data, array_flip(self::$resourceFields));
     }
 
-    public function getConsultancyList(array $filters): mixed
+    public function getConsultancyList(array $filters): Builder
     {
         $typeId = $this->ensureConsultancyTypeExists();
 
         return $this->getAppointmentsList($filters, $typeId);
     }
 
-    public function createConsultancy(array $data): mixed
+    public function createConsultancy(array $data): Appointments
     {
         $typeId = $this->ensureConsultancyTypeExists();
 
@@ -102,7 +103,7 @@ class ConsultancyService extends AppointmentService
         return $this->createAppointment($data);
     }
 
-    public function updateConsultancy(int $id, array $data): mixed
+    public function updateConsultancy(int $id, array $data): Appointments
     {
         $this->findConsultancyOrFail($id);
 
@@ -111,7 +112,7 @@ class ConsultancyService extends AppointmentService
         return $this->updateAppointment($id, $data);
     }
 
-    public function getScheduledConsultancies(array $filters): mixed
+    public function getScheduledConsultancies(array $filters): mixed  // Returns Collection via parent
     {
         $typeId = $this->ensureConsultancyTypeExists();
 
@@ -120,7 +121,7 @@ class ConsultancyService extends AppointmentService
         return $this->getScheduledAppointments($filters);
     }
 
-    public function getNonScheduledConsultancies(array $filters): mixed
+    public function getNonScheduledConsultancies(array $filters): mixed  // Returns Collection via parent
     {
         $typeId = $this->ensureConsultancyTypeExists();
 
@@ -129,7 +130,7 @@ class ConsultancyService extends AppointmentService
         return $this->getNonScheduledAppointments($filters);
     }
 
-    public function getConsultancyStatistics(array $filters = []): mixed
+    public function getConsultancyStatistics(array $filters = []): array
     {
         $typeId = $this->ensureConsultancyTypeExists();
 
@@ -138,14 +139,14 @@ class ConsultancyService extends AppointmentService
         return $this->getAppointmentStatistics($filters);
     }
 
-    public function deleteConsultancy(int $id): mixed
+    public function deleteConsultancy(int $id): bool
     {
         $this->findConsultancyOrFail($id);
 
         return $this->deleteAppointment($id);
     }
 
-    public function scheduleConsultancy(int $id, array $data): mixed
+    public function scheduleConsultancy(int $id, array $data): Appointments
     {
         $this->findConsultancyOrFail($id);
 

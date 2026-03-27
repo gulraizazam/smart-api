@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Appointment;
 
 use App\Exceptions\AppointmentException;
@@ -17,43 +19,44 @@ use App\Models\Services;
 use App\Models\Leads;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
 class AppointmentService
 {
-    protected $account_id;
-    protected $user_id;
+    protected ?int $account_id = null;
+    protected ?int $user_id = null;
 
     public function __construct()
     {
         // Properties will be set lazily when needed via getAccountId() and getUserId()
     }
 
-    protected function getAccountId()
+    protected function getAccountId(): int
     {
-        if (!$this->account_id) {
+        if ($this->account_id === null) {
             if (!Auth::check()) {
                 throw new \Exception('User must be authenticated to use AppointmentService');
             }
-            $this->account_id = Auth::user()->account_id;
+            $this->account_id = (int) Auth::user()->account_id;
         }
         return $this->account_id;
     }
 
-    protected function getUserId()
+    protected function getUserId(): int
     {
-        if (!$this->user_id) {
+        if ($this->user_id === null) {
             if (!Auth::check()) {
                 throw new \Exception('User must be authenticated to use AppointmentService');
             }
-            $this->user_id = Auth::id();
+            $this->user_id = (int) Auth::id();
         }
         return $this->user_id;
     }
 
-    public function getAppointmentsList($filters, $appointmentTypeId = null)
+    public function getAppointmentsList(array $filters, ?int $appointmentTypeId = null): Builder
     {
         $query = Appointments::with([
             'appointment_type',
@@ -82,7 +85,7 @@ class AppointmentService
         return $query;
     }
 
-    protected function applyFilters($query, $filters)
+    protected function applyFilters(Builder $query, array $filters): Builder
     {
         if (!empty($filters['patient_id'])) {
             $query->where('patient_id', $filters['patient_id']);
@@ -138,7 +141,7 @@ class AppointmentService
         return $query;
     }
 
-    public function createAppointment(array $data)
+    public function createAppointment(array $data): Appointments
     {
         DB::beginTransaction();
         try {
@@ -531,7 +534,7 @@ class AppointmentService
         }
     }
 
-    public function updateAppointment($id, array $data)
+    public function updateAppointment(int $id, array $data): Appointments
     {
         DB::beginTransaction();
         try {
@@ -642,7 +645,7 @@ class AppointmentService
         }
     }
 
-    public function deleteAppointment($id)
+    public function deleteAppointment(int $id): bool
     {
         DB::beginTransaction();
         try {
@@ -700,7 +703,7 @@ class AppointmentService
         }
     }
 
-    public function updateAppointmentStatus($id, array $data)
+    public function updateAppointmentStatus(int $id, array $data): Appointments
     {
         DB::beginTransaction();
         try {
@@ -760,7 +763,7 @@ class AppointmentService
         }
     }
 
-    public function getScheduledAppointments($filters)
+    public function getScheduledAppointments(array $filters): mixed
     {
         $query = Appointments::with([
             'appointment_type',
@@ -787,7 +790,7 @@ class AppointmentService
         return $query->get();
     }
 
-    public function getNonScheduledAppointments($filters)
+    public function getNonScheduledAppointments(array $filters): mixed
     {
         $query = Appointments::with([
             'appointment_type',
@@ -813,7 +816,7 @@ class AppointmentService
         return $query->get();
     }
 
-    public function scheduleAppointment($id, array $data)
+    public function scheduleAppointment(int $id, array $data): Appointments
     {
         DB::beginTransaction();
         try {
@@ -940,7 +943,7 @@ class AppointmentService
         }
     }
 
-    public function getAppointmentById($id)
+    public function getAppointmentById(int $id): ?Appointments
     {
         $appointment = Appointments::with([
             'appointment_type',
@@ -972,7 +975,7 @@ class AppointmentService
         return $appointment;
     }
 
-    protected function validateAppointmentData(array $data)
+    protected function validateAppointmentData(array $data): void
     {
         if (isset($data['location_id'])) {
             $location = Locations::find($data['location_id']);
@@ -999,11 +1002,9 @@ class AppointmentService
         if (isset($data['appointment_type_id']) && $data['appointment_type_id'] == 1) {
             $this->validateRotaAvailability($data);
         }
-
-        return true;
     }
 
-    protected function validateRotaAvailability(array $data)
+    protected function validateRotaAvailability(array $data): void
     {
         \Log::info('validateRotaAvailability called', [
             'has_scheduled_date' => isset($data['scheduled_date']),
@@ -1045,7 +1046,7 @@ class AppointmentService
         }
     }
 
-    public function getAppointmentStatistics($filters = [])
+    public function getAppointmentStatistics(array $filters = []): array
     {
         $cacheKey = "appointment_stats_{$this->getAccountId()}_" . md5(json_encode($filters));
 

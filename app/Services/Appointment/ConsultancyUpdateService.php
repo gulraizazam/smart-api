@@ -166,7 +166,7 @@ class ConsultancyUpdateService
 
     protected function validateBusinessClosure(int $accountId, int $locationId, string $date): void
     {
-        $allCentresLocationId = (int) config('constants.all_centres_location_id', 30);
+        $allCentresLocationId = (int) config('constants.all_centres_location_id');
 
         $closure = BusinessClosure::where('account_id', $accountId)
             ->whereDate('start_date', '<=', $date)

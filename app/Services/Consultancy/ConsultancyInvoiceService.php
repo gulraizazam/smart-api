@@ -356,7 +356,7 @@ class ConsultancyInvoiceService
         array $data,
         InvoiceStatuses $invoiceStatus,
         int $isExclusive,
-        mixed $user,
+        User $user,
     ): Invoices {
         $now = Filters::getCurrentTimeStamp();
 
@@ -418,7 +418,7 @@ class ConsultancyInvoiceService
         InvoiceDetails $invoiceDetail,
         array $data,
         int $paymentModeId,
-        mixed $user,
+        User $user,
     ): void {
         $now = Filters::getCurrentTimeStamp();
         $settlePaymentMode = PaymentModes::where('payment_type', config('constants.payment_type_settle'))->first();
@@ -558,7 +558,7 @@ class ConsultancyInvoiceService
         Appointments $appointment,
         Invoices $invoice,
         array $data,
-        mixed $user,
+        User $user,
     ): void {
         $patient = User::find($appointment->patient_id);
         $location = Locations::with('city')->find($appointment->location_id);
