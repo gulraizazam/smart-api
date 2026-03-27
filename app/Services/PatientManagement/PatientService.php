@@ -432,6 +432,7 @@ class PatientService
         }
 
         $accountId = Auth::user()->account_id;
+        $userCentres = ACL::getUserCentres();
 
         return [
             'appointments' => $patient->appointments()->where('account_id', $accountId)->count(),
@@ -439,8 +440,14 @@ class PatientService
             'treatments' => $patient->appointments()->where('account_id', $accountId)->where('appointment_type_id', 2)->count(),
             'vouchers' => UserVouchers::where('user_id', $patientId)->count(),
             'documents' => $patient->documents()->count(),
-            'plans' => $patient->packages()->count(),
-            'invoices' => $patient->invoices()->count(),
+            'plans' => $patient->packages()
+                ->where('account_id', $accountId)
+                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->count(),
+            'invoices' => $patient->invoices()
+                ->where('account_id', $accountId)
+                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->count(),
             'refunds' => DB::table('package_advances')->where('patient_id', $patientId)->where('is_refund', 1)->count(),
             'activity_logs' => Activity::where('patient_id', $patientId)->whereNotNull('description')->count(),
         ];
