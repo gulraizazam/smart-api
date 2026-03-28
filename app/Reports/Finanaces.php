@@ -1287,11 +1287,16 @@ class Finanaces
     // Filter by selected locations first, then by region if provided
     $userCentres = ACL::getUserCentres();
     
-    if (!empty($data['location_id']) && is_array($data['location_id'])) {
+    // Filter out empty values (from "All" option) in location_id
+    $locationIds = (!empty($data['location_id']) && is_array($data['location_id']))
+        ? array_filter($data['location_id'], function($val) { return $val !== '' && $val !== null; })
+        : [];
+
+    if (!empty($locationIds)) {
         // Filter user centres to only selected locations
-        $selectedLocations = array_intersect($data['location_id'], is_array($userCentres) ? $userCentres : [$userCentres]);
+        $selectedLocations = array_intersect($locationIds, is_array($userCentres) ? $userCentres : [$userCentres]);
         if (empty($selectedLocations)) {
-            $selectedLocations = $data['location_id'];
+            $selectedLocations = $locationIds;
         }
         if (isset($data['region_id']) && $data['region_id']) {
             $location_information = Locations::generalrevenuegetActiveSorted($selectedLocations, $data['region_id']);
