@@ -1108,12 +1108,12 @@ class Finanaces
         '=',
         $account_id,
     ];
-    $location_information = ACL::getUserCentres();
+    $userCentres = ACL::getUserCentres();
     // Filter out empty values (from "All" option) in location_id_com
     $locationIds = array_filter($data['location_id_com'], function($val) { return $val !== '' && $val !== null; });
     // If no specific locations selected (only "All" was picked), use all user centres
     if (empty($locationIds)) {
-        $locationIds = is_array($location_information) ? $location_information : [$location_information];
+        $locationIds = is_array($userCentres) ? $userCentres : [$userCentres];
     }
     $report_data = [];
     foreach ($locationIds as $location) {
@@ -1132,20 +1132,20 @@ class Finanaces
 
         $packagesadvances = $query->get();
 
-        $location_information = Locations::find($location);
+        $location_single_info = Locations::find($location);
 
-        if (!$location_information) {
+        if (!$location_single_info) {
             continue;
         }
 
         if ($packagesadvances) {
             $balance = 0;
             $total_balance = 0;
-            $report_data[$location_information->id] = [
-                'id' => $location_information->id,
-                'name' => $location_information->name,
-                'city' => $location_information->city->name,
-                'region' => $location_information->region->name,
+            $report_data[$location_single_info->id] = [
+                'id' => $location_single_info->id,
+                'name' => $location_single_info->name,
+                'city' => $location_single_info->city->name,
+                'region' => $location_single_info->region->name,
                 'revenue_data' => [],
             ];
 
@@ -1249,7 +1249,7 @@ class Finanaces
                             $refund_out = $packagesadvance->cash_amount;
                         }
                         $gender = $packagesadvance->user->gender == 1 ? 'Male' : 'Female';
-                        $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
+                        $report_data[$location_single_info->id]['revenue_data'][$packagesadvance->id] = [
                             'patient_id' => $packagesadvance->patient_id,
                             'patient' => $packagesadvance->user->name,
                             'gender' => $gender,
