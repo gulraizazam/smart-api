@@ -8,6 +8,7 @@ var CashflowVendors = (function () {
     var currentVendorData = null;
     var termsLabels = { upfront: 'Upfront', net_7: 'Net 7', net_15: 'Net 15', net_30: 'Net 30', custom: 'Custom' };
     var ledgerDateFrom = null;
+    var pendingCategoryId = null;
     var ledgerDateTo = null;
     var overviewPurchasePage = 1;
     var overviewPaymentPage = 1;
@@ -111,12 +112,17 @@ var CashflowVendors = (function () {
             // Load vendor-emphasis categories if not yet loaded
             if ($('#vendor-category-select option').length <= 1) {
                 loadVendorCategories();
+            } else if (pendingCategoryId) {
+                // Categories already loaded, apply pending selection
+                $('#vendor-category-select').val(pendingCategoryId).trigger('change');
+                pendingCategoryId = null;
             }
         }).on('shown.bs.modal', function () {
             var mb = $(this).find('.modal-body');
             mb.find('.vendor-select2').select2({ dropdownParent: mb });
             mb.find('[data-toggle="tooltip"]').tooltip();
         }).on('hidden.bs.modal', function () {
+            pendingCategoryId = null;
             $('#form-vendor .vendor-select2').select2('destroy');
             $('#form-vendor')[0].reset();
             $('#form-vendor .is-invalid').removeClass('is-invalid');
@@ -195,6 +201,11 @@ var CashflowVendors = (function () {
                 $.each(cats, function (i, c) {
                     sel.append('<option value="' + c.id + '">' + esc(c.name) + '</option>');
                 });
+                // Apply pending category selection after rebuilding dropdown
+                if (pendingCategoryId) {
+                    sel.val(pendingCategoryId);
+                    pendingCategoryId = null;
+                }
                 // Re-trigger select2 if modal is open
                 if ($('#modal_vendor').hasClass('show')) {
                     sel.trigger('change');
@@ -357,7 +368,8 @@ var CashflowVendors = (function () {
         form.find('[name="phone"]').val(v.phone || '');
         form.find('[name="email"]').val(v.email || '');
         form.find('[name="payment_terms"]').val(v.payment_terms || 'upfront');
-        form.find('[name="category_id"]').val(v.category_id || '').trigger('change');
+        pendingCategoryId = v.category_id || '';
+        form.find('[name="category_id"]').val(pendingCategoryId).trigger('change');
         form.find('[name="opening_balance"]').val(v.opening_balance || 0);
         form.find('[name="address"]').val(v.address || '');
         form.find('[name="notes"]').val(v.notes || '');
