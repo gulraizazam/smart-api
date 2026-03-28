@@ -1109,8 +1109,14 @@ class Finanaces
         $account_id,
     ];
     $location_information = ACL::getUserCentres();
+    // Filter out empty values (from "All" option) in location_id_com
+    $locationIds = array_filter($data['location_id_com'], function($val) { return $val !== '' && $val !== null; });
+    // If no specific locations selected (only "All" was picked), use all user centres
+    if (empty($locationIds)) {
+        $locationIds = is_array($location_information) ? $location_information : [$location_information];
+    }
     $report_data = [];
-    foreach ($data['location_id_com'] as $location) {
+    foreach ($locationIds as $location) {
         $query = PackageAdvances::whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where('location_id', '=', $location)
