@@ -1134,6 +1134,10 @@ class Finanaces
 
         $location_information = Locations::find($location);
 
+        if (!$location_information) {
+            continue;
+        }
+
         if ($packagesadvances) {
             $balance = 0;
             $total_balance = 0;
