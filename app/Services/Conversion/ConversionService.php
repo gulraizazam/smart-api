@@ -29,6 +29,10 @@ use Illuminate\Support\Facades\DB;
  * 4. At least one service was added on or after invoice creation date
  * 5. At least one payment (cash_flow='in', cash_amount>0) exists on or after invoice date
  * 6. The FIRST such payment date falls within the report date range
+ *
+ * NOTE: The consultation's scheduled_date does NOT need to be within the report range.
+ * A consultation from a prior month is counted as converted if its first payment falls
+ * within the report range. This means converted count can exceed total arrived count.
  * 
  * Conversion spend = sum of (revenue_in - refund_out) via genericfunctionforstaffwiserevenue
  * for all payments from invoice date within the report date range.
@@ -315,7 +319,7 @@ class ConversionService
             ->whereIn('appointments.appointment_status_id', $statusIds)
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereIn('appointments.location_id', $locations)
-            ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
+            ->where('appointments.scheduled_date', '<=', $endDate)
             ->where('package_advances.cash_amount', '>', 0)
             ->where('package_advances.created_at', '>=', $startDate . ' 00:00:00')
             ->where('package_advances.created_at', '<=', $endDate . ' 23:59:59')
