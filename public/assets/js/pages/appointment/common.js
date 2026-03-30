@@ -1043,6 +1043,13 @@ function editSchedule(id, doc_id, loc_id) {
     $("#schedule_doctor_id").val(doc_id)
     $("#schedule_location_id").val(loc_id)
 
+    // Re-initialize datepicker without startDate constraint so past dates can be displayed
+    $("#schedule_date").datepicker('destroy').datepicker({
+        format: 'yyyy-mm-dd'
+    }).on('changeDate', function (ev) {
+        $(this).datepicker('hide');
+    });
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
