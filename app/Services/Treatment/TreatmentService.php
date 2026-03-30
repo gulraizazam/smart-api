@@ -164,7 +164,7 @@ final class TreatmentService
             $lead = $this->handleLead($validated, $appointmentData, $accountId);
             $appointmentData['lead_id'] = $lead?->id;
 
-            Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $appointmentData);
+            Patients::updateRecord((int) $appointmentData['patient_id'], false, $appointmentData, $appointmentData);
 
             $appointment = Appointments::create($appointmentData);
 
