@@ -173,107 +173,150 @@ class PackagesController extends Controller
     public function savebundle_service(Request $request)
     {
         try {
-            
-
             $bundleId = $request->bundle_id;
             $bundle = Bundles::find($bundleId);
-            
+
             if (!$bundle) {
                 return ApiHelper::apiResponse($this->error, 'Bundle not found', false);
             }
 
             $locationInfo = Locations::find($request->location_id);
-            
+
+            if (!$locationInfo) {
+                return ApiHelper::apiResponse($this->error, 'Location not found', false);
+            }
+
+            $taxPct = (float) ($locationInfo->tax_percentage ?? 0);
+            $netAmount = (float) $request->net_amount;
+
             // Build bundle data structure
             $bundleData = [
                 'qty' => '1',
                 'bundle_id' => $bundle->id,
                 'service_price' => $bundle->price,
                 'service_name' => $bundle->name,
-                'net_amount' => $request->net_amount,
+                'net_amount' => $netAmount,
                 'discount_name' => '-',
                 'discount_type' => '-',
                 'discount_price' => '0',
-                'tax_percenatage' => $locationInfo->tax_percentage ?? 0,
+                'tax_percenatage' => $taxPct,
             ];
 
             // Calculate tax based on bundle's tax treatment type
             if ($bundle->tax_treatment_type_id == Config::get('constants.tax_both')) {
-                $bundleData['tax_exclusive_net_amount'] = $request->net_amount;
-                $bundleData['tax_price'] = ceil($request->net_amount * ($locationInfo->tax_percentage / 100));
-                $bundleData['tax_including_price'] = ceil($request->net_amount + $bundleData['tax_price']);
+                $bundleData['tax_exclusive_net_amount'] = $netAmount;
+                $bundleData['tax_price'] = ceil($netAmount * ($taxPct / 100));
+                $bundleData['tax_including_price'] = ceil($netAmount + $bundleData['tax_price']);
             } else {
-                $bundleData['tax_including_price'] = $request->net_amount;
-                $bundleData['tax_exclusive_net_amount'] = ceil((100 * $bundleData['tax_including_price']) / ($bundleData['tax_percenatage'] + 100));
-                $bundleData['tax_price'] = ceil($bundleData['tax_including_price'] - $bundleData['tax_exclusive_net_amount']);
+                $bundleData['tax_including_price'] = $netAmount;
+                $bundleData['tax_exclusive_net_amount'] = $taxPct > 0
+                    ? ceil((100 * $netAmount) / ($taxPct + 100))
+                    : $netAmount;
+                $bundleData['tax_price'] = ceil($netAmount - $bundleData['tax_exclusive_net_amount']);
             }
 
-            // Get bundle services for display with proper tax calculation
+            // Resolve the parent package (if editing an existing plan)
+            $findPackage = Packages::where('random_id', $request->random_id)->first();
+
+            // Persist the PackageBundles record
+            $packageBundleRecord = PackageBundles::create([
+                'random_id'              => $request->random_id,
+                'qty'                    => 1,
+                'bundle_id'              => $bundle->id,
+                'source_type'            => 'bundle',
+                'discount_name'          => '-',
+                'discount_type'          => '-',
+                'discount_price'         => 0,
+                'service_price'          => $bundle->price,
+                'net_amount'             => $netAmount,
+                'is_exclusive'           => 0,
+                'tax_exclusive_net_amount' => $bundleData['tax_exclusive_net_amount'],
+                'tax_percenatage'        => $taxPct,
+                'tax_price'              => $bundleData['tax_price'],
+                'tax_including_price'    => $bundleData['tax_including_price'],
+                'location_id'            => $request->location_id,
+                'package_id'             => $findPackage?->id,
+                'is_allocate'            => $findPackage ? 1 : 0,
+            ]);
+
+            // Get bundle services and calculate proportional prices
             $bundleServices = BundleHasServices::with('service')
                 ->where('bundle_id', $bundle->id)
                 ->get();
 
-            // Prepare services for price calculation
-            $calculableServices = [];
-            foreach ($bundleServices as $bundleService) {
-                $calculableServices[] = [
-                    'service_price' => $bundleService->calculated_price,
-                    'calculated_price' => $bundleService->calculated_price,
-                    'service_id' => $bundleService->service_id,
-                ];
-            }
+            $calculableServices = $bundleServices->map(fn ($bs) => [
+                'service_price'    => $bs->calculated_price,
+                'calculated_price' => $bs->calculated_price,
+                'service_id'       => $bs->service_id,
+            ])->toArray();
 
-            // Calculate proportional prices for each service
             $calculatedServicesPrices = Bundles::calculatePrices(
                 $calculableServices,
                 $bundleData['tax_exclusive_net_amount'],
                 $bundleData['tax_including_price']
             );
 
-            // Get service details with tax treatment types
             $serviceIds = array_column($calculatedServicesPrices, 'service_id');
             $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
             $packageServicesData = [];
             foreach ($calculatedServicesPrices as $calculatedService) {
                 $serviceInfo = $servicesInfo->get($calculatedService['service_id']);
-                
-                if ($serviceInfo) {
-                    // Determine if service price is tax-inclusive or tax-exclusive
-                    $serviceTaxType = $serviceInfo->tax_treatment_type_id;
-                    $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
-                    
-                    // Calculate tax for this service
-                    if ($serviceTaxType == Config::get('constants.tax_both')) {
-                        if ($isExclusive) {
-                            $taxExclusivePrice = $calculatedService['calculated_price'];
-                            $taxPrice = ceil($taxExclusivePrice * ($locationInfo->tax_percentage / 100));
-                            $taxIncludingPrice = ceil($taxExclusivePrice + $taxPrice);
-                        } else {
-                            $taxIncludingPrice = $calculatedService['calculated_price'];
-                            $taxExclusivePrice = ceil((100 * $taxIncludingPrice) / ($locationInfo->tax_percentage + 100));
-                            $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
-                        }
-                    } elseif ($serviceTaxType == Config::get('constants.tax_is_exclusive')) {
-                        $taxExclusivePrice = $calculatedService['calculated_price'];
-                        $taxPrice = ceil($taxExclusivePrice * ($locationInfo->tax_percentage / 100));
-                        $taxIncludingPrice = ceil($taxExclusivePrice + $taxPrice);
-                    } else {
-                        // tax_is_inclusive
-                        $taxIncludingPrice = $calculatedService['calculated_price'];
-                        $taxExclusivePrice = ceil((100 * $taxIncludingPrice) / ($locationInfo->tax_percentage + 100));
-                        $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
-                    }
-                    
-                    $packageServicesData[] = [
-                        'name' => $serviceInfo->name,
-                        'service_id' => $calculatedService['service_id'],
-                        'tax_exclusive_price' => $taxExclusivePrice,
-                        'tax_price' => $taxPrice,
-                        'tax_including_price' => $taxIncludingPrice,
-                        'is_consumed' => 0,
-                    ];
+
+                if (!$serviceInfo) {
+                    continue;
                 }
+
+                $serviceTaxType = $serviceInfo->tax_treatment_type_id;
+                $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
+
+                if (($serviceTaxType == Config::get('constants.tax_both') && $isExclusive) ||
+                    $serviceTaxType == Config::get('constants.tax_is_exclusive')) {
+                    $taxExclusivePrice = $calculatedService['calculated_price'];
+                    $taxPrice = ceil($taxExclusivePrice * ($taxPct / 100));
+                    $taxIncludingPrice = ceil($taxExclusivePrice + $taxPrice);
+                } else {
+                    $taxIncludingPrice = $calculatedService['calculated_price'];
+                    $taxExclusivePrice = $taxPct > 0
+                        ? ceil((100 * $taxIncludingPrice) / ($taxPct + 100))
+                        : $taxIncludingPrice;
+                    $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
+                }
+
+                // Persist each PackageService record
+                PackageService::create([
+                    'random_id'          => $request->random_id,
+                    'package_id'         => $findPackage?->id,
+                    'package_bundle_id'  => $packageBundleRecord->id,
+                    'service_id'         => $calculatedService['service_id'],
+                    'price'              => $calculatedService['calculated_price'],
+                    'orignal_price'      => $calculatedService['service_price'],
+                    'actual_price'       => $serviceInfo->price,
+                    'is_exclusive'       => $isExclusive ? 1 : 0,
+                    'tax_exclusive_price' => $taxExclusivePrice,
+                    'tax_percenatage'    => $taxPct,
+                    'tax_price'          => $taxPrice,
+                    'tax_including_price' => $taxIncludingPrice,
+                    'sold_by'            => $request->sold_by ?? null,
+                    'created_at'         => Filters::getCurrentTimeStamp(),
+                    'updated_at'         => Filters::getCurrentTimeStamp(),
+                ]);
+
+                $packageServicesData[] = [
+                    'name' => $serviceInfo->name,
+                    'service_id' => $calculatedService['service_id'],
+                    'tax_exclusive_price' => $taxExclusivePrice,
+                    'tax_price' => $taxPrice,
+                    'tax_including_price' => $taxIncludingPrice,
+                    'is_consumed' => 0,
+                ];
+            }
+
+            // Update plan name and total if package already exists
+            if ($findPackage) {
+                $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
+                $findPackage->update(['total_price' => $newTotal]);
+                $this->updatePlanNameForPackage($findPackage);
             }
 
             return ApiHelper::apiResponse($this->success, 'Bundle service added successfully', true, [
@@ -285,12 +328,12 @@ class PackagesController extends Controller
                     'discount_price' => '0',
                     'sold_by' => $request->sold_by ?? null,
                     'bundlesData' => array_merge($bundleData, [
-                        'id' => $bundle->id, // Return original bundle ID
+                        'id' => $packageBundleRecord->id,
                     ]),
                     'packageServicesData' => $packageServicesData,
                 ]
             ]);
-            
+
         } catch (\Exception $e) {
             \Log::error('Save Bundle Service Error: ' . $e->getMessage());
             return ApiHelper::apiResponse($this->error, 'Failed to add bundle service: ' . $e->getMessage(), false);
