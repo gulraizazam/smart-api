@@ -27,7 +27,7 @@ final class PlanDatatableRequest extends FormRequest
             'sort'               => 'sometimes|array',
             'sort.field'         => 'sometimes|string|max:50',
             'sort.sort'          => 'sometimes|string|in:asc,desc,ASC,DESC',
-            'query'              => 'sometimes|array',
+            'query'              => 'sometimes|nullable',
             'customActionType'   => 'sometimes|string|in:group_action',
             'id'                 => 'sometimes|array',
             'id.*'               => 'sometimes|integer',
