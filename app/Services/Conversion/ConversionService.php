@@ -482,6 +482,7 @@ class ConversionService
             $locations = DB::table('appointments')
                 ->where('doctor_id', $doctorId)
                 ->whereBetween('scheduled_date', [$startDate, $endDate])
+                ->whereNull('deleted_at')
                 ->distinct()
                 ->pluck('location_id')
                 ->toArray();
@@ -494,6 +495,7 @@ class ConversionService
             ->whereIn('appointment_status_id', $statusIds)
             ->whereIn('location_id', $locations)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->whereNull('deleted_at')
             ->count();
 
         if ($totalArrived === 0) {

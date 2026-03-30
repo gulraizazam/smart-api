@@ -223,7 +223,7 @@
                                             </div>
 
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
-                                                 style="display: none;" id="location_id_D" onchange="SetLocation()">
+                                                 style="display: none;" id="location_id_D">
                                                 {!! Form::label('location_id_com', 'Centres', ['class' => 'control-label']) !!}
 
                                                 {!! Form::select('location_id_com[]', $locations_com, (Auth::user()->hasRole('FDM')) ? array_keys($locations_com->toArray()) : null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}

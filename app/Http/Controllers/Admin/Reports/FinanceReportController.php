@@ -93,6 +93,9 @@ class FinanceReportController extends Controller
         }
 
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
+        if (!Auth::user()->hasRole('FDM')) {
+            $locations_com->prepend('All', '');
+        }
 
         $appointment_types = AppointmentTypes::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $appointment_types->prepend('All', '');
