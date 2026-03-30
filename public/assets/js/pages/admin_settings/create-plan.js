@@ -1590,16 +1590,10 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_id").val(active_filters.id);
 
-        $("#search_location_id").val(active_filters.location_id);
+        $("#search_location_id").val(active_filters.location_id).trigger('change');
         $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
-
-        // getUserCentre is defined in packages/index.blade.php inline script
-        // Only call it if it exists (not in patient card context)
-        if (typeof getUserCentre === 'function') {
-            getUserCentre();
-        }
 
     } catch (error) {
         showException(error);
