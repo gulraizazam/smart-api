@@ -318,17 +318,16 @@ final class TreatmentController extends Controller
     private function successResponse(string $message, mixed $data = null): JsonResponse
     {
         return response()->json([
-            'success' => true,
+            'status'  => true,
             'message' => $message,
             'data'    => $data,
-            'errors'  => [],
         ]);
     }
 
     private function errorResponse(string $message, int $code = 400, array $errors = []): JsonResponse
     {
         return response()->json([
-            'success' => false,
+            'status'  => false,
             'message' => $message,
             'data'    => null,
             'errors'  => $errors,
