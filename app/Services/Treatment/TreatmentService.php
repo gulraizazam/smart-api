@@ -7,6 +7,7 @@ namespace App\Services\Treatment;
 use App\Exceptions\TreatmentException;
 use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
+use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Http\Resources\Treatment\TreatmentDatatableResource;
@@ -575,6 +576,12 @@ final class TreatmentService
             $where[] = ['patient_id', '=', $patientId];
         } elseif (hasFilter($filters, 'patient_id')) {
             $where[] = ['patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id'])];
+        }
+
+        // Auto-filter by doctor_id for doctor roles
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(DoctorDashboardHelper::DOCTOR_ROLE_NAMES)) {
+            $where[] = ['doctor_id', '=', $user->id];
         }
 
         $directFilterMap = [
