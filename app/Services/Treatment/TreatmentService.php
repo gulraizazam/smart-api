@@ -655,7 +655,7 @@ final class TreatmentService
         }
 
         if ($service->parent_id == 0) {
-            return ($service->id == 13)
+            return ($service->slug === 'all')
                 ? Services::pluck('id')->toArray()
                 : Services::where('parent_id', $service->id)->pluck('id')->toArray();
         }
