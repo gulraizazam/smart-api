@@ -368,7 +368,7 @@ class PackageAdvances extends BaseModal
         }
     }
 
-    public static function updateRecord_onlyadvances(array $data, int $id): self
+    public static function updateRecord_onlyadvances(array $data, int|string $id): self
     {
         $oldData = self::findOrFail($id)->toArray();
         $record = self::where('id', $id)->firstOrFail();
@@ -379,7 +379,7 @@ class PackageAdvances extends BaseModal
         return $record;
     }
 
-    public static function inactiveRecord(int $id): bool
+    public static function inactiveRecord(int|string $id): bool
     {
         $advance = self::getData($id);
 
@@ -395,7 +395,7 @@ class PackageAdvances extends BaseModal
         return true;
     }
 
-    public static function activeRecord(int $id): bool
+    public static function activeRecord(int|string $id): bool
     {
         $advance = self::getData($id);
 
@@ -411,7 +411,7 @@ class PackageAdvances extends BaseModal
         return true;
     }
 
-    public static function DeleteRecord(int $id): bool
+    public static function DeleteRecord(int|string $id): bool
     {
         $advance = self::getData($id);
 
@@ -448,7 +448,7 @@ class PackageAdvances extends BaseModal
         return true;
     }
 
-    public static function CancelRecord(int $id, int $accountId): ?self
+    public static function CancelRecord(int|string $id, int|string $accountId): ?self
     {
         $record = self::where(['id' => $id, 'account_id' => $accountId])->first();
 
@@ -461,7 +461,7 @@ class PackageAdvances extends BaseModal
         return $record;
     }
 
-    public static function isChildExists(int $id, int $accountId): bool
+    public static function isChildExists(int|string $id, int|string $accountId): bool
     {
         // Currently no child constraints; kept for interface compatibility
         return false;
@@ -575,7 +575,7 @@ class PackageAdvances extends BaseModal
         return $where;
     }
 
-    public static function getAppointmentPackage(int $appointmentId, int $patientId, ?int $id = null): float
+    public static function getAppointmentPackage(int|string $appointmentId, int|string $patientId, int|string|null $id = null): float
     {
         if ($id === null) {
             return (float) self::where([

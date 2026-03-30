@@ -98,7 +98,7 @@ class PlanInvoice extends Model
     /**
      * Generate invoice number: {patient_id}-{package_id}-{sequence}
      */
-    public static function generateInvoiceNumber(int $patientId, int $packageId): string
+    public static function generateInvoiceNumber(int|string $patientId, int|string $packageId): string
     {
         $prefix = "{$patientId}-{$packageId}-";
 

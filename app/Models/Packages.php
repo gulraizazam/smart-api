@@ -129,7 +129,7 @@ class Packages extends BaseModal
         return $record;
     }
 
-    public static function updateRecordRefunds(int $packageId): self
+    public static function updateRecordRefunds(int|string $packageId): self
     {
         $record = self::findOrFail($packageId);
         $oldData = $record->toArray();
@@ -140,7 +140,7 @@ class Packages extends BaseModal
         return $record;
     }
 
-    public static function inactiveRecord(int $id): array
+    public static function inactiveRecord(int|string $id): array
     {
         $package = self::getData($id);
 
@@ -154,7 +154,7 @@ class Packages extends BaseModal
         return ['status' => true, 'message' => 'Record has been inactivated successfully.'];
     }
 
-    public static function activeRecord(int $id): array
+    public static function activeRecord(int|string $id): array
     {
         $package = self::getData($id);
 
@@ -168,7 +168,7 @@ class Packages extends BaseModal
         return ['status' => true, 'message' => 'Record has been activated successfully.'];
     }
 
-    public static function DeleteRecord(int $id): array
+    public static function DeleteRecord(int|string $id): array
     {
         $package = self::getData($id);
 
@@ -186,7 +186,7 @@ class Packages extends BaseModal
         return ['status' => true, 'message' => 'Record has been deleted successfully.'];
     }
 
-    public static function isChildExists(int $id, int $accountId): bool
+    public static function isChildExists(int|string $id, int|string $accountId): bool
     {
         return InvoiceDetails::where('package_id', $id)->exists()
             || PackageAdvances::where('package_id', $id)->exists();
@@ -194,7 +194,7 @@ class Packages extends BaseModal
 
     // ── Query Helpers ───────────────────────────────────
 
-    public static function getTotalRecords(Request $request, int $accountId, int|false $id, bool $applyFilter, string $filename): int
+    public static function getTotalRecords(Request $request, int|string $accountId, int|string|false $id, bool $applyFilter, string $filename): int
     {
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
 
@@ -210,10 +210,10 @@ class Packages extends BaseModal
 
     public static function getRecords(
         Request $request,
-        int $iDisplayStart,
-        int $iDisplayLength,
-        int $accountId,
-        int|false $id,
+        int|string $iDisplayStart,
+        int|string $iDisplayLength,
+        int|string $accountId,
+        int|string|false $id,
         bool $applyFilter,
         string $filename,
     ): \Illuminate\Database\Eloquent\Collection {
@@ -233,7 +233,7 @@ class Packages extends BaseModal
         return $query->get();
     }
 
-    public static function filters(Request $request, int $accountId, int|false $id, bool $applyFilter, string $filename): array
+    public static function filters(Request $request, int|string $accountId, int|string|false $id, bool $applyFilter, string $filename): array
     {
         $where = [];
         $filters = getFilters($request->all());
