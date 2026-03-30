@@ -558,7 +558,15 @@ function addFeedback(url) {
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
             $('#location').val(response.data.appointment.location.name);
-            $('#scheduled_date').val(response.data.appointment.scheduled_date);
+            // Format scheduled_date from ISO/Y-m-d to readable format (e.g. "Mar 30, 2026")
+            var rawDate = response.data.appointment.scheduled_date;
+            if (rawDate) {
+                var dateObj = new Date(rawDate);
+                if (!isNaN(dateObj.getTime())) {
+                    rawDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                }
+            }
+            $('#scheduled_date').val(rawDate || '-');
             $('#add_patients_id').val(response.data.appointment.patient_id);
             $('#add_treatment_id').val(response.data.appointment.id);
         },
