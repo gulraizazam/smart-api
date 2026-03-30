@@ -3,6 +3,7 @@
 namespace App\Services\Appointment;
 
 use App\Helpers\ACL;
+use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Models\AppointmentStatuses;
@@ -220,6 +221,12 @@ class AppointmentFilterService
         //->whereIn('appointments.city_id', ACL::getUserCities())
         ->whereIn('appointments.location_id', ACL::getUserCentres())
         ->where('appointments.appointment_type_id', $consultancyTypeId); // Always filter for consultancy only
+
+        // Auto-filter by doctor_id for doctor roles
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(DoctorDashboardHelper::DOCTOR_ROLE_NAMES)) {
+            $query->where('appointments.doctor_id', $user->id);
+        }
 
         return $query;
     }
