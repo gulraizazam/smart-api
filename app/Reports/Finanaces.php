@@ -1108,9 +1108,15 @@ class Finanaces
         '=',
         $account_id,
     ];
-    $location_information = ACL::getUserCentres();
+    $userCentres = ACL::getUserCentres();
+    // Filter out empty values (from "All" option) in location_id_com
+    $locationIds = array_filter($data['location_id_com'], function($val) { return $val !== '' && $val !== null; });
+    // If no specific locations selected (only "All" was picked), use all user centres
+    if (empty($locationIds)) {
+        $locationIds = is_array($userCentres) ? $userCentres : [$userCentres];
+    }
     $report_data = [];
-    foreach ($data['location_id_com'] as $location) {
+    foreach ($locationIds as $location) {
         $query = PackageAdvances::whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where('location_id', '=', $location)
@@ -1126,16 +1132,20 @@ class Finanaces
 
         $packagesadvances = $query->get();
 
-        $location_information = Locations::find($location);
+        $location_single_info = Locations::find($location);
+
+        if (!$location_single_info) {
+            continue;
+        }
 
         if ($packagesadvances) {
             $balance = 0;
             $total_balance = 0;
-            $report_data[$location_information->id] = [
-                'id' => $location_information->id,
-                'name' => $location_information->name,
-                'city' => $location_information->city->name,
-                'region' => $location_information->region->name,
+            $report_data[$location_single_info->id] = [
+                'id' => $location_single_info->id,
+                'name' => $location_single_info->name,
+                'city' => $location_single_info->city->name,
+                'region' => $location_single_info->region->name,
                 'revenue_data' => [],
             ];
 
@@ -1238,11 +1248,11 @@ class Finanaces
                             $refund_bank_in = 0;
                             $refund_out = $packagesadvance->cash_amount;
                         }
-                        $gender = $packagesadvance->user->gender == 1 ? 'Male' : 'Female';
-                        $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
+                        $genderLabel = $packagesadvance->user->gender == 1 ? 'Male' : 'Female';
+                        $report_data[$location_single_info->id]['revenue_data'][$packagesadvance->id] = [
                             'patient_id' => $packagesadvance->patient_id,
                             'patient' => $packagesadvance->user->name,
-                            'gender' => $gender,
+                            'gender' => $genderLabel,
                             'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                             'transtype' => $transtype,
                             'payment_mode_id' => $packagesadvance->payment_mode_id,
@@ -1287,11 +1297,16 @@ class Finanaces
     // Filter by selected locations first, then by region if provided
     $userCentres = ACL::getUserCentres();
     
-    if (!empty($data['location_id']) && is_array($data['location_id'])) {
+    // Filter out empty values (from "All" option) in location_id
+    $locationIds = (!empty($data['location_id']) && is_array($data['location_id']))
+        ? array_filter($data['location_id'], function($val) { return $val !== '' && $val !== null; })
+        : [];
+
+    if (!empty($locationIds)) {
         // Filter user centres to only selected locations
-        $selectedLocations = array_intersect($data['location_id'], is_array($userCentres) ? $userCentres : [$userCentres]);
+        $selectedLocations = array_intersect($locationIds, is_array($userCentres) ? $userCentres : [$userCentres]);
         if (empty($selectedLocations)) {
-            $selectedLocations = $data['location_id'];
+            $selectedLocations = $locationIds;
         }
         if (isset($data['region_id']) && $data['region_id']) {
             $location_information = Locations::generalrevenuegetActiveSorted($selectedLocations, $data['region_id']);

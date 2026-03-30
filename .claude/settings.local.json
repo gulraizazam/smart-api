@@ -71,14 +71,9 @@
       "Bash(find /c/laragon/www/cutera-upgradation1/resources/views -path *leads* -type f)",
       "Bash(find C:/laragon/www/cutera-upgradation1/public/assets/js -name *leads* -o -name *datatable*)",
       "Bash(find C:/laragon/www/cutera-upgradation1/public/assets -name *ktdatatable* -o -name *KTDatatable*)",
-      "Bash(ls:*)",
-      "Bash(find /c/laragon/www/cutera-upgradation1 -name *Consultancy* -type f)",
-      "Bash(find /c/laragon/www/cutera-upgradation1/app -name *.php -type f)",
-      "Bash(find /c/laragon/www/cutera-upgradation1/app -path *Appointment* -name *.php -type f)",
-      "Bash(mkdir -p /c/laragon/www/cutera-upgradation1/app/Traits)",
-      "Bash(mkdir -p /c/laragon/www/cutera-upgradation1/app/Http/Resources/Consultancy)",
-      "Bash(mkdir -p /c/laragon/www/cutera-upgradation1/app/Http/Requests/Consultancy)",
-      "Bash(mkdir -p /c/laragon/www/cutera-upgradation1/app/Services/Consultancy)"
+      "Bash(find /c/laragon/www/cutera-upgradation1 -type f \\\\\\(-name *accountsales* -o -name *sales*summary* -o -name *summary* \\\\\\))",
+      "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name *vendor*)",
+      "Bash(find /c/laragon/www/cutera-upgradation1 -path */vendor -prune -o -type f \\\\\\(-path */cashflow/*Controller* -o -path */cashflow/*Model* \\\\\\) -print)"
     ]
   }
 }
