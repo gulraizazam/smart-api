@@ -502,10 +502,6 @@ class ConversionService
             ->whereNull('deleted_at')
             ->count();
 
-        if ($totalArrived === 0) {
-            return $this->emptyDoctorResult();
-        }
-
         // Fetch candidate appointments using shared logic
         $candidates = $this->fetchCandidateAppointments(
             [$doctorId],
