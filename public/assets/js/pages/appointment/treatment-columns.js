@@ -28,7 +28,7 @@ function getTreatmentColumns(includePatientColumn = true, perms = null) {
             sortable: false,
             template: function (data) {
                 var detail_url = route('admin.appointments.detail', { id: data.id });
-                return '<a href="javascript:void(0);" onclick="viewTreatmentDetail(`' + detail_url + '`)">' + data.Patient_ID + '</a>';
+                return '<a href="javascript:void(0);" onclick="viewDetail(`' + detail_url + '`)">' + data.Patient_ID + '</a>';
             }
         }
     ];
