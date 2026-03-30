@@ -79,7 +79,7 @@ class PackageAdvances extends BaseModal
     protected function casts(): array
     {
         return [
-            'cash_amount' => 'decimal:2',
+            'cash_amount' => 'float',
             'active'      => 'boolean',
             'is_cancel'   => 'boolean',
             'is_tax'      => 'boolean',
