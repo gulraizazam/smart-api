@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exceptions;
 
 use Exception;
 
-class TreatmentException extends Exception
+final class TreatmentException extends Exception
 {
-    protected $statusCode;
-    protected $errorData;
-
-    public function __construct(string $message = 'Treatment operation failed', int $statusCode = 400, array $errorData = [])
-    {
-        parent::__construct($message);
-        $this->statusCode = $statusCode;
-        $this->errorData = $errorData;
+    public function __construct(
+        string $message = 'Treatment operation failed',
+        private readonly int $statusCode = 400,
+        private readonly array $errorData = [],
+    ) {
+        parent::__construct($message, $statusCode);
     }
 
     public function getStatusCode(): int
@@ -26,23 +26,53 @@ class TreatmentException extends Exception
         return $this->errorData;
     }
 
-    public static function notFound(string $message = 'Treatment not found'): self
+    public static function notFound(string $message = 'Treatment not found.'): self
     {
         return new self($message, 404);
     }
 
-    public static function unauthorized(string $message = 'Unauthorized access to treatment'): self
+    public static function unauthorized(string $message = 'Unauthorized access to treatment.'): self
     {
         return new self($message, 403);
     }
 
-    public static function validationFailed(string $message = 'Validation failed', array $errors = []): self
+    public static function validationFailed(string $message = 'Validation failed.', array $errors = []): self
     {
         return new self($message, 422, $errors);
     }
 
-    public static function operationFailed(string $message = 'Operation failed'): self
+    public static function operationFailed(string $message = 'Operation failed.'): self
     {
         return new self($message, 500);
+    }
+
+    public static function invalidData(string $message = 'Invalid data provided.'): self
+    {
+        return new self($message, 422);
+    }
+
+    public static function resourceNotFound(string $resource): self
+    {
+        return new self("{$resource} not found.", 422);
+    }
+
+    public static function doctorUnavailable(string $detail = ''): self
+    {
+        $message = 'Doctor is not available.';
+        if ($detail) {
+            $message .= " {$detail}";
+        }
+
+        return new self($message, 422);
+    }
+
+    public static function invoiceExists(): self
+    {
+        return new self('Invoice already generated. Treatment cannot be rescheduled.', 422);
+    }
+
+    public static function permissionDenied(string $field): self
+    {
+        return new self("You do not have permission to change the {$field}.");
     }
 }

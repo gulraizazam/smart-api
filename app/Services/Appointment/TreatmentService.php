@@ -1,45 +1,48 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Appointment;
 
 use App\Exceptions\AppointmentException;
 use App\Helpers\AppointmentHelper;
 use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
-use App\Models\Services;
 use App\Models\Resources;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Services;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Appointment-oriented TreatmentService (extends AppointmentService).
+ *
+ * Used by the /api/treatment/* routes for list/scheduled/non-scheduled/statistics
+ * which delegate to AppointmentService base methods.
+ *
+ * Store/update/edit logic lives in Treatment\TreatmentService (consolidated).
+ */
 class TreatmentService extends AppointmentService
 {
-    protected $treatmentTypeId;
+    private ?int $treatmentTypeId = null;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    protected function getTreatmentTypeId()
+    protected function getTreatmentTypeId(): ?int
     {
         if ($this->treatmentTypeId === null) {
             $accountId = $this->getAccountId();
-            $cacheKey = "treatment_type_id_{$accountId}";
+            $cacheKey  = "treatment_type_id_{$accountId}";
 
-            $this->treatmentTypeId = Cache::remember($cacheKey, 3600, function () use ($accountId) {
-                $type = AppointmentTypes::where([
+            $this->treatmentTypeId = Cache::remember($cacheKey, 3600, fn () =>
+                AppointmentTypes::where([
                     'account_id' => $accountId,
-                    'slug' => 'treatment'
-                ])->first();
-
-                return $type ? $type->id : null;
-            });
+                    'slug'       => 'treatment',
+                ])->value('id')
+            );
         }
 
         return $this->treatmentTypeId;
     }
 
-    public function getTreatmentList($filters)
+    public function getTreatmentList(array $filters): \Illuminate\Database\Eloquent\Builder
     {
         if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
@@ -48,7 +51,7 @@ class TreatmentService extends AppointmentService
         return $this->getAppointmentsList($filters, $this->treatmentTypeId);
     }
 
-    public function createTreatment(array $data)
+    public function createTreatment(array $data): mixed
     {
         if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
@@ -64,19 +67,17 @@ class TreatmentService extends AppointmentService
         }
 
         if (!isset($data['appointment_status_id'])) {
-            // Get default status for this account
-            $defaultStatus = \App\Models\AppointmentStatuses::where([
+            $defaultStatus = AppointmentStatuses::where([
                 'account_id' => $this->getAccountId(),
-                'is_default' => 1
+                'is_default' => 1,
             ])->first();
-            
+
             if ($defaultStatus) {
-                $data['appointment_status_id'] = $defaultStatus->id;
+                $data['appointment_status_id']      = $defaultStatus->id;
                 $data['base_appointment_status_id'] = $defaultStatus->id;
             }
         }
-        
-        // Always ensure base_appointment_status_id is set when appointment_status_id exists
+
         if (isset($data['appointment_status_id']) && !isset($data['base_appointment_status_id'])) {
             $data['base_appointment_status_id'] = $data['appointment_status_id'];
         }
@@ -84,99 +85,88 @@ class TreatmentService extends AppointmentService
         return $this->createAppointment($data);
     }
 
-    public function updateTreatment($id, array $data)
-    {
-        $appointment = Appointments::where([
-            'id' => $id,
-            'account_id' => $this->getAccountId(),
-            'appointment_type_id' => $this->getTreatmentTypeId()
-        ])->first();
-
-        if (!$appointment) {
-            throw AppointmentException::notFound();
-        }
-
-        return $this->updateAppointment($id, $data);
-    }
-
-    public function getScheduledTreatments($filters)
+    public function getScheduledTreatments(array $filters): mixed
     {
         if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
         $filters['appointment_type_id'] = $this->treatmentTypeId;
+
         return $this->getScheduledAppointments($filters);
     }
 
-    public function getNonScheduledTreatments($filters)
+    public function getNonScheduledTreatments(array $filters): mixed
     {
         if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
         $filters['appointment_type_id'] = $this->treatmentTypeId;
+
         return $this->getNonScheduledAppointments($filters);
     }
 
-    public function getTreatmentStatistics($filters = [])
+    public function getTreatmentStatistics(array $filters = []): mixed
     {
         if (!$this->getTreatmentTypeId()) {
             throw AppointmentException::invalidType();
         }
 
         $filters['appointment_type_id'] = $this->treatmentTypeId;
+
         return $this->getAppointmentStatistics($filters);
     }
 
-    public function getAvailableResources($location_id, $service_id = null)
+    public function getAvailableResources(int $locationId, ?int $serviceId = null): mixed
     {
-        $cacheKey = "treatment_resources_{$this->getAccountId()}_{$location_id}_{$service_id}";
+        $cacheKey = "treatment_resources_{$this->getAccountId()}_{$locationId}_{$serviceId}";
 
-        return Cache::remember($cacheKey, 1800, function () use ($location_id, $service_id) {
+        return Cache::remember($cacheKey, 1800, function () use ($locationId, $serviceId) {
             $query = Resources::where([
-                'account_id' => $this->getAccountId(),
-                'location_id' => $location_id,
-                'active' => 1
+                'account_id'  => $this->getAccountId(),
+                'location_id' => $locationId,
+                'active'      => 1,
             ]);
 
-            if ($service_id) {
-                $query->whereHas('machineType.services', function ($q) use ($service_id) {
-                    $q->where('service_id', $service_id);
-                });
+            if ($serviceId) {
+                $query->whereHas('machineType.services', fn ($q) => $q->where('service_id', $serviceId));
             }
 
             return $query->with('machineType')->get();
         });
     }
 
-    public function getServicesByLocation($location_id)
+    public function getServicesByLocation(int $locationId): mixed
     {
-        $cacheKey = "treatment_services_location_{$this->getAccountId()}_{$location_id}";
+        $cacheKey = "treatment_services_location_{$this->getAccountId()}_{$locationId}";
 
-        return Cache::remember($cacheKey, 3600, function () use ($location_id) {
-            return Services::whereHas('locations', function ($q) use ($location_id) {
-                $q->where('location_id', $location_id);
-            })->where('account_id', $this->getAccountId())
-              ->where('active', 1)
-              ->orderBy('name')
-              ->get();
-        });
+        return Cache::remember($cacheKey, 3600, fn () =>
+            Services::whereHas('locations', fn ($q) => $q->where('location_id', $locationId))
+                ->where('account_id', $this->getAccountId())
+                ->where('active', 1)
+                ->orderBy('name')
+                ->get()
+        );
     }
 
-    public function validateResourceAvailability($resource_id, $scheduled_date, $scheduled_time, $appointment_id = null)
-    {
+    public function validateResourceAvailability(
+        int $resourceId,
+        string $scheduledDate,
+        string $scheduledTime,
+        ?int $appointmentId = null,
+    ): bool {
         $query = Appointments::where([
-            'resource_id' => $resource_id,
-            'scheduled_date' => $scheduled_date,
-            'scheduled_time' => $scheduled_time
+            'resource_id'    => $resourceId,
+            'scheduled_date' => $scheduledDate,
+            'scheduled_time' => $scheduledTime,
         ]);
 
-        if ($appointment_id) {
-            $query->where('id', '!=', $appointment_id);
+        if ($appointmentId) {
+            $query->where('id', '!=', $appointmentId);
         }
 
-        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->account_id);
+        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
             $query->where('base_appointment_status_id', '!=', $cancelledStatus->id);
         }

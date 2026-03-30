@@ -118,14 +118,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::post('save', [\App\Http\Controllers\Admin\CentreTargetsController::class, 'saveSystemTarget'])->name('save');
     });
 
-    // Treatments API Routes (Optimized)
+    // Treatments API Routes (Unified → TreatmentController)
     Route::prefix('treatments')->name('treatments.')->group(function () {
-        Route::post('datatable', [\App\Http\Controllers\Api\TreatmentsController::class, 'datatable'])->name('datatable');
-        Route::post('store', [\App\Http\Controllers\Api\TreatmentsController::class, 'store'])->name('store');
-        Route::post('drag-drop-reschedule', [\App\Http\Controllers\Api\TreatmentsController::class, 'dragDropReschedule'])->name('drag_drop_reschedule');
-        Route::get('check-patient-last-treatment', [\App\Http\Controllers\Api\TreatmentsController::class, 'checkPatientLastTreatment'])->name('check_patient_last_treatment');
-        Route::post('clear-cache', [\App\Http\Controllers\Api\TreatmentsController::class, 'clearCache'])->name('clear_cache');
-        Route::get('{id}/edit', [\App\Http\Controllers\Api\TreatmentsController::class, 'edit'])->name('edit');
+        Route::post('datatable', [\App\Http\Controllers\Api\TreatmentController::class, 'datatable'])->name('datatable');
+        Route::post('store', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
+        Route::post('drag-drop-reschedule', [\App\Http\Controllers\Api\TreatmentController::class, 'dragDropReschedule'])->name('drag_drop_reschedule');
+        Route::get('check-patient-last-treatment', [\App\Http\Controllers\Api\TreatmentController::class, 'checkPatientLastTreatment'])->name('check_patient_last_treatment');
+        Route::post('clear-cache', [\App\Http\Controllers\Api\TreatmentController::class, 'clearCache'])->name('clear_cache');
+        Route::get('{id}/edit', [\App\Http\Controllers\Api\TreatmentController::class, 'edit'])->name('edit');
     });
 
     // Permissions API Routes (Optimized)
