@@ -3068,7 +3068,15 @@ function deleteConfPlanRow(id, type = '') {
 }
 function deletePlan(id, type) {
 
-    var package_total = $('#' + type + 'package_total_1').val();
+    // Use bundle-specific selectors when the edit bundle modal is open
+    var isBundleModal = $('#modal_edit_bundle').hasClass('show');
+    var package_total = isBundleModal
+        ? $('#edit_bundle_package_total_1').val()
+        : $('#' + type + 'package_total_1').val();
+    var random_id = isBundleModal
+        ? $('#edit_bundle_random_id_1').val()
+        : $('#edit_random_id_1').val();
+
     $('#edit_payment_mode_id').val('').change();
     $.ajax({
         type: 'post',
@@ -3077,7 +3085,7 @@ function deletePlan(id, type) {
             '_token': $('input[name=_token]').val(),
             'id': id,
             'package_total': package_total,
-            'random_id': $('#edit_random_id_1').val()
+            'random_id': random_id
         },
         success: function (resposne) {
 
