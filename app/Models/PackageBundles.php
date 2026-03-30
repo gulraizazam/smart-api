@@ -70,13 +70,13 @@ class PackageBundles extends Model
     protected function casts(): array
     {
         return [
-            'service_price'           => 'decimal:2',
-            'net_amount'              => 'decimal:2',
-            'discount_price'          => 'decimal:2',
-            'tax_exclusive_net_amount' => 'decimal:2',
-            'tax_price'               => 'decimal:2',
-            'tax_including_price'     => 'decimal:2',
-            'tax_percenatage'         => 'decimal:2',
+            'service_price'           => 'float',
+            'net_amount'              => 'float',
+            'discount_price'          => 'float',
+            'tax_exclusive_net_amount' => 'float',
+            'tax_price'               => 'float',
+            'tax_including_price'     => 'float',
+            'tax_percenatage'         => 'float',
             'is_exclusive'            => 'boolean',
             'is_allocate'             => 'boolean',
             'active'                  => 'boolean',

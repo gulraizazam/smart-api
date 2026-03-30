@@ -60,13 +60,13 @@ class PackageService extends Model
     protected function casts(): array
     {
         return [
-            'price'              => 'decimal:2',
-            'orignal_price'      => 'decimal:2',
-            'actual_price'       => 'decimal:2',
-            'tax_exclusive_price' => 'decimal:2',
-            'tax_price'          => 'decimal:2',
-            'tax_including_price' => 'decimal:2',
-            'tax_percenatage'    => 'decimal:2',
+            'price'              => 'float',
+            'orignal_price'      => 'float',
+            'actual_price'       => 'float',
+            'tax_exclusive_price' => 'float',
+            'tax_price'          => 'float',
+            'tax_including_price' => 'float',
+            'tax_percenatage'    => 'float',
             'is_exclusive'       => 'boolean',
             'is_consumed'        => 'boolean',
             'consumed_at'        => 'datetime',

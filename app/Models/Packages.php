@@ -61,7 +61,7 @@ class Packages extends BaseModal
     protected function casts(): array
     {
         return [
-            'total_price'  => 'decimal:2',
+            'total_price'  => 'float',
             'active'       => 'boolean',
             'is_exclusive' => 'boolean',
             'is_refund'    => 'boolean',
