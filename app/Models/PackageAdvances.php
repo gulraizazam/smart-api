@@ -294,8 +294,11 @@ class PackageAdvances extends BaseModal
      * Update lead status to Converted when payment is received.
      * Flow: package_advances -> packages (appointment_id) -> appointments (lead_id) -> leads
      */
-    public static function updateLeadStatusToConverted(int $packageId, int $accountId): void
+    public static function updateLeadStatusToConverted(int|string $packageId, int|string $accountId): void
     {
+        $packageId = (int) $packageId;
+        $accountId = (int) $accountId;
+
         try {
             $package = Packages::find($packageId);
             if (!$package?->appointment_id) {
