@@ -25,7 +25,7 @@ final class PlansController extends Controller
 
     // ── Patient-scoped datatable ────────────────────────
 
-    public function datatable(PlanDatatableRequest $request, int $patientId): JsonResponse
+    public function datatable(PlanDatatableRequest $request, int|string $patientId): JsonResponse
     {
         try {
             if ($this->isBulkDelete($request)) {
@@ -62,7 +62,7 @@ final class PlansController extends Controller
 
     // ── Patient-scoped lookup data ──────────────────────
 
-    public function getLookupData(int $patientId): JsonResponse
+    public function getLookupData(int|string $patientId): JsonResponse
     {
         if (Gate::denies('plans_manage')) {
             return $this->unauthorizedResponse();
@@ -81,7 +81,7 @@ final class PlansController extends Controller
 
     // ── Patient statistics ──────────────────────────────
 
-    public function getStatistics(int $patientId): JsonResponse
+    public function getStatistics(int|string $patientId): JsonResponse
     {
         if (Gate::denies('plans_manage')) {
             return $this->unauthorizedResponse();

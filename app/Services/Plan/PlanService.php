@@ -113,7 +113,7 @@ final class PlanService
     /**
      * @return array{total_plans: int, active_plans: int, total_amount: float, cash_received: float, refunded_plans: int}
      */
-    public function getPatientStatistics(int $patientId): array
+    public function getPatientStatistics(int|string $patientId): array
     {
         $stats = Packages::where('patient_id', $patientId)
             ->selectRaw('
@@ -142,7 +142,7 @@ final class PlanService
     //  Lookup Data (cached)
     // ──────────────────────────────────────────────────
 
-    public function getLookupData(int $patientId): array
+    public function getLookupData(int|string $patientId): array
     {
         $cacheKey = "plan_lookup_patient_{$patientId}_" . Auth::id();
 
@@ -181,7 +181,7 @@ final class PlanService
         });
     }
 
-    public function clearLookupCache(int $patientId): void
+    public function clearLookupCache(int|string $patientId): void
     {
         Cache::forget("plan_lookup_patient_{$patientId}_" . Auth::id());
     }
@@ -300,7 +300,7 @@ final class PlanService
     //  Appointment Info
     // ──────────────────────────────────────────────────
 
-    public function getAppointmentInfo(int $patientId, int $locationId): array
+    public function getAppointmentInfo(int|string $patientId, int|string $locationId): array
     {
         try {
             $arrivedStatus = DB::table('appointment_statuses')->where('is_arrived', 1)->first();
@@ -403,7 +403,7 @@ final class PlanService
     //  Services by Location
     // ──────────────────────────────────────────────────
 
-    public function getServicesByLocation(int $locationId, int $accountId): array
+    public function getServicesByLocation(int|string $locationId, int|string $accountId): array
     {
         try {
             $serviceHasLocations = DB::table('service_has_locations')
@@ -678,7 +678,7 @@ final class PlanService
     /**
      * @throws PlanException
      */
-    public function getEditFormData(int $packageId): array
+    public function getEditFormData(int|string $packageId): array
     {
         try {
             $package = Packages::with('user', 'location')->find($packageId)
@@ -785,7 +785,7 @@ final class PlanService
     /**
      * @throws PlanException
      */
-    public function getDisplayData(int $packageId): array
+    public function getDisplayData(int|string $packageId): array
     {
         try {
             $package = Packages::with('user', 'location')->find($packageId)
@@ -870,7 +870,7 @@ final class PlanService
     /**
      * @throws PlanException
      */
-    public function deletePlan(int $packageId): array
+    public function deletePlan(int|string $packageId): array
     {
         $package = Packages::find($packageId)
             ?? throw PlanException::notFound($packageId);
@@ -924,7 +924,7 @@ final class PlanService
         return $query;
     }
 
-    private function buildOptimizedResultQuery(array $where, int $accountId): Builder
+    private function buildOptimizedResultQuery(array $where, int|string $accountId): Builder
     {
         $userCentres = ACL::getUserCentres();
         $canViewInactive = Gate::allows('view_inactive_plans');
@@ -1018,17 +1018,17 @@ final class PlanService
 
     // ── Filter Building ─────────────────────────────────
 
-    private function buildWhereConditions(array $filters, string $filename, int $userId, int $accountId, int $patientId): array
+    private function buildWhereConditions(array $filters, string $filename, int|string $userId, int|string $accountId, int|string $patientId): array
     {
         return $this->buildWhereConditionsBase($filters, $filename, $userId, $accountId, $patientId);
     }
 
-    private function buildGlobalWhereConditions(array $filters, string $filename, int $userId, int $accountId): array
+    private function buildGlobalWhereConditions(array $filters, string $filename, int|string $userId, int|string $accountId): array
     {
         return $this->buildWhereConditionsBase($filters, $filename, $userId, $accountId, null);
     }
 
-    private function buildWhereConditionsBase(array $filters, string $filename, int $userId, int $accountId, ?int $patientId): array
+    private function buildWhereConditionsBase(array $filters, string $filename, int|string $userId, int|string $accountId, int|string|null $patientId): array
     {
         $where = [];
         $applyFilter = $this->shouldApplyFilter($filters);
@@ -1051,7 +1051,7 @@ final class PlanService
         return $where;
     }
 
-    private function addPatientFilter(array &$where, array $filters, int $userId, string $filename, bool $applyFilter): void
+    private function addPatientFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, 'patient_id')) {
             $patientId = $filters['patient_id'];
@@ -1067,7 +1067,7 @@ final class PlanService
         }
     }
 
-    private function addFilterCondition(array &$where, array $filters, string $filterKey, string $column, int $userId, string $filename, bool $applyFilter): void
+    private function addFilterCondition(array &$where, array $filters, string $filterKey, string $column, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, $filterKey)) {
             $where[] = [$column, '=', $filters[$filterKey]];
@@ -1079,7 +1079,7 @@ final class PlanService
         }
     }
 
-    private function addStatusFilter(array &$where, array $filters, int $userId, string $filename, bool $applyFilter): void
+    private function addStatusFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, 'status')) {
             $where[] = ['packages.active', '=', $filters['status']];
@@ -1094,7 +1094,7 @@ final class PlanService
         }
     }
 
-    private function addDateRangeFilter(array &$where, array $filters, int $userId, string $filename, bool $applyFilter): void
+    private function addDateRangeFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, 'created_at')) {
             $dateRange = explode(' - ', $filters['created_at']);
@@ -1500,7 +1500,7 @@ final class PlanService
 
     // ── Membership Processing ───────────────────────────
 
-    private function processMembershipPlan(Packages $package, array $data, int $appointmentId, mixed $request): void
+    private function processMembershipPlan(Packages $package, array $data, int|string $appointmentId, mixed $request): void
     {
         $total = (float) str_replace(',', '', $data['total'] ?? '0');
         $cashAmount = (float) ($data['cash_amount'] ?? 0);
@@ -1623,7 +1623,7 @@ final class PlanService
         }
     }
 
-    private function updateMembershipRecord(int $membershipCodeId, array $membership, array $data, bool $isFullyPaid): void
+    private function updateMembershipRecord(int|string $membershipCodeId, array $membership, array $data, bool $isFullyPaid): void
     {
         $membershipRecord = Membership::find($membershipCodeId);
         if (!$membershipRecord) {
@@ -1706,7 +1706,7 @@ final class PlanService
 
     // ── Package Record Creation ─────────────────────────
 
-    private function createPackageRecord(array $data, int $appointmentId): Packages
+    private function createPackageRecord(array $data, int|string $appointmentId): Packages
     {
         $totalPrice = str_replace(',', '', $data['total']);
 
@@ -1731,7 +1731,7 @@ final class PlanService
 
     // ── Payment Processing ──────────────────────────────
 
-    private function handlePackagePayment(Packages $package, array $data, int $appointmentId): void
+    private function handlePackagePayment(Packages $package, array $data, int|string $appointmentId): void
     {
         $packageAdvance = PackageAdvances::createRecord([
             'cash_flow'       => CashFlow::In->value,
@@ -1760,7 +1760,7 @@ final class PlanService
         $this->markAppointmentAsConvertedOptimized($appointmentId, $package->id, (float) $data['cash_amount']);
     }
 
-    private function handlePartialMembershipPayment(Packages $package, array $data, int $appointmentId): void
+    private function handlePartialMembershipPayment(Packages $package, array $data, int|string $appointmentId): void
     {
         $packageAdvance = PackageAdvances::createRecord([
             'cash_flow'       => CashFlow::In->value,
@@ -1899,7 +1899,7 @@ final class PlanService
 
     // ── Voucher Handling ────────────────────────────────
 
-    private function handleVoucherConsumption(Discounts $discount, int $userId, string $randomId, Services $service, float $discountPrice, string $serviceId): void
+    private function handleVoucherConsumption(Discounts $discount, int|string $userId, string $randomId, Services $service, float $discountPrice, string $serviceId): void
     {
         $userVoucher = UserVouchers::where('voucher_id', $discount->id)
             ->where('user_id', $userId)
@@ -1950,7 +1950,7 @@ final class PlanService
 
     // ── Appointment Conversion ──────────────────────────
 
-    private function markAppointmentAsConvertedOptimized(int $appointmentId, int $packageId, float $paymentAmount): void
+    private function markAppointmentAsConvertedOptimized(int|string $appointmentId, int|string $packageId, float $paymentAmount): void
     {
         try {
             $appointment = Appointments::find($appointmentId);
@@ -2044,7 +2044,7 @@ final class PlanService
         }
     }
 
-    private function updateLeadStatusToConverted(object $appointment, int $accountId, mixed $location, mixed $service, float $paymentAmount): void
+    private function updateLeadStatusToConverted(object $appointment, int|string $accountId, mixed $location, mixed $service, float $paymentAmount): void
     {
         $lead = Leads::find($appointment->lead_id);
         if (!$lead) {
@@ -2059,7 +2059,7 @@ final class PlanService
         }
     }
 
-    private function sendMetaConvertedEvent(object $appointment, int $packageId, float $paymentAmount): void
+    private function sendMetaConvertedEvent(object $appointment, int|string $packageId, float $paymentAmount): void
     {
         if (!$appointment->lead_id) {
             return;
@@ -2093,7 +2093,7 @@ final class PlanService
 
     // ── Membership Display ──────────────────────────────
 
-    private function getMembershipDisplay(int $patientId): string
+    private function getMembershipDisplay(int|string $patientId): string
     {
         $membership = Membership::with('membershiptype')
             ->where('patient_id', $patientId)
@@ -2127,7 +2127,7 @@ final class PlanService
         return "{$typeName} - {$membership->code} - {$status}" . ($expiryFormatted ? " (Exp: {$expiryFormatted})" : '');
     }
 
-    private function getMembershipDisplayForPackage(int $patientId): string
+    private function getMembershipDisplayForPackage(int|string $patientId): string
     {
         $membership = Membership::with('membershiptype')
             ->where('patient_id', $patientId)
@@ -2156,7 +2156,7 @@ final class PlanService
         return $membership->active == 1 ? 'Active' : 'Inactive';
     }
 
-    private function getMembershipForLocation(int $patientId): string
+    private function getMembershipForLocation(int|string $patientId): string
     {
         $membership = DB::table('memberships')
             ->join('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
@@ -2177,7 +2177,7 @@ final class PlanService
         return "{$typeName}{$status}";
     }
 
-    private function getPatientMembershipDisplay(int $patientId): string
+    private function getPatientMembershipDisplay(int|string $patientId): string
     {
         $patient = DB::table('users')
             ->leftJoin('user_memberships', 'users.id', '=', 'user_memberships.user_id')
@@ -2257,7 +2257,7 @@ final class PlanService
         return !empty($data['cash_amount']) && $data['cash_amount'] != '0';
     }
 
-    private function hasChildRecords(int $packageId): bool
+    private function hasChildRecords(int|string $packageId): bool
     {
         return DB::table('invoice_details')->where('package_id', $packageId)->exists()
             || DB::table('package_advances')->where('package_id', $packageId)->exists();
@@ -2265,7 +2265,7 @@ final class PlanService
 
     // ── Patient Appointments Builder ────────────────────
 
-    private function buildPatientAppointments(int $patientId, int $locationId): array
+    private function buildPatientAppointments(int|string $patientId, int|string $locationId): array
     {
         $appointments = DB::table('appointments')
             ->leftJoin('services', 'appointments.service_id', '=', 'services.id')

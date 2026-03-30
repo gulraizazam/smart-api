@@ -195,7 +195,7 @@ class PackageService extends Model
         return true;
     }
 
-    public static function InvoiceCancel(object $invoiceDetail, int $accountId): bool
+    public static function InvoiceCancel(object $invoiceDetail, int|string $accountId): bool
     {
         $packageService = self::findOrFail($invoiceDetail->package_service_id);
         $oldData = $packageService->toArray();
