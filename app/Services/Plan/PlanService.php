@@ -1155,7 +1155,7 @@ final class PlanService
 
     // ── Tax Calculations ────────────────────────────────
 
-    private function calculateTax(int $taxTreatmentType, float $netAmount, float $taxPercentage, bool $isExclusive): array
+    private function calculateTax(int|string $taxTreatmentType, float $netAmount, float $taxPercentage, bool $isExclusive): array
     {
         $taxBoth = Config::get('constants.tax_both');
         $taxExclusive = Config::get('constants.tax_is_exclusive');
@@ -1175,7 +1175,7 @@ final class PlanService
         };
     }
 
-    private function calculateServiceTax(int $taxTreatmentType, float $price, float $taxPercentage, bool $isExclusive): array
+    private function calculateServiceTax(int|string $taxTreatmentType, float $price, float $taxPercentage, bool $isExclusive): array
     {
         $taxBoth = Config::get('constants.tax_both');
         $taxExclusive = Config::get('constants.tax_is_exclusive');
@@ -1618,7 +1618,7 @@ final class PlanService
 
             $membershipCodeId = $membership['membershipCodeId'] ?? null;
             if ($membershipCodeId) {
-                $this->updateMembershipRecord($membershipCodeId, $membership, $data, $isFullyPaid);
+                $this->updateMembershipRecord((int) $membershipCodeId, $membership, $data, $isFullyPaid);
             }
         }
     }
