@@ -1,482 +1,329 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use DateTime;
+use App\Enums\PlanType;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class Packages extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['random_id', 'name', 'plan_name', 'sessioncount', 'total_price', 'is_exclusive', 'plan_type', 'account_id', 'patient_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'location_id', 'appointment_id', 'is_refund'];
-
-    protected static $_fillable = ['name', 'sessioncount', 'total_price', 'is_exclusive', 'plan_type', 'patient_id', 'active', 'location_id', 'appointment_id', 'is_refund', 'created_at', 'updated_at', 'deleted_at'];
-
     protected $table = 'packages';
 
-    protected static $_table = 'packages';
+    protected static string $_table = 'packages';
 
-    /*
-     * get the data of patients from users table
-     *
-     * */
-    public function user()
+    protected $fillable = [
+        'random_id',
+        'name',
+        'plan_name',
+        'sessioncount',
+        'total_price',
+        'is_exclusive',
+        'plan_type',
+        'account_id',
+        'patient_id',
+        'active',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'location_id',
+        'appointment_id',
+        'is_refund',
+    ];
+
+    protected static array $_fillable = [
+        'name',
+        'sessioncount',
+        'total_price',
+        'is_exclusive',
+        'plan_type',
+        'patient_id',
+        'active',
+        'location_id',
+        'appointment_id',
+        'is_refund',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'total_price'  => 'decimal:2',
+            'active'       => 'boolean',
+            'is_exclusive' => 'boolean',
+            'is_refund'    => 'boolean',
+            'plan_type'    => PlanType::class,
+            'created_at'   => 'datetime',
+            'updated_at'   => 'datetime',
+            'deleted_at'   => 'datetime',
+        ];
+    }
+
+    // ── Relationships ───────────────────────────────────
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
 
-    /**
-     * Get the packages.
-     */
-    public function packagesadvances()
+    public function packagesadvances(): HasMany
     {
-
-        return $this->hasMany('App\Models\PackageAdvances', 'package_id');
+        return $this->hasMany(PackageAdvances::class, 'package_id');
     }
 
-    /*
-    * get the data of location from location table
-    *
-    * */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+        return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
 
-    /*
-     * get the data of appointment from package
-     * */
-
-    public function appointment()
+    public function appointment(): BelongsTo
     {
-       return  $this->belongsTo(Appointments::class);
+        return $this->belongsTo(Appointments::class);
     }
 
-    /*
-     * get the data of appointment from package
-     *
-     */
-    public function packageservice()
+    public function packageservice(): HasMany
     {
-        return $this->hasMany('App\Models\PackageService', 'package_id');
-    }
-    public function services()
-    {
-        return $this->hasMany('App\Models\Services', 'service_id');
+        return $this->hasMany(PackageService::class, 'package_id');
     }
 
-    /*
-     * Create Record
-     *  @param: data
-     * @return: mixed
-     * */
-    public static function createRecord($data, $request)
+    public function packagebundles(): HasMany
     {
+        return $this->hasMany(PackageBundles::class, 'package_id');
+    }
 
+    // ── CRUD Operations ─────────────────────────────────
+
+    public static function createRecord(array $data, array|Request $request): self
+    {
         $record = self::create($data);
-
-        $data['name'] = sprintf('%05d', $record->id);
-
         $record->update(['name' => sprintf('%05d', $record->id)]);
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-        $packagebundle = PackageBundles::createRecord($record, $request);
+        PackageBundles::createRecord($record, $request instanceof Request ? $request->all() : $request);
 
         return $record;
     }
 
-    /*
-     * Update Record
-     * @param: data
-     * @return: mixed
-     * */
-    public static function updateRecord($data, $random_id, $request)
+    public static function updateRecord(array $data, string $randomId, array|Request $request): self
     {
-        $record = self::where('random_id', '=', $random_id)->first();
-        $id = $record->id;
-        $old_data = (self::find($record->id))->toArray();
+        $record = self::where('random_id', $randomId)->firstOrFail();
+        $oldData = $record->toArray();
+
         $record->update($data);
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
-        $packagebundle = PackageBundles::updateRecord($record, $request);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $oldData, $record->id);
+        PackageBundles::updateRecord($record, $request instanceof Request ? $request->all() : $request);
 
         return $record;
     }
 
-    /*
-    * Update Record when refu
-    * @param: data
-    * @return: mixed
-    * */
-    public static function updateRecordRefunds($package_id)
+    public static function updateRecordRefunds(int $packageId): self
     {
-
-        $record = self::where('id', '=', $package_id)->first();
-
-        $id = $record->id;
-
-        $old_data = (self::find($package_id))->toArray();
+        $record = self::findOrFail($packageId);
+        $oldData = $record->toArray();
 
         $record->update(['is_refund' => '1']);
-
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $record, self::$_fillable, $old_data, $id);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $record->toArray(), self::$_fillable, $oldData, $record->id);
 
         return $record;
     }
 
-    /**
-     * inactive Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function inactiveRecord($id)
+    public static function inactiveRecord(int $id): array
     {
-
-        $package = Packages::getData($id);
+        $package = self::getData($id);
 
         if (!$package) {
-            return [
-                'status' => false,
-                'message' => 'Resource not found.',
-            ];
+            return ['status' => false, 'message' => 'Resource not found.'];
         }
 
-        $record = $package->update(['active' => 0]);
-
+        $package->update(['active' => 0]);
         AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
 
-        return [
-            'status' => true,
-            'message' => 'Record has been inactivated successfully.',
-        ];
+        return ['status' => true, 'message' => 'Record has been inactivated successfully.'];
     }
 
-    /**
-     * active Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function activeRecord($id)
+    public static function activeRecord(int $id): array
     {
-
-        $package = Packages::getData($id);
+        $package = self::getData($id);
 
         if (!$package) {
-
-            return [
-                'status' => false,
-                'message' => 'Resource not found.',
-            ];
+            return ['status' => false, 'message' => 'Resource not found.'];
         }
 
-        $record = $package->update(['active' => 1]);
-
+        $package->update(['active' => 1]);
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
-        return [
-            'status' => true,
-            'message' => 'Record has been activated successfully.',
-        ];
+        return ['status' => true, 'message' => 'Record has been activated successfully.'];
     }
 
-    /**
-     * Delete Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function DeleteRecord($id)
+    public static function DeleteRecord(int $id): array
     {
-        $package = Packages::getData($id);
+        $package = self::getData($id);
 
         if (!$package) {
-            return [
-                'status' => false,
-                'message' => 'Resource not found.',
-            ];
+            return ['status' => false, 'message' => 'Resource not found.'];
         }
 
-        // Check if child records exists or not, If exist then disallow to delete it.
-        if (Packages::isChildExists($id, Auth::User()->account_id)) {
-
-            return [
-                'status' => false,
-                'message' => 'Child records exist, unable to delete resource',
-            ];
+        if (self::isChildExists($id, Auth::user()->account_id)) {
+            return ['status' => false, 'message' => 'Child records exist, unable to delete resource'];
         }
 
-        $record = $package->delete();
-
-        //log request for delete for audit trail
-
+        $package->delete();
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
-        return [
-            'status' => true,
-            'message' => 'Record has been deleted successfully.',
-        ];
+        return ['status' => true, 'message' => 'Record has been deleted successfully.'];
     }
 
-    /**
-     * Check if child records exist
-     *
-     * @param  (int)  $id
-     * @return (boolean)
-     */
-    public static function isChildExists($id, $account_id)
+    public static function isChildExists(int $id, int $accountId): bool
     {
-        if (
-            InvoiceDetails::where(['package_id' => $id])->count() ||
-            PackageAdvances::where(['package_id' => $id])->count()
+        return InvoiceDetails::where('package_id', $id)->exists()
+            || PackageAdvances::where('package_id', $id)->exists();
+    }
 
-        ) {
-            return true;
+    // ── Query Helpers ───────────────────────────────────
+
+    public static function getTotalRecords(Request $request, int $accountId, int|false $id, bool $applyFilter, string $filename): int
+    {
+        $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
+
+        $query = self::when(count($where) > 0, fn ($q) => $q->where($where))
+            ->whereIn('location_id', ACL::getUserCentres());
+
+        if (!Gate::allows('view_inactive_plans')) {
+            $query->where('active', 1);
         }
 
-        return false;
+        return $query->count();
     }
 
-    /**
-     * Get Total Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
-     */
-    public static function getTotalRecords(Request $request, $account_id, $id, $apply_filter, $filename)
-    {
-        $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
-
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::where($where)->whereIn('location_id', ACL::getUserCentres())->count();
-            } else {
-                return self::where($where)->where('active', 1)->whereIn('location_id', ACL::getUserCentres())->count();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::whereIn('location_id', ACL::getUserCentres())->count();
-            } else {
-                return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
-            }
-        }
-    }
-
-    /**
-     * Get Records
-     *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
-     */
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $id, $apply_filter, $filename)
-    {
-
-        $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
-
+    public static function getRecords(
+        Request $request,
+        int $iDisplayStart,
+        int $iDisplayLength,
+        int $accountId,
+        int|false $id,
+        bool $applyFilter,
+        string $filename,
+    ): \Illuminate\Database\Eloquent\Collection {
+        $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'updated_at', 'DESC');
-        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-            return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        } else {
-            return self::when(count($where), fn ($query) => $query->where($where))->where('active', 1)->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
+
+        $query = self::when(count($where) > 0, fn ($q) => $q->where($where))
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->orderBy($orderBy, $order);
+
+        if (!Gate::allows('view_inactive_plans')) {
+            $query->where('active', 1);
         }
+
+        return $query->get();
     }
 
-    public static function filters($request, $account_id, $id, $apply_filter, $filename)
+    public static function filters(Request $request, int $accountId, int|false $id, bool $applyFilter, string $filename): array
     {
-
         $where = [];
-
         $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
+        $applyFilter = checkFilters($filters, $filename);
+
+        $startDateTime = null;
+        $endDateTime = null;
 
         if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
+            $dateRange = explode(' - ', $filters['created_at']);
+            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
+            $endDateString = new \DateTime($dateRange[1]);
+            $endDateString->setTime(23, 59, 0);
+            $endDateTime = $endDateString->format('Y-m-d H:i:s');
         }
 
-        if ($id != false) {
-            $where[] = [
-                'patient_id',
-                '=',
-                $id,
-            ];
-            Filters::put(Auth::user()->id, $filename, 'patient_id', $id);
+        $userId = Auth::id();
+
+        // Patient ID
+        if ($id !== false) {
+            $where[] = ['patient_id', '=', $id];
+            Filters::put($userId, $filename, 'patient_id', $id);
         } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, $filename, 'patient_id');
-            } else {
-                if (Filters::get(Auth::user()->id, $filename, 'patient_id')) {
-                    /*$where[] = array(
-                        'patient_id',
-                        '=',
-                        Filters::get(Auth::user()->id,$filename,'patient_id')
-                    );*/
-                }
+            if ($applyFilter) {
+                Filters::forget($userId, $filename, 'patient_id');
             }
         }
 
-        if ($account_id) {
-            $where[] = [
-                'account_id',
-                '=',
-                $account_id,
-            ];
-            Filters::put(Auth::User()->id, $filename, 'account_id', $account_id);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'account_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'account_id')) {
-                    $where[] = [
-                        'account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $filename, 'account_id'),
-                    ];
-                }
-            }
+        // Account ID
+        if ($accountId) {
+            $where[] = ['account_id', '=', $accountId];
+            Filters::put($userId, $filename, 'account_id', $accountId);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'account_id');
+        } elseif ($cached = Filters::get($userId, $filename, 'account_id')) {
+            $where[] = ['account_id', '=', $cached];
         }
 
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = [
-                'patient_id',
-                '=',
-                $filters['patient_id'],
-            ];
-            // Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
-            // Filters::put(Auth::user()->id , $filename, 'patient_name', str_replace('undefined', '', $filters['patient_name'])) ;
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'patient_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'patient_id')) {
-                    /*$where[] = array(
-                        'patient_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $filename, 'patient_id')
-                    );*/
-                }
-            }
+            $where[] = ['patient_id', '=', $filters['patient_id']];
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'patient_id');
         }
+
         if (hasFilter($filters, 'id')) {
-            $where[] = [
-                'patient_id',
-                '=',
-                GeneralFunctions::patientSearch($filters['id']),
-            ];
-            Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['id']));
-            Filters::put(Auth::User()->id, $filename, 'id', GeneralFunctions::patientSearch($filters['id']));
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'id');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'id')) {
-                    /*$where[] = array(
-                        'patient_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $filename, 'id')
-                    );*/
-                }
-            }
+            $patientId = GeneralFunctions::patientSearch($filters['id']);
+            $where[] = ['patient_id', '=', $patientId];
+            Filters::put($userId, $filename, 'patient_id', $patientId);
+            Filters::put($userId, $filename, 'id', $patientId);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'id');
         }
 
         if (hasFilter($filters, 'package_id')) {
-            $where[] = [
-                'id',
-                '=',
-                $filters['package_id'],
-            ];
-            Filters::put(Auth::User()->id, $filename, 'package_id', $filters['package_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'package_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'package_id')) {
-                    $where[] = [
-                        'id',
-                        '=',
-                        Filters::get(Auth::User()->id, $filename, 'package_id'),
-                    ];
-                }
-            }
+            $where[] = ['id', '=', $filters['package_id']];
+            Filters::put($userId, $filename, 'package_id', $filters['package_id']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'package_id');
+        } elseif ($cached = Filters::get($userId, $filename, 'package_id')) {
+            $where[] = ['id', '=', $cached];
         }
-        if (hasFilter($filters, 'created_at')) {
-            $where[] = ['created_at', '>=', $start_date_time];
-            $where[] = ['created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'created_at');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'created_at')) {
-                    $where[] = ['created_at', '>=', Filters::get(Auth::User()->id, $filename, 'created_at')];
-                }
-            }
+
+        if (hasFilter($filters, 'created_at') && $startDateTime && $endDateTime) {
+            $where[] = ['created_at', '>=', $startDateTime];
+            $where[] = ['created_at', '<=', $endDateTime];
+            Filters::put($userId, $filename, 'created_at', $filters['created_at']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'created_at');
+        } elseif ($cached = Filters::get($userId, $filename, 'created_at')) {
+            $where[] = ['created_at', '>=', $cached];
         }
 
         if (hasFilter($filters, 'location_id')) {
-            $where[] = [
-                'location_id',
-                '=',
-                $filters['location_id'],
-            ];
-            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'location_id');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'location_id')) {
-                    $where[] = [
-                        'location_id',
-                        '=',
-                        Filters::get(Auth::User()->id, $filename, 'location_id'),
-                    ];
-                }
-            }
+            $where[] = ['location_id', '=', $filters['location_id']];
+            Filters::put($userId, $filename, 'location_id', $filters['location_id']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'location_id');
+        } elseif ($cached = Filters::get($userId, $filename, 'location_id')) {
+            $where[] = ['location_id', '=', $cached];
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = [
-                'active',
-                '=',
-                $filters['status'],
-            ];
-            Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
+            $where[] = ['active', '=', $filters['status']];
+            Filters::put($userId, $filename, 'status', $filters['status']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filename, 'status');
         } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, $filename, 'status');
-            } else {
-                if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
-                    if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                        $where[] = [
-                            'active',
-                            '=',
-                            Filters::get(Auth::user()->id, $filename, 'status'),
-                        ];
-                    }
-                }
+            $cached = Filters::get($userId, $filename, 'status');
+            if ($cached === 0 || $cached === 1 || $cached === '0' || $cached === '1') {
+                $where[] = ['active', '=', $cached];
             }
         }
 

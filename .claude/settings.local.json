@@ -73,7 +73,9 @@
       "Bash(find C:/laragon/www/cutera-upgradation1/public/assets -name *ktdatatable* -o -name *KTDatatable*)",
       "Bash(find /c/laragon/www/cutera-upgradation1 -type f \\\\\\(-name *accountsales* -o -name *sales*summary* -o -name *summary* \\\\\\))",
       "Bash(find /c/laragon/www/cutera-upgradation1 -type f -name *vendor*)",
-      "Bash(find /c/laragon/www/cutera-upgradation1 -path */vendor -prune -o -type f \\\\\\(-path */cashflow/*Controller* -o -path */cashflow/*Model* \\\\\\) -print)"
+      "Bash(find /c/laragon/www/cutera-upgradation1 -path */vendor -prune -o -type f \\\\\\(-path */cashflow/*Controller* -o -path */cashflow/*Model* \\\\\\) -print)",
+      "Bash(find C:laragonwwwcutera-upgradation1 -type d -name *plan* -o -name *Plan*)",
+      "Bash(find C:laragonwwwcutera-upgradation1resourcesviews -path *plan* -o -path *package*)"
     ]
   }
 }
