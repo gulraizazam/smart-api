@@ -119,15 +119,39 @@ function setEditBundleData(response) {
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
 
-                // Get sold_by names for this bundle
+                // Get consumed status, consumed_at, and sold_by names for this bundle
+                let isConsumed = 'No';
+                let consumedAt = 'N/A';
                 let soldByNames = [];
                 Object.values(packageservices).forEach(function (ps) {
-                    if (ps.package_bundle_id == packagebundle.id && ps.sold_by && ps.sold_by.name) {
-                        if (!soldByNames.includes(ps.sold_by.name)) {
-                            soldByNames.push(ps.sold_by.name);
+                    if (ps.package_bundle_id == packagebundle.id) {
+                        if (ps.sold_by && ps.sold_by.name) {
+                            if (!soldByNames.includes(ps.sold_by.name)) {
+                                soldByNames.push(ps.sold_by.name);
+                            }
+                        }
+                        if (ps.is_consumed == '1' || ps.is_consumed === true) {
+                            isConsumed = 'Yes';
+                            if (ps.consumed_at) {
+                                let date = new Date(ps.consumed_at);
+                                let day = String(date.getDate()).padStart(2, '0');
+                                let month = String(date.getMonth() + 1).padStart(2, '0');
+                                let year = String(date.getFullYear()).slice(-2);
+                                let hours = String(date.getHours()).padStart(2, '0');
+                                let minutes = String(date.getMinutes()).padStart(2, '0');
+                                consumedAt = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                            }
                         }
                     }
                 });
+
+                if (childServiceCount > 1) {
+                    service_options += '<td>-</td>';
+                    service_options += '<td>-</td>';
+                } else {
+                    service_options += '<td>' + isConsumed + '</td>';
+                    service_options += '<td>' + consumedAt + '</td>';
+                }
                 service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
                 service_options += del_icon;
                 service_options += '</tr>';
@@ -149,11 +173,13 @@ function setEditBundleData(response) {
                             }
                             let actualPrice = packageservice.actual_price ? parseFloat(packageservice.actual_price).toFixed(2) : '-';
                             service_options += '<tr class="' + packagebundle.id + '" style="display: none; background-color: #f9f9f9;">';
-                            service_options += '<td>' + packageservice.service.name + '</td>';
+                            service_options += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + packageservice.service.name + '</td>';
                             service_options += '<td>' + actualPrice + '</td>';
                             service_options += '<td>' + packageservice.tax_exclusive_price + '</td>';
                             service_options += '<td>' + packageservice.tax_price + '</td>';
                             service_options += '<td>' + packageservice.tax_including_price + '</td>';
+                            service_options += '<td>' + consume + '</td>';
+                            service_options += '<td>' + psConsumedAt + '</td>';
                             service_options += '<td>' + (packageservice.sold_by ? packageservice.sold_by.name : 'N/A') + '</td>';
                             service_options += '<td></td>';
                             service_options += '</tr>';
@@ -336,6 +362,8 @@ $(document).on('click', '#EditBundlePackage', function() {
                     service_row += '<td>' + bundlesData.tax_exclusive_net_amount + '</td>';
                     service_row += '<td>' + bundlesData.tax_price + '</td>';
                     service_row += '<td>' + bundlesData.tax_including_price + '</td>';
+                    service_row += '<td>No</td>';
+                    service_row += '<td>N/A</td>';
                     service_row += '<td><input type="hidden" class="package_bundles_sold_by" name="sold_by[]" value="' + sold_by + '" />N/A</td>';
                     service_row += del_icon;
                     service_row += '</tr>';
@@ -345,12 +373,26 @@ $(document).on('click', '#EditBundlePackage', function() {
                     // Add child services (expandable rows)
                     jQuery.each(packageServicesData, function (i, packageService) {
                         let consume = packageService.is_consumed == '0' ? 'No' : 'Yes';
-                        let child_row = '<tr class="' + bundlesData.id + '" style="display: none">';
+                        let psConsumedAt = 'N/A';
+                        if (packageService.consumed_at) {
+                            let date = new Date(packageService.consumed_at);
+                            let day = String(date.getDate()).padStart(2, '0');
+                            let month = String(date.getMonth() + 1).padStart(2, '0');
+                            let year = String(date.getFullYear()).slice(-2);
+                            let hours = String(date.getHours()).padStart(2, '0');
+                            let minutes = String(date.getMinutes()).padStart(2, '0');
+                            psConsumedAt = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                        }
+                        let child_row = '<tr class="' + bundlesData.id + '" style="display: none; background-color: #f9f9f9;">';
+                        child_row += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + packageService.name + '</td>';
+                        child_row += '<td>-</td>';
+                        child_row += '<td>' + packageService.tax_exclusive_price + '</td>';
+                        child_row += '<td>' + packageService.tax_price + '</td>';
+                        child_row += '<td>' + packageService.tax_including_price + '</td>';
+                        child_row += '<td>' + consume + '</td>';
+                        child_row += '<td>' + psConsumedAt + '</td>';
+                        child_row += '<td>N/A</td>';
                         child_row += '<td></td>';
-                        child_row += '<td>' + packageService.name + '</td>';
-                        child_row += '<td colspan="2">Amount : ' + packageService.tax_exclusive_price + '</td>';
-                        child_row += '<td colspan="2">Tax:' + packageService.tax_price + ' | Total Amount:' + packageService.tax_including_price + '</td>';
-                        child_row += '<td>Is Consumed:' + consume + ' | Consumed At: N/A</td>';
                         child_row += '</tr>';
                         $('#edit_bundle_plan_services').append(child_row);
                     });

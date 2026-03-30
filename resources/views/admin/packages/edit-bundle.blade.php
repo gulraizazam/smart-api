@@ -150,8 +150,9 @@
                                 <th>Amount</th>
                                 <th>Tax </th>
                                 <th>Total.</th>
+                                <th>Consumed</th>
+                                <th>Consumed At</th>
                                 <th>Sold By</th>
-                                <!-- <th>Is Consumed</th> -->
                                 <th>Action</th>
                             </tr>
                         </thead>

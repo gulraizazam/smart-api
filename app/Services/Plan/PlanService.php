@@ -1515,7 +1515,7 @@ final class PlanService
         $hasStudentDocuments = false;
 
         if ($request && isset($packageMemberships[0]['membershipId'])) {
-            $membershipTypeId = $packageMemberships[0]['membershipId'];
+            $membershipTypeId = (int) $packageMemberships[0]['membershipId'];
             $studentVerificationService = app(StudentVerificationService::class);
             $isStudentCheck = $studentVerificationService->isStudentMembership($membershipTypeId);
 
