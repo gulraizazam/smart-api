@@ -217,27 +217,7 @@ class PackagesController extends Controller
 
             // Resolve the parent package (if editing an existing plan)
             $findPackage = Packages::where('random_id', $request->random_id)->first();
-
-            // Persist the PackageBundles record
-            $packageBundleRecord = PackageBundles::create([
-                'random_id'              => $request->random_id,
-                'qty'                    => 1,
-                'bundle_id'              => $bundle->id,
-                'source_type'            => 'bundle',
-                'discount_name'          => '-',
-                'discount_type'          => '-',
-                'discount_price'         => 0,
-                'service_price'          => $bundle->price,
-                'net_amount'             => $netAmount,
-                'is_exclusive'           => 0,
-                'tax_exclusive_net_amount' => $bundleData['tax_exclusive_net_amount'],
-                'tax_percenatage'        => $taxPct,
-                'tax_price'              => $bundleData['tax_price'],
-                'tax_including_price'    => $bundleData['tax_including_price'],
-                'location_id'            => $request->location_id,
-                'package_id'             => $findPackage?->id,
-                'is_allocate'            => $findPackage ? 1 : 0,
-            ]);
+            $isEditMode = $findPackage !== null;
 
             // Get bundle services and calculate proportional prices
             $bundleServices = BundleHasServices::with('service')
@@ -258,6 +238,33 @@ class PackagesController extends Controller
 
             $serviceIds = array_column($calculatedServicesPrices, 'service_id');
             $servicesInfo = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+            // In edit mode: persist to DB immediately since package already exists
+            // In create mode: only return calculated data — persistence happens in savepackages via storeBundleTypeServices
+            $packageBundleRecordId = $bundle->id; // Default: return bundles.id for create flow
+
+            if ($isEditMode) {
+                $packageBundleRecord = PackageBundles::create([
+                    'random_id'              => $request->random_id,
+                    'qty'                    => 1,
+                    'bundle_id'              => $bundle->id,
+                    'source_type'            => 'bundle',
+                    'discount_name'          => '-',
+                    'discount_type'          => '-',
+                    'discount_price'         => 0,
+                    'service_price'          => $bundle->price,
+                    'net_amount'             => $netAmount,
+                    'is_exclusive'           => 0,
+                    'tax_exclusive_net_amount' => $bundleData['tax_exclusive_net_amount'],
+                    'tax_percenatage'        => $taxPct,
+                    'tax_price'              => $bundleData['tax_price'],
+                    'tax_including_price'    => $bundleData['tax_including_price'],
+                    'location_id'            => $request->location_id,
+                    'package_id'             => $findPackage->id,
+                    'is_allocate'            => 1,
+                ]);
+                $packageBundleRecordId = $packageBundleRecord->id; // Return package_bundles.id for edit flow delete button
+            }
 
             $packageServicesData = [];
             foreach ($calculatedServicesPrices as $calculatedService) {
@@ -283,24 +290,26 @@ class PackagesController extends Controller
                     $taxPrice = ceil($taxIncludingPrice - $taxExclusivePrice);
                 }
 
-                // Persist each PackageService record
-                PackageService::create([
-                    'random_id'          => $request->random_id,
-                    'package_id'         => $findPackage?->id,
-                    'package_bundle_id'  => $packageBundleRecord->id,
-                    'service_id'         => $calculatedService['service_id'],
-                    'price'              => $calculatedService['calculated_price'],
-                    'orignal_price'      => $calculatedService['service_price'],
-                    'actual_price'       => $serviceInfo->price,
-                    'is_exclusive'       => $isExclusive ? 1 : 0,
-                    'tax_exclusive_price' => $taxExclusivePrice,
-                    'tax_percenatage'    => $taxPct,
-                    'tax_price'          => $taxPrice,
-                    'tax_including_price' => $taxIncludingPrice,
-                    'sold_by'            => $request->sold_by ?? null,
-                    'created_at'         => Filters::getCurrentTimeStamp(),
-                    'updated_at'         => Filters::getCurrentTimeStamp(),
-                ]);
+                // Only persist PackageService records in edit mode
+                if ($isEditMode) {
+                    PackageService::create([
+                        'random_id'          => $request->random_id,
+                        'package_id'         => $findPackage->id,
+                        'package_bundle_id'  => $packageBundleRecordId,
+                        'service_id'         => $calculatedService['service_id'],
+                        'price'              => $calculatedService['calculated_price'],
+                        'orignal_price'      => $calculatedService['service_price'],
+                        'actual_price'       => $serviceInfo->price,
+                        'is_exclusive'       => $isExclusive ? 1 : 0,
+                        'tax_exclusive_price' => $taxExclusivePrice,
+                        'tax_percenatage'    => $taxPct,
+                        'tax_price'          => $taxPrice,
+                        'tax_including_price' => $taxIncludingPrice,
+                        'sold_by'            => $request->sold_by ?? null,
+                        'created_at'         => Filters::getCurrentTimeStamp(),
+                        'updated_at'         => Filters::getCurrentTimeStamp(),
+                    ]);
+                }
 
                 $packageServicesData[] = [
                     'name' => $serviceInfo->name,
@@ -309,11 +318,12 @@ class PackagesController extends Controller
                     'tax_price' => $taxPrice,
                     'tax_including_price' => $taxIncludingPrice,
                     'is_consumed' => 0,
+                    'actual_price' => $serviceInfo->price,
                 ];
             }
 
-            // Update plan name and total if package already exists
-            if ($findPackage) {
+            // Update plan name and total only in edit mode
+            if ($isEditMode) {
                 $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
                 $findPackage->update(['total_price' => $newTotal]);
                 $this->updatePlanNameForPackage($findPackage);
@@ -328,7 +338,7 @@ class PackagesController extends Controller
                     'discount_price' => '0',
                     'sold_by' => $request->sold_by ?? null,
                     'bundlesData' => array_merge($bundleData, [
-                        'id' => $packageBundleRecord->id,
+                        'id' => $packageBundleRecordId,
                     ]),
                     'packageServicesData' => $packageServicesData,
                 ]
