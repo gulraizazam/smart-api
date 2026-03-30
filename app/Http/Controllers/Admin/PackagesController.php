@@ -448,7 +448,7 @@ class PackagesController extends Controller
             // Also check from database if this is a student membership (in case frontend doesn't pass it)
             $studentVerificationService = app(\App\Services\Membership\StudentVerificationService::class);
             if (!$isStudentMembership && $packageBundle && $packageBundle->membership_type_id) {
-                $isStudentMembership = $studentVerificationService->isStudentMembership($packageBundle->membership_type_id);
+                $isStudentMembership = $studentVerificationService->isStudentMembership((int) $packageBundle->membership_type_id);
             }
             
             \Log::info('Edit membership - document check', [
