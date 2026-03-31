@@ -35,7 +35,10 @@ class DoctorDashboardController extends Controller
 
         $doctorInfo = $this->doctorIdentifier->getDoctorInfo($doctorId);
 
-        return view('admin.doctor_dashboard.index', compact('doctorInfo'));
+        $userRoles = $user->user_roles()->pluck('name')->toArray();
+        $showUpsellCards = in_array('Aesthetic Doctor', $userRoles) || in_array('Lifestyle Consultant', $userRoles);
+
+        return view('admin.doctor_dashboard.index', compact('doctorInfo', 'showUpsellCards'));
     }
 
     public function getKpis(Request $request): JsonResponse
