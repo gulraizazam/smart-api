@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BundleServicesPriceHistory extends Model
 {
+    protected $table = 'bundle_services_price_history';
+
     protected $fillable = [
         'bundle_id',
         'bundle_price',
@@ -20,53 +25,45 @@ class BundleServicesPriceHistory extends Model
         'account_id',
     ];
 
-    protected $table = 'bundle_services_price_history';
-
-    /**
-     * Get Bundle Service belong to Service.
-     */
-    public function service()
+    protected function casts(): array
     {
-        return $this->belongsTo('App\Models\Services', 'service_id');
+        return [
+            'bundle_price'          => 'float',
+            'bundle_services_price' => 'float',
+            'service_price'         => 'float',
+            'active'                => 'integer',
+            'effective_from'        => 'date',
+            'effective_to'          => 'date',
+        ];
     }
 
-    /**
-     * Get Bundle Service belong to Bundle.
-     */
-    public function bundle()
+    // ── Relationships ───────────────────────────────────
+
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Bundles', 'bundle_id');
+        return $this->belongsTo(Services::class, 'service_id');
     }
 
-    /**
-     * Create Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function createRecord($data, $account_id)
+    public function bundle(): BelongsTo
     {
-        // Set Account ID
+        return $this->belongsTo(Bundles::class, 'bundle_id');
+    }
+
+    // ── Record Operations ───────────────────────────────
+
+    public static function createRecord(array $data, int $account_id): self
+    {
         $data['account_id'] = $account_id;
 
-        $record = self::create($data);
-
-        return $record;
+        return self::create($data);
     }
 
-    /**
-     * Update Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function updateRecord($id, $data, $account_id)
+    public static function updateRecord(int $id, array $data, int $account_id): ?self
     {
-        // Set Account ID
         $data['account_id'] = $account_id;
 
         $record = self::where([
-            'id' => $id,
+            'id'         => $id,
             'account_id' => $account_id,
         ])->first();
 

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
@@ -9,134 +12,165 @@ class Bundles extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id', 'created_at', 'updated_at', 'account_id'];
-
-    protected static $_fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id'];
-
     protected $table = 'bundles';
 
-    protected static $_table = 'bundles';
+    protected static string $_table = 'bundles';
 
-    protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A',
+    protected $fillable = [
+        'name',
+        'price',
+        'services_price',
+        'type',
+        'start',
+        'end',
+        'apply_discount',
+        'total_services',
+        'active',
+        'tax_treatment_type_id',
+        'account_id',
+        'created_at',
+        'updated_at',
     ];
 
-    /**
-     * sent the bundle data to resource has rota.
-     */
-    public function resourcehasrota()
+    protected static array $_fillable = [
+        'name',
+        'price',
+        'services_price',
+        'type',
+        'start',
+        'end',
+        'apply_discount',
+        'total_services',
+        'active',
+        'tax_treatment_type_id',
+    ];
+
+    protected function casts(): array
     {
-        return $this->hasMany('App\Models\ResourceHasRota', 'bundle_id');
+        return [
+            'price'          => 'float',
+            'services_price' => 'float',
+            'total_services' => 'integer',
+            'apply_discount' => 'boolean',
+            'active'         => 'integer',
+            'start'          => 'date',
+            'end'            => 'date',
+            'created_at'     => 'datetime:F d,Y h:i A',
+        ];
     }
 
-    /**
-     * Get the Locations for Bundle.
-     */
-    public function locations()
+    // ── Relationships ───────────────────────────────────
+
+    public function resourcehasrota(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'bundle_id');
+        return $this->hasMany(ResourceHasRota::class, 'bundle_id');
     }
 
-    /**
-     * Get the Active Locations for Bundle.
-     */
-    public function locationsActive()
+    public function locations(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'bundle_id')->where(['active' => 1]);
+        return $this->hasMany(Locations::class, 'bundle_id');
     }
 
-    /**
-     * Get the doctors for Bundle.
-     */
-    public function doctors()
+    public function locationsActive(): HasMany
     {
-        return $this->hasMany('App\Models\Doctors', 'bundle_id');
+        return $this->hasMany(Locations::class, 'bundle_id')->where('active', 1);
     }
 
-    /**
-     * Get the appointments for Bundle.
-     */
-    public function appointments()
+    public function doctors(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'bundle_id');
+        return $this->hasMany(Doctors::class, 'bundle_id');
     }
 
-    /**
-     * sent the bundle data to Package Bundle.
-     */
-    public function packagebundle()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\PackageBundles', 'bundle_id');
+        return $this->hasMany(Appointments::class, 'bundle_id');
     }
+
+    public function packagebundle(): HasMany
+    {
+        return $this->hasMany(PackageBundles::class, 'bundle_id');
+    }
+
+    public function bundleServices(): HasMany
+    {
+        return $this->hasMany(BundleHasServices::class, 'bundle_id');
+    }
+
+    public function priceHistory(): HasMany
+    {
+        return $this->hasMany(BundleServicesPriceHistory::class, 'bundle_id');
+    }
+
+    // ── Scopes ──────────────────────────────────────────
 
     /**
      * Get active and sorted data only.
      */
-    public static function getActiveSorted($bundleId = false, $get_all = false)
+    public static function getActiveSorted(int|array|false $bundleId = false, bool $get_all = false): mixed
     {
-        if ($bundleId && !is_array($bundleId)) {
-            $bundleId = [$bundleId];
-        }
+        $query = self::where(['active' => 1, 'type' => 'multiple'])
+            ->where('account_id', Auth::user()->account_id);
+
         if ($bundleId) {
-            return self::where(['active' => 1, 'type' => 'multiple'])->whereIn('id', $bundleId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
-        } else {
-            return self::where(['active' => 1, 'type' => 'multiple'])->where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
+            $ids = is_array($bundleId) ? $bundleId : [$bundleId];
+            $query->whereIn('id', $ids);
         }
+
+        return $query->pluck('name', 'id');
     }
 
     /**
-     * Get active and sorted data only.
+     * Get active records only.
      */
-    public static function getActiveOnly($bundleId = false)
+    public static function getActiveOnly(int|array|false $bundleId = false): mixed
     {
-        if ($bundleId && !is_array($bundleId)) {
-            $bundleId = [$bundleId];
-        }
-        $query = self::where(['active' => 1]);
+        $query = self::where('active', 1);
+
         if ($bundleId) {
-            $query->whereIn('id', $bundleId);
+            $ids = is_array($bundleId) ? $bundleId : [$bundleId];
+            $query->whereIn('id', $ids);
         }
 
-        return $query->OrderBy('sort_number', 'asc')->get();
+        return $query->orderBy('sort_number', 'asc')->get();
     }
 
     /**
-     * Calculate Price based on package price
+     * Calculate price based on package price.
      *
-     * @param  (array)  $services
-     * @param  (double)  $services_price
-     * @param  (double)  $price
-     * @return (array) $services
+     * @param  array<int, array{service_price: float, calculated_price: float}>  $services
      */
-    public static function calculatePrices($services, $services_price, $price)
+    public static function calculatePrices(array $services, float|string $services_price, float|string $price): array
     {
+        $servicesPrice = (float) str_replace(',', '', (string) $services_price);
+        $bundlePrice = (float) str_replace(',', '', (string) $price);
 
-        $calculated_services = [];
+        if ($servicesPrice == 0) {
+            return $services;
+        }
 
-        /*
-         * Case 1: $services_price is greater than $price
-         */
-        if ($services_price == $price) {
+        if ($servicesPrice == $bundlePrice) {
             foreach ($services as $key => $service) {
                 $services[$key]['calculated_price'] = $services[$key]['service_price'];
             }
-        } elseif ($services_price > $price) {
-
-            $ratio = (1 - round((self::convertToInt($price) / self::convertToInt($services_price)), 8));
-
+        } elseif ($servicesPrice > $bundlePrice) {
+            $ratio = 1 - round($bundlePrice / $servicesPrice, 8);
             foreach ($services as $key => $service) {
-                $services[$key]['calculated_price'] = round($services[$key]['service_price'] - ($services[$key]['service_price'] * $ratio), 2);
+                $services[$key]['calculated_price'] = round(
+                    $services[$key]['service_price'] - ($services[$key]['service_price'] * $ratio),
+                    2
+                );
             }
         } else {
-            $ratio = -1 * (1 - round(($price / $services_price), 8));
-
+            $ratio = -1 * (1 - round($bundlePrice / $servicesPrice, 8));
             foreach ($services as $key => $service) {
-                $services[$key]['calculated_price'] = round($services[$key]['service_price'] + ($services[$key]['service_price'] * $ratio), 2);
+                $services[$key]['calculated_price'] = round(
+                    $services[$key]['service_price'] + ($services[$key]['service_price'] * $ratio),
+                    2
+                );
             }
         }
 
         // Last-session absorption: adjust last service so SUM(calculated_price) == $price exactly
-        $price = floatval(str_replace(',', '', $price));
         if (count($services) > 1) {
             $sumWithoutLast = 0;
             $lastKey = array_key_last($services);
@@ -145,15 +179,9 @@ class Bundles extends BaseModal
                     $sumWithoutLast += $services[$key]['calculated_price'];
                 }
             }
-            $services[$lastKey]['calculated_price'] = round($price - $sumWithoutLast, 2);
+            $services[$lastKey]['calculated_price'] = round($bundlePrice - $sumWithoutLast, 2);
         }
 
         return $services;
-    }
-
-    public static function convertToInt($val)
-    {
-
-        return (int)(str_replace(',', '', $val));
     }
 }
