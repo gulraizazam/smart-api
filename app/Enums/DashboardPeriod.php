@@ -42,7 +42,7 @@ enum DashboardPeriod: string
             self::Last7Days => [Carbon::today()->subDays(6)->format('Y-m-d'), Carbon::today()->format('Y-m-d')],
             self::Week      => [Carbon::now()->startOfWeek(Carbon::SUNDAY)->format('Y-m-d'), Carbon::today()->format('Y-m-d')],
             self::ThisMonth => [Carbon::now()->startOfMonth()->format('Y-m-d'), Carbon::today()->format('Y-m-d')],
-            self::LastMonth => [Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'), Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')],
+            self::LastMonth => [Carbon::now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'), Carbon::now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d')],
         };
     }
 

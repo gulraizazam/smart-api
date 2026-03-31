@@ -38,7 +38,7 @@ class SendCashflowMonthlyReport implements ShouldQueue
     private function sendReportForAccount(int $accountId, ReportService $reportService): void
     {
         // Previous month
-        $prevMonth = Carbon::now()->subMonth();
+        $prevMonth = Carbon::now()->subMonthNoOverflow();
         $dateFrom = $prevMonth->startOfMonth()->toDateString();
         $dateTo = $prevMonth->endOfMonth()->toDateString();
         $monthLabel = $prevMonth->format('F Y');

@@ -90,8 +90,8 @@ class DoctorDashboardController extends Controller
 
             [$startDate, $endDate] = match ($period) {
                 'last_month' => [
-                    now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                    now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                    now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+                    now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
                 ],
                 default => [
                     now()->startOfMonth()->format('Y-m-d'),

@@ -257,7 +257,7 @@ class DoctorDashboardService
 
         // Fallback to last month's target
         if (!$target) {
-            $lastMonth = Carbon::parse($startDate)->subMonth();
+            $lastMonth = Carbon::parse($startDate)->subMonthNoOverflow();
             $target = $this->getBranchTarget(
                 $mostActiveBranchId,
                 (int) $lastMonth->format('m'),

@@ -772,8 +772,8 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     'label' => 'This Month'
                 ],
                 'lastmonth' => [
-                    'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
-                    'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+                    'start_date' => Carbon::now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d 00:00:00'),
+                    'end_date' => Carbon::now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d 23:59:59'),
                     'label' => 'Last Month'
                 ],
                 'august2025' => [
@@ -850,8 +850,8 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                     'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
                 ],
                 'lastmonth' => [
-                    'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
-                    'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+                    'start_date' => Carbon::now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d 00:00:00'),
+                    'end_date' => Carbon::now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d 23:59:59'),
                 ],
             ];
 
