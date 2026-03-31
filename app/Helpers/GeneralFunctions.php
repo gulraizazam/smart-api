@@ -906,8 +906,8 @@ class GeneralFunctions
                 'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
             ],
             'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
+                'start_date' => Carbon::now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d')
             ]
         ];
         return $periods;

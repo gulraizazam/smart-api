@@ -166,8 +166,8 @@ class DoctorDashboardHelper
     public static function getLastMonthRange(): array
     {
         return [
-            now()->subMonth()->startOfMonth()->format('Y-m-d'),
-            now()->subMonth()->endOfMonth()->format('Y-m-d'),
+            now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
+            now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d'),
         ];
     }
 
@@ -186,10 +186,10 @@ class DoctorDashboardHelper
      */
     public static function getLastMonthSameDateRange(string $currentStart, string $currentEnd): array
     {
-        $start = \Carbon\Carbon::parse($currentStart)->subMonth()->startOfMonth()->format('Y-m-d');
+        $start = \Carbon\Carbon::parse($currentStart)->subMonthNoOverflow()->startOfMonth()->format('Y-m-d');
 
         $currentEndDay  = (int) \Carbon\Carbon::parse($currentEnd)->format('d');
-        $lastMonthEnd   = \Carbon\Carbon::parse($currentEnd)->subMonth();
+        $lastMonthEnd   = \Carbon\Carbon::parse($currentEnd)->subMonthNoOverflow();
         $lastMonthDays  = (int) $lastMonthEnd->daysInMonth;
         $clampedDay     = min($currentEndDay, $lastMonthDays);
 

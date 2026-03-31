@@ -208,8 +208,8 @@ class dashboardreport
             'week'      => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
             'thisMonth' => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()->addDay()],
             'lastMonth', 'lastmonth' => [
-                Carbon::now()->subMonth()->startOfMonth(),
-                Carbon::now()->subMonth()->endOfMonth()->addDay(),
+                Carbon::now()->subMonthNoOverflow()->startOfMonth(),
+                Carbon::now()->subMonthNoOverflow()->endOfMonth()->addDay(),
             ],
             default     => [Carbon::today(), Carbon::tomorrow()],
         };

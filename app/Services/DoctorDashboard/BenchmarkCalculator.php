@@ -334,7 +334,7 @@ class BenchmarkCalculator
      */
     private function getGoogleReviewsPerDoctor(array $doctorIds, int $accountId): array
     {
-        $lastMonth = now()->subMonth();
+        $lastMonth = now()->subMonthNoOverflow();
         $month = $lastMonth->month;
         $year = $lastMonth->year;
 

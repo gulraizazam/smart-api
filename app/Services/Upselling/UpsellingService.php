@@ -136,8 +136,8 @@ class UpsellingService
                 'end_date' => now()->subDay(1)->format('Y-m-d 23:59:59'),
             ],
             'lastmonth' => [
-                'start_date' => now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
-                'end_date' => now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+                'start_date' => now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d 23:59:59'),
             ],
         ];
 
