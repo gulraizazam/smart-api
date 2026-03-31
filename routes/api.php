@@ -286,9 +286,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('machine_types/status', [MachineTypeController::class, 'status'])->name('machine_types.status');
     // Machine Types Routes End
 
-    // Services (Optimized - using API Controller with Service Layer)
+    // Services (Optimized - API Controller + Service Layer + API Resources)
     Route::prefix('services')->name('services.')->group(function () {
-        // Static routes first (before dynamic {id} routes)
         Route::post('datatable', [ServicesController::class, 'datatable'])->name('datatable');
         Route::post('status', [ServicesController::class, 'status'])->name('status');
         Route::get('create', [ServicesController::class, 'create'])->name('create');
@@ -297,12 +296,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::get('sort/get', [ServicesController::class, 'sortOrderGet'])->name('get_sort');
         Route::post('sort/save', [ServicesController::class, 'sortOrderSave'])->name('sort_save');
         Route::get('color', [ServicesController::class, 'getColor'])->name('get_color');
-        // Dynamic routes with {id} parameter
-        Route::get('{id}/edit', [ServicesController::class, 'edit'])->name('edit');
-        Route::get('{id}/duplicate', [ServicesController::class, 'duplicate'])->name('duplicate');
-        Route::get('{id}', [ServicesController::class, 'show'])->name('show');
-        Route::put('{id}', [ServicesController::class, 'update'])->name('update');
-        Route::delete('{id}', [ServicesController::class, 'destroy'])->name('destroy');
+
+        Route::get('{id}/edit', [ServicesController::class, 'edit'])->name('edit')->whereNumber('id');
+        Route::get('{id}/duplicate', [ServicesController::class, 'duplicate'])->name('duplicate')->whereNumber('id');
+        Route::get('{id}', [ServicesController::class, 'show'])->name('show')->whereNumber('id');
+        Route::put('{id}', [ServicesController::class, 'update'])->name('update')->whereNumber('id');
+        Route::delete('{id}', [ServicesController::class, 'destroy'])->name('destroy')->whereNumber('id');
     });
 
     // Logs Routes Start
