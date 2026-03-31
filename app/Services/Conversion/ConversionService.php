@@ -91,15 +91,15 @@ class ConversionService
                 ->keyBy('package_bundle_id');
         }
 
-        // Bulk fetch first payments per package (cash_flow='in', cash_amount>0, not deleted)
-        $firstPayments = PackageAdvances::whereIn('package_id', $allPackageIds)
+        // Bulk fetch all payments per package (cash_flow='in', cash_amount>0, not deleted)
+        // ordered by created_at so we can find the first payment on/after invoice date per appointment
+        $allPaymentsByPackage = PackageAdvances::whereIn('package_id', $allPackageIds)
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
             ->whereNull('deleted_at')
             ->orderBy('created_at', 'asc')
             ->get()
-            ->groupBy('package_id')
-            ->map(fn($group) => $group->first());
+            ->groupBy('package_id');
 
         // Bulk fetch all package advances for conversion spend (within date range, cash_amount > 0)
         $allPackageAdvances = PackageAdvances::whereIn('package_id', $allPackageIds)
@@ -189,13 +189,15 @@ class ConversionService
             // Step 4: Find first payment across all packages (on or after invoice date)
             $earliestPayment = null;
             foreach ($packageIds as $pkgId) {
-                $fp = $firstPayments->get($pkgId);
-                if ($fp) {
+                $payments = $allPaymentsByPackage->get($pkgId, collect());
+                // Find the first payment on or after invoice date (payments are ordered by created_at asc)
+                foreach ($payments as $fp) {
                     $fpDate = Carbon::parse($fp->created_at)->format('Y-m-d');
                     if ($fpDate >= $invoiceDate) {
                         if (!$earliestPayment || $fp->created_at < $earliestPayment->created_at) {
                             $earliestPayment = $fp;
                         }
+                        break; // first qualifying payment for this package found
                     }
                 }
             }
