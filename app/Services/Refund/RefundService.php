@@ -499,6 +499,7 @@ final class RefundService
     {
         $results = DB::table('package_advances')
             ->whereIn('package_id', $packageIds)
+            ->whereNull('deleted_at')
             ->where('is_cancel', '0')
             ->groupBy('package_id')
             ->select([
