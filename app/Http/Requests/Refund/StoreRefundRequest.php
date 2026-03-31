@@ -12,7 +12,12 @@ final class StoreRefundRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('refunds_create') ?? false;
+        $user = $this->user();
+        if (!$user) {
+            return false;
+        }
+
+        return $user->can('refunds_create') || $user->can('patients_refund_refund');
     }
 
     public function rules(): array
@@ -21,7 +26,7 @@ final class StoreRefundRequest extends FormRequest
             'refund_amount'   => ['required', 'numeric', 'min:1', 'regex:/^[0-9]+$/'],
             'refund_note'     => ['required', 'string', 'max:1000'],
             'package_id'      => ['required', 'integer', 'exists:packages,id'],
-            'payment_mode_id' => ['required', 'integer', 'exists:payment_modes,id'],
+            'payment_mode_id' => ['nullable', 'integer', 'exists:payment_modes,id'],
             'created_at'      => ['required', 'date', 'date_format:Y-m-d'],
             'date_backend'    => ['nullable', 'date_format:Y-m-d'],
             'case_setteled'   => ['nullable', 'in:0,1'],

@@ -392,7 +392,7 @@ final class RefundService
                 'cash_amount' => $refundAmount,
                 'is_refund' => '1',
                 'patient_id' => $packageInfo->patient_id,
-                'payment_mode_id' => $data['payment_mode_id'],
+                'payment_mode_id' => $data['payment_mode_id'] ?? null,
                 'account_id' => $accountId,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),

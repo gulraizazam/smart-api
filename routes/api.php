@@ -340,20 +340,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     });
     // Doctors Route End
 
-    //Refunds route start (Legacy - kept for backward compatibility)
-    Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
-    Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
-    Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
-    Route::resource('refunds', RefundsController::class)->except('index');
-
-    // Refunds API Routes (Optimized)
-    Route::prefix('refunds')->name('refunds.api.')->group(function () {
-        Route::post('datatable', [ApiRefundsController::class, 'datatable'])->name('datatable');
-        Route::post('patient/{patientId}/datatable', [ApiRefundsController::class, 'patientDatatable'])->name('patient_datatable');
-        Route::get('{id}/calculate', [ApiRefundsController::class, 'calculate'])->name('calculate');
-        Route::get('ledger/{id}', [ApiRefundsController::class, 'detail'])->name('detail');
-        Route::post('/', [ApiRefundsController::class, 'store'])->name('store');
-    });
+    // Refunds Routes (Refactored — using API controller)
+    Route::post('refunds/datatable', [ApiRefundsController::class, 'datatable'])->name('refunds.datatable');
+    Route::get('refunds/refund_create/{id}', [ApiRefundsController::class, 'calculate'])->name('refunds.refund_create');
+    Route::get('refunds/detail/{id}', [ApiRefundsController::class, 'detail'])->name('refunds.detail');
+    Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
     Route::resource('feedbacks', FeedbackController::class)->except('index');
     //Discount route Start
@@ -762,8 +753,8 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::post('invoicepatient/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoicepatient.cancel');
 
-    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'patientDatatable'])->name('refundpatient.datatable');
-    Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
+    Route::post('refundpatient/datatable/&{id}', [ApiRefundsController::class, 'patientDatatable'])->name('refundpatient.datatable');
+    Route::get('refundpatient/refund_create/{id}', [ApiRefundsController::class, 'calculate'])->name('refundpatient.refund_create');
 
     // Patient non-plans refunds API routes removed — functionality not in use
 

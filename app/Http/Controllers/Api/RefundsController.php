@@ -8,9 +8,6 @@ use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Refund\RefundDatatableRequest;
 use App\Http\Requests\Refund\StoreRefundRequest;
-use App\Http\Resources\Refund\RefundCalculationResource;
-use App\Http\Resources\Refund\RefundDatatableCollection;
-use App\Http\Resources\Refund\PatientLedgerResource;
 use App\Services\Refund\RefundService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -46,40 +43,38 @@ final class RefundsController extends Controller
                 ? (int) ceil($datatableData['total'] / $pagination['perpage'])
                 : 1;
 
-            // Adjust total if rows were filtered out (zero-refund packages)
-            $adjustedTotal = $datatableData['total'] - ($datatableData['total'] - count($rows));
-
             $permissions = $this->resolvePermissions($request);
 
-            $collection = new RefundDatatableCollection($rows);
-            $collection->setContext(
-                meta: [
+            return response()->json([
+                'meta' => [
                     'field'   => $request->input('sort.field', 'id'),
                     'page'    => $pagination['page'],
                     'pages'   => $totalPages,
                     'perpage' => $pagination['perpage'],
-                    'total'   => max($adjustedTotal, count($rows)),
+                    'total'   => count($rows),
                     'sort'    => strtolower($request->input('sort.sort', 'desc')),
                 ],
-                permissions: $permissions,
-                filterValues: $datatableData['filter_values'],
-                activeFilters: Filters::all(Auth::id(), 'plansrefunds'),
-            );
-
-            return response()->json($collection);
+                'data'           => $rows,
+                'permissions'    => $permissions,
+                'filter_values'  => $datatableData['filter_values'],
+                'active_filters' => Filters::all(Auth::id(), 'plansrefunds'),
+            ]);
         } catch (\Throwable $e) {
             Log::error('Refunds Datatable Error', [
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
 
-            return $this->errorResponse('An error occurred while fetching refunds data.', 500);
+            return response()->json([
+                'meta' => ['total' => 0],
+                'data' => [],
+            ], 500);
         }
     }
 
     // ── Patient Refunds Datatable ─────────────────────────
 
-    public function patientDatatable(RefundDatatableRequest $request, int $patientId): JsonResponse
+    public function patientDatatable(RefundDatatableRequest $request, int $id): JsonResponse
     {
         try {
             $this->handleFilterCancellation($request, 'patientrefunds');
@@ -87,11 +82,11 @@ final class RefundsController extends Controller
             $filters = $request->filters();
             $applyFilter = checkFilters($filters, 'patientrefunds');
 
-            $datatableData = $this->refundService->getPatientDatatableData($patientId, $applyFilter);
+            $datatableData = $this->refundService->getPatientDatatableData($id, $applyFilter);
             $pagination = $request->paginationParams($datatableData['total']);
 
             $rows = $this->refundService->buildPatientRefundRows(
-                $patientId,
+                $id,
                 $pagination['start'],
                 $pagination['perpage'],
                 $applyFilter,
@@ -101,29 +96,30 @@ final class RefundsController extends Controller
                 ? (int) ceil($datatableData['total'] / $pagination['perpage'])
                 : 1;
 
-            $collection = new RefundDatatableCollection($rows);
-            $collection->setContext(
-                meta: [
+            return response()->json([
+                'meta' => [
                     'field'   => $request->input('sort.field', 'id'),
                     'page'    => $pagination['page'],
                     'pages'   => $totalPages,
                     'perpage' => $pagination['perpage'],
-                    'total'   => max(count($rows), 0),
+                    'total'   => count($rows),
                     'sort'    => strtolower($request->input('sort.sort', 'desc')),
                 ],
-                permissions: $this->refundService->patientPermissions(),
-                filterValues: $datatableData['filter_values'],
-                activeFilters: Filters::all(Auth::id(), 'patientrefunds'),
-            );
-
-            return response()->json($collection);
+                'data'           => $rows,
+                'permissions'    => $this->refundService->patientPermissions(),
+                'filter_values'  => $datatableData['filter_values'],
+                'active_filters' => Filters::all(Auth::id(), 'patientrefunds'),
+            ]);
         } catch (\Throwable $e) {
             Log::error('Patient Refunds Datatable Error', [
                 'message'    => $e->getMessage(),
-                'patient_id' => $patientId,
+                'patient_id' => $id,
             ]);
 
-            return $this->errorResponse('An error occurred while fetching patient refunds.', 500);
+            return response()->json([
+                'meta' => ['total' => 0],
+                'data' => [],
+            ], 500);
         }
     }
 
@@ -132,27 +128,42 @@ final class RefundsController extends Controller
     public function calculate(int $id): JsonResponse
     {
         if (Gate::denies('refunds_create')) {
-            return $this->unauthorizedResponse();
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data' => null,
+            ], 403);
         }
 
         try {
             $result = $this->refundService->calculateRefund($id);
 
             if ($result['error'] ?? false) {
-                return $this->errorResponse($result['message'], 404);
+                return response()->json([
+                    'status' => 404,
+                    'msg' => $result['message'],
+                    'data' => $result['package_id'],
+                ]);
             }
 
-            return $this->successResponse(
-                new RefundCalculationResource($result),
-                'Record found',
-            );
+            unset($result['error']);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Record found',
+                'data' => $result,
+            ]);
         } catch (\Throwable $e) {
             Log::error('Refund Calculation Error', [
                 'package_id' => $id,
                 'message'    => $e->getMessage(),
             ]);
 
-            return $this->errorResponse('An error occurred while calculating refund.', 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while calculating refund.',
+                'data' => null,
+            ], 500);
         }
     }
 
@@ -166,18 +177,22 @@ final class RefundsController extends Controller
                 (int) Auth::user()->account_id,
             );
 
-            if (!$result['success']) {
-                return $this->errorResponse($result['message'], 422);
-            }
-
-            return $this->successResponse(null, $result['message']);
+            return response()->json([
+                'status' => $result['success'],
+                'message' => $result['message'],
+                'data' => null,
+            ]);
         } catch (\Throwable $e) {
             Log::error('Store Refund Error', [
                 'message' => $e->getMessage(),
                 'data'    => $request->safe()->except('refund_note'),
             ]);
 
-            return $this->errorResponse('An error occurred while creating refund.', 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while creating refund.',
+                'data' => null,
+            ], 500);
         }
     }
 
@@ -186,23 +201,32 @@ final class RefundsController extends Controller
     public function detail(int $id): JsonResponse
     {
         if (Gate::denies('refunds_manage')) {
-            return $this->unauthorizedResponse();
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not authorized to access this resource.',
+                'data' => null,
+            ], 403);
         }
 
         try {
             $data = $this->refundService->getPatientLedger($id);
 
-            return $this->successResponse(
-                new PatientLedgerResource($data),
-                'Patient ledger loaded.',
-            );
+            return response()->json([
+                'status' => true,
+                'message' => 'Patient ledger loaded.',
+                'data' => $data,
+            ]);
         } catch (\Throwable $e) {
             Log::error('Patient Ledger Error', [
                 'patient_id' => $id,
                 'message'    => $e->getMessage(),
             ]);
 
-            return $this->errorResponse('An error occurred while fetching ledger.', 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'An error occurred while fetching ledger.',
+                'data' => null,
+            ], 500);
         }
     }
 
@@ -222,35 +246,5 @@ final class RefundsController extends Controller
         }
 
         return $this->refundService->globalPermissions();
-    }
-
-    private function successResponse(mixed $data = null, string $message = 'Success'): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data'    => $data,
-            'errors'  => [],
-        ]);
-    }
-
-    private function errorResponse(string $message, int $status = 400): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'data'    => null,
-            'errors'  => [],
-        ], $status);
-    }
-
-    private function unauthorizedResponse(): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'You are not authorized to access this resource.',
-            'data'    => null,
-            'errors'  => [],
-        ], 403);
     }
 }
