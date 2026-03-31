@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Gate;
 class BundleHelper
 {
     public const CACHE_TTL = 3600; // 1 hour
-    public const DEFAULT_TAX_TREATMENT_TYPE = 1;
+    public const DEFAULT_TAX_TREATMENT_TYPE = 2;
 
     /**
      * Get services list with caching.
@@ -63,7 +63,10 @@ class BundleHelper
      */
     public static function getTaxTreatmentTypes(): array
     {
-        return Cache::remember('bundle_tax_treatment_types', self::CACHE_TTL, fn () => TaxTreatmentType::select('id', 'name')->get()->toArray()
+        return Cache::remember('bundle_tax_treatment_types', self::CACHE_TTL, fn () => TaxTreatmentType::select('id', 'name')
+            ->whereNot('id', 1)
+            ->get()
+            ->toArray()
         );
     }
 
