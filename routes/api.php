@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\BundlesController as AdminBundlesController;
 use App\Http\Controllers\Api\BundlesController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Api\RefundsController as ApiRefundsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
@@ -339,11 +340,21 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     });
     // Doctors Route End
 
-    //Refunds route start
+    //Refunds route start (Legacy - kept for backward compatibility)
     Route::post('refunds/datatable', [RefundsController::class, 'datatable'])->name('refunds.datatable');
     Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
     Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
     Route::resource('refunds', RefundsController::class)->except('index');
+
+    // Refunds API Routes (Optimized)
+    Route::prefix('refunds')->name('refunds.api.')->group(function () {
+        Route::post('datatable', [ApiRefundsController::class, 'datatable'])->name('datatable');
+        Route::post('patient/{patientId}/datatable', [ApiRefundsController::class, 'patientDatatable'])->name('patient_datatable');
+        Route::get('{id}/calculate', [ApiRefundsController::class, 'calculate'])->name('calculate');
+        Route::get('ledger/{id}', [ApiRefundsController::class, 'detail'])->name('detail');
+        Route::post('/', [ApiRefundsController::class, 'store'])->name('store');
+    });
+
     Route::resource('feedbacks', FeedbackController::class)->except('index');
     //Discount route Start
     Route::post('discounts/datatable', [DiscountsController::class, 'datatable'])->name('discounts.datatable');
