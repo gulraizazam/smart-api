@@ -12,7 +12,12 @@ final class RefundDatatableRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('refunds_manage') ?? false;
+        $user = $this->user();
+        if (!$user) {
+            return false;
+        }
+
+        return $user->can('refunds_manage') || $user->can('patients_refund_manage');
     }
 
     public function rules(): array

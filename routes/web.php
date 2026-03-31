@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\BundlesController as AdminBundlesController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Api\RefundsController as ApiRefundsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
@@ -421,7 +422,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         /*Route start for Patient refunds*/
 
-        Route::post('refundpatient/store', [RefundsController::class, 'store'])->name('refundpatient.store');
+        Route::post('refundpatient/store', [ApiRefundsController::class, 'store'])->name('refundpatient.store');
 
         Route::get('refundpatient/detail/{id}', [RefundsController::class, 'detail'])->name('refundpatient.detail');
 
