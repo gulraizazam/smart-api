@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Service;
 
 use App\Exceptions\ServiceException;
-use App\Helpers\Filters;
-use App\Helpers\NodesTree;
 use App\Helpers\ServiceHelper;
 use App\Models\Appointments;
 use App\Models\AuditTrails;
@@ -19,87 +19,59 @@ use App\Models\PackageService;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
 use App\Models\StaffTargetServices;
-use App\Models\TaxTreatmentType;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
-class ServiceService
+final class ServiceService
 {
-    protected static string $table = 'services';
+    private const TABLE = 'services';
 
-    protected static array $fillable = [
+    private const AUDIT_FIELDS = [
         'name', 'slug', 'end_node', 'complimentory', 'active',
-        'tax_treatment_type_id', 'parent_id', 'duration', 'price', 'description', 'color'
+        'tax_treatment_type_id', 'parent_id', 'duration', 'price', 'description', 'color',
     ];
 
+    // ──────────────────────────────────────────────
+    // Read operations
+    // ──────────────────────────────────────────────
+
     /**
-     * Get services list for datatable with parent-child hierarchy
+     * Get services list for datatable with parent-child hierarchy.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    public function getServicesList(Request $request, int $accountId): array
-    {
-        $filters = getFilters($request->all());
-        $this->applyFilters($filters, $accountId);
-
-        $canViewInactive = ServiceHelper::canViewInactive();
-
-        // Get parent services
-        $parentQuery = Services::where('slug', '!=', 'all')
-            ->where('parent_id', 0)
-            ->where('account_id', $accountId);
-
-        if (!$canViewInactive) {
-            $parentQuery->where('active', 1);
-        }
-
-        $parents = $parentQuery->orderBy('id', 'asc')->get();
+    public function getServicesList(
+        array $filters,
+        int $accountId,
+        bool $canViewInactive,
+    ): array {
+        $parents = Services::parentsOnly()
+            ->forAccount($accountId)
+            ->when(! $canViewInactive, fn ($q) => $q->isActive())
+            ->orderBy('id', 'asc')
+            ->get();
 
         $mergedServices = [];
 
         foreach ($parents as $parent) {
-            $parentMatches = !hasFilter($filters, 'name') || stripos($parent->name, $filters['name']) !== false;
+            $nameFilter = $filters['name'] ?? null;
+            $statusFilter = $filters['status'] ?? null;
+            $parentMatches = ! $nameFilter || stripos($parent->name, $nameFilter) !== false;
 
-            if ($parentMatches) {
-                // Parent matches: get ALL children (only filter by status)
-                $childQuery = Services::where('parent_id', $parent->id);
+            $childQuery = Services::where('parent_id', $parent->id)
+                ->when(! $canViewInactive, fn ($q) => $q->isActive())
+                ->when($statusFilter !== null, fn ($q) => $q->where('active', $statusFilter));
 
-                if (!$canViewInactive) {
-                    $childQuery->where('active', 1);
-                }
+            if (! $parentMatches) {
+                $childQuery->where('name', 'like', '%' . $nameFilter . '%');
+            }
 
-                if (hasFilter($filters, 'status')) {
-                    $childQuery->where('active', $filters['status']);
-                }
+            $children = $childQuery->orderBy('sort_number', 'asc')->get();
 
-                $children = $childQuery->orderBy('sort_number', 'asc')->get()->toArray();
-
+            if ($parentMatches || $children->isNotEmpty()) {
                 $mergedServices[] = $parent->toArray();
                 foreach ($children as $child) {
-                    $mergedServices[] = $child;
-                }
-            } else {
-                // Parent doesn't match: get children that match the name filter
-                $childQuery = Services::where('parent_id', $parent->id)
-                    ->where('name', 'like', '%' . $filters['name'] . '%');
-
-                if (!$canViewInactive) {
-                    $childQuery->where('active', 1);
-                }
-
-                if (hasFilter($filters, 'status')) {
-                    $childQuery->where('active', $filters['status']);
-                }
-
-                $children = $childQuery->orderBy('sort_number', 'asc')->get()->toArray();
-
-                // Only include parent if it has matching children
-                if (count($children) > 0) {
-                    $mergedServices[] = $parent->toArray();
-                    foreach ($children as $child) {
-                        $mergedServices[] = $child;
-                    }
+                    $mergedServices[] = $child->toArray();
                 }
             }
         }
@@ -108,63 +80,39 @@ class ServiceService
     }
 
     /**
-     * Apply and store filters
+     * Get total records count for pagination.
      */
-    protected function applyFilters(array $filters, int $accountId): void
-    {
-        $userId = Auth::user()->id;
-        $filename = 'services';
-        $applyFilter = checkFilters($filters, $filename);
-
-        if (hasFilter($filters, 'name')) {
-            Filters::put($userId, $filename, 'name', $filters['name']);
-        } elseif ($applyFilter) {
-            Filters::forget($userId, $filename, 'name');
-        }
-
-        if (hasFilter($filters, 'status')) {
-            Filters::put($userId, $filename, 'status', $filters['status']);
-        } elseif ($applyFilter) {
-            Filters::forget($userId, $filename, 'status');
-        }
+    public function getTotalRecords(
+        array $filters,
+        int $accountId,
+        bool $canViewInactive,
+    ): int {
+        return Services::forAccount($accountId)
+            ->when(
+                ! empty($filters['name']),
+                fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'),
+            )
+            ->when(
+                isset($filters['status']),
+                fn ($q) => $q->where('active', $filters['status']),
+            )
+            ->when(! $canViewInactive, fn ($q) => $q->isActive())
+            ->count();
     }
 
     /**
-     * Get total records count
-     */
-    public function getTotalRecords(Request $request, int $accountId): int
-    {
-        $filters = getFilters($request->all());
-        $query = Services::where('account_id', $accountId);
-
-        if (hasFilter($filters, 'name')) {
-            $query->where('name', 'like', '%' . $filters['name'] . '%');
-        }
-
-        if (hasFilter($filters, 'status')) {
-            $query->where('active', $filters['status']);
-        }
-
-        if (!Gate::allows('view_inactive_records')) {
-            $query->where('active', 1);
-        }
-
-        return $query->count();
-    }
-
-    /**
-     * Get form data for create/edit
+     * Get form data for create/edit modal.
+     *
+     * @return array<string, mixed>
      */
     public function getFormData(int $accountId, ?int $serviceId = null): array
     {
-        $service = null;
-        $selectTaxTreatmentType = ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE; // Default: Is Inclusive
+        $selectTaxTreatmentType = ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE;
 
         if ($serviceId) {
             $service = Services::findOrFail($serviceId);
-            // If existing service has "Both" (ID 1), default to "Is Inclusive" (ID 3)
-            $selectTaxTreatmentType = ($service->tax_treatment_type_id && $service->tax_treatment_type_id != 1) 
-                ? $service->tax_treatment_type_id 
+            $selectTaxTreatmentType = ($service->tax_treatment_type_id && $service->tax_treatment_type_id !== 1)
+                ? $service->tax_treatment_type_id
                 : ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE;
         } else {
             $service = new \stdClass();
@@ -173,218 +121,41 @@ class ServiceService
         }
 
         return [
-            'parent_services' => ServiceHelper::getParentServices($accountId),
-            'service' => $service,
-            'durations' => ServiceHelper::getDurations(),
-            'tax_treatment_types' => ServiceHelper::getTaxTreatmentTypes(),
+            'parent_services'          => ServiceHelper::getParentServices($accountId),
+            'service'                  => $service,
+            'durations'                => ServiceHelper::getDurations(),
+            'tax_treatment_types'      => ServiceHelper::getTaxTreatmentTypes(),
             'select_tax_treatment_type' => $selectTaxTreatmentType,
         ];
     }
 
     /**
-     * Create a new service
+     * Get service description/instructions by ID.
      */
-    public function createService(array $data, int $accountId): Services
+    public function getServiceDescription(int $id): ?string
     {
-        $data = ServiceHelper::prepareServiceData($data, $accountId);
-
-        return DB::transaction(function () use ($data, $accountId) {
-            // Create the service
-            $service = Services::create($data);
-            $service->update(['sort_no' => $service->id]);
-
-            // Log audit trail
-            AuditTrails::addEventLogger(self::$table, 'create', $data, self::$fillable, $service);
-
-            // Create associated bundle
-            $this->createServiceBundle($service, $data);
-
-            // Clear cache
-            ServiceHelper::clearCache($accountId);
-
-            return $service;
-        });
+        return Services::where('id', $id)->value('description');
     }
 
     /**
-     * Update an existing service
+     * Get services for drag-and-drop sorting.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    public function updateService(int $id, array $data, int $accountId): Services
+    public function getServicesForSort(int $accountId): array
     {
-        $service = Services::where('id', $id)->where('account_id', $accountId)->first();
-
-        if (!$service) {
-            throw ServiceException::notFound($id);
-        }
-
-        // Check if changing from child to parent when appointments exist
-        if ($service->parent_id > 0 && ($data['parent_id'] ?? 0) == 0) {
-            $appointmentCount = Appointments::where('service_id', $id)->count();
-            if ($appointmentCount > 0) {
-                throw ServiceException::hasAppointments($id);
-            }
-        }
-
-        // Check if parent change is allowed
-        if ($this->hasChildServices($id, $accountId)) {
-            if ($service->parent_id != ($data['parent_id'] ?? $service->parent_id) ||
-                $service->end_node != (int)($data['end_node'] ?? $service->end_node)) {
-                throw ServiceException::parentChangeNotAllowed($id);
-            }
-        }
-
-        $data = ServiceHelper::prepareServiceData($data, $accountId);
-
-        return DB::transaction(function () use ($service, $data, $id, $accountId) {
-            $oldData = $service->toArray();
-
-            // Handle color inheritance
-            if (($data['parent_id'] ?? 0) == 0) {
-                // This is a parent - update children colors
-                Services::where('parent_id', $id)->update(['color' => $data['color'] ?? $service->color]);
-            } else {
-                // This is a child - inherit parent color
-                $parentColor = ServiceHelper::getParentColor($data['parent_id']);
-                if ($parentColor) {
-                    $data['color'] = $parentColor;
-                }
-            }
-
-            $service->update($data);
-
-            // Log audit trail
-            AuditTrails::EditEventLogger(self::$table, 'edit', $data, self::$fillable, $oldData, $id);
-
-            // Update associated bundle
-            $this->updateServiceBundle($service, $data, $accountId);
-
-            // Clear cache
-            ServiceHelper::clearCache($accountId);
-
-            return $service->fresh();
-        });
-    }
-
-    /**
-     * Delete a service
-     */
-    public function deleteService(int $id, int $accountId): array
-    {
-        $service = Services::find($id);
-
-        if (!$service) {
-            throw ServiceException::notFound($id);
-        }
-
-        // Check for dependencies
-        $dependency = $this->checkDependencies($id, $accountId);
-        if ($dependency) {
-            throw ServiceException::hasDependencies($id, $dependency);
-        }
-
-        return DB::transaction(function () use ($service, $id, $accountId) {
-            $service->delete();
-
-            // Log audit trail
-            AuditTrails::deleteEventLogger(self::$table, 'delete', self::$fillable, $id);
-
-            // Delete associated bundle
-            $this->deleteServiceBundle($id);
-
-            // Clear cache
-            ServiceHelper::clearCache($accountId);
-
-            return [
-                'status' => true,
-                'message' => 'Record has been deleted successfully.',
-            ];
-        });
-    }
-
-    /**
-     * Activate a service
-     */
-    public function activateService(int $id, int $accountId): bool
-    {
-        $service = Services::find($id);
-
-        if (!$service) {
-            throw ServiceException::notFound($id);
-        }
-
-        return DB::transaction(function () use ($service, $id, $accountId) {
-            // Activate children if this is a parent
-            Services::where('parent_id', $id)->update(['active' => 1]);
-
-            $service->update(['active' => 1]);
-
-            // Log audit trail
-            AuditTrails::activeEventLogger(self::$table, 'active', self::$fillable, $id);
-
-            // Activate associated bundle
-            $this->updateBundleStatus($id, 1);
-
-            // Clear cache
-            ServiceHelper::clearCache($accountId);
-
-            return true;
-        });
-    }
-
-    /**
-     * Deactivate a service
-     */
-    public function deactivateService(int $id, int $accountId): bool
-    {
-        $service = Services::find($id);
-
-        if (!$service) {
-            throw ServiceException::notFound($id);
-        }
-
-        // If this is a parent service, deactivate all children as well
-        if ($service->parent_id == 0) {
-            Services::where('parent_id', $id)->update(['active' => 0]);
-        }
-
-        return DB::transaction(function () use ($service, $id, $accountId) {
-            // Deactivate the service itself
-            $service->update(['active' => 0]);
-
-            // Log audit trail
-            AuditTrails::inactiveEventLogger(self::$table, 'inactive', self::$fillable, $id);
-
-            // Deactivate associated bundle
-            $this->updateBundleStatus($id, 0);
-
-            // Clear cache
-            ServiceHelper::clearCache($accountId);
-
-            return true;
-        });
-    }
-
-    /**
-     * Get services for sorting
-     */
-    public function getServicesForSort(): array
-    {
-        $services = Services::where('slug', '!=', 'all')
-            ->where('parent_id', 0)
+        $parents = Services::parentsOnly()
+            ->forAccount($accountId)
             ->orderBy('id', 'asc')
+            ->with(['children' => fn ($q) => $q->orderBy('sort_number', 'asc')])
             ->get();
 
         $mergedServices = [];
 
-        foreach ($services as $service) {
-            $children = Services::where('parent_id', $service->id)
-                ->orderBy('sort_number', 'asc')
-                ->get()
-                ->toArray();
-
-            $mergedServices[] = $service->toArray();
-            foreach ($children as $child) {
-                $mergedServices[] = $child;
+        foreach ($parents as $parent) {
+            $mergedServices[] = $parent->toArray();
+            foreach ($parent->children as $child) {
+                $mergedServices[] = $child->toArray();
             }
         }
 
@@ -392,7 +163,175 @@ class ServiceService
     }
 
     /**
-     * Save sort order
+     * Get service color by ID.
+     */
+    public function getServiceColor(int $serviceId): string
+    {
+        if ($serviceId === 0) {
+            return '#000';
+        }
+
+        return Services::where('id', $serviceId)->value('color') ?? '#000';
+    }
+
+    /**
+     * Check if service has child services.
+     */
+    public function hasChildServices(int $id, int $accountId): bool
+    {
+        return Services::where('parent_id', $id)
+            ->forAccount($accountId)
+            ->exists();
+    }
+
+    // ──────────────────────────────────────────────
+    // Write operations
+    // ──────────────────────────────────────────────
+
+    /**
+     * Create a new service with associated bundle.
+     */
+    public function createService(array $data, int $accountId, int $userId): Services
+    {
+        $data = ServiceHelper::prepareServiceData($data, $accountId);
+
+        return DB::transaction(function () use ($data, $accountId, $userId): Services {
+            $service = Services::create($data);
+            $service->update(['sort_no' => $service->id]);
+
+            AuditTrails::addEventLogger(self::TABLE, 'create', $data, self::AUDIT_FIELDS, $service);
+
+            $this->createServiceBundle($service, $data, $accountId, $userId);
+
+            ServiceHelper::clearCache($accountId);
+
+            return $service;
+        });
+    }
+
+    /**
+     * Update an existing service with color inheritance and bundle sync.
+     */
+    public function updateService(int $id, array $data, int $accountId, int $userId): Services
+    {
+        $service = Services::where('id', $id)->forAccount($accountId)->first();
+
+        if (! $service) {
+            throw ServiceException::notFound($id);
+        }
+
+        $this->validateServiceUpdate($service, $data, $id, $accountId);
+
+        $data = ServiceHelper::prepareServiceData($data, $accountId);
+
+        return DB::transaction(function () use ($service, $data, $id, $accountId, $userId): Services {
+            $oldData = $service->toArray();
+
+            $this->applyColorInheritance($service, $data, $id);
+
+            $service->update($data);
+
+            AuditTrails::EditEventLogger(self::TABLE, 'edit', $data, self::AUDIT_FIELDS, $oldData, $id);
+
+            $this->updateServiceBundle($service, $data, $accountId, $userId);
+
+            ServiceHelper::clearCache($accountId);
+
+            return $service->fresh();
+        });
+    }
+
+    /**
+     * Delete a service after dependency checks.
+     *
+     * @return array{status: bool, message: string}
+     */
+    public function deleteService(int $id, int $accountId): array
+    {
+        $service = Services::find($id);
+
+        if (! $service) {
+            throw ServiceException::notFound($id);
+        }
+
+        $dependency = $this->checkDependencies($id, $accountId);
+        if ($dependency) {
+            throw ServiceException::hasDependencies($id, $dependency);
+        }
+
+        return DB::transaction(function () use ($service, $id, $accountId): array {
+            $service->delete();
+
+            AuditTrails::deleteEventLogger(self::TABLE, 'delete', self::AUDIT_FIELDS, $id);
+
+            $this->deleteServiceBundle($id);
+
+            ServiceHelper::clearCache($accountId);
+
+            return [
+                'status'  => true,
+                'message' => 'Record has been deleted successfully.',
+            ];
+        });
+    }
+
+    /**
+     * Activate a service and its children + associated bundle.
+     */
+    public function activateService(int $id, int $accountId): bool
+    {
+        $service = Services::find($id);
+
+        if (! $service) {
+            throw ServiceException::notFound($id);
+        }
+
+        return DB::transaction(function () use ($service, $id, $accountId): bool {
+            Services::where('parent_id', $id)->update(['active' => 1]);
+            $service->update(['active' => 1]);
+
+            AuditTrails::activeEventLogger(self::TABLE, 'active', self::AUDIT_FIELDS, $id);
+
+            $this->updateBundleStatus($id, 1);
+
+            ServiceHelper::clearCache($accountId);
+
+            return true;
+        });
+    }
+
+    /**
+     * Deactivate a service (cascade to children if parent) + associated bundle.
+     */
+    public function deactivateService(int $id, int $accountId): bool
+    {
+        $service = Services::find($id);
+
+        if (! $service) {
+            throw ServiceException::notFound($id);
+        }
+
+        return DB::transaction(function () use ($service, $id, $accountId): bool {
+            if ($service->parent_id === 0) {
+                Services::where('parent_id', $id)->update(['active' => 0]);
+            }
+
+            $service->update(['active' => 0]);
+
+            AuditTrails::inactiveEventLogger(self::TABLE, 'inactive', self::AUDIT_FIELDS, $id);
+
+            $this->updateBundleStatus($id, 0);
+
+            ServiceHelper::clearCache($accountId);
+
+            return true;
+        });
+    }
+
+    /**
+     * Save drag-and-drop sort order.
+     *
+     * @param  array<int, int>  $itemIds
      */
     public function saveSortOrder(array $itemIds, int $accountId): bool
     {
@@ -400,9 +339,9 @@ class ServiceService
             return false;
         }
 
-        DB::transaction(function () use ($itemIds, $accountId) {
-            foreach ($itemIds as $key => $itemId) {
-                Services::where('id', $itemId)->update(['sort_number' => $key]);
+        DB::transaction(function () use ($itemIds, $accountId): void {
+            foreach ($itemIds as $position => $itemId) {
+                Services::where('id', (int) $itemId)->update(['sort_number' => $position]);
             }
 
             ServiceHelper::clearCache($accountId);
@@ -411,76 +350,67 @@ class ServiceService
         return true;
     }
 
+    // ──────────────────────────────────────────────
+    // Private helpers
+    // ──────────────────────────────────────────────
+
     /**
-     * Get service description/instructions
+     * Validate constraints before updating a service.
      */
-    public function getServiceDescription(int $id): ?string
+    private function validateServiceUpdate(Services $service, array $data, int $id, int $accountId): void
     {
-        $service = Services::find($id, ['description']);
-        return $service ? $service->description : null;
+        // Prevent changing child → parent when appointments exist
+        if ($service->parent_id > 0 && ($data['parent_id'] ?? 0) == 0) {
+            if (Appointments::where('service_id', $id)->exists()) {
+                throw ServiceException::hasAppointments($id);
+            }
+        }
+
+        // Prevent parent/end_node changes when children exist
+        if ($this->hasChildServices($id, $accountId)) {
+            $parentChanged = $service->parent_id !== (int) ($data['parent_id'] ?? $service->parent_id);
+            $endNodeChanged = $service->end_node !== (int) ($data['end_node'] ?? $service->end_node);
+
+            if ($parentChanged || $endNodeChanged) {
+                throw ServiceException::parentChangeNotAllowed($id);
+            }
+        }
     }
 
     /**
-     * Check if service has child services
+     * Apply color inheritance rules (parent → children, child ← parent).
      */
-    public function hasChildServices(int $id, int $accountId): bool
+    private function applyColorInheritance(Services $service, array &$data, int $id): void
     {
-        return Services::where('parent_id', $id)
-            ->where('account_id', $accountId)
-            ->exists();
+        if (($data['parent_id'] ?? 0) == 0) {
+            Services::where('parent_id', $id)->update(['color' => $data['color'] ?? $service->color]);
+        } else {
+            $parentColor = ServiceHelper::getParentColor((int) $data['parent_id']);
+            if ($parentColor) {
+                $data['color'] = $parentColor;
+            }
+        }
     }
 
     /**
-     * Check for dependencies that prevent deletion
-     * Returns the dependency name or null if none found
+     * Check for dependencies that prevent deletion.
      */
-    protected function checkDependencies(int $id, int $accountId): ?string
+    private function checkDependencies(int $id, int $accountId): ?string
     {
-        // Check child services
-        if (Services::where('parent_id', $id)->where('account_id', $accountId)->exists()) {
-            return 'child services';
-        }
+        $checks = [
+            'child services'      => fn () => Services::where('parent_id', $id)->forAccount($accountId)->exists(),
+            'packages'            => fn () => PackageService::where('service_id', $id)->exists(),
+            'discounts'           => fn () => DiscountHasLocations::where('service_id', $id)->exists(),
+            'doctor allocations'  => fn () => DoctorHasLocations::where('service_id', $id)->where('is_allocated', 1)->exists(),
+            'location assignments' => fn () => ServiceHasLocations::where('service_id', $id)->exists(),
+            'appointments'        => fn () => Appointments::where('service_id', $id)->exists(),
+            'staff targets'       => fn () => StaffTargetServices::where('service_id', $id)->exists(),
+            'paid invoices'       => fn () => $this->hasPaidInvoices($id),
+        ];
 
-        // Check package services
-        if (PackageService::where('service_id', $id)->exists()) {
-            return 'packages';
-        }
-
-        // Check discount locations
-        if (DiscountHasLocations::where('service_id', $id)->exists()) {
-            return 'discounts';
-        }
-
-        // Check doctor allocations
-        if (DoctorHasLocations::where('service_id', $id)->where('is_allocated', 1)->exists()) {
-            return 'doctor allocations';
-        }
-
-        // Check service locations
-        if (ServiceHasLocations::where('service_id', $id)->exists()) {
-            return 'location assignments';
-        }
-
-        // Check appointments
-        if (Appointments::where('service_id', $id)->exists()) {
-            return 'appointments';
-        }
-
-        // Check staff targets
-        if (StaffTargetServices::where('service_id', $id)->exists()) {
-            return 'staff targets';
-        }
-
-        // Check paid invoices
-        $paidStatus = InvoiceStatuses::where('slug', 'paid')->first();
-        if ($paidStatus) {
-            $hasInvoices = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                ->where('invoice_details.service_id', $id)
-                ->where('invoices.invoice_status_id', $paidStatus->id)
-                ->exists();
-
-            if ($hasInvoices) {
-                return 'paid invoices';
+        foreach ($checks as $dependency => $check) {
+            if ($check()) {
+                return $dependency;
             }
         }
 
@@ -488,140 +418,136 @@ class ServiceService
     }
 
     /**
-     * Create bundle for a service
+     * Check if service has paid invoices.
      */
-    protected function createServiceBundle(Services $service, array $data): void
+    private function hasPaidInvoices(int $serviceId): bool
     {
+        $paidStatus = InvoiceStatuses::where('slug', 'paid')->first();
+
+        if (! $paidStatus) {
+            return false;
+        }
+
+        return Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->where('invoice_details.service_id', $serviceId)
+            ->where('invoices.invoice_status_id', $paidStatus->id)
+            ->exists();
+    }
+
+    // ──────────────────────────────────────────────
+    // Bundle management (private)
+    // ──────────────────────────────────────────────
+
+    private function createServiceBundle(Services $service, array $data, int $accountId, int $userId): void
+    {
+        $price = (float) ($service->price ?? 0.0);
+
         $bundle = Bundles::create([
-            'name' => $service->name,
-            'price' => $service->price ?? 0.0,
-            'services_price' => $service->price ?? 0.0,
-            'type' => 'single',
-            'total_services' => 1,
-            'account_id' => 1,
+            'name'                  => $service->name,
+            'price'                 => $price,
+            'services_price'        => $price,
+            'type'                  => 'single',
+            'total_services'        => 1,
+            'account_id'            => $accountId,
             'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
         ]);
 
         BundleHasServices::create([
-            'bundle_id' => $bundle->id,
-            'service_id' => $service->id,
-            'service_price' => $service->price ?? 0.0,
-            'calculated_price' => $service->price ?? 0.0,
-            'end_node' => $service->end_node,
+            'bundle_id'        => $bundle->id,
+            'service_id'       => $service->id,
+            'service_price'    => $price,
+            'calculated_price' => $price,
+            'end_node'         => $service->end_node,
         ]);
 
         BundleServicesPriceHistory::createRecord([
-            'bundle_id' => $bundle->id,
-            'bundle_price' => $service->price ?? 0.0,
-            'service_id' => $service->id,
-            'service_price' => $service->price ?? 0.0,
+            'bundle_id'      => $bundle->id,
+            'bundle_price'   => $price,
+            'service_id'     => $service->id,
+            'service_price'  => $price,
             'effective_from' => Carbon::now()->format('Y-m-d'),
-            'created_by' => Auth::user()->id,
-            'updated_by' => Auth::user()->id,
-        ], $service->account_id);
-    }
-
-    /**
-     * Update bundle for a service
-     */
-    protected function updateServiceBundle(Services $service, array $data, int $accountId): void
-    {
-        $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-            ->where([
-                'bundles.account_id' => $accountId,
-                'bundles.type' => 'single',
-                'bundle_has_services.service_id' => $service->id,
-            ])
-            ->select('bundles.id')
-            ->first();
-
-        if (!$bundleWithService) {
-            return;
-        }
-
-        // Deactivate previous price history
-        BundleServicesPriceHistory::where('bundle_id', $bundleWithService->id)
-            ->whereNull('effective_to')
-            ->update([
-                'effective_to' => Carbon::now()->format('Y-m-d'),
-                'active' => 0,
-                'updated_by' => Auth::user()->id,
-            ]);
-
-        // Update bundle
-        Bundles::where('id', $bundleWithService->id)->update([
-            'name' => $service->name,
-            'price' => $service->price,
-            'services_price' => $service->price,
-            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
-        ]);
-
-        // Update bundle has services
-        BundleHasServices::where('bundle_id', $bundleWithService->id)->update([
-            'service_price' => $service->price,
-            'calculated_price' => $service->price,
-            'end_node' => $service->end_node,
-        ]);
-
-        // Create new price history
-        BundleServicesPriceHistory::createRecord([
-            'bundle_id' => $bundleWithService->id,
-            'bundle_price' => $service->price,
-            'service_id' => $service->id,
-            'service_price' => $service->price,
-            'effective_from' => Carbon::now()->format('Y-m-d'),
-            'created_by' => Auth::user()->id,
-            'updated_by' => Auth::user()->id,
+            'created_by'     => $userId,
+            'updated_by'     => $userId,
         ], $accountId);
     }
 
-    /**
-     * Delete bundle for a service
-     */
-    protected function deleteServiceBundle(int $serviceId): void
+    private function updateServiceBundle(Services $service, array $data, int $accountId, int $userId): void
     {
-        $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-            ->where([
-                'bundles.type' => 'single',
-                'bundle_has_services.service_id' => $serviceId,
-            ])
-            ->select('bundles.id')
-            ->first();
+        $bundleId = $this->findSingleBundleId($service->id, $accountId);
 
-        if ($bundleWithService) {
-            Bundles::where('id', $bundleWithService->id)->delete();
-            BundleHasServices::where('bundle_id', $bundleWithService->id)->delete();
+        if (! $bundleId) {
+            return;
+        }
+
+        $price = (float) ($service->price ?? 0.0);
+
+        // Deactivate previous price history
+        BundleServicesPriceHistory::where('bundle_id', $bundleId)
+            ->whereNull('effective_to')
+            ->update([
+                'effective_to' => Carbon::now()->format('Y-m-d'),
+                'active'       => 0,
+                'updated_by'   => $userId,
+            ]);
+
+        Bundles::where('id', $bundleId)->update([
+            'name'                  => $service->name,
+            'price'                 => $price,
+            'services_price'        => $price,
+            'tax_treatment_type_id' => $data['tax_treatment_type_id'] ?? ServiceHelper::DEFAULT_TAX_TREATMENT_TYPE,
+        ]);
+
+        BundleHasServices::where('bundle_id', $bundleId)->update([
+            'service_price'    => $price,
+            'calculated_price' => $price,
+            'end_node'         => $service->end_node,
+        ]);
+
+        BundleServicesPriceHistory::createRecord([
+            'bundle_id'      => $bundleId,
+            'bundle_price'   => $price,
+            'service_id'     => $service->id,
+            'service_price'  => $price,
+            'effective_from' => Carbon::now()->format('Y-m-d'),
+            'created_by'     => $userId,
+            'updated_by'     => $userId,
+        ], $accountId);
+    }
+
+    private function deleteServiceBundle(int $serviceId): void
+    {
+        $bundleId = $this->findSingleBundleId($serviceId);
+
+        if (! $bundleId) {
+            return;
+        }
+
+        Bundles::where('id', $bundleId)->delete();
+        BundleHasServices::where('bundle_id', $bundleId)->delete();
+    }
+
+    private function updateBundleStatus(int $serviceId, int $status): void
+    {
+        $bundleId = $this->findSingleBundleId($serviceId);
+
+        if ($bundleId) {
+            Bundles::where('id', $bundleId)->update(['active' => $status]);
         }
     }
 
     /**
-     * Update bundle status (active/inactive)
+     * Find the single-type bundle ID linked to a service.
      */
-    protected function updateBundleStatus(int $serviceId, int $status): void
+    private function findSingleBundleId(int $serviceId, ?int $accountId = null): ?int
     {
-        $bundleWithService = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
-            ->where([
-                'bundles.type' => 'single',
-                'bundle_has_services.service_id' => $serviceId,
-            ])
-            ->select('bundles.id')
-            ->first();
+        $query = Bundles::join('bundle_has_services', 'bundle_has_services.bundle_id', '=', 'bundles.id')
+            ->where('bundles.type', 'single')
+            ->where('bundle_has_services.service_id', $serviceId);
 
-        if ($bundleWithService) {
-            Bundles::where('id', $bundleWithService->id)->update(['active' => $status]);
-        }
-    }
-
-    /**
-     * Get service color by ID
-     */
-    public function getServiceColor(int $serviceId): string
-    {
-        if ($serviceId == 0) {
-            return '#000';
+        if ($accountId !== null) {
+            $query->where('bundles.account_id', $accountId);
         }
 
-        $service = Services::find($serviceId, ['color']);
-        return $service ? $service->color : '#000';
+        return $query->value('bundles.id');
     }
 }
