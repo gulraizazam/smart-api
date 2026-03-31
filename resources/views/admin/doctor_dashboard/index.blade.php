@@ -136,6 +136,7 @@
             <div class="dd-kpi-section dd-section-upsell">
                 <div class="dd-kpi-section-title">Upselling & Memberships</div>
                 <div class="dd-kpi-grid">
+                    @if($showUpsellCards)
                     <div class="dd-kpi-card" data-kpi="upsell_revenue">
                         <div class="dd-kpi-label"><i class="la la-hand-holding-usd"></i> Upsell Revenue</div>
                         <div class="dd-kpi-value currency dd-skeleton" style="height:24px;width:70px;" id="kpiUpsellRev">&nbsp;</div>
@@ -150,6 +151,7 @@
                         <div class="dd-kpi-last-month" id="kpiUpsellRateLast"></div>
                         <div class="dd-kpi-bench-network" id="kpiUpsellRateBench"></div>
                     </div>
+                    @endif
                     <div class="dd-kpi-card" data-kpi="gold_memberships">
                         <div class="dd-kpi-label"><i class="la la-medal"></i> Gold Memberships</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:40px;" id="kpiGoldMem">&nbsp;</div>
