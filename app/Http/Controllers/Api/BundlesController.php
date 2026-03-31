@@ -1,169 +1,345 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Services\Bundle\BundleService;
 use App\Exceptions\BundleException;
-use App\HelperModule\ApiHelper;
+use App\Helpers\BundleHelper;
+use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Bundle\StoreBundleRequest;
 use App\Http\Requests\Bundle\UpdateBundleRequest;
 use App\Http\Requests\Bundle\UpdateBundleStatusRequest;
-use Illuminate\Http\Request;
+use App\Http\Resources\Bundle\BundleDatatableResource;
+use App\Http\Resources\Bundle\BundleDetailResource;
+use App\Http\Resources\Bundle\BundleFormDataResource;
+use App\Services\Bundle\BundleService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
-class BundlesController extends Controller
+final class BundlesController extends Controller
 {
-    protected BundleService $bundleService;
-    protected int $success;
-    protected int $error;
-    protected int $unauthorized;
-
-    public function __construct(BundleService $bundleService)
-    {
-        $this->bundleService = $bundleService;
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly BundleService $bundleService,
+    ) {}
 
     /**
-     * Get bundles datatable data
+     * Get bundles datatable data.
      */
     public function datatable(Request $request): JsonResponse
     {
+        if (! Gate::allows('packages_manage')) {
+            return $this->unauthorizedResponse();
+        }
+
         try {
-            if (!Gate::allows('packages_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            $user = Auth::user();
+            $accountId = $user->account_id;
+            $filters = getFilters($request->all());
+            $records = ['data' => []];
+
+            // Handle bulk delete
+            if (hasFilter($filters, 'delete')) {
+                $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
+                $this->bundleService->bulkDelete($ids, $accountId);
+                $records['status'] = true;
+                $records['message'] = 'Records have been deleted successfully!';
             }
 
-            $records = $this->bundleService->getDatatableRecords($request);
+            // Persist/clear filters, then restore any saved filters not in current request
+            $this->applyFilters($filters, $user->id);
+            $filters = $this->restoreSavedFilters($filters, $user->id);
+
+            [$orderBy, $order] = getSortBy($request);
+            $canViewInactive = Gate::allows('view_inactive_packages');
+
+            $totalRecords = $this->bundleService->getTotalRecords($filters, $accountId, $canViewInactive);
+            [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
+
+            $bundles = $this->bundleService->getBundlesList($filters, $accountId, $canViewInactive, $displayStart, $displayLength);
+
+            $records = $this->appendFilterData($records, $user->id);
+            $records['data'] = BundleDatatableResource::collection($bundles)->resolve();
+            $records['permissions'] = BundleHelper::getPermissions();
+            $records['meta'] = [
+                'field'   => $orderBy,
+                'page'    => $page,
+                'pages'   => $pages,
+                'perpage' => $displayLength,
+                'total'   => $totalRecords,
+                'sort'    => $order,
+            ];
 
             return response()->json($records);
-
-        } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Store a new simple bundle
+     * Store a new bundle.
      */
     public function store(StoreBundleRequest $request): JsonResponse
     {
         try {
             $this->bundleService->createBundle($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Bundle has been created successfully.');
-
+            return $this->successResponse('Bundle has been created successfully.');
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get bundle data for editing
+     * Get bundle data for editing.
      */
     public function edit(int $id): JsonResponse
     {
-        try {
-            if (!Gate::allows('packages_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
 
+        try {
             $data = $this->bundleService->getBundleForEdit($id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
-
+            return $this->successResponse('Record found', new BundleFormDataResource($data));
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Update a simple bundle
+     * Update a bundle.
      */
     public function update(UpdateBundleRequest $request, int $id): JsonResponse
     {
         try {
             $this->bundleService->updateBundle($id, $request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Bundle has been updated successfully.');
-
+            return $this->successResponse('Bundle has been updated successfully.');
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false, $e->getErrors());
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Delete a bundle
+     * Delete a bundle.
      */
     public function destroy(int $id): JsonResponse
     {
-        try {
-            if (!Gate::allows('packages_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+        if (! Gate::allows('packages_destroy')) {
+            return $this->unauthorizedResponse();
+        }
 
+        try {
             $this->bundleService->deleteBundle($id);
 
-            return ApiHelper::apiResponse($this->success, 'Bundle has been deleted successfully.');
-
+            return $this->successResponse('Bundle has been deleted successfully.');
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Update bundle status (active/inactive)
+     * Update bundle status (active/inactive).
      */
     public function status(UpdateBundleStatusRequest $request): JsonResponse
     {
         try {
-            $this->bundleService->updateStatus($request->id, $request->status);
+            $id = (int) $request->validated('id');
+            $status = (int) $request->validated('status');
 
-            $message = $request->status == 1 
-                ? 'Bundle has been activated successfully.' 
-                : 'Bundle has been inactivated successfully.';
+            $this->bundleService->updateStatus($id, $status);
 
-            return ApiHelper::apiResponse($this->success, $message);
+            $message = match ($status) {
+                1       => 'Bundle has been activated successfully.',
+                default => 'Bundle has been inactivated successfully.',
+            };
 
+            return $this->successResponse($message);
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get bundle details
+     * Get bundle details.
      */
     public function detail(int $id): JsonResponse
     {
-        try {
-            if (!Gate::allows('packages_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+        if (! Gate::allows('packages_manage')) {
+            return $this->unauthorizedResponse();
+        }
 
+        try {
             $data = $this->bundleService->getBundleDetails($id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
-
+            return $this->successResponse('Record found', new BundleDetailResource($data));
         } catch (BundleException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
+    }
+
+    // ── Private helpers ─────────────────────────────────
+
+    private function applyFilters(array $filters, int $userId): void
+    {
+        $filename = 'bundles';
+        $applyFilter = checkFilters($filters, $filename);
+
+        $simpleFilters = ['name', 'price', 'total_services', 'status'];
+        foreach ($simpleFilters as $key) {
+            if (hasFilter($filters, $key)) {
+                Filters::put($userId, $filename, $key, $filters[$key]);
+            } elseif ($applyFilter) {
+                Filters::forget($userId, $filename, $key);
+            }
+        }
+
+        // Date filters with special keys
+        $dateFilters = [
+            'created_from' => 'created_from',
+            'created_to'   => 'created_to',
+            'startdate'    => 'start',
+            'enddate'      => 'end',
+        ];
+
+        foreach ($dateFilters as $filterKey => $storageKey) {
+            if (hasFilter($filters, $filterKey)) {
+                Filters::put($userId, $filename, $storageKey, $filters[$filterKey]);
+            } elseif ($applyFilter) {
+                Filters::forget($userId, $filename, $storageKey);
+            }
+        }
+    }
+
+    /**
+     * Restore saved filters from session when not explicitly applied in current request.
+     * This preserves the old behavior where navigating back to the datatable
+     * restores previously set filters.
+     *
+     * @return array<string, mixed>
+     */
+    private function restoreSavedFilters(array $filters, int $userId): array
+    {
+        $filename = 'bundles';
+        $applyFilter = checkFilters($filters, $filename);
+
+        if ($applyFilter) {
+            return $filters;
+        }
+
+        // Restore simple filters
+        foreach (['name', 'price', 'total_services'] as $key) {
+            if (! hasFilter($filters, $key)) {
+                $saved = Filters::get($userId, $filename, $key);
+                if ($saved !== null) {
+                    $filters[$key] = $saved;
+                }
+            }
+        }
+
+        // Restore status filter (accepts 0 as valid)
+        if (! hasFilter($filters, 'status')) {
+            $saved = Filters::get($userId, $filename, 'status');
+            if (in_array($saved, [0, 1, '0', '1'], true)) {
+                $filters['status'] = $saved;
+            }
+        }
+
+        // Restore date filters
+        $dateMapping = [
+            'created_from' => 'created_from',
+            'created_to'   => 'created_to',
+            'startdate'    => 'start',
+            'enddate'      => 'end',
+        ];
+
+        foreach ($dateMapping as $filterKey => $storageKey) {
+            if (! hasFilter($filters, $filterKey)) {
+                $saved = Filters::get($userId, $filename, $storageKey);
+                if ($saved !== null) {
+                    $filters[$filterKey] = $saved;
+                }
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function appendFilterData(array $records, int $userId): array
+    {
+        $records['filter_values'] = BundleHelper::getFilterValues();
+        $records['active_filters'] = Filters::all($userId, 'bundles');
+
+        return $records;
+    }
+
+    // ── Standardized response helpers ───────────────────
+
+    private function successResponse(string $message, mixed $data = null, bool $success = true): JsonResponse
+    {
+        return response()->json([
+            'success' => $success,
+            'status'  => $success,
+            'message' => $message,
+            'data'    => $data,
+            'errors'  => [],
+        ], 200);
+    }
+
+    private function failResponse(string $message, array $errors = []): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => $errors,
+        ], 200);
+    }
+
+    private function unauthorizedResponse(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => 'You are not authorized to access this resource.',
+            'data'    => null,
+            'errors'  => [],
+        ], 403);
+    }
+
+    private function errorResponse(\Exception $e): JsonResponse
+    {
+        $message = config('app.debug')
+            ? $e->getMessage() . ' Line ' . $e->getLine() . ' File ' . $e->getFile()
+            : 'Something went wrong, please try again later.';
+
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => [],
+        ], 500);
     }
 }

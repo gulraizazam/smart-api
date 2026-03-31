@@ -1,48 +1,61 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BundleHasServices extends Model
 {
-    protected $fillable = ['bundle_id', 'service_id', 'service_price', 'calculated_price', 'end_node'];
-
-    protected static $_fillable = ['bundle_id', 'service_id', 'service_price', 'end_node'];
-
     protected $table = 'bundle_has_services';
 
-    protected static $_table = 'bundle_has_services';
+    protected static string $_table = 'bundle_has_services';
 
     public $timestamps = false;
 
-    /**
-     * Get Bundle Service belong to Service.
-     */
-    public function service()
+    protected $fillable = [
+        'bundle_id',
+        'service_id',
+        'service_price',
+        'calculated_price',
+        'end_node',
+    ];
+
+    protected static array $_fillable = [
+        'bundle_id',
+        'service_id',
+        'service_price',
+        'end_node',
+    ];
+
+    protected function casts(): array
     {
-        return $this->belongsTo('App\Models\Services', 'service_id');
+        return [
+            'service_price'    => 'float',
+            'calculated_price' => 'float',
+            'end_node'         => 'integer',
+        ];
     }
 
-    /**
-     * Get Bundle Service belong to Bundle.
-     */
-    public function bundle()
+    // ── Relationships ───────────────────────────────────
+
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Bundles', 'bundle_id');
+        return $this->belongsTo(Services::class, 'service_id');
     }
 
-    /**
-     * Create Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function createRecord($data, $parent_data)
+    public function bundle(): BelongsTo
     {
+        return $this->belongsTo(Bundles::class, 'bundle_id');
+    }
 
+    // ── Record Operations ───────────────────────────────
+
+    public static function createRecord(array $data, mixed $parent_data): bool
+    {
         $record = self::insert($data);
-
         $parent_id = $parent_data;
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
@@ -50,18 +63,10 @@ class BundleHasServices extends Model
         return $record;
     }
 
-    /**
-     * update Record
-     *
-     * @param data ,parent_data
-     * @return (mixed)
-     */
-    public static function updateRecord($data, $parent_data)
+    public static function updateRecord(array $data, mixed $parent_data): bool
     {
         $record = self::insert($data);
-
         $parent_id = $parent_data->id;
-
         $old_data = '0';
 
         AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $record, $parent_id);

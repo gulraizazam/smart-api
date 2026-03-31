@@ -383,11 +383,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::prefix('bundles')->name('bundles.')->group(function () {
         Route::post('datatable', [BundlesController::class, 'datatable'])->name('datatable');
         Route::post('status', [BundlesController::class, 'status'])->name('status');
-        Route::get('detail/{id}', [BundlesController::class, 'detail'])->name('detail');
-        Route::get('{id}/edit', [BundlesController::class, 'edit'])->name('edit');
+        Route::get('detail/{id}', [BundlesController::class, 'detail'])->name('detail')->whereNumber('id');
+        Route::get('{id}/edit', [BundlesController::class, 'edit'])->name('edit')->whereNumber('id');
         Route::post('/', [BundlesController::class, 'store'])->name('store');
-        Route::put('{id}', [BundlesController::class, 'update'])->name('update');
-        Route::delete('{id}', [BundlesController::class, 'destroy'])->name('destroy');
+        Route::put('{id}', [BundlesController::class, 'update'])->name('update')->whereNumber('id');
+        Route::delete('{id}', [BundlesController::class, 'destroy'])->name('destroy')->whereNumber('id');
     });
     //Bundles Route End
 

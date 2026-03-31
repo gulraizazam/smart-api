@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exceptions;
 
 use Exception;
 
 class BundleException extends Exception
 {
-    protected $statusCode;
-    protected $errors;
-
-    public function __construct(string $message = 'Bundle operation failed', int $statusCode = 400, array $errors = [], Exception $previous = null)
-    {
+    public function __construct(
+        string $message = 'Bundle operation failed',
+        protected int $statusCode = 400,
+        protected array $errors = [],
+        ?\Throwable $previous = null,
+    ) {
         parent::__construct($message, $statusCode, $previous);
-        $this->statusCode = $statusCode;
-        $this->errors = $errors;
     }
 
     public function getStatusCode(): int
