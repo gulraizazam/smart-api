@@ -1,55 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\ServiceException;
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\ServiceHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Service\SaveSortOrderRequest;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
 use App\Http\Requests\Service\UpdateServiceStatusRequest;
-use App\Models\Services;
+use App\Http\Resources\Service\ServiceDatatableResource;
+use App\Http\Resources\Service\ServiceFormDataResource;
 use App\Services\Service\ServiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
-class ServicesController extends Controller
+final class ServicesController extends Controller
 {
-    protected string $success;
-    protected string $error;
-    protected string $unauthorized;
-    protected ServiceService $serviceService;
-
-    public function __construct(ServiceService $serviceService)
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-        $this->serviceService = $serviceService;
-    }
+    public function __construct(
+        private readonly ServiceService $serviceService,
+    ) {}
 
     /**
-     * Get services datatable data
+     * Get services datatable data.
      */
     public function datatable(Request $request): JsonResponse
     {
         try {
-            $accountId = Auth::user()->account_id;
+            $user = Auth::user();
+            $accountId = $user->account_id;
             $filters = getFilters($request->all());
             $records = ['data' => []];
 
             // Handle bulk delete
             if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
+                $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
                 foreach ($ids as $id) {
                     try {
-                        $this->serviceService->deleteService((int)$id, $accountId);
-                    } catch (ServiceException $e) {
-                        // Skip services that can't be deleted
+                        $this->serviceService->deleteService($id, $accountId);
+                    } catch (ServiceException) {
                         continue;
                     }
                 }
@@ -57,296 +51,356 @@ class ServicesController extends Controller
                 $records['message'] = 'Records have been deleted successfully!';
             }
 
-            // Get sorting
+            $this->applyFilters($filters, $user->id);
+
             [$orderBy, $order] = getSortBy($request);
+            $canViewInactive = ServiceHelper::canViewInactive();
 
-            // Get total records
-            $totalRecords = $this->serviceService->getTotalRecords($request, $accountId);
-
-            // Get pagination elements
+            $totalRecords = $this->serviceService->getTotalRecords($filters, $accountId, $canViewInactive);
             [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
 
-            // Get services list
-            $services = $this->serviceService->getServicesList($request, $accountId);
+            $services = $this->serviceService->getServicesList($filters, $accountId, $canViewInactive);
 
-            // Get filter values
-            $records = $this->getExtraData($records);
+            $records = $this->appendFilterData($records, $accountId, $user->id);
 
-            if (!empty($services)) {
-                $records['data'] = $services;
+            if (! empty($services)) {
+                $records['data'] = ServiceDatatableResource::collection($services)->resolve();
                 $records['permissions'] = ServiceHelper::getPermissions();
                 $records['meta'] = [
-                    'field' => $orderBy,
-                    'page' => $page,
-                    'pages' => $pages,
+                    'field'   => $orderBy,
+                    'page'    => $page,
+                    'pages'   => $pages,
                     'perpage' => 100,
-                    'total' => $totalRecords,
-                    'sort' => $order,
+                    'total'   => $totalRecords,
+                    'sort'    => $order,
                 ];
             }
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get extra data for filters
-     */
-    private function getExtraData(array $records = []): array
-    {
-        $accountId = Auth::user()->account_id;
-        $filters = Filters::all(Auth::user()->id, 'services');
-
-        $records['filter_values'] = [
-            'services' => ServiceHelper::getParentServices($accountId),
-            'status' => config('constants.status'),
-        ];
-
-        $records['active_filters'] = $filters;
-
-        return $records;
-    }
-
-    /**
-     * Get form data for creating a new service
+     * Get form data for creating a new service.
      */
     public function create(): JsonResponse
     {
-        if (!Gate::allows('services_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_create')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $accountId = Auth::user()->account_id;
-            $data = $this->serviceService->getFormData($accountId);
+            $data = $this->serviceService->getFormData(Auth::user()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Store a new service
+     * Store a new service.
      */
     public function store(StoreServiceRequest $request): JsonResponse
     {
         try {
-            $accountId = Auth::user()->account_id;
-            $service = $this->serviceService->createService($request->validated(), $accountId);
+            $user = Auth::user();
+            $service = $this->serviceService->createService(
+                $request->validated(),
+                $user->account_id,
+                $user->id,
+            );
 
-            if ($service) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $service
+                ? $this->successResponse('Record has been created successfully.')
+                : $this->failResponse('Something went wrong, please try again later.');
         } catch (ServiceException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get service for editing
+     * Get service for editing.
      */
     public function edit(int $id): JsonResponse
     {
-        if (!Gate::allows('services_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_edit')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $accountId = Auth::user()->account_id;
-            $data = $this->serviceService->getFormData($accountId, $id);
+            $data = $this->serviceService->getFormData(Auth::user()->account_id, $id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get service details (for instructions modal)
+     * Get service details (description/instructions modal).
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(int $id): JsonResponse
     {
-        if (!Gate::allows('services_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_manage')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
             $description = $this->serviceService->getServiceDescription($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'description' => $description,
-            ]);
+            return $this->successResponse('Record found', ['description' => $description]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Update a service
+     * Update a service.
      */
     public function update(UpdateServiceRequest $request, int $id): JsonResponse
     {
         try {
-            $accountId = Auth::user()->account_id;
-            $service = $this->serviceService->updateService($id, $request->validated(), $accountId);
+            $user = Auth::user();
+            $service = $this->serviceService->updateService(
+                $id,
+                $request->validated(),
+                $user->account_id,
+                $user->id,
+            );
 
-            if ($service) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $service
+                ? $this->successResponse('Record has been updated successfully.')
+                : $this->failResponse('Something went wrong, please try again later.');
         } catch (ServiceException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Delete a service
+     * Delete a service.
      */
     public function destroy(int $id): JsonResponse
     {
-        if (!Gate::allows('services_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_destroy')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $accountId = Auth::user()->account_id;
-            $result = $this->serviceService->deleteService($id, $accountId);
+            $result = $this->serviceService->deleteService($id, Auth::user()->account_id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $this->successResponse($result['message'], null, $result['status']);
         } catch (ServiceException $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Update service status (active/inactive)
+     * Update service status (active/inactive).
      */
     public function status(UpdateServiceStatusRequest $request): JsonResponse
     {
         try {
-            $accountId = Auth::user()->account_id;
-            $serviceId = $request->input('id');
-            $status = $request->input('status');
+            $user = Auth::user();
+            $serviceId = (int) $request->validated('id');
+            $status = (int) $request->validated('status');
 
-            if ($status == 1) {
-                $this->serviceService->activateService($serviceId, $accountId);
-            } else {
-                $this->serviceService->deactivateService($serviceId, $accountId);
-            }
+            match ($status) {
+                1 => $this->serviceService->activateService($serviceId, $user->account_id),
+                0 => $this->serviceService->deactivateService($serviceId, $user->account_id),
+            };
 
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.');
         } catch (ServiceException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get service data for duplication
+     * Get service data for duplication.
      */
     public function duplicate(int $id): JsonResponse
     {
-        if (!Gate::allows('services_duplicate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_duplicate')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $accountId = Auth::user()->account_id;
-            $data = $this->serviceService->getFormData($accountId, $id);
+            $data = $this->serviceService->getFormData(Auth::user()->account_id, $id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Store duplicated service
+     * Store duplicated service.
      */
     public function storeDuplicate(StoreServiceRequest $request): JsonResponse
     {
-        if (!Gate::allows('services_duplicate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        if (! Gate::allows('services_duplicate')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $accountId = Auth::user()->account_id;
-            $service = $this->serviceService->createService($request->validated(), $accountId);
+            $user = Auth::user();
+            $service = $this->serviceService->createService(
+                $request->validated(),
+                $user->account_id,
+                $user->id,
+            );
 
-            if ($service) {
-                return ApiHelper::apiResponse($this->success, 'Service has been duplicated successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $service
+                ? $this->successResponse('Service has been duplicated successfully.')
+                : $this->failResponse('Something went wrong, please try again later.');
         } catch (ServiceException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get services for sorting
+     * Get services for sorting.
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (!Gate::allows('services_sort')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        if (! Gate::allows('services_sort')) {
+            return $this->unauthorizedResponse();
         }
 
         try {
-            $services = $this->serviceService->getServicesForSort();
+            $services = $this->serviceService->getServicesForSort(Auth::user()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $services);
+            return $this->successResponse('Success', $services);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Save sort order
+     * Save sort order.
      */
-    public function sortOrderSave(Request $request): JsonResponse
+    public function sortOrderSave(SaveSortOrderRequest $request): JsonResponse
     {
-        if (!Gate::allows('services_sort')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }
-
         try {
-            $itemIds = $request->input('item_ids', []);
-            $accountId = Auth::user()->account_id;
+            $saved = $this->serviceService->saveSortOrder(
+                $request->validated('item_ids'),
+                Auth::user()->account_id,
+            );
 
-            if ($this->serviceService->saveSortOrder($itemIds, $accountId)) {
-                return ApiHelper::apiResponse($this->success, 'Records are sorted successfully!');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong! Records are not sorted', false);
+            return $saved
+                ? $this->successResponse('Records are sorted successfully!')
+                : $this->failResponse('Something went wrong! Records are not sorted.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->errorResponse($e);
         }
     }
 
     /**
-     * Get service color
+     * Get service color.
+     *
+     * Note: Flat response format preserved for frontend compatibility.
+     * The JS reads `data.color` directly from $.get() callback.
      */
     public function getColor(Request $request): JsonResponse
     {
-        $serviceId = (int)$request->input('service', 0);
-        $color = $this->serviceService->getServiceColor($serviceId);
+        $serviceId = (int) $request->input('service', 0);
 
-        return response()->json(['color' => $color]);
+        return response()->json([
+            'color' => $this->serviceService->getServiceColor($serviceId),
+        ]);
+    }
+
+    // ──────────────────────────────────────────────
+    // Private helpers
+    // ──────────────────────────────────────────────
+
+    private function applyFilters(array $filters, int $userId): void
+    {
+        $filename = 'services';
+        $applyFilter = checkFilters($filters, $filename);
+
+        foreach (['name', 'status'] as $key) {
+            if (hasFilter($filters, $key)) {
+                Filters::put($userId, $filename, $key, $filters[$key]);
+            } elseif ($applyFilter) {
+                Filters::forget($userId, $filename, $key);
+            }
+        }
+    }
+
+    private function appendFilterData(array $records, int $accountId, int $userId): array
+    {
+        $records['filter_values'] = [
+            'services' => ServiceHelper::getParentServices($accountId),
+            'status'   => config('constants.status'),
+        ];
+        $records['active_filters'] = Filters::all($userId, 'services');
+
+        return $records;
+    }
+
+    // ──────────────────────────────────────────────
+    // Standardized response helpers
+    // ──────────────────────────────────────────────
+
+    private function successResponse(string $message, mixed $data = null, bool $success = true): JsonResponse
+    {
+        return response()->json([
+            'success' => $success,
+            'status'  => $success,   // backward compat — JS reads response.status
+            'message' => $message,
+            'data'    => $data,
+            'errors'  => [],
+        ], 200);
+    }
+
+    private function failResponse(string $message, array $errors = []): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => $errors,
+        ], 200);
+    }
+
+    private function unauthorizedResponse(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => 'You are not authorized to access this resource.',
+            'data'    => null,
+            'errors'  => [],
+        ], 403);
+    }
+
+    private function errorResponse(\Exception $e): JsonResponse
+    {
+        $message = config('app.debug')
+            ? $e->getMessage() . ' Line ' . $e->getLine() . ' File ' . $e->getFile()
+            : 'Something went wrong, please try again later.';
+
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => [],
+        ], 500);
     }
 }
