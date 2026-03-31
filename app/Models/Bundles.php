@@ -53,8 +53,6 @@ class Bundles extends BaseModal
             'total_services' => 'integer',
             'apply_discount' => 'boolean',
             'active'         => 'integer',
-            'start'          => 'date',
-            'end'            => 'date',
             'created_at'     => 'datetime:F d,Y h:i A',
         ];
     }
