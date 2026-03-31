@@ -178,7 +178,7 @@ class ApplicationUserController extends Controller
         }
     }
 
-    public function changePassword(int $id): JsonResponse
+    public function changePassword(int $id): JsonResponse|\Illuminate\Contracts\View\View
     {
         try {
             if (!Gate::allows('users_change_password')) {
@@ -191,12 +191,7 @@ class ApplicationUserController extends Controller
                 return ApiHelper::apiResponse($this->success, 'User not found.', false);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'user' => [
-                    'id' => encrypt($user->id),
-                    'name' => $user->name,
-                ],
-            ]);
+            return view('admin.users.change_password', compact('user'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
