@@ -61,6 +61,7 @@ class PatientReturnCalculator
                 // (by any doctor, not just this doctor)
                 $returnExists = DB::table('appointments')
                     ->where('patient_id', $patientId)
+                    ->where('doctor_id', $doctorId)
                     ->where('appointment_type_id', 2)
                     ->whereIn('appointment_status_id', $treatmentStatusIds)
                     ->where('id', '!=', $treatment->id)
