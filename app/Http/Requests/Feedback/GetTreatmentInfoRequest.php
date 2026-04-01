@@ -17,15 +17,7 @@ class GetTreatmentInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'treatment_id' => ['required', 'integer', 'exists:appointments,id'],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'treatment_id.required' => 'Treatment selection is required.',
-            'treatment_id.exists' => 'Selected treatment does not exist.',
+            'treatment_id' => ['nullable', 'integer', 'exists:appointments,id'],
         ];
     }
 }

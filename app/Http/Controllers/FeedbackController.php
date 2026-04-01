@@ -112,9 +112,17 @@ class FeedbackController extends Controller
     public function getTreatment(GetTreatmentRequest $request): JsonResponse
     {
         try {
-            $treatments = $this->feedbackService->getAvailableTreatments(
-                (int) $request->validated('patient_id')
-            );
+            $patientId = $request->validated('patient_id');
+
+            if (empty($patientId)) {
+                return response()->json([
+                    'status' => 1,
+                    'message' => 'Treatment found',
+                    'treatments' => [],
+                ]);
+            }
+
+            $treatments = $this->feedbackService->getAvailableTreatments((int) $patientId);
 
             return response()->json([
                 'status' => 1,
@@ -129,9 +137,17 @@ class FeedbackController extends Controller
     public function getTreatmentInfo(GetTreatmentInfoRequest $request): JsonResponse
     {
         try {
-            $treatment = $this->feedbackService->getTreatmentInfo(
-                (int) $request->validated('treatment_id')
-            );
+            $treatmentId = $request->validated('treatment_id');
+
+            if (empty($treatmentId)) {
+                return response()->json([
+                    'status' => 1,
+                    'message' => 'Treatment found',
+                    'treatments' => null,
+                ]);
+            }
+
+            $treatment = $this->feedbackService->getTreatmentInfo((int) $treatmentId);
 
             return response()->json([
                 'status' => $treatment ? 1 : 0,
