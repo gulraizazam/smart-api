@@ -8,7 +8,6 @@
     var isLoading = false;
 
     $(document).ready(function () {
-        $('#summary-period').select2({ minimumResultsForSearch: -1, width: '200px' });
         bindEvents();
         loadDashboard();
     });
@@ -17,22 +16,6 @@
         $('#btn-refresh-dash').on('click', loadDashboard);
         $('#btn-reconcile').on('click', runReconciliation);
 
-        // Period selector
-        $('#summary-period').on('change', function () {
-            var val = $(this).val();
-            if (val === 'custom') {
-                $('#custom-period-inputs').removeClass('d-none');
-            } else {
-                $('#custom-period-inputs').addClass('d-none');
-                loadDashboard();
-            }
-        });
-        $('#btn-apply-period').on('click', function () {
-            var from = $('#summary-date-from').val();
-            var to = $('#summary-date-to').val();
-            if (from && to) { loadDashboard(); }
-        });
-
         // Modal cleanup on close
         $('#modal_preview').on('hidden.bs.modal', function () {
             $('#preview-iframe').attr('src', '');
@@ -40,20 +23,6 @@
     }
 
     function getDateRange() {
-        var period = $('#summary-period').val() || 'this_month';
-        if (period === 'last_month') {
-            return {
-                date_from: moment().subtract(1, 'month').startOf('month').format('YYYY-MM-DD'),
-                date_to: moment().subtract(1, 'month').endOf('month').format('YYYY-MM-DD')
-            };
-        }
-        if (period === 'custom') {
-            return {
-                date_from: $('#summary-date-from').val() || moment().startOf('month').format('YYYY-MM-DD'),
-                date_to: $('#summary-date-to').val() || moment().format('YYYY-MM-DD')
-            };
-        }
-        // this_month (default)
         return {
             date_from: moment().startOf('month').format('YYYY-MM-DD'),
             date_to: moment().format('YYYY-MM-DD')
@@ -117,13 +86,21 @@
 
     function renderSummary(s) {
         if (!s) return;
+
+        // Month label e.g. "April 2026"
+        $('#sum-month-label').text('— ' + moment().format('MMMM YYYY'));
+
+        // Opening balance with "As of [date]" label
         $('#sum-opening').text('PKR ' + nf(s.opening_balance));
+        if (s.opening_date) {
+            $('#sum-opening-date').text('As of ' + moment(s.opening_date).format('D MMM YYYY'));
+        }
+
         $('#sum-inflows').text('PKR ' + nf(s.inflows));
         $('#sum-outflows').text('PKR ' + nf(s.outflows));
         $('#sum-net').text('PKR ' + nf(s.net));
         $('#sum-closing').text('PKR ' + nf(s.closing_balance));
 
-        // Color net and closing based on positive/negative
         $('#sum-net').css('color', s.net < 0 ? '#F64E60' : '');
         $('#sum-closing').css('color', s.closing_balance < 0 ? '#F64E60' : '');
     }
