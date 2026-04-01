@@ -191,8 +191,8 @@
             barEl.style.width = pct + '%';
             barEl.className = 'dd-goal-bar ' + goal.color;
             pctEl.textContent = goal.percentage + '%';
-            revEl.textContent = 'PKR ' + formatCurrency(goal.doctor_revenue) + ' / ' + formatCurrency(goal.branch_target);
-            daysEl.textContent = goal.days_remaining + ' days left';
+            revEl.textContent = 'PKR ' + formatCurrency(goal.branch_revenue) + ' / ' + formatCurrency(goal.branch_target);
+            daysEl.textContent = goal.days_remaining + ' working days left';
         } else {
             pctEl.textContent = '';
             revEl.textContent = goal ? goal.message : 'No target set';
