@@ -185,8 +185,6 @@
                         <div class="dd-kpi-label"><i class="la la-redo"></i> Return Rate</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:50px;" id="kpiReturnRate">&nbsp;</div>
                         <div class="dd-kpi-sub" id="kpiReturnRateSub"></div>
-                        <div class="dd-kpi-mom" id="kpiReturnRateMom"></div>
-                        <div class="dd-kpi-last-month" id="kpiReturnRateLast"></div>
                         <div class="dd-kpi-bench-network" id="kpiReturnRateBench"></div>
                     </div>
                     <div class="dd-kpi-card" data-kpi="avg_procedures">

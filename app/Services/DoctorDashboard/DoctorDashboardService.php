@@ -73,7 +73,10 @@ class DoctorDashboardService
         $membership = $this->membershipCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
         $feedback = $this->feedbackCalculator->calculate($doctorId, $startDate, $endDate);
         $productRevenue = $this->productRevenueCalculator->calculate($doctorId, $startDate, $endDate);
-        $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        // Return rate always uses rolling 45-day window regardless of period toggle
+        $rolling45Start = Carbon::now()->subDays(45)->format('Y-m-d');
+        $rolling45End = Carbon::now()->format('Y-m-d');
+        $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $rolling45Start, $rolling45End, $accountId);
         $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $startDate, $endDate, $accountId);
         $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
         $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
@@ -88,7 +91,6 @@ class DoctorDashboardService
         // Ratios: use full last calendar month
         $lastConversion     = $this->conversionCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
         $lastFeedback       = $this->feedbackCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
-        $lastPatientReturn  = $this->patientReturnCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
         $lastAvgProcedures  = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $lastStartDate, $lastEndDate, $accountId);
         $lastGoogleReviews  = $this->getGoogleReviews($doctorId, $lastStartDate, $accountId);
 
@@ -166,8 +168,6 @@ class DoctorDashboardService
                     'value' => $patientReturn['return_rate'],
                     'patients_returned' => $patientReturn['patients_returned'],
                     'total_unique' => $patientReturn['total_unique_patients'],
-                    'last_month' => $lastPatientReturn['return_rate'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($patientReturn['return_rate'], $lastPatientReturn['return_rate']),
                 ],
                 'avg_procedures' => [
                     'value' => $avgProcedures['avg_procedures'],
@@ -519,7 +519,10 @@ class DoctorDashboardService
         $membership = $this->membershipCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
         $feedback = $this->feedbackCalculator->calculate($doctorId, $startDate, $endDate);
         $productRevenue = $this->productRevenueCalculator->calculate($doctorId, $startDate, $endDate);
-        $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
+        // Return rate always uses rolling 45-day window
+        $rolling45Start = Carbon::now()->subDays(45)->format('Y-m-d');
+        $rolling45End = Carbon::now()->format('Y-m-d');
+        $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $rolling45Start, $rolling45End, $accountId);
         $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $startDate, $endDate, $accountId);
         $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
         $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
