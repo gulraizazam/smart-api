@@ -5,6 +5,9 @@ var table_columns = [{
     title: 'Patient ID',
     sortable: false,
     width: 80,
+    template: function (data) {
+        return 'C-' + data.paient_id;
+    }
 }, {
     field: 'paient_name',
     title: 'Patient Name',
