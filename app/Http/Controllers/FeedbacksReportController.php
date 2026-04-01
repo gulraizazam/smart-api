@@ -1,38 +1,69 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
-use App\Models\Feedback;
+use App\Http\Requests\Feedback\FeedbackReportRequest;
 use App\Models\Locations;
-use App\Models\MembershipType;
 use App\Models\Services;
-use App\Models\User;
+use App\Services\Feedback\FeedbackService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class FeedbacksReportController extends Controller
 {
-    public function feedbackReport()
+    public function __construct(
+        private readonly FeedbackService $feedbackService,
+    ) {}
+
+    public function feedbackReport(): View
     {
+        abort_unless(Gate::allows('feedbacks_manage'), 401);
 
-        $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        $services = Services::where('parent_id', 0)->where('active', 1)->get();
-        $feedbacks = Feedback::with('doctor', 'service')->select('doctor_id')
-        ->selectRaw('AVG(CAST(rating AS DECIMAL(4,2))) as avg_rating, COUNT(*) as total_feedbacks')
-        ->groupBy('doctor_id')
-        ->with('doctor')
-        ->get();
+        $data = $this->feedbackService->getReportPageData();
 
-        return view('admin.reports.feedback_report', get_defined_vars());
+        $Users = $data['doctors'];
+        $locations = $data['locations'];
+        $services = $data['services'];
+        $feedbacks = $data['feedbacks'];
 
+        return view('admin.reports.feedback_report', compact(
+            'Users',
+            'locations',
+            'services',
+            'feedbacks',
+        ));
     }
-    public function futureTreatmentsReport()
+
+    public function loadFeedbackReport(FeedbackReportRequest $request): View
     {
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $validated = $request->validated();
+
+        $locationId = !empty($validated['centre_id']) ? (int) $validated['centre_id'] : null;
+        $doctorId = !empty($validated['doctor_id']) ? (int) $validated['doctor_id'] : null;
+        $serviceId = !empty($validated['service_id']) ? (int) $validated['service_id'] : null;
+
+        $result = $this->feedbackService->getReportData(
+            locationId: $locationId,
+            doctorId: $doctorId,
+            serviceId: $serviceId,
+            dateRange: $validated['date_range'],
+        );
+
+        return view('admin.reports.feedbackReport', compact('result'));
+    }
+
+    public function futureTreatmentsReport(): View
+    {
+        $accountId = Auth::user()->account_id;
+
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), $accountId);
         $services = Services::where('parent_id', 0)
             ->where('active', 1)
             ->where('slug', '!=', 'all')
@@ -40,133 +71,21 @@ class FeedbacksReportController extends Controller
             ->where('name', 'NOT LIKE', '%settlement%')
             ->get();
 
-        return view('admin.reports.future_treatments_report', get_defined_vars());
-    }
-    public function loadFeedbackReport(Request $request)
-{
-
-
-    $locationId = $request->centre_id ?? null;
-    $doctorId = $request->doctor_id ?? null;
-    $serviceId = $request->service_id ?? null;
-
-    $doctorId = $doctorId === '' ? null : $doctorId;
-    $serviceId = $serviceId === '' ? null : $serviceId;
-
-    // Parse date range - always exclude today to match dashboard behavior
-     $period = $request->date_range;
-    $dates = explode(' - ', $request->input('date_range'));
-    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-    
-    // Always exclude today: if end date is today or later, use yesterday
-    $endDateParsed = date('Y-m-d', strtotime($dates[1]));
-    $today = date('Y-m-d');
-    if ($endDateParsed >= $today) {
-        $endDate = date('Y-m-d 23:59:59', strtotime('yesterday'));
-    } else {
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        return view('admin.reports.future_treatments_report', compact('locations', 'services'));
     }
 
-    $feedbacks = Feedback::query()
-        ->when($locationId, fn($q) => $q->where('location_id', $locationId))
-        ->when($serviceId, fn($q) => $q->where('service_id', $serviceId))
-        ->when($doctorId, fn($q) => $q->where('doctor_id', $doctorId))
-        ->whereBetween('created_at', [$startDate, $endDate]);
-
-    // CASE LOGIC
-    if ($locationId && !$serviceId && !$doctorId) {
-
-        // CASE 1: Only centre → Avg rating of all doctors in that centre
-        $result = $feedbacks->select('doctor_id')
-            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-            ->groupBy('doctor_id')
-            ->with('doctor')
-            ->get();
-
-    } elseif ($doctorId && !$serviceId && !$locationId) {
-
-        // CASE 2: Only doctor → Avg rating per service
-        $result = $feedbacks->select('service_id')
-            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-            ->groupBy('service_id')
-            ->with('service')
-            ->get();
-
-    } elseif ($serviceId && !$doctorId && !$locationId) {
-
-        // CASE 3: Only service → All doctors' rating against that service
-        $result = $feedbacks->select('doctor_id')
-            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-            ->groupBy('doctor_id')
-            ->with('doctor')
-            ->get();
-
-    } elseif ($locationId && $doctorId && !$serviceId) {
-
-        // CASE 4: location + doctor → That doctor's rating per service in that location
-        $result = $feedbacks->select('service_id', 'doctor_id')
-            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-            ->groupBy('service_id')
-            ->with('service', 'doctor')
-            ->get();
-
-    } elseif ($locationId && $serviceId && !$doctorId) {
-
-        // CASE 5: location + service → All doctors' rating in that location for that service
-        $result = $feedbacks->select('doctor_id')
-            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-            ->groupBy('doctor_id')
-            ->with('doctor')
-            ->get();
-
-    } elseif ($serviceId && $doctorId && !$locationId) {
-
-        // CASE 6: service + doctor → Rating for that doctor + service
-    $record = $feedbacks->select('doctor_id', 'service_id')
-        ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-        ->with('doctor', 'service')
-        ->first();
-
-    $result = $record ? [$record] : [];
-
-    } elseif ($locationId && $doctorId && $serviceId) {
-        $feedback = Feedback::where('location_id', $locationId)
-        ->where('doctor_id', $doctorId)
-        ->where('service_id', $serviceId)
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-        ->first();
-
-        $result = $feedback ? [$feedback] : [];
-
-    } else {
-
-        // Default: fallback to full feedback list if no logic matched
-       $result = $feedbacks->select('doctor_id')
-    ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedbacks')
-    ->groupBy('doctor_id')
-    ->with('doctor')
-    ->get();
-    }
-
-    return view('admin.reports.feedbackReport', compact('result'));
-}
-
-    public function loadFutureTreatmentsReport(Request $request)
+    public function loadFutureTreatmentsReport(Request $request): View
     {
-        // Set fixed date range: today + next 7 days (including today)
         $startDate = Carbon::today()->startOfDay();
         $endDate = Carbon::today()->addDays(6)->endOfDay();
 
         $centreId = $request->input('centre_id');
         $serviceId = $request->input('service_id');
 
-        // Get child service IDs if service is selected
         $serviceIds = [];
         if ($serviceId) {
-            $serviceIds[] = $serviceId; // Include parent service ID
+            $serviceIds[] = $serviceId;
 
-            // Fetch all child service IDs
             $childServices = DB::table('services')
                 ->where('parent_id', $serviceId)
                 ->where('active', 1)
@@ -176,7 +95,6 @@ class FeedbacksReportController extends Controller
             $serviceIds = array_merge($serviceIds, $childServices);
         }
 
-        // Query appointments table with the specified filters
         $appointments = DB::table('appointments')
             ->join('users', 'appointments.patient_id', '=', 'users.id')
             ->join('services', 'appointments.service_id', '=', 'services.id')
@@ -184,12 +102,8 @@ class FeedbacksReportController extends Controller
             ->where('appointments.appointment_type_id', 2)
             ->where('appointments.appointment_status_id', 1)
             ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
-            ->when($centreId, function ($query) use ($centreId) {
-                return $query->where('appointments.location_id', $centreId);
-            })
-            ->when(!empty($serviceIds), function ($query) use ($serviceIds) {
-                return $query->whereIn('appointments.service_id', $serviceIds);
-            })
+            ->when($centreId, fn ($query) => $query->where('appointments.location_id', $centreId))
+            ->when(!empty($serviceIds), fn ($query) => $query->whereIn('appointments.service_id', $serviceIds))
             ->select(
                 'users.name as patient_name',
                 'services.name as service_name',
@@ -203,7 +117,7 @@ class FeedbacksReportController extends Controller
             'start_date' => $startDate->format('d M Y'),
             'end_date' => $endDate->format('d M Y'),
             'centre_id' => $centreId,
-            'service_id' => $serviceId
+            'service_id' => $serviceId,
         ];
 
         return view('admin.reports.future_treatments_report_data', compact('appointments', 'filters'));
