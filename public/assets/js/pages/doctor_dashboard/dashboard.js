@@ -229,9 +229,7 @@
         setKpiLastMonth('kpiGoogleRevLast', kpis.google_reviews.last_month);
 
         setKpi('kpiReturnRate', kpis.patient_return_rate.value + '%');
-        setKpiSub('kpiReturnRateSub', kpis.patient_return_rate.patients_returned + '/' + kpis.patient_return_rate.total_unique + ' returned');
-        setKpiMom('kpiReturnRateMom', kpis.patient_return_rate.mom);
-        setKpiLastMonth('kpiReturnRateLast', kpis.patient_return_rate.last_month + '%');
+        setKpiSub('kpiReturnRateSub', kpis.patient_return_rate.patients_returned + '/' + kpis.patient_return_rate.total_unique + ' returned (last 45 days)');
 
         setKpi('kpiAvgProc', kpis.avg_procedures.value);
         setKpiSub('kpiAvgProcSub', kpis.avg_procedures.total_procedures + ' procedures, ' + kpis.avg_procedures.unique_patients + ' patients');

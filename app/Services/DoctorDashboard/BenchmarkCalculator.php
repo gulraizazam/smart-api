@@ -148,8 +148,10 @@ class BenchmarkCalculator
         // Upsell rate per doctor (unique upsold / unique treated × 100)
         $upsellRates = $this->getUpsellRatePerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $startDate, $endDate);
 
-        // Return rate per doctor
-        $returnRates = $this->getReturnRatePerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $startDate, $endDate);
+        // Return rate per doctor — always rolling 45 days
+        $rolling45Start = now()->subDays(45)->format('Y-m-d');
+        $rolling45End = now()->format('Y-m-d');
+        $returnRates = $this->getReturnRatePerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $rolling45Start, $rolling45End);
 
         // Avg procedures per doctor
         $avgProcedures = $this->getAvgProceduresPerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $startDate, $endDate);
@@ -260,7 +262,9 @@ class BenchmarkCalculator
 
     /**
      * Get return rate per doctor via efficient aggregate SQL.
-     * Return rate = patients with >1 arrived treatment / total unique treated patients.
+     * Return rate = unique patients with >1 arrived treatment with the SAME doctor
+     *               / total unique treated patients per doctor.
+     * Uses rolling 45-day window.
      */
     private function getReturnRatePerDoctor(array $doctorIds, array $treatmentStatusIds, string $startDate, string $endDate): array
     {
@@ -275,7 +279,7 @@ class BenchmarkCalculator
             ->pluck('total_unique', 'doctor_id')
             ->toArray();
 
-        // Patients with >1 treatment per doctor (returned patients)
+        // Patients with >1 treatment with the SAME doctor (returned to same doctor)
         $returnedPerDoc = DB::table('appointments')
             ->whereIn('doctor_id', $doctorIds)
             ->where('appointment_type_id', 2)
