@@ -517,6 +517,11 @@ var CashflowVendors = (function () {
                 $('#ledger-opening').text('PKR ' + nf(d.opening_balance));
                 $('#ledger-opening-date').text(fd(d.date_from));
 
+                // Update card labels based on whether custom date range is selected
+                var isCustomRange = !!(ledgerDateFrom || ledgerDateTo);
+                $('#ledger-purchases-label').text(isCustomRange ? 'Period Purchases' : 'This Month Purchases');
+                $('#ledger-payments-label').text(isCustomRange ? 'Period Payments' : 'This Month Payments');
+
                 // Period stats in cards
                 var stats = d.period_stats || {};
                 $('#ledger-stat-purchases').text('PKR ' + nf(stats.total_purchases));

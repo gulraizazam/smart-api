@@ -230,8 +230,9 @@ class VendorService
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
 
-        $dateFrom = $filters['date_from'] ?? null;
-        $dateTo = $filters['date_to'] ?? null;
+        // Default to current month when no date range provided
+        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $filters['date_to'] ?? now()->toDateString();
 
         $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
 
@@ -240,12 +241,7 @@ class VendorService
         $prePeriod = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId);
 
-        if ($dateFrom) {
-            $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
-        } else {
-            // No date filter: no pre-period transactions (opening balance = vendor.opening_balance)
-            $prePeriod->whereRaw('1 = 0');
-        }
+        $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
 
         $prePurchases = (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
