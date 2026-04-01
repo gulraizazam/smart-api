@@ -232,9 +232,7 @@
         setKpiSub('kpiReturnRateSub', kpis.patient_return_rate.patients_returned + '/' + kpis.patient_return_rate.total_unique + ' returned (last 45 days)');
 
         setKpi('kpiAvgProc', kpis.avg_procedures.value);
-        setKpiSub('kpiAvgProcSub', kpis.avg_procedures.total_procedures + ' procedures, ' + kpis.avg_procedures.unique_patients + ' patients');
-        setKpiMom('kpiAvgProcMom', kpis.avg_procedures.mom);
-        setKpiLastMonth('kpiAvgProcLast', kpis.avg_procedures.last_month);
+        setKpiSub('kpiAvgProcSub', kpis.avg_procedures.total_procedures + ' procedures, ' + kpis.avg_procedures.converted_patients + ' converted patients (last 3 months)');
 
         // Activity
         setKpi('kpiPatientsSeen', kpis.patients_seen.value);

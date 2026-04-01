@@ -77,7 +77,8 @@ class DoctorDashboardService
         $rolling45Start = Carbon::now()->subDays(45)->format('Y-m-d');
         $rolling45End = Carbon::now()->format('Y-m-d');
         $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $rolling45Start, $rolling45End, $accountId);
-        $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $startDate, $endDate, $accountId);
+        // Avg procedures always uses trailing 3 months (independent of period toggle)
+        $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $accountId);
         $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
         $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
         $newVsReturning = $this->getNewVsReturning($doctorId, $startDate, $endDate, $accountId);
@@ -91,7 +92,6 @@ class DoctorDashboardService
         // Ratios: use full last calendar month
         $lastConversion     = $this->conversionCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
         $lastFeedback       = $this->feedbackCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
-        $lastAvgProcedures  = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $lastStartDate, $lastEndDate, $accountId);
         $lastGoogleReviews  = $this->getGoogleReviews($doctorId, $lastStartDate, $accountId);
 
         // Accumulators: use same-date window in last month (e.g. Mar 1–17 vs Feb 1–17)
@@ -172,9 +172,7 @@ class DoctorDashboardService
                 'avg_procedures' => [
                     'value' => $avgProcedures['avg_procedures'],
                     'total_procedures' => $avgProcedures['total_procedures'],
-                    'unique_patients' => $avgProcedures['unique_patients'],
-                    'last_month' => $lastAvgProcedures['avg_procedures'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($avgProcedures['avg_procedures'], $lastAvgProcedures['avg_procedures']),
+                    'converted_patients' => $avgProcedures['converted_patients'],
                 ],
                 'patients_seen' => [
                     'value' => $patientsSeen['total'],
@@ -523,7 +521,8 @@ class DoctorDashboardService
         $rolling45Start = Carbon::now()->subDays(45)->format('Y-m-d');
         $rolling45End = Carbon::now()->format('Y-m-d');
         $patientReturn = $this->patientReturnCalculator->calculate($doctorId, $rolling45Start, $rolling45End, $accountId);
-        $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $startDate, $endDate, $accountId);
+        // Avg procedures always uses trailing 3 months
+        $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $accountId);
         $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
         $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
 

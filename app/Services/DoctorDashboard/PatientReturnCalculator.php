@@ -92,38 +92,66 @@ class PatientReturnCalculator
     }
 
     /**
-     * Calculate avg procedures per patient for a doctor in a date range.
+     * Calculate avg procedures per converted patient (trailing 3 months).
      *
-     * Only procedures AFTER a re-consultation count for the new doctor.
+     * 1. Find patients this doctor converted in the trailing 3 months
+     *    (consultation with converted status, doctor_id = this doctor)
+     * 2. Count arrived treatment appointments each of those patients completed
+     *    from their conversion date up to today
+     * 3. Average = total treatments / total converted patients
      *
      * @param int $doctorId
-     * @param string $startDate
-     * @param string $endDate
      * @param int $accountId
      * @return array
      */
-    public function calculateAvgProcedures(int $doctorId, string $startDate, string $endDate, int $accountId): array
+    public function calculateAvgProcedures(int $doctorId, int $accountId): array
     {
+        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
         $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
 
-        $result = DB::table('appointments')
-            ->where('doctor_id', $doctorId)
-            ->where('appointment_type_id', 2)
-            ->whereIn('appointment_status_id', $treatmentStatusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->select(
-                DB::raw('COUNT(*) as total_procedures'),
-                DB::raw('COUNT(DISTINCT patient_id) as unique_patients')
-            )
-            ->first();
+        if (!$convertedStatusId) {
+            return ['avg_procedures' => 0, 'total_procedures' => 0, 'converted_patients' => 0];
+        }
 
-        $totalProcedures = (int) ($result->total_procedures ?? 0);
-        $uniquePatients = (int) ($result->unique_patients ?? 0);
+        $trailing3Start = \Carbon\Carbon::now()->subMonths(3)->startOfMonth()->format('Y-m-d');
+        $today = \Carbon\Carbon::now()->format('Y-m-d');
+
+        // Get patients converted by this doctor in the trailing 3 months
+        // For each, get the earliest conversion date (in case of multiple consultations)
+        $conversions = DB::table('appointments')
+            ->where('doctor_id', $doctorId)
+            ->where('appointment_type_id', 1)
+            ->where('appointment_status_id', $convertedStatusId)
+            ->whereBetween('scheduled_date', [$trailing3Start, $today])
+            ->select('patient_id', DB::raw('MIN(scheduled_date) as conversion_date'))
+            ->groupBy('patient_id')
+            ->get();
+
+        if ($conversions->isEmpty()) {
+            return ['avg_procedures' => 0, 'total_procedures' => 0, 'converted_patients' => 0];
+        }
+
+        $totalProcedures = 0;
+
+        foreach ($conversions as $conv) {
+            // Count arrived treatments for this patient from conversion date onwards
+            $procedures = DB::table('appointments')
+                ->where('patient_id', $conv->patient_id)
+                ->where('appointment_type_id', 2)
+                ->whereIn('appointment_status_id', $treatmentStatusIds)
+                ->where('scheduled_date', '>=', $conv->conversion_date)
+                ->where('scheduled_date', '<=', $today)
+                ->count();
+
+            $totalProcedures += $procedures;
+        }
+
+        $convertedPatients = $conversions->count();
 
         return [
-            'avg_procedures' => $uniquePatients > 0 ? round($totalProcedures / $uniquePatients, 1) : 0,
+            'avg_procedures' => $convertedPatients > 0 ? round($totalProcedures / $convertedPatients, 1) : 0,
             'total_procedures' => $totalProcedures,
-            'unique_patients' => $uniquePatients,
+            'converted_patients' => $convertedPatients,
         ];
     }
 

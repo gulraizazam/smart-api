@@ -153,8 +153,8 @@ class BenchmarkCalculator
         $rolling45End = now()->format('Y-m-d');
         $returnRates = $this->getReturnRatePerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $rolling45Start, $rolling45End);
 
-        // Avg procedures per doctor
-        $avgProcedures = $this->getAvgProceduresPerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $startDate, $endDate);
+        // Avg procedures per doctor — always trailing 3 months
+        $avgProcedures = $this->getAvgProceduresPerDoctor($qualifiedDoctorIds, $treatmentStatusIds, $accountId);
 
         // Google reviews per doctor (last month per spec)
         $googleReviews = $this->getGoogleReviewsPerDoctor($qualifiedDoctorIds, $accountId);
@@ -306,27 +306,50 @@ class BenchmarkCalculator
     }
 
     /**
-     * Get average procedures per patient per doctor.
+     * Get average procedures per converted patient per doctor (trailing 3 months).
+     * Same logic as PatientReturnCalculator::calculateAvgProcedures.
      */
-    private function getAvgProceduresPerDoctor(array $doctorIds, array $treatmentStatusIds, string $startDate, string $endDate): array
+    private function getAvgProceduresPerDoctor(array $doctorIds, array $treatmentStatusIds, int $accountId): array
     {
-        $rows = DB::table('appointments')
-            ->whereIn('doctor_id', $doctorIds)
-            ->where('appointment_type_id', 2)
-            ->whereIn('appointment_status_id', $treatmentStatusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->select(
-                'doctor_id',
-                DB::raw('COUNT(*) as total_procedures'),
-                DB::raw('COUNT(DISTINCT patient_id) as unique_patients')
-            )
-            ->groupBy('doctor_id')
-            ->get();
+        $convertedStatusId = DoctorDashboardHelper::getConvertedStatusId($accountId);
+        if (!$convertedStatusId) {
+            return [];
+        }
+
+        $trailing3Start = now()->subMonths(3)->startOfMonth()->format('Y-m-d');
+        $today = now()->format('Y-m-d');
 
         $result = [];
-        foreach ($rows as $row) {
-            if ((int) $row->unique_patients > 0) {
-                $result[$row->doctor_id] = round((int) $row->total_procedures / (int) $row->unique_patients, 1);
+
+        foreach ($doctorIds as $docId) {
+            // Get patients converted by this doctor in trailing 3 months
+            $conversions = DB::table('appointments')
+                ->where('doctor_id', $docId)
+                ->where('appointment_type_id', 1)
+                ->where('appointment_status_id', $convertedStatusId)
+                ->whereBetween('scheduled_date', [$trailing3Start, $today])
+                ->select('patient_id', DB::raw('MIN(scheduled_date) as conversion_date'))
+                ->groupBy('patient_id')
+                ->get();
+
+            if ($conversions->isEmpty()) {
+                continue;
+            }
+
+            $totalProcedures = 0;
+            foreach ($conversions as $conv) {
+                $totalProcedures += DB::table('appointments')
+                    ->where('patient_id', $conv->patient_id)
+                    ->where('appointment_type_id', 2)
+                    ->whereIn('appointment_status_id', $treatmentStatusIds)
+                    ->where('scheduled_date', '>=', $conv->conversion_date)
+                    ->where('scheduled_date', '<=', $today)
+                    ->count();
+            }
+
+            $convertedCount = $conversions->count();
+            if ($convertedCount > 0) {
+                $result[$docId] = round($totalProcedures / $convertedCount, 1);
             }
         }
 
