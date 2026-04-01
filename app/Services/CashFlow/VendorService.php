@@ -163,7 +163,7 @@ class VendorService
         // sum(opening_balance) + pre-month purchases - pre-month payments
         $prePeriod = VendorTransaction::forAccount($accountId)
             ->whereRaw("{$dateExpr} < ?", [$monthStart]);
-        $prePurchases = (float) (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePurchases = (float) (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $prePayments = (float) (clone $prePeriod)->where('type', 'payment')->sum('amount');
         $totalOpeningBalance = $totalStaticOpening + $prePurchases - $prePayments;
 
@@ -172,7 +172,7 @@ class VendorService
             ->whereRaw("{$dateExpr} >= ?", [$monthStart])
             ->whereRaw("{$dateExpr} <= ?", [$monthEnd]);
 
-        $monthPurchases = (clone $monthBase)->where('type', 'purchase')->sum('amount');
+        $monthPurchases = (clone $monthBase)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $monthPayments = (clone $monthBase)->where('type', 'payment')->sum('amount');
 
         $perPage = 20;
@@ -236,7 +236,7 @@ class VendorService
         $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
 
         // Compute opening balance at period start:
-        // vendor.opening_balance + SUM(purchases before date_from) - SUM(payments before date_from)
+        // vendor.opening_balance + SUM(delivered purchases before date_from) - SUM(payments before date_from)
         $prePeriod = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId);
 
@@ -247,7 +247,7 @@ class VendorService
             $prePeriod->whereRaw('1 = 0');
         }
 
-        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
 
@@ -283,7 +283,7 @@ class VendorService
             $periodBase->whereRaw("{$dateExpr} <= ?", [$dateTo]);
         }
 
-        $periodPurchases = (clone $periodBase)->where('type', 'purchase')->sum('amount');
+        $periodPurchases = (clone $periodBase)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $periodPayments = (clone $periodBase)->where('type', 'payment')->sum('amount');
         $periodCount = (clone $periodBase)->count();
 
@@ -310,6 +310,9 @@ class VendorService
             $newerTxs = $newerTxs->orderByRaw("{$dateExpr} DESC, created_at DESC")
                 ->limit($skipCount)->get();
             foreach ($newerTxs as $ntx) {
+                if ($ntx->type === 'purchase' && $ntx->status !== VendorTransaction::STATUS_DELIVERED) {
+                    continue;
+                }
                 $closingBalance -= ($ntx->type === 'purchase') ? (float) $ntx->amount : -(float) $ntx->amount;
             }
         }
@@ -319,6 +322,11 @@ class VendorService
         $runBal = $closingBalance;
         $items = $transactions->getCollection()->map(function ($tx) use (&$runBal) {
             $arr = $tx->toArray();
+            // Ordered purchases don't affect balance — show null running_balance for them
+            if ($tx->type === 'purchase' && $tx->status !== VendorTransaction::STATUS_DELIVERED) {
+                $arr['running_balance'] = null;
+                return $arr;
+            }
             $arr['running_balance'] = round($runBal, 2);
             // Move backwards: undo this transaction to get balance before it
             $runBal -= ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
@@ -524,7 +532,7 @@ class VendorService
             $prePeriod->whereRaw('1 = 0');
         }
 
-        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
+        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
 
@@ -549,18 +557,22 @@ class VendorService
         $rows = [];
         $running = $openingBalance;
         foreach ($txs as $tx) {
-            $running += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+            $affectsBalance = $tx->type !== 'purchase' || $tx->status === VendorTransaction::STATUS_DELIVERED;
+            if ($affectsBalance) {
+                $running += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+            }
             $desc = ($tx->expense && $tx->expense->description) ? $tx->expense->description : ($tx->description ?? '');
             $branchName = $tx->is_for_general ? 'General' : ($tx->forBranch ? $tx->forBranch->name : '');
             $rows[] = [
                 'date' => $tx->transaction_date ?? $tx->created_at->toDateString(),
                 'type' => ucfirst($tx->type),
+                'status' => $tx->status ?? '',
                 'description' => $desc,
                 'reference' => $tx->reference_no ?? '',
                 'branch' => $branchName,
                 'purchase' => $tx->type === 'purchase' ? (float) $tx->amount : '',
                 'payment' => $tx->type === 'payment' ? (float) $tx->amount : '',
-                'balance' => round($running, 2),
+                'balance' => $affectsBalance ? round($running, 2) : null,
                 'by' => $tx->creator ? $tx->creator->name : '',
             ];
         }

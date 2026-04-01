@@ -1,115 +1,89 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Membership;
 
 use App\Exceptions\MembershipException;
+use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
+use App\Helpers\Filters;
+use App\Models\Appointments;
+use App\Models\Discounts;
+use App\Models\DoctorHasLocations;
+use App\Models\Locations;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use App\Models\PackageBundles;
+use App\Models\Patients;
+use App\Models\RoleHasUsers;
+use App\Models\StudentVerification;
 use App\Models\User;
+use App\Models\UserHasLocations;
 use Carbon\Carbon;
+use DateTime;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Rap2hpoutre\FastExcel\FastExcel;
 
-class MembershipService
+final class MembershipService
 {
-    /**
-     * Get membership by ID
-     *
-     * @param int $id
-     * @return Membership|null
-     */
+    // ── Lookups ──────────────────────────────────────────
+
     public function getMembershipById(int $id): ?Membership
     {
         return Membership::with(['membershipType', 'patient', 'createdBy'])->find($id);
     }
 
-    /**
-     * Get membership by code
-     *
-     * @param string $code
-     * @return Membership|null
-     */
     public function getMembershipByCode(string $code): ?Membership
     {
         return Membership::with(['membershipType', 'patient'])->where('code', $code)->first();
     }
 
-    /**
-     * Check if membership code is available
-     *
-     * @param string $code
-     * @return bool
-     */
     public function isCodeAvailable(string $code): bool
     {
         return !Membership::where('code', $code)->exists();
     }
 
-    /**
-     * Check if membership code is assigned
-     *
-     * @param string $code
-     * @return bool
-     */
     public function isCodeAssigned(string $code): bool
     {
-        return Membership::where('code', $code)->whereNotNull('patient_id')->exists();
+        return Membership::where('code', $code)->assigned()->exists();
     }
 
-    /**
-     * Get patient's active membership
-     *
-     * @param int $patientId
-     * @return Membership|null
-     */
     public function getPatientActiveMembership(int $patientId): ?Membership
     {
         $cacheKey = "patient_active_membership_{$patientId}";
-        
+
         return Cache::remember($cacheKey, 300, function () use ($patientId) {
-            // Always pick the latest assigned membership (by assigned_at timestamp)
             return Membership::with(['membershipType'])
                 ->where('patient_id', $patientId)
-                ->where('active', 1)
-                ->where('end_date', '>=', Carbon::today())
-                ->orderBy('assigned_at', 'desc')
+                ->active()
+                ->notExpired()
+                ->orderByDesc('assigned_at')
                 ->first();
         });
     }
 
-    /**
-     * Get patient's membership history
-     *
-     * @param int $patientId
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getPatientMembershipHistory(int $patientId)
+    public function getPatientMembershipHistory(int $patientId): Collection
     {
         return Membership::with(['membershipType', 'createdBy'])
             ->where('patient_id', $patientId)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->get();
     }
 
-    /**
-     * Check if patient has overlapping membership
-     *
-     * @param int $patientId
-     * @param string $startDate
-     * @param string $endDate
-     * @param int|null $excludeMembershipId
-     * @return bool
-     */
     public function hasOverlappingMembership(
         int $patientId,
         string $startDate,
         string $endDate,
-        ?int $excludeMembershipId = null
+        ?int $excludeMembershipId = null,
     ): bool {
         $query = Membership::where('patient_id', $patientId)
-            ->where('active', 1)
+            ->active()
             ->where(function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('start_date', [$startDate, $endDate])
                     ->orWhereBetween('end_date', [$startDate, $endDate])
@@ -126,13 +100,32 @@ class MembershipService
         return $query->exists();
     }
 
-    /**
-     * Create membership code
-     *
-     * @param array $data
-     * @return Membership
-     * @throws MembershipException
-     */
+    // ── Create Form Data ────────────────────────────────
+
+    public function getCreateFormData(): array
+    {
+        $membershipTypes = MembershipType::parentsOnly()
+            ->active()
+            ->pluck('name', 'id');
+
+        return ['membershipType' => $membershipTypes];
+    }
+
+    // ── Edit Form Data ──────────────────────────────────
+
+    public function getEditFormData(int $id): array
+    {
+        $membership      = Membership::findOrFail($id);
+        $membershipTypes = MembershipType::parentsOnly()->active()->pluck('name', 'id');
+
+        return [
+            'membership'     => $membership,
+            'membershipType' => $membershipTypes,
+        ];
+    }
+
+    // ── CRUD ─────────────────────────────────────────────
+
     public function createMembership(array $data): Membership
     {
         DB::beginTransaction();
@@ -141,17 +134,15 @@ class MembershipService
                 throw new MembershipException("Membership code '{$data['code']}' already exists.");
             }
 
-            $membershipType = MembershipType::find($data['membership_type_id']);
-            if (!$membershipType) {
-                throw new MembershipException("Membership type not found.");
-            }
+            $membershipType = MembershipType::findOrFail($data['membership_type_id']);
 
             if (!$membershipType->active) {
-                throw new MembershipException("Cannot create membership for inactive membership type.");
+                throw new MembershipException('Cannot create membership for inactive membership type.');
             }
 
             $data['created_by'] = Auth::id();
-            $data['active'] = 1;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['active']     = true;
 
             $membership = Membership::create($data);
 
@@ -159,44 +150,24 @@ class MembershipService
 
             Log::info('Membership code created', [
                 'membership_id' => $membership->id,
-                'code' => $membership->code,
-                'type' => $membershipType->name,
-                'created_by' => Auth::id()
+                'code'          => $membership->code,
+                'type'          => $membershipType->name,
+                'created_by'    => Auth::id(),
             ]);
 
             return $membership;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Failed to create membership', [
-                'error' => $e->getMessage(),
-                'data' => $data
-            ]);
-            throw new MembershipException("Failed to create membership: " . $e->getMessage());
+            Log::error('Failed to create membership', ['error' => $e->getMessage()]);
+            throw new MembershipException('Failed to create membership: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Update membership
-     *
-     * @param int $id
-     * @param array $data
-     * @return Membership
-     * @throws MembershipException
-     */
     public function updateMembership(int $id, array $data): Membership
     {
         DB::beginTransaction();
         try {
-            $membership = Membership::find($id);
-            if (!$membership) {
-                throw new MembershipException("Membership not found.");
-            }
-
-            if (isset($data['code']) && $data['code'] !== $membership->code) {
-                if (!$this->isCodeAvailable($data['code'])) {
-                    throw new MembershipException("Membership code '{$data['code']}' already exists.");
-                }
-            }
+            $membership = Membership::findOrFail($id);
 
             $data['updated_by'] = Auth::id();
             $membership->update($data);
@@ -209,210 +180,761 @@ class MembershipService
 
             Log::info('Membership updated', [
                 'membership_id' => $membership->id,
-                'updated_by' => Auth::id()
+                'updated_by'    => Auth::id(),
             ]);
 
             return $membership->fresh(['membershipType', 'patient']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Failed to update membership', [
                 'membership_id' => $id,
-                'error' => $e->getMessage()
+                'error'          => $e->getMessage(),
             ]);
-            throw new MembershipException("Failed to update membership: " . $e->getMessage());
+            throw new MembershipException('Failed to update membership: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Delete membership
-     *
-     * @param int $id
-     * @return bool
-     * @throws MembershipException
-     */
     public function deleteMembership(int $id): bool
     {
-        DB::beginTransaction();
-        try {
-            $membership = Membership::find($id);
-            if (!$membership) {
-                throw new MembershipException("Membership not found.");
-            }
+        $membership = Membership::findOrFail($id);
+        $membership->delete();
 
-            if ($membership->patient_id) {
-                throw new MembershipException("Cannot delete assigned membership. Please cancel it first.");
-            }
+        Log::info('Membership deleted', [
+            'membership_id' => $id,
+            'deleted_by'    => Auth::id(),
+        ]);
 
-            $patientId = $membership->patient_id;
-            $membership->delete();
-
-            if ($patientId) {
-                $this->clearPatientMembershipCache($patientId);
-            }
-
-            DB::commit();
-
-            Log::info('Membership deleted', [
-                'membership_id' => $id,
-                'deleted_by' => Auth::id()
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Failed to delete membership', [
-                'membership_id' => $id,
-                'error' => $e->getMessage()
-            ]);
-            throw new MembershipException("Failed to delete membership: " . $e->getMessage());
-        }
+        return true;
     }
 
-    /**
-     * Activate membership
-     *
-     * @param int $id
-     * @return Membership
-     * @throws MembershipException
-     */
-    public function activateMembership(int $id): Membership
+    // ── Status Toggle ───────────────────────────────────
+
+    public function toggleStatus(int $id, int $status): bool
     {
-        $membership = Membership::find($id);
-        if (!$membership) {
-            throw new MembershipException("Membership not found.");
+        $membership = Membership::findOrFail($id);
+
+        if ($status === 1) {
+            $membershipType = MembershipType::find($membership->membership_type_id);
+            if (!$membershipType?->active) {
+                return false;
+            }
         }
 
+        $membership->update(['active' => (bool) $status]);
+
+        if ($membership->patient_id) {
+            $this->clearPatientMembershipCache($membership->patient_id);
+        }
+
+        return true;
+    }
+
+    // ── Cancel Membership ───────────────────────────────
+
+    public function cancelMembership(int $patientId): array
+    {
+        $membership = Membership::where('patient_id', $patientId)->first();
+
+        if (!$membership) {
+            throw new MembershipException('Membership not found');
+        }
+
+        $isInactiveAndExpired = $membership->end_date < now()->format('Y-m-d');
+
+        if (!$isInactiveAndExpired) {
+            $this->ensureNoRestrictedServices($patientId);
+        }
+
+        $membershipCode = $membership->code;
+        $isReferral     = $membership->is_referral;
+        $patient        = Patients::find($patientId);
         $membershipType = $membership->membershipType;
-        if (!$membershipType || !$membershipType->active) {
-            throw new MembershipException("Cannot activate membership with inactive membership type.");
+
+        Membership::where('patient_id', $patientId)->delete();
+
+        $cancelledReferrals = 0;
+        if (!$isReferral) {
+            $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
+                ->where('is_referral', true)
+                ->delete();
         }
 
-        $membership->update(['active' => 1, 'updated_by' => Auth::id()]);
-
-        if ($membership->patient_id) {
-            $this->clearPatientMembershipCache($membership->patient_id);
+        if ($patient) {
+            ActivityLogger::logMembershipCancelled($patient, $membership, $membershipType);
         }
 
-        Log::info('Membership activated', [
-            'membership_id' => $id,
-            'activated_by' => Auth::id()
-        ]);
+        $this->clearPatientMembershipCache($patientId);
 
-        return $membership->fresh();
+        $message = 'Membership cancelled successfully';
+        if ($cancelledReferrals > 0) {
+            $message .= ' along with ' . $cancelledReferrals . ' associated referral(s)';
+        }
+
+        return ['message' => $message];
     }
 
-    /**
-     * Deactivate membership
-     *
-     * @param int $id
-     * @return Membership
-     * @throws MembershipException
-     */
-    public function deactivateMembership(int $id): Membership
+    // ── Upload / Import ─────────────────────────────────
+
+    public function uploadMemberships(\Illuminate\Http\UploadedFile $file): void
     {
-        $membership = Membership::find($id);
-        if (!$membership) {
-            throw new MembershipException("Membership not found.");
+        $collections = (new FastExcel())->import($file);
+
+        $rows = $collections->map(function ($collection) {
+            $data = [];
+            foreach ($collection as $key => $value) {
+                $convertedKey        = strtolower(str_replace(' ', '_', trim($key)));
+                $data[$convertedKey] = $value;
+            }
+            return $data;
+        });
+
+        foreach ($rows as $row) {
+            if (empty($row['code']) || !strlen((string) $row['code'])) {
+                continue;
+            }
+
+            $membershipTypeId = MembershipType::where('name', $row['membership_type'])->value('id');
+
+            if (!$membershipTypeId) {
+                continue;
+            }
+
+            Membership::updateOrCreate(
+                ['code' => $row['code']],
+                [
+                    'code'               => $row['code'],
+                    'membership_type_id' => $membershipTypeId,
+                    'created_by'         => Auth::id(),
+                ],
+            );
         }
-
-        $membership->update(['active' => 0, 'updated_by' => Auth::id()]);
-
-        if ($membership->patient_id) {
-            $this->clearPatientMembershipCache($membership->patient_id);
-        }
-
-        Log::info('Membership deactivated', [
-            'membership_id' => $id,
-            'deactivated_by' => Auth::id()
-        ]);
-
-        return $membership->fresh();
     }
 
-    /**
-     * Get available codes count for membership type
-     *
-     * @param int $membershipTypeId
-     * @return int
-     */
+    // ── Sold By Users ───────────────────────────────────
+
+    public function getSoldByUsers(?int $locationId): Collection
+    {
+        $accountId = Auth::user()->account_id;
+
+        if (empty($locationId)) {
+            return User::where('account_id', $accountId)
+                ->where('active', 1)
+                ->whereIn('user_type_id', [
+                    config('constants.doctor_user_id'),
+                    config('constants.fdm_user_id'),
+                ])
+                ->orderBy('name')
+                ->pluck('name', 'id');
+        }
+
+        $doctorIds = DoctorHasLocations::where('location_id', $locationId)
+            ->where('is_allocated', 1)
+            ->pluck('user_id')
+            ->toArray();
+
+        $locationUserIds = UserHasLocations::where('location_id', $locationId)
+            ->pluck('user_id')
+            ->toArray();
+
+        $fdmRole     = DB::table('roles')->where('name', 'FDM')->first();
+        $fdmUserIds  = [];
+
+        if ($fdmRole) {
+            $roleUserIds = RoleHasUsers::where('role_id', $fdmRole->id)
+                ->pluck('user_id')
+                ->toArray();
+            $fdmUserIds = array_intersect($locationUserIds, $roleUserIds);
+        }
+
+        $allUserIds = array_unique(array_merge($doctorIds, $fdmUserIds));
+
+        return User::whereIn('id', $allUserIds)
+            ->where('active', 1)
+            ->orderBy('name')
+            ->pluck('name', 'id');
+    }
+
+    // ── Student Verification Details ────────────────────
+
+    public function getStudentVerificationDetails(int $membershipId): array
+    {
+        $membership = Membership::with('membershipType')->findOrFail($membershipId);
+        $patient    = User::findOrFail($membership->patient_id);
+
+        $studentVerification = StudentVerification::where('membership_id', $membershipId)
+            ->orWhere(function ($query) use ($membership) {
+                $query->where('patient_id', $membership->patient_id)
+                    ->where('membership_type_id', $membership->membership_type_id);
+            })
+            ->first();
+
+        $documents = [];
+        if ($studentVerification && !empty($studentVerification->document_paths)) {
+            $documents = $studentVerification->document_paths;
+        }
+
+        $serviceUsage = $this->buildServiceUsageData($membership, $patient);
+
+        return [
+            'membership'   => [
+                'id'         => $membership->id,
+                'code'       => $membership->code,
+                'type'       => $membership->membershipType?->name ?? 'N/A',
+                'start_date' => $membership->start_date,
+                'end_date'   => $membership->end_date,
+                'status'     => $membership->active ? 'Active' : 'Expired',
+            ],
+            'patient'      => [
+                'id'        => $patient->id,
+                'unique_id' => 'C-' . $patient->id,
+                'name'      => $patient->name,
+                'email'     => $patient->email,
+                'phone'     => $patient->phone,
+            ],
+            'verification' => $studentVerification ? [
+                'id'           => $studentVerification->id,
+                'status'       => $studentVerification->status,
+                'submitted_at' => $studentVerification->submitted_at?->format('M d, Y h:i A'),
+                'reviewed_at'  => $studentVerification->reviewed_at?->format('M d, Y h:i A'),
+            ] : null,
+            'documents'    => $documents,
+            'service_usage' => $serviceUsage,
+        ];
+    }
+
+    // ── Datatable ───────────────────────────────────────
+
+    public function getDatatableData(array $rawFilters, bool $applyFilter): array
+    {
+        $filters     = getFilters($rawFilters);
+        $where       = $this->buildFilters($filters, $applyFilter);
+        $userCentres = ACL::getUserCentres();
+
+        return [
+            'where'       => $where,
+            'total'       => $this->countRecords($where, $filters, $applyFilter, $userCentres),
+            'filters'     => $filters,
+            'userCentres' => $userCentres,
+        ];
+    }
+
+    public function getDatatableRows(
+        array $where,
+        int $offset,
+        int $limit,
+        array $filters,
+        bool $applyFilter,
+        array $userCentres,
+    ): Collection {
+        $query = Membership::with(['membershipType', 'patient']);
+
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        $this->applySpecialFilters($query, $filters, $applyFilter);
+        $this->applyCentreAccess($query, $userCentres);
+
+        if (!Gate::allows('view_inactive_machine_types')) {
+            $query->where('memberships.active', true);
+        }
+
+        return $query->orderByDesc('created_at')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+    }
+
+    public function getDatatableFilterValues(): array
+    {
+        $accountId = Auth::user()->account_id;
+
+        $users           = User::getAllRecords($accountId)->pluck('name', 'id');
+        $membershipTypes = MembershipType::active()->pluck('name', 'id');
+        $locations       = Locations::getActiveSorted(ACL::getUserCentres());
+        $soldByUsers     = User::where('account_id', $accountId)
+            ->where('active', 1)
+            ->whereIn('user_type_id', [
+                config('constants.doctor_user_id'),
+                config('constants.fdm_user_id'),
+            ])
+            ->orderBy('name')
+            ->pluck('name', 'id');
+
+        return [
+            'status'       => config('constants.status'),
+            'users'        => $users,
+            'membershipType' => $membershipTypes,
+            'locations'    => $locations,
+            'soldByUsers'  => $soldByUsers,
+        ];
+    }
+
+    public function getActiveFilterValues(): array
+    {
+        $userId = Auth::id();
+
+        return [
+            'patient_id'         => Filters::get($userId, 'memberships', 'patient_id'),
+            'code'               => Filters::get($userId, 'memberships', 'code'),
+            'membership_type_id' => Filters::get($userId, 'memberships', 'membership_type_id'),
+            'status'             => Filters::get($userId, 'memberships', 'status'),
+            'location_id'        => Filters::get($userId, 'memberships', 'location_id'),
+            'sold_by'            => Filters::get($userId, 'memberships', 'sold_by'),
+            'assigned_at'        => Filters::get($userId, 'memberships', 'assigned_at'),
+            'created_by'         => Filters::get($userId, 'memberships', 'created_by'),
+        ];
+    }
+
+    // ── Expiring / Expired ──────────────────────────────
+
+    public function getExpiringMemberships(int $days = 30): Collection
+    {
+        return Membership::with(['membershipType', 'patient'])
+            ->assigned()
+            ->active()
+            ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays($days)])
+            ->orderBy('end_date')
+            ->get();
+    }
+
+    public function getExpiredMemberships(): Collection
+    {
+        return Membership::with(['membershipType', 'patient'])
+            ->assigned()
+            ->active()
+            ->expired()
+            ->orderByDesc('end_date')
+            ->get();
+    }
+
+    // ── Code Counts ─────────────────────────────────────
+
     public function getAvailableCodesCount(int $membershipTypeId): int
     {
         $cacheKey = "membership_type_{$membershipTypeId}_available_codes";
-        
+
         return Cache::remember($cacheKey, 1800, function () use ($membershipTypeId) {
             return Membership::where('membership_type_id', $membershipTypeId)
-                ->whereNull('patient_id')
-                ->where('active', 1)
+                ->unassigned()
+                ->active()
                 ->count();
         });
     }
 
-    /**
-     * Get assigned codes count for membership type
-     *
-     * @param int $membershipTypeId
-     * @return int
-     */
     public function getAssignedCodesCount(int $membershipTypeId): int
     {
         return Membership::where('membership_type_id', $membershipTypeId)
-            ->whereNotNull('patient_id')
+            ->assigned()
             ->count();
     }
 
-    /**
-     * Get expiring memberships
-     *
-     * @param int $days Number of days to look ahead
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getExpiringMemberships(int $days = 30)
-    {
-        $startDate = Carbon::today();
-        $endDate = Carbon::today()->addDays($days);
+    // ── Cache ───────────────────────────────────────────
 
-        return Membership::with(['membershipType', 'patient'])
-            ->whereNotNull('patient_id')
-            ->where('active', 1)
-            ->whereBetween('end_date', [$startDate, $endDate])
-            ->orderBy('end_date', 'asc')
-            ->get();
-    }
-
-    /**
-     * Get expired memberships
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getExpiredMemberships()
-    {
-        return Membership::with(['membershipType', 'patient'])
-            ->whereNotNull('patient_id')
-            ->where('active', 1)
-            ->where('end_date', '<', Carbon::today())
-            ->orderBy('end_date', 'desc')
-            ->get();
-    }
-
-    /**
-     * Clear patient membership cache
-     *
-     * @param int $patientId
-     * @return void
-     */
-    protected function clearPatientMembershipCache(int $patientId): void
+    public function clearPatientMembershipCache(int $patientId): void
     {
         Cache::forget("patient_active_membership_{$patientId}");
     }
 
-    /**
-     * Clear membership type cache
-     *
-     * @param int $membershipTypeId
-     * @return void
-     */
     public function clearMembershipTypeCache(int $membershipTypeId): void
     {
         Cache::forget("membership_type_{$membershipTypeId}_available_codes");
+    }
+
+    // ── Private Helpers ─────────────────────────────────
+
+    private function ensureNoRestrictedServices(int $patientId): void
+    {
+        $restrictedServiceNames = ['Gold Membership Card', 'Student Membership Card'];
+
+        $hasRestricted = DB::table('packages')
+            ->join('package_services', 'packages.id', '=', 'package_services.package_id')
+            ->join('services', 'package_services.service_id', '=', 'services.id')
+            ->where('packages.patient_id', $patientId)
+            ->whereNull('packages.deleted_at')
+            ->whereNull('services.deleted_at')
+            ->whereIn('services.name', $restrictedServiceNames)
+            ->exists();
+
+        if ($hasRestricted) {
+            throw new MembershipException('Membership applied on services, you can not cancel it');
+        }
+    }
+
+    private function buildServiceUsageData(Membership $membership, User $patient): array
+    {
+        $membershipTypeDiscountIds = Discounts::where('customer_type_id', $membership->membership_type_id)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($membershipTypeDiscountIds)) {
+            return [
+                'total_services'       => 0,
+                'total_discount_saved' => 0,
+                'services'             => [],
+            ];
+        }
+
+        $usedServices = PackageBundles::whereIn('discount_id', $membershipTypeDiscountIds)
+            ->whereHas('package', fn ($q) => $q->where('patient_id', $patient->id))
+            ->with(['bundle', 'package', 'discount', 'packageservice'])
+            ->get();
+
+        $serviceUsage        = [];
+        $totalDiscountAmount = 0;
+
+        foreach ($usedServices as $service) {
+            $serviceName    = $service->bundle?->name ?? 'Unknown Service';
+            $discountSaved  = $service->service_price - $service->tax_including_price;
+            $packageService = $service->packageservice->first();
+            $isConsumed     = $packageService ? (bool) $packageService->is_consumed : false;
+            $consumedAt     = $packageService?->consumed_at
+                ? Carbon::parse($packageService->consumed_at)->format('d/m/y')
+                : null;
+
+            $serviceUsage[] = [
+                'service_name'  => $serviceName,
+                'service_price' => $service->service_price,
+                'discount_amount' => $service->discount_price ?? 0,
+                'discount_type' => $service->discount_type,
+                'net_amount'    => $service->tax_including_price,
+                'plan_id'       => $service->package_id,
+                'plan_date'     => $service->package?->created_at->format('M d, Y'),
+                'is_consumed'   => $isConsumed,
+                'consumed_at'   => $consumedAt,
+            ];
+
+            if ($discountSaved > 0) {
+                $totalDiscountAmount += $discountSaved;
+            }
+        }
+
+        return [
+            'total_services'       => count($serviceUsage),
+            'total_discount_saved' => $totalDiscountAmount,
+            'services'             => $serviceUsage,
+        ];
+    }
+
+    private function buildFilters(array $filters, bool $applyFilter): array
+    {
+        $where  = [];
+        $userId = Auth::id();
+
+        // Code filter
+        $this->applySimpleFilter($where, $filters, $applyFilter, 'code', 'memberships.code', 'like', $userId);
+
+        // Membership type filter
+        $this->applySimpleFilter($where, $filters, $applyFilter, 'membership_type_id', 'memberships.membership_type_id', '=', $userId);
+
+        // Created by filter
+        $this->applySimpleFilter($where, $filters, $applyFilter, 'created_by', 'memberships.created_by', '=', $userId);
+
+        // Assigned filter
+        $this->applyAssignedFilter($where, $filters, $applyFilter, $userId);
+
+        // Status filter (active/inactive/expired)
+        $this->applyStatusFilter($where, $filters, $applyFilter, $userId);
+
+        // Location filter (handled separately in special filters)
+        if (hasFilter($filters, 'location_id')) {
+            Filters::put($userId, 'memberships', 'location_id', $filters['location_id']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'location_id');
+        }
+
+        // Sold by filter (handled separately)
+        if (hasFilter($filters, 'sold_by')) {
+            Filters::put($userId, 'memberships', 'sold_by', $filters['sold_by']);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'sold_by');
+        }
+
+        // Assigned at date range
+        $this->applyDateRangeFilter($where, $filters, $applyFilter, $userId);
+
+        return $where;
+    }
+
+    private function applySimpleFilter(
+        array &$where,
+        array $filters,
+        bool $applyFilter,
+        string $filterKey,
+        string $column,
+        string $operator,
+        int $userId,
+    ): void {
+        $isLike = $operator === 'like';
+
+        if (hasFilter($filters, $filterKey)) {
+            $value = $isLike ? '%' . $filters[$filterKey] . '%' : $filters[$filterKey];
+            $where[] = [$column, $operator, $value];
+            Filters::put($userId, 'memberships', $filterKey, $filters[$filterKey]);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', $filterKey);
+        } else {
+            $saved = Filters::get($userId, 'memberships', $filterKey);
+            if ($saved !== null) {
+                $value = $isLike ? '%' . $saved . '%' : $saved;
+                $where[] = [$column, $operator, $value];
+            }
+        }
+    }
+
+    private function applyAssignedFilter(array &$where, array $filters, bool $applyFilter, int $userId): void
+    {
+        $assignedValue = null;
+
+        if (hasFilter($filters, 'assigned')) {
+            $assignedValue = $filters['assigned'];
+            Filters::put($userId, 'memberships', 'assigned', $assignedValue);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'assigned');
+        } else {
+            $assignedValue = Filters::get($userId, 'memberships', 'assigned');
+        }
+
+        if ($assignedValue !== null) {
+            match ((string) $assignedValue) {
+                '1' => $where[] = ['memberships.patient_id', '<>', null],
+                '0' => $where[] = ['memberships.patient_id', '=', null],
+                default => null,
+            };
+        }
+    }
+
+    private function applyStatusFilter(array &$where, array $filters, bool $applyFilter, int $userId): void
+    {
+        $statusValue = null;
+
+        if (hasFilter($filters, 'status')) {
+            $statusValue = $filters['status'];
+            Filters::put($userId, 'memberships', 'status', $statusValue);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'status');
+        } else {
+            $statusValue = Filters::get($userId, 'memberships', 'status');
+        }
+
+        if ($statusValue !== null) {
+            match ($statusValue) {
+                'active' => (function () use (&$where) {
+                    $where[] = ['memberships.patient_id', '<>', null];
+                    $where[] = ['memberships.end_date', '>=', now()->format('Y-m-d')];
+                })(),
+                'inactive' => $where[] = ['memberships.patient_id', '=', null],
+                'expired'  => $where[] = ['memberships.end_date', '<', now()->format('Y-m-d')],
+                default    => null,
+            };
+        }
+    }
+
+    private function applyDateRangeFilter(array &$where, array $filters, bool $applyFilter, int $userId): void
+    {
+        $dateRange = null;
+
+        if (hasFilter($filters, 'assigned_at')) {
+            $dateRange = $filters['assigned_at'];
+            Filters::put($userId, 'memberships', 'assigned_at', $dateRange);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'assigned_at');
+        } else {
+            $dateRange = Filters::get($userId, 'memberships', 'assigned_at');
+        }
+
+        if ($dateRange) {
+            $parts         = explode(' - ', $dateRange);
+            $startDateTime = date('Y-m-d 00:00:00', strtotime($parts[0]));
+            $endDateObj    = new DateTime($parts[1]);
+            $endDateObj->setTime(23, 59, 59);
+            $endDateTime = $endDateObj->format('Y-m-d H:i:s');
+
+            $where[] = ['memberships.assigned_at', '>=', $startDateTime];
+            $where[] = ['memberships.assigned_at', '<=', $endDateTime];
+        }
+    }
+
+    private function applySpecialFilters(mixed $query, array $filters, bool $applyFilter): void
+    {
+        // Patient ID filter
+        $patientIdFilter = $this->getPatientIdFilter($filters, $applyFilter);
+        if ($patientIdFilter !== null) {
+            empty($patientIdFilter)
+                ? $query->where('memberships.patient_id', '=', -1)
+                : $query->whereIn('memberships.patient_id', $patientIdFilter);
+        }
+
+        // Location filter
+        $locationFilter = $this->getLocationFilter($filters, $applyFilter);
+        if ($locationFilter !== null) {
+            empty($locationFilter)
+                ? $query->where('memberships.patient_id', '=', -1)
+                : $query->whereIn('memberships.patient_id', $locationFilter);
+        }
+
+        // Sold by filter
+        $soldByFilter = $this->getSoldByFilter($filters, $applyFilter);
+        if ($soldByFilter !== null) {
+            empty($soldByFilter)
+                ? $query->where('memberships.id', '=', -1)
+                : $query->whereIn('memberships.id', $soldByFilter);
+        }
+    }
+
+    private function applyCentreAccess(mixed $query, array $userCentres): void
+    {
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
+        if (!empty($userCentres)) {
+            if ($isSuperAdmin) {
+                $query->where(function ($q) use ($userCentres) {
+                    $q->whereNull('memberships.patient_id')
+                        ->orWhereExists(function ($sub) use ($userCentres) {
+                            $sub->select(DB::raw(1))
+                                ->from('appointments')
+                                ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                                ->whereIn('appointments.location_id', $userCentres);
+                        });
+                });
+            } else {
+                $query->whereNotNull('memberships.patient_id')
+                    ->whereExists(function ($sub) use ($userCentres) {
+                        $sub->select(DB::raw(1))
+                            ->from('appointments')
+                            ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                            ->whereIn('appointments.location_id', $userCentres);
+                    });
+            }
+        } elseif (!$isSuperAdmin) {
+            $query->whereNotNull('memberships.patient_id');
+        }
+    }
+
+    private function getPatientIdFilter(array $filters, bool $applyFilter): ?array
+    {
+        $userId   = Auth::id();
+        $patientId = null;
+
+        if (hasFilter($filters, 'patient_id')) {
+            $patientId = $filters['patient_id'];
+            Filters::put($userId, 'memberships', 'patient_id', $patientId);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, 'memberships', 'patient_id');
+        } else {
+            $patientId = Filters::get($userId, 'memberships', 'patient_id');
+        }
+
+        return empty($patientId) ? null : [$patientId];
+    }
+
+    private function getLocationFilter(array $filters, bool $applyFilter): ?array
+    {
+        $userId     = Auth::id();
+        $locationId = null;
+
+        if (hasFilter($filters, 'location_id')) {
+            $locationId = $filters['location_id'];
+        } elseif (!$applyFilter) {
+            $locationId = Filters::get($userId, 'memberships', 'location_id');
+        }
+
+        if (empty($locationId)) {
+            return null;
+        }
+
+        return Appointments::where('location_id', $locationId)
+            ->whereNotNull('patient_id')
+            ->distinct()
+            ->pluck('patient_id')
+            ->toArray();
+    }
+
+    private function getSoldByFilter(array $filters, bool $applyFilter): ?array
+    {
+        $userId = Auth::id();
+        $soldBy = null;
+
+        if (hasFilter($filters, 'sold_by')) {
+            $soldBy = $filters['sold_by'];
+        } elseif (!$applyFilter) {
+            $soldBy = Filters::get($userId, 'memberships', 'sold_by');
+        }
+
+        if (empty($soldBy)) {
+            return null;
+        }
+
+        return DB::table('memberships')
+            ->join('package_bundles', 'memberships.id', '=', 'package_bundles.membership_code_id')
+            ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
+            ->where('package_services.sold_by', $soldBy)
+            ->distinct()
+            ->pluck('memberships.id')
+            ->toArray();
+    }
+
+    private function countRecords(array $where, array $filters, bool $applyFilter, array $userCentres): int
+    {
+        $query = DB::table('memberships');
+
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        // Apply special filters to count query
+        $patientIdFilter = $this->getPatientIdFilter($filters, $applyFilter);
+        if ($patientIdFilter !== null) {
+            empty($patientIdFilter)
+                ? $query->where('memberships.patient_id', '=', -1)
+                : $query->whereIn('memberships.patient_id', $patientIdFilter);
+        }
+
+        $locationFilter = $this->getLocationFilter($filters, $applyFilter);
+        if ($locationFilter !== null) {
+            empty($locationFilter)
+                ? $query->where('memberships.patient_id', '=', -1)
+                : $query->whereIn('memberships.patient_id', $locationFilter);
+        }
+
+        $soldByFilter = $this->getSoldByFilter($filters, $applyFilter);
+        if ($soldByFilter !== null) {
+            empty($soldByFilter)
+                ? $query->where('memberships.id', '=', -1)
+                : $query->whereIn('memberships.id', $soldByFilter);
+        }
+
+        if (!Gate::allows('view_inactive_centres')) {
+            $query->where('memberships.active', true);
+        }
+
+        // Centre access for count
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
+        if (!empty($userCentres)) {
+            if ($isSuperAdmin) {
+                $query->where(function ($q) use ($userCentres) {
+                    $q->whereNull('memberships.patient_id')
+                        ->orWhereExists(function ($sub) use ($userCentres) {
+                            $sub->select(DB::raw(1))
+                                ->from('appointments')
+                                ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                                ->whereIn('appointments.location_id', $userCentres);
+                        });
+                });
+            } else {
+                $query->whereNotNull('memberships.patient_id')
+                    ->whereExists(function ($sub) use ($userCentres) {
+                        $sub->select(DB::raw(1))
+                            ->from('appointments')
+                            ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                            ->whereIn('appointments.location_id', $userCentres);
+                    });
+            }
+        } elseif (!$isSuperAdmin) {
+            $query->whereNotNull('memberships.patient_id');
+        }
+
+        return $query->count();
     }
 }
