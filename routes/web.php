@@ -57,8 +57,9 @@ use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\Reports\FinanceReportController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
-use App\Http\Controllers\Admin\MembershipsController;
-use App\Http\Controllers\Admin\MembershipTypesController;
+use App\Http\Controllers\Admin\MembershipsController as AdminMembershipsController;
+use App\Http\Controllers\Admin\MembershipTypesController as AdminMembershipTypesController;
+use App\Http\Controllers\Api\MembershipsController as ApiMembershipsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Reports\OperationsReportController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
@@ -99,7 +100,7 @@ Route::get('/package-advances-sum', function () {
     return response()->json(['sum' => $sum]);
 });
 Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
-Route::get('/download-student-membership-patients', [MembershipsController::class, 'downloadStudentMembershipPatients'])
+Route::get('/download-student-membership-patients', [ApiMembershipsController::class, 'downloadStudentMembershipPatients'])
     ->name('download.student.membership.patients');
 Route::get('/unauthorized', function () {
     return view('unathorized');
@@ -367,9 +368,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
         
         // Memberships
-        Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
-        Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
-        Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
+        Route::post('memberships/upload', [ApiMembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
+        Route::get('memberships/export/pdf', [ApiMembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
+        Route::get('memberships/export/excel', [ApiMembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         // Patients - using API controller for CRUD operations, keeping view routes
         Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
         Route::match(['get', 'post'], 'patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
@@ -652,8 +653,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('activitylogs', [ActivitylogsReportController::class, 'InsertLogs']);
 
         ///////////Memberships routes/////
-        Route::resource('membershiptypes', MembershipTypesController::class)->only('index');
-        Route::resource('memberships', MembershipsController::class)->only('index');
+        Route::resource('membershiptypes', AdminMembershipTypesController::class)->only('index');
+        Route::resource('memberships', AdminMembershipsController::class)->only('index');
         
         // Wrong Conversions Report
         Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');

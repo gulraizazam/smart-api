@@ -1,68 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Membership;
 
 use App\Exceptions\MembershipException;
+use App\Helpers\Filters;
+use App\Models\Discounts;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
-class MembershipTypeService
+final class MembershipTypeService
 {
-    /**
-     * Get membership type by ID
-     *
-     * @param int $id
-     * @return MembershipType|null
-     */
+    // ── Lookups ──────────────────────────────────────────
+
     public function getMembershipTypeById(int $id): ?MembershipType
     {
         return MembershipType::with(['parent', 'children', 'discounts'])->find($id);
     }
 
-    /**
-     * Get all active membership types
-     *
-     * @param bool $parentsOnly
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getActiveMembershipTypes(bool $parentsOnly = false)
+    public function getActiveMembershipTypes(bool $parentsOnly = false): Collection
     {
         $cacheKey = $parentsOnly ? 'membership_types_active_parents' : 'membership_types_active_all';
-        
+
         return Cache::remember($cacheKey, 3600, function () use ($parentsOnly) {
-            $query = MembershipType::where('active', 1);
-            
+            $query = MembershipType::active();
+
             if ($parentsOnly) {
-                $query->whereNull('parent_id');
+                $query->parentsOnly();
             }
-            
+
             return $query->orderBy('name')->get();
         });
     }
 
-    /**
-     * Get membership types for patient (includes renewal if applicable)
-     *
-     * @param int|null $patientId
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getMembershipTypesForPatient(?int $patientId = null)
+    public function getMembershipTypesForPatient(?int $patientId = null): Collection
     {
-        $parentTypes = $this->getActiveMembershipTypes(true);
-        
+        $parentTypes = $this->getActiveMembershipTypes(parentsOnly: true);
+
         if (!$patientId) {
             return $parentTypes;
         }
 
         $latestMembership = Membership::where('patient_id', $patientId)
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('created_at')
             ->first();
 
-        if (!$latestMembership || $latestMembership->end_date >= now()->format('Y-m-d')) {
+        if (!$latestMembership || $latestMembership->end_date >= now()->toDateString()) {
             return $parentTypes;
         }
 
@@ -73,7 +64,7 @@ class MembershipTypeService
 
         $expiredMembershipTypeId = $expiredType->parent_id ?? $expiredType->id;
 
-        $renewalType = MembershipType::where('active', 1)
+        $renewalType = MembershipType::active()
             ->where('parent_id', $expiredMembershipTypeId)
             ->first();
 
@@ -84,96 +75,123 @@ class MembershipTypeService
         return $parentTypes;
     }
 
-    /**
-     * Create membership type
-     *
-     * @param array $data
-     * @return MembershipType
-     * @throws MembershipException
-     */
+    // ── Edit Form Data ──────────────────────────────────
+
+    public function getEditFormData(int $id): array
+    {
+        $membershipType = MembershipType::with('discounts')->findOrFail($id);
+
+        $parentMemberships = MembershipType::parentsOnly()
+            ->active()
+            ->where('id', '!=', $id)
+            ->pluck('name', 'id');
+
+        $today = Carbon::now()->toDateString();
+        $activeDiscounts = Discounts::where('active', 1)
+            ->where('discount_type', '!=', 'voucher')
+            ->whereDate('start', '<=', $today)
+            ->whereDate('end', '>=', $today)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+        $assignedDiscountIds = $membershipType->discounts->pluck('id')->toArray();
+
+        return [
+            'membershipType'     => $membershipType,
+            'parentMemberships'  => $parentMemberships,
+            'activeDiscounts'    => $activeDiscounts,
+            'assignedDiscountIds' => $assignedDiscountIds,
+        ];
+    }
+
+    // ── Active Types (with renewal logic) ───────────────
+
+    public function getActiveTypesForPatient(?int $patientId): array
+    {
+        $expiredMembershipTypeId = null;
+
+        if ($patientId) {
+            $latestMembership = Membership::where('patient_id', $patientId)
+                ->orderByDesc('created_at')
+                ->first();
+
+            if ($latestMembership?->end_date < now()->format('Y-m-d')) {
+                $expiredType = MembershipType::find($latestMembership->membership_type_id);
+                if ($expiredType) {
+                    $expiredMembershipTypeId = $expiredType->parent_id ?? $expiredType->id;
+                }
+            }
+        }
+
+        $parentTypes = MembershipType::active()
+            ->parentsOnly()
+            ->select('id', 'name', 'amount', 'period', 'parent_id')
+            ->orderBy('name')
+            ->get();
+
+        $membershipTypes = $parentTypes;
+
+        if ($expiredMembershipTypeId) {
+            $renewalType = MembershipType::active()
+                ->where('parent_id', $expiredMembershipTypeId)
+                ->select('id', 'name', 'amount', 'period', 'parent_id')
+                ->first();
+
+            if ($renewalType) {
+                $membershipTypes = $parentTypes->push($renewalType)->sortBy('name')->values();
+            }
+        }
+
+        return [
+            'membership_types'          => $membershipTypes,
+            'expired_membership_type_id' => $expiredMembershipTypeId,
+        ];
+    }
+
+    // ── CRUD ─────────────────────────────────────────────
+
     public function createMembershipType(array $data): MembershipType
     {
         DB::beginTransaction();
         try {
-            if (MembershipType::where('name', $data['name'])->exists()) {
-                throw new MembershipException("Membership type with name '{$data['name']}' already exists.");
-            }
-
-            if (isset($data['parent_id']) && $data['parent_id']) {
-                $parent = MembershipType::find($data['parent_id']);
-                if (!$parent) {
-                    throw new MembershipException("Parent membership type not found.");
-                }
-                if (!$parent->active) {
-                    throw new MembershipException("Cannot create renewal for inactive parent membership type.");
-                }
-            }
-
             $data['created_by'] = Auth::id();
-            $data['active'] = 1;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['parent_id']  = !empty($data['parent_id']) ? $data['parent_id'] : null;
 
             $membershipType = MembershipType::create($data);
-
-            if (isset($data['discount_ids']) && is_array($data['discount_ids'])) {
-                $membershipType->discounts()->sync($data['discount_ids']);
-            }
 
             $this->clearCache();
             DB::commit();
 
             Log::info('Membership type created', [
                 'membership_type_id' => $membershipType->id,
-                'name' => $membershipType->name,
-                'created_by' => Auth::id()
+                'name'               => $membershipType->name,
+                'created_by'         => Auth::id(),
             ]);
 
             return $membershipType;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Failed to create membership type', [
-                'error' => $e->getMessage(),
-                'data' => $data
-            ]);
-            throw new MembershipException("Failed to create membership type: " . $e->getMessage());
+            Log::error('Failed to create membership type', ['error' => $e->getMessage()]);
+            throw new MembershipException('Failed to create membership type: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Update membership type
-     *
-     * @param int $id
-     * @param array $data
-     * @return MembershipType
-     * @throws MembershipException
-     */
     public function updateMembershipType(int $id, array $data): MembershipType
     {
         DB::beginTransaction();
         try {
-            $membershipType = MembershipType::find($id);
-            if (!$membershipType) {
-                throw new MembershipException("Membership type not found.");
-            }
+            $membershipType = MembershipType::findOrFail($id);
 
-            if (isset($data['name']) && $data['name'] !== $membershipType->name) {
-                if (MembershipType::where('name', $data['name'])->where('id', '!=', $id)->exists()) {
-                    throw new MembershipException("Membership type with name '{$data['name']}' already exists.");
-                }
-            }
-
-            if (isset($data['parent_id']) && $data['parent_id']) {
-                if ($data['parent_id'] == $id) {
-                    throw new MembershipException("Membership type cannot be its own parent.");
-                }
-                
-                $parent = MembershipType::find($data['parent_id']);
-                if (!$parent) {
-                    throw new MembershipException("Parent membership type not found.");
-                }
-            }
-
-            $data['updated_by'] = Auth::id();
-            $membershipType->update($data);
+            $membershipType->update([
+                'name'       => $data['name'],
+                'period'     => $data['period'],
+                'amount'     => $data['amount'],
+                'parent_id'  => !empty($data['parent_id']) ? $data['parent_id'] : null,
+                'updated_by' => Auth::id(),
+                'account_id' => Auth::user()->account_id,
+            ]);
 
             if (isset($data['discount_ids']) && is_array($data['discount_ids'])) {
                 $membershipType->discounts()->sync($data['discount_ids']);
@@ -184,164 +202,196 @@ class MembershipTypeService
 
             Log::info('Membership type updated', [
                 'membership_type_id' => $id,
-                'updated_by' => Auth::id()
+                'updated_by'         => Auth::id(),
             ]);
 
             return $membershipType->fresh(['parent', 'children', 'discounts']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Failed to update membership type', [
                 'membership_type_id' => $id,
-                'error' => $e->getMessage()
+                'error'              => $e->getMessage(),
             ]);
-            throw new MembershipException("Failed to update membership type: " . $e->getMessage());
+            throw new MembershipException('Failed to update membership type: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Delete membership type
-     *
-     * @param int $id
-     * @return bool
-     * @throws MembershipException
-     */
-    public function deleteMembershipType(int $id): bool
+    public function deleteMembershipType(int $id): string
     {
         DB::beginTransaction();
         try {
-            $membershipType = MembershipType::find($id);
-            if (!$membershipType) {
-                throw new MembershipException("Membership type not found.");
-            }
+            $membershipType = MembershipType::findOrFail($id);
 
-            $membershipCount = Membership::where('membership_type_id', $id)->count();
-            
-            if ($membershipCount > 0) {
-                $membershipType->update(['active' => 0, 'updated_by' => Auth::id()]);
-                Membership::where('membership_type_id', $id)->update(['active' => 0]);
-                
-                Log::info('Membership type deactivated (has memberships)', [
-                    'membership_type_id' => $id,
-                    'membership_count' => $membershipCount
-                ]);
-                
+            $hasMemberships = Membership::where('membership_type_id', $id)->exists();
+
+            if ($hasMemberships) {
+                $membershipType->update(['active' => false]);
+                Membership::where('membership_type_id', $id)->update(['active' => false]);
+
                 $this->clearCache();
                 DB::commit();
-                return true;
+
+                return 'deactivated';
             }
 
             $membershipType->delete();
-
             $this->clearCache();
             DB::commit();
 
-            Log::info('Membership type deleted', [
-                'membership_type_id' => $id,
-                'deleted_by' => Auth::id()
-            ]);
-
-            return true;
-        } catch (\Exception $e) {
+            return 'deleted';
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Failed to delete membership type', [
                 'membership_type_id' => $id,
-                'error' => $e->getMessage()
+                'error'              => $e->getMessage(),
             ]);
-            throw new MembershipException("Failed to delete membership type: " . $e->getMessage());
+            throw new MembershipException('Failed to delete membership type: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Activate membership type
-     *
-     * @param int $id
-     * @return MembershipType
-     * @throws MembershipException
-     */
-    public function activateMembershipType(int $id): MembershipType
+    // ── Status Toggle ───────────────────────────────────
+
+    public function toggleStatus(int $id, int $status): bool
     {
         $membershipType = MembershipType::find($id);
         if (!$membershipType) {
-            throw new MembershipException("Membership type not found.");
+            return false;
         }
 
-        $membershipType->update(['active' => 1, 'updated_by' => Auth::id()]);
-        Membership::where('membership_type_id', $id)->update(['active' => 1]);
+        $membershipType->update(['active' => (bool) $status]);
+        Membership::where('membership_type_id', $id)->update(['active' => (bool) $status]);
 
         $this->clearCache();
 
-        Log::info('Membership type activated', [
-            'membership_type_id' => $id,
-            'activated_by' => Auth::id()
-        ]);
-
-        return $membershipType->fresh();
+        return true;
     }
 
-    /**
-     * Deactivate membership type
-     *
-     * @param int $id
-     * @return MembershipType
-     * @throws MembershipException
-     */
-    public function deactivateMembershipType(int $id): MembershipType
+    // ── Datatable ───────────────────────────────────────
+
+    public function getDatatableData(array $rawFilters, bool $applyFilter): array
     {
-        $membershipType = MembershipType::find($id);
-        if (!$membershipType) {
-            throw new MembershipException("Membership type not found.");
-        }
-
-        $membershipType->update(['active' => 0, 'updated_by' => Auth::id()]);
-        Membership::where('membership_type_id', $id)->update(['active' => 0]);
-
-        $this->clearCache();
-
-        Log::info('Membership type deactivated', [
-            'membership_type_id' => $id,
-            'deactivated_by' => Auth::id()
-        ]);
-
-        return $membershipType->fresh();
-    }
-
-    /**
-     * Get membership type statistics
-     *
-     * @param int $id
-     * @return array
-     */
-    public function getMembershipTypeStats(int $id): array
-    {
-        $total = Membership::where('membership_type_id', $id)->count();
-        $available = Membership::where('membership_type_id', $id)
-            ->whereNull('patient_id')
-            ->where('active', 1)
-            ->count();
-        $assigned = Membership::where('membership_type_id', $id)
-            ->whereNotNull('patient_id')
-            ->count();
-        $active = Membership::where('membership_type_id', $id)
-            ->whereNotNull('patient_id')
-            ->where('active', 1)
-            ->where('end_date', '>=', now())
-            ->count();
+        $where = $this->buildFilters($rawFilters, $applyFilter);
 
         return [
-            'total' => $total,
-            'available' => $available,
-            'assigned' => $assigned,
-            'active' => $active,
-            'expired' => $assigned - $active,
+            'where' => $where,
+            'total' => $this->countRecords($where),
         ];
     }
 
-    /**
-     * Clear all membership type caches
-     *
-     * @return void
-     */
-    protected function clearCache(): void
+    public function getDatatableRows(array $where, int $offset, int $limit): Collection
+    {
+        $query = MembershipType::with(['parent', 'children']);
+
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        if (!Gate::allows('view_inactive_machine_types')) {
+            $query->where('membership_types.active', true);
+        }
+
+        return $query->orderByDesc('created_at')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+    }
+
+    // ── Stats ───────────────────────────────────────────
+
+    public function getMembershipTypeStats(int $id): array
+    {
+        $total     = Membership::where('membership_type_id', $id)->count();
+        $available = Membership::where('membership_type_id', $id)->unassigned()->active()->count();
+        $assigned  = Membership::where('membership_type_id', $id)->assigned()->count();
+        $active    = Membership::where('membership_type_id', $id)->assigned()->active()->notExpired()->count();
+
+        return [
+            'total'     => $total,
+            'available' => $available,
+            'assigned'  => $assigned,
+            'active'    => $active,
+            'expired'   => $assigned - $active,
+        ];
+    }
+
+    // ── Private Helpers ─────────────────────────────────
+
+    private function buildFilters(array $rawFilters, bool $applyFilter): array
+    {
+        $filters = getFilters($rawFilters);
+        $where   = [];
+        $userId  = Auth::id();
+
+        // Name filter
+        $this->applyFilter(
+            $where,
+            $filters,
+            $applyFilter,
+            'name',
+            'membership_types.name',
+            'like',
+            'membership_types',
+            $userId,
+        );
+
+        // Status filter
+        $this->applyFilter(
+            $where,
+            $filters,
+            $applyFilter,
+            'status',
+            'membership_types.active',
+            '=',
+            'membership_types',
+            $userId,
+        );
+
+        return $where;
+    }
+
+    private function applyFilter(
+        array &$where,
+        array $filters,
+        bool $applyFilter,
+        string $filterKey,
+        string $column,
+        string $operator,
+        string $filterGroup,
+        int $userId,
+    ): void {
+        $isLike = $operator === 'like';
+
+        if (hasFilter($filters, $filterKey)) {
+            $value = $isLike ? '%' . $filters[$filterKey] . '%' : $filters[$filterKey];
+            $where[] = [$column, $operator, $value];
+            Filters::put($userId, $filterGroup, $filterKey, $filters[$filterKey]);
+        } elseif ($applyFilter) {
+            Filters::forget($userId, $filterGroup, $filterKey);
+        } else {
+            $saved = Filters::get($userId, $filterGroup, $filterKey);
+            if ($saved !== null) {
+                $value = $isLike ? '%' . $saved . '%' : $saved;
+                $where[] = [$column, $operator, $value];
+            }
+        }
+    }
+
+    private function countRecords(array $where): int
+    {
+        $query = DB::table('membership_types');
+
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        if (!Gate::allows('view_inactive_centres')) {
+            $query->where('membership_types.active', true);
+        }
+
+        return $query->count();
+    }
+
+    private function clearCache(): void
     {
         Cache::forget('membership_types_active_parents');
         Cache::forget('membership_types_active_all');
