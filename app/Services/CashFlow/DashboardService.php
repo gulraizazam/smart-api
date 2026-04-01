@@ -37,7 +37,7 @@ class DashboardService
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
         return [
-            'summary' => $this->getSummaryCards($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
+            'summary' => $this->getSummaryCards($accountId, $goLiveDate),
             'pools' => $this->getPoolBalances($accountId),
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
@@ -55,68 +55,115 @@ class DashboardService
     }
 
     /**
-     * Summary cards: Opening Balance | Inflows | Outflows | Net Cash Flow | Closing Balance
-     * Scoped to the selected period (default: current month).
-     * Opening balance = all inflows - all outflows from go-live to period start.
+     * Summary cards: Opening Balance | Inflows This Month | Outflows This Month | Net | Closing Balance
+     * Always current month. Uses system_created_at (same as pool observer) for consistency.
+     * Opening balance = pool opening balances + all activity from go-live to last day of previous month.
      */
-    public function getSummaryCards(int $accountId, string $dateFrom, string $dateTo, ?int $branchId, ?string $goLiveDate = null): array
+    public function getSummaryCards(int $accountId, ?string $goLiveDate = null): array
     {
-        // Opening balance: cumulative net from go-live up to (but not including) the period start
+        $monthStart  = Carbon::now()->startOfMonth()->toDateString();
+        $today       = Carbon::now()->toDateString();
+        $lastDayPrev = Carbon::now()->startOfMonth()->subDay()->toDateString(); // last day of previous month
+
+        // Opening balance: pool opening balances + everything from go-live up to end of last month
         $openingBalance = (float) CashPool::forAccount($accountId)->sum('opening_balance');
+        $openingDate    = $lastDayPrev;
 
-        if ($goLiveDate) {
-            $preStart = Carbon::parse($dateFrom)->subDay()->toDateString();
-            // Only calculate if the period starts after go-live
-            if ($preStart >= $goLiveDate) {
-                $preInflows = $this->getInflows($accountId, $goLiveDate, $preStart, $branchId, $goLiveDate);
-                $preOutflows = $this->getOutflows($accountId, $goLiveDate, $preStart, $branchId);
+        if ($goLiveDate && $lastDayPrev >= $goLiveDate) {
+            // Patient payments (net of refunds) from go-live to end of last month
+            $prePayments = (float) PackageAdvances::where('account_id', $accountId)
+                ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
+                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('cash_amount');
 
-                // Inventory net (all payment modes) up to period start
-                $preInventorySales = (float) Order::where('account_id', $accountId)
-                    ->where('order_type', 'sale')
-                    ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $preStart])
-                    ->when($branchId, fn($q) => $q->where('location_id', $branchId))
-                    ->sum('total_price');
+            $preRefunds = (float) PackageAdvances::where('account_id', $accountId)
+                ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
+                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('cash_amount');
 
-                $preInventoryRefunds = (float) Order::where('account_id', $accountId)
-                    ->where('order_type', 'refund')
-                    ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $preStart])
-                    ->when($branchId, fn($q) => $q->where('location_id', $branchId))
-                    ->sum('total_price');
+            // Inventory sales (net of refunds) from go-live to end of last month
+            $preInventorySales = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('total_price');
 
-                $openingBalance += $preInflows + $preInventorySales - $preInventoryRefunds - $preOutflows;
-            }
+            $preInventoryRefunds = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('total_price');
+
+            // Expenses from go-live to end of last month
+            $preExpenses = (float) Expense::forAccount($accountId)
+                ->whereNull('voided_at')->where('status', '!=', 'rejected')
+                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('amount');
+
+            // Staff advances net from go-live to end of last month
+            $preAdvances = (float) StaffAdvance::where('account_id', $accountId)
+                ->whereNull('deleted_at')->whereNull('voided_at')
+                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('amount');
+
+            $preReturns = (float) StaffReturn::where('account_id', $accountId)
+                ->whereNull('deleted_at')->whereNull('voided_at')
+                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->sum('amount');
+
+            $openingBalance += ($prePayments - $preRefunds)
+                             + ($preInventorySales - $preInventoryRefunds)
+                             - $preExpenses
+                             - ($preAdvances - $preReturns);
         }
 
-        // Period inflows and outflows
-        $periodInflows = $this->getInflows($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate);
-        $periodOutflows = $this->getOutflows($accountId, $dateFrom, $dateTo, $branchId);
+        // Current month inflows: patient payments (net of refunds) + inventory (net of refunds)
+        $payments = (float) PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
+            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->sum('cash_amount');
 
-        // Inventory net for the period (all payment modes)
-        $periodInventorySales = (float) Order::where('account_id', $accountId)
+        $refunds = (float) PackageAdvances::where('account_id', $accountId)
+            ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
+            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->sum('cash_amount');
+
+        $inventorySales = (float) Order::where('account_id', $accountId)
             ->where('order_type', 'sale')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
-            ->when($branchId, fn($q) => $q->where('location_id', $branchId))
-            ->when($goLiveDate, fn($q) => $q->where('created_at', '>=', $goLiveDate . ' 00:00:00'))
+            ->whereBetween(DB::raw('DATE(created_at)'), [$monthStart, $today])
             ->sum('total_price');
 
-        $periodInventoryRefunds = (float) Order::where('account_id', $accountId)
+        $inventoryRefunds = (float) Order::where('account_id', $accountId)
             ->where('order_type', 'refund')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
-            ->when($branchId, fn($q) => $q->where('location_id', $branchId))
-            ->when($goLiveDate, fn($q) => $q->where('created_at', '>=', $goLiveDate . ' 00:00:00'))
+            ->whereBetween(DB::raw('DATE(created_at)'), [$monthStart, $today])
             ->sum('total_price');
 
-        $totalInflows = $periodInflows + $periodInventorySales - $periodInventoryRefunds;
-        $netCashFlow = $totalInflows - $periodOutflows;
+        // Current month outflows: expenses + staff advances net
+        $expenses = (float) Expense::forAccount($accountId)
+            ->whereNull('voided_at')->where('status', '!=', 'rejected')
+            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->sum('amount');
+
+        $advances = (float) StaffAdvance::where('account_id', $accountId)
+            ->whereNull('deleted_at')->whereNull('voided_at')
+            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->sum('amount');
+
+        $returns = (float) StaffReturn::where('account_id', $accountId)
+            ->whereNull('deleted_at')->whereNull('voided_at')
+            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->sum('amount');
+
+        $totalInflows  = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
+        $totalOutflows = $expenses + ($advances - $returns);
+        $netCashFlow   = $totalInflows - $totalOutflows;
         $closingBalance = $openingBalance + $netCashFlow;
 
         return [
-            'opening_balance' => round($openingBalance, 2),
-            'inflows' => round($totalInflows, 2),
-            'outflows' => round($periodOutflows, 2),
-            'net' => round($netCashFlow, 2),
-            'closing_balance' => round($closingBalance, 2),
+            'opening_balance'  => round($openingBalance, 2),
+            'opening_date'     => $openingDate,
+            'inflows'          => round($totalInflows, 2),
+            'outflows'         => round($totalOutflows, 2),
+            'net'              => round($netCashFlow, 2),
+            'closing_balance'  => round($closingBalance, 2),
         ];
     }
 

@@ -57,23 +57,10 @@
                 </div>
                 @endcan
 
-                <!-- Period Selector + Summary Cards -->
+                <!-- Summary Cards: Current Month -->
                 <div class="card card-custom mb-5">
                     <div class="card-header py-3">
-                        <div class="card-title"><h3 class="card-label"><i class="la la-chart-bar mr-2"></i>Cash Flow Summary</h3></div>
-                        <div class="card-toolbar">
-                            <select id="summary-period" class="form-control form-control-sm select2" style="width:200px;">
-                                <option value="this_month" selected>This Month</option>
-                                <option value="last_month">Last Month</option>
-                                <option value="custom">Custom Period</option>
-                            </select>
-                            <div id="custom-period-inputs" class="d-none ml-3 d-flex align-items-center" style="gap:8px;">
-                                <input type="date" id="summary-date-from" class="form-control form-control-sm" style="width:140px;">
-                                <span class="text-muted">to</span>
-                                <input type="date" id="summary-date-to" class="form-control form-control-sm" style="width:140px;">
-                                <button id="btn-apply-period" class="btn btn-sm btn-primary">Apply</button>
-                            </div>
-                        </div>
+                        <div class="card-title"><h3 class="card-label"><i class="la la-chart-bar mr-2"></i>Cash Flow Summary <span class="text-muted font-size-sm font-weight-normal ml-2" id="sum-month-label"></span></h3></div>
                     </div>
                     <div class="card-body py-4">
                         <div class="row">
@@ -81,23 +68,24 @@
                                 <div class="bg-light-info rounded py-3 px-4 text-center">
                                     <div class="font-weight-bold text-info mb-1" style="font-size:11px;">Opening Balance</div>
                                     <div class="font-weight-bolder font-size-h4" id="sum-opening">PKR 0</div>
+                                    <div class="font-size-xs text-muted mt-1" id="sum-opening-date"></div>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="bg-light-success rounded py-3 px-4 text-center">
-                                    <div class="font-weight-bold text-success mb-1" style="font-size:11px;">Inflows</div>
+                                    <div class="font-weight-bold text-success mb-1" style="font-size:11px;">Inflows This Month</div>
                                     <div class="font-weight-bolder font-size-h4" id="sum-inflows">PKR 0</div>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="bg-light-danger rounded py-3 px-4 text-center">
-                                    <div class="font-weight-bold text-danger mb-1" style="font-size:11px;">Outflows</div>
+                                    <div class="font-weight-bold text-danger mb-1" style="font-size:11px;">Outflows This Month</div>
                                     <div class="font-weight-bolder font-size-h4" id="sum-outflows">PKR 0</div>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="bg-light-primary rounded py-3 px-4 text-center">
-                                    <div class="font-weight-bold text-primary mb-1" style="font-size:11px;">Net Cash Flow</div>
+                                    <div class="font-weight-bold text-primary mb-1" style="font-size:11px;">Net Cash Flow This Month</div>
                                     <div class="font-weight-bolder font-size-h4" id="sum-net">PKR 0</div>
                                 </div>
                             </div>
