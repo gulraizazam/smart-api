@@ -149,6 +149,10 @@ class FeedbackController extends Controller
 
             $treatment = $this->feedbackService->getTreatmentInfo((int) $treatmentId);
 
+            if ($treatment) {
+                $treatment->scheduled_date = $treatment->scheduled_date->format('M d, Y');
+            }
+
             return response()->json([
                 'status' => $treatment ? 1 : 0,
                 'message' => $treatment ? 'Treatment found' : 'Treatment not found',
