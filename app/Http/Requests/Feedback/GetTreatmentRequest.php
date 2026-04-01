@@ -17,15 +17,7 @@ class GetTreatmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'patient_id' => ['required', 'integer', 'exists:users,id'],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'patient_id.required' => 'Patient selection is required.',
-            'patient_id.exists' => 'Selected patient does not exist.',
+            'patient_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }
 }
