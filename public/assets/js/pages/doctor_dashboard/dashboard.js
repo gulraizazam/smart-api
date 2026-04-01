@@ -12,6 +12,9 @@
     let heroData = null;
     let benchmarkData = null;
 
+    // Cache: stores fetched data per period for instant switching
+    var cache = { this_month: {}, last_month: {} };
+
     // Charts
     let chartRevenue = null;
     let chartConversion = null;
@@ -21,18 +24,21 @@
     function init() {
         bindEvents();
         loadAllData();
+        // Preload the other period in the background
+        preloadPeriod('last_month');
     }
 
     function bindEvents() {
-        // Period toggle
+        // Period toggle — instant render from cache, no API wait
         document.querySelectorAll('#ddPeriodToggle .dd-pill-opt').forEach(function (el) {
             el.addEventListener('click', function () {
+                var newPeriod = this.dataset.period;
+                if (newPeriod === currentPeriod) return;
+
                 document.querySelectorAll('#ddPeriodToggle .dd-pill-opt').forEach(function (o) { o.classList.remove('active'); });
                 this.classList.add('active');
-                currentPeriod = this.dataset.period;
-                loadKpis();
-                loadHero();
-                loadBenchmarks();
+                currentPeriod = newPeriod;
+                renderFromCache();
             });
         });
 
@@ -44,6 +50,52 @@
                 toggleLastMonthDisplay();
             });
         }
+    }
+
+    /**
+     * Render from cache or fetch.
+     * last_month: always serve from cache (data won't change).
+     * this_month: always fetch fresh (new data may have come in).
+     */
+    function renderFromCache() {
+        if (currentPeriod === 'last_month') {
+            var c = cache.last_month;
+            if (c.kpis && c.hero && c.benchmarks) {
+                kpiData = c.kpis;
+                renderKpis(c.kpis.kpis);
+                heroData = c.hero;
+                renderHero(c.hero);
+                benchmarkData = c.benchmarks;
+                renderBenchmarkIndicators(c.benchmarks);
+                return;
+            }
+        }
+        // this_month or cache miss: fetch fresh
+        loadKpis();
+        loadHero();
+        loadBenchmarks();
+    }
+
+    /**
+     * Preload a period's data in the background so toggle is instant.
+     */
+    function preloadPeriod(period) {
+        var headers = { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' };
+
+        fetch(DD_CONFIG.routes.kpis + '?period=' + period, { headers: headers })
+            .then(function (r) { return r.json(); })
+            .then(function (res) { if (res.status && res.data) cache[period].kpis = res.data; })
+            .catch(function () {});
+
+        fetch(DD_CONFIG.routes.hero + '?period=' + period, { headers: headers })
+            .then(function (r) { return r.json(); })
+            .then(function (res) { if (res.status && res.data) cache[period].hero = res.data; })
+            .catch(function () {});
+
+        fetch(DD_CONFIG.routes.benchmarks + '?period=' + period, { headers: headers })
+            .then(function (r) { return r.json(); })
+            .then(function (res) { if (res.status && res.data) cache[period].benchmarks = res.data; })
+            .catch(function () {});
     }
 
     // ===================== Data Loading =====================
@@ -60,6 +112,7 @@
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
+                    cache[currentPeriod].kpis = res.data;
                     kpiData = res.data;
                     renderKpis(res.data.kpis);
                 }
@@ -73,6 +126,7 @@
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
+                    cache[currentPeriod].hero = res.data;
                     heroData = res.data;
                     renderHero(res.data);
                 }
@@ -97,6 +151,7 @@
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
+                    cache[currentPeriod].benchmarks = res.data;
                     benchmarkData = res.data;
                     renderBenchmarkIndicators(res.data);
                 }
