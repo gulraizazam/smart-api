@@ -57,10 +57,13 @@ class DoctorDashboardService
     public function getKpiData(int $doctorId, int $accountId, ?string $period = 'this_month'): array
     {
         [$startDate, $endDate] = $this->getDateRange($period);
-        // Full last calendar month — for ratio/rate KPIs (conversion, feedback, return rate, etc.)
-        [$lastStartDate, $lastEndDate] = DoctorDashboardHelper::getLastMonthRange();
-        // Same-date window in last month — for accumulating KPIs (revenue, counts)
-        // e.g. if current = Mar 1–17 → last = Feb 1–17 (fair like-for-like)
+        // Previous period for comparison — relative to selected period, not always "last month from now"
+        // For ratio/rate KPIs (conversion, feedback, return rate, etc.): full previous calendar month
+        // For accumulating KPIs (revenue, counts): same-date window in previous month
+        $periodStart = Carbon::parse($startDate);
+        $prevMonthStart = $periodStart->copy()->subMonthNoOverflow()->startOfMonth();
+        $prevMonthEnd = $prevMonthStart->copy()->endOfMonth();
+        [$lastStartDate, $lastEndDate] = [$prevMonthStart->format('Y-m-d'), $prevMonthEnd->format('Y-m-d')];
         [$lastSameDateStart, $lastSameDateEnd] = DoctorDashboardHelper::getLastMonthSameDateRange($startDate, $endDate);
 
         // Current period KPIs
@@ -194,11 +197,12 @@ class DoctorDashboardService
      *
      * @param int $doctorId
      * @param int $accountId
+     * @param string $period 'this_month'|'last_month'
      * @return array
      */
-    public function getHeroData(int $doctorId, int $accountId): array
+    public function getHeroData(int $doctorId, int $accountId, string $period = 'this_month'): array
     {
-        [$startDate, $endDate] = DoctorDashboardHelper::getThisMonthRange();
+        [$startDate, $endDate] = $this->getDateRange($period);
 
         // Goal progress bar
         $goalProgress = $this->getGoalProgress($doctorId, $startDate, $endDate, $accountId);
@@ -279,8 +283,9 @@ class DoctorDashboardService
 
         $percentage = $target > 0 ? round(($branchRevenue / $target) * 100, 1) : 0;
 
-        // Working days remaining: total working days - Mon-Sat days elapsed this month
-        $daysRemaining = $this->getWorkingDaysRemaining($totalWorkingDays);
+        // Working days remaining: total working days - Mon-Sat days elapsed
+        // For past months, always 0
+        $daysRemaining = $this->getWorkingDaysRemaining($totalWorkingDays, $startDate, $endDate);
 
         // Color rules
         $color = 'red';
@@ -343,21 +348,31 @@ class DoctorDashboardService
     }
 
     /**
-     * Calculate working days remaining in current month.
+     * Calculate working days remaining for the given period.
      * Working days = Mon-Sat (Sunday is off).
+     * For past months (endDate < today), returns 0.
      *
      * @param int $totalWorkingDays from centre target
+     * @param string $startDate period start
+     * @param string $endDate period end
      * @return int
      */
-    private function getWorkingDaysRemaining(int $totalWorkingDays): int
+    private function getWorkingDaysRemaining(int $totalWorkingDays, string $startDate, string $endDate): int
     {
-        $now = Carbon::now();
-        $startOfMonth = $now->copy()->startOfMonth();
+        $now = Carbon::now()->startOfDay();
+        $periodEnd = Carbon::parse($endDate)->startOfDay();
+
+        // Past month — no days remaining
+        if ($periodEnd->lt($now)) {
+            return 0;
+        }
+
+        $startOfMonth = Carbon::parse($startDate)->startOfDay();
 
         // Count Mon-Sat days elapsed from 1st to today (inclusive)
         $elapsed = 0;
         $day = $startOfMonth->copy();
-        while ($day->lte($now->copy()->startOfDay())) {
+        while ($day->lte($now)) {
             if ($day->dayOfWeek !== Carbon::SUNDAY) {
                 $elapsed++;
             }

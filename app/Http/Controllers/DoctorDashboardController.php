@@ -56,11 +56,12 @@ class DoctorDashboardController extends Controller
         }
     }
 
-    public function getHeroData(): JsonResponse
+    public function getHeroData(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
-            $data = $this->dashboardService->getHeroData($user->id, $user->account_id);
+            $period = $request->get('period', 'this_month');
+            $data = $this->dashboardService->getHeroData($user->id, $user->account_id, $period);
 
             return ApiHelper::apiResponse($this->success, 'Hero data loaded.', true, $data);
         } catch (\Exception $e) {
