@@ -1,56 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
-use App\Models\Discounts;
+use App\Models\Discount;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
-class InactiveDiscounts extends Command
+final class InactiveDiscounts extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'discounts:inactive';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Inactive Discounts at every night 1 AM';
+    protected $description = 'Deactivate expired discounts (runs nightly at 1 AM)';
 
-    /**
-     * Create a new command instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
+    public function handle(): int
     {
         try {
-            $today = Carbon::now()->subDay(1)->toDateString();
+            $yesterday = Carbon::now()->subDay()->toDateString();
 
-            if (Discounts::whereDate('end', '<=', $today)->count()) {
-                Discounts::whereDate('end', '<=', $today)->update(['active' => 0]);
-            }
+            $updated = Discount::where('active', true)
+                ->whereDate('end', '<=', $yesterday)
+                ->update(['active' => false]);
 
-            return true;
+            $this->info("Deactivated {$updated} expired discount(s).");
 
-        } catch (\Exception $exception) {
-            return $exception->getMessage().'------'.$exception->getFile();
+            return self::SUCCESS;
+        } catch (\Throwable $e) {
+            Log::error('InactiveDiscounts Command Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            $this->error('Failed to deactivate discounts: ' . $e->getMessage());
+
+            return self::FAILURE;
         }
-
     }
 }

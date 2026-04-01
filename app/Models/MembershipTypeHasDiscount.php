@@ -1,14 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MembershipTypeHasDiscount extends Model
 {
-    use HasFactory;
-
     protected $table = 'membership_type_has_discounts';
 
     protected $fillable = [
@@ -17,13 +17,15 @@ class MembershipTypeHasDiscount extends Model
         'created_by',
     ];
 
-    public function membershipType()
+    // ── Relationships ────────────────────────────────────
+
+    public function membershipType(): BelongsTo
     {
         return $this->belongsTo(MembershipType::class, 'membership_type_id');
     }
 
-    public function discount()
+    public function discount(): BelongsTo
     {
-        return $this->belongsTo(Discounts::class, 'discount_id');
+        return $this->belongsTo(Discount::class, 'discount_id');
     }
 }
