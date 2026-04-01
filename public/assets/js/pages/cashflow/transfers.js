@@ -6,9 +6,11 @@ var CashflowTransfers = (function () {
     var transfersXhr = null;
     var poolFormOptions = '';
 
+    var dateRangeSelected = false;
+
     function initDateRange() {
         $('#filter-date-range').daterangepicker({
-            locale: { format: 'MM/DD/YYYY' },
+            locale: { format: 'MM/DD/YYYY', cancelLabel: 'Clear' },
             ranges: {
                 'Today': [moment(), moment()],
                 'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
@@ -19,12 +21,22 @@ var CashflowTransfers = (function () {
                 'This Year': [moment().startOf('year'), moment().endOf('year')],
                 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')]
             },
-            startDate: moment().startOf('month'),
-            endDate: moment()
+            autoUpdateInput: false
+        });
+
+        $('#filter-date-range').on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+            dateRangeSelected = true;
+        });
+
+        $('#filter-date-range').on('cancel.daterangepicker', function () {
+            $(this).val('');
+            dateRangeSelected = false;
         });
     }
 
     function getDateRange() {
+        if (!dateRangeSelected) return { date_from: '', date_to: '' };
         var picker = $('#filter-date-range').data('daterangepicker');
         if (!picker) return { date_from: '', date_to: '' };
         return {
@@ -52,8 +64,8 @@ var CashflowTransfers = (function () {
             $('#filter-pool').val('').trigger('change');
             $('#filter-method').val('').trigger('change');
             $('#filter-search').val('');
-            var picker = $('#filter-date-range').data('daterangepicker');
-            if (picker) { picker.setStartDate(moment().startOf('month')); picker.setEndDate(moment()); }
+            $('#filter-date-range').val('');
+            dateRangeSelected = false;
             currentPage = 1;
             loadTransfers();
         });

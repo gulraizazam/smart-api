@@ -233,19 +233,19 @@ class VendorService
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
 
-        // If no date filter, default to current month
-        if (!$dateFrom && !$dateTo) {
-            $dateFrom = now()->startOfMonth()->toDateString();
-            $dateTo = now()->toDateString();
-        }
-
         $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
 
         // Compute opening balance at period start:
         // vendor.opening_balance + SUM(purchases before date_from) - SUM(payments before date_from)
         $prePeriod = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId)
-            ->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+            ->where('vendor_id', $vendorId);
+
+        if ($dateFrom) {
+            $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+        } else {
+            // No date filter: no pre-period transactions (opening balance = vendor.opening_balance)
+            $prePeriod->whereRaw('1 = 0');
+        }
 
         $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
@@ -255,9 +255,14 @@ class VendorService
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
             ->with(['expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
-            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
-            ->whereRaw("{$dateExpr} <= ?", [$dateTo])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
+
+        if ($dateFrom) {
+            $query->whereRaw("{$dateExpr} >= ?", [$dateFrom]);
+        }
+        if ($dateTo) {
+            $query->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+        }
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
@@ -269,9 +274,14 @@ class VendorService
 
         // Period stats (on unfiltered-by-type query for the date range)
         $periodBase = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId)
-            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
-            ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+            ->where('vendor_id', $vendorId);
+
+        if ($dateFrom) {
+            $periodBase->whereRaw("{$dateExpr} >= ?", [$dateFrom]);
+        }
+        if ($dateTo) {
+            $periodBase->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+        }
 
         $periodPurchases = (clone $periodBase)->where('type', 'purchase')->sum('amount');
         $periodPayments = (clone $periodBase)->where('type', 'payment')->sum('amount');
@@ -500,14 +510,20 @@ class VendorService
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
 
-        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? now()->toDateString();
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
         $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
 
         // Opening balance at period start
         $prePeriod = VendorTransaction::forAccount($accountId)
-            ->where('vendor_id', $vendorId)
-            ->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+            ->where('vendor_id', $vendorId);
+
+        if ($dateFrom) {
+            $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
+        } else {
+            $prePeriod->whereRaw('1 = 0');
+        }
+
         $prePurchases = (clone $prePeriod)->where('type', 'purchase')->sum('amount');
         $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
@@ -515,9 +531,14 @@ class VendorService
         $query = VendorTransaction::forAccount($accountId)
             ->where('vendor_id', $vendorId)
             ->with(['expense:id,description,expense_date', 'forBranch:id,name', 'creator:id,name'])
-            ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
-            ->whereRaw("{$dateExpr} <= ?", [$dateTo])
             ->orderByRaw("{$dateExpr} ASC, created_at ASC");
+
+        if ($dateFrom) {
+            $query->whereRaw("{$dateExpr} >= ?", [$dateFrom]);
+        }
+        if ($dateTo) {
+            $query->whereRaw("{$dateExpr} <= ?", [$dateTo]);
+        }
 
         if (!empty($filters['type'])) {
             $query->where('type', $filters['type']);
