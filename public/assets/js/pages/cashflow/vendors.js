@@ -161,14 +161,10 @@ var CashflowVendors = (function () {
     }
 
     function initLedgerDatePicker() {
-        var start = moment().startOf('month');
-        var end = moment();
-        ledgerDateFrom = start.format('YYYY-MM-DD');
-        ledgerDateTo = end.format('YYYY-MM-DD');
+        ledgerDateFrom = null;
+        ledgerDateTo = null;
 
         $('#ledger-date-range').daterangepicker({
-            startDate: start,
-            endDate: end,
             ranges: {
                 'This Month': [moment().startOf('month'), moment()],
                 'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
@@ -177,13 +173,24 @@ var CashflowVendors = (function () {
                 'This Quarter': [moment().startOf('quarter'), moment()],
                 'This Year': [moment().startOf('year'), moment()]
             },
-            locale: { format: 'DD MMM YYYY' },
+            locale: { format: 'DD MMM YYYY', cancelLabel: 'Clear' },
             alwaysShowCalendars: true,
-            autoUpdateInput: true,
+            autoUpdateInput: false,
             opens: 'left'
-        }, function (s, e) {
-            ledgerDateFrom = s.format('YYYY-MM-DD');
-            ledgerDateTo = e.format('YYYY-MM-DD');
+        });
+
+        $('#ledger-date-range').on('apply.daterangepicker', function (ev, picker) {
+            $(this).val(picker.startDate.format('DD MMM YYYY') + ' - ' + picker.endDate.format('DD MMM YYYY'));
+            ledgerDateFrom = picker.startDate.format('YYYY-MM-DD');
+            ledgerDateTo = picker.endDate.format('YYYY-MM-DD');
+            ledgerPage = 1;
+            if (currentVendorId) loadLedger(currentVendorId);
+        });
+
+        $('#ledger-date-range').on('cancel.daterangepicker', function () {
+            $(this).val('');
+            ledgerDateFrom = null;
+            ledgerDateTo = null;
             ledgerPage = 1;
             if (currentVendorId) loadLedger(currentVendorId);
         });
