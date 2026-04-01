@@ -13,7 +13,10 @@
     let benchmarkData = null;
 
     // Cache: stores fetched data per period for instant switching
+    // last_month: cached forever (won't change). this_month: cached for 5 minutes.
+    var CACHE_TTL = 5 * 60 * 1000; // 5 minutes in ms
     var cache = { this_month: {}, last_month: {} };
+    var cacheTimestamp = { this_month: 0, last_month: 0 };
 
     // Charts
     let chartRevenue = null;
@@ -53,24 +56,31 @@
     }
 
     /**
-     * Render from cache or fetch.
-     * last_month: always serve from cache (data won't change).
-     * this_month: always fetch fresh (new data may have come in).
+     * Check if cached data is valid.
+     * last_month: never expires. this_month: valid for 5 minutes.
+     */
+    function isCacheValid(period) {
+        var c = cache[period];
+        if (!c.kpis || !c.hero || !c.benchmarks) return false;
+        if (period === 'last_month') return true;
+        return (Date.now() - cacheTimestamp[period]) < CACHE_TTL;
+    }
+
+    /**
+     * Render from cache if valid, otherwise fetch fresh.
      */
     function renderFromCache() {
-        if (currentPeriod === 'last_month') {
-            var c = cache.last_month;
-            if (c.kpis && c.hero && c.benchmarks) {
-                kpiData = c.kpis;
-                renderKpis(c.kpis.kpis);
-                heroData = c.hero;
-                renderHero(c.hero);
-                benchmarkData = c.benchmarks;
-                renderBenchmarkIndicators(c.benchmarks);
-                return;
-            }
+        if (isCacheValid(currentPeriod)) {
+            var c = cache[currentPeriod];
+            kpiData = c.kpis;
+            renderKpis(c.kpis.kpis);
+            heroData = c.hero;
+            renderHero(c.hero);
+            benchmarkData = c.benchmarks;
+            renderBenchmarkIndicators(c.benchmarks);
+            return;
         }
-        // this_month or cache miss: fetch fresh
+        // Cache miss or expired: fetch fresh
         loadKpis();
         loadHero();
         loadBenchmarks();
@@ -84,17 +94,17 @@
 
         fetch(DD_CONFIG.routes.kpis + '?period=' + period, { headers: headers })
             .then(function (r) { return r.json(); })
-            .then(function (res) { if (res.status && res.data) cache[period].kpis = res.data; })
+            .then(function (res) { if (res.status && res.data) { cache[period].kpis = res.data; stampCache(period); } })
             .catch(function () {});
 
         fetch(DD_CONFIG.routes.hero + '?period=' + period, { headers: headers })
             .then(function (r) { return r.json(); })
-            .then(function (res) { if (res.status && res.data) cache[period].hero = res.data; })
+            .then(function (res) { if (res.status && res.data) { cache[period].hero = res.data; stampCache(period); } })
             .catch(function () {});
 
         fetch(DD_CONFIG.routes.benchmarks + '?period=' + period, { headers: headers })
             .then(function (r) { return r.json(); })
-            .then(function (res) { if (res.status && res.data) cache[period].benchmarks = res.data; })
+            .then(function (res) { if (res.status && res.data) { cache[period].benchmarks = res.data; stampCache(period); } })
             .catch(function () {});
     }
 
@@ -106,29 +116,38 @@
         loadBenchmarks();
     }
 
+    function stampCache(period) {
+        var c = cache[period];
+        if (c.kpis && c.hero && c.benchmarks) {
+            cacheTimestamp[period] = Date.now();
+        }
+    }
+
     function loadKpis() {
-        var url = DD_CONFIG.routes.kpis + '?period=' + currentPeriod;
+        var period = currentPeriod;
+        var url = DD_CONFIG.routes.kpis + '?period=' + period;
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
-                    cache[currentPeriod].kpis = res.data;
-                    kpiData = res.data;
-                    renderKpis(res.data.kpis);
+                    cache[period].kpis = res.data;
+                    stampCache(period);
+                    if (period === currentPeriod) { kpiData = res.data; renderKpis(res.data.kpis); }
                 }
             })
             .catch(function (err) { console.error('KPI load error:', err); });
     }
 
     function loadHero() {
-        var url = DD_CONFIG.routes.hero + '?period=' + currentPeriod;
+        var period = currentPeriod;
+        var url = DD_CONFIG.routes.hero + '?period=' + period;
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
-                    cache[currentPeriod].hero = res.data;
-                    heroData = res.data;
-                    renderHero(res.data);
+                    cache[period].hero = res.data;
+                    stampCache(period);
+                    if (period === currentPeriod) { heroData = res.data; renderHero(res.data); }
                 }
             })
             .catch(function (err) { console.error('Hero load error:', err); });
@@ -146,14 +165,15 @@
     }
 
     function loadBenchmarks() {
-        var url = DD_CONFIG.routes.benchmarks + '?period=' + currentPeriod;
+        var period = currentPeriod;
+        var url = DD_CONFIG.routes.benchmarks + '?period=' + period;
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
-                    cache[currentPeriod].benchmarks = res.data;
-                    benchmarkData = res.data;
-                    renderBenchmarkIndicators(res.data);
+                    cache[period].benchmarks = res.data;
+                    stampCache(period);
+                    if (period === currentPeriod) { benchmarkData = res.data; renderBenchmarkIndicators(res.data); }
                 }
             })
             .catch(function (err) { console.error('Benchmark load error:', err); });
