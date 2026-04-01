@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\ServicesController as AdminServicesController;
 use App\Http\Controllers\Api\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Api\DiscountsController as ApiDiscountsController;
 use App\Http\Controllers\Admin\VouchersController;
 use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\LocationsController;
@@ -346,19 +347,23 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
     Route::resource('feedbacks', FeedbackController::class)->except('index');
-    //Discount route Start
-    Route::post('discounts/datatable', [DiscountsController::class, 'datatable'])->name('discounts.datatable');
-    Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
-    Route::get('discounts/locations/{id}', [DiscountsController::class, 'displayDlocation'])->name('discounts.location_manage');
-    Route::get('discounts/getDservice', [DiscountsController::class, 'getDservices'])->name('discounts.get_Dservice');
-    Route::get('getDiscountServices', [DiscountsController::class, 'getDiscountServices'])->name('discounts.getDiscountServices');
-    Route::get('discounts/services-for-configurable', [DiscountsController::class, 'getServicesForConfigurable'])->name('discounts.servicesForConfigurable');
-    Route::post('discounts/allocate-configurable', [DiscountsController::class, 'allocateConfigurable'])->name('discounts.allocateConfigurable');
-    Route::post('discounts/saveDervice', [DiscountsController::class, 'saveDservices'])->name('discounts.save_Dervice');
-    Route::post('discounts/deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
-    Route::post('discounts/deleteDserviceGroup', [DiscountsController::class, 'deleteDserviceGroup'])->name('discounts.delete_service_group');
+    // Discount Routes (Refactored — using API controller)
+    Route::post('discounts/datatable', [ApiDiscountsController::class, 'datatable'])->name('discounts.datatable');
+    Route::post('discounts/status', [ApiDiscountsController::class, 'status'])->name('discounts.status');
+    Route::get('discounts/locations/{id}', [ApiDiscountsController::class, 'displayLocation'])->name('discounts.location_manage');
+    Route::get('discounts/getDservice', [ApiDiscountsController::class, 'getServices'])->name('discounts.get_Dservice');
+    Route::get('getDiscountServices', [ApiDiscountsController::class, 'getDiscountServices'])->name('discounts.getDiscountServices');
+    Route::get('discounts/services-for-configurable', [ApiDiscountsController::class, 'getServicesForConfigurable'])->name('discounts.servicesForConfigurable');
+    Route::post('discounts/allocate-configurable', [ApiDiscountsController::class, 'allocateConfigurable'])->name('discounts.allocateConfigurable');
+    Route::post('discounts/saveDervice', [ApiDiscountsController::class, 'saveAllocations'])->name('discounts.save_Dervice');
+    Route::post('discounts/deleteDservice', [ApiDiscountsController::class, 'deleteAllocation'])->name('discounts.delete_service');
+    Route::post('discounts/deleteDserviceGroup', [ApiDiscountsController::class, 'deleteAllocationGroup'])->name('discounts.delete_service_group');
 
-    Route::resource('discounts', DiscountsController::class)->except('index');
+    Route::get('discounts/create', [ApiDiscountsController::class, 'create'])->name('discounts.create');
+    Route::post('discounts', [ApiDiscountsController::class, 'store'])->name('discounts.store');
+    Route::get('discounts/{id}/edit', [ApiDiscountsController::class, 'edit'])->name('discounts.edit');
+    Route::put('discounts/{id}', [ApiDiscountsController::class, 'update'])->name('discounts.update');
+    Route::delete('discounts/{id}', [ApiDiscountsController::class, 'destroy'])->name('discounts.destroy');
 
     ////Vouchers
 
