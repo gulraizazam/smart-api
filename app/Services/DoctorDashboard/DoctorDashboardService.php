@@ -81,7 +81,7 @@ class DoctorDashboardService
         $avgProcedures = $this->patientReturnCalculator->calculateAvgProcedures($doctorId, $accountId);
         $googleReviews = $this->getGoogleReviews($doctorId, $startDate, $accountId);
         $patientsSeen = $this->getPatientsSeen($doctorId, $startDate, $endDate, $accountId);
-        $newVsReturning = $this->getNewVsReturning($doctorId, $startDate, $endDate, $accountId);
+        $revenuePerDay = $this->getRevenuePerDay($doctorId, $startDate, $endDate, $accountId, $revenue['total_revenue']);
 
         $avgClientValue = $this->revenueCalculator->calculateAvgClientValue(
             $revenue['total_revenue'],
@@ -100,6 +100,7 @@ class DoctorDashboardService
         $lastMembership     = $this->membershipCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
         $lastProductRevenue = $this->productRevenueCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd);
         $lastPatientsSeen   = $this->getPatientsSeen($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
+        $lastRevenuePerDay  = $this->getRevenuePerDay($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId, $lastRevenue['total_revenue']);
 
         // avg_client_value uses same-date revenue but full-month conversion (ratio)
         $lastAvgClientValue = $this->revenueCalculator->calculateAvgClientValue(
@@ -107,13 +108,17 @@ class DoctorDashboardService
             $lastConversion['total_converted']
         );
 
+        // Working days for daily-average MoM on accumulating metrics
+        $currentWorkingDays = $this->countWorkingDays($startDate, $endDate);
+        $lastWorkingDays = $this->countWorkingDays($lastSameDateStart, $lastSameDateEnd);
+
         return [
             'period' => ['start' => $startDate, 'end' => $endDate],
             'kpis' => [
                 'total_revenue' => [
                     'value' => $revenue['total_revenue'],
                     'last_month' => $lastRevenue['total_revenue'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($revenue['total_revenue'], $lastRevenue['total_revenue']),
+                    'mom' => $this->dailyAvgMoM($revenue['total_revenue'], $currentWorkingDays, $lastRevenue['total_revenue'], $lastWorkingDays),
                     'formatted' => DoctorDashboardHelper::formatCurrency($revenue['total_revenue']),
                 ],
                 'conversion_rate' => [
@@ -132,7 +137,7 @@ class DoctorDashboardService
                 'upsell_revenue' => [
                     'value' => $upsell['upsell_revenue'],
                     'last_month' => $lastUpsell['upsell_revenue'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($upsell['upsell_revenue'], $lastUpsell['upsell_revenue']),
+                    'mom' => $this->dailyAvgMoM($upsell['upsell_revenue'], $currentWorkingDays, $lastUpsell['upsell_revenue'], $lastWorkingDays),
                     'formatted' => DoctorDashboardHelper::formatCurrency($upsell['upsell_revenue']),
                 ],
                 'upsell_rate' => [
@@ -144,7 +149,7 @@ class DoctorDashboardService
                 'gold_memberships' => [
                     'value' => $membership['gold_memberships_sold'],
                     'last_month' => $lastMembership['gold_memberships_sold'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($membership['gold_memberships_sold'], $lastMembership['gold_memberships_sold']),
+                    'mom' => $this->dailyAvgMoM($membership['gold_memberships_sold'], $currentWorkingDays, $lastMembership['gold_memberships_sold'], $lastWorkingDays),
                 ],
                 'feedback_score' => [
                     'value' => $feedback['avg_rating'],
@@ -161,7 +166,7 @@ class DoctorDashboardService
                     'value' => $productRevenue['product_revenue'],
                     'total_orders' => $productRevenue['total_orders'],
                     'last_month' => $lastProductRevenue['product_revenue'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($productRevenue['product_revenue'], $lastProductRevenue['product_revenue']),
+                    'mom' => $this->dailyAvgMoM($productRevenue['product_revenue'], $currentWorkingDays, $lastProductRevenue['product_revenue'], $lastWorkingDays),
                     'formatted' => DoctorDashboardHelper::formatCurrency($productRevenue['product_revenue']),
                 ],
                 'patient_return_rate' => [
@@ -179,12 +184,13 @@ class DoctorDashboardService
                     'consultations' => $patientsSeen['consultations'],
                     'treatments' => $patientsSeen['treatments'],
                     'last_month' => $lastPatientsSeen['total'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($patientsSeen['total'], $lastPatientsSeen['total']),
+                    'mom' => $this->dailyAvgMoM($patientsSeen['total'], $currentWorkingDays, $lastPatientsSeen['total'], $lastWorkingDays),
                 ],
-                'new_vs_returning' => [
-                    'new' => $newVsReturning['new'],
-                    'returning' => $newVsReturning['returning'],
-                    'total' => $newVsReturning['total'],
+                'revenue_per_day' => [
+                    'value' => $revenuePerDay['revenue_per_day'],
+                    'working_days_elapsed' => $revenuePerDay['working_days_elapsed'],
+                    'last_month' => $lastRevenuePerDay['revenue_per_day'],
+                    'mom' => DoctorDashboardHelper::calculateMoM($revenuePerDay['revenue_per_day'], $lastRevenuePerDay['revenue_per_day']),
                 ],
             ],
         ];
@@ -531,6 +537,8 @@ class DoctorDashboardService
             $conversion['total_converted']
         );
 
+        $revenuePerDay = $this->getRevenuePerDay($doctorId, $startDate, $endDate, $accountId, $revenue['total_revenue']);
+
         $doctorKpis = [
             'total_revenue'      => $revenue['total_revenue'],
             'conversion_rate'    => $conversion['conversion_rate'],
@@ -544,6 +552,7 @@ class DoctorDashboardService
             'patient_return_rate' => $patientReturn['return_rate'],
             'avg_procedures'     => $avgProcedures['avg_procedures'],
             'patients_seen'      => $patientsSeen['total'],
+            'revenue_per_day'    => $revenuePerDay['revenue_per_day'],
         ];
 
         return $this->benchmarkCalculator->calculate($doctorId, $doctorKpis, $startDate, $endDate, $accountId);
@@ -603,53 +612,36 @@ class DoctorDashboardService
     }
 
     /**
-     * Get new vs returning patient breakdown.
+     * Calculate revenue per working day for a doctor.
+     * Revenue / Mon-Sat days elapsed in the period.
+     *
+     * @param int $doctorId
+     * @param string $startDate
+     * @param string $endDate
+     * @param int $accountId
+     * @param float $revenue Pre-calculated revenue for the period
+     * @return array
      */
-    private function getNewVsReturning(int $doctorId, string $startDate, string $endDate, int $accountId): array
+    private function getRevenuePerDay(int $doctorId, string $startDate, string $endDate, int $accountId, float $revenue): array
     {
-        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->startOfDay();
 
-        // Get consultation patients in the period
-        $patients = DB::table('appointments')
-            ->where('doctor_id', $doctorId)
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', $consultationStatusIds)
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->distinct()
-            ->pluck('patient_id')
-            ->toArray();
-
-        if (empty($patients)) {
-            return ['new' => 0, 'returning' => 0, 'total' => 0];
-        }
-
-        // New patient = first-ever arrived consultation is in this period
-        $newCount = 0;
-        $returningCount = 0;
-
-        // Get first consultation date for each patient
-        $firstConsultations = DB::table('appointments')
-            ->whereIn('patient_id', $patients)
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', $consultationStatusIds)
-            ->select('patient_id', DB::raw('MIN(scheduled_date) as first_date'))
-            ->groupBy('patient_id')
-            ->pluck('first_date', 'patient_id')
-            ->toArray();
-
-        foreach ($patients as $patientId) {
-            $firstDate = $firstConsultations[$patientId] ?? null;
-            if ($firstDate && $firstDate >= $startDate) {
-                $newCount++;
-            } else {
-                $returningCount++;
+        // Count Mon-Sat days in the period
+        $workingDaysElapsed = 0;
+        $day = $start->copy();
+        while ($day->lte($end)) {
+            if ($day->dayOfWeek !== Carbon::SUNDAY) {
+                $workingDaysElapsed++;
             }
+            $day->addDay();
         }
+
+        $revenuePerDay = $workingDaysElapsed > 0 ? round($revenue / $workingDaysElapsed, 0) : 0;
 
         return [
-            'new' => $newCount,
-            'returning' => $returningCount,
-            'total' => count($patients),
+            'revenue_per_day' => $revenuePerDay,
+            'working_days_elapsed' => $workingDaysElapsed,
         ];
     }
 
@@ -663,5 +655,37 @@ class DoctorDashboardService
         }
 
         return DoctorDashboardHelper::getThisMonthRange();
+    }
+
+    /**
+     * Count Mon-Sat working days in a date range (inclusive).
+     */
+    private function countWorkingDays(string $startDate, string $endDate): int
+    {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->startOfDay();
+        $count = 0;
+        $day = $start->copy();
+
+        while ($day->lte($end)) {
+            if ($day->dayOfWeek !== Carbon::SUNDAY) {
+                $count++;
+            }
+            $day->addDay();
+        }
+
+        return $count;
+    }
+
+    /**
+     * MoM comparison using daily averages instead of raw totals.
+     * Divides each period's value by its working days before comparing.
+     */
+    private function dailyAvgMoM(float $currentValue, int $currentDays, float $lastValue, int $lastDays): float
+    {
+        $currentAvg = $currentDays > 0 ? $currentValue / $currentDays : 0;
+        $lastAvg = $lastDays > 0 ? $lastValue / $lastDays : 0;
+
+        return DoctorDashboardHelper::calculateMoM($currentAvg, $lastAvg);
     }
 }

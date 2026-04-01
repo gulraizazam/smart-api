@@ -208,10 +208,13 @@
                         <div class="dd-kpi-last-month" id="kpiPatientsSeenLast"></div>
                         <div class="dd-kpi-bench-network" id="kpiPatientsSeenBench"></div>
                     </div>
-                    <div class="dd-kpi-card" data-kpi="new_vs_returning">
-                        <div class="dd-kpi-label"><i class="la la-user-plus"></i> New vs Returning</div>
-                        <div class="dd-kpi-value dd-skeleton" style="height:24px;width:70px;" id="kpiNewReturn">&nbsp;</div>
-                        <div class="dd-kpi-sub" id="kpiNewReturnSub"></div>
+                    <div class="dd-kpi-card" data-kpi="revenue_per_day">
+                        <div class="dd-kpi-label"><i class="la la-calendar-check"></i> Revenue / Working Day</div>
+                        <div class="dd-kpi-value currency dd-skeleton" style="height:24px;width:70px;" id="kpiRevPerDay">&nbsp;</div>
+                        <div class="dd-kpi-sub" id="kpiRevPerDaySub"></div>
+                        <div class="dd-kpi-mom" id="kpiRevPerDayMom"></div>
+                        <div class="dd-kpi-last-month" id="kpiRevPerDayLast"></div>
+                        <div class="dd-kpi-bench-network" id="kpiRevPerDayBench"></div>
                     </div>
                 </div>
             </div>
@@ -225,10 +228,6 @@
                 <div class="dd-chart-card">
                     <div class="dd-chart-title">Conversion Rate Trend</div>
                     <div id="chartConversionTrend" style="height: 220px;"></div>
-                </div>
-                <div class="dd-chart-card">
-                    <div class="dd-chart-title">New vs Returning Patients</div>
-                    <div id="chartNewVsReturning" style="height: 200px;"></div>
                 </div>
             </div>
 

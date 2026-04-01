@@ -159,6 +159,9 @@ class BenchmarkCalculator
         // Google reviews per doctor (last month per spec)
         $googleReviews = $this->getGoogleReviewsPerDoctor($qualifiedDoctorIds, $accountId);
 
+        // Revenue per working day per doctor
+        $revenuePerDay = $this->getRevenuePerDayPerDoctor($revenueData, $startDate, $endDate);
+
         return [
             'doctor_count' => count($qualifiedDoctorIds),
             'total_revenue' => $this->bestMax($revenueData),
@@ -173,6 +176,7 @@ class BenchmarkCalculator
             'patient_return_rate' => $this->bestMax($returnRates),
             'avg_procedures' => $this->bestMax($avgProcedures),
             'patients_seen' => $this->bestMax($patientsSeen),
+            'revenue_per_day' => $this->bestMax($revenuePerDay),
         ];
     }
 
@@ -377,6 +381,36 @@ class BenchmarkCalculator
     }
 
     /**
+     * Get revenue per working day per doctor.
+     * Divides each doctor's revenue by Mon-Sat days elapsed in the period.
+     */
+    private function getRevenuePerDayPerDoctor(array $revenueData, string $startDate, string $endDate): array
+    {
+        // Count Mon-Sat days in the period (same for all doctors)
+        $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+        $end = \Carbon\Carbon::parse($endDate)->startOfDay();
+        $workingDays = 0;
+        $day = $start->copy();
+        while ($day->lte($end)) {
+            if ($day->dayOfWeek !== \Carbon\Carbon::SUNDAY) {
+                $workingDays++;
+            }
+            $day->addDay();
+        }
+
+        if ($workingDays === 0) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($revenueData as $docId => $revenue) {
+            $result[$docId] = round((float) $revenue / $workingDays, 0);
+        }
+
+        return $result;
+    }
+
+    /**
      * Find the best (max) value from a [doctorId => value] array.
      *
      * @param array $data [doctorId => value]
@@ -420,6 +454,7 @@ class BenchmarkCalculator
             'patient_return_rate' => $doctorKpis['patient_return_rate'] ?? 0,
             'avg_procedures'     => $doctorKpis['avg_procedures'] ?? 0,
             'patients_seen'      => $doctorKpis['patients_seen'] ?? 0,
+            'revenue_per_day'    => $doctorKpis['revenue_per_day'] ?? 0,
         ];
 
         $result = [
@@ -512,6 +547,7 @@ class BenchmarkCalculator
             'patient_return_rate' => $emptyMetric,
             'avg_procedures' => $emptyMetric,
             'patients_seen' => $emptyMetric,
+            'revenue_per_day' => $emptyMetric,
         ];
     }
 }

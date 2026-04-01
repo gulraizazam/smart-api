@@ -21,7 +21,6 @@
     // Charts
     let chartRevenue = null;
     let chartConversion = null;
-    let chartNewReturn = null;
 
     // ===================== Init =====================
     function init() {
@@ -240,8 +239,10 @@
         setKpiMom('kpiPatientsSeenMom', kpis.patients_seen.mom);
         setKpiLastMonth('kpiPatientsSeenLast', kpis.patients_seen.last_month);
 
-        setKpi('kpiNewReturn', kpis.new_vs_returning.new + ' / ' + kpis.new_vs_returning.returning);
-        setKpiSub('kpiNewReturnSub', 'New / Returning');
+        setKpi('kpiRevPerDay', formatCurrency(kpis.revenue_per_day.value), 'currency');
+        setKpiSub('kpiRevPerDaySub', kpis.revenue_per_day.working_days_elapsed + ' working days');
+        setKpiMom('kpiRevPerDayMom', kpis.revenue_per_day.mom);
+        setKpiLastMonth('kpiRevPerDayLast', 'PKR ' + formatCurrency(kpis.revenue_per_day.last_month));
 
         // Render charts
         renderCharts(kpis);
@@ -374,7 +375,8 @@
             'kpiGoogleRevBench':     { data: bench.google_reviews,      fmt: function(v) { return v; } },
             'kpiReturnRateBench':    { data: bench.patient_return_rate, fmt: function(v) { return v + '%'; } },
             'kpiAvgProcBench':       { data: bench.avg_procedures,      fmt: function(v) { return v; } },
-            'kpiPatientsSeenBench':  { data: bench.patients_seen,       fmt: function(v) { return v; } }
+            'kpiPatientsSeenBench':  { data: bench.patients_seen,       fmt: function(v) { return v; } },
+            'kpiRevPerDayBench':     { data: bench.revenue_per_day,    fmt: function(v) { return 'PKR ' + formatCurrencyShort(v); } }
         };
 
         Object.keys(map).forEach(function(id) {
@@ -387,7 +389,6 @@
         // Revenue trend — simple bar comparing current vs last month
         renderRevenueChart(kpis);
         renderConversionChart(kpis);
-        renderNewVsReturningChart(kpis);
     }
 
     function getPeriodLabel() {
@@ -454,31 +455,6 @@
         if (chartConversion) chartConversion.destroy();
         chartConversion = new ApexCharts(el, options);
         chartConversion.render();
-    }
-
-    function renderNewVsReturningChart(kpis) {
-        var el = document.getElementById('chartNewVsReturning');
-        if (!el) return;
-
-        var nr = kpis.new_vs_returning;
-        if (nr.total === 0) {
-            el.innerHTML = '<div class="dd-appt-empty">No patient data</div>';
-            return;
-        }
-
-        var options = {
-            chart: { type: 'donut', height: 200 },
-            series: [nr.new, nr.returning],
-            labels: ['New Patients', 'Returning Patients'],
-            colors: ['#3699ff', '#1bc5bd'],
-            legend: { position: 'bottom', fontSize: '12px' },
-            dataLabels: { enabled: true },
-            plotOptions: { pie: { donut: { size: '55%' } } }
-        };
-
-        if (chartNewReturn) chartNewReturn.destroy();
-        chartNewReturn = new ApexCharts(el, options);
-        chartNewReturn.render();
     }
 
     // ===================== Helpers =====================
