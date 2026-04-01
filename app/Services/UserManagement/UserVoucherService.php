@@ -14,46 +14,16 @@ use App\Models\PackageService;
 use App\Models\PackageVouchers;
 use App\Models\User;
 use App\Models\UserVouchers;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
-class UserVoucherService
+final class UserVoucherService
 {
     private const FILTER_KEY = 'vouchers';
 
-    public function getDatatableCount(array $params): int
-    {
-        return $this->buildDatatableQuery($params)->count();
-    }
-
-    public function getDatatableData(array $params): array
-    {
-        $vouchers = $this->buildDatatableQuery($params)
-            ->with(['user', 'voucher'])
-            ->orderByDesc('created_at')
-            ->offset($params['offset'] ?? 0)
-            ->limit($params['limit'] ?? 30)
-            ->get();
-
-        $usedVouchersLookup = $this->buildUsedVouchersLookup($vouchers);
-        UserVoucherResource::$usedVouchersLookup = $usedVouchersLookup;
-
-        return [
-            'data' => UserVoucherResource::collection($vouchers),
-            'total' => $vouchers->count(),
-        ];
-    }
-
-    private function buildDatatableQuery(array $params): \Illuminate\Database\Eloquent\Builder
-    {
-        $userId = (int) Auth::id();
-        $applyFilter = $params['apply_filter'] ?? false;
-
-        $where = $this->buildWhereConditions($params, $userId, $applyFilter);
-
-        return UserVouchers::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where));
-    }
+    // ── CRUD Operations ─────────────────────────────────
 
     public function store(array $data): UserVouchers
     {
@@ -143,6 +113,33 @@ class UserVoucherService
         ];
     }
 
+    // ── Datatable ───────────────────────────────────────
+
+    public function getDatatableCount(array $params): int
+    {
+        return $this->buildDatatableQuery($params)->count();
+    }
+
+    public function getDatatableData(array $params): array
+    {
+        $vouchers = $this->buildDatatableQuery($params)
+            ->with(['user', 'voucher'])
+            ->orderByDesc('created_at')
+            ->offset($params['offset'] ?? 0)
+            ->limit($params['limit'] ?? 30)
+            ->get();
+
+        $usedVouchersLookup = $this->buildUsedVouchersLookup($vouchers);
+        UserVoucherResource::$usedVouchersLookup = $usedVouchersLookup;
+
+        return [
+            'data' => UserVoucherResource::collection($vouchers),
+            'total' => $vouchers->count(),
+        ];
+    }
+
+    // ── Voucher Usage ───────────────────────────────────
+
     public function getVoucherUsageData(int $id): array
     {
         $userVoucher = $this->find($id);
@@ -163,15 +160,14 @@ class UserVoucherService
 
         $voucherName = $userVoucher->voucher?->name;
         $randomIds = $packageVouchers->pluck('package_random_id')->unique()->all();
+        $mainServiceIds = $packageVouchers->pluck('main_service_id')->unique()->all();
 
-        // Batch load all packages by random_id to avoid N+1
         $packagesLookup = Packages::whereIn('random_id', $randomIds)
             ->get()
             ->keyBy('random_id');
 
-        // Batch load all matching bundles with their relationships
         $allBundles = PackageBundles::whereIn('random_id', $randomIds)
-            ->whereIn('bundle_id', $packageVouchers->pluck('main_service_id')->unique()->all())
+            ->whereIn('bundle_id', $mainServiceIds)
             ->where('discount_name', $voucherName)
             ->with('bundle')
             ->get();
@@ -180,7 +176,6 @@ class UserVoucherService
             return [];
         }
 
-        // Batch load all package services for the found bundles
         $bundleIds = $allBundles->pluck('id')->all();
         $allPackageServices = PackageService::whereIn('package_bundle_id', $bundleIds)
             ->with('service')
@@ -191,8 +186,8 @@ class UserVoucherService
 
         foreach ($packageVouchers as $packageVoucher) {
             $matchingBundles = $allBundles->filter(
-                fn ($b) => $b->random_id === $packageVoucher->package_random_id
-                    && $b->bundle_id === $packageVoucher->main_service_id
+                fn ($b): bool => $b->random_id === $packageVoucher->package_random_id
+                    && $b->bundle_id === $packageVoucher->main_service_id,
             );
 
             $package = $packagesLookup[$packageVoucher->package_random_id] ?? null;
@@ -217,6 +212,8 @@ class UserVoucherService
         return $voucherUsageData;
     }
 
+    // ── Filter & Permission Helpers ─────────────────────
+
     public function getFilterValues(): array
     {
         return [
@@ -232,6 +229,7 @@ class UserVoucherService
 
         if (!empty($filters['patient_id'])) {
             $patient = User::find($filters['patient_id']);
+
             if ($patient) {
                 $filters['patient_name'] = $patient->name;
             }
@@ -257,7 +255,20 @@ class UserVoucherService
             ->exists();
     }
 
-    private function buildUsedVouchersLookup($vouchers): array
+    // ── Private Helpers ─────────────────────────────────
+
+    private function buildDatatableQuery(array $params): Builder
+    {
+        $userId = (int) Auth::id();
+        $applyFilter = $params['apply_filter'] ?? false;
+
+        $where = $this->buildWhereConditions($params, $userId, $applyFilter);
+
+        return UserVouchers::query()
+            ->when(count($where) > 0, fn (Builder $q): Builder => $q->where($where));
+    }
+
+    private function buildUsedVouchersLookup(Collection $vouchers): array
     {
         $userIds = $vouchers->pluck('user_id')->unique()->all();
         $voucherIds = $vouchers->pluck('voucher_id')->unique()->all();
@@ -270,7 +281,7 @@ class UserVoucherService
             ->whereIn('voucher_id', $voucherIds)
             ->select('user_id', 'voucher_id')
             ->get()
-            ->groupBy(fn ($item) => $item->user_id . '_' . $item->voucher_id)
+            ->groupBy(fn ($item): string => $item->user_id . '_' . $item->voucher_id)
             ->all();
     }
 
@@ -302,8 +313,15 @@ class UserVoucherService
         return $where;
     }
 
-    private function addFilter(array &$where, array $params, string $paramKey, string $column, string $operator, int $userId, bool $applyFilter): void
-    {
+    private function addFilter(
+        array &$where,
+        array $params,
+        string $paramKey,
+        string $column,
+        string $operator,
+        int $userId,
+        bool $applyFilter,
+    ): void {
         if (!empty($params[$paramKey])) {
             $where[] = [$column, $operator, $params[$paramKey]];
             Filters::put($userId, self::FILTER_KEY, $paramKey, $params[$paramKey]);
