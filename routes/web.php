@@ -656,6 +656,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::resource('membershiptypes', AdminMembershipTypesController::class)->only('index');
         Route::resource('memberships', AdminMembershipsController::class)->only('index');
         
+        // Jenpharm Gift Voucher Report
+        Route::get('jenpharm-voucher-report', [\App\Http\Controllers\Admin\JenpharmVoucherReportController::class, 'index'])->name('jenpharm-voucher-report.index');
+
         // Wrong Conversions Report
         Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');
         Route::post('wrong-conversions/reset/{id}', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'reset'])->name('wrong-conversions.reset');
