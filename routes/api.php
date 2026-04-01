@@ -346,7 +346,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('refunds/detail/{id}', [ApiRefundsController::class, 'detail'])->name('refunds.detail');
     Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
-    Route::resource('feedbacks', FeedbackController::class)->except('index');
+    Route::resource('feedbacks', FeedbackController::class)->only(['store', 'edit', 'update', 'destroy']);
     // Discount Routes (Refactored — using API controller)
     Route::post('discounts/datatable', [ApiDiscountsController::class, 'datatable'])->name('discounts.datatable');
     Route::post('discounts/status', [ApiDiscountsController::class, 'status'])->name('discounts.status');

@@ -1,54 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\DoctorDashboard;
 
+use App\Models\Feedback;
 use Illuminate\Support\Facades\DB;
 
 class FeedbackCalculator
 {
     /**
      * Calculate average feedback score for a doctor in a date range.
-     *
      * Rating scale: 1-10, stored per treatment/procedure.
-     *
-     * @param int $doctorId
-     * @param string $startDate Y-m-d
-     * @param string $endDate Y-m-d
-     * @return array
+     * Excludes today's data to match dashboard behavior.
      */
     public function calculate(int $doctorId, string $startDate, string $endDate): array
     {
-        // Exclude today: if endDate is today or later, use yesterday
-        $today = now()->format('Y-m-d');
-        if ($endDate >= $today) {
-            $endDate = now()->subDay()->format('Y-m-d');
-        }
+        $endDate = $this->excludeToday($endDate);
 
-        $result = DB::table('feedback')
-            ->where('doctor_id', $doctorId)
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select(
-                DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'),
-                DB::raw('COUNT(*) as total_feedback')
-            )
+        $result = Feedback::where('doctor_id', $doctorId)
+            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedback')
             ->first();
 
-        $avgRating = $result && $result->avg_rating ? (float) $result->avg_rating : 0;
-        $totalFeedback = $result ? (int) $result->total_feedback : 0;
-
         return [
-            'avg_rating' => $avgRating,
-            'total_feedback' => $totalFeedback,
+            'avg_rating' => $result?->avg_rating ? (float) $result->avg_rating : 0.0,
+            'total_feedback' => $result ? (int) $result->total_feedback : 0,
         ];
     }
 
     /**
      * Calculate feedback scores for multiple doctors (benchmark).
      *
-     * @param array $doctorIds
-     * @param string $startDate
-     * @param string $endDate
-     * @return array [doctorId => avg_rating]
+     * @param array<int> $doctorIds
+     * @return array<int, float> [doctorId => avg_rating]
      */
     public function calculateForDoctors(array $doctorIds, string $startDate, string $endDate): array
     {
@@ -56,45 +41,34 @@ class FeedbackCalculator
             return [];
         }
 
-        // Exclude today: if endDate is today or later, use yesterday
-        $today = now()->format('Y-m-d');
-        if ($endDate >= $today) {
-            $endDate = now()->subDay()->format('Y-m-d');
-        }
+        $endDate = $this->excludeToday($endDate);
 
-        return DB::table('feedback')
-            ->whereIn('doctor_id', $doctorIds)
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->select('doctor_id', DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'))
+        return Feedback::whereIn('doctor_id', $doctorIds)
+            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
+            ->select('doctor_id')
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating')
             ->groupBy('doctor_id')
             ->pluck('avg_rating', 'doctor_id')
-            ->map(fn($v) => (float) $v)
+            ->map(fn (mixed $v): float => (float) $v)
             ->toArray();
     }
 
     /**
      * Get the highest feedback score month in the last N months.
      * Excludes today to match dashboard and reports behavior.
-     *
-     * @param int $doctorId
-     * @param int $months
-     * @return array|null
      */
     public function getHighestScoreMonth(int $doctorId, int $months = 6): ?array
     {
         $startDate = now()->subMonths($months)->startOfMonth()->format('Y-m-d');
-        // Exclude today - use yesterday as the end date
         $endDate = now()->subDay()->format('Y-m-d');
 
-        $result = DB::table('feedback')
-            ->where('doctor_id', $doctorId)
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $result = Feedback::where('doctor_id', $doctorId)
+            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
             ->select(
                 DB::raw('YEAR(created_at) as yr'),
                 DB::raw('MONTH(created_at) as mn'),
-                DB::raw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating'),
-                DB::raw('COUNT(*) as total_feedback')
             )
+            ->selectRaw('ROUND(AVG(CAST(rating AS DECIMAL(4,2))), 2) as avg_rating, COUNT(*) as total_feedback')
             ->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))
             ->having('total_feedback', '>=', 1)
             ->orderByDesc('avg_rating')
@@ -110,5 +84,17 @@ class FeedbackCalculator
             'avg_rating' => (float) $result->avg_rating,
             'total_feedback' => (int) $result->total_feedback,
         ];
+    }
+
+    /**
+     * Adjust end date to exclude today's data.
+     */
+    private function excludeToday(string $endDate): string
+    {
+        $today = now()->format('Y-m-d');
+
+        return $endDate >= $today
+            ? now()->subDay()->format('Y-m-d')
+            : $endDate;
     }
 }
