@@ -39,11 +39,13 @@ class PoolService
             return $pools;
         }
 
-        // Add inventory cash sales since go-live to branch pool balances (display only)
+        // Add inventory sales since go-live to pool balances (display only)
         $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
         if ($branchPools->isNotEmpty()) {
             $locationIds = $branchPools->pluck('location_id')->toArray();
-            $inventorySales = Order::where('account_id', $accountId)
+
+            // Cash inventory sales → branch pools
+            $inventoryCashSales = Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
                 ->where('payment_mode', 1)
                 ->whereIn('location_id', $locationIds)
@@ -52,9 +54,42 @@ class PoolService
                 ->groupBy('location_id')
                 ->pluck('total', 'location_id');
 
+            // Cash inventory refunds → subtract from branch pools
+            $inventoryCashRefunds = Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', $locationIds)
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->selectRaw('location_id, SUM(total_price) as total')
+                ->groupBy('location_id')
+                ->pluck('total', 'location_id');
+
             foreach ($branchPools as $pool) {
-                $inventoryAmount = (float) ($inventorySales[$pool->location_id] ?? 0);
-                $pool->cached_balance = (float) $pool->cached_balance + $inventoryAmount;
+                $salesAmount = (float) ($inventoryCashSales[$pool->location_id] ?? 0);
+                $refundAmount = (float) ($inventoryCashRefunds[$pool->location_id] ?? 0);
+                $pool->cached_balance = (float) $pool->cached_balance + $salesAmount - $refundAmount;
+            }
+        }
+
+        // Non-cash inventory sales (card/bank) → bank account pools
+        $bankPools = $pools->where('type', CashPool::TYPE_BANK_ACCOUNT);
+        if ($bankPools->isNotEmpty()) {
+            $nonCashSales = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->where('payment_mode', '!=', 1)
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->sum('total_price');
+
+            $nonCashRefunds = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', '!=', 1)
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->sum('total_price');
+
+            $nonCashNet = $nonCashSales - $nonCashRefunds;
+
+            if ($nonCashNet != 0 && $bankPools->count() > 0) {
+                $bankPools->first()->cached_balance = (float) $bankPools->first()->cached_balance + $nonCashNet;
             }
         }
 

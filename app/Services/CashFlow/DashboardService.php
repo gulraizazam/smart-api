@@ -90,7 +90,9 @@ class DashboardService
             $branchPools = $pools->where('type', CashPool::TYPE_BRANCH_CASH)->where('location_id', '!=', null);
             if ($branchPools->isNotEmpty()) {
                 $locationIds = $branchPools->pluck('location_id')->toArray();
-                $inventorySales = Order::where('account_id', $accountId)
+
+                // Cash inventory sales → add to branch pools
+                $inventoryCashSales = Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
                     ->where('payment_mode', 1)
                     ->whereIn('location_id', $locationIds)
@@ -99,9 +101,43 @@ class DashboardService
                     ->groupBy('location_id')
                     ->pluck('total', 'location_id');
 
+                // Cash inventory refunds → subtract from branch pools
+                $inventoryCashRefunds = Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', $locationIds)
+                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->selectRaw('location_id, SUM(total_price) as total')
+                    ->groupBy('location_id')
+                    ->pluck('total', 'location_id');
+
                 foreach ($branchPools as $pool) {
-                    $inventoryAmount = (float) ($inventorySales[$pool->location_id] ?? 0);
-                    $pool->cached_balance = (float) $pool->cached_balance + $inventoryAmount;
+                    $salesAmount = (float) ($inventoryCashSales[$pool->location_id] ?? 0);
+                    $refundAmount = (float) ($inventoryCashRefunds[$pool->location_id] ?? 0);
+                    $pool->cached_balance = (float) $pool->cached_balance + $salesAmount - $refundAmount;
+                }
+            }
+
+            // Non-cash inventory sales (card/bank) → add to bank account pools
+            $bankPools = $pools->where('type', CashPool::TYPE_BANK_ACCOUNT);
+            if ($bankPools->isNotEmpty()) {
+                $nonCashSales = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->where('payment_mode', '!=', 1)
+                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->sum('total_price');
+
+                $nonCashRefunds = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->where('payment_mode', '!=', 1)
+                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->sum('total_price');
+
+                $nonCashNet = $nonCashSales - $nonCashRefunds;
+
+                if ($nonCashNet != 0 && $bankPools->count() > 0) {
+                    // Add to the first bank pool (typically there's only one)
+                    $bankPools->first()->cached_balance = (float) $bankPools->first()->cached_balance + $nonCashNet;
                 }
             }
         }
@@ -194,10 +230,9 @@ class DashboardService
             ->pluck('total', 'date')
             ->toArray();
 
-        // Inventory cash sales by day
+        // Inventory sales by day (all payment modes)
         $inventoryQuery = Order::where('account_id', $accountId)
             ->where('order_type', 'sale')
-            ->where('payment_mode', 1)
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
@@ -214,6 +249,25 @@ class DashboardService
             ->pluck('total', 'date')
             ->toArray();
 
+        // Inventory refunds by day (all payment modes)
+        $inventoryRefundQuery = Order::where('account_id', $accountId)
+            ->where('order_type', 'refund')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+
+        if ($goLiveDate) {
+            $inventoryRefundQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+        }
+
+        if ($branchId) {
+            $inventoryRefundQuery->where('location_id', $branchId);
+        }
+
+        $inventoryRefunds = $inventoryRefundQuery
+            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_price) as total'))
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->pluck('total', 'date')
+            ->toArray();
+
         // Build day-by-day array
         $days = [];
         $current = Carbon::parse($dateFrom);
@@ -223,7 +277,7 @@ class DashboardService
             $d = $current->toDateString();
             $days[] = [
                 'date' => $d,
-                'inflows' => (float) ($inflows[$d] ?? 0) - (float) ($refunds[$d] ?? 0) + (float) ($inventorySales[$d] ?? 0),
+                'inflows' => (float) ($inflows[$d] ?? 0) - (float) ($refunds[$d] ?? 0) + (float) ($inventorySales[$d] ?? 0) - (float) ($inventoryRefunds[$d] ?? 0),
                 'outflows' => (float) ($outflows[$d] ?? 0),
             ];
             $current->addDay();
@@ -756,22 +810,35 @@ class DashboardService
 
         $refunds = (float) $refundQuery->sum('cash_amount');
 
-        // Add inventory cash sales
-        $inventoryQuery = Order::where('account_id', $accountId)
-            ->where('order_type', 'sale')
-            ->where('payment_mode', 1);
+        // Add inventory sales (all payment modes)
+        $inventorySalesQuery = Order::where('account_id', $accountId)
+            ->where('order_type', 'sale');
 
         if ($goLiveDate) {
-            $inventoryQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+            $inventorySalesQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
         }
 
         if ($branchId) {
-            $inventoryQuery->where('location_id', $branchId);
+            $inventorySalesQuery->where('location_id', $branchId);
         }
 
-        $inventorySales = (float) $inventoryQuery->sum('total_price');
+        $inventorySales = (float) $inventorySalesQuery->sum('total_price');
 
-        return $payments - $refunds + $inventorySales;
+        // Subtract inventory refunds (all payment modes)
+        $inventoryRefundsQuery = Order::where('account_id', $accountId)
+            ->where('order_type', 'refund');
+
+        if ($goLiveDate) {
+            $inventoryRefundsQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+        }
+
+        if ($branchId) {
+            $inventoryRefundsQuery->where('location_id', $branchId);
+        }
+
+        $inventoryRefunds = (float) $inventoryRefundsQuery->sum('total_price');
+
+        return $payments - $refunds + $inventorySales - $inventoryRefunds;
     }
 
     /**

@@ -3536,22 +3536,27 @@ class CashFlowController extends Controller
 
             
 
-            // Add inventory cash sales since March 8th to current balance
+            // Add inventory sales since go-live to current balance (cash only for branch pools)
 
-            $march8th = '2026-03-08';
+            $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId) ?? '2026-03-08';
 
             $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
 
-            
-
-            $inventorySalesSinceMarch8 = Order::where('account_id', $accountId)
+            $inventoryCashSales = (float) Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
-                ->where('payment_mode', 1) // Cash payment mode
+                ->where('payment_mode', 1)
                 ->whereIn('location_id', array_keys($branchPoolMap))
-                ->where('created_at', '>=', $march8th . ' 00:00:00')
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
                 ->sum('total_price');
 
-            $currentBalance += (float) $inventorySalesSinceMarch8;
+            $inventoryCashRefunds = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->sum('total_price');
+
+            $currentBalance += $inventoryCashSales - $inventoryCashRefunds;
 
             // Week range: Sunday (start) to today - for opening balance calculation
             $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
@@ -3562,7 +3567,8 @@ class CashFlowController extends Controller
             // Debug information
             $debugInfo = [
                 'cached_balance' => (float) $pools->sum('cached_balance'),
-                'inventory_sales_since_march8' => (float) $inventorySalesSinceMarch8,
+                'inventory_cash_sales' => $inventoryCashSales,
+                'inventory_cash_refunds' => $inventoryCashRefunds,
                 'total_current_balance' => $currentBalance,
                 'static_opening_balance' => (float) $pools->sum('opening_balance'),
                 'current_date' => \Carbon\Carbon::now()->toDateTimeString(),
@@ -3736,12 +3742,11 @@ class CashFlowController extends Controller
                 ->toArray();
 
             // ---- Calculate opening balance (last week's closing balance) ----
-            // If we're in the first week (March 8-14, 2026), use the static opening balance
+            // If we're in the first week since go-live, use the static opening balance
             // Otherwise, calculate what the balance was at the end of last Saturday
-            $march8th = '2026-03-08';
             $lastSaturday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->subDay()->endOfDay();
-            
-            if ($lastSaturday->lt(\Carbon\Carbon::parse($march8th))) {
+
+            if ($lastSaturday->lt(\Carbon\Carbon::parse($goLiveDate))) {
                 // We're in the first week, use static opening balance
                 $openingBalance = (float) $pools->sum('opening_balance');
             } else {
@@ -3749,7 +3754,7 @@ class CashFlowController extends Controller
                 // Start with static opening balance
                 $openingBalance = (float) $pools->sum('opening_balance');
                 
-                // Add all transactions from March 8th to end of last Saturday
+                // Add all transactions from go-live to end of last Saturday
                 $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
                 
                 // Add package advances (services cash inflows)
@@ -3763,7 +3768,7 @@ class CashFlowController extends Controller
                         ->whereNull('deleted_at')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->whereBetween('system_created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                         ->sum('cash_amount');
                     $openingBalance += (float) $servicesIn;
                     
@@ -3775,27 +3780,35 @@ class CashFlowController extends Controller
                         ->whereNull('deleted_at')
                         ->whereIn('payment_mode_id', $cashModeIds)
                         ->whereIn('location_id', array_keys($branchPoolMap))
-                        ->whereBetween('system_created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                         ->sum('cash_amount');
                     $openingBalance -= (float) $servicesOut;
                 }
                 
-                // Add inventory sales
-                $inventorySales = 0;
-                $inventorySales = Order::where('account_id', $accountId)
+                // Add inventory cash sales
+                $inventorySales = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
-                    ->where('payment_mode', 1) // Cash payment mode
+                    ->where('payment_mode', 1)
                     ->whereIn('location_id', array_keys($branchPoolMap))
-                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                     ->sum('total_price');
-                $openingBalance += (float) $inventorySales;
+                $openingBalance += $inventorySales;
+
+                // Subtract inventory cash refunds
+                $inventoryRefunds = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                    ->sum('total_price');
+                $openingBalance -= $inventoryRefunds;
                 
                 // Subtract expenses
                 $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->where('status', '!=', 'rejected')
                     ->whereIn('paid_from_pool_id', $poolIds)
-                    ->whereBetween('expense_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->whereBetween('expense_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
                     ->sum('amount');
                 $openingBalance -= (float) $obExpenses;
                 
@@ -3805,14 +3818,14 @@ class CashFlowController extends Controller
                 $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('from_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
                     ->sum('amount');
                 $openingBalance -= (float) $transfersOut;
                 
                 $transfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('to_pool_id', $poolIds)
-                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($march8th)->toDateString(), $lastSaturday->toDateString()])
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
                     ->sum('amount');
                 $openingBalance += (float) $transfersIn;
                 
@@ -3820,7 +3833,7 @@ class CashFlowController extends Controller
                 $obStaffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                     ->sum('amount');
                 $openingBalance -= (float) $obStaffAdvances;
 
@@ -3828,7 +3841,7 @@ class CashFlowController extends Controller
                 $obStaffReturns = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
                     ->whereNull('voided_at')
                     ->whereIn('pool_id', $poolIds)
-                    ->whereBetween('created_at', [$march8th . ' 00:00:00', $lastSaturday])
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
                     ->sum('amount');
                 $openingBalance += (float) $obStaffReturns;
                 
@@ -3837,7 +3850,8 @@ class CashFlowController extends Controller
                     'static_opening' => (float) $pools->sum('opening_balance'),
                     'services_in' => (float) $servicesIn,
                     'services_out' => (float) $servicesOut,
-                    'inventory_sales' => (float) $inventorySales,
+                    'inventory_sales' => $inventorySales,
+                    'inventory_refunds' => $inventoryRefunds,
                     'expenses' => (float) $obExpenses,
                     'transfers_out' => (float) $transfersOut,
                     'transfers_in' => (float) $transfersIn,
@@ -3884,15 +3898,27 @@ class CashFlowController extends Controller
                 $servicesCashInflowsCount = $svcInCount + $svcOutCount;
             }
 
-            // Inventory Cash Inflows
-            $inventoryQuery = Order::where('account_id', $accountId)
+            // Inventory Cash Inflows (sales minus refunds)
+            $inventorySalesQuery = Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
                 ->where('payment_mode', 1)
                 ->whereIn('location_id', array_keys($branchPoolMap))
                 ->whereDate('created_at', '>=', $sunday)
                 ->whereDate('created_at', '<=', $today);
-            $inventoryCashInflows = (float) $inventoryQuery->sum('total_price');
-            $inventoryCashInflowsCount = $inventoryQuery->count();
+            $inventorySalesAmount = (float) $inventorySalesQuery->sum('total_price');
+            $inventorySalesCount = $inventorySalesQuery->count();
+
+            $inventoryRefundsQuery = Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->whereDate('created_at', '>=', $sunday)
+                ->whereDate('created_at', '<=', $today);
+            $inventoryRefundsAmount = (float) $inventoryRefundsQuery->sum('total_price');
+            $inventoryRefundsCount = $inventoryRefundsQuery->count();
+
+            $inventoryCashInflows = $inventorySalesAmount - $inventoryRefundsAmount;
+            $inventoryCashInflowsCount = $inventorySalesCount + $inventoryRefundsCount;
 
             // Expenses Total (current week)
             $weekExpensesTotal = 0;
