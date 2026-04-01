@@ -31,6 +31,7 @@
                 this.classList.add('active');
                 currentPeriod = this.dataset.period;
                 loadKpis();
+                loadHero();
                 loadBenchmarks();
             });
         });
@@ -67,7 +68,8 @@
     }
 
     function loadHero() {
-        fetch(DD_CONFIG.routes.hero, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+        var url = DD_CONFIG.routes.hero + '?period=' + currentPeriod;
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status && res.data) {
@@ -192,7 +194,7 @@
             barEl.className = 'dd-goal-bar ' + goal.color;
             pctEl.textContent = goal.percentage + '%';
             revEl.textContent = 'PKR ' + formatCurrency(goal.branch_revenue) + ' / ' + formatCurrency(goal.branch_target);
-            daysEl.textContent = goal.days_remaining + ' working days left';
+            daysEl.textContent = goal.days_remaining > 0 ? goal.days_remaining + ' working days left' : 'Month completed';
         } else {
             pctEl.textContent = '';
             revEl.textContent = goal ? goal.message : 'No target set';
@@ -317,18 +319,26 @@
         renderNewVsReturningChart(kpis);
     }
 
+    function getPeriodLabel() {
+        return currentPeriod === 'last_month' ? 'Last Month' : 'This Month';
+    }
+
+    function getPrevPeriodLabel() {
+        return currentPeriod === 'last_month' ? '2 Months Ago' : 'Last Month';
+    }
+
     function renderRevenueChart(kpis) {
         var el = document.getElementById('chartRevenueTrend');
         if (!el) return;
 
         var series = [{
-            name: 'This Month',
+            name: getPeriodLabel(),
             data: [kpis.total_revenue.value]
         }];
 
         if (vsToggle) {
             series.push({
-                name: 'Last Month',
+                name: getPrevPeriodLabel(),
                 data: [kpis.total_revenue.last_month]
             });
         }
@@ -428,7 +438,7 @@
 
     function setKpiLastMonth(id, text) {
         var el = document.getElementById(id);
-        if (el) el.textContent = 'Last month: ' + text;
+        if (el) el.textContent = getPrevPeriodLabel() + ': ' + text;
     }
 
 
