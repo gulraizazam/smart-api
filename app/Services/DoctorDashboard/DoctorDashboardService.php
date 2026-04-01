@@ -681,7 +681,7 @@ class DoctorDashboardService
      * MoM comparison using daily averages instead of raw totals.
      * Divides each period's value by its working days before comparing.
      */
-    private function dailyAvgMoM(float $currentValue, int $currentDays, float $lastValue, int $lastDays): float
+    private function dailyAvgMoM(float $currentValue, int $currentDays, float $lastValue, int $lastDays): array
     {
         $currentAvg = $currentDays > 0 ? $currentValue / $currentDays : 0;
         $lastAvg = $lastDays > 0 ? $lastValue / $lastDays : 0;
