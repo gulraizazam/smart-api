@@ -57,14 +57,12 @@ class DoctorDashboardService
     public function getKpiData(int $doctorId, int $accountId, ?string $period = 'this_month'): array
     {
         [$startDate, $endDate] = $this->getDateRange($period);
-        // Previous period for comparison — relative to selected period, not always "last month from now"
-        // For ratio/rate KPIs (conversion, feedback, return rate, etc.): full previous calendar month
-        // For accumulating KPIs (revenue, counts): same-date window in previous month
+        // Previous full calendar month for all MoM comparisons
+        // Daily average normalization handles partial-month fairness for accumulating metrics
         $periodStart = Carbon::parse($startDate);
         $prevMonthStart = $periodStart->copy()->subMonthNoOverflow()->startOfMonth();
         $prevMonthEnd = $prevMonthStart->copy()->endOfMonth();
         [$lastStartDate, $lastEndDate] = [$prevMonthStart->format('Y-m-d'), $prevMonthEnd->format('Y-m-d')];
-        [$lastSameDateStart, $lastSameDateEnd] = DoctorDashboardHelper::getLastMonthSameDateRange($startDate, $endDate);
 
         // Current period KPIs
         $conversion = $this->conversionCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
@@ -94,15 +92,15 @@ class DoctorDashboardService
         $lastFeedback       = $this->feedbackCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
         $lastGoogleReviews  = $this->getGoogleReviews($doctorId, $lastStartDate, $accountId);
 
-        // Accumulators: use same-date window in last month (e.g. Mar 1–17 vs Feb 1–17)
-        $lastRevenue        = $this->revenueCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
-        $lastUpsell         = $this->upsellCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
-        $lastMembership     = $this->membershipCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
-        $lastProductRevenue = $this->productRevenueCalculator->calculate($doctorId, $lastSameDateStart, $lastSameDateEnd);
-        $lastPatientsSeen   = $this->getPatientsSeen($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId);
-        $lastRevenuePerDay  = $this->getRevenuePerDay($doctorId, $lastSameDateStart, $lastSameDateEnd, $accountId, $lastRevenue['total_revenue']);
+        // Accumulators: use full last month (daily avg normalization handles partial-month fairness)
+        $lastRevenue        = $this->revenueCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastUpsell         = $this->upsellCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastMembership     = $this->membershipCalculator->calculate($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastProductRevenue = $this->productRevenueCalculator->calculate($doctorId, $lastStartDate, $lastEndDate);
+        $lastPatientsSeen   = $this->getPatientsSeen($doctorId, $lastStartDate, $lastEndDate, $accountId);
+        $lastRevenuePerDay  = $this->getRevenuePerDay($doctorId, $lastStartDate, $lastEndDate, $accountId, $lastRevenue['total_revenue']);
 
-        // avg_client_value uses same-date revenue but full-month conversion (ratio)
+        // avg_client_value uses full last month revenue and conversion (both full month)
         $lastAvgClientValue = $this->revenueCalculator->calculateAvgClientValue(
             $lastRevenue['total_revenue'],
             $lastConversion['total_converted']
@@ -110,7 +108,7 @@ class DoctorDashboardService
 
         // Working days for daily-average MoM on accumulating metrics
         $currentWorkingDays = $this->countWorkingDays($startDate, $endDate);
-        $lastWorkingDays = $this->countWorkingDays($lastSameDateStart, $lastSameDateEnd);
+        $lastWorkingDays = $this->countWorkingDays($lastStartDate, $lastEndDate);
 
         return [
             'period' => ['start' => $startDate, 'end' => $endDate],
