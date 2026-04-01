@@ -215,8 +215,9 @@ class DoctorDashboardService
     /**
      * Get goal progress bar data.
      *
-     * Formula: (This Doctor's Revenue This Month / Branch Monthly Target) × 100
-     * Uses most active branch this month for target selection.
+     * Formula: (Branch-wide Revenue This Month / Branch Monthly Target) × 100
+     * Uses the doctor's most active branch for target selection.
+     * Revenue is the total for the entire branch (team effort), not just this doctor.
      *
      * @param int $doctorId
      * @param string $startDate
@@ -226,10 +227,7 @@ class DoctorDashboardService
      */
     private function getGoalProgress(int $doctorId, string $startDate, string $endDate, int $accountId): array
     {
-        $revenue = $this->revenueCalculator->calculate($doctorId, $startDate, $endDate, $accountId);
-        $doctorRevenue = $revenue['total_revenue'];
-
-        // Find the most active branch
+        // Find the doctor's most active branch
         $locationIds = $this->doctorIdentifier->getDoctorLocationIds($doctorId);
         $revenueByLocation = $this->revenueCalculator->calculateByLocation(
             $doctorId, $startDate, $endDate, $accountId, $locationIds
@@ -249,16 +247,16 @@ class DoctorDashboardService
             $mostActiveBranchId = $locationIds[0];
         }
 
-        // Get branch monthly target
+        // Get branch monthly target and working days
         $month = (int) Carbon::parse($startDate)->format('m');
         $year = (int) Carbon::parse($startDate)->format('Y');
 
-        $target = $this->getBranchTarget($mostActiveBranchId, $month, $year, $accountId);
+        $targetData = $this->getBranchTarget($mostActiveBranchId, $month, $year, $accountId);
 
         // Fallback to last month's target
-        if (!$target) {
+        if (!$targetData) {
             $lastMonth = Carbon::parse($startDate)->subMonthNoOverflow();
-            $target = $this->getBranchTarget(
+            $targetData = $this->getBranchTarget(
                 $mostActiveBranchId,
                 (int) $lastMonth->format('m'),
                 (int) $lastMonth->format('Y'),
@@ -266,15 +264,23 @@ class DoctorDashboardService
             );
         }
 
-        if (!$target) {
+        if (!$targetData) {
             return [
                 'has_target' => false,
                 'message' => 'No branch target set yet.',
             ];
         }
 
-        $percentage = $target > 0 ? round(($doctorRevenue / $target) * 100, 1) : 0;
-        $daysRemaining = Carbon::now()->diffInDays(Carbon::now()->endOfMonth()) + 1;
+        $target = $targetData['target'];
+        $totalWorkingDays = $targetData['working_days'];
+
+        // Calculate branch-wide revenue using same logic as Operations::Monthlyachievedamount
+        $branchRevenue = $this->getBranchRevenue($mostActiveBranchId, $startDate, $endDate, $accountId);
+
+        $percentage = $target > 0 ? round(($branchRevenue / $target) * 100, 1) : 0;
+
+        // Working days remaining: total working days - Mon-Sat days elapsed this month
+        $daysRemaining = $this->getWorkingDaysRemaining($totalWorkingDays);
 
         // Color rules
         $color = 'red';
@@ -286,13 +292,79 @@ class DoctorDashboardService
 
         return [
             'has_target' => true,
-            'doctor_revenue' => $doctorRevenue,
+            'branch_revenue' => $branchRevenue,
             'branch_target' => $target,
             'percentage' => $percentage,
             'days_remaining' => $daysRemaining,
             'color' => $color,
             'branch_id' => $mostActiveBranchId,
         ];
+    }
+
+    /**
+     * Get branch-wide revenue for a location.
+     * Uses same logic as Operations::Monthlyachievedamount — direct query on
+     * package_advances by location_id (revenue_in - refund_out).
+     *
+     * @param int $locationId
+     * @param string $startDate
+     * @param string $endDate
+     * @param int $accountId
+     * @return float
+     */
+    private function getBranchRevenue(int $locationId, string $startDate, string $endDate, int $accountId): float
+    {
+        $advances = DB::table('package_advances')
+            ->where('account_id', $accountId)
+            ->where('location_id', $locationId)
+            ->whereDate('created_at', '>=', $startDate)
+            ->whereDate('created_at', '<=', $endDate)
+            ->get();
+
+        $revenueIn = 0;
+        $refundOut = 0;
+
+        foreach ($advances as $adv) {
+            if (
+                ($adv->cash_flow === 'in' && $adv->is_adjustment == '0' && $adv->is_tax == '0' && $adv->is_cancel == '0')
+                || ($adv->cash_flow === 'out' && $adv->is_refund == '1')
+            ) {
+                if ($adv->cash_amount != 0) {
+                    if ($adv->cash_flow === 'in') {
+                        $revenueIn += (float) $adv->cash_amount;
+                    } else {
+                        $refundOut += (float) $adv->cash_amount;
+                    }
+                }
+            }
+        }
+
+        return $revenueIn - $refundOut;
+    }
+
+    /**
+     * Calculate working days remaining in current month.
+     * Working days = Mon-Sat (Sunday is off).
+     *
+     * @param int $totalWorkingDays from centre target
+     * @return int
+     */
+    private function getWorkingDaysRemaining(int $totalWorkingDays): int
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+
+        // Count Mon-Sat days elapsed from 1st to today (inclusive)
+        $elapsed = 0;
+        $day = $startOfMonth->copy();
+        while ($day->lte($now->copy()->startOfDay())) {
+            if ($day->dayOfWeek !== Carbon::SUNDAY) {
+                $elapsed++;
+            }
+            $day->addDay();
+        }
+
+        return max(0, $totalWorkingDays - $elapsed);
     }
 
     /**
@@ -304,7 +376,7 @@ class DoctorDashboardService
      * @param int $accountId
      * @return float|null
      */
-    private function getBranchTarget(?int $locationId, int $month, int $year, int $accountId): ?float
+    private function getBranchTarget(?int $locationId, int $month, int $year, int $accountId): ?array
     {
         if (!$locationId) {
             return null;
@@ -324,7 +396,10 @@ class DoctorDashboardService
 
         // target_amount is daily target; monthly = daily × working_days
         $workingDays = (int) ($meta->working_days ?: 22);
-        return (float) $meta->target_amount * $workingDays;
+        return [
+            'target' => (float) $meta->target_amount * $workingDays,
+            'working_days' => $workingDays,
+        ];
     }
 
     /**
