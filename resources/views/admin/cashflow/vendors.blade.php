@@ -213,7 +213,7 @@
                                 <div class="col-6 col-md-3">
                                     <div class="card card-custom" style="border-left:4px solid #FFA800;">
                                         <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Purchases</div>
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold" id="ledger-purchases-label">This Month Purchases</div>
                                             <div class="font-size-h5 font-weight-bolder mt-1 text-danger" id="ledger-stat-purchases">PKR 0</div>
                                         </div>
                                     </div>
@@ -221,7 +221,7 @@
                                 <div class="col-6 col-md-3">
                                     <div class="card card-custom" style="border-left:4px solid #1BC5BD;">
                                         <div class="card-body py-3 px-4">
-                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold">Period Payments</div>
+                                            <div class="text-muted font-size-xs text-uppercase font-weight-bold" id="ledger-payments-label">This Month Payments</div>
                                             <div class="font-size-h5 font-weight-bolder mt-1 text-success" id="ledger-stat-payments">PKR 0</div>
                                         </div>
                                     </div>
