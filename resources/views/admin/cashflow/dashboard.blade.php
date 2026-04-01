@@ -57,27 +57,56 @@
                 </div>
                 @endcan
 
-                <!-- Summary Cards: Inflows | Outflows | Net -->
-                <div class="row mb-5">
-                    <div class="col-md-4">
-                        <div class="card card-custom bg-light-success py-4 px-5">
-                            <div class="font-weight-bold text-success mb-1">Inflows</div>
-                            <div class="font-weight-bolder font-size-h3" id="sum-inflows">PKR 0</div>
-                            <div class="font-size-sm text-muted" id="sum-inflows-change"></div>
+                <!-- Period Selector + Summary Cards -->
+                <div class="card card-custom mb-5">
+                    <div class="card-header py-3">
+                        <div class="card-title"><h3 class="card-label"><i class="la la-chart-bar mr-2"></i>Cash Flow Summary</h3></div>
+                        <div class="card-toolbar">
+                            <select id="summary-period" class="form-control form-control-sm select2" style="width:200px;">
+                                <option value="this_month" selected>This Month</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="custom">Custom Period</option>
+                            </select>
+                            <div id="custom-period-inputs" class="d-none ml-3 d-flex align-items-center" style="gap:8px;">
+                                <input type="date" id="summary-date-from" class="form-control form-control-sm" style="width:140px;">
+                                <span class="text-muted">to</span>
+                                <input type="date" id="summary-date-to" class="form-control form-control-sm" style="width:140px;">
+                                <button id="btn-apply-period" class="btn btn-sm btn-primary">Apply</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card card-custom bg-light-danger py-4 px-5">
-                            <div class="font-weight-bold text-danger mb-1">Outflows</div>
-                            <div class="font-weight-bolder font-size-h3" id="sum-outflows">PKR 0</div>
-                            <div class="font-size-sm text-muted" id="sum-outflows-change"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card card-custom bg-light-primary py-4 px-5">
-                            <div class="font-weight-bold text-primary mb-1">Net Cash Flow</div>
-                            <div class="font-weight-bolder font-size-h3" id="sum-net">PKR 0</div>
-                            <div class="font-size-sm text-muted" id="sum-net-change"></div>
+                    <div class="card-body py-4">
+                        <div class="row">
+                            <div class="col">
+                                <div class="bg-light-info rounded py-3 px-4 text-center">
+                                    <div class="font-weight-bold text-info mb-1" style="font-size:11px;">Opening Balance</div>
+                                    <div class="font-weight-bolder font-size-h4" id="sum-opening">PKR 0</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="bg-light-success rounded py-3 px-4 text-center">
+                                    <div class="font-weight-bold text-success mb-1" style="font-size:11px;">Inflows</div>
+                                    <div class="font-weight-bolder font-size-h4" id="sum-inflows">PKR 0</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="bg-light-danger rounded py-3 px-4 text-center">
+                                    <div class="font-weight-bold text-danger mb-1" style="font-size:11px;">Outflows</div>
+                                    <div class="font-weight-bolder font-size-h4" id="sum-outflows">PKR 0</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="bg-light-primary rounded py-3 px-4 text-center">
+                                    <div class="font-weight-bold text-primary mb-1" style="font-size:11px;">Net Cash Flow</div>
+                                    <div class="font-weight-bolder font-size-h4" id="sum-net">PKR 0</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="bg-light-dark rounded py-3 px-4 text-center">
+                                    <div class="font-weight-bold mb-1" style="font-size:11px;">Closing Balance</div>
+                                    <div class="font-weight-bolder font-size-h4" id="sum-closing">PKR 0</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

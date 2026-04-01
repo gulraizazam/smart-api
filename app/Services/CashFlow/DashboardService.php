@@ -37,7 +37,7 @@ class DashboardService
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
         return [
-            'summary' => $this->getSummaryCards($accountId, $branchId, $goLiveDate),
+            'summary' => $this->getSummaryCards($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
             'pools' => $this->getPoolBalances($accountId),
             'pending_actions' => $this->getPendingActions($accountId),
             'daily_trend' => $this->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
@@ -55,19 +55,68 @@ class DashboardService
     }
 
     /**
-     * Summary cards: Inflows | Outflows | Net — all-time cumulative (real-time cash position).
-     * No date filtering: these represent total cash movements since the system started,
-     * consistent with how pool balances (cached_balance) work.
+     * Summary cards: Opening Balance | Inflows | Outflows | Net Cash Flow | Closing Balance
+     * Scoped to the selected period (default: current month).
+     * Opening balance = all inflows - all outflows from go-live to period start.
      */
-    public function getSummaryCards(int $accountId, ?int $branchId, ?string $goLiveDate = null): array
+    public function getSummaryCards(int $accountId, string $dateFrom, string $dateTo, ?int $branchId, ?string $goLiveDate = null): array
     {
-        $inflows = $this->getAllTimeInflows($accountId, $branchId, $goLiveDate);
-        $outflows = $this->getAllTimeOutflows($accountId, $branchId, $goLiveDate);
+        // Opening balance: cumulative net from go-live up to (but not including) the period start
+        $openingBalance = (float) CashPool::forAccount($accountId)->sum('opening_balance');
+
+        if ($goLiveDate) {
+            $preStart = Carbon::parse($dateFrom)->subDay()->toDateString();
+            // Only calculate if the period starts after go-live
+            if ($preStart >= $goLiveDate) {
+                $preInflows = $this->getInflows($accountId, $goLiveDate, $preStart, $branchId, $goLiveDate);
+                $preOutflows = $this->getOutflows($accountId, $goLiveDate, $preStart, $branchId);
+
+                // Inventory net (all payment modes) up to period start
+                $preInventorySales = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $preStart])
+                    ->when($branchId, fn($q) => $q->where('location_id', $branchId))
+                    ->sum('total_price');
+
+                $preInventoryRefunds = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $preStart])
+                    ->when($branchId, fn($q) => $q->where('location_id', $branchId))
+                    ->sum('total_price');
+
+                $openingBalance += $preInflows + $preInventorySales - $preInventoryRefunds - $preOutflows;
+            }
+        }
+
+        // Period inflows and outflows
+        $periodInflows = $this->getInflows($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate);
+        $periodOutflows = $this->getOutflows($accountId, $dateFrom, $dateTo, $branchId);
+
+        // Inventory net for the period (all payment modes)
+        $periodInventorySales = (float) Order::where('account_id', $accountId)
+            ->where('order_type', 'sale')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
+            ->when($branchId, fn($q) => $q->where('location_id', $branchId))
+            ->when($goLiveDate, fn($q) => $q->where('created_at', '>=', $goLiveDate . ' 00:00:00'))
+            ->sum('total_price');
+
+        $periodInventoryRefunds = (float) Order::where('account_id', $accountId)
+            ->where('order_type', 'refund')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo])
+            ->when($branchId, fn($q) => $q->where('location_id', $branchId))
+            ->when($goLiveDate, fn($q) => $q->where('created_at', '>=', $goLiveDate . ' 00:00:00'))
+            ->sum('total_price');
+
+        $totalInflows = $periodInflows + $periodInventorySales - $periodInventoryRefunds;
+        $netCashFlow = $totalInflows - $periodOutflows;
+        $closingBalance = $openingBalance + $netCashFlow;
 
         return [
-            'inflows' => $inflows,
-            'outflows' => $outflows,
-            'net' => $inflows - $outflows,
+            'opening_balance' => round($openingBalance, 2),
+            'inflows' => round($totalInflows, 2),
+            'outflows' => round($periodOutflows, 2),
+            'net' => round($netCashFlow, 2),
+            'closing_balance' => round($closingBalance, 2),
         ];
     }
 
