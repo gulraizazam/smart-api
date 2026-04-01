@@ -145,6 +145,20 @@ class DoctorDashboardHelper
     }
 
     /**
+     * Percentage point difference for metrics that are already percentages/rates.
+     * e.g. 66.7% vs 61.1% = +5.6pp
+     */
+    public static function calculatePointDiff(float $current, float $previous): array
+    {
+        $diff = round($current - $previous, 1);
+
+        return [
+            'value' => abs($diff),
+            'direction' => $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'flat'),
+        ];
+    }
+
+    /**
      * Get date range for "this month" period.
      *
      * @return array [startDate, endDate]

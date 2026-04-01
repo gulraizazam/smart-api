@@ -124,7 +124,7 @@ class DoctorDashboardService
                     'total_arrived' => $conversion['total_arrived'],
                     'total_converted' => $conversion['total_converted'],
                     'last_month' => $lastConversion['conversion_rate'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($conversion['conversion_rate'], $lastConversion['conversion_rate']),
+                    'mom' => DoctorDashboardHelper::calculatePointDiff($conversion['conversion_rate'], $lastConversion['conversion_rate']),
                 ],
                 'avg_client_value' => [
                     'value' => $avgClientValue,
@@ -153,7 +153,7 @@ class DoctorDashboardService
                     'value' => $feedback['avg_rating'],
                     'total_feedback' => $feedback['total_feedback'],
                     'last_month' => $lastFeedback['avg_rating'],
-                    'mom' => DoctorDashboardHelper::calculateMoM($feedback['avg_rating'], $lastFeedback['avg_rating']),
+                    'mom' => DoctorDashboardHelper::calculatePointDiff($feedback['avg_rating'], $lastFeedback['avg_rating']),
                 ],
                 'google_reviews' => [
                     'value' => $googleReviews,
