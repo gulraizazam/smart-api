@@ -1,6 +1,11 @@
 var table_url = route('admin.feedbacks.datatable');
 
 var table_columns = [{
+    field: 'paient_id',
+    title: 'Patient ID',
+    sortable: false,
+    width: 80,
+}, {
     field: 'paient_name',
     title: 'Patient Name',
     sortable: false,
