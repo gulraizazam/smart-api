@@ -191,8 +191,6 @@
                         <div class="dd-kpi-label"><i class="la la-syringe"></i> Avg Procedures</div>
                         <div class="dd-kpi-value dd-skeleton" style="height:24px;width:40px;" id="kpiAvgProc">&nbsp;</div>
                         <div class="dd-kpi-sub" id="kpiAvgProcSub"></div>
-                        <div class="dd-kpi-mom" id="kpiAvgProcMom"></div>
-                        <div class="dd-kpi-last-month" id="kpiAvgProcLast"></div>
                         <div class="dd-kpi-bench-network" id="kpiAvgProcBench"></div>
                     </div>
                 </div>
