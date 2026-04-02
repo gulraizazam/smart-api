@@ -649,7 +649,7 @@ class DashboardService
             if ($outstanding <= 0) continue;
 
             $lastDate = $lastAdvanceDates[$adv->user_id] ?? null;
-            $daysSince = $lastDate ? Carbon::parse($lastDate)->diffInDays(Carbon::now()) : 0;
+            $daysSince = $lastDate ? (int) Carbon::parse($lastDate)->diffInDays(Carbon::now()) : 0;
 
             // aging: green < agingDays, amber = agingDays to 2x, red > 2x
             $aging = 'green';
