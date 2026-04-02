@@ -340,7 +340,7 @@ function setFilters(filter_values, active_filters) {
                 data: { location_id: locationId },
                 success: function(response) {
                     let options = '<option value="">All</option>';
-                    if (response.success && response.data && response.data.users) {
+                    if (response.status && response.data && response.data.users) {
                         Object.entries(response.data.users).forEach(function(user) {
                             options += '<option value="' + user[0] + '">' + user[1] + '</option>';
                         });
@@ -352,7 +352,7 @@ function setFilters(filter_values, active_filters) {
                 }
             });
         });
-        
+
         // Initialize daterangepicker for assigned_at filter
         $('#search_assigned_at').daterangepicker({
             autoUpdateInput: false,
@@ -394,7 +394,7 @@ function setFilters(filter_values, active_filters) {
                 data: { location_id: active_filters.location_id },
                 success: function(response) {
                     let options = '<option value="">All</option>';
-                    if (response.success && response.data && response.data.users) {
+                    if (response.status && response.data && response.data.users) {
                         Object.entries(response.data.users).forEach(function(user) {
                             options += '<option value="' + user[0] + '">' + user[1] + '</option>';
                         });
