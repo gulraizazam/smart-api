@@ -223,6 +223,7 @@ class Invoices
     /**
      * Generate Daily Employee Stats
      *
+     * @deprecated Use App\Services\Reports\Revenue\DailyEmployeeStatsReport instead.
      * @param  (mixed)  $request
      * @return (mixed)
      */
@@ -575,7 +576,8 @@ class Invoices
         return $appointments;
     }
 
-    /*
+    /**
+     * @deprecated Use App\Services\Reports\Revenue\CollectionByServiceReport instead.
      * Collection by service
      */
     public static function collectionbyservice($data, $account_id)
