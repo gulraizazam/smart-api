@@ -1085,10 +1085,7 @@ class Finanaces
     }
 
     /**
-     * General Reveneue report
-     *
-     * @param  (mixed)  $request
-     * @return (mixed)
+     * @deprecated Use App\Services\Reports\Revenue\GeneralRevenueDetailReport::generate() instead.
      */
     public static function generalrevenuereportdetail($data, $account_id)
 {
@@ -1278,10 +1275,7 @@ class Finanaces
 }
 
     /**
-     * General Reveneue report summary
-     *
-     * @param  (mixed)  $request
-     * @return (mixed)
+     * @deprecated Use App\Services\Reports\Revenue\GeneralRevenueSummaryReport::generate() instead.
      */
     public static function generalrevenuereportsummary($data, $account_id)
 {
@@ -2392,6 +2386,9 @@ class Finanaces
         }
     }
 
+    /**
+     * @deprecated Use App\Services\Reports\Revenue\ConversionReport instead.
+     */
     public static function conversion_report($data, $account_id)
     {
         $where = [];

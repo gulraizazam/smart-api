@@ -158,39 +158,8 @@ class FinanceReportController extends Controller
         return view('admin.reports.service_barchart', get_defined_vars());
     }
     /**
-     * Load Report
-     *
-     * @return \Illuminate\Http\Response
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\GeneralSalesReportController::reportLoad()
      */
-    public function reportLoad(Request $request)
-    {
-        switch ($request->get('report_type')) {
-            case 'collection_by_service':
-                return self::collectionbyservice($request);
-                break;
-            case 'daily_employee_stats':
-                return self::dailyEmployeeStats($request);
-                break;
-            case 'general_revenue_report_detail':
-                return self::generalrevenuereportdetail($request);
-                break;
-            case 'general_revenue_report_summary':
-                return self::generalrevenuereportsummary($request);
-                break;
-            case 'conversion_report':
-                return self::conversionreport($request);
-                break;
-            case 'services_sold':
-                return self::serviceSoldreport($request);
-                break;
-             case 'gender_wise_revenue':
-                return self::revenueByGenderAndService($request);
-                break;
-            default:
-                return self::collectionbyservice($request);
-                break;
-        }
-    }
 
     /**
      * Center Performance status by revenue
@@ -821,129 +790,8 @@ class FinanceReportController extends Controller
     }
 
     /**
-     * Daily Employee Stats
-     *
-     * @return \Illuminate\Http\Response
+     * @deprecated Moved to App\Services\Reports\Revenue\DailyEmployeeStatsReport
      */
-    public function dailyEmployeeStats(Request $request)
-    {
-
-        if (!Gate::allows('finance_general_revenue_reports_daily_employee_stats')) {
-            return abort(401);
-        }
-
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-
-        $filters = [];
-
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
-        $users->prepend('All', '');
-
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionaryWithoutAll(Auth::User()->account_id);
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-
-        $reportData = \App\Reports\Invoices::getDailyEmployeeStats($request->all(), $filters);
-        foreach ($reportData as $rowpackage) {
-            $filters['reportData'] = $reportData;
-        }
-        switch ($request->get('medium_type')) {
-            case 'web':
-                return view('admin.reports.dailyemployeestats.report', compact('reportData', 'filters', 'start_date', 'end_date'));
-                break;
-            case 'print':
-                return view('admin.reports.dailyemployeestats.reportprint', compact('reportData', 'filters', 'start_date', 'end_date'));
-                break;
-            case 'pdf':
-                $pdf = PDF::loadView('admin.reports.dailyemployeestats.reportpdf', compact('reportData', 'filters', 'start_date', 'end_date'));
-                $pdf->setPaper('A4', 'landscape');
-
-                return $pdf->stream('Daily Employee Stats', 'landscape');
-                break;
-            case 'excel':
-                self::dailyEmployeeStatsExcel($reportData, $start_date, $end_date);
-                break;
-            default:
-                return view('admin.reports.dailyemployeestats.report', compact('reportData', 'filters', 'start_date', 'end_date'));
-                break;
-        }
-    }
-
-    /**
-     * Daily Employee Stats Excel
-     *
-     * @param  (mixed)  $reportData
-     * @param  (mixed)  $start_date
-     * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
-     */
-    private static function dailyEmployeeStatsExcel($reportData, $start_date, $end_date)
-    {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
-        $Excel_writer->setPreCalculateFormulas(false);
-
-        $spreadsheet->setActiveSheetIndex(0);
-        $activeSheet = $spreadsheet->getActiveSheet();
-
-        $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
-
-        $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
-
-        $activeSheet->setCellValue('A3', '');
-        $activeSheet->setCellValue('B3', '');
-        $activeSheet->setCellValue('C3', '');
-
-        $activeSheet->setCellValue('A4', 'Doctor')->getStyle('A4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B4', 'Service')->getStyle('B4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('C4', 'Total')->getStyle('C4')->getFont()->setBold(true);
-
-        $counter = 5;
-        $total = 0;
-        if (count($reportData)) {
-            $servicegrandtotal = 0;
-            foreach ($reportData as $reportpackagedata) {
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
-                $counter++;
-                $count = 0;
-                $servicetotal = 0;
-                foreach ($reportpackagedata['records'] as $reportRow) {
-                    $servicetotal += $reportRow['amount'];
-
-                    $activeSheet->setCellValue('B' . $counter, $reportRow['name']);
-                    $activeSheet->setCellValue('C' . $counter, number_format($reportRow['amount'], 2));
-                    $counter++;
-                }
-                $servicegrandtotal += $servicetotal;
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('C' . $counter, number_format($servicetotal, 2))->getStyle('A' . $counter)->getFont()->setBold(true);
-                $counter++;
-            }
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('B' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, '');
-            $counter++;
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('B' . $counter, 'Grand Total')->getStyle('B' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('C' . $counter, number_format($servicegrandtotal, 2))->getStyle('C' . $counter)->getFont()->setBold(true);
-        }
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'SaleSummaryDoctorsWise' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
-        header('Cache-Control: max-age=0');
-        $Excel_writer->save('php://output');
-    }
 
     /**
      * Load Sales By Services category.
@@ -1236,6 +1084,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    /** @deprecated Moved to App\Services\Reports\Revenue\GeneralRevenueDetailReport. Called via GeneralSalesReportController. */
     public function generalrevenuereportdetail(Request $request)
     {
 
@@ -1464,6 +1313,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    /** @deprecated Moved to App\Services\Reports\Revenue\GeneralRevenueSummaryReport. Called via GeneralSalesReportController. */
     public function generalrevenuereportsummary(Request $request)
     {
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__summary_report')) {
@@ -2275,6 +2125,7 @@ class FinanceReportController extends Controller
         $Excel_writer->save('php://output');
     }
 
+    /** @deprecated Moved to App\Services\Reports\Revenue\ConversionReport. Called via GeneralSalesReportController. */
     public function conversionreport(Request $request)
     {
         if (!Gate::allows('finance_general_revenue_reports_conversion_report')) {
@@ -2317,6 +2168,7 @@ class FinanceReportController extends Controller
         }
     }
 
+/** @deprecated Moved to App\Services\Reports\Revenue\ServicesSoldReport. Called via GeneralSalesReportController. */
 public function serviceSoldreport(Request $request)
 {
     // Handle date range
@@ -2407,6 +2259,7 @@ public function serviceSoldreport(Request $request)
         'locations'
     ));
 }
+/** @deprecated Moved to App\Services\Reports\Revenue\GenderWiseRevenueReport. Called via GeneralSalesReportController. */
 public static function revenueByGenderAndService($request)
 {
     // Extract data and account_id from request
@@ -2635,6 +2488,7 @@ public static function revenueByGenderAndService($request)
     /*
      *  Collection by Serivce Report
      */
+    /** @deprecated Moved to App\Services\Reports\Revenue\CollectionByServiceReport. Called via GeneralSalesReportController. */
     public function collectionbyservice(Request $request)
     {
 

@@ -56,6 +56,7 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\Reports\FinanceReportController;
+use App\Http\Controllers\Admin\Reports\GeneralSalesReportController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\MembershipsController as AdminMembershipsController;
 use App\Http\Controllers\Admin\MembershipTypesController as AdminMembershipTypesController;
@@ -573,7 +574,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('service-report/{service_id}', [FinanceReportController::class, 'serviceBarChart'])->name('service.barchart');
         Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
         Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
-        Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
+        Route::post('reports/account_sales_report_load', [GeneralSalesReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
         Route::post('reports/account_revenue_report_load', [FinanceReportController::class, 'revenueReportLoad'])->name('reports.account_revenue_report_load');
         Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
 
