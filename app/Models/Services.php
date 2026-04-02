@@ -327,7 +327,7 @@ class Services extends BaseModal
             ['account_id', '=', $account_id],
             ['active', '=', 1],
             ['slug', '!=', 'all'],
-        ])->get()->getDictionary();
+        ])->get()->keyBy('id');
     }
 
     /**
