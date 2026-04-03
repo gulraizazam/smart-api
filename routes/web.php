@@ -63,6 +63,7 @@ use App\Http\Controllers\Admin\MembershipTypesController as AdminMembershipTypes
 use App\Http\Controllers\Api\MembershipsController as ApiMembershipsController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Reports\OperationsReportController;
+use App\Http\Controllers\Admin\Reports\OperationsReportNewController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
@@ -601,7 +602,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
         Route::get('membership_reports', [MembershipReportsController::class, 'index'])->name('reports.membership-reports');
-        Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
+        Route::post('operation_reports/operations-report-load', [OperationsReportNewController::class, 'reportLoad'])->name('reports.operations_report_load');
         Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
         Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');

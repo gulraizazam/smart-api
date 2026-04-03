@@ -676,6 +676,7 @@ class Operations
      * @param  (mixed)  $request
      * @return (mixed)
      */
+    /** @deprecated Called via App\Services\Reports\Operations\DarReport. */
     public static function dar_report($data, $account_id)
     {
         if (isset($data['date_range']) && $data['date_range']) {
@@ -754,6 +755,7 @@ class Operations
         return [$appointment_data, $locationData];
     }
 
+    /** @deprecated Called via App\Services\Reports\Operations\WalkingReport. */
     public static function walking_report($data, $account_id)
     {
         if (isset($data['date_range']) && $data['date_range']) {
@@ -828,6 +830,7 @@ class Operations
         ];
     }
 
+    /** @deprecated Called via App\Services\Reports\Operations\AgentReport. */
     public static function agent_report($data, $account_id)
     {
         if (isset($data['date_range']) && $data['date_range']) {

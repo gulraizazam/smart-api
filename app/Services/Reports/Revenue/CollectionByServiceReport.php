@@ -5,23 +5,20 @@ declare(strict_types=1);
 namespace App\Services\Reports\Revenue;
 
 use App\Helpers\ACL;
-use App\Models\Appointments;
-use App\Models\Bundles;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
-use App\Models\Packages;
-use App\Models\PackageBundles;
-use App\Models\PackageService;
 use App\Models\Services;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class CollectionByServiceReport
 {
     /**
      * Generate collection by service report.
      *
-     * Extracted from App\Reports\Invoices::collectionbyservice()
-     * Business logic preserved exactly.
+     * Calculates service-wise revenue from package_advances where cash_flow='out'
+     * (service consumption records). Each record is linked to an appointment
+     * which contains the service_id.
      */
     public function generate(
         ?string $startDate,
@@ -31,35 +28,39 @@ class CollectionByServiceReport
         int $accountId,
     ): array {
         $resolvedLocationIds = $this->resolveLocationIds($locationIds, $regionId);
-        $locationInfo = Locations::whereIn('id', $resolvedLocationIds)->get();
+
+        $results = PackageAdvances::join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
+            ->whereDate('package_advances.created_at', '>=', $startDate)
+            ->whereDate('package_advances.created_at', '<=', $endDate)
+            ->where('package_advances.account_id', $accountId)
+            ->whereIn('package_advances.location_id', $resolvedLocationIds)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->where('package_advances.cash_flow', 'out')
+            ->select(
+                'appointments.service_id',
+                DB::raw('SUM(package_advances.cash_amount) as total_amount'),
+            )
+            ->groupBy('appointments.service_id')
+            ->get();
+
+        // Batch-load service names
+        $serviceIds = $results->pluck('service_id')->unique()->filter()->values()->toArray();
+        $services = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
         $reportData = [];
 
-        foreach ($locationInfo as $location) {
-            $advances = PackageAdvances::whereDate('created_at', '>=', $startDate)
-                ->whereDate('created_at', '<=', $endDate)
-                ->where('account_id', $accountId)
-                ->where('location_id', $location->id)
-                ->orderBy('created_at', 'asc')
-                ->get();
+        foreach ($results as $row) {
+            $service = $services->get($row->service_id);
 
-            if ($advances->isEmpty()) {
+            if (! $service) {
                 continue;
             }
 
-            $packageIds = [];
-            $bundles = [];
-
-            foreach ($advances as $advance) {
-                if (! $this->isValidTransaction($advance)) {
-                    continue;
-                }
-
-                if ($advance->cash_flow === 'in') {
-                    $this->processInflow($advance, $reportData, $packageIds, $bundles, $startDate, $endDate);
-                } else {
-                    $this->processOutflow($advance, $reportData, $bundles);
-                }
-            }
+            $reportData[$service->id] = [
+                'id' => $service->id,
+                'name' => $service->name,
+                'amount' => (float) $row->total_amount,
+            ];
         }
 
         return $this->buildResult($reportData, $startDate, $endDate);
@@ -122,7 +123,6 @@ class CollectionByServiceReport
             }
         } else {
             if (! empty($locationIds)) {
-                // If location_id is an array, use it; if single value, wrap it
                 if (is_array($locationIds)) {
                     $filtered = array_filter($locationIds, fn ($val) => $val !== '' && $val !== null);
                     if (! empty($filtered)) {
@@ -142,204 +142,6 @@ class CollectionByServiceReport
         }
 
         return $where;
-    }
-
-    private function isValidTransaction(PackageAdvances $advance): bool
-    {
-        return ($advance->cash_flow === 'in'
-                && $advance->cash_amount != '0'
-                && $advance->is_adjustment == '0'
-                && $advance->is_tax == '0'
-                && $advance->is_cancel == '0')
-            || ($advance->cash_flow === 'out'
-                && $advance->is_refund == '1'
-                && $advance->is_tax == '0');
-    }
-
-    private function processInflow(
-        PackageAdvances $advance,
-        array &$reportData,
-        array &$packageIds,
-        array &$bundles,
-        ?string $startDate,
-        ?string $endDate,
-    ): void {
-        if ($advance->appointment_id) {
-            $appointment = Appointments::where('id', $advance->appointment_id)
-                ->where('appointment_type_id', '2')
-                ->first();
-
-            if ($appointment) {
-                $service = Services::find($appointment->service_id);
-
-                if ($service && ! in_array($service->id, $bundles)) {
-                    $reportData[$service->id] = [
-                        'package_bundle_id' => 0,
-                        'id' => $service->id,
-                        'name' => $service->name,
-                        'amount' => 0,
-                    ];
-                    $bundles[] = $service->id;
-                }
-
-                if ($service) {
-                    $reportData[$service->id]['amount'] += $advance->cash_amount;
-                }
-            }
-        } else {
-            if (! in_array($advance->package_id, $packageIds, true)) {
-                $packageIds[] = $advance->package_id;
-                $package = Packages::find($advance->package_id);
-
-                if ($package) {
-                    $this->processPackageInflow($package, $advance, $reportData, $bundles, $startDate, $endDate);
-                }
-            }
-        }
-    }
-
-    private function processPackageInflow(
-        Packages $package,
-        PackageAdvances $advance,
-        array &$reportData,
-        array &$bundles,
-        ?string $startDate,
-        ?string $endDate,
-    ): void {
-        $consumedServices = PackageService::whereDate('updated_at', '>=', $startDate)
-            ->whereDate('updated_at', '<=', $endDate)
-            ->where('is_consumed', '1')
-            ->where('package_id', $package->id)
-            ->whereNotNull('package_id')
-            ->get();
-
-        if ($consumedServices->count() > 0) {
-            $consumedIds = $consumedServices->pluck('id')->toArray();
-            $totalConsume = $consumedServices->sum('tax_including_price');
-
-            // Process consumed services
-            foreach ($consumedServices as $packageService) {
-                $packageBundle = PackageBundles::find($packageService->package_bundle_id);
-                if (! $packageBundle) {
-                    continue;
-                }
-                $bundleInfo = Bundles::find($packageBundle->bundle_id);
-                if (! $bundleInfo) {
-                    continue;
-                }
-
-                if (! in_array($bundleInfo->id, $bundles)) {
-                    $reportData[$bundleInfo->id] = [
-                        'package_bundle_id' => $packageService->package_bundle_id,
-                        'id' => $bundleInfo->id,
-                        'name' => $bundleInfo->name,
-                        'amount' => 0,
-                    ];
-                    $bundles[] = $bundleInfo->id;
-                }
-                $reportData[$bundleInfo->id]['amount'] += $packageService->tax_including_price;
-            }
-
-            // Calculate remaining for unconsumed services
-            $cashReceive = PackageAdvances::whereDate('created_at', '>=', $startDate)
-                ->whereDate('created_at', '<=', $endDate)
-                ->where('package_id', $package->id)
-                ->where('is_cancel', '0')
-                ->where('cash_flow', 'in')
-                ->sum('cash_amount');
-
-            $unconsumedServices = PackageService::whereNotIn('id', $consumedIds)
-                ->where('package_id', $package->id)
-                ->whereNotNull('package_id')
-                ->get();
-
-            foreach ($unconsumedServices as $packageService) {
-                $packageBundle = PackageBundles::find($packageService->package_bundle_id);
-                if (! $packageBundle) {
-                    continue;
-                }
-                $bundleInfo = Bundles::find($packageBundle->bundle_id);
-                if (! $bundleInfo) {
-                    continue;
-                }
-
-                $remainingAmount = $cashReceive - $totalConsume;
-                $totalPrice = $package->total_price - $totalConsume;
-                $divideAmount = $totalPrice > 0
-                    ? ($packageService->tax_including_price / $totalPrice) * $remainingAmount
-                    : 0;
-
-                if (! in_array($bundleInfo->id, $bundles)) {
-                    $reportData[$bundleInfo->id] = [
-                        'id' => $bundleInfo->id,
-                        'name' => $bundleInfo->name,
-                        'amount' => 0,
-                    ];
-                    $bundles[] = $bundleInfo->id;
-                }
-
-                $reportData[$bundleInfo->id]['amount'] += $divideAmount;
-            }
-        }
-    }
-
-    private function processOutflow(PackageAdvances $advance, array &$reportData, array &$bundles): void
-    {
-        if ($advance->appointment_id) {
-            $appointment = Appointments::find($advance->appointment_id);
-
-            if ($appointment) {
-                $service = Services::find($appointment->service_id);
-
-                if ($service && ! in_array($service->id, $bundles)) {
-                    $reportData[$appointment->service_id] = [
-                        'id' => $appointment->service_id,
-                        'name' => $service->name,
-                        'amount' => 0,
-                    ];
-                    $bundles[] = $service->id;
-                }
-
-                if ($service) {
-                    $reportData[$appointment->service_id]['amount'] -= $advance->cash_amount;
-                }
-            }
-        } else {
-            $package = Packages::find($advance->package_id);
-
-            if ($package) {
-                $packageServices = PackageService::where('package_id', $package->id)
-                    ->whereNotNull('package_id')
-                    ->get();
-
-                foreach ($packageServices as $packageService) {
-                    $packageBundle = PackageBundles::find($packageService->package_bundle_id);
-                    if (! $packageBundle) {
-                        continue;
-                    }
-                    $bundleInfo = Bundles::find($packageBundle->bundle_id);
-                    if (! $bundleInfo) {
-                        continue;
-                    }
-
-                    $totalAmount = $package->total_price;
-                    $divideAmount = $totalAmount > 0
-                        ? ($packageService->tax_including_price * $advance->cash_amount) / $totalAmount
-                        : 0;
-
-                    if (! in_array($bundleInfo->id, $bundles)) {
-                        $reportData[$bundleInfo->id] = [
-                            'id' => $bundleInfo->id,
-                            'name' => $bundleInfo->name,
-                            'amount' => 0,
-                        ];
-                        $bundles[] = $bundleInfo->id;
-                    }
-
-                    $reportData[$bundleInfo->id]['amount'] -= $divideAmount;
-                }
-            }
-        }
     }
 
     private function buildResult(array $reportData, ?string $startDate, ?string $endDate): array
