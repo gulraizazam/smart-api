@@ -1,97 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exports;
 
-
-use App\Models\Packages;
-use App\Models\Services;
-use Maatwebsite\Excel\Events\AfterSheet;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use App\Services\Reports\MembershipReportService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportMemberships implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private $request;
+    public function __construct(
+        private readonly MembershipReportService $reportService,
+        private readonly Request $request,
+    ) {}
 
-    public function __construct($request)
+    public function collection(): Collection
     {
-        $this->request = $request;
-    }
+        $startDate = null;
+        $endDate = null;
 
-    public function collection()
-    {
-
-        $where = [];
-        $whereMembership = [];
-        if ($this->request->date_range && $this->request->date_range != '') {
-            $date_range = explode(' - ', $this->request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
+        if ($this->request->date_range && $this->request->date_range !== '') {
+            $parts = explode(' - ', $this->request->date_range);
+            $startDate = date('Y-m-d', strtotime($parts[0]));
+            $endDate = date('Y-m-d', strtotime($parts[1]));
         }
 
-        if ($this->request->location_id != null || $this->request->location_id != '') {
-            $where[] = ['packages.location_id', '=', $this->request->location_id];
-        }
-        if ($this->request->membership_type_id != null || $this->request->membership_type_id != '') {
-            $whereMembership[] = [['membership_type_id' => $this->request->membership_type_id]];
-        }
+        $locationId = $this->request->location_id ? (int) $this->request->location_id : null;
+        $membershipTypeId = ($this->request->membership_type_id !== null && $this->request->membership_type_id !== '')
+            ? $this->request->membership_type_id
+            : null;
 
-
-        $serviceIds = Services::where('name', 'like', '%Gold Membership Card%')
-            ->orWhere('name', 'like', '%Student Membership Card%')
-            ->pluck('id')->toArray();
-
-        $packagesWithServices = Packages::with([
-            'user',
-            'packageservice.service',
-            'location',
-            'user.membership.membershipType'
-        ])
-            ->whereHas('packageservice', function ($query) use ($serviceIds) {
-                $query->whereIn('service_id', $serviceIds);
-            })
-            ->where($where)
-            ->when(isset($this->request->membership_type_id), function ($query) use ($whereMembership) {
-                if ($this->request->membership_type_id === "no_membership") {
-                    $query->whereDoesntHave('user.membership');
-                } else {
-                    $query->whereHas('user.membership', function ($query) use ($whereMembership) {
-                        $query->where($whereMembership);
-                    });
-                }
-            })
-            ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
-                $query->whereHas('user.membership', function ($query) use ($start_date, $end_date) {
-                    $query->whereBetween('assigned_at', [$start_date, $end_date]);
-                });
-            })
-            ->get();
-
-        $users = $packagesWithServices->map(function ($package) use ($serviceIds) {
-            $user = $package->user;
-            $service = $package->packageservice->whereIn('service_id', $serviceIds)->first();
-            $serviceName = $service->service->name;
-            $location = $package->location;
-            $membership = $user->membership;
-            return [
-                'user_id' => $user->id,
-                'user_name' => $user->name,
-                'location' => $location->name,
-                'service_name' => $serviceName,
-                'service_status' => $service->is_consumed ? 'Consumed' : 'Not Consumed',
-                'membership_code' => $membership ? $membership->code : 'No membership',
-                'membership_type' => $membership ? $membership->membershipType->name : 'No membership',
-                'membership_type_id' => $membership ? $membership->membershipType->id : 0,
-                'assigned_at' => $membership ? $membership->assigned_at : null,
-            ];
-        });
-
-        return $users;
+        return $this->reportService->generate(
+            locationId: $locationId,
+            membershipTypeId: $membershipTypeId,
+            startDate: $startDate,
+            endDate: $endDate,
+        );
     }
 
     public function headings(): array
@@ -103,51 +53,34 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
             'Membership Code',
             'Membership Type',
             'Service Status',
-
         ];
     }
 
-    public function map($users): array
+    public function map($row): array
     {
-
-
-        $user_data = [];
-
-
-        $user_data[] = [
-            $users['user_id'],
-            $users['user_name'] ?? 'N/A',
-            $users['location'] ?? 'N/A',
-            $users['membership_code'] ?? 'N/A',
-            $users['membership_type'] ?? 'N/A',
-            $users['service_status'] ?? 'N/A',
+        return [
+            [
+                $row['user_id'],
+                $row['user_name'] ?? 'N/A',
+                $row['location'] ?? 'N/A',
+                $row['membership_code'] ?? 'N/A',
+                $row['membership_type'] ?? 'N/A',
+                $row['service_status'] ?? 'N/A',
+            ],
         ];
-
-
-        return $user_data;
     }
 
-    /**
-     * Write code on Method
-     */
     public function registerEvents(): array
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $event->sheet->getDelegate()->getStyle('A1:K1')->getFont()->setBold(true);
-                $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
-                $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('C')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('D')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('E')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('F')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('G')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
-                $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('L')->setWidth(20);
+                $sheet = $event->sheet->getDelegate();
+                $sheet->getStyle('A1:F1')->getFont()->setBold(true);
+                $sheet->getRowDimension('1')->setRowHeight(30);
+
+                foreach (range('A', 'F') as $col) {
+                    $sheet->getColumnDimension($col)->setWidth(20);
+                }
             },
         ];
     }

@@ -607,7 +607,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
         Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
-        Route::get('memberships/export', [MembershipReportsController::class, 'Export'])->name('memberships.export.excel');
+        Route::get('memberships/export', [MembershipReportsController::class, 'export'])->name('memberships.export.excel');
         Route::get('/admin/doctor/consultant/breakdown/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('doctor.consultant.breakdown');
         Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
         Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
