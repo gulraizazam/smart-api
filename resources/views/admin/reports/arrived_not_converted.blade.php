@@ -82,11 +82,6 @@
                     
                 <tbody>
                 @foreach($patients as $patient)
-                    <?php
-                    $doct = \App\Models\User::whereId($patient->doctor_id)->first();
-                    $service = \App\Models\Services::whereId($patient->service_id)->first();
-                    $loc = \App\Models\Locations::whereId($patient->location_id)->first();
-                    ?>
                     <tr>
                         <td>{{$patient->id}}</td>
                         <td>{{$patient->name ?? 'N/A'}}</td>
@@ -95,10 +90,10 @@
                         @else
                         <td>***********</td>
                         @endif
-                        <td>{{$service->name}}</td>
-                        <td>{{$doct->name ?? 'N/A'}}</td>
-                        <td>{{$loc->name ?? 'N/A'}}</td>
-                        <td>{{$patient->scheduled_date}}</td> 
+                        <td>{{$patient->service_name ?? 'N/A'}}</td>
+                        <td>{{$patient->doctor_name ?? 'N/A'}}</td>
+                        <td>{{$patient->location_name ?? 'N/A'}}</td>
+                        <td>{{$patient->scheduled_date}}</td>
                     </tr>
                 @endforeach
                 </tbody>

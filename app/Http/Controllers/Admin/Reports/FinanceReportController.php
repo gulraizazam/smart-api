@@ -2912,14 +2912,9 @@ public static function revenueByGenderAndService($request)
         ]);
     }
 
-    public function ArrivedNotConverted()
-    {
-        $services = Services::where(['parent_id' => 0])->whereNotIn('slug', ['all'])->get();
-        $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-
-        return view('admin.reports.arrived', get_defined_vars());
-    }
+    /**
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController
+     */
 
     public function DailyArrival()
     {
@@ -3228,53 +3223,13 @@ public static function revenueByGenderAndService($request)
 
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
-    public function loadAppointmentsReport(Request $request)
-    {
+    /**
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\AppointmentsReportController
+     */
 
-        $timeInterval  = $request->time;
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-
-        $centerId = $request->input('centre_id');
-        $createdBy = $request->input('created_by');
-
-        // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
-        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
-
-        $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
-            $query->orderBy('created_at', 'asc'); // Order invoices by creation time
-        }])
-            ->where('appointment_type_id', 1)
-            ->whereIn('appointment_status_id', $statusIds)
-            ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
-                $query->havingRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?', [$timeInterval]);
-            })
-            ->when($centerId, function ($query, $centerId) {
-                // Apply the centre_id condition if it's present
-                return $query->where('location_id', $centerId);
-            })
-            ->when($createdBy, function ($query, $createdBy) {
-                // Apply the centre_id condition if it's present
-                return $query->where('created_by', $createdBy);
-            })
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get();
-        return view('admin.reports.appointmentsReports',get_defined_vars());
-
-    }
-    public function appointmentsReport()
-    {
-
-        $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.appointments_report', get_defined_vars());
-    }
+    /**
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\AppointmentsReportController
+     */
 
     /**
      * Display Tax Calculation Report filter page.
@@ -3356,169 +3311,6 @@ public static function revenueByGenderAndService($request)
     }
 
     /**
-     * CSR Dashboard - Display consultations scheduled in next 5 days across all branches
-     *
-     * @return \Illuminate\Http\Response
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\CsrDashboardController
      */
-    public function csrDashboard()
-    {
-       
-        $today = Carbon::today();
-        $endDate = Carbon::today()->addDays(4); // Today + 4 days = 5 days total
-
-        // Get all locations/branches accessible to user
-        $locations = Locations::getActiveSorted(ACL::getUserCentres());
-
-        // Get consultation appointment type (type_id = 1 is typically consultancy)
-        $consultationTypeId = config('constants.appointment_type_consultancy', 1);
-
-        // Get appointments grouped by location and date
-        $appointments = Appointments::with(['patient', 'doctor', 'location', 'appointment_status_base', 'user'])
-            ->whereIn('location_id', ACL::getUserCentres())
-            ->where('account_id', Auth::user()->account_id)
-            ->where('appointment_type_id', $consultationTypeId)
-            ->whereDate('scheduled_date', '>=', $today)
-            ->whereDate('scheduled_date', '<=', $endDate)
-            ->orderBy('location_id')
-            ->orderBy('scheduled_date')
-            ->orderBy('scheduled_time')
-            ->get();
-
-        // Group appointments by location and date
-        $dashboardData = [];
-        $locationStats = [];
-        $dateRange = [];
-
-        // Build date range array
-        for ($i = 0; $i < 5; $i++) {
-            $date = Carbon::today()->addDays($i);
-            $dateRange[$date->format('Y-m-d')] = [
-                'date' => $date->format('Y-m-d'),
-                'display' => $date->format('D, M d'),
-                'is_today' => $i === 0,
-            ];
-        }
-
-        // Initialize location stats
-        foreach ($locations as $locationId => $locationName) {
-            if ($locationId) {
-                $locationStats[$locationId] = [
-                    'name' => $locationName,
-                    'total' => 0,
-                    'dates' => array_fill_keys(array_keys($dateRange), 0),
-                ];
-            }
-        }
-
-        // Process appointments for location stats
-        foreach ($appointments as $appointment) {
-            $locationId = $appointment->location_id;
-            $dateKey = Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
-
-            if (isset($locationStats[$locationId])) {
-                $locationStats[$locationId]['total']++;
-                if (isset($locationStats[$locationId]['dates'][$dateKey])) {
-                    $locationStats[$locationId]['dates'][$dateKey]++;
-                }
-            }
-        }
-
-        // Calculate totals
-        $totalAppointments = $appointments->count();
-        $totalByDate = [];
-        foreach ($dateRange as $dateKey => $dateInfo) {
-            $totalByDate[$dateKey] = 0;
-            foreach ($locationStats as $stats) {
-                $totalByDate[$dateKey] += $stats['dates'][$dateKey];
-            }
-        }
-
-        // Get CSR user IDs from role_has_users table (CSR role IDs: 2)
-        $csrRoleIds = [2]; // CSR
-        $csrUserIds = RoleHasUsers::whereIn('role_id', $csrRoleIds)->pluck('user_id')->toArray();
-
-        // Get all users for name lookup
-        $users = User::getAllRecords(Auth::user()->account_id)->getDictionary();
-
-        // CSR-wise consultation stats (New Created = created_by, Rescheduled = converted_by)
-        $csrStats = [];
-
-        // Initialize all CSR users with 0 counts first
-        foreach ($csrUserIds as $csrId) {
-            if (isset($users[$csrId]) && $users[$csrId]->active == 1) {
-                $csrStats[$csrId] = [
-                    'name' => $users[$csrId]->name,
-                    'new_created' => array_fill_keys(array_keys($dateRange), 0),
-                    'rescheduled' => array_fill_keys(array_keys($dateRange), 0),
-                    'total_new' => 0,
-                    'total_rescheduled' => 0,
-                ];
-            }
-        }
-
-        // Get new consultations (created_by) - only for CSR users
-        $newConsultations = Appointments::whereIn('location_id', ACL::getUserCentres())
-            ->where('account_id', Auth::user()->account_id)
-            ->where('appointment_type_id', $consultationTypeId)
-            ->whereDate('scheduled_date', '>=', $today)
-            ->whereDate('scheduled_date', '<=', $endDate)
-            ->whereNotNull('created_by')
-            ->whereIn('created_by', $csrUserIds)
-            ->select('created_by', 'scheduled_date', DB::raw('COUNT(*) as count'))
-            ->groupBy('created_by', 'scheduled_date')
-            ->get();
-
-        // Get rescheduled consultations (converted_by) - only for CSR users
-        $rescheduledConsultations = Appointments::whereIn('location_id', ACL::getUserCentres())
-            ->where('account_id', Auth::user()->account_id)
-            ->where('appointment_type_id', $consultationTypeId)
-            ->whereDate('scheduled_date', '>=', $today)
-            ->whereDate('scheduled_date', '<=', $endDate)
-            ->whereNotNull('converted_by')
-            ->whereIn('converted_by', $csrUserIds)
-            ->select('converted_by', 'scheduled_date', DB::raw('COUNT(*) as count'))
-            ->groupBy('converted_by', 'scheduled_date')
-            ->get();
-
-        // Process new consultations
-        foreach ($newConsultations as $record) {
-            $csrId = $record->created_by;
-            $dateKey = Carbon::parse($record->scheduled_date)->format('Y-m-d');
-
-            if (isset($csrStats[$csrId]) && isset($csrStats[$csrId]['new_created'][$dateKey])) {
-                $csrStats[$csrId]['new_created'][$dateKey] += $record->count;
-                $csrStats[$csrId]['total_new'] += $record->count;
-            }
-        }
-
-        // Process rescheduled consultations
-        foreach ($rescheduledConsultations as $record) {
-            $csrId = $record->converted_by;
-            $dateKey = Carbon::parse($record->scheduled_date)->format('Y-m-d');
-
-            if (isset($csrStats[$csrId]) && isset($csrStats[$csrId]['rescheduled'][$dateKey])) {
-                $csrStats[$csrId]['rescheduled'][$dateKey] += $record->count;
-                $csrStats[$csrId]['total_rescheduled'] += $record->count;
-            }
-        }
-
-        // Sort CSR stats by name
-        uasort($csrStats, function($a, $b) {
-            return strcasecmp($a['name'], $b['name']);
-        });
-
-        // Get CSR daily target from settings
-        $csrTargetSetting = Settings::getBySlug('sys-csr-target', Auth::user()->account_id);
-        $csrTarget = $csrTargetSetting ? (int) $csrTargetSetting->data : 10;
-
-        return view('admin.reports.csr_dashboard', compact(
-            'locationStats',
-            'dateRange',
-            'totalAppointments',
-            'totalByDate',
-            'csrStats',
-            'today',
-            'csrTarget'
-        ));
-    }
 }

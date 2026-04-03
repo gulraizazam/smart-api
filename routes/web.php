@@ -75,6 +75,9 @@ use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 use App\Http\Controllers\UpsellingReportController;
 use App\Http\Controllers\Admin\InvoiceGenerationController;
+use App\Http\Controllers\Admin\Reports\AppointmentsReportController;
+use App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController;
+use App\Http\Controllers\Admin\Reports\CsrDashboardController;
 use App\Models\PackageService;
 
 /*
@@ -574,7 +577,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('reports/tax_calculation_report_load', [FinanceReportController::class, 'taxCalculationReportLoad'])->name('reports.tax_calculation_report_load');
         Route::get('service-report/{service_id}', [FinanceReportController::class, 'serviceBarChart'])->name('service.barchart');
         Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
-        Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
+        Route::get('reports/arrived_not_converted', [ArrivedNotConvertedController::class, 'index'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
         Route::post('reports/account_sales_report_load', [GeneralSalesReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
         Route::post('reports/account_revenue_report_load', [FinanceReportController::class, 'revenueReportLoad'])->name('reports.account_revenue_report_load');
         Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
@@ -603,7 +606,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
         Route::get('membership_reports', [MembershipReportsController::class, 'index'])->name('reports.membership-reports');
         Route::post('operation_reports/operations-report-load', [OperationsReportNewController::class, 'reportLoad'])->name('reports.operations_report_load');
-        Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
+        Route::post('operation_reports/converted-report-load', [ArrivedNotConvertedController::class, 'reportLoad'])->name('reports.converted_report_load');
         Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
         Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
@@ -619,11 +622,11 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
          Route::get('reports/doctor_wise_conversion', [FinanceReportController::class, 'doctorWiseConversion'])->name('reports.doctorWiseConversion')->middleware('permission:staff_wise_arrival_manage');
 
          Route::post('reports/incentive_report', [FinanceReportController::class, 'loadIncentiveReport'])->name('reports.incentive_report');
-         Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
-         Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');
+         Route::get('reports/appointments', [AppointmentsReportController::class, 'index'])->name('reports.appointmentsReport');
+         Route::post('reports/appointments_report', [AppointmentsReportController::class, 'reportLoad'])->name('reports.appointments_report');
          
          // CSR Dashboard - Consultations scheduled in next 5 days
-         Route::get('reports/csr-dashboard', [FinanceReportController::class, 'csrDashboard'])->name('reports.csr_dashboard')->middleware('permission:csr_dashboard_report');
+         Route::get('reports/csr-dashboard', CsrDashboardController::class)->name('reports.csr_dashboard')->middleware('permission:csr_dashboard_report');
 
          //////Dashboard Stats - Now handled by API routes in api.php //////
         // Kept routes that are still needed (not migrated to API or used elsewhere)
