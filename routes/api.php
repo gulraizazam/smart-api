@@ -796,6 +796,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     Route::post('reports/general-sales', [\App\Http\Controllers\Api\Reports\GeneralSalesReportController::class, '__invoke'])->name('api.reports.general-sales');
     Route::post('reports/operations', [\App\Http\Controllers\Api\Reports\OperationsReportController::class, '__invoke'])->name('api.reports.operations');
+    Route::post('reports/memberships', [\App\Http\Controllers\Api\Reports\MembershipReportController::class, '__invoke'])->name('api.reports.memberships');
     /*Warehouseroutes*/
 
     /*Brand routes*/

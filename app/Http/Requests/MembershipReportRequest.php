@@ -1,40 +1,58 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 class MembershipReportRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
-        return true; // Adjust this based on your authorization logic
+        return true;
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
-            'location_id' => 'nullable|integer',
-            'membership_type_id' => 'nullable',
-            'date_range' => 'nullable|string',
+            'location_id'        => 'nullable|integer',
+            'membership_type_id' => 'nullable|string',
+            'date_range'         => 'nullable|string',
         ];
     }
 
-    public function getStartDate()
+    public function locationId(): ?int
+    {
+        $value = $this->input('location_id');
+
+        return $value ? (int) $value : null;
+    }
+
+    public function membershipTypeId(): ?string
+    {
+        $value = $this->input('membership_type_id');
+
+        return ($value !== null && $value !== '') ? $value : null;
+    }
+
+    public function startDate(): ?string
     {
         if ($this->date_range) {
-            $date_range = explode(' - ', $this->date_range);
-            return date('Y-m-d', strtotime($date_range[0]));
+            $parts = explode(' - ', $this->date_range);
+
+            return date('Y-m-d', strtotime($parts[0]));
         }
 
         return null;
     }
 
-    public function getEndDate()
+    public function endDate(): ?string
     {
         if ($this->date_range) {
-            $date_range = explode(' - ', $this->date_range);
-            return date('Y-m-d', strtotime($date_range[1]));
+            $parts = explode(' - ', $this->date_range);
+
+            return date('Y-m-d', strtotime($parts[1]));
         }
 
         return null;

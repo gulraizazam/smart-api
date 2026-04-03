@@ -79,7 +79,9 @@
       "Bash(find:*)",
       "Bash(grep -E \"\\\\.\\(php\\)$\")",
       "Bash(ls C:/laragon/www/cutera-upgradation1/app/Http/Resources/*/*.php)",
-      "Bash(find C:laragonwwwcutera-upgradation1 -path */.git -prune -o -type f \\\\\\(-name *discount* -o -name *Discount* \\\\\\) -print)"
+      "Bash(find C:laragonwwwcutera-upgradation1 -path */.git -prune -o -type f \\\\\\(-name *discount* -o -name *Discount* \\\\\\) -print)",
+      "Bash(xargs tail:*)",
+      "Bash(document)"
     ]
   }
 }
