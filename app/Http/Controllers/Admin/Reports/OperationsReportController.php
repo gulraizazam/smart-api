@@ -1471,67 +1471,7 @@ class OperationsReportController extends Controller
 
     }
 
-    public function reportLoadConverted(Request $request)
-    {
-        // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
-        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
-
-        $where = [];
-        $where[] = [
-            'appointments.appointment_type_id',
-            '=',
-            1,
-        ];
-        if ($request->location_id && $request->location_id) {
-            $where[] = [
-                'appointments.location_id',
-                '=',
-                $request->location_id,
-            ];
-        }
-        if ($request->doctor_id && $request->doctor_id != '') {
-            $where[] = [
-                'appointments.doctor_id',
-                '=',
-                $request->doctor_id,
-            ];
-        }
-        if ($request->service_id && $request->service_id != '') {
-            $where[] = [
-                'appointments.service_id',
-                '=',
-                $request->service_id,
-            ];
-        }
-        if (isset($request->date_range) && $request->date_range) {
-            $date_range = explode(' - ', $request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        if (isset($request->date_range) && $request->date_range) {
-            $patients = DB::table('users')
-                ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*', 'appointments.doctor_id', 'appointments.location_id', 'appointments.service_id', 'appointments.scheduled_date', 'appointments.id as apt_id')
-                ->join('appointments', 'appointments.patient_id', '=', 'users.id')
-                ->leftJoin('package_advances', function ($join) {
-                    $join->on('package_advances.patient_id', '=', 'users.id');
-                    $join->where('package_advances.cash_flow', '=', 'in');
-                })
-                ->where($where)
-                ->whereIn('appointments.appointment_status_id', $statusIds)
-                ->whereBetween('appointments.scheduled_date', [$start_date, $end_date])
-                ->groupBy('users.id')
-                ->havingRaw('cash_amount_test < 1')
-                ->orderBy('appointments.scheduled_date', 'desc')
-                ->get();
-        }
-
-        return view('admin.reports.arrived_not_converted', compact('patients'));
-    }
+    /**
+     * @deprecated Moved to App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController
+     */
 }

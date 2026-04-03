@@ -797,6 +797,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('reports/general-sales', [\App\Http\Controllers\Api\Reports\GeneralSalesReportController::class, '__invoke'])->name('api.reports.general-sales');
     Route::post('reports/operations', [\App\Http\Controllers\Api\Reports\OperationsReportController::class, '__invoke'])->name('api.reports.operations');
     Route::post('reports/memberships', [\App\Http\Controllers\Api\Reports\MembershipReportController::class, '__invoke'])->name('api.reports.memberships');
+    Route::post('reports/appointments', [\App\Http\Controllers\Api\Reports\AppointmentsReportController::class, '__invoke'])->name('api.reports.appointments');
+    Route::get('reports/csr-dashboard', [\App\Http\Controllers\Api\Reports\CsrDashboardController::class, '__invoke'])->name('api.reports.csr-dashboard');
+    Route::post('reports/arrived-not-converted', [\App\Http\Controllers\Api\Reports\ArrivedNotConvertedController::class, '__invoke'])->name('api.reports.arrived-not-converted');
     /*Warehouseroutes*/
 
     /*Brand routes*/
