@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class Brand extends BaseModal
 {
@@ -16,11 +16,16 @@ class Brand extends BaseModal
 
     protected $table = 'brands';
 
+    // -----------------------------------------------------------------
+    // Active query methods (used by other modules)
+    // -----------------------------------------------------------------
+
+    // -----------------------------------------------------------------
+    // Deprecated methods — logic moved to BrandService
+    // -----------------------------------------------------------------
+
     /**
-     * Get Total Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Use BrandService::getDatatableCount() instead.
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
@@ -35,12 +40,7 @@ class Brand extends BaseModal
     }
 
     /**
-     * Get Records
-     *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Use BrandService::getDatatableRecords() instead.
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
@@ -53,11 +53,7 @@ class Brand extends BaseModal
     }
 
     /**
-     * Get filters
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Filter logic moved to BrandService.
      */
     public static function lead_sources_filters($request, $account_id, $search = false)
     {
@@ -75,10 +71,7 @@ class Brand extends BaseModal
     }
 
     /**
-     * Create Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use BrandService::create() instead.
      */
     public static function createRecord($request, $account_id)
     {
@@ -91,10 +84,7 @@ class Brand extends BaseModal
     }
 
     /**
-     * Update Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use BrandService::update() instead.
      */
     public static function updateRecord($id, $request, $account_id)
     {
@@ -121,10 +111,7 @@ class Brand extends BaseModal
     }
 
     /**
-     * Delete Record
-     *
-     * @param id
-     * @return (mixed)
+     * @deprecated Use BrandService::delete() instead.
      */
     public static function DeleteRecord($id)
     {

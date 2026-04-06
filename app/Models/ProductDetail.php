@@ -1,11 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-
-
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductDetail extends BaseModal
