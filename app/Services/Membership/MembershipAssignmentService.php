@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Membership;
 
 use App\Exceptions\MembershipException;
@@ -15,12 +16,9 @@ use Illuminate\Support\Facades\Log;
 
 class MembershipAssignmentService
 {
-    protected MembershipService $membershipService;
-
-    public function __construct(MembershipService $membershipService)
-    {
-        $this->membershipService = $membershipService;
-    }
+    public function __construct(
+        protected readonly MembershipService $membershipService,
+    ) {}
 
     /**
      * Assign membership to patient

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use DateTime;
@@ -8,9 +9,11 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Locations extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Locations extends BaseModel
 {
     use SoftDeletes;
 
@@ -20,103 +23,103 @@ class Locations extends BaseModal
         'address', 'google_map', 'region_id', 'city_id', 'active', 'sort_no', 'created_at', 'updated_at', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn',
     ];
 
-    protected static $_fillable = ['name', 'fdo_name', 'fdo_phone', 'slug', 'address', 'google_map', 'region_id', 'city_id', 'active', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn'];
+    protected static array $_fillable = ['name', 'fdo_name', 'fdo_phone', 'slug', 'address', 'google_map', 'region_id', 'city_id', 'active', 'parent_id', 'image_src', 'tax_percentage', 'ntn', 'stn'];
 
     protected $table = 'locations';
 
-    protected static $_table = 'locations';
+    protected static string $_table = 'locations';
 
     /**
      * sent the city data to resource has rota.
      */
-    public function resourcehasrota()
+    public function resourcehasrota(): HasMany
     {
-        return $this->hasMany('App\Models\ResourceHasRota', 'location_id');
+        return $this->hasMany(ResourceHasRota::class, 'location_id');
     }
 
     /**
      * sent the location name to resource with location_id.
      */
-    public function resource()
+    public function resource(): HasMany
     {
 
-        return $this->hasMany('App\Models\Resources', 'location_id');
+        return $this->hasMany(Resources::class, 'location_id');
     }
 
     /**
      * Get the locations.
      */
-    public function doctorhaslocation()
+    public function doctorhaslocation(): HasMany
     {
 
-        return $this->hasMany('App\Models\DoctorHasLocations', 'location_id');
+        return $this->hasMany(DoctorHasLocations::class, 'location_id');
     }
 
     /**
      * Get the locations.
      */
-    public function discounthaslocation()
+    public function discounthaslocation(): HasMany
     {
 
-        return $this->hasMany('App\Models\DiscountHasLocations', 'location_id');
+        return $this->hasMany(DiscountHasLocations::class, 'location_id');
     }
 
     /**
      * Get the Locations that owns the City.
      */
-    public function city()
+    public function city(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Cities')->withTrashed();
+        return $this->belongsTo(Cities::class)->withTrashed();
     }
 
     /**
      * Get the Locations that owns the City.
      */
-    public function region()
+    public function region(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Regions')->withTrashed();
+        return $this->belongsTo(Regions::class)->withTrashed();
     }
 
     /**
      * Get the doctors for location.
      */
-    public function doctors()
+    public function doctors(): HasMany
     {
-        return $this->hasMany('App\Models\Doctors', 'location_id');
+        return $this->hasMany(Doctors::class, 'location_id');
     }
 
     /**
      * Get the doctors for location.
      */
-    public function doctorsActive()
+    public function doctorsActive(): HasMany
     {
-        return $this->hasMany('App\Models\Doctors', 'location_id')->where(['active' => 1]);
+        return $this->hasMany(Doctors::class, 'location_id')->where(['active' => 1]);
     }
 
     /**
      * Get the appointments for location.
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'location_id');
+        return $this->hasMany(Appointments::class, 'location_id');
     }
 
     /**
      * Get location.
      */
-    public function packageadvances()
+    public function packageadvances(): HasMany
     {
-        return $this->hasMany('App\Models\PackageAdvances', 'location_id');
+        return $this->hasMany(PackageAdvances::class, 'location_id');
     }
 
-    public function audit_field_before()
+    public function audit_field_before(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
     }
 
-    public function audit_field_after()
+    public function audit_field_after(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
     }
 
     /**
@@ -130,10 +133,10 @@ class Locations extends BaseModal
     /**
      * Get the locations.
      */
-    public function package()
+    public function package(): HasMany
     {
 
-        return $this->hasMany('App\Models\Packages', 'location_id');
+        return $this->hasMany(Packages::class, 'location_id');
     }
 
     /**
@@ -983,9 +986,9 @@ class Locations extends BaseModal
         return false;
     }
 
-    public function service_has_locations()
+    public function service_has_locations(): HasMany
     {
-        return $this->hasMany('App\Models\ServiceHasLocations', 'location_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(ServiceHasLocations::class, 'location_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     /*

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Observers\CashFlow;
 
 use App\Models\CashFlow\CashTransfer;

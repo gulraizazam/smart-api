@@ -1,22 +1,24 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Documents extends BaseModal
+class Documents extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'document_type', 'url', 'active', 'user_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name', 'document_type', 'url', 'active', 'user_id'];
+    protected static array $_fillable = ['name', 'document_type', 'url', 'active', 'user_id'];
 
     protected $table = 'documents';
 
-    protected static $_table = 'documents';
+    protected static string $_table = 'documents';
 
     protected $appends = ['full_url'];
 
@@ -238,7 +240,7 @@ class Documents extends BaseModal
         return $where;
     }
 
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }

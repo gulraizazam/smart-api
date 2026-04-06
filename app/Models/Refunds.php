@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
@@ -11,6 +12,7 @@ use App\HelperModule\ApiHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Refunds extends Model
 {
@@ -18,16 +20,16 @@ class Refunds extends Model
 
     protected $fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'account_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'package_id', 'deleted_at', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax','is_setteled'];
 
-    protected static $_fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'package_id', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax'];
+    protected static array $_fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'package_id', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax'];
 
     protected $table = 'package_advances';
 
-    protected static $_table = 'package_advances';
+    protected static string $_table = 'package_advances';
 
     /**
      * Get the user information that present in packages_advances.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }

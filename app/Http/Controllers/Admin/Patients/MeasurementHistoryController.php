@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
@@ -23,12 +23,7 @@ class MeasurementHistoryController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the resource.
@@ -117,7 +112,7 @@ class MeasurementHistoryController extends Controller
             'manage' => Gate::allows('appointments_measurement_manage'),
         ];
 
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     private function getFiltersData($records, $filename)
@@ -167,14 +162,14 @@ class MeasurementHistoryController extends Controller
 
         $leadServices = $measurementinformation->service_id;
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'users' => $users,
             'patient_id' => $patient_id,
             'measurementinformation' => $measurementinformation,
             'Services' => $Services,
             'leadServices' => $leadServices,
-        ], 'admin.patients.card.measurement.edit');
+        ]);
 
     }
 
@@ -232,7 +227,7 @@ class MeasurementHistoryController extends Controller
 
         $leadServices = $measurementinformation->service_id;
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'patient_id' => $patient_id,
             'measurementinformation' => $measurementinformation,
@@ -240,7 +235,7 @@ class MeasurementHistoryController extends Controller
             'Services' => $Services,
             'leadServices' => $leadServices,
             'thisId' => $id,
-        ], 'admin.patients.card.measurement.filled_preview');
+        ]);
 
     }
 }

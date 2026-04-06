@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreSettingRequest;
 use App\Http\Requests\Admin\UpdateSettingRequest;
@@ -19,18 +18,13 @@ use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    private readonly int $success;
 
-    private readonly int $error;
-
-    private readonly int $unauthorized;
 
     public function __construct(
         private readonly SettingsService $settingsService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(): View
@@ -81,7 +75,7 @@ class SettingsController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SettingsController');
         }
     }
 
@@ -124,23 +118,19 @@ class SettingsController extends Controller
     {
         try {
             if (! Gate::allows('settings_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $setting = $this->settingsService->find($id);
 
             if (! $setting) {
-                return ApiHelper::apiResponse($this->success, 'No Data Found', false);
+                return $this->errorResponse('No Data Found', 404);
             }
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                'Success',
-                true,
-                (new SettingEditResource($setting))->resolve(),
+            return $this->successResponse('Success', (new SettingEditResource($setting))->resolve(),
             );
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SettingsController');
         }
     }
 
@@ -148,20 +138,20 @@ class SettingsController extends Controller
     {
         try {
             if (! Gate::allows('settings_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             if (! $this->settingsService->validateDiscountRange($id, (float) $request->input('min', 0), (float) $request->input('max', 0))) {
-                return ApiHelper::apiResponse($this->success, 'Min value is greater than Max value.', false);
+                return $this->errorResponse('Min value is greater than Max value.', 404);
             }
 
             $record = $this->settingsService->update($id, $request->validated());
 
             return $record
-                ? ApiHelper::apiResponse($this->success, 'Record has been updated successfully.')
-                : ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                ? $this->successResponse('Record has been updated successfully.')
+                : $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SettingsController');
         }
     }
 

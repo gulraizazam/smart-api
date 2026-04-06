@@ -1,23 +1,24 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 
-class SMSTemplates extends BaseModal
+class SMSTemplates extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'slug', 'account_id', 'content', 'active', 'created_at', 'updated_at', 'slug'];
 
-    protected static $_fillable = ['name', 'slug', 'content', 'active', 'slug'];
+    protected static array $_fillable = ['name', 'slug', 'content', 'active', 'slug'];
 
     protected $table = 'sms_templates';
 
-    protected static $_table = 'sms_templates';
+    protected static string $_table = 'sms_templates';
 
     /**
      * Get Total Records

@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\AppointmentStatuses;
@@ -13,19 +14,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AppointmentStatusesController extends Controller
 {
-    protected $error;
-
-    protected $success;
-
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     /**
      * Display a listing of Appointment_statuse.
      *
@@ -49,7 +37,7 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if (! Gate::allows('appointment_statuses_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $filename = 'appointment_statuses';
@@ -125,7 +113,7 @@ class AppointmentStatusesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 
@@ -161,19 +149,19 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if (! Gate::allows('appointment_statuses_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                return $this->errorResponse($validator->errors()->first(), 200);
             }
             if (AppointmentStatuses::createRecord($request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->successResponse('Record has been created successfully.', null, 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 
@@ -198,18 +186,18 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if (! Gate::allows('appointment_statuses_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $appointment_statuse = AppointmentStatuses::getData($id);
             if (! $appointment_statuse) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 200);
             }
             $parentAppointmentStatuses = AppointmentStatuses::getParentRecords(false, Auth::User()->account_id, $appointment_statuse->id, true);
             $appointment_statuse->parent_options = $parentAppointmentStatuses;
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $appointment_statuse);
+            return $this->successResponse('Success', $appointment_statuse, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 
@@ -222,20 +210,20 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if (! Gate::allows('appointment_statuses_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                return $this->errorResponse($validator->errors()->first(), 200);
             }
 
             if (AppointmentStatuses::updateRecord($id, $request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->successResponse('Record has been updated successfully.', null, 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 
@@ -248,13 +236,16 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if (! Gate::allows('appointment_statuses_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $response = AppointmentStatuses::deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            if ($response->get('status')) {
+                return $this->successResponse($response->get('message'), null, 200);
+            }
+            return $this->errorResponse($response->get('message'), 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 
@@ -268,19 +259,22 @@ class AppointmentStatusesController extends Controller
         try {
             if ($request->status == 0) {
                 if (! Gate::allows('cities_inactive')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
                 $response = AppointmentStatuses::inactiveRecord($request->id);
             } else {
                 if (! Gate::allows('cities_active')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
                 $response = AppointmentStatuses::activeRecord($request->id);
             }
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            if ($response->get('status')) {
+                return $this->successResponse($response->get('message'), null, 200);
+            }
+            return $this->errorResponse($response->get('message'), 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentStatusesController');
         }
     }
 }

@@ -1,24 +1,26 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Appointmentimage extends BaseModal
+class Appointmentimage extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['image_name', 'image_path', 'type', 'appointment_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['image_name', 'image_path', 'type', 'appointment_id'];
+    protected static array $_fillable = ['image_name', 'image_path', 'type', 'appointment_id'];
 
     protected $table = 'appointmentimages';
 
-    protected static $_table = 'appointmentimages';
+    protected static string $_table = 'appointmentimages';
 
-    public function appointment()
+    public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointments::class);
     }

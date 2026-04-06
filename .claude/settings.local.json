@@ -82,7 +82,16 @@
       "Bash(find C:laragonwwwcutera-upgradation1 -path */.git -prune -o -type f \\\\\\(-name *discount* -o -name *Discount* \\\\\\) -print)",
       "Bash(xargs tail:*)",
       "Bash(document)",
-      "Bash(claude:*)"
+      "Bash(claude:*)",
+      "Bash(xargs wc:*)",
+      "Bash(bash /tmp/check_controllers.sh)",
+      "Bash(bash /tmp/check_root_controllers.sh)",
+      "Bash(bash /tmp/verify_edge_cases.sh)",
+      "Read(//tmp/**)",
+      "Bash(bash /tmp/verify_all.sh)",
+      "Bash(bash /tmp/edge_case_check.sh)",
+      "Bash(wc -l /c/laragon/www/cutera-upgradation1/app/Http/Controllers/Admin/*.php)",
+      "Bash(git checkout:*)"
     ]
   }
 }

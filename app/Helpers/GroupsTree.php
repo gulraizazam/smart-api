@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Services;
@@ -9,15 +10,15 @@ use App\Models\Services;
  */
 class GroupsTree
 {
-    public $id = 0;
+    public int $id = 0;
 
-    public $name = '';
+    public string $name = '';
 
-    public $children_groups = [];
+    public array $children_groups = [];
 
-    public $counter = 0;
+    public int $counter = 0;
 
-    public $current_id = -1;
+    public int $current_id = -1;
 
     /**
      * Initializer
@@ -74,7 +75,7 @@ class GroupsTree
         }
     }
 
-    public $groupList = [];
+    public array $groupList = [];
 
     /* Convert group tree to a list */
     public function toList($tree, $c = 0)
@@ -95,7 +96,7 @@ class GroupsTree
         }
     }
 
-    public $groupListView = [];
+    public array $groupListView = [];
 
     /* Convert group tree for List View */
     public function toListView($tree, $c = 0)
@@ -119,7 +120,7 @@ class GroupsTree
         }
     }
 
-    public $groupListIDs = [];
+    public array $groupListIDs = [];
 
     /* Convert group tree to array */
     public function toListArray($tree, $c = 0)

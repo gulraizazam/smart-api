@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApplicationUserDatatableRequest;
 use App\Http\Requests\Admin\ApplicationUserRequest;
@@ -23,16 +22,13 @@ use Illuminate\Support\Facades\Log;
 
 class ApplicationUserController extends Controller
 {
-    private readonly int $success;
-    private readonly int $error;
-    private readonly int $unauthorized;
+
 
     public function __construct(
         private readonly ApplicationUserService $userService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -75,7 +71,7 @@ class ApplicationUserController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -83,12 +79,12 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $this->userService->getCreateData());
+            return $this->successResponse('Record found', $this->userService->getCreateData());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -96,14 +92,14 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $this->userService->create($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -111,18 +107,18 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $data = $this->userService->getEditData($id);
 
             if (!$data) {
-                return ApiHelper::apiResponse($this->success, 'Record not found.', false);
+                return $this->errorResponse('Record not found.', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -130,14 +126,14 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $this->userService->update($id, $request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -145,16 +141,16 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->userService->delete($id);
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.')
-                : ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                ? $this->successResponse('Record has been deleted successfully.')
+                : $this->errorResponse('Resource not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -162,7 +158,7 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_active')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->userService->changeStatus(
@@ -171,10 +167,10 @@ class ApplicationUserController extends Controller
             );
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Status has been changed successfully.')
-                : ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                ? $this->successResponse('Status has been changed successfully.')
+                : $this->errorResponse('Resource not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -182,18 +178,18 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_change_password')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $user = $this->userService->findByAccountId($id);
 
             if (!$user) {
-                return ApiHelper::apiResponse($this->success, 'User not found.', false);
+                return $this->errorResponse('User not found.', 404);
             }
 
             return view('admin.users.change_password', compact('user'));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -201,22 +197,22 @@ class ApplicationUserController extends Controller
     {
         try {
             if (!Gate::allows('users_change_password')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             try {
                 $id = decrypt($request->validated('id'));
             } catch (DecryptException) {
-                return ApiHelper::apiResponse($this->error, 'Something went wrong, please try again.', false);
+                return $this->errorResponse('Something went wrong, please try again.', 500);
             }
 
             $result = $this->userService->changePassword((int) $id, $request->validated('password'));
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Password has been changed successfully.')
-                : ApiHelper::apiResponse($this->error, 'Something went wrong, please try again.', false);
+                ? $this->successResponse('Password has been changed successfully.')
+                : $this->errorResponse('Something went wrong, please try again.', 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -228,11 +224,11 @@ class ApplicationUserController extends Controller
                 Auth::user()->account_id,
             );
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'patients' => $patients,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -247,11 +243,11 @@ class ApplicationUserController extends Controller
                 Auth::user()->account_id,
             );
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'patients' => $patients,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -263,11 +259,11 @@ class ApplicationUserController extends Controller
                 Auth::user()->account_id,
             );
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'patients' => $patients,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -279,11 +275,11 @@ class ApplicationUserController extends Controller
                 Auth::user()->account_id,
             );
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'patients' => $patients,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -293,11 +289,11 @@ class ApplicationUserController extends Controller
             $patientId = (int) $request->input('patient_id');
             $patient = Patients::find($patientId);
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'patient' => $patient,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -307,14 +303,14 @@ class ApplicationUserController extends Controller
             $cities = ACL::getUserCities();
 
             if (count($cities) === 1) {
-                return ApiHelper::apiResponse($this->success, 'City found', true, [
+                return $this->successResponse('City found', [
                     'city' => $cities[0],
                 ]);
             }
 
-            return ApiHelper::apiResponse($this->success, 'City not found', false);
+            return $this->errorResponse('City not found', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ApplicationUserController');
         }
     }
 
@@ -325,11 +321,11 @@ class ApplicationUserController extends Controller
             $result = $planService->getUserDefaultCenter();
 
             return $result['status']
-                ? ApiHelper::apiResponse($this->success, 'Center found', true, ['center' => $result['center']])
-                : ApiHelper::apiResponse($this->success, 'Center not found', false);
+                ? $this->successResponse('Center found', ['center' => $result['center']])
+                : $this->errorResponse('Center not found', 404);
         } catch (\Exception $e) {
             Log::error('Get User Centers Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, 'Failed to get user centers.', false);
+            return $this->errorResponse('Failed to get user centers.', 500);
         }
     }
 }

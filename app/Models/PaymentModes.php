@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PaymentModes extends BaseModal
+class PaymentModes extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'name', 'type', 'active', 'payment_type', 'created_at', 'updated_at', 'sort_number'];
 
-    protected static $_fillable = ['name', 'type', 'active', 'payment_type'];
+    protected static array $_fillable = ['name', 'type', 'active', 'payment_type'];
 
     protected $table = 'payment_modes';
 
-    protected static $_table = 'payment_modes';
+    protected static string $_table = 'payment_modes';
 
     public function scopeActive($query, $active = 1)
     {
@@ -27,21 +29,21 @@ class PaymentModes extends BaseModal
     /**
      * Get the package advaances.
      */
-    public function packageadvance()
+    public function packageadvance(): HasMany
     {
 
-        return $this->hasMany('App\Models\PackageAdvances', 'payment_mode_id');
+        return $this->hasMany(PackageAdvances::class, 'payment_mode_id');
     }
 
     /*Relation for audit trail*/
-    public function audit_field_before()
+    public function audit_field_before(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
     }
 
-    public function audit_field_after()
+    public function audit_field_after(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
     }
     /*end*/
 

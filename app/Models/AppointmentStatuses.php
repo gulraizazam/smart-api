@@ -1,30 +1,32 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class AppointmentStatuses extends BaseModal
+class AppointmentStatuses extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'sort_no', 'active', 'created_at', 'updated_at', 'deleted_at', 'is_comment', 'is_arrived', 'is_converted', 'parent_id', 'account_id', 'allow_message', 'is_default', 'is_cancelled', 'is_unscheduled'];
 
-    protected static $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'allow_message', 'is_default', 'is_arrived', 'is_converted', 'is_cancelled', 'is_unscheduled', 'deleted_at'];
+    protected static array $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'allow_message', 'is_default', 'is_arrived', 'is_converted', 'is_cancelled', 'is_unscheduled', 'deleted_at'];
 
     protected $table = 'appointment_statuses';
 
-    protected static $_table = 'appointment_statuses';
+    protected static string $_table = 'appointment_statuses';
 
     /**
      * Get the Appointments for Appointment Status.
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'appointment_status_id');
+        return $this->hasMany(Appointments::class, 'appointment_status_id');
     }
 
     /**

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
-class Bundles extends BaseModal
+class Bundles extends BaseModel
 {
     use SoftDeletes;
 

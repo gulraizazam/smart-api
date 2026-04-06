@@ -11,15 +11,12 @@ use App\Http\Requests\Consultancy\StoreConsultancyRequest;
 use App\Http\Requests\Consultancy\UpdateConsultancyRequest;
 use App\Http\Resources\Consultancy\ConsultancyResource;
 use App\Services\Appointment\ConsultancyService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class ConsultancyController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly ConsultancyService $consultancyService,
     ) {}

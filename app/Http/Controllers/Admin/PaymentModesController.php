@@ -1,30 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
-use App\Models\PaymentModes;
+use App\Services\PaymentMode\PaymentModeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class PaymentModesController extends Controller
 {
-    protected $error;
-
-    protected $success;
-
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly PaymentModeService $paymentModeService,
+    ) {}
 
     public function index()
     {
@@ -45,61 +36,14 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $filename = 'payment_modes';
-
-            $filters = getFilters($request->all());
-
-            $apply_filter = checkFilters($filters, $filename);
-
-            $records = [];
-            $records['data'] = [];
-            [$orderBy, $order] = getSortBy($request);
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
-                $PaymentModes = PaymentModes::getBulkData($ids);
-                if ($PaymentModes) {
-                    foreach ($PaymentModes as $city) {
-                        // Check if child records exists or not, If exist then disallow to delete it.
-                        if (! PaymentModes::isChildExists($city->id, Auth::User()->account_id)) {
-                            $city->delete();
-                        }
-                    }
-                }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
-            }
-            // Get Total Records
-            $iTotalRecords = PaymentModes::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $PaymentModes = PaymentModes::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-            foreach ($PaymentModes as $paymentMode) {
-                $paymentMode->type = ucwords($paymentMode->type);
-                $paymentMode->payment_type = config('constants.payment_type.'.$paymentMode->payment_type);
-            }
-            $records['data'] = $PaymentModes;
-            $records['permissions'] = [
-                'edit' => Gate::allows('payment_modes_edit'),
-                'delete' => Gate::allows('payment_modes_destroy'),
-                'active' => Gate::allows('payment_modes_active'),
-                'inactive' => Gate::allows('payment_modes_inactive'),
-            ];
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
+            $records = $this->paymentModeService->getDatatableData($request, Auth::User()->account_id);
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -121,20 +65,16 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $itemIDs = $request->item_ids;
-            if (count($itemIDs)) {
-                foreach ($itemIDs as $key => $itemID) {
-                    PaymentModes::where('id', '=', $itemID)->update(['sort_number' => $key]);
-                }
-
-                return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
+            if ($this->paymentModeService->saveSortOrder($request->item_ids)) {
+                return $this->successResponse('Records are sorted Successfully!');
+            }
+
+            return $this->errorResponse('Something went Wrong! Records are not sorted', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -156,13 +96,13 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $payment_modes = PaymentModes::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+            $payment_modes = $this->paymentModeService->getSortedPaymentModes(Auth::User()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $payment_modes);
+            return $this->successResponse('Success', $payment_modes);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -175,32 +115,19 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (PaymentModes::createRecord($request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            $result = $this->paymentModeService->validateAndCreate($request->all(), Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->successResponse($result['error'], false, $result['errors'] ?? null);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
-    }
-
-    /**
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function verifyFields(Request $request)
-    {
-        return $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'type' => 'required',
-        ]);
     }
 
     /**
@@ -212,16 +139,18 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $payment_mode = PaymentModes::getData($id);
-            if (! $payment_mode) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $payment_mode);
+            $result = $this->paymentModeService->getEditData($id);
+
+            if (! $result['success']) {
+                return $this->errorResponse($result['error'], 404);
+            }
+
+            return $this->successResponse('Success', $result['payment_mode']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -234,19 +163,18 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (PaymentModes::updateRecord($id, $request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            $result = $this->paymentModeService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
+            }
+
+            return $this->successResponse($result['error'], false, $result['errors'] ?? null);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -259,13 +187,14 @@ class PaymentModesController extends Controller
     {
         try {
             if (! Gate::allows('payment_modes_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $response = PaymentModes::deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            $response = $this->paymentModeService->deletePaymentMode($id);
+
+            return $this->successResponse($response['message'], $response['status']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 
@@ -279,19 +208,19 @@ class PaymentModesController extends Controller
         try {
             if ($request->status == 0) {
                 if (! Gate::allows('payment_modes_inactive')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = PaymentModes::inactiveRecord($request->id);
             } else {
                 if (! Gate::allows('payment_modes_active')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = PaymentModes::activeRecord($request->id);
             }
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            $response = $this->paymentModeService->changeStatus($request->id, $request->status);
+
+            return $this->successResponse($response['message'], $response['status']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PaymentModesController');
         }
     }
 }

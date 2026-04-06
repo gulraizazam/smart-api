@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FileUploadTownRequest;
@@ -24,12 +24,7 @@ class TownController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the resource.
@@ -135,7 +130,7 @@ class TownController extends Controller
     public function create()
     {
         if (! Gate::allows('towns_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $cities = Cities::where([
             ['account_id', '=', Auth::User()->account_id],
@@ -144,7 +139,7 @@ class TownController extends Controller
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'cities' => $cities,
         ]);
     }
@@ -157,19 +152,19 @@ class TownController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('towns_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->successResponse($validator->messages()->first(), false);
         }
 
         if (Towns::createRecord($request, Auth::User()->account_id)) {
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         }
     }
 
@@ -206,13 +201,13 @@ class TownController extends Controller
     public function edit($id)
     {
         if (! Gate::allows('towns_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $town = Towns::getData($id);
 
         if (! $town) {
-            return ApiHelper::apiResponse($this->unauthorized, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 401);
         }
 
         $cities = Cities::where([
@@ -223,7 +218,7 @@ class TownController extends Controller
         ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'cities' => $cities,
             'town' => $town,
         ]);
@@ -274,12 +269,12 @@ class TownController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('towns_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $response = Towns::DeleteRecord($id);
 
-        return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
+        return $response['status'] ? $this->successResponse($response['message']) : $this->errorResponse($response['message'], 400);
     }
 
     /**
@@ -297,10 +292,10 @@ class TownController extends Controller
         $response = Towns::activeRecord($request->id, $request->status);
 
         if ($response) {
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.');
         }
 
-        return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+        return $this->errorResponse('Resource not found.', 404);
 
     }
 

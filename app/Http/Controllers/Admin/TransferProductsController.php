@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransferProduct\StoreTransferProductRequest;
 use App\Services\TransferProduct\TransferProductService;
@@ -15,18 +14,13 @@ use Illuminate\View\View;
 
 class TransferProductsController extends Controller
 {
-    private readonly int $success;
 
-    private readonly int $error;
-
-    private readonly int $unauthorized;
 
     public function __construct(
         private readonly TransferProductService $transferService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(): View
@@ -71,9 +65,9 @@ class TransferProductsController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -82,9 +76,9 @@ class TransferProductsController extends Controller
         try {
             $data = $this->transferService->getCreateFormData();
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -95,22 +89,14 @@ class TransferProductsController extends Controller
 
             $validation = $this->transferService->validateTransfer($data);
             if ($validation) {
-                return ApiHelper::apiResponse(
-                    $validation['message'] === 'Please add different location.' ? $this->error : $this->success,
-                    $validation['message'],
-                    false,
-                );
+                return $this->errorResponse($validation['message'], 200);
             }
 
             $result = $this->transferService->store($data);
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                $result['message'],
-                $result['success'],
-            );
+            return $this->successResponse($result['message'], $result['success']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -120,12 +106,12 @@ class TransferProductsController extends Controller
             $data = $this->transferService->getEditFormData($id);
 
             if (! $data) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
+            return $this->successResponse('Success', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -136,18 +122,14 @@ class TransferProductsController extends Controller
 
             $validation = $this->transferService->validateTransfer($data, true);
             if ($validation) {
-                return ApiHelper::apiResponse($this->success, $validation['message'], false);
+                return $this->errorResponse($validation['message'], 400);
             }
 
             $result = $this->transferService->update($id, $data);
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                $result['message'],
-                $result['success'],
-            );
+            return $this->successResponse($result['message'], $result['success']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -156,9 +138,9 @@ class TransferProductsController extends Controller
         try {
             $result = $this->transferService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TransferProductsController');
         }
     }
 
@@ -166,13 +148,13 @@ class TransferProductsController extends Controller
     {
         $data = $this->transferService->getProductsWithDoctors($request->all());
 
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        return $this->successResponse('Record found.', $data);
     }
 
     public function getTransferProducts(Request $request): JsonResponse
     {
         $data = $this->transferService->getTransferProducts($request->all());
 
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        return $this->successResponse('Record found.', $data);
     }
 }

@@ -1,41 +1,42 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-class ServiceHasLocations extends BaseModal
+class ServiceHasLocations extends BaseModel
 {
     protected $fillable = ['service_id', 'location_id', 'account_id'];
 
-    protected static $_fillable = ['service_id', 'location_id'];
+    protected static array $_fillable = ['service_id', 'location_id'];
 
     protected $table = 'service_has_locations';
 
-    protected static $_table = 'service_has_locations';
+    protected static string $_table = 'service_has_locations';
 
     public $timestamps = false;
 
     /**
      * Get Service locations belong to location.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id');
+        return $this->belongsTo(Locations::class, 'location_id');
     }
 
     /**
      * Get Service Locations belong to user.
      */
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'service_id');
+        return $this->belongsTo(Locations::class, 'service_id');
     }
 
     /**
      * Get Service Locations belong to user.
      */
-    public function account()
+    public function account(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Accounts', 'account_id');
+        return $this->belongsTo(Accounts::class, 'account_id');
     }
 
     /**

@@ -10,7 +10,9 @@ use DateTime;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderRefund extends Model
 {
@@ -186,11 +188,11 @@ class OrderRefund extends Model
         return $where;
     }
 
-    public function patients()
+    public function patients(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
     }
-    public function orderrefunddetails()
+    public function orderrefunddetails(): HasMany
     {
         return $this->hasMany(OrderRefundDetail::class, 'order_refund_id')->with('product');
     }

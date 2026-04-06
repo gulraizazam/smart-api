@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -19,12 +20,10 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class InvoiceGenerationController extends Controller
 {
-    protected $invoiceService;
+    public function __construct(
+        protected readonly InvoiceGenerationService $invoiceService,
+    ) {}
 
-    public function __construct(InvoiceGenerationService $invoiceService)
-    {
-        $this->invoiceService = $invoiceService;
-    }
 
     /**
      * Calculate amounts and generate exempt invoices

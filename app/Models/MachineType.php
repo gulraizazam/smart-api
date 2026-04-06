@@ -1,25 +1,28 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use DateTime;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class MachineType extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class MachineType extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
+    protected static array $_fillable = ['name', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $table = 'machine_types';
 
-    protected static $_table = 'machine_types';
+    protected static string $_table = 'machine_types';
 
     protected $casts = [
         'created_at' => 'datetime:F d,Y h:i A',
@@ -28,9 +31,9 @@ class MachineType extends BaseModal
     /*
      * Get the services against location id
      */
-    public function machinetype_has_services()
+    public function machinetype_has_services(): HasMany
     {
-        return $this->hasMany('App\Models\MachineTypeHasServices', 'machine_type_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(MachineTypeHasServices::class, 'machine_type_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     /**
@@ -38,17 +41,17 @@ class MachineType extends BaseModal
      *
      * @return mixed
      */
-    public function services()
+    public function services(): BelongsToMany
     {
-        return $this->belongsToMany('App\Models\Services', 'machine_type_has_services', 'machine_type_id', 'service_id')->withTrashed();
+        return $this->belongsToMany(Services::class, 'machine_type_has_services', 'machine_type_id', 'service_id')->withTrashed();
     }
 
     /**
      * Get the machine type for Resource.
      */
-    public function Resource()
+    public function Resource(): HasMany
     {
-        return $this->hasMany('App\Models\Resources', 'machine_type_id');
+        return $this->hasMany(Resources::class, 'machine_type_id');
     }
 
     /**

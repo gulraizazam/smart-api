@@ -1,29 +1,31 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CancellationReasons extends BaseModal
+class CancellationReasons extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'active', 'account_id', 'created_at', 'updated_at', 'appointment_type_id', 'sort_no'];
 
-    protected static $_fillable = ['name', 'active', 'appointment_type_id'];
+    protected static array $_fillable = ['name', 'active', 'appointment_type_id'];
 
     protected $table = 'cancellation_reasons';
 
-    protected static $_table = 'cancellation_reasons';
+    protected static string $_table = 'cancellation_reasons';
 
     /**
      * Get the Appointments for Treatment.
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'cancellation_reason_id');
+        return $this->hasMany(Appointments::class, 'cancellation_reason_id');
     }
 
     /**

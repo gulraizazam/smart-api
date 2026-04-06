@@ -1,18 +1,22 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Helpers\AppointmentHelper;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;use Illuminate\Database\Eloquent\Relations\HasOne;
+
+use Illuminate\Support\Facades\Cache;use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Appointments extends Model
 {
@@ -29,16 +33,16 @@ class Appointments extends Model
 
     protected $table = 'appointments';
 
-    public static $_table = 'appointments';
+    public static string $_table = 'appointments';
 
     /**
      * used in event
      *
      * @var string
      */
-    public $__table = 'appointments';
+    public string $__table = 'appointments';
 
-    public static $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+    public static array $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
@@ -51,7 +55,7 @@ class Appointments extends Model
      *
      * @var array
      */
-    public $__fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+    public array $__fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
@@ -200,31 +204,31 @@ class Appointments extends Model
     /**
      * Get the lead comments for lead.
      */
-    public function appointment_comments()
+    public function appointment_comments(): HasMany
     {
-        return $this->hasMany('App\Models\AppointmentComments', 'appointment_id')->OrderBy('created_at', 'desc');
+        return $this->hasMany(AppointmentComments::class, 'appointment_id')->OrderBy('created_at', 'desc');
     }
 
     /**
      * Get the Service that owns the Appointment.
      */
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services')->withTrashed();
+        return $this->belongsTo(Services::class)->withTrashed();
     }
 
     /**
      * Get Appointment Type that owns the Appointment.
      */
-    public function appointment_type()
+    public function appointment_type(): BelongsTo
     {
-        return $this->belongsTo('App\Models\AppointmentTypes')->withTrashed();
+        return $this->belongsTo(AppointmentTypes::class)->withTrashed();
     }
 
     /**
      * Get the Appointment Status that owns the Appointment.
      */
-    public function appointment_status()
+    public function appointment_status(): BelongsTo
     {
         return $this->belongsTo(AppointmentStatuses::class)->withTrashed();
     }
@@ -233,23 +237,23 @@ class Appointments extends Model
      * Get the Appointment status according to base appointment status
      * */
 
-    public function appointment_status_base()
+    public function appointment_status_base(): BelongsTo
     {
-        return $this->belongsTo('App\Models\AppointmentStatuses', 'base_appointment_status_id')->withTrashed();
+        return $this->belongsTo(AppointmentStatuses::class, 'base_appointment_status_id')->withTrashed();
     }
 
     /**
      * Get the Appointment Status that owns the Appointment.
      */
-    public function cancellation_reason()
+    public function cancellation_reason(): BelongsTo
     {
-        return $this->belongsTo('App\Models\CancellationReasons')->withTrashed();
+        return $this->belongsTo(CancellationReasons::class)->withTrashed();
     }
 
     /**
      * Get the Doctors that owns the Appointment.
      */
-    public function doctor()
+    public function doctor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'doctor_id')->withTrashed();
     }
@@ -257,39 +261,39 @@ class Appointments extends Model
     /**
      * Get the City that owns the Appointment.
      */
-    public function city()
+    public function city(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Cities')->withTrashed();
+        return $this->belongsTo(Cities::class)->withTrashed();
     }
 
     /**
      * Get the Region that owns the Appointment.
      */
-    public function region()
+    public function region(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Regions')->withTrashed();
+        return $this->belongsTo(Regions::class)->withTrashed();
     }
 
     /**
      * Get the Doctors that owns the Appointment.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations')->withTrashed();
+        return $this->belongsTo(Locations::class)->withTrashed();
     }
 
     /**
      * Get the Lead that owns the Appointment.
      */
-    public function lead()
+    public function lead(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Leads')->withTrashed();
+        return $this->belongsTo(Leads::class)->withTrashed();
     }
 
     /**
      * Get the patient that owns the Appointment.
      */
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
@@ -297,7 +301,7 @@ class Appointments extends Model
     /**
      * Get the patient that owns the Appointment.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
@@ -306,7 +310,7 @@ class Appointments extends Model
      * Get the user by whom appointment is converted
      */
 
-    public function user_converted_by()
+    public function user_converted_by(): BelongsTo
     {
         return $this->belongsTo(User::class, 'converted_by')->withTrashed();
     }
@@ -315,7 +319,7 @@ class Appointments extends Model
      * Get the user by whom appointment is updated
       */
 
-    public function user_updated_by()
+    public function user_updated_by(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by')->withTrashed();
     }
@@ -323,16 +327,16 @@ class Appointments extends Model
     /*
      * Get the appointments for City.
      */
-    public function sms_logs()
+    public function sms_logs(): HasMany
     {
-        return $this->hasMany('App\Models\SMSLogs', 'appointment_id')->withTrashed();
+        return $this->hasMany(SMSLogs::class, 'appointment_id')->withTrashed();
     }
 
     /*
      * Self join on appointment_id
      * */
 
-    public function appointments()
+    public function appointments(): HasMany
     {
         return $this->hasMany(Appointments::class, 'appointment_id');
     }
@@ -340,17 +344,17 @@ class Appointments extends Model
     /**
      * Get the package advances information.
      */
-    public function packageadvance()
+    public function packageadvance(): HasMany
     {
 
-        return $this->hasMany('App\Models\PackageAdvances', 'appointment_id');
+        return $this->hasMany(PackageAdvances::class, 'appointment_id');
     }
 
     /*
      * Get the packages information
      * */
 
-    public function packages()
+    public function packages(): HasMany
     {
         return $this->hasMany(Packages::class, 'appointment_id');
     }
@@ -358,7 +362,7 @@ class Appointments extends Model
     /*
      * Get the invoices of the appointments
      * */
-    public function hasInvoices()
+    public function hasInvoices(): HasMany
     {
         return $this->hasMany(Invoices::class, 'appointment_id');
     }
@@ -583,12 +587,12 @@ class Appointments extends Model
             'message' => 'Record has been deleted successfully.',
         ];
     }
-    public function feedback()
+    public function feedback(): HasOne
     {
         return $this->hasOne(Feedback::class, 'appointment_id');
     }
 
-    public function resource()
+    public function resource(): BelongsTo
     {
         return $this->belongsTo(Resources::class, 'resource_id')->withTrashed();
     }

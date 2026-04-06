@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -12,11 +13,11 @@ class InvoiceDetails extends Model
 
     protected $fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive','is_settlement'];
 
-    protected static $_fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive'];
+    protected static array $_fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive'];
 
     protected $table = 'invoice_details';
 
-    protected static $_table = 'invoice_details';
+    protected static string $_table = 'invoice_details';
 
     /**
      * Create Record
@@ -39,17 +40,17 @@ class InvoiceDetails extends Model
      * get the service through relation
      */
     /*Get the user data*/
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'service_id')->withTrashed();
+        return $this->belongsTo(Services::class, 'service_id')->withTrashed();
     }
 
     public function parentService(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'parent_id', 'service_id');
+        return $this->belongsTo(Services::class, 'parent_id', 'service_id');
     }
     public function invoice(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Invoices', 'invoice_id');
+        return $this->belongsTo(Invoices::class, 'invoice_id');
     }
 }

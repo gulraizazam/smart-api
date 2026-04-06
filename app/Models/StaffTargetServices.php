@@ -1,45 +1,46 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-class StaffTargetServices extends BaseModal
+class StaffTargetServices extends BaseModel
 {
     protected $fillable = [
         'account_id', 'location_id', 'staff_target_id', 'service_id',
         'target_amount', 'target_services', 'month', 'year', 'created_at', 'updated_at', 'deleted_at',
     ];
 
-    protected static $_fillable = [
+    protected static array $_fillable = [
         'account_id', 'location_id', 'staff_target_id', 'service_id',
         'target_amount', 'target_services', 'month', 'year',
     ];
 
     protected $table = 'staff_target_services';
 
-    protected static $_table = 'staff_target_services';
+    protected static string $_table = 'staff_target_services';
 
     /**
      * Get Service locations belong to location.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id');
+        return $this->belongsTo(Locations::class, 'location_id');
     }
 
     /**
      * Get Service Locations belong to user.
      */
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'service_id');
+        return $this->belongsTo(Services::class, 'service_id');
     }
 
     /**
      * Get Service Locations belong to user.
      */
-    public function account()
+    public function account(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Accounts', 'account_id');
+        return $this->belongsTo(Accounts::class, 'account_id');
     }
 
     /**

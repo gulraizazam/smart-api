@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Helpers\Elastic\AppointmentsElastic;
@@ -17,14 +18,9 @@ class SyncSingleAppointmentJob implements ShouldQueue
     /**
      * Holds payload data
      */
-    protected $payload;
+    protected mixed $payload;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
-    public function __construct($payload)
+    public function __construct(mixed $payload)
     {
         $this->payload = $payload;
     }

@@ -1,78 +1,81 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Cities extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Cities extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'region_id', 'name', 'slug', 'active', 'is_featured', 'created_at', 'updated_at', 'sort_number'];
 
-    protected static $_fillable = ['name', 'slug', 'active', 'region_id', 'is_featured'];
+    protected static array $_fillable = ['name', 'slug', 'active', 'region_id', 'is_featured'];
 
     protected $table = 'cities';
 
-    protected static $_table = 'cities';
+    protected static string $_table = 'cities';
 
     /**
      * sent the city data to resource has rota.
      */
-    public function resourcehasrota()
+    public function resourcehasrota(): HasMany
     {
-        return $this->hasMany('App\Models\ResourceHasRota', 'city_id');
+        return $this->hasMany(ResourceHasRota::class, 'city_id');
     }
 
     /**
      * Get the Locations for City.
      */
-    public function locations()
+    public function locations(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'city_id');
+        return $this->hasMany(Locations::class, 'city_id');
     }
 
     /**
      * Get the Region for City.
      */
-    public function region()
+    public function region(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Regions', 'region_id');
+        return $this->belongsTo(Regions::class, 'region_id');
     }
 
     /**
      * Get the town of city.
      */
-    public function town()
+    public function town(): HasMany
     {
-        return $this->hasMany('App\Models\Towns', 'city_id', 'id');
+        return $this->hasMany(Towns::class, 'city_id', 'id');
     }
 
     /**
      * Get the Active Locations for City.
      */
-    public function locationsActive()
+    public function locationsActive(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'city_id')->where(['active' => 1]);
+        return $this->hasMany(Locations::class, 'city_id')->where(['active' => 1]);
     }
 
     /**
      * Get the doctors for City.
      */
-    public function doctors()
+    public function doctors(): HasMany
     {
-        return $this->hasMany('App\Models\Doctors', 'city_id');
+        return $this->hasMany(Doctors::class, 'city_id');
     }
 
     /**
      * Get the appointments for City.
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'city_id');
+        return $this->hasMany(Appointments::class, 'city_id');
     }
 
     /**

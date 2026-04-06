@@ -1,27 +1,30 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
-use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Role;use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Discounts extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Discounts extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'type', 'amount', 'discount_type', 'pre_days', 'post_days', 'start', 'end', 'active', 'service_id', 'location_id', 'created_at', 'updated_at', 'account_id', 'slug', 'customer_type_id'];
 
-    protected static $_fillable = ['name', 'type', 'amount', 'discount_type', 'pre_days', 'post_days', 'start', 'end', 'active', 'slug', 'customer_type_id'];
+    protected static array $_fillable = ['name', 'type', 'amount', 'discount_type', 'pre_days', 'post_days', 'start', 'end', 'active', 'slug', 'customer_type_id'];
 
     protected $table = 'discounts';
 
-    protected static $_table = 'discounts';
+    protected static string $_table = 'discounts';
 
     protected $casts = [
         'created_at' => 'datetime:F d,Y h:i A',
@@ -50,10 +53,10 @@ class Discounts extends BaseModal
     /**
      * Get the Users.
      */
-    public function discounthaslocation()
+    public function discounthaslocation(): HasMany
     {
 
-        return $this->hasMany('App\Models\DiscountHasLocations', 'discount_id');
+        return $this->hasMany(DiscountHasLocations::class, 'discount_id');
     }
 
     /**
@@ -300,20 +303,20 @@ class Discounts extends BaseModal
     /**
      * Get the Package Service.
      */
-    public function packageservice()
+    public function packageservice(): HasMany
     {
-        return $this->hasMany('App\Models\PackageBundles', 'discount_id');
+        return $this->hasMany(PackageBundles::class, 'discount_id');
     }
 
     /*Relation for audit trail*/
-    public function audit_field_before()
+    public function audit_field_before(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
     }
 
-    public function audit_field_after()
+    public function audit_field_after(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
     }
     /*end*/
 
@@ -476,7 +479,7 @@ class Discounts extends BaseModal
             ['account_id', '=', $account_id],
         ])->get();
     }
-    public function roles()
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'discount_role', 'discount_id', 'role_id');
     }

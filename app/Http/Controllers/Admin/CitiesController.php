@@ -1,33 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
-use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
-use App\Models\Cities;
-use App\Models\Regions;
+use App\Services\City\CityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class CitiesController extends Controller
 {
-    protected $error;
-
-    protected $success;
-
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly CityService $cityService,
+    ) {}
 
     /**
      * Display a listing of Permission.
@@ -39,12 +26,12 @@ class CitiesController extends Controller
         if (! Gate::allows('cities_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'cities');
+        $data = $this->cityService->getIndexData(Auth::User()->id);
 
-        $regions = Regions::getActiveSorted(ACL::getUserRegions());
-        $regions->prepend('Select a Region', '');
-
-        return view('admin.cities.index', compact('regions', 'filters'));
+        return view('admin.cities.index', [
+            'regions' => $data['regions'],
+            'filters' => $data['filters'],
+        ]);
     }
 
     /**
@@ -56,82 +43,14 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $filename = 'cities';
-
-            $filters = getFilters($request->all());
-
-            $apply_filter = checkFilters($filters, $filename);
-
-            $records = [];
-            $records['data'] = [];
-
-            [$orderBy, $order] = getSortBy($request);
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
-                $Cities = Cities::getBulkData($ids);
-                if ($Cities) {
-                    foreach ($Cities as $city) {
-                        // Check if child records exists or not, If exist then disallow to delete it.
-                        if (! Cities::isChildExists($city->id, Auth::User()->account_id)) {
-                            $city->delete();
-                        }
-                    }
-                }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
-            }
-
-            // Get Total Records
-            $iTotalRecords = Cities::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $Cities = Cities::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-            $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
-
-            if ($Cities) {
-                foreach ($Cities as $citie) {
-                    $records['data'][] = [
-                        'id' => $citie->id,
-                        'name' => $citie->name,
-                        'is_featured' => $citie->is_featured ? 'Yes' : 'No',
-                        'region_id' => (array_key_exists($citie->region_id, $Regions)) ? $Regions[$citie->region_id]->name : 'N/A',
-                        'active' => $citie->active,
-                    ];
-                }
-            }
-
-            $records['permissions'] = [
-                'edit' => Gate::allows('cities_edit'),
-                'delete' => Gate::allows('cities_destroy'),
-                'active' => Gate::allows('cities_active'),
-                'inactive' => Gate::allows('cities_inactive'),
-            ];
-
-            $regions = Regions::getActiveSorted(ACL::getUserRegions());
-            $filters = Filters::all(Auth::User()->id, 'cities');
-            $records['active_filters'] = $filters;
-            $records['filter_values'] = [
-                'regions' => $regions,
-                'is_featured' => [1 => 'Yes', 0 => 'No'],
-                'status' => config('constants.status'),
-            ];
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
+            $records = $this->cityService->getDatatableData($request, Auth::User()->account_id);
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -146,30 +65,25 @@ class CitiesController extends Controller
             return abort(401);
         }
 
-        $regions = Regions::getActiveSorted(ACL::getUserRegions());
-        $regions->prepend('Select a Region', '');
+        $data = $this->cityService->getCreateData();
 
-        return view('admin.cities.create', compact('regions'));
+        return view('admin.cities.create', ['regions' => $data['regions']]);
     }
 
     public function sortOrderSave(Request $request)
     {
         try {
             if (! Gate::allows('cities_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $itemIDs = $request->item_ids;
-            if (count($itemIDs)) {
-                foreach ($itemIDs as $key => $itemID) {
-                    Cities::where('id', '=', $itemID)->update(['sort_number' => $key]);
-                }
-
-                return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
+            if ($this->cityService->saveSortOrder($request->item_ids)) {
+                return $this->successResponse('Records are sorted Successfully!', null, 200);
+            }
+
+            return $this->errorResponse('Something went Wrong! Records are not sorted', 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -191,13 +105,13 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $cities = Cities::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+            $cities = $this->cityService->getSortedCities(Auth::User()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $cities);
+            return $this->successResponse('Success', $cities, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -210,35 +124,19 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (Cities::createRecord($request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            $result = $this->cityService->validateAndCreate($request->all(), Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message'], null, 200);
+            }
+
+            return $this->errorResponse($result['error'], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function verifyFields(Request $request, $id = null)
-    {
-        return $validator = Validator::make($request->all(), [
-            'name' => [
-                'required',
-                Rule::unique('cities')->ignore($id),
-            ],
-        ]);
     }
 
     /**
@@ -250,19 +148,18 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $city = Cities::getData($id);
-            if (! $city) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+
+            $result = $this->cityService->getEditData($id);
+
+            if (! $result['success']) {
+                return $this->errorResponse($result['error'], 200);
             }
-            $regions = Regions::getActiveSorted(ACL::getUserRegions());
-            $regions->prepend('Select a Region', '');
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $city);
-
+            return $this->successResponse('Success', $result['city'], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -275,19 +172,18 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $validator = $this->verifyFields($request, $id);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (Cities::updateRecord($id, $request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            $result = $this->cityService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message'], null, 200);
+            }
+
+            return $this->errorResponse($result['error'], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -300,13 +196,18 @@ class CitiesController extends Controller
     {
         try {
             if (! Gate::allows('cities_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $response = Cities::DeleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            $response = $this->cityService->deleteCity($id);
+
+            if ($response['status']) {
+                return $this->successResponse($response['message'], null, 200);
+            }
+
+            return $this->errorResponse($response['message'], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 
@@ -320,19 +221,23 @@ class CitiesController extends Controller
         try {
             if ($request->status == 0) {
                 if (! Gate::allows('cities_inactive')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = Cities::inactiveRecord($request->id);
             } else {
                 if (! Gate::allows('cities_active')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = Cities::activeRecord($request->id);
             }
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            $response = $this->cityService->changeStatus($request->id, $request->status);
+
+            if ($response['status']) {
+                return $this->successResponse($response['message'], null, 200);
+            }
+
+            return $this->errorResponse($response['message'], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CitiesController');
         }
     }
 }

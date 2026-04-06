@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InvoiceStatuses extends Model
 {
@@ -16,20 +18,20 @@ class InvoiceStatuses extends Model
     /**
      * Get the invoice.
      */
-    public function invoice()
+    public function invoice(): HasMany
     {
-        return $this->hasMany('App\Models\Invoices', 'invoice_status_id');
+        return $this->hasMany(Invoices::class, 'invoice_status_id');
     }
 
     /*Relation for audit trail*/
-    public function audit_field_before()
+    public function audit_field_before(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
     }
 
-    public function audit_field_after()
+    public function audit_field_after(): HasMany
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
     }
     /*end*/
 

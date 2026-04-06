@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 /**
  * Created by PhpStorm.
  * User: REDSignal
@@ -19,7 +20,6 @@ use App\Models\Locations;
 use App\Models\Appointments;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
-use App\HelperModule\ApiHelper;
 use App\Models\Activity;
 use App\Models\Inventory;
 use App\Models\PackageAdvances;

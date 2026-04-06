@@ -15,14 +15,11 @@ use App\Http\Resources\Reports\GeneralRevenueSummaryResource;
 use App\Http\Resources\Reports\ServicesSoldResource;
 use App\Services\Reports\Enums\ReportType;
 use App\Services\Reports\GeneralSalesReportService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class GeneralSalesReportController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly GeneralSalesReportService $reportService,
     ) {}

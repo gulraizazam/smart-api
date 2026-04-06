@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class Settings extends BaseModal
+class Settings extends BaseModel
 {
     use SoftDeletes;
 

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class BusinessClosure extends Model
 {
@@ -31,7 +34,7 @@ class BusinessClosure extends Model
     /**
      * Get the locations for this business closure
      */
-    public function locations()
+    public function locations(): BelongsToMany
     {
         return $this->belongsToMany(Locations::class, 'business_closure_locations', 'business_closure_id', 'location_id');
     }
@@ -39,7 +42,7 @@ class BusinessClosure extends Model
     /**
      * Get the user who created this closure
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
@@ -47,7 +50,7 @@ class BusinessClosure extends Model
     /**
      * Get the account
      */
-    public function account()
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Accounts::class, 'account_id');
     }

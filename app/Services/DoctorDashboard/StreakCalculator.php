@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
 use Carbon\Carbon;
@@ -19,12 +20,9 @@ class StreakCalculator
     /**
      * @var ConversionCalculator
      */
-    private $conversionCalculator;
-
-    public function __construct(ConversionCalculator $conversionCalculator)
-    {
-        $this->conversionCalculator = $conversionCalculator;
-    }
+    public function __construct(
+        private readonly ConversionCalculator $conversionCalculator,
+    ) {}
 
     /**
      * Calculate current streak and best streak for a doctor.

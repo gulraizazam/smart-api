@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExpenseCategory extends Model
 {
@@ -24,7 +26,7 @@ class ExpenseCategory extends Model
     /**
      * Expenses under this category.
      */
-    public function expenses()
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class, 'category_id');
     }

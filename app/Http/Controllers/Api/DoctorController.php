@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ChangePasswordRequest;
 use App\Http\Requests\Admin\DoctorDatatableRequest;
@@ -21,9 +21,8 @@ class DoctorController extends Controller
     public function __construct(
         private readonly DoctorService $doctorService,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -39,13 +38,13 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $deleteIds = $request->getDeleteIds();
             if (!empty($deleteIds)) {
                 if (!Gate::allows('doctors_destroy')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete doctors.', false);
+                    return $this->errorResponse('You are not authorized to delete doctors.', 401);
                 }
 
                 $this->doctorService->bulkDelete($deleteIds);
@@ -83,7 +82,7 @@ class DoctorController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -91,12 +90,12 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Data found', true, $this->doctorService->getCreateData());
+            return $this->successResponse('Data found', $this->doctorService->getCreateData());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -104,16 +103,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $user = $this->doctorService->create($request->validated());
 
             return $user
-                ? ApiHelper::apiResponse($this->success, 'Record has been created successfully.')
-                : ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
+                ? $this->successResponse('Record has been created successfully.')
+                : $this->errorResponse('Something went wrong, please try again later.', 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -121,16 +120,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $data = $this->doctorService->getEditData($id);
 
             return $data
-                ? ApiHelper::apiResponse($this->success, 'Data found', true, $data)
-                : ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                ? $this->successResponse('Data found', $data)
+                : $this->errorResponse('No Record Found!', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -138,16 +137,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $user = $this->doctorService->update($id, $request->all());
 
             return $user
-                ? ApiHelper::apiResponse($this->success, 'Record has been updated successfully.')
-                : ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
+                ? $this->successResponse('Record has been updated successfully.')
+                : $this->errorResponse('Something went wrong, please try again later.', 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -155,14 +154,14 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->doctorService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -176,16 +175,16 @@ class DoctorController extends Controller
             };
 
             if ($permission && !Gate::allows($permission)) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->doctorService->changeStatus($request->id, $request->status);
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Status has been changed successfully.')
-                : ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                ? $this->successResponse('Status has been changed successfully.')
+                : $this->errorResponse('Resource not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -193,16 +192,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_change_password')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $user = $this->doctorService->getPasswordChangeData($id);
 
             return $user
-                ? ApiHelper::apiResponse($this->success, 'Record found', true, $user)
-                : ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                ? $this->successResponse('Record found', $user)
+                : $this->errorResponse('No Record Found!', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -210,16 +209,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_change_password')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->doctorService->changePassword($request->validated('id'), $request->validated('password'));
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Password has been changed successfully.')
-                : ApiHelper::apiResponse($this->success, 'Something went wrong, please try again.', false);
+                ? $this->successResponse('Password has been changed successfully.')
+                : $this->errorResponse('Something went wrong, please try again.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -227,12 +226,12 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, $this->doctorService->getLocationAllocationData($id));
+            return $this->successResponse('Service Allocated', $this->doctorService->getLocationAllocationData($id));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -240,12 +239,12 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $this->doctorService->getServicesForLocation($request));
+            return $this->successResponse('Success', $this->doctorService->getServicesForLocation($request));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -253,16 +252,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->doctorService->saveServiceAllocation($request->doctor_id, $request->id);
 
             return $result['status']
-                ? ApiHelper::apiResponse($this->success, $result['message'], true, $result['data'])
-                : ApiHelper::apiResponse($this->success, $result['message'], false);
+                ? $this->successResponse($result['message'], $result['data'])
+                : $this->errorResponse($result['message'], 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 
@@ -270,16 +269,16 @@ class DoctorController extends Controller
     {
         try {
             if (!Gate::allows('doctors_allocate')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->doctorService->deleteServiceAllocation($request->id);
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Location/Service has been unassigned to doctor!', true, ['id' => $request->id])
-                : ApiHelper::apiResponse($this->success, 'Service not found.', false);
+                ? $this->successResponse('Location/Service has been unassigned to doctor!', ['id' => $request->id])
+                : $this->errorResponse('Service not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DoctorController');
         }
     }
 }

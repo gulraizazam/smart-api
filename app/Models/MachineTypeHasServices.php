@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -8,11 +9,11 @@ class MachineTypeHasServices extends Model
 {
     protected $fillable = ['machine_type_id ', 'service_id'];
 
-    protected static $_fillable = ['machine_type_id ', 'service_id'];
+    protected static array $_fillable = ['machine_type_id ', 'service_id'];
 
     protected $table = 'machine_type_has_services';
 
-    protected static $_table = 'machine_type_has_services';
+    protected static string $_table = 'machine_type_has_services';
 
     public $timestamps = false;
 

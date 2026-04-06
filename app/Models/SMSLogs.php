@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SMSLogs extends Model
 {
@@ -20,9 +22,9 @@ class SMSLogs extends Model
     /**
      * Get the Leads for Lead Source.
      */
-    public function appointments()
+    public function appointments(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Appointments', 'appointment_id');
+        return $this->belongsTo(Appointments::class, 'appointment_id');
     }
 
     public function getToAttribute($value)

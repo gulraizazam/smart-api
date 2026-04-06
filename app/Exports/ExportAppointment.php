@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Exports;
 
 use App\Helpers\ACL;
@@ -15,9 +16,9 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportAppointment implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private $limit = 1000;
+    private int $limit = 1000;
 
-    private $offset = 0;
+    private int $offset = 0;
 
     public function __construct($limit = 1000, $offset = 0)
     {

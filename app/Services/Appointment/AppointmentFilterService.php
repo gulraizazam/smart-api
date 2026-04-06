@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Appointment;
 
 use App\Helpers\ACL;
@@ -13,9 +14,9 @@ use Illuminate\Support\Facades\Gate;
 
 class AppointmentFilterService
 {
-    private $userId;
-    private $accountId;
-    private $filename = 'appointments';
+    private int|null $userId;
+    private int|null $accountId;
+    private string $filename = 'appointments';
 
     public function __construct()
     {

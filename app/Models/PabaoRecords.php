@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PabaoRecords extends BaseModal
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PabaoRecords extends BaseModel
 {
     use SoftDeletes;
 
@@ -26,44 +29,44 @@ class PabaoRecords extends BaseModal
         'created_by', 'updated_by', 'converted_by', 'created_at', 'updated_at', 'account_id',
     ];
 
-    protected static $_fillable = [
+    protected static array $_fillable = [
         'patient_id', 'region_id', 'city_id', 'pabao_record_status_id',
         'pabao_record_source_id', 'msg_count', 'service_id',
     ];
 
     protected $table = 'pabao_records';
 
-    protected static $_table = 'pabao_records';
+    protected static string $_table = 'pabao_records';
 
     /**
      * Get the Lead that owns the City.
      */
-    public function city()
+    public function city(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Cities')->withTrashed();
+        return $this->belongsTo(Cities::class)->withTrashed();
     }
 
     /**
      * Get the Lead that owns the City.
      */
-    public function region()
+    public function region(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Regions')->withTrashed();
+        return $this->belongsTo(Regions::class)->withTrashed();
     }
 
     /**
      * Get the User that owns the Lead.
      */
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'created_by')->withTrashed();
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /**
      * Get the pabao_record comments for pabao_record.
      */
-    public function pabao_record_payments()
+    public function pabao_record_payments(): HasMany
     {
-        return $this->hasMany('App\Models\PabaoRecordPayments', 'pabao_record_id')->OrderBy('created_at', 'desc');
+        return $this->hasMany(PabaoRecordPayments::class, 'pabao_record_id')->OrderBy('created_at', 'desc');
     }
 }

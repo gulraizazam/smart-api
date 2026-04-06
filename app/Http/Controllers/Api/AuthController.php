@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,11 +14,7 @@ class AuthController extends Controller
 
     public $error;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-    }
+    
 
     /**
      * Login for Apis
@@ -38,7 +34,7 @@ class AuthController extends Controller
             ];
             $validate = Validator::make($request->all(), $rules, $message);
             if ($validate->fails()) {
-                return ApiHelper::apiResponse($this->error, $validate->errors()->first(), $validate->errors());
+                return $this->errorResponse($validate->errors()->first(), 422, $validate->errors()->all());
             }
 
             if (Auth::attempt($request->only(['email', 'password']))) {
@@ -46,13 +42,13 @@ class AuthController extends Controller
                 $user = auth()->user();
                 $user->api_token = auth()->user()->createToken('login')->plainTextToken;
 
-                return ApiHelper::apiResponse($this->success, 'Success', $user);
+                return $this->successResponse('Success', $user);
             }
 
-            return ApiHelper::apiResponse($this->error, __('auth.failed'));
+            return $this->errorResponse(__('auth.failed'), 401);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

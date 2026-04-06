@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Exports;
 
 use DateTime;
@@ -16,7 +17,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class ExportMembership implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private $request;
+    private mixed $request;
 
     public function __construct($request)
     {

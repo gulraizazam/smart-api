@@ -1,63 +1,65 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
 use App\Helpers\Widgets\RegionsWidget;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Regions extends BaseModal
+class Regions extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'name', 'slug', 'active', 'created_at', 'updated_at', 'sort_number'];
 
-    protected static $_fillable = ['name', 'slug', 'active'];
+    protected static array $_fillable = ['name', 'slug', 'active'];
 
     protected $table = 'regions';
 
-    protected static $_table = 'regions';
+    protected static string $_table = 'regions';
 
     /**
      * sent the region data to resource has rota.
      */
-    public function resourcehasrota()
+    public function resourcehasrota(): HasMany
     {
-        return $this->hasMany('App\Models\ResourceHasRota', 'region_id');
+        return $this->hasMany(ResourceHasRota::class, 'region_id');
     }
 
     /**
      * Get the Locations for Region.
      */
-    public function locations()
+    public function locations(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'region_id');
+        return $this->hasMany(Locations::class, 'region_id');
     }
 
     /**
      * Get the Active Locations for Region.
      */
-    public function locationsActive()
+    public function locationsActive(): HasMany
     {
-        return $this->hasMany('App\Models\Locations', 'region_id')->where(['active' => 1]);
+        return $this->hasMany(Locations::class, 'region_id')->where(['active' => 1]);
     }
 
     /**
      * Get the doctors for Region.
      */
-    public function doctors()
+    public function doctors(): HasMany
     {
-        return $this->hasMany('App\Models\Doctors', 'region_id');
+        return $this->hasMany(Doctors::class, 'region_id');
     }
 
     /**
      * Get the appointments for Region.
      */
-    public function appointments()
+    public function appointments(): HasMany
     {
-        return $this->hasMany('App\Models\Appointments', 'region_id');
+        return $this->hasMany(Appointments::class, 'region_id');
     }
 
     /**

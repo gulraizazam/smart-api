@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\Discounts;
@@ -17,18 +18,6 @@ use Illuminate\Validation\Rule;
 
 class MembershipTypesController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
     /**
      * Display a listing of memberships types.
      *
@@ -127,11 +116,11 @@ class MembershipTypesController extends Controller
     {
 
         if (!Gate::allows('membershiptypes_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $data = $request->all();
 
@@ -140,9 +129,9 @@ class MembershipTypesController extends Controller
         $data['parent_id'] = !empty($data['parent_id']) ? $data['parent_id'] : null;
         $record = MembershipType::create($data);
         if ($record) {
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.', null, 200);
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
     protected function verifyFields(Request $request)
@@ -160,7 +149,7 @@ class MembershipTypesController extends Controller
     {
 
         if (!Gate::allows('membershiptypes_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         if ($request->status == "0") {
             $response = $this->InactiveRecord($request->id, $request->status);
@@ -168,15 +157,15 @@ class MembershipTypesController extends Controller
             $response = $this->activeRecord($request->id, $request->status);
         }
         if ($response) {
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.', null, 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+        return $this->errorResponse('Resource not found.', 200);
     }
     public function edit($id)
     {
         if (!Gate::allows('membershiptypes_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $membershipType = MembershipType::with('discounts')->find($id);
 
@@ -199,12 +188,12 @@ class MembershipTypesController extends Controller
         // Get currently assigned discount IDs
         $assignedDiscountIds = $membershipType->discounts->pluck('id')->toArray();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'membershipType' => $membershipType,
             'parentMemberships' => $parentMemberships,
             'activeDiscounts' => $activeDiscounts,
             'assignedDiscountIds' => $assignedDiscountIds,
-        ]);
+        ], 200);
     }
     public function update(Request $request, $id)
     {
@@ -222,7 +211,7 @@ class MembershipTypesController extends Controller
 
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first());
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $data = $request->all();
         $data['account_id'] = Auth::user()->account_id;
@@ -247,15 +236,15 @@ class MembershipTypesController extends Controller
         $record->discounts()->sync($discountIds);
 
         if ($record) {
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.', null, 200);
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
     public function destroy($id)
     {
         if (!Gate::allows('membershiptypes_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $membershipType = MembershipType::find($id);
 
@@ -265,13 +254,13 @@ class MembershipTypesController extends Controller
             if ($find_membership) {
                 $membershipType->update(['active' => 0]);
                 Membership::where('membership_type_id', $id)->update(['active' => 0]);
-                return ApiHelper::apiResponse($this->error, 'Record has been deactivated successfully');
+                return $this->successResponse('Record has been deactivated successfully', null, 500);
             } else {
                 $membershipType->delete();
-                return ApiHelper::apiResponse($this->error, 'Record has been deleted successfully');
+                return $this->successResponse('Record has been deleted successfully', null, 500);
             }
         }
-        return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+        return $this->errorResponse('Resource not found', 200);
     }
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
@@ -441,9 +430,9 @@ class MembershipTypesController extends Controller
             }
         }
 
-        return ApiHelper::apiResponse($this->success, 'Membership types retrieved successfully.', true, [
+        return $this->successResponse('Membership types retrieved successfully.', [
             'membership_types' => $membershipTypes,
             'expired_membership_type_id' => $expiredMembershipTypeId
-        ]);
+        ], 200);
     }
 }

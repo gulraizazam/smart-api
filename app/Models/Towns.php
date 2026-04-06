@@ -1,23 +1,26 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Towns extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Towns extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'city_id', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name', 'slug', 'active', 'account_id'];
+    protected static array $_fillable = ['name', 'slug', 'active', 'account_id'];
 
     protected $table = 'towns';
 
-    protected static $_table = 'towns';
+    protected static string $_table = 'towns';
 
     /**
      * Get Total Records
@@ -344,17 +347,17 @@ class Towns extends BaseModal
     /**
      * Get the comments for the blog post.
      */
-    public function leads()
+    public function leads(): HasMany
     {
-        return $this->hasMany('App\Models\Leads', 'town_id', 'id');
+        return $this->hasMany(Leads::class, 'town_id', 'id');
     }
 
     /**
      * Get the city of town.
      */
-    public function city()
+    public function city(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Cities', 'city_id');
+        return $this->belongsTo(Cities::class, 'city_id');
     }
 
     /**

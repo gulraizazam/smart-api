@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VoucherHasLocations extends Model
 {
@@ -12,18 +14,18 @@ class VoucherHasLocations extends Model
 
     protected $table = 'voucher_has_locations';
 
-    public function voucher()
+    public function voucher(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Voucher', 'voucher_id')->withTrashed();
+        return $this->belongsTo(Voucher::class, 'voucher_id')->withTrashed();
     }
 
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+        return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
 
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'service_id')->withTrashed();
+        return $this->belongsTo(Services::class, 'service_id')->withTrashed();
     }
 }

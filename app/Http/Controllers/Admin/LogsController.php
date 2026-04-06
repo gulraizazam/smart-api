@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AuditTrails;
 use Illuminate\Http\Request;
@@ -11,18 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 class LogsController extends Controller
 {
-    protected $error;
 
-    protected $success;
 
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the resource.
@@ -47,7 +38,7 @@ class LogsController extends Controller
     {
         try {
             if (! Gate::allows('logs_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $records = [];
             $records['data'] = [];
@@ -68,9 +59,9 @@ class LogsController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LogsController');
         }
     }
 }

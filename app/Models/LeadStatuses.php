@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
-class LeadStatuses extends BaseModal
+class LeadStatuses extends BaseModel
 {
     use SoftDeletes;
 

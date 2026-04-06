@@ -53,7 +53,14 @@ class ConversionReport
         $locationIds = GeneralFunctions::getLocationIds($requestData['location_id'] ?? null);
 
         // Case 1: Direct package appointments
-        $appointments = Appointments::with('location:id,name')
+        $appointments = Appointments::with([
+                'location:id,name',
+                'doctor:id,name',
+                'patient:id,name,phone',
+                'service:id,name',
+                'region:id,name',
+                'city:id,name',
+            ])
             ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
             ->when($locationIds, fn ($q) => $q->whereIn('appointments.location_id', $locationIds))
@@ -86,6 +93,34 @@ class ConversionReport
         $appointmentsInfo = [];
         $locationData = [];
 
+        // Preload packages and advances for Case 1 to eliminate N+1 queries
+        $case1AppointmentIds = $appointments->pluck('id')->unique()->toArray();
+        $allPackages = count($case1AppointmentIds)
+            ? Packages::whereIn('appointment_id', $case1AppointmentIds)
+                ->whereNull('deleted_at')
+                ->get()
+                ->groupBy('appointment_id')
+            : collect();
+
+        $allPackageIds = $allPackages->flatten()->pluck('id')->toArray();
+        $allAdvancesInRange = count($allPackageIds)
+            ? PackageAdvances::whereIn('package_id', $allPackageIds)
+                ->whereDate('created_at', '>=', $startDate)
+                ->whereDate('created_at', '<=', $endDate)
+                ->where('cash_amount', '>', 0)
+                ->get()
+                ->groupBy('package_id')
+            : collect();
+
+        $allFirstAdvances = count($allPackageIds)
+            ? PackageAdvances::whereIn('package_id', $allPackageIds)
+                ->where('cash_amount', '>', 0)
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->groupBy('package_id')
+                ->map(fn ($group) => $group->first())
+            : collect();
+
         if ($appointments->count()) {
             foreach ($appointments as $appointment) {
                 if (! in_array($appointment->id, $appointmentIds)) {
@@ -108,22 +143,20 @@ class ConversionReport
                 }
                 $appointmentIds[] = $appointment->id;
 
-                $packageInfo = Packages::where('appointment_id', $appointment->id)->pluck('id')->toArray();
+                $packageInfo = ($allPackages[$appointment->id] ?? collect())->pluck('id')->toArray();
 
                 if (count($packageInfo)) {
                     $revenueIn = 0;
                     $out = 0;
 
-                    $packageAdvances = PackageAdvances::whereIn('package_id', $packageInfo)
-                        ->whereDate('created_at', '>=', $startDate)
-                        ->whereDate('created_at', '<=', $endDate)
-                        ->where('cash_amount', '>', 0)
-                        ->get();
+                    $packageAdvances = collect($packageInfo)
+                        ->flatMap(fn ($pkgId) => $allAdvancesInRange[$pkgId] ?? []);
 
                     if ($packageAdvances->count() > 0) {
-                        $firstAdvance = PackageAdvances::whereIn('package_id', $packageInfo)
-                            ->where('cash_amount', '>', 0)
-                            ->orderBy('created_at', 'asc')
+                        $firstAdvance = collect($packageInfo)
+                            ->map(fn ($pkgId) => $allFirstAdvances[$pkgId] ?? null)
+                            ->filter()
+                            ->sortBy('created_at')
                             ->first();
 
                         $date = $firstAdvance->updated_at->format('Y-m-d');
@@ -162,7 +195,14 @@ class ConversionReport
         }
 
         // Case 2: Child appointments
-        $records = Appointments::with('location:id,name')
+        $records = Appointments::with([
+                'location:id,name',
+                'doctor:id,name',
+                'patient:id,name,phone',
+                'service:id,name',
+                'region:id,name',
+                'city:id,name',
+            ])
             ->join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
             ->join('package_advances', 'appoint_2.id', '=', 'package_advances.appointment_id')
             ->when($locationIds, fn ($q) => $q->whereIn('appointments.location_id', $locationIds))
@@ -174,6 +214,42 @@ class ConversionReport
 
         if ($records->count()) {
             $appointmentIds2 = $appointmentIds;
+            $case2Ids = $records->pluck('id')->unique()->toArray();
+
+            // Preload child appointment IDs grouped by parent
+            $childAppointmentsByParent = count($case2Ids)
+                ? Appointments::whereIn('appointment_id', $case2Ids)
+                    ->select('id', 'appointment_id')
+                    ->get()
+                    ->groupBy('appointment_id')
+                : collect();
+
+            // Preload all advances for child appointments
+            $allChildAppointmentIds = $childAppointmentsByParent->flatten()->pluck('id')->toArray();
+            $childAdvancesInRange = count($allChildAppointmentIds)
+                ? PackageAdvances::whereIn('appointment_id', $allChildAppointmentIds)
+                    ->whereDate('created_at', '>=', $startDate)
+                    ->whereDate('created_at', '<=', $endDate)
+                    ->get()
+                    ->groupBy('appointment_id')
+                : collect();
+
+            $childFirstAdvances = count($allChildAppointmentIds)
+                ? PackageAdvances::whereIn('appointment_id', $allChildAppointmentIds)
+                    ->where('cash_amount', '>', 0)
+                    ->orderBy('created_at', 'asc')
+                    ->get()
+                    ->groupBy('appointment_id')
+                    ->map(fn ($group) => $group->first())
+                : collect();
+
+            // Preload packages for Case 2 appointments
+            $case2Packages = count($case2Ids)
+                ? Packages::whereIn('appointment_id', $case2Ids)
+                    ->whereNull('deleted_at')
+                    ->get()
+                    ->groupBy('appointment_id')
+                : collect();
 
             foreach ($records as $appointment) {
                 $revenueIn = 0;
@@ -183,18 +259,17 @@ class ConversionReport
                 $converted = '';
                 $firstAdvance = null;
 
-                $inAppointmentIds = Appointments::where('appointment_id', $appointment->id)->pluck('id')->toArray();
+                $inAppointmentIds = ($childAppointmentsByParent[$appointment->id] ?? collect())->pluck('id')->toArray();
 
                 if (count($inAppointmentIds)) {
-                    $advanceInfo = PackageAdvances::whereIn('appointment_id', $inAppointmentIds)
-                        ->whereDate('created_at', '>=', $startDate)
-                        ->whereDate('created_at', '<=', $endDate)
-                        ->get();
+                    $advanceInfo = collect($inAppointmentIds)
+                        ->flatMap(fn ($id) => $childAdvancesInRange[$id] ?? []);
 
                     if ($advanceInfo->count() > 0) {
-                        $firstAdvance = PackageAdvances::whereIn('appointment_id', $inAppointmentIds)
-                            ->where('cash_amount', '>', 0)
-                            ->orderBy('created_at', 'asc')
+                        $firstAdvance = collect($inAppointmentIds)
+                            ->map(fn ($id) => $childFirstAdvances[$id] ?? null)
+                            ->filter()
+                            ->sortBy('created_at')
                             ->first();
 
                         $date = $firstAdvance->updated_at->format('Y-m-d');
@@ -236,7 +311,7 @@ class ConversionReport
                         'conversion_date' => '',
                     ];
 
-                    $packageInfo = Packages::where('appointment_id', $appointment->id)->pluck('id')->toArray();
+                    $packageInfo = ($case2Packages[$appointment->id] ?? collect())->pluck('id')->toArray();
 
                     if (count($packageInfo) == 0) {
                         $appointmentIds2[] = $appointment->id;

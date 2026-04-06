@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
@@ -710,11 +710,11 @@ class PackagesController extends Controller
         }
 
         if ($type === 'web') {
-            return ApiHelper::makeResponse([
+            return $this->successResponse('Record found.', [
                 'finance_log' => $finance_log,
                 'id' => $id,
                 'patient' => $patient,
-            ], 'admin.patients.card.plans.log');
+            ]);
         }
 
         return $this->packagelogexcel($id, $finance_log);

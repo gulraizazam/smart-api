@@ -1,366 +1,150 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Membership;
 
-use App\Models\StudentVerification;
 use App\Models\MembershipType;
+use App\Models\StudentVerification;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StudentVerificationService
 {
-    /**
-     * Store student verification documents
-     *
-     * @param array $data
-     * @return StudentVerification
-     */
-    public function storeVerification(array $data)
+    private const ALLOWED_MIMES = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'application/pdf',
+    ];
+
+    private const ALLOWED_EXTENSIONS = [
+        'jpg',
+        'jpeg',
+        'png',
+        'gif',
+        'webp',
+        'pdf',
+    ];
+
+    private const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+    public function storeVerification(array $data): ?StudentVerification
     {
-        try {
-            $documentPaths = [];
+        $documentPaths = [];
 
-            Log::info('Starting document storage', [
-                'has_documents_key' => isset($data['documents']),
-                'documents_type' => isset($data['documents']) ? gettype($data['documents']) : 'not set',
-                'documents_count' => isset($data['documents']) && is_array($data['documents']) ? count($data['documents']) : 0
-            ]);
-
-            // Store uploaded documents
-            if (isset($data['documents']) && is_array($data['documents'])) {
-                foreach ($data['documents'] as $index => $document) {
-                    // Check if document is a valid UploadedFile instance
-                    if ($document instanceof \Illuminate\Http\UploadedFile && $document->isValid()) {
-                        try {
-                            // Check if the temp file still exists
-                            $tempPath = $document->getRealPath();
-                            if (empty($tempPath) || !file_exists($tempPath)) {
-                                Log::warning('Document temp file no longer exists', [
-                                    'index' => $index,
-                                    'original_name' => $document->getClientOriginalName()
-                                ]);
-                                continue;
-                            }
-                            
-                            // Generate a unique filename
-                            $extension = $document->getClientOriginalExtension() ?: 'jpg';
-                            $filename = 'student_doc_' . time() . '_' . $index . '_' . uniqid() . '.' . $extension;
-                            
-                            // Ensure the directory exists
-                            $storagePath = storage_path('app/public/student_verifications');
-                            if (!file_exists($storagePath)) {
-                                mkdir($storagePath, 0755, true);
-                            }
-                            
-                            // Move the file to storage
-                            $destinationPath = $storagePath . '/' . $filename;
-                            if (copy($tempPath, $destinationPath)) {
-                                $path = 'student_verifications/' . $filename;
-                                $documentPaths[] = $path;
-                                Log::info('Document stored successfully', [
-                                    'path' => $path,
-                                    'original_name' => $document->getClientOriginalName(),
-                                    'size' => $document->getSize()
-                                ]);
-                            } else {
-                                Log::error('Failed to copy document', [
-                                    'index' => $index,
-                                    'from' => $tempPath,
-                                    'to' => $destinationPath
-                                ]);
-                            }
-                        } catch (\Exception $e) {
-                            Log::error('Failed to store document', [
-                                'index' => $index,
-                                'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString()
-                            ]);
-                        }
-                    } else {
-                        Log::warning('Skipping invalid document', [
-                            'index' => $index,
-                            'type' => gettype($document)
-                        ]);
-                    }
-                }
-            }
-            
-            // Don't create verification record if no documents were uploaded
-            if (empty($documentPaths)) {
-                Log::warning('No valid documents to store for student verification');
-                return null;
-            }
-
-            // Create verification record
-            $verification = StudentVerification::create([
-                'patient_id' => $data['patient_id'],
-                'membership_id' => $data['membership_id'] ?? null,
-                'membership_type_id' => $data['membership_type_id'],
-                'package_id' => $data['package_id'] ?? null,
-                'document_paths' => $documentPaths,
-                'status' => 'pending',
-                'submitted_by' => Auth::id(),
-                'submitted_at' => now(),
-            ]);
-
-            Log::info('Student verification created', [
-                'verification_id' => $verification->id,
-                'patient_id' => $data['patient_id'],
-                'documents_count' => count($documentPaths)
-            ]);
-
-            return $verification;
-        } catch (\Exception $e) {
-            Log::error('Failed to store student verification', [
-                'error' => $e->getMessage(),
-                'data' => $data
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Check if membership type is student membership
-     *
-     * @param int $membershipTypeId
-     * @return bool
-     */
-    public function isStudentMembership(int $membershipTypeId): bool
-    {
-        $membershipType = MembershipType::find($membershipTypeId);
-        
-        if (!$membershipType) {
-            return false;
+        if (isset($data['documents']) && is_array($data['documents'])) {
+            $documentPaths = $this->processDocuments($data['documents']);
         }
 
-        return stripos($membershipType->name, 'student') !== false;
+        if (empty($documentPaths)) {
+            Log::warning('No valid documents to store for student verification.');
+            return null;
+        }
+
+        $verification = StudentVerification::create([
+            'patient_id' => $data['patient_id'],
+            'membership_id' => $data['membership_id'] ?? null,
+            'membership_type_id' => $data['membership_type_id'],
+            'package_id' => $data['package_id'] ?? null,
+            'document_paths' => $documentPaths,
+            'status' => 'pending',
+            'submitted_by' => Auth::id(),
+            'submitted_at' => now(),
+        ]);
+
+        Log::info('Student verification created.', [
+            'verification_id' => $verification->id,
+            'patient_id' => $data['patient_id'],
+            'documents_count' => count($documentPaths),
+        ]);
+
+        return $verification;
     }
 
-    /**
-     * Check if documents are uploaded
-     *
-     * @param array $documents
-     * @return bool
-     */
-    /**
-     * Check if documents are uploaded and store them immediately
-     * Returns array of stored paths, or empty array if no valid documents
-     *
-     * @param array $documents
-     * @return array
-     */
     public function storeDocumentsImmediately(array $documents): array
     {
-        $storedPaths = [];
-        
-        if (empty($documents)) {
-            \Log::info('storeDocumentsImmediately: empty documents array');
-            return $storedPaths;
-        }
-
-        // Ensure the directory exists
-        $storagePath = storage_path('app/public/student_verifications');
-        if (!file_exists($storagePath)) {
-            mkdir($storagePath, 0755, true);
-        }
-
-        foreach ($documents as $index => $document) {
-            // Check if it's a valid uploaded file object
-            if ($document instanceof \Illuminate\Http\UploadedFile) {
-                try {
-                    // Get file info before any operations that might consume it
-                    $originalName = $document->getClientOriginalName();
-                    $extension = $document->getClientOriginalExtension() ?: 'jpg';
-                    $mimeType = $document->getClientMimeType();
-                    
-                    \Log::info('storeDocumentsImmediately: processing file', [
-                        'index' => $index,
-                        'original_name' => $originalName,
-                        'extension' => $extension,
-                        'mime_type' => $mimeType
-                    ]);
-                    
-                    // Try to get file contents directly using file_get_contents on the temp path
-                    // or use the UploadedFile's get() method
-                    $fileContent = null;
-                    
-                    // Method 1: Try to read from temp path
-                    $tempPath = $document->getRealPath();
-                    if (!empty($tempPath) && file_exists($tempPath)) {
-                        $fileContent = file_get_contents($tempPath);
-                        \Log::info('storeDocumentsImmediately: read from temp path', ['temp_path' => $tempPath]);
-                    }
-                    
-                    // Method 2: If temp path failed, try getContent() method (Laravel 8+)
-                    if (empty($fileContent) && method_exists($document, 'getContent')) {
-                        $fileContent = $document->getContent();
-                        \Log::info('storeDocumentsImmediately: read using getContent()');
-                    }
-                    
-                    // Method 3: Try reading from php://input stream
-                    if (empty($fileContent)) {
-                        $tempPath = $document->getPathname();
-                        if (!empty($tempPath) && file_exists($tempPath)) {
-                            $fileContent = file_get_contents($tempPath);
-                            \Log::info('storeDocumentsImmediately: read from pathname', ['pathname' => $tempPath]);
-                        }
-                    }
-                    
-                    if (!empty($fileContent)) {
-                        // Generate a unique filename and write to disk
-                        $filename = 'student_doc_' . time() . '_' . $index . '_' . uniqid() . '.' . $extension;
-                        $destinationPath = $storagePath . '/' . $filename;
-                        
-                        if (file_put_contents($destinationPath, $fileContent)) {
-                            $path = 'student_verifications/' . $filename;
-                            $storedPaths[] = $path;
-                            \Log::info('storeDocumentsImmediately: document stored', [
-                                'path' => $path,
-                                'original_name' => $originalName,
-                                'size' => strlen($fileContent)
-                            ]);
-                        } else {
-                            \Log::error('storeDocumentsImmediately: failed to write file', [
-                                'destination' => $destinationPath
-                            ]);
-                        }
-                    } else {
-                        \Log::warning('storeDocumentsImmediately: could not read file content', [
-                            'index' => $index,
-                            'original_name' => $originalName
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('storeDocumentsImmediately: failed to store', [
-                        'index' => $index,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                }
-            } else {
-                \Log::warning('storeDocumentsImmediately: not an UploadedFile', [
-                    'index' => $index,
-                    'type' => gettype($document)
-                ]);
-            }
-        }
-
-        return $storedPaths;
+        return $this->processDocuments($documents);
     }
-    
-    /**
-     * Check if documents are uploaded (legacy method for compatibility)
-     *
-     * @param array $documents
-     * @return bool
-     */
+
     public function hasDocuments(array $documents): bool
     {
-        if (empty($documents)) {
-            return false;
-        }
-
         foreach ($documents as $document) {
-            if ($document instanceof \Illuminate\Http\UploadedFile && $document->isValid()) {
+            if ($document instanceof UploadedFile && $document->isValid()) {
                 return true;
             }
         }
 
         return false;
     }
-    
-    /**
-     * Create verification record with already-stored document paths
-     *
-     * @param array $data
-     * @return StudentVerification
-     */
-    public function createVerificationRecord(array $data)
+
+    public function createVerificationRecord(array $data): ?StudentVerification
     {
-        try {
-            if (empty($data['document_paths'])) {
-                Log::warning('createVerificationRecord: No document paths provided');
-                return null;
-            }
-            
-            $verification = StudentVerification::create([
-                'patient_id' => $data['patient_id'],
-                'membership_id' => $data['membership_id'] ?? null,
-                'membership_type_id' => $data['membership_type_id'],
-                'package_id' => $data['package_id'] ?? null,
-                'document_paths' => $data['document_paths'],
-                'status' => 'pending',
-                'submitted_by' => Auth::id(),
-                'submitted_at' => now(),
-            ]);
-
-            Log::info('Student verification record created', [
-                'verification_id' => $verification->id,
-                'patient_id' => $data['patient_id'],
-                'package_id' => $data['package_id'],
-                'documents_count' => count($data['document_paths'])
-            ]);
-
-            return $verification;
-        } catch (\Exception $e) {
-            Log::error('Failed to create student verification record', [
-                'error' => $e->getMessage(),
-                'data' => $data
-            ]);
-            throw $e;
+        if (empty($data['document_paths'])) {
+            Log::warning('createVerificationRecord: No document paths provided.');
+            return null;
         }
+
+        $verification = StudentVerification::create([
+            'patient_id' => $data['patient_id'],
+            'membership_id' => $data['membership_id'] ?? null,
+            'membership_type_id' => $data['membership_type_id'],
+            'package_id' => $data['package_id'] ?? null,
+            'document_paths' => $data['document_paths'],
+            'status' => 'pending',
+            'submitted_by' => Auth::id(),
+            'submitted_at' => now(),
+        ]);
+
+        Log::info('Student verification record created.', [
+            'verification_id' => $verification->id,
+            'patient_id' => $data['patient_id'],
+            'documents_count' => count($data['document_paths']),
+        ]);
+
+        return $verification;
     }
 
-    /**
-     * Get verification by patient and membership
-     *
-     * @param int $patientId
-     * @param int $membershipId
-     * @return StudentVerification|null
-     */
-    public function getVerificationByMembership(int $patientId, int $membershipId)
+    public function isStudentMembership(int $membershipTypeId): bool
+    {
+        $membershipType = MembershipType::find($membershipTypeId);
+
+        return $membershipType !== null && stripos($membershipType->name, 'student') !== false;
+    }
+
+    public function getVerificationByMembership(int $patientId, int $membershipId): ?StudentVerification
     {
         return StudentVerification::where('patient_id', $patientId)
             ->where('membership_id', $membershipId)
             ->first();
     }
 
-    /**
-     * Approve verification
-     *
-     * @param int $verificationId
-     * @return StudentVerification
-     */
-    public function approveVerification(int $verificationId)
+    public function approveVerification(int $verificationId): StudentVerification
     {
         $verification = StudentVerification::findOrFail($verificationId);
-        
+
         $verification->update([
             'status' => 'approved',
             'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),
         ]);
 
-        Log::info('Student verification approved', [
+        Log::info('Student verification approved.', [
             'verification_id' => $verificationId,
-            'reviewed_by' => Auth::id()
+            'reviewed_by' => Auth::id(),
         ]);
 
         return $verification;
     }
 
-    /**
-     * Reject verification
-     *
-     * @param int $verificationId
-     * @param string $reason
-     * @return StudentVerification
-     */
-    public function rejectVerification(int $verificationId, string $reason)
+    public function rejectVerification(int $verificationId, string $reason): StudentVerification
     {
         $verification = StudentVerification::findOrFail($verificationId);
-        
+
         $verification->update([
             'status' => 'rejected',
             'rejection_reason' => $reason,
@@ -368,27 +152,94 @@ class StudentVerificationService
             'reviewed_at' => now(),
         ]);
 
-        Log::info('Student verification rejected', [
+        Log::info('Student verification rejected.', [
             'verification_id' => $verificationId,
             'reviewed_by' => Auth::id(),
-            'reason' => $reason
         ]);
 
         return $verification;
     }
 
-    /**
-     * Delete verification documents
-     *
-     * @param StudentVerification $verification
-     * @return void
-     */
-    public function deleteDocuments(StudentVerification $verification)
+    public function deleteDocuments(StudentVerification $verification): void
     {
-        if (!empty($verification->document_paths)) {
+        if (! empty($verification->document_paths)) {
             foreach ($verification->document_paths as $path) {
                 Storage::disk('public')->delete($path);
             }
         }
+    }
+
+    /**
+     * Process and store uploaded documents with MIME/extension validation.
+     *
+     * @param  array<int, mixed>  $documents
+     * @return array<int, string>
+     */
+    private function processDocuments(array $documents): array
+    {
+        $storedPaths = [];
+
+        foreach ($documents as $index => $document) {
+            if (! $document instanceof UploadedFile || ! $document->isValid()) {
+                continue;
+            }
+
+            if (! $this->isAllowedFile($document)) {
+                Log::warning('Document rejected: invalid type or size.', [
+                    'index' => $index,
+                    'mime' => $document->getClientMimeType(),
+                    'extension' => $document->getClientOriginalExtension(),
+                    'size' => $document->getSize(),
+                ]);
+                continue;
+            }
+
+            try {
+                $extension = strtolower($document->getClientOriginalExtension());
+                if (! in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+                    $extension = 'jpg';
+                }
+
+                $filename = 'student_doc_' . now()->timestamp . "_{$index}_" . Str::random(16) . '.' . $extension;
+                $path = $document->storeAs('student_verifications', $filename, 'public');
+
+                if ($path) {
+                    $storedPaths[] = $path;
+                    Log::info('Document stored.', [
+                        'path' => $path,
+                        'original_name' => $document->getClientOriginalName(),
+                        'size' => $document->getSize(),
+                    ]);
+                }
+            } catch (\Throwable $e) {
+                Log::error('Failed to store document.', [
+                    'index' => $index,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $storedPaths;
+    }
+
+    private function isAllowedFile(UploadedFile $file): bool
+    {
+        $mime = $file->getClientMimeType();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $size = $file->getSize();
+
+        if (! in_array($mime, self::ALLOWED_MIMES, true)) {
+            return false;
+        }
+
+        if (! in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+            return false;
+        }
+
+        if ($size === false || $size > self::MAX_FILE_SIZE_BYTES) {
+            return false;
+        }
+
+        return true;
     }
 }

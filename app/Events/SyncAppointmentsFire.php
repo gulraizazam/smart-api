@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Events;
 
 use App\Models\Accounts;
@@ -15,13 +16,8 @@ class SyncAppointmentsFire
     /**
      * Variable holding account object
      */
-    protected $account;
+    protected Accounts $account;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
     public function __construct(Accounts $account)
     {
         $this->account = $account;

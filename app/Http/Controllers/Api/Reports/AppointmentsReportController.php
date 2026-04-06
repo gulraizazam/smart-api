@@ -8,13 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Reports\AppointmentsReportRequest;
 use App\Http\Resources\Reports\AppointmentsReportResource;
 use App\Services\Reports\AppointmentsReportService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 
 class AppointmentsReportController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly AppointmentsReportService $reportService,
     ) {}

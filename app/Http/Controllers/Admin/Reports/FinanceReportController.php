@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Reports;
 
 use App\Helpers\ACL;
@@ -37,18 +38,9 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class FinanceReportController extends Controller
 {
-    protected $error;
 
-    protected $success;
 
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing filter for finanace report.

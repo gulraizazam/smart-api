@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
@@ -13,23 +14,23 @@ class InvoiceGenerationService
     const PAYMENT_MODE_BANK = 4;  // Bank/Wire Transfer
     // Note: PayPal (ID 3) is deleted, Settle Amount (ID 5) is excluded from calculations
 
-    protected $dateFrom;
-    protected $dateTo;
-    protected $locationIds;
-    protected $bankTaxablePercent;
-    protected $cashPercent;
-    protected $consultationAmount;
-    protected $consultationAmounts = [];
-    protected $isMixedMode = false;
-    protected $maxExemptPerPatient;
-    protected $unplacedExemptPerPatient = [];
-    protected $workingDays = [];
-    protected $usedInvoiceNumbers = [];
-    protected $dailyRevenue = [];
-    protected $dailyBudgetUsed = [];
-    protected $patientDailyInvoiceCount = [];
-    protected $taxPercent;
-    protected $maxInvoicesPerDay;
+    protected ?string $dateFrom = null;
+    protected ?string $dateTo = null;
+    protected ?array $locationIds = null;
+    protected float $bankTaxablePercent = 0.0;
+    protected float $cashPercent = 0.0;
+    protected float $consultationAmount = 0.0;
+    protected array $consultationAmounts = [];
+    protected bool $isMixedMode = false;
+    protected float $maxExemptPerPatient = 0.0;
+    protected array $unplacedExemptPerPatient = [];
+    protected array $workingDays = [];
+    protected array $usedInvoiceNumbers = [];
+    protected array $dailyRevenue = [];
+    protected array $dailyBudgetUsed = [];
+    protected array $patientDailyInvoiceCount = [];
+    protected float $taxPercent = 0.0;
+    protected int $maxInvoicesPerDay = 0;
 
     /**
      * Main function to calculate and generate exempt invoices

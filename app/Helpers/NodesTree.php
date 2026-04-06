@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Services;
@@ -9,37 +10,37 @@ use App\Models\Services;
  */
 class NodesTree
 {
-    public $id = 0;
+    public int $id = 0;
 
-    public $name = '';
+    public string $name = '';
 
-    public $parent_id = '';
+    public mixed $parent_id = '';
 
-    public $slug = '';
+    public string $slug = '';
 
-    public $complimentory = '';
+    public mixed $complimentory = '';
 
-    public $active = '';
+    public mixed $active = '';
 
-    public $duration = '';
+    public mixed $duration = '';
 
-    public $price = '';
+    public mixed $price = '';
 
-    public $color = '';
+    public string $color = '';
 
-    public $end_node = '';
+    public mixed $end_node = '';
 
-    public $non_negative_groups = false;
+    public bool $non_negative_groups = false;
 
-    public $children_groups = [];
+    public array $children_groups = [];
 
-    public $children_nodes = [];
+    public array $children_nodes = [];
 
-    public $counter = 0;
+    public int $counter = 0;
 
-    public $current_id = -1;
+    public int $current_id = -1;
 
-    public $default_text = 'Please select...';
+    public string $default_text = 'Please select...';
 
     /**
      * Initializer
@@ -112,7 +113,7 @@ class NodesTree
             $this->children_groups[$counter] = new NodesTree();
             /* Initial setup */
             $this->children_groups[$counter]->current_id = $this->current_id;
-            $this->children_groups[$counter]->current_id = $this->non_negative_groups;
+            $this->children_groups[$counter]->non_negative_groups = $this->non_negative_groups;
             $this->children_groups[$counter]->build($row['id'], $account_id, true, true);
             $counter++;
         }
@@ -146,7 +147,7 @@ class NodesTree
         }
     }
 
-    public $nodeList = [];
+    public array $nodeList = [];
 
     /* Convert node tree to a list */
     public function toList($tree, $c = 0, $active_only = false)

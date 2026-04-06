@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
@@ -17,18 +17,9 @@ use Illuminate\Support\Facades\Validator;
 
 class MachineTypeController extends Controller
 {
-    protected $error;
 
-    protected $success;
 
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the machine type.
@@ -53,7 +44,7 @@ class MachineTypeController extends Controller
     {
         try {
             if (!Gate::allows('machineType_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $filename = 'machinetypes';
@@ -112,9 +103,9 @@ class MachineTypeController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 
@@ -161,11 +152,11 @@ class MachineTypeController extends Controller
     {
         try {
             if (!Gate::allows('machineType_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                return $this->successResponse($validator->errors()->first(), false, $validator->errors());
             }
             if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
                 $data = $request->all();
@@ -187,12 +178,12 @@ class MachineTypeController extends Controller
                     MachineTypeHasServices::createRecord($servicesData, $machinetype);
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->successResponse('Record has been created successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 
@@ -229,19 +220,19 @@ class MachineTypeController extends Controller
     {
         try {
             if (!Gate::allows('machineType_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $machine_type = MachineType::getData($id);
             if (!$machine_type) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
             $service_machine_type = $machine_type->machinetype_has_services()->pluck('service_id')->toArray();
             $services = GeneralFunctions::ServicesTreeMachineType();
 
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, ['machine_type' => $machine_type, 'service_machine_type' => $service_machine_type, 'services' => $services]);
+            return $this->successResponse('Success', ['machine_type' => $machine_type, 'service_machine_type' => $service_machine_type, 'services' => $services]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 
@@ -254,11 +245,11 @@ class MachineTypeController extends Controller
     {
         try {
             if (!Gate::allows('machineType_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                return $this->successResponse($validator->errors()->first(), false, $validator->errors());
             }
 
             if ($machinetype = MachineType::updateRecord($id, $request, Auth::User()->account_id)) {
@@ -283,12 +274,12 @@ class MachineTypeController extends Controller
                     MachineTypeHasServices::updateRecord($servicesData, $machinetype);
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->successResponse('Record has been updated successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 
@@ -301,13 +292,13 @@ class MachineTypeController extends Controller
     {
         try {
             if (!Gate::allows('machineType_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $response = MachineType::deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            return $this->successResponse($response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 
@@ -321,19 +312,19 @@ class MachineTypeController extends Controller
         try {
             if ($request->status == 0) {
                 if (!Gate::allows('machineType_inactive')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
                 $response = MachineType::inactiveRecord($request->id);
             } else {
                 if (!Gate::allows('machineType_active')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
                 $response = MachineType::activeRecord($request->id);
             }
 
-            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+            return $this->successResponse($response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MachineTypeController');
         }
     }
 }

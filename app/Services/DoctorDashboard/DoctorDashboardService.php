@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
 use App\Helpers\DoctorDashboardHelper;
@@ -11,40 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class DoctorDashboardService
 {
-    private DoctorIdentifier $doctorIdentifier;
-    private ConversionCalculator $conversionCalculator;
-    private RevenueCalculator $revenueCalculator;
-    private UpsellCalculator $upsellCalculator;
-    private MembershipCalculator $membershipCalculator;
-    private FeedbackCalculator $feedbackCalculator;
-    private ProductRevenueCalculator $productRevenueCalculator;
-    private PatientReturnCalculator $patientReturnCalculator;
-    private PersonalBestCalculator $personalBestCalculator;
-    private BenchmarkCalculator $benchmarkCalculator;
-
     public function __construct(
-        DoctorIdentifier $doctorIdentifier,
-        ConversionCalculator $conversionCalculator,
-        RevenueCalculator $revenueCalculator,
-        UpsellCalculator $upsellCalculator,
-        MembershipCalculator $membershipCalculator,
-        FeedbackCalculator $feedbackCalculator,
-        ProductRevenueCalculator $productRevenueCalculator,
-        PatientReturnCalculator $patientReturnCalculator,
-        PersonalBestCalculator $personalBestCalculator,
-        BenchmarkCalculator $benchmarkCalculator
-    ) {
-        $this->doctorIdentifier = $doctorIdentifier;
-        $this->conversionCalculator = $conversionCalculator;
-        $this->revenueCalculator = $revenueCalculator;
-        $this->upsellCalculator = $upsellCalculator;
-        $this->membershipCalculator = $membershipCalculator;
-        $this->feedbackCalculator = $feedbackCalculator;
-        $this->productRevenueCalculator = $productRevenueCalculator;
-        $this->patientReturnCalculator = $patientReturnCalculator;
-        $this->personalBestCalculator = $personalBestCalculator;
-        $this->benchmarkCalculator = $benchmarkCalculator;
-    }
+        private readonly DoctorIdentifier $doctorIdentifier,
+        private readonly ConversionCalculator $conversionCalculator,
+        private readonly RevenueCalculator $revenueCalculator,
+        private readonly UpsellCalculator $upsellCalculator,
+        private readonly MembershipCalculator $membershipCalculator,
+        private readonly FeedbackCalculator $feedbackCalculator,
+        private readonly ProductRevenueCalculator $productRevenueCalculator,
+        private readonly PatientReturnCalculator $patientReturnCalculator,
+        private readonly PersonalBestCalculator $personalBestCalculator,
+        private readonly BenchmarkCalculator $benchmarkCalculator,
+    ) {}
 
     /**
      * Get all KPI data for the doctor dashboard.

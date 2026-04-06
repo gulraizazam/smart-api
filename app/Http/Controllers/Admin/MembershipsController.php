@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Exports\ExportMembership;
-use App\HelperModule\ApiHelper;
 use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
@@ -28,17 +28,6 @@ use App\Exports\StudentMembershipPatientsExport;
 
 class MembershipsController extends Controller
 {
-    public $success;
-    public $error;
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     public function index()
     {
         if (!Gate::allows('memberships_manage')) {
@@ -127,43 +116,43 @@ class MembershipsController extends Controller
                     'sort' => $order,
                 ];
             }
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'MembershipsController');
         }
     }
 
     public function create()
     {
         if (!Gate::allows('memberships_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         // Only fetch parent membership types (not renewals)
         $membershipType = MembershipType::parentsOnly()
             ->where('active', 1)
             ->pluck('name', 'id');
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+        return $this->successResponse('Record found.', [
             'membershipType' => $membershipType,
 
-        ]);
+        ], 200);
     }
     public function store(Request $request)
     {
         if (!Gate::allows('memberships_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $data = $request->all();
         $data['account_id'] = Auth::user()->account_id;
         $data['created_by'] = Auth::id();
         $record = Membership::create($data);
         if ($record) {
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.', null, 200);
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
     protected function verifyFields(Request $request)
@@ -177,7 +166,7 @@ class MembershipsController extends Controller
     public function status(Request $request)
     {
         if (!Gate::allows('memberships_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         if ($request->status == "0") {
             $response = $this->InactiveRecord($request->id, $request->status);
@@ -185,9 +174,9 @@ class MembershipsController extends Controller
             $response = $this->activeRecord($request->id, $request->status);
         }
         if ($response) {
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.', null, 200);
         }
-        return ApiHelper::apiResponse($this->error, 'You can not change status of this membership', false);
+        return $this->errorResponse('You can not change status of this membership', 500);
     }
     public function cancelMembership(Request $request)
     {
@@ -195,7 +184,7 @@ class MembershipsController extends Controller
         $membership = Membership::where('patient_id', $request->id)->first();
 
         if (!$membership) {
-            return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+            return $this->errorResponse('Membership not found', 500);
         }
 
         // Check if membership is inactive and expired
@@ -222,11 +211,7 @@ class MembershipsController extends Controller
                         ->first();
 
                     if ($hasRestrictedService) {
-                        return ApiHelper::apiResponse(
-                            $this->error,
-                            'Membership applied on services, you can not cancel it',
-                            false
-                        );
+                        return $this->errorResponse('Membership applied on services, you can not cancel it', 500);
                     }
                 }
             }
@@ -262,20 +247,20 @@ class MembershipsController extends Controller
             $message .= ' along with ' . $cancelledReferrals . ' associated referral(s)';
         }
 
-        return ApiHelper::apiResponse($this->success, $message);
+        return $this->successResponse($message, null, 200);
     }
     public function edit($id)
     {
         if (!Gate::allows('memberships_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $membership = Membership::find($id);
         // Only fetch parent membership types (not renewals)
         $membershipType = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id');
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'membership' => $membership,
             'membershipType' => $membershipType
-        ]);
+        ], 200);
     }
     public function update(Request $request, $id)
     {
@@ -284,7 +269,7 @@ class MembershipsController extends Controller
         }
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first());
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $data = $request->all();
         $data['updated_by'] = Auth::id();
@@ -292,36 +277,36 @@ class MembershipsController extends Controller
         $record = Membership::find($id);
         if ($record) {
             $record->update($data);
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.', null, 200);
         } else {
-            return ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 500);
         }
     }
     public function destroy($id)
     {
         if (!Gate::allows('memberships_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $membership = Membership::find($id);
 
         if ($membership) {
             $membership->delete();
-            return ApiHelper::apiResponse($this->error, 'Record has been deleted Successfully');
+            return $this->successResponse('Record has been deleted Successfully', null, 500);
         }
-        return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+        return $this->errorResponse('Membership not found', 500);
     }
     public function uploadMemberships(Request $request)
     {
 
 
         if (!Gate::allows('memberships_import')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $validator = \Validator::make($request->all(), [
             'memberships_file' => ['required', 'mimes:xls,xlsx'],
         ]);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         try {
             $all_codes_list = [];
@@ -368,9 +353,9 @@ class MembershipsController extends Controller
                     ], $membership_data);
                 }
             };
-            return ApiHelper::apiResponse($this->success, 'Memberships has been imported');
+            return $this->successResponse('Memberships has been imported', null, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), 'false');
+            return $this->errorResponse($e->getMessage(), 200);
         }
     }
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -959,13 +944,13 @@ class MembershipsController extends Controller
             $membership = Membership::with('membershipType')->find($membershipId);
             
             if (!$membership) {
-                return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+                return $this->errorResponse('Membership not found', 500);
             }
 
             $patient = User::find($membership->patient_id);
             
             if (!$patient) {
-                return ApiHelper::apiResponse($this->error, 'Patient not found', false);
+                return $this->errorResponse('Patient not found', 500);
             }
 
             // Get student verification record
@@ -1034,7 +1019,7 @@ class MembershipsController extends Controller
                 }
             }
 
-            return ApiHelper::apiResponse($this->success, 'Details found', true, [
+            return $this->successResponse('Details found', [
                 'membership' => [
                     'id' => $membership->id,
                     'code' => $membership->code,
@@ -1062,10 +1047,10 @@ class MembershipsController extends Controller
                     'total_discount_saved' => $totalDiscountAmount,
                     'services' => $serviceUsage,
                 ],
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             \Log::error('Error fetching student verification details: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, 'Failed to fetch details', false);
+            return $this->errorResponse('Failed to fetch details', 500);
         }
     }
 }

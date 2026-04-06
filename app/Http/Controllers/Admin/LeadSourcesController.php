@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Lead\StoreLeadSourceRequest;
 use App\Http\Requests\Lead\UpdateLeadSourceRequest;
@@ -23,8 +22,7 @@ class LeadSourcesController extends Controller
     public function __construct(
         protected readonly LeadSourceService $service,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
     }
 
     public function index(): \Illuminate\View\View
@@ -40,7 +38,7 @@ class LeadSourcesController extends Controller
     {
         try {
             if (!Gate::allows('lead_sources_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $accountId = Auth::user()->account_id;
@@ -49,7 +47,7 @@ class LeadSourcesController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->service->bulkDelete($ids, $accountId);
-                return ApiHelper::apiResponse($this->success, 'Records have been deleted successfully!');
+                return $this->successResponse('Records have been deleted successfully!');
             }
 
             [$orderBy, $order] = getSortBy($request);
@@ -62,7 +60,7 @@ class LeadSourcesController extends Controller
                 ->orderBy('sort_no')
                 ->get();
 
-            return ApiHelper::apiDataTable([
+            return response()->json([
                 'data' => LeadSourceResource::collection($records),
                 'permissions' => [
                     'edit' => Gate::allows('lead_sources_edit'),
@@ -82,7 +80,7 @@ class LeadSourcesController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -99,14 +97,14 @@ class LeadSourcesController extends Controller
     {
         try {
             if (!Gate::allows('lead_sources_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $records = $this->service->getSortableRecords(Auth::user()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, LeadSourceResource::collection($records));
+            return $this->successResponse('Success', LeadSourceResource::collection($records));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -114,19 +112,19 @@ class LeadSourcesController extends Controller
     {
         try {
             if (!Gate::allows('lead_sources_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $itemIds = $request->item_ids;
             if (!$itemIds || !count($itemIds)) {
-                return ApiHelper::apiResponse($this->success, 'No items to sort.', false);
+                return $this->errorResponse('No items to sort.', 404);
             }
 
             $this->service->saveSortOrder($itemIds);
 
-            return ApiHelper::apiResponse($this->success, 'Records are sorted successfully!');
+            return $this->successResponse('Records are sorted successfully!');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -135,9 +133,9 @@ class LeadSourcesController extends Controller
         try {
             $record = $this->service->create($request->validated(), Auth::user()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, new LeadSourceResource($record));
+            return $this->successResponse('Record has been created successfully.', new LeadSourceResource($record));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -145,18 +143,18 @@ class LeadSourcesController extends Controller
     {
         try {
             if (!Gate::allows('lead_sources_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $record = $this->service->find($id);
 
             if (!$record) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, new LeadSourceResource($record));
+            return $this->successResponse('Success', new LeadSourceResource($record));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -166,12 +164,12 @@ class LeadSourcesController extends Controller
             $record = $this->service->update($id, $request->validated(), Auth::user()->account_id);
 
             if (!$record) {
-                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                return $this->errorResponse('Something went wrong, please try again later.', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.', true, new LeadSourceResource($record));
+            return $this->successResponse('Record has been updated successfully.', new LeadSourceResource($record));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -179,14 +177,14 @@ class LeadSourcesController extends Controller
     {
         try {
             if (!Gate::allows('lead_sources_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->service->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 
@@ -196,14 +194,14 @@ class LeadSourcesController extends Controller
             $gate = $request->status == 0 ? 'lead_sources_inactive' : 'lead_sources_active';
 
             if (!Gate::allows($gate)) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->service->toggleStatus($request->id, (int) $request->status);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadSourcesController');
         }
     }
 }

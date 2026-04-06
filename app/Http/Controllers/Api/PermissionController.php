@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PermissionDatatableRequest;
@@ -22,9 +22,8 @@ class PermissionController extends Controller
     public function __construct(
         private readonly PermissionService $permissionService,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -57,7 +56,7 @@ class PermissionController extends Controller
             $perPage = $request->getPerPage();
             $total = $result['total'];
 
-            return ApiHelper::apiDataTable([
+            return response()->json([
                 'data' => $result['data'],
                 'permissions' => $this->permissionService->getUserPermissions(),
                 'meta' => [
@@ -70,7 +69,7 @@ class PermissionController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -78,14 +77,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'permissions' => $this->permissionService->getParentGroups(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -93,14 +92,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to create permissions.', false);
+                return $this->errorResponse('You are not authorized to create permissions.', 401);
             }
 
             $this->permissionService->create($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -108,15 +107,15 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to edit permissions.', false);
+                return $this->errorResponse('You are not authorized to edit permissions.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'permissions' => $this->permissionService->getParentGroups(),
                 'permission' => $permission,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -124,14 +123,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'permission' => $permission->load('parent:id,name'),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -139,14 +138,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to edit permissions.', false);
+                return $this->errorResponse('You are not authorized to edit permissions.', 401);
             }
 
             $this->permissionService->update($id, $request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -154,14 +153,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete permissions.', false);
+                return $this->errorResponse('You are not authorized to delete permissions.', 401);
             }
 
             $this->permissionService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            return $this->successResponse('Record has been deleted successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 
@@ -169,14 +168,14 @@ class PermissionController extends Controller
     {
         try {
             if (!Gate::allows('permissions_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Parent groups retrieved', true, [
+            return $this->successResponse('Parent groups retrieved', [
                 'parent_groups' => $this->permissionService->getParentGroups(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'PermissionController');
         }
     }
 }

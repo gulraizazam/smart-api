@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\Schedule\BusinessClosureService;
 use App\Http\Requests\Schedule\StoreBusinessClosureRequest;
 use App\Http\Requests\Schedule\UpdateBusinessClosureRequest;
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Models\Locations;
 use Illuminate\Http\Request;
@@ -25,9 +25,8 @@ class BusinessClosureController extends Controller
     public function __construct(BusinessClosureService $service)
     {
         $this->service = $service;
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     /**
@@ -36,7 +35,7 @@ class BusinessClosureController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         if (!Gate::allows('business_closures_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -46,7 +45,7 @@ class BusinessClosureController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $deleted = $this->service->bulkDelete($ids);
-                return ApiHelper::apiResponse($this->success, "{$deleted} records deleted successfully.", true);
+                return $this->successResponse("{$deleted} records deleted successfully.");
             }
 
             $datatableData = $this->service->getDatatableData($filters);
@@ -98,10 +97,10 @@ class BusinessClosureController extends Controller
                 'delete' => Gate::allows('business_closures_delete'),
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 
@@ -111,7 +110,7 @@ class BusinessClosureController extends Controller
     public function create(): JsonResponse
     {
         if (!Gate::allows('business_closures_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -127,11 +126,11 @@ class BusinessClosureController extends Controller
             
             $locations = $locationsQuery->orderBy('name', 'asc')->get(['id', 'name']);
 
-            return ApiHelper::apiResponse($this->success, 'Data loaded successfully.', true, [
+            return $this->successResponse('Data loaded successfully.', [
                 'locations' => $locations,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 
@@ -141,17 +140,17 @@ class BusinessClosureController extends Controller
     public function store(StoreBusinessClosureRequest $request): JsonResponse
     {
         if (!Gate::allows('business_closures_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $closure = $this->service->create($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Business closure created successfully.', true, [
+            return $this->successResponse('Business closure created successfully.', [
                 'closure' => $closure,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 
@@ -161,14 +160,14 @@ class BusinessClosureController extends Controller
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('business_closures_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $closure = $this->service->getById($id);
 
             if (!$closure) {
-                return ApiHelper::apiResponse($this->error, 'Business closure not found.', false);
+                return $this->errorResponse('Business closure not found.', 500);
             }
 
             $userCentres = ACL::getUserCentres();
@@ -183,13 +182,13 @@ class BusinessClosureController extends Controller
             
             $locations = $locationsQuery->orderBy('name', 'asc')->get(['id', 'name']);
 
-            return ApiHelper::apiResponse($this->success, 'Data loaded successfully.', true, [
+            return $this->successResponse('Data loaded successfully.', [
                 'closure' => $closure,
                 'location_ids' => $closure->locations->pluck('id')->toArray(),
                 'locations' => $locations,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 
@@ -199,17 +198,17 @@ class BusinessClosureController extends Controller
     public function update(UpdateBusinessClosureRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('business_closures_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $closure = $this->service->update($id, $request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Business closure updated successfully.', true, [
+            return $this->successResponse('Business closure updated successfully.', [
                 'closure' => $closure,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 
@@ -219,15 +218,15 @@ class BusinessClosureController extends Controller
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('business_closures_delete')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $this->service->delete($id);
 
-            return ApiHelper::apiResponse($this->success, 'Business closure deleted successfully.', true);
+            return $this->successResponse('Business closure deleted successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BusinessClosureController');
         }
     }
 }

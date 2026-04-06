@@ -1,14 +1,18 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use DateTime;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class CustomFormFeedbacks extends BaseModal
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class CustomFormFeedbacks extends BaseModel
 {
     use SoftDeletes;
 
@@ -23,9 +27,9 @@ class CustomFormFeedbacks extends BaseModal
      *
      * @var array
      */
-    protected static $_fillable = ['form_name', 'form_description', 'content', 'reference_id', 'custom_form_id', 'custom_form_type'];
+    protected static array $_fillable = ['form_name', 'form_description', 'content', 'reference_id', 'custom_form_id', 'custom_form_type'];
 
-    protected static $_table = 'custom_form_feedbacks';
+    protected static string $_table = 'custom_form_feedbacks';
 
     const sort_field = 'id';
 
@@ -284,7 +288,7 @@ class CustomFormFeedbacks extends BaseModal
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reference_id');
     }
@@ -393,12 +397,12 @@ class CustomFormFeedbacks extends BaseModal
         ])->with(['form_fields', 'patient'])->first();
     }
 
-    public function form_fields()
+    public function form_fields(): HasMany
     {
-        return $this->hasMany('App\Models\CustomFormFeedbackDetails', 'custom_form_feedback_id');
+        return $this->hasMany(CustomFormFeedbackDetails::class, 'custom_form_feedback_id');
     }
 
-    public function patient()
+    public function patient(): HasOne
     {
         return $this->hasOne(User::class, 'id', 'reference_id');
     }

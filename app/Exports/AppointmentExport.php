@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Exports;
 
 use Illuminate\Support\Facades\Gate;
@@ -12,9 +13,9 @@ class AppointmentExport implements FromCollection, WithHeadings, ShouldAutoSize
 {
     use Exportable;
 
-    private $filters = [];
+    private array $filters = [];
 
-    public function __construct($filters)
+    public function __construct(array $filters)
     {
         $this->filters = $filters;
 

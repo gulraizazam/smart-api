@@ -1,16 +1,19 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use DB;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use DateTime;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOne;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invoices extends Model
 {
@@ -18,31 +21,31 @@ class Invoices extends Model
 
     protected $fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id','is_settlement', 'package_id'];
 
-    protected static $_fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id'];
+    protected static array $_fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id'];
 
     protected $table = 'invoices';
 
-    protected static $_table = 'invoices';
+    protected static string $_table = 'invoices';
 
     /*Get the invoice status data*/
-    public function invoicestatus()
+    public function invoicestatus(): BelongsTo
     {
-        return $this->belongsTo('App\Models\InvoiceStatuses', 'invoice_status_id')->withTrashed();
+        return $this->belongsTo(InvoiceStatuses::class, 'invoice_status_id')->withTrashed();
     }
 
     /*Get the user data*/
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'patient_id')->withTrashed();
+        return $this->belongsTo(User::class, 'patient_id')->withTrashed();
     }
 
     /**
      * Get the package advances information.
      */
-    public function packageadvance()
+    public function packageadvance(): HasMany
     {
 
-        return $this->hasMany('App\Models\PackageAdvances', 'invoice_id');
+        return $this->hasMany(PackageAdvances::class, 'invoice_id');
     }
 
     /**
@@ -64,7 +67,7 @@ class Invoices extends Model
      * Get the appointments of the invoices
      * */
 
-    public function toAppointment()
+    public function toAppointment(): BelongsTo
     {
         return $this->belongsTo(Appointments::class, 'id');
     }
@@ -72,7 +75,7 @@ class Invoices extends Model
     /*
      * Get the appointment of the invoice
      * */
-    public function appointment()
+    public function appointment(): BelongsTo
     {
         return $this->belongsTo(Appointments::class, 'appointment_id');
     }
@@ -402,6 +405,6 @@ class Invoices extends Model
 
     public function invoiceDetailService(): HasOne
     {
-        return $this->hasOne('App\Models\InvoiceDetails', 'invoice_id', 'id');
+        return $this->hasOne(InvoiceDetails::class, 'invoice_id', 'id');
     }
 }

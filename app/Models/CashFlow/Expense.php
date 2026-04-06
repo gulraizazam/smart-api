@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasOne;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Expense extends Model
 {
@@ -38,7 +41,7 @@ class Expense extends Model
     /**
      * Category of the expense.
      */
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class, 'category_id')->withTrashed();
     }
@@ -46,7 +49,7 @@ class Expense extends Model
     /**
      * Pool this expense was paid from.
      */
-    public function paidFromPool()
+    public function paidFromPool(): BelongsTo
     {
         return $this->belongsTo(CashPool::class, 'paid_from_pool_id')->withTrashed();
     }
@@ -54,7 +57,7 @@ class Expense extends Model
     /**
      * Branch this expense is for (null = General/Company-wide).
      */
-    public function forBranch()
+    public function forBranch(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'for_branch_id')->withTrashed();
     }
@@ -62,7 +65,7 @@ class Expense extends Model
     /**
      * Payment method used.
      */
-    public function paymentMethod()
+    public function paymentMethod(): BelongsTo
     {
         return $this->belongsTo(PaymentModes::class, 'payment_method_id')->withTrashed();
     }
@@ -70,7 +73,7 @@ class Expense extends Model
     /**
      * Vendor linked to this expense.
      */
-    public function vendor()
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_id')->withTrashed();
     }
@@ -78,7 +81,7 @@ class Expense extends Model
     /**
      * Staff member who made the expense.
      */
-    public function staff()
+    public function staff(): BelongsTo
     {
         return $this->belongsTo(User::class, 'staff_id')->withTrashed();
     }
@@ -86,7 +89,7 @@ class Expense extends Model
     /**
      * Admin who approved/rejected.
      */
-    public function verifier()
+    public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by')->withTrashed();
     }
@@ -94,7 +97,7 @@ class Expense extends Model
     /**
      * User who created the expense.
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
@@ -102,7 +105,7 @@ class Expense extends Model
     /**
      * Admin who voided.
      */
-    public function voidedByUser()
+    public function voidedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by')->withTrashed();
     }
@@ -113,12 +116,12 @@ class Expense extends Model
     /**
      * Alias for paidFromPool (used by dashboard).
      */
-    public function pool()
+    public function pool(): BelongsTo
     {
         return $this->belongsTo(CashPool::class, 'paid_from_pool_id');
     }
 
-    public function vendorTransaction()
+    public function vendorTransaction(): HasOne
     {
         return $this->hasOne(VendorTransaction::class, 'expense_id');
     }
@@ -126,7 +129,7 @@ class Expense extends Model
     /**
      * Last edit audit log entry (for "Edited" badge hover detail).
      */
-    public function lastEditLog()
+    public function lastEditLog(): HasOne
     {
         return $this->hasOne(CashflowAuditLog::class, 'entity_id')
             ->where('entity_type', 'expense')

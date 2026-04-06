@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Product\StoreProductRequest;
 use App\Models\Brand;
@@ -21,18 +20,13 @@ use Illuminate\View\View;
 
 class ProductsController extends Controller
 {
-    private readonly int $success;
 
-    private readonly int $error;
-
-    private readonly int $unauthorized;
 
     public function __construct(
         private readonly ProductService $productService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(): View
@@ -101,9 +95,9 @@ class ProductsController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -114,9 +108,9 @@ class ProductsController extends Controller
                 abort(401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $this->productService->getCreateFormData());
+            return $this->successResponse('Record found', $this->productService->getCreateFormData());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -128,18 +122,18 @@ class ProductsController extends Controller
             }
 
             if ($request->sale_price && $request->sale_price < 0) {
-                return ApiHelper::apiResponse($this->error, 'Sale price must be greater than 0', false);
+                return $this->errorResponse('Sale price must be greater than 0', 500);
             }
 
             $product = $this->productService->create($request->validated());
 
             if ($product) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->successResponse('Record has been created successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -147,18 +141,18 @@ class ProductsController extends Controller
     {
         try {
             if (! Gate::allows('product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $data = $this->productService->getEditFormData($id);
 
             if (! $data) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
+            return $this->successResponse('Success', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -166,7 +160,7 @@ class ProductsController extends Controller
     {
         try {
             if (! Gate::allows('product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $data = $request->all();
@@ -176,12 +170,12 @@ class ProductsController extends Controller
             $product = $this->productService->update($id, $data);
 
             if ($product) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->successResponse('Record has been updated successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -189,23 +183,23 @@ class ProductsController extends Controller
     {
         try {
             if (! Gate::allows('product_sale_price')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $product = $this->productService->find($id);
 
             if (! $product) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
             if ($request->sale_price && $request->sale_price < 0) {
-                return ApiHelper::apiResponse($this->error, 'Sale price must be greater than 0', false);
+                return $this->errorResponse('Sale price must be greater than 0', 500);
             }
             if ($product->product_type === 'in_house_use') {
-                return ApiHelper::apiResponse($this->success, "Sale price can't be added against in-house product!", false);
+                return $this->errorResponse("Sale price can't be added against in-house product!", 400);
             }
             if ($product->purchase_price > $request->sale_price) {
-                return ApiHelper::apiResponse($this->success, 'Sale price must be equal or greater than purchase price!', false);
+                return $this->errorResponse('Sale price must be equal or greater than purchase price!', 404);
             }
 
             $data = $request->all();
@@ -215,12 +209,12 @@ class ProductsController extends Controller
             $updated = $this->productService->update($id, $data);
 
             if ($updated) {
-                return ApiHelper::apiResponse($this->success, 'Record has been update successfully.');
+                return $this->successResponse('Record has been update successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -228,14 +222,14 @@ class ProductsController extends Controller
     {
         try {
             if (! Gate::allows('product_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->productService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -245,12 +239,12 @@ class ProductsController extends Controller
             $product = $this->productService->find($id);
 
             if (! $product) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $product);
+            return $this->successResponse('Success', $product);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -258,25 +252,25 @@ class ProductsController extends Controller
     {
         try {
             if (! Gate::allows('product_add_stock')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             if ($request->purchase_price && $request->purchase_price < 0) {
-                return ApiHelper::apiResponse($this->error, 'Purchase price must be greater than 0', false);
+                return $this->errorResponse('Purchase price must be greater than 0', 500);
             }
             if ($request->quantity && $request->quantity < 0) {
-                return ApiHelper::apiResponse($this->error, 'Quantity must be greater than 0', false);
+                return $this->errorResponse('Quantity must be greater than 0', 500);
             }
 
             $result = $this->productService->addStock($id, $request->all());
 
             if ($result) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->successResponse('Record has been created successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -297,7 +291,7 @@ class ProductsController extends Controller
     public function productStockDetail(Request $request, int $id): JsonResponse
     {
         if (! Gate::allows('product_stock_detail')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $stockData = $this->productService->getStockDetailData($id);
@@ -306,7 +300,7 @@ class ProductsController extends Controller
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        return ApiHelper::apiDataTable([
+        return response()->json([
             'data' => $stockData['data'],
             'meta' => [
                 'field' => $orderBy,
@@ -322,7 +316,7 @@ class ProductsController extends Controller
     public function productInventoryDetail(Request $request, int $id): JsonResponse
     {
         if (! Gate::allows('product_stock_detail')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $inventoryData = $this->productService->getInventoryDetailData($id);
@@ -331,7 +325,7 @@ class ProductsController extends Controller
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        return ApiHelper::apiDataTable([
+        return response()->json([
             'data' => $inventoryData['data'],
             'meta' => [
                 'field' => $orderBy,
@@ -353,10 +347,10 @@ class ProductsController extends Controller
         $product = $this->productService->toggleStatus((int) $request->id, (int) $request->status);
 
         if ($product) {
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.');
         }
 
-        return ApiHelper::apiResponse($this->success, 'Product not found.', false);
+        return $this->errorResponse('Product not found.', 404);
     }
 
     public function transferProductGetData(int $id): JsonResponse
@@ -368,9 +362,9 @@ class ProductsController extends Controller
 
             $data = $this->productService->getTransferProductData($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -381,7 +375,7 @@ class ProductsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->error, 'Quantity can not be less than 0', false);
+            return $this->errorResponse('Quantity can not be less than 0', 500);
         }
 
         try {
@@ -392,38 +386,34 @@ class ProductsController extends Controller
             $toLocation = $request->to_location_id ?? $request->to_warehouse_id;
 
             if ($toLocation === null) {
-                return ApiHelper::apiResponse($this->error, 'Please select any Branch/Warehouse.', false);
+                return $this->errorResponse('Please select any Branch/Warehouse.', 500);
             }
 
             if ($request->product_type_option_to === 'in_warehouse') {
                 if ($request->from_warehouse_id == $request->to_warehouse_id) {
-                    return ApiHelper::apiResponse($this->error, 'Please different location add.', false);
+                    return $this->errorResponse('Please different location add.', 500);
                 }
             } else {
                 if ($request->from_location_id == $request->to_location_id) {
-                    return ApiHelper::apiResponse($this->error, 'Please different location add.', false);
+                    return $this->errorResponse('Please different location add.', 500);
                 }
             }
 
             if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Transfer quantity can't be 0.", false);
+                return $this->errorResponse("Transfer quantity can't be 0.", 500);
             }
             if ($request->product_type_option_to === 'in_warehouse' && $request->to_warehouse_id === null) {
-                return ApiHelper::apiResponse($this->error, 'Please select warehouse', false);
+                return $this->errorResponse('Please select warehouse', 500);
             }
             if ($request->product_type_option_to === 'in_branch' && $request->to_location_id === null) {
-                return ApiHelper::apiResponse($this->error, 'Please select any centre.', false);
+                return $this->errorResponse('Please select any centre.', 500);
             }
 
             $result = $this->productService->transferProduct($request->all());
 
-            return ApiHelper::apiResponse(
-                $result['success'] ? $this->success : $this->error,
-                $result['message'],
-                $result['success'],
-            );
+            return $this->successResponse($result['message'], $result['success']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -438,7 +428,7 @@ class ProductsController extends Controller
 
             return view('admin.products.logs', compact('records'));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -459,9 +449,9 @@ class ProductsController extends Controller
         try {
             $data = $this->productService->getLocationAllocation($id);
 
-            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, $data);
+            return $this->successResponse('Service Allocated', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -470,9 +460,9 @@ class ProductsController extends Controller
         try {
             $this->productService->saveAllocation($request->all());
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, []);
+            return $this->successResponse('Success', []);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 
@@ -481,9 +471,9 @@ class ProductsController extends Controller
         try {
             $products = $this->productService->searchProducts($request->search ?? '');
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, ['products' => $products]);
+            return $this->successResponse('Success', ['products' => $products]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ProductsController');
         }
     }
 }

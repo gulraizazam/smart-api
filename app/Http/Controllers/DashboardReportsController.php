@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Helpers\DashboardHelper;
 use App\Helpers\GeneralFunctions;
-use App\HelperModule\ApiHelper;
 use App\Models\Locations;
 use App\Models\Services;
 use App\Models\User;
@@ -19,18 +19,10 @@ use Illuminate\View\View;
 
 class DashboardReportsController extends Controller
 {
-    protected string $success;
-    protected string $error;
-    protected string $unauthorized;
-
     public function __construct(
         protected readonly DashboardRevenueService $revenueService,
         protected readonly DashboardChartService $chartService,
-    ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    ) {}
 
     public function collectionByCentre(Request $request): JsonResponse
     {
@@ -40,7 +32,7 @@ class DashboardReportsController extends Controller
         $data = $result['data'];
         $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        return ApiHelper::apiResponse($this->success, 'Pie chart data.', true, [
+        return $this->successResponse('Pie chart data.', [
             'pie' => $data,
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
@@ -59,7 +51,7 @@ class DashboardReportsController extends Controller
 
         $result = $this->revenueService->getCollectionByServiceCategory($type, $request);
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => $result['data'],
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
@@ -74,7 +66,7 @@ class DashboardReportsController extends Controller
         $data = $result['data'];
         $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => $data,
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
@@ -85,7 +77,7 @@ class DashboardReportsController extends Controller
     {
         $result = $this->revenueService->getMyCollectionByCentre($request->type ?? '', $request);
 
-        return ApiHelper::apiResponse($this->success, 'Pie chart data.', true, [
+        return $this->successResponse('Pie chart data.', [
             'pie' => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
@@ -95,7 +87,7 @@ class DashboardReportsController extends Controller
     {
         $result = $this->revenueService->getRevenueByCentre($request->type ?? '', $request);
 
-        return ApiHelper::apiResponse($this->success, 'Bar chart data.', true, [
+        return $this->successResponse('Bar chart data.', [
             'pie' => $this->appendPercentages($result['data']),
             'total' => number_format($result['total'], 2),
         ]);
@@ -105,7 +97,7 @@ class DashboardReportsController extends Controller
     {
         $result = $this->revenueService->getMyRevenueByCentre($request->type ?? '', $request);
 
-        return ApiHelper::apiResponse($this->success, 'Bar chart data.', true, [
+        return $this->successResponse('Bar chart data.', [
             'pie' => $result['data'],
             'total' => number_format($result['total'], 2),
         ]);
@@ -119,7 +111,7 @@ class DashboardReportsController extends Controller
         $data = $result['data'];
         $data[$day] = $this->appendPercentages($data[$day] ?? []);
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => $data,
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
@@ -130,7 +122,7 @@ class DashboardReportsController extends Controller
     {
         $result = $this->revenueService->getRevenueByService($request->period ?? '', $request, 'dashboard_my_revenue_by_service');
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => $result['data'],
             'colors' => $result['colors'],
             'total' => number_format($result['total'] ?? 0, 2),
@@ -142,7 +134,7 @@ class DashboardReportsController extends Controller
         $day = $request->period ?: 'today';
 
         if (!Gate::allows('dashboard_appointment_by_status')) {
-            return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+            return $this->successResponse('Service data.', [
                 'pie' => [], 'colors' => [], 'total' => 0,
             ]);
         }
@@ -150,7 +142,7 @@ class DashboardReportsController extends Controller
         $result = $this->chartService->getAppointmentByStatus($day, $request->type, $request->get('performance'));
         $chartData = $this->appendPercentages($result['chartData']);
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => [$day => $chartData],
             'colors' => $result['colors'],
             'total' => 0,
@@ -162,7 +154,7 @@ class DashboardReportsController extends Controller
         $period = $request->period ?: 'today';
         $result = $this->chartService->getAppointmentByType($period, null, $request->get('performance'));
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'pie' => [$period => $result['chartData']],
             'colors' => $result['colors'] ?: ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'],
             'total' => $result['total'],
@@ -175,7 +167,7 @@ class DashboardReportsController extends Controller
             ? (Services::find($request->child_id)?->name ?? 'N/A')
             : 'N/A';
 
-        return ApiHelper::apiResponse($this->success, 'Service data.', true, [
+        return $this->successResponse('Service data.', [
             'child' => $child,
         ]);
     }
@@ -188,7 +180,7 @@ class DashboardReportsController extends Controller
                 $request->centre_id ?? 'All',
             );
 
-            return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
+            return $this->successResponse('Centre wise arrival data.', [
                 'bar' => $result['labels'] ?? [],
                 'total' => $result['data']['total'] ?? [],
                 'arrived' => $result['data']['arrived'] ?? [],
@@ -197,7 +189,7 @@ class DashboardReportsController extends Controller
         } catch (\Exception $e) {
             Log::error('CentreWiseArrival Error: ' . $e->getMessage());
 
-            return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
+            return $this->successResponse('Centre wise arrival data.', [
                 'bar' => [], 'total' => [], 'arrived' => [], 'walkin' => [],
             ]);
         }
@@ -210,7 +202,7 @@ class DashboardReportsController extends Controller
             $request->user_id ?? 'All',
         );
 
-        return ApiHelper::apiResponse($this->success, 'Centre wise arrival data.', true, [
+        return $this->successResponse('Centre wise arrival data.', [
             'bar' => $result['labels'],
             'total' => $result['total'],
             'arrived' => $result['arrived'],
@@ -221,7 +213,7 @@ class DashboardReportsController extends Controller
     {
         $result = $this->chartService->getCallWiseArrival($request->period ?: 'today', $request->user_id);
 
-        return ApiHelper::apiResponse($this->success, 'CSR wise arrival data.', true, [
+        return $this->successResponse('CSR wise arrival data.', [
             'bar' => $result['labels'],
             'total' => $result['total'],
             'arrived' => $result['arrived'],
@@ -236,7 +228,7 @@ class DashboardReportsController extends Controller
             $request->doc_id,
         );
 
-        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data.', true, [
+        return $this->successResponse('Doctor wise feedback data.', [
             'labels' => $result['labels'] ?? [],
             'rating' => $result['data']['rating'] ?? [],
             'total' => $result['data']['total'] ?? [],
@@ -267,7 +259,7 @@ class DashboardReportsController extends Controller
             ];
         }
 
-        return ApiHelper::apiResponse($this->success, 'Doctor wise conversion data.', true, [
+        return $this->successResponse('Doctor wise conversion data.', [
             'labels' => $labels,
             'total_appointments' => $result['data']['total_appointments'] ?? [],
             'converted_appointments' => $result['data']['converted_appointments'] ?? [],
@@ -281,7 +273,7 @@ class DashboardReportsController extends Controller
     {
         $consultants = $this->chartService->getCentreDoctors($request->centre_id ?? 'All');
 
-        return ApiHelper::apiResponse($this->success, 'Doctors loaded.', true, ['doctors' => $consultants]);
+        return $this->successResponse('Doctors loaded.', ['doctors' => $consultants]);
     }
 
     public function followUpReport(): View

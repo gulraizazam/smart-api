@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashflowAuditLog extends Model
 {
@@ -55,7 +57,7 @@ class CashflowAuditLog extends Model
     /**
      * User who performed the action.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }

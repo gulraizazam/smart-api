@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+namespace App\Policies;
+
+use App\Models\User;
+
+/**
+ * Authorization policy for Appointments.
+ *
+ * All methods delegate to Spatie permission strings so the logic stays
+ * in one place. The Gate::before() Super-Admin bypass in AuthServiceProvider
+ * means Super-Admin users automatically pass every check here.
+ */
+class AppointmentPolicy
+{
+    /**
+     * View any appointment (consultancy or treatment list).
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->can('appointments_consultancy') || $user->can('treatments_services');
+    }
+
+    /**
+     * View a single appointment record.
+     */
+    public function view(User $user): bool
+    {
+        return $user->can('appointments_manage') || $user->can('appointments_view');
+    }
+
+    /**
+     * Create a new appointment.
+     */
+    public function create(User $user): bool
+    {
+        return $user->can('appointments_manage');
+    }
+
+    /**
+     * Update an existing appointment.
+     */
+    public function update(User $user): bool
+    {
+        return $user->can('appointments_manage');
+    }
+
+    /**
+     * Delete / cancel an appointment.
+     */
+    public function delete(User $user): bool
+    {
+        return $user->can('appointments_destroy');
+    }
+
+    /**
+     * Manage treatment-type appointments.
+     */
+    public function manageTreatments(User $user): bool
+    {
+        return $user->can('treatments_manage');
+    }
+
+    /**
+     * View treatment appointments list.
+     */
+    public function viewTreatments(User $user): bool
+    {
+        return $user->can('treatments_services');
+    }
+
+    /**
+     * Issue / view invoices for an appointment.
+     */
+    public function invoice(User $user): bool
+    {
+        return $user->can('appointments_invoice');
+    }
+
+    /**
+     * View patient contact details (phone number).
+     */
+    public function viewContact(User $user): bool
+    {
+        return $user->can('contact');
+    }
+
+    /**
+     * Export appointment data.
+     */
+    public function export(User $user): bool
+    {
+        return $user->can('appointments_manage') || $user->can('appointments_export');
+    }
+
+    /**
+     * Update appointment status (arrived, converted, no-show, etc.).
+     */
+    public function updateStatus(User $user): bool
+    {
+        return $user->can('appointments_manage') || $user->can('appointments_status_update');
+    }
+
+    /**
+     * Manage schedules / time-slots.
+     */
+    public function manageSchedule(User $user): bool
+    {
+        return $user->can('appointments_manage') || $user->can('schedule_manage');
+    }
+}

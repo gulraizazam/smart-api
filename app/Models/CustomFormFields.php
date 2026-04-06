@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\CustomFormHelper;
@@ -8,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 
-class CustomFormFields extends BaseModal
+class CustomFormFields extends BaseModel
 {
     use SoftDeletes;
 
@@ -18,23 +19,23 @@ class CustomFormFields extends BaseModal
 
     protected $table = 'custom_form_fields';
 
-    protected static $_fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
+    protected static array $_fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
 
     /**
      * Logable
      *
      * @var array
      */
-    public $__fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
+    public array $__fillable = ['name', 'description', 'field_type', 'content', 'section_id', 'active', 'user_form_id', 'sort_number', 'form_type'];
 
-    protected static $_table = 'custom_form_fields';
+    protected static string $_table = 'custom_form_fields';
 
     /**
      * Logable through event
      *
      * @var string
      */
-    public $__table = 'custom_form_fields';
+    public string $__table = 'custom_form_fields';
 
     /**
      * Get active and sorted data only.

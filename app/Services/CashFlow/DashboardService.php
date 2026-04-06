@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Helpers\CashflowHelper;
@@ -18,12 +19,9 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
-    private CashflowSettingService $settingService;
-
-    public function __construct(CashflowSettingService $settingService)
-    {
-        $this->settingService = $settingService;
-    }
+    public function __construct(
+        private readonly CashflowSettingService $settingService,
+    ) {}
 
     /**
      * Get full dashboard data.

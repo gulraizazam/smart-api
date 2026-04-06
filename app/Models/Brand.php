@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class Brand extends BaseModal
+class Brand extends BaseModel
 {
     use HasFactory;
 

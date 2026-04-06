@@ -1,7 +1,6 @@
 <?php
 
-
-
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 
@@ -826,7 +825,7 @@ class CashFlowController extends Controller
 
 
 
-            $perPage = $request->input('per_page', 25);
+            $perPage = (int) $request->input('per_page', 25);
 
             $expenses = $this->expenseService->getExpenses($accountId, $filters, $perPage);
 
@@ -2042,7 +2041,7 @@ class CashFlowController extends Controller
 
             $filters = $request->only(['type', 'date_from', 'date_to', 'status']);
 
-            $result = $this->vendorService->getVendorLedger($id, $accountId, $filters, $request->input('per_page', 50));
+            $result = $this->vendorService->getVendorLedger($id, $accountId, $filters, (int) $request->input('per_page', 50));
 
 
 

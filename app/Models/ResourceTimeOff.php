@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ResourceTimeOff extends Model
 {
@@ -35,7 +37,7 @@ class ResourceTimeOff extends Model
     /**
      * Get the resource that owns the time off
      */
-    public function resource()
+    public function resource(): BelongsTo
     {
         return $this->belongsTo(Resources::class, 'resource_id');
     }
@@ -43,7 +45,7 @@ class ResourceTimeOff extends Model
     /**
      * Get the location
      */
-    public function location()
+    public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id');
     }

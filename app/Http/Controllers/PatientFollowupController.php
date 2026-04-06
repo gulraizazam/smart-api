@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
@@ -9,7 +10,6 @@ use Illuminate\Support\Str;
 use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\Exports\ExportFollowUp;
-use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -18,16 +18,9 @@ use Illuminate\Support\Facades\Config;
 
 class PatientFollowupController extends Controller
 {
-    public $success;
-    public $error;
-    public $unauthorized;
-
     public function __construct()
     {
         $this->middleware('auth');
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
     }
     public function patientFollowUp(Request $request)
     {
@@ -52,20 +45,20 @@ class PatientFollowupController extends Controller
 
 
         $center_id =  ACL::getUserCentres();
+        $centerPlaceholders = implode(',', array_fill(0, count($center_id), '?'));
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(
+            ->join(DB::raw("(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
-
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
-                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
-
+                    AND appointment.location_id IN ({$centerPlaceholders})
                 GROUP BY appointment.patient_id
-            ) latest_appointments'), function ($join) {
+            ) latest_appointments"), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->addBinding($center_id, 'join')
             ->where($whereAppointment)
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
@@ -168,33 +161,48 @@ class PatientFollowupController extends Controller
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
             ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
+
+        $patientIdsToFetch = $plans_check->pluck('patient_id')->toArray();
+
+        // Preload all treatments grouped by patient (fixes N+1)
+        $allTreatments = Appointments::where('appointment_type_id', Config::get('constants.appointment_type_service'))
+            ->whereIn('patient_id', $patientIdsToFetch)
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->get()
+            ->groupBy('patient_id');
+
+        // Preload conversion dates grouped by patient (fixes N+1)
+        $allConversionDates = PackageAdvances::whereIn('patient_id', $patientIdsToFetch)
+            ->where('cash_amount', '>', 0)
+            ->where('cash_flow', 'in')
+            ->where('is_setteled', 0)
+            ->where('is_tax', 0)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->groupBy('patient_id')
+            ->map(fn ($group) => $group->first());
+
+        // Preload all patients (fixes N+1)
+        $allPatients = Patients::whereIn('id', $patientIdsToFetch)
+            ->where(['user_type_id' => 3, 'active' => 1])
+            ->get()
+            ->keyBy('id');
+
         foreach ($plans_check as $data) {
+            $treatments = $allTreatments->get($data['patient_id'], collect());
+            $conversion_date = $allConversionDates->get($data['patient_id']);
+            $patient = $allPatients->get($data['patient_id']);
 
-            $treatments = Appointments::where([
-                'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                'patient_id' => $data['patient_id'],
-            ])
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->get();
-            $conversion_date = PackageAdvances::where([
-                ['patient_id', '=', $data['patient_id']],
-                ['cash_amount', '>', 0],
-                ['cash_flow', '=', 'in'],
-                ['is_setteled', '=', 0],
-                ['is_tax', '=', 0],
-
-            ])->first();
-            $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             if ($patient) {
                 $data['patient_id'] = $patient->id;
                 $data['name'] = $patient->name;
                 $data['phone'] = $patient->phone;
                 $data['settle_amount_with_tax'] = ($data['settle_amount'] + $data['settle_tax_amount']  + $data['settle__adjustment_amounts']);
                 $data['created_at'] = $conversion_date ? Carbon::parse($conversion_date->created_at)->format('Y-m-d') : Carbon::parse($data['created_at'])->format('Y-m-d');
-                if (count($treatments) > 0) {
-                    $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                    $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                    $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
+                if ($treatments->count() > 0) {
+                    $has_treatment_with_status_2 = $treatments->contains('base_appointment_status_id', 2);
+                    $check_treatments = $treatments->sortByDesc('id')->first();
+                    $future_treatments = $treatments->where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
                     if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
                         array_push($is_treatment, $data);
@@ -211,7 +219,7 @@ class PatientFollowupController extends Controller
         usort($patient_data, function ($a, $b) {
             return strtotime($b['created_at']) - strtotime($a['created_at']);
         });
-        return ApiHelper::apiResponse($this->success, 'patient data', true, [
+        return $this->successResponse('patient data', [
             'patient_data' => $patient_data
         ]);
     }
@@ -232,19 +240,20 @@ class PatientFollowupController extends Controller
         ];
 
         $center_id = ACL::getUserCentres();
+        $centerPlaceholders = implode(',', array_fill(0, count($center_id), '?'));
         $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(
+            ->join(DB::raw("(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
-                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
-
+                    AND appointment.location_id IN ({$centerPlaceholders})
                 GROUP BY appointment.patient_id
-            ) latest_appointments'), function ($join) {
+            ) latest_appointments"), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->addBinding($center_id, 'join')
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
 
@@ -342,15 +351,26 @@ class PatientFollowupController extends Controller
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
             ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
-        foreach ($plans_check as $data) {
-            $treatments = Appointments::where([
-                'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                'patient_id' => $data['patient_id'],
-            ])
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->get();
 
-            $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
+        $downloadPatientIds = $plans_check->pluck('patient_id')->toArray();
+
+        // Preload all treatments grouped by patient (fixes N+1)
+        $allDownloadTreatments = Appointments::where('appointment_type_id', Config::get('constants.appointment_type_service'))
+            ->whereIn('patient_id', $downloadPatientIds)
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->get()
+            ->groupBy('patient_id');
+
+        // Preload all patients (fixes N+1)
+        $allDownloadPatients = Patients::whereIn('id', $downloadPatientIds)
+            ->where(['user_type_id' => 3, 'active' => 1])
+            ->get()
+            ->keyBy('id');
+
+        foreach ($plans_check as $data) {
+            $treatments = $allDownloadTreatments->get($data['patient_id'], collect());
+            $patient = $allDownloadPatients->get($data['patient_id']);
+
             if ($patient) {
                 $data['patient_id'] = $patient->id;
                 $data['name'] = $patient->name;
@@ -358,10 +378,10 @@ class PatientFollowupController extends Controller
                 $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'] + $data['refunded_amount'] + $data['settle__adjustment_amounts'];
             }
 
-            if (count($treatments) > 0) {
-                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
+            if ($treatments->count() > 0) {
+                $has_treatment_with_status_2 = $treatments->contains('base_appointment_status_id', 2);
+                $check_treatments = $treatments->sortByDesc('id')->first();
+                $future_treatments = $treatments->where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
 
                 if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 1;
@@ -394,18 +414,20 @@ class PatientFollowupController extends Controller
         ];
 
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
+        $centerPlaceholders = implode(',', array_fill(0, count($center_id), '?'));
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(
+            ->join(DB::raw("(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
-                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
+                    AND appointment.location_id IN ({$centerPlaceholders})
                 GROUP BY appointment.patient_id
-            ) latest_appointments'), function ($join) {
+            ) latest_appointments"), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->addBinding($center_id, 'join')
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
 
@@ -497,15 +519,27 @@ class PatientFollowupController extends Controller
         });
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+
+        $monthlyPatientIds = $plans_check->pluck('patient_id')->toArray();
+
+        // Preload all treatments grouped by patient (fixes N+1)
+        $allMonthlyTreatments = Appointments::where('appointment_type_id', Config::get('constants.appointment_type_service'))
+            ->whereIn('patient_id', $monthlyPatientIds)
+            ->whereIn('location_id', ACL::getUserCentres())
+            ->where($where)
+            ->get()
+            ->groupBy('patient_id');
+
+        // Preload all patients (fixes N+1)
+        $allMonthlyPatients = Patients::whereIn('id', $monthlyPatientIds)
+            ->where(['user_type_id' => 3, 'active' => 1])
+            ->get()
+            ->keyBy('id');
+
         foreach ($plans_check as $data) {
-            $treatments = Appointments::where([
-                'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                'patient_id' => $data['patient_id'],
-            ])
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where($where)
-                ->get();
-            $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
+            $treatments = $allMonthlyTreatments->get($data['patient_id'], collect());
+            $patient = $allMonthlyPatients->get($data['patient_id']);
+
             if ($patient) {
                 $data['patient_id'] = $patient->id;
                 $data['name'] = $patient->name;
@@ -514,11 +548,10 @@ class PatientFollowupController extends Controller
 
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'] + $data['refunded_amount'] + $data['settle__adjustment_amounts'];
 
-
-            if (count($treatments) > 0) {
-                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
+            if ($treatments->count() > 0) {
+                $has_treatment_with_status_2 = $treatments->contains('base_appointment_status_id', 2);
+                $check_treatments = $treatments->sortByDesc('id')->first();
+                $future_treatments = $treatments->where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
@@ -566,7 +599,7 @@ class PatientFollowupController extends Controller
             ->toArray();
 
         if (empty($patient_ids)) {
-            return ApiHelper::apiResponse($this->success, 'patient data', true, ['patient_data' => []]);
+            return $this->successResponse('patient data', ['patient_data' => []]);
         }
 
         // Combine 6 PackageAdvances queries into ONE using conditional aggregation
@@ -666,7 +699,7 @@ class PatientFollowupController extends Controller
         // Sort by scheduled_date descending
         usort($patient_data, fn($a, $b) => strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']));
 
-        return ApiHelper::apiResponse($this->success, 'patient data', true, [
+        return $this->successResponse('patient data', [
             'patient_data' => $patient_data
         ]);
     }

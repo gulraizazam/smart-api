@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\MembershipCodeException;
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Membership\GenerateCodesRequest;
 use App\Services\Membership\MembershipCodeService;
@@ -14,16 +14,13 @@ use Illuminate\Support\Facades\Log;
 class MembershipCodeController extends Controller
 {
     protected MembershipCodeService $codeService;
-    protected $success;
-    protected $error;
-    protected $unauthorized;
+
 
     public function __construct(MembershipCodeService $codeService)
     {
         $this->codeService = $codeService;
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     /**
@@ -35,7 +32,7 @@ class MembershipCodeController extends Controller
     public function generateCodes(GenerateCodesRequest $request)
     {
         if (!Gate::allows('memberships_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to generate membership codes.', false);
+            return $this->errorResponse('You are not authorized to generate membership codes.', 401);
         }
 
         try {
@@ -45,20 +42,16 @@ class MembershipCodeController extends Controller
                 $request->end_code
             );
 
-            return ApiHelper::apiResponse(
-                $this->success,
-                "Successfully generated {$result['count']} membership codes from {$result['start_code']} to {$result['end_code']}.",
-                true,
-                $result
+            return $this->successResponse("Successfully generated {$result['count']} membership codes from {$result['start_code']} to {$result['end_code']}.", $result
             );
         } catch (MembershipCodeException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
             Log::error('Unexpected error generating codes', [
                 'error' => $e->getMessage(),
                 'request' => $request->all()
             ]);
-            return ApiHelper::apiResponse($this->error, 'An unexpected error occurred. Please try again.', false);
+            return $this->errorResponse('An unexpected error occurred. Please try again.', 500);
         }
     }
 
@@ -83,27 +76,27 @@ class MembershipCodeController extends Controller
             $endPrefix = preg_replace('/\d+$/', '', $endCode);
 
             if ($startPrefix !== $endPrefix) {
-                return ApiHelper::apiResponse($this->error, 'Start and end codes must have the same prefix.', false);
+                return $this->errorResponse('Start and end codes must have the same prefix.', 500);
             }
 
             $startNumber = (int) preg_replace('/^\D+/', '', $startCode);
             $endNumber = (int) preg_replace('/^\D+/', '', $endCode);
 
             if ($startNumber >= $endNumber) {
-                return ApiHelper::apiResponse($this->error, 'Start code number must be less than end code number.', false);
+                return $this->errorResponse('Start code number must be less than end code number.', 500);
             }
 
             if (strlen($startCode) !== strlen($endCode)) {
-                return ApiHelper::apiResponse($this->error, 'Start and end codes must have the same length.', false);
+                return $this->errorResponse('Start and end codes must have the same length.', 500);
             }
 
             $count = $endNumber - $startNumber + 1;
 
             if ($count > 10000) {
-                return ApiHelper::apiResponse($this->error, 'Cannot generate more than 10,000 codes at once.', false);
+                return $this->errorResponse('Cannot generate more than 10,000 codes at once.', 500);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Preview calculated successfully.', true, [
+            return $this->successResponse('Preview calculated successfully.', [
                 'count' => $count,
                 'prefix' => $startPrefix,
                 'start_number' => $startNumber,
@@ -117,7 +110,7 @@ class MembershipCodeController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -140,11 +133,11 @@ class MembershipCodeController extends Controller
                 $request->limit ?? 100
             );
 
-            return ApiHelper::apiResponse($this->success, 'Available codes retrieved successfully.', true, [
+            return $this->successResponse('Available codes retrieved successfully.', [
                 'codes' => $codes
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -169,12 +162,12 @@ class MembershipCodeController extends Controller
                 $request->available_only ?? false
             );
 
-            return ApiHelper::apiResponse($this->success, 'Search completed successfully.', true, [
+            return $this->successResponse('Search completed successfully.', [
                 'codes' => $codes,
                 'count' => $codes->count()
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

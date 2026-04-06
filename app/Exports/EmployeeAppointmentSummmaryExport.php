@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\Exportable;
@@ -11,7 +12,7 @@ class EmployeeAppointmentSummmaryExport implements FromCollection, WithHeadings,
 {
     use Exportable;
 
-    private $filters = [];
+    private array $filters = [];
 
     public function __construct($filters)
     {

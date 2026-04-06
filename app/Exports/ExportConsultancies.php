@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Exports;
 
 use App\Helpers\ACL;
@@ -16,9 +17,11 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private $limit = 10000;
+    private int $limit = 10000;
 
-    private $offset = 0;
+    private int $offset = 0;
+
+    private mixed $request;
 
     public function __construct($limit, $offset, $request)
     {

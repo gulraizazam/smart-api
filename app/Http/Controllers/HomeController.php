@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Helpers\DashboardHelper;
 use App\Models\Locations;
 use App\Models\RoleHasUsers;
 use App\Models\User;
-use App\HelperModule\ApiHelper;
 use App\Services\Dashboard\DashboardRevenueService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -71,7 +71,7 @@ class HomeController extends Controller
     {
         $result = $this->revenueService->getMyCollectionByCentre($request->type ?? '', $request);
 
-        return ApiHelper::apiResponse(200, 'pie chart data', true, [
+        return $this->successResponse('pie chart data', [
             'pie'   => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
@@ -81,7 +81,7 @@ class HomeController extends Controller
     {
         $result = $this->revenueService->getMyRevenueByCentre($request->type ?? '', $request);
 
-        return ApiHelper::apiResponse(200, 'Bar chart data', true, [
+        return $this->successResponse('Bar chart data', [
             'pie'   => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
@@ -95,7 +95,7 @@ class HomeController extends Controller
             'dashboard_my_revenue_by_service',
         );
 
-        return ApiHelper::apiResponse(200, 'service data', true, [
+        return $this->successResponse('service data', [
             'pie'    => $result['data'],
             'colors' => $result['colors'],
             'total'  => number_format($result['total'] ?? 0, 2),

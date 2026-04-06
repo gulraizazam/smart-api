@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Helpers\Elastic\AppointmentsElastic;
@@ -17,7 +18,7 @@ class IndexSingleAppointmentJob implements ShouldQueue
     /**
      * Holds payload data
      */
-    protected $payload;
+    protected mixed $payload;
 
     /**
      * Create a new event instance.

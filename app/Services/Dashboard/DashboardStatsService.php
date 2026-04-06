@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Dashboard;
 
 use App\Helpers\DashboardHelper;
@@ -34,7 +35,8 @@ class DashboardStatsService
         $arrivedStatusIds = DashboardHelper::getArrivedAndConvertedStatusIds();
         $arrivedStatusId = DashboardHelper::getArrivedStatusId();
 
-        $statusIdsList = implode(',', array_map('intval', $arrivedStatusIds));
+        $statusPlaceholders = implode(',', array_fill(0, count($arrivedStatusIds), '?'));
+        $bindings = [...$arrivedStatusIds, $arrivedStatusId];
 
         $results = Appointments::query()
             ->whereIn('appointment_type_id', [$consultancyTypeId, $treatmentTypeId])
@@ -43,9 +45,10 @@ class DashboardStatsService
             ->select(
                 'appointment_type_id',
                 DB::raw('COUNT(*) as all_count'),
-                DB::raw("SUM(CASE WHEN appointment_status_id IN ({$statusIdsList}) THEN 1 ELSE 0 END) as done_arrived_converted"),
-                DB::raw("SUM(CASE WHEN appointment_status_id = {$arrivedStatusId} THEN 1 ELSE 0 END) as done_arrived_only"),
+                DB::raw("SUM(CASE WHEN appointment_status_id IN ({$statusPlaceholders}) THEN 1 ELSE 0 END) as done_arrived_converted"),
+                DB::raw('SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_arrived_only'),
             )
+            ->addBinding($bindings, 'select')
             ->groupBy('appointment_type_id')
             ->get()
             ->keyBy('appointment_type_id');

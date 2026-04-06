@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use Validator;
@@ -16,7 +18,6 @@ use App\Models\PaymentModes;
 use Illuminate\Http\Request;
 use App\Models\PackageBundles;
 use App\Models\PackageService;
-use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
 use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
@@ -25,19 +26,6 @@ use Illuminate\Support\Facades\Gate;
 
 class RefundsController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -187,10 +175,10 @@ class RefundsController extends Controller
                 ];
             }
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RefundsController');
         }
     }
 
@@ -336,10 +324,10 @@ class RefundsController extends Controller
                 'refund' => Gate::allows('patients_refund_refund'),
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RefundsController');
         }
     }
 
@@ -351,7 +339,7 @@ class RefundsController extends Controller
     public function refund_create($id)
     {
         if (! Gate::allows('refunds_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $return_tax_amount = '';
@@ -477,7 +465,7 @@ class RefundsController extends Controller
         }
        
         $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->get()->pluck('name', 'id');
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'id' => $id,
             'refundable_amount' => $refundable_amount,
             'cash_amount' => $package_cash_receive,
@@ -487,8 +475,8 @@ class RefundsController extends Controller
             'return_tax_amount' => $return_tax_amount,
             'date_backend' => $date_backend,
             'paymentmodes' => $paymentmodes,
-            
-        ]);
+
+        ], 200);
     }
 
     /**
@@ -501,7 +489,7 @@ class RefundsController extends Controller
        
        
         if (! Gate::allows('refunds_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
@@ -512,23 +500,23 @@ class RefundsController extends Controller
       
         if(!$package_advance_last_in)
         {
-            return ApiHelper::apiResponse($this->success, 'No balance available', false);
+            return $this->errorResponse('No balance available', 200);
         }
         $validator = $this->verifyFields($request);
-       
+
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $record = Refunds::createRecord($request, Auth::User()->account_id);
         if($record == 'setteled'){
-            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not refund amount against this plan.', false);
+            return $this->errorResponse('Plan is already settled. you can not refund amount against this plan.', 200);
         }else if($record == 'amountexceed'){
-            return ApiHelper::apiResponse($this->success, 'You can not refund amount more than amount received.', false);
+            return $this->errorResponse('You can not refund amount more than amount received.', 200);
         } else{
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.', null, 200);
         }
-        
-        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+
+        return $this->errorResponse('Something went wrong, please try again later.', 200);
     }
 
     /*

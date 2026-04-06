@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class AuditTrails extends BaseModal
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class AuditTrails extends BaseModel
 {
     protected $fillable = ['audit_trail_action_name', 'audit_trail_table_name', 'table_record_id', 'user_id', 'created_at', 'updated_at', 'parent_id'];
 
@@ -18,17 +21,17 @@ class AuditTrails extends BaseModal
     /**
      * sent the location name to resource with location_id.
      */
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo(User::class);
     }
 
-    public function auditTable()
+    public function auditTable(): BelongsTo
     {
         return $this->belongsTo(AuditTrailTables::class, 'audit_trail_table_name', 'id');
     }
 
-    public function auditAction()
+    public function auditAction(): BelongsTo
     {
         return $this->belongsTo(AuditTrailActions::class, 'audit_trail_action_name', 'id');
     }
@@ -284,7 +287,7 @@ class AuditTrails extends BaseModal
      *
      * */
 
-    public function auditTrailChanges()
+    public function auditTrailChanges(): HasMany
     {
         return $this->hasMany(AuditTrailChanges::class, 'audit_trail_id', 'id');
     }
@@ -338,7 +341,7 @@ class AuditTrails extends BaseModal
      *
      * */
 
-    public function userr()
+    public function userr(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }

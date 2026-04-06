@@ -8,14 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Reports\ArrivedNotConvertedRequest;
 use App\Http\Resources\Reports\ArrivedNotConvertedResource;
 use App\Services\Reports\ArrivedNotConvertedService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class ArrivedNotConvertedController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly ArrivedNotConvertedService $reportService,
     ) {}

@@ -11,15 +11,12 @@ use App\Http\Requests\Consultancy\FinalCalculationRequest;
 use App\Http\Requests\Consultancy\StoreConsultancyInvoiceRequest;
 use App\Http\Resources\Consultancy\ConsultancyInvoiceResource;
 use App\Services\Consultancy\ConsultancyInvoiceService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class ConsultancyInvoiceController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly ConsultancyInvoiceService $invoiceService,
     ) {}

@@ -21,16 +21,31 @@ class GeneralRevenueSummaryReport
         $locationInfo = $this->resolveLocations($locationIds, $regionId);
         $reportData = [];
 
-        foreach ($locationInfo as $key => $locationName) {
-            $advances = PackageAdvances::with('user:id,gender', 'paymentmode')
+        $locationKeys = array_keys(is_array($locationInfo) ? $locationInfo : $locationInfo->toArray());
+
+        // Preload all advances grouped by location to eliminate N+1
+        $allAdvances = count($locationKeys)
+            ? PackageAdvances::with('user:id,gender', 'paymentmode')
                 ->whereDate('created_at', '>=', $startDate)
                 ->whereDate('created_at', '<=', $endDate)
                 ->where('account_id', $accountId)
-                ->where('location_id', $key)
+                ->whereIn('location_id', $locationKeys)
                 ->orderBy('created_at', 'asc')
-                ->get();
+                ->get()
+                ->groupBy('location_id')
+            : collect();
 
-            $location = Locations::find($key);
+        // Preload all locations with city and region
+        $allLocations = count($locationKeys)
+            ? Locations::with('city:id,name', 'region:id,name')
+                ->whereIn('id', $locationKeys)
+                ->get()
+                ->keyBy('id')
+            : collect();
+
+        foreach ($locationInfo as $key => $locationName) {
+            $advances = $allAdvances[$key] ?? collect();
+            $location = $allLocations[$key] ?? null;
 
             if (! $location) {
                 continue;

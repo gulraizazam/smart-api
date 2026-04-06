@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AppointmentComments extends Model
 {
@@ -18,15 +20,15 @@ class AppointmentComments extends Model
     /**
      * Get the appointment that owns the comments.
      */
-    public function appointment()
+    public function appointment(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Appointments');
+        return $this->belongsTo(Appointments::class);
     }
 
     /**
      * Get the User that owns the Appointment comment.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

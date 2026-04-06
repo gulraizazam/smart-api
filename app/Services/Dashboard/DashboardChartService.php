@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Dashboard;
 
 use App\Helpers\DashboardHelper;
@@ -501,14 +502,16 @@ class DashboardChartService
         $arrivedStatusIds = DashboardHelper::getArrivedAndConvertedStatusIds();
 
         // Get CSR users who created appointments
+        $placeholders = implode(',', array_fill(0, count($arrivedStatusIds), '?'));
         $csrData = Appointments::whereIn('location_id', $locationIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereNotNull('created_by')
             ->select(
                 'created_by',
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', $arrivedStatusIds) . ') THEN 1 ELSE 0 END) as arrived')
+                DB::raw("SUM(CASE WHEN appointment_status_id IN ({$placeholders}) THEN 1 ELSE 0 END) as arrived")
             )
+            ->addBinding($arrivedStatusIds, 'select')
             ->groupBy('created_by')
             ->get();
 

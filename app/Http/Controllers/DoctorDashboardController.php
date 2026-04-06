@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers;
 
-use App\HelperModule\ApiHelper;
 use App\Services\DoctorDashboard\DoctorDashboardService;
 use App\Services\DoctorDashboard\DoctorIdentifier;
 use Illuminate\Http\JsonResponse;
@@ -20,8 +20,7 @@ class DoctorDashboardController extends Controller
         protected readonly DoctorDashboardService $dashboardService,
         protected readonly DoctorIdentifier $doctorIdentifier,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
+
     }
 
     public function index(): View
@@ -49,10 +48,10 @@ class DoctorDashboardController extends Controller
 
             $data = $this->dashboardService->getKpiData($user->id, $user->account_id, $period);
 
-            return ApiHelper::apiResponse($this->success, 'KPI data loaded.', true, $data);
+            return $this->successResponse('KPI data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard KPI Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -63,10 +62,10 @@ class DoctorDashboardController extends Controller
             $period = $request->get('period', 'this_month');
             $data = $this->dashboardService->getHeroData($user->id, $user->account_id, $period);
 
-            return ApiHelper::apiResponse($this->success, 'Hero data loaded.', true, $data);
+            return $this->successResponse('Hero data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Hero Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -76,10 +75,10 @@ class DoctorDashboardController extends Controller
             $user = Auth::user();
             $data = $this->dashboardService->getTodaysAppointments($user->id, $user->account_id);
 
-            return ApiHelper::apiResponse($this->success, "Today's appointments loaded.", true, $data);
+            return $this->successResponse("Today's appointments loaded.", $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Appointments Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -102,10 +101,10 @@ class DoctorDashboardController extends Controller
 
             $data = $this->dashboardService->getBenchmarks($user->id, $startDate, $endDate, $user->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Benchmark data loaded.', true, $data);
+            return $this->successResponse('Benchmark data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Benchmark Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

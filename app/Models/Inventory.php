@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Inventory extends Model
 {
@@ -21,15 +22,15 @@ class Inventory extends Model
             return self::join('products','products.id','inventories.product_id')->count();
         }
     }
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
-    public function warehouse()
+    public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
-    public function centre()
+    public function centre(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id');
     }

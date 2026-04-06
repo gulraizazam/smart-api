@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserTypeRequest;
 use App\Http\Resources\User\UserTypeResource;
@@ -15,22 +14,19 @@ use Illuminate\Support\Facades\Gate;
 
 class UserTypeController extends Controller
 {
-    private readonly int $success;
-    private readonly int $error;
-    private readonly int $unauthorized;
+
 
     public function __construct(
         private readonly UserTypeService $userTypeService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(Request $request): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -84,160 +80,160 @@ class UserTypeController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function create(): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'types' => $this->userTypeService->getAllForDropdown(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function store(UserTypeRequest $request): JsonResponse
     {
         if (!Gate::allows('user_types_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $this->userTypeService->create($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function show(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $userType = $this->userTypeService->find($id);
 
             return $userType
-                ? ApiHelper::apiResponse($this->success, 'Record found.', true, ['usertype' => new UserTypeResource($userType)])
-                : ApiHelper::apiResponse($this->success, 'Record not found.', false);
+                ? $this->successResponse('Record found.', ['usertype' => new UserTypeResource($userType)])
+                : $this->errorResponse('Record not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $userType = $this->userTypeService->find($id);
 
             if (!$userType) {
-                return ApiHelper::apiResponse($this->success, 'Record not found.', false);
+                return $this->errorResponse('Record not found.', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'usertype' => new UserTypeResource($userType),
                 'types' => $this->userTypeService->getTypeOptions(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function update(UserTypeRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('user_types_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $userType = $this->userTypeService->update($id, $request->validated());
 
             return $userType
-                ? ApiHelper::apiResponse($this->success, 'Record has been updated successfully.')
-                : ApiHelper::apiResponse($this->success, 'Record not found.', false);
+                ? $this->successResponse('Record has been updated successfully.')
+                : $this->errorResponse('Record not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->userTypeService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
+            return $result['success'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function activate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->userTypeService->activate($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
+            return $result['success'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function inactivate(int $id): JsonResponse
     {
         if (!Gate::allows('user_types_inactive')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->userTypeService->inactivate($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['success']);
+            return $result['success'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function dropdown(): JsonResponse
     {
         try {
-            return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+            return $this->successResponse('Records found.', [
                 'types' => $this->userTypeService->getAllForDropdown(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 
     public function forDoctor(): JsonResponse
     {
         try {
-            return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+            return $this->successResponse('Records found.', [
                 'types' => $this->userTypeService->getForDoctor(),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserTypeController');
         }
     }
 }

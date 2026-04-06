@@ -364,4 +364,66 @@ class FeedbackService
 
         ActivityLogger::logFeedbackAdded($feedback, $appointment, $patient, $service, $location);
     }
+
+    public function getFutureTreatmentsPageData(): array
+    {
+        $accountId = Auth::user()->account_id;
+
+        return [
+            'locations' => Locations::getActiveRecordsByCity('', ACL::getUserCentres(), $accountId),
+            'services' => Services::where('parent_id', 0)
+                ->where('active', 1)
+                ->where('slug', '!=', 'all')
+                ->where('name', 'NOT LIKE', '%refund%')
+                ->where('name', 'NOT LIKE', '%settlement%')
+                ->get(),
+        ];
+    }
+
+    public function getFutureTreatmentsData(?string $centreId, ?string $serviceId): array
+    {
+        $startDate = \Illuminate\Support\Carbon::today()->startOfDay();
+        $endDate = \Illuminate\Support\Carbon::today()->addDays(6)->endOfDay();
+
+        $serviceIds = [];
+        if ($serviceId) {
+            $serviceIds[] = $serviceId;
+
+            $childServices = \Illuminate\Support\Facades\DB::table('services')
+                ->where('parent_id', $serviceId)
+                ->where('active', 1)
+                ->pluck('id')
+                ->toArray();
+
+            $serviceIds = array_merge($serviceIds, $childServices);
+        }
+
+        $appointments = \Illuminate\Support\Facades\DB::table('appointments')
+            ->join('users', 'appointments.patient_id', '=', 'users.id')
+            ->join('services', 'appointments.service_id', '=', 'services.id')
+            ->join('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
+            ->where('appointments.appointment_type_id', 2)
+            ->where('appointments.appointment_status_id', 1)
+            ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
+            ->when($centreId, fn ($query) => $query->where('appointments.location_id', $centreId))
+            ->when(!empty($serviceIds), fn ($query) => $query->whereIn('appointments.service_id', $serviceIds))
+            ->select(
+                'users.name as patient_name',
+                'services.name as service_name',
+                'appointments.scheduled_date',
+                'appointment_statuses.name as appointment_status'
+            )
+            ->orderBy('appointments.scheduled_date', 'asc')
+            ->get();
+
+        return [
+            'appointments' => $appointments,
+            'filters' => [
+                'start_date' => $startDate->format('d M Y'),
+                'end_date' => $endDate->format('d M Y'),
+                'centre_id' => $centreId,
+                'service_id' => $serviceId,
+            ],
+        ];
+    }
 }

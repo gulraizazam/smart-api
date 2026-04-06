@@ -6,8 +6,9 @@ namespace App\Models;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProductDetail extends BaseModal
+class ProductDetail extends BaseModel
 {
     use  HasFactory;
 
@@ -32,7 +33,7 @@ class ProductDetail extends BaseModal
    
 
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
