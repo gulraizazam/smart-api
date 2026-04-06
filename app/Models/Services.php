@@ -315,7 +315,7 @@ class Services extends BaseModal
      */
     public static function getAllRecordsDictionary(int $account_id): \Illuminate\Support\Collection
     {
-        return self::where('account_id', $account_id)->get()->getDictionary();
+        return self::where('account_id', $account_id)->get()->keyBy('id');
     }
 
     /**
