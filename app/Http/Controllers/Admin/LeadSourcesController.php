@@ -27,13 +27,13 @@ class LeadSourcesController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    public function index(): JsonResponse
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('lead_sources_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            abort(401);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Lead sources page.', true);
+        return view('admin.lead_sources.index');
     }
 
     public function datatable(Request $request): JsonResponse
@@ -84,6 +84,15 @@ class LeadSourcesController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
+    }
+
+    public function sortOrder(): \Illuminate\View\View
+    {
+        if (!Gate::allows('lead_sources_sort')) {
+            abort(401);
+        }
+
+        return view('admin.lead_sources.sort');
     }
 
     public function sortOrderGet(): JsonResponse
