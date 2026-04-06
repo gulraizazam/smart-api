@@ -1,54 +1,79 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Helpers\Filters;
-use Auth;
+use App\Models\AuditTrails;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class Settings extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'data', 'account_id', 'slug', 'active', 'created_at', 'updated_at'];
+    protected $fillable = ['name', 'data', 'account_id', 'slug', 'active', 'is_featured', 'sort_no', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['name', 'data', 'slug', 'active'];
+    /** @var array Auditable fields for AuditTrails logging */
+    public static array $_fillable = ['name', 'data', 'slug', 'active'];
 
     protected $table = 'settings';
 
-    protected static $_table = 'settings';
+    public static string $_table = 'settings';
+
+    // -----------------------------------------------------------------
+    // Active query methods (used by other modules)
+    // -----------------------------------------------------------------
 
     /**
-     * Get Total Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * Find a setting by slug and account.
      */
-    public static function getTotalRecords(Request $request, $account_id, $apply_filter)
+    public static function getBySlug(string $slug, int $accountId): ?static
     {
-        $where = self::settings_filters($request, $account_id, $apply_filter);
-        if (count($where)) {
-            return self::where($where)->count();
-        } else {
-            return self::count();
-        }
+        return self::where(['slug' => $slug, 'account_id' => $accountId])->first();
     }
 
     /**
-     * Get Records
-     *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * Check if child records exist.
      */
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function isChildExists(int $id, int $accountId): bool
+    {
+        return false;
+    }
+
+    /**
+     * Get all records as an ID-keyed dictionary array.
+     */
+    public static function getAllRecordsDictionary(int $accountId): array
+    {
+        return self::where(['account_id' => $accountId])->get()->getDictionary();
+    }
+
+    // -----------------------------------------------------------------
+    // Deprecated methods — logic moved to SettingsService
+    // -----------------------------------------------------------------
+
+    /**
+     * @deprecated Use SettingsService::getDatatableCount() instead.
+     */
+    public static function getTotalRecords(Request $request, int $account_id, bool $apply_filter): int
+    {
+        $where = self::settings_filters($request, $account_id, $apply_filter);
+
+        return count($where) > 0 ? self::where($where)->count() : self::count();
+    }
+
+    /**
+     * @deprecated Use SettingsService::getDatatableData() instead.
+     */
+    public static function getRecords(Request $request, int $iDisplayStart, int $iDisplayLength, int|false $account_id = false, bool $apply_filter = false): \Illuminate\Database\Eloquent\Collection
     {
         $where = self::settings_filters($request, $account_id, $apply_filter);
         [$orderBy, $order] = getSortBy($request);
 
-        return self::when(count($where), fn ($q) => $q->where($where))
+        return self::when(count($where) > 0, fn ($q) => $q->where($where))
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
@@ -56,104 +81,48 @@ class Settings extends BaseModal
     }
 
     /**
-     * Get filters
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
-     * @return (mixed)
+     * @deprecated Filter logic moved to SettingsService.
      */
-    public static function settings_filters($request, $account_id, $apply_filter)
+    public static function settings_filters(mixed $request, int|false $account_id, bool $apply_filter): array
     {
         $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = [
-                'account_id',
-                '=',
-                $account_id,
-            ];
-            Filters::put(Auth::User()->id, 'settings', 'account_id', $account_id);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'settings', 'account_id');
-            } else {
-                if (Filters::get(Auth::User()->id, 'settings', 'account_id')) {
-                    $where[] = [
-                        'account_id',
-                        '=',
-                        Filters::get(Auth::User()->id, 'settings', 'account_id'),
-                    ];
-                }
-            }
+            $where[] = ['account_id', '=', $account_id];
+            Filters::put(Auth::user()->id, 'settings', 'account_id', $account_id);
+        } elseif ($apply_filter) {
+            Filters::forget(Auth::user()->id, 'settings', 'account_id');
+        } elseif ($stored = Filters::get(Auth::user()->id, 'settings', 'account_id')) {
+            $where[] = ['account_id', '=', $stored];
         }
+
         if (hasFilter($filters, 'name')) {
-            $where[] = [
-                'name',
-                'like',
-                '%'.$filters['name'].'%',
-            ];
-            Filters::put(Auth::User()->id, 'settings', 'setting_name', $filters['name']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'settings', 'setting_name');
-            } else {
-                if (Filters::get(Auth::User()->id, 'settings', 'setting_name')) {
-                    $where[] = [
-                        'name',
-                        'like',
-                        '%'.Filters::get(Auth::User()->id, 'settings', 'setting_name').'%',
-                    ];
-                }
-            }
+            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            Filters::put(Auth::user()->id, 'settings', 'setting_name', $filters['name']);
+        } elseif ($apply_filter) {
+            Filters::forget(Auth::user()->id, 'settings', 'setting_name');
+        } elseif ($stored = Filters::get(Auth::user()->id, 'settings', 'setting_name')) {
+            $where[] = ['name', 'like', '%' . $stored . '%'];
         }
+
         if (hasFilter($filters, 'data')) {
-            $where[] = [
-                'data',
-                'like',
-                '%'.$filters['data'].'%',
-            ];
-            Filters::put(Auth::User()->id, 'settings', 'setting_data', $filters['data']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'settings', 'setting_data');
-            } else {
-                if (Filters::get(Auth::User()->id, 'settings', 'setting_data')) {
-                    $where[] = [
-                        'data',
-                        'like',
-                        '%'.Filters::get(Auth::User()->id, 'settings', 'setting_data').'%',
-                    ];
-                }
-            }
+            $where[] = ['data', 'like', '%' . $filters['data'] . '%'];
+            Filters::put(Auth::user()->id, 'settings', 'setting_data', $filters['data']);
+        } elseif ($apply_filter) {
+            Filters::forget(Auth::user()->id, 'settings', 'setting_data');
+        } elseif ($stored = Filters::get(Auth::user()->id, 'settings', 'setting_data')) {
+            $where[] = ['data', 'like', '%' . $stored . '%'];
         }
 
         return $where;
     }
 
     /**
-     * Get All Records
-     *
-     * @param  (int)  $account_id Current Organization's ID
-     * @return (mixed)
+     * @deprecated Use SettingsService::create() instead.
      */
-    public static function getAllRecordsDictionary($account_id)
+    public static function createRecord(mixed $request, int $account_id): static
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
-    }
-
-    /**
-     * Create Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
-     */
-    public static function createRecord($request, $account_id)
-    {
-
         $data = $request->all();
-
-        // Set Account ID
         $data['account_id'] = $account_id;
         $data['slug'] = 'custom';
 
@@ -164,45 +133,30 @@ class Settings extends BaseModal
     }
 
     /**
-     * Update Record
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return (mixed)
+     * @deprecated Use SettingsService::update() instead.
      */
-    public static function updateRecord($id, $request, $account_id)
+    public static function updateRecord(int $id, mixed $request, int $account_id): ?static
     {
-        $old_data = (Settings::find($id))->toArray();
-
+        $old_data = (self::find($id))?->toArray() ?? [];
         $data = $request->all();
-        // Set Account ID
         $data['account_id'] = $account_id;
 
-        if ($old_data['slug'] == 'sys-discounts') {
-            $range = [$request->min, $request->max];
-            $data['data'] = implode(':', $range);
+        if (($old_data['slug'] ?? '') === 'sys-discounts') {
+            $data['data'] = implode(':', [$request->min, $request->max]);
         }
-        if ($old_data['slug'] == 'sys-documentationcharges') {
-            $data['data'] = $request->data;
-        }
-        if ($old_data['slug'] == 'sys-birthdaypromotion') {
-            $range = [$request->pre, $request->post];
-            $data['data'] = implode(':', $range);
+        if (($old_data['slug'] ?? '') === 'sys-birthdaypromotion') {
+            $data['data'] = implode(':', [$request->pre, $request->post]);
         }
 
-        if (! isset($data['is_featured'])) {
-            $data['is_featured'] = 0;
-        } elseif ($data['is_featured'] == '') {
+        if (! isset($data['is_featured']) || $data['is_featured'] === '') {
             $data['is_featured'] = 0;
         }
 
-        $record = self::where([
-            'id' => $id,
-            'account_id' => $account_id,
-        ])->first();
-
+        $record = self::where(['id' => $id, 'account_id' => $account_id])->first();
         if (! $record) {
             return null;
         }
+
         if (isset($data['min'])) {
             $data['min'] = ltrim($data['min'], '0');
         }
@@ -215,27 +169,5 @@ class Settings extends BaseModal
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
 
         return $record;
-    }
-
-    /**
-     * Get active and sorted data only.
-     *
-     *
-     * @return (mixed)
-     */
-    public static function getBySlug($slug, $account_id)
-    {
-        return self::where(['slug' => $slug, 'account_id' => $account_id])->first();
-    }
-
-    /**
-     * Check if child records exist
-     *
-     * @param  (int)  $id
-     * @return (boolean)
-     */
-    public static function isChildExists($id, $account_id)
-    {
-        return false;
     }
 }
