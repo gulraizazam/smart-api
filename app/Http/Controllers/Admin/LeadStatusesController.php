@@ -26,13 +26,13 @@ class LeadStatusesController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-    public function index(): JsonResponse
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('lead_statuses_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            abort(401);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Lead statuses page.', true);
+        return view('admin.lead_statuses.index');
     }
 
     public function datatable(Request $request): JsonResponse
@@ -107,6 +107,15 @@ class LeadStatusesController extends Controller
                 'is_junk' => 0,
             ],
         ]);
+    }
+
+    public function sortOrder(): \Illuminate\View\View
+    {
+        if (!Gate::allows('lead_statuses_sort')) {
+            abort(401);
+        }
+
+        return view('admin.lead_statuses.sort');
     }
 
     public function sortOrderGet(): JsonResponse
