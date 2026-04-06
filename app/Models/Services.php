@@ -313,9 +313,9 @@ class Services extends BaseModal
     /**
      * @deprecated Access via query builder directly.
      */
-    public static function getAllRecordsDictionary(int $account_id): \Illuminate\Support\Collection
+    public static function getAllRecordsDictionary(int $account_id): array
     {
-        return self::where('account_id', $account_id)->get()->keyBy('id');
+        return self::where('account_id', $account_id)->get()->getDictionary();
     }
 
     /**
