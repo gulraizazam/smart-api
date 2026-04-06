@@ -5,6 +5,19 @@
         .parentsrc{
             background: #f5f5f5;
         }
+        @media (max-width: 768px) {
+            .card-header {
+                flex-wrap: wrap !important;
+                gap: 8px;
+            }
+            .card-toolbar {
+                width: 100%;
+            }
+            .card-toolbar .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">

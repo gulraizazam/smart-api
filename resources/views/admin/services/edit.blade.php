@@ -20,7 +20,7 @@
     </div>
     <!--end::Modal header-->
     <!--begin::Modal body-->
-    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+    <div class="modal-body scroll-y mx-2 mx-md-5 mx-xl-15 my-7">
         <!--begin::Form-->
         <form id="modal_edit_services_form" method="post" action="">
             <!--begin::Scroll-->

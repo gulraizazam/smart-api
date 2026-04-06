@@ -101,6 +101,43 @@
                     max-width: 100% !important;
                     height: auto !important;
                 }
+
+                /* Card header stacking */
+                .card-header {
+                    flex-wrap: wrap !important;
+                    gap: 8px;
+                }
+                .card-toolbar {
+                    width: 100%;
+                    display: flex !important;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    padding: 4px 0;
+                }
+                .card-toolbar .btn {
+                    font-size: 12px;
+                    padding: 6px 10px;
+                }
+                .card-toolbar .delete-records {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+
+                /* Add/Edit service modals full-width on mobile */
+                #modal_add_services .modal-dialog,
+                #modal_edit_services .modal-dialog {
+                    margin: 10px;
+                    max-width: calc(100% - 20px);
+                }
+                #modal_add_services .modal-body,
+                #modal_edit_services .modal-body {
+                    padding-left: 10px !important;
+                    padding-right: 10px !important;
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                }
             }
         </style>
     @endpush

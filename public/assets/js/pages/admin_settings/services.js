@@ -6,7 +6,7 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width:350,
+        width:200,
         template: function (data) {
             if (data.parent_id == 0) {
                 return '<b class="text text-dark" style="font-size: 12px; white-space: nowrap;">'+data.name+'</b>';
@@ -23,7 +23,7 @@ var table_columns = [
         field: 'duration',
         title: 'Duration',
         sortable: false,
-        width: 80,
+        width: 90,
         template: function (data) {
             if (typeof data.price !== 'undefined') {
                 return '<span>'+data.duration+' mins</span>';
