@@ -34,6 +34,19 @@
                 margin-bottom: 10px;
                 border-radius: 4px;
             }
+            @media (max-width: 768px) {
+                .card-header {
+                    flex-wrap: wrap !important;
+                    gap: 8px;
+                }
+                .card-toolbar {
+                    width: 100%;
+                }
+                .card-toolbar .btn {
+                    width: 100%;
+                    text-align: center;
+                }
+            }
         </style>
     @endpush
 

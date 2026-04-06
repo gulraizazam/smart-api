@@ -48,7 +48,7 @@
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="centre_id" name="centre_id">
-                                                <option value="">Select Centre</option>
+                                                <option value="" selected>All</option>
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
