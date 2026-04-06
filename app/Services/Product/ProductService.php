@@ -1,0 +1,686 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Product;
+
+use App\Helpers\ACL;
+use App\Helpers\GeneralFunctions;
+use App\Helpers\Widgets\LocationsWidget;
+use App\Models\Brand;
+use App\Models\DoctorHasLocations;
+use App\Models\Inventory;
+use App\Models\Locations;
+use App\Models\Product;
+use App\Models\ProductDetail;
+use App\Models\Purchase;
+use App\Models\PurchaseDetail;
+use App\Models\RoleHasUsers;
+use App\Models\Stock;
+use App\Models\TransferProduct;
+use App\Models\User;
+use App\Models\UserHasLocations;
+use App\Models\Warehouse;
+use DateTime;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Activity;
+
+class ProductService
+{
+    // ---------------------------------------------------------------
+    // Datatable
+    // ---------------------------------------------------------------
+
+    public function getDatatableCount(array $params): int
+    {
+        return $this->buildFilteredQuery($params)->count();
+    }
+
+    public function getDatatableRecords(array $params): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = $this->buildFilteredQuery($params);
+
+        if (count($this->buildWhereConditions($params)) > 0) {
+            return $query->select('products.*')
+                ->orderBy('products.name', 'asc')
+                ->offset($params['offset'] ?? 0)
+                ->limit($params['limit'] ?? 30)
+                ->get();
+        }
+
+        return $query->select('products.*')
+            ->orderBy('products.name', 'asc')
+            ->offset($params['offset'] ?? 0)
+            ->limit($params['limit'] ?? 30)
+            ->orderBy('id', 'DESC')
+            ->get();
+    }
+
+    /**
+     * Transform product records for datatable display.
+     */
+    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $products, array $brands): \Illuminate\Support\Collection
+    {
+        return collect($products)->map(function ($product) use ($brands) {
+            $product->brand_id = (array_key_exists($product->brand_id, $brands)) ? $brands[$product->brand_id]->name : 'N/A';
+            $product->sale_price = $product->sale_price ?? 'N/A';
+            $product->product_type = ucwords(str_replace('_', ' ', $product->product_type));
+
+            return $product;
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // CRUD
+    // ---------------------------------------------------------------
+
+    public function find(int $id): ?Product
+    {
+        return Product::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+    }
+
+    public function create(array $data): Product
+    {
+        $accountId = Auth::user()->account_id;
+
+        $slug = Str::slug($data['name']);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        $product = new Product();
+        $product->name = $data['name'];
+        $product->slug = $slug;
+        $product->account_id = $accountId;
+        $product->brand_id = $data['brand_id'];
+        $product->sale_price = $data['sale_price'] ?? null;
+        $product->sku = $data['sku'];
+        $product->product_type = 'for_sale';
+        $product->created_by = Auth::id();
+        $product->save();
+
+        return $product;
+    }
+
+    public function update(int $id, array $data): ?Product
+    {
+        $accountId = Auth::user()->account_id;
+
+        $record = Product::where('id', $id)
+            ->where('account_id', $accountId)
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        $data['account_id'] = $accountId;
+        $data['updated_by'] = Auth::id();
+        $record->update($data);
+
+        return $record;
+    }
+
+    /**
+     * @return array{status: bool, message: string}
+     */
+    public function delete(int $id): array
+    {
+        $product = $this->find($id);
+
+        if (! $product) {
+            return ['status' => false, 'message' => 'Resource not found.'];
+        }
+
+        $accountId = Auth::user()->account_id;
+
+        if (
+            TransferProduct::where(['product_id' => $id, 'account_id' => $accountId])->orWhere(['child_product_id' => $id])->exists() ||
+            \App\Models\OrderDetail::where(['product_id' => $id, 'account_id' => $accountId])->exists()
+        ) {
+            return ['status' => false, 'message' => 'Child records exist, unable to delete resource'];
+        }
+
+        Stock::where(['product_id' => $product->id])->delete();
+        ProductDetail::where('product_id', $id)->delete();
+        $product->delete();
+
+        return ['status' => true, 'message' => 'Record has been deleted successfully.'];
+    }
+
+    /**
+     * Bulk delete products.
+     *
+     * @return array{status: bool, message: string}
+     */
+    public function bulkDelete(array $ids): array
+    {
+        $products = Product::getBulkData($ids);
+
+        if ($products->isEmpty()) {
+            return ['status' => false, 'message' => 'No records found.'];
+        }
+
+        $anyDeleted = false;
+        $accountId = Auth::user()->account_id;
+
+        foreach ($products as $product) {
+            if (! Product::isChildExists($product->id, $accountId)) {
+                Stock::where(['product_id' => $product->id])->delete();
+                ProductDetail::where(['product_id' => $product->id])->delete();
+                $product->delete();
+                $anyDeleted = true;
+            }
+        }
+
+        if (! $anyDeleted) {
+            return ['status' => false, 'message' => 'Child records exist, unable to delete resource!'];
+        }
+
+        return ['status' => true, 'message' => 'Records has been deleted successfully!'];
+    }
+
+    public function toggleStatus(int $id, int $status): ?Product
+    {
+        $product = $this->find($id);
+
+        if (! $product) {
+            return null;
+        }
+
+        $product->update(['status' => $status]);
+
+        return $product;
+    }
+
+    // ---------------------------------------------------------------
+    // Sale Price
+    // ---------------------------------------------------------------
+
+    public function updateSalePrice(int $id, array $data): ?Product
+    {
+        $product = $this->find($id);
+
+        if (! $product) {
+            return null;
+        }
+
+        $data['account_id'] = Auth::user()->account_id;
+        $data['updated_by'] = Auth::id();
+        $product->update($data);
+
+        return $product;
+    }
+
+    // ---------------------------------------------------------------
+    // Stock Management
+    // ---------------------------------------------------------------
+
+    public function addStock(int $productId, array $data): bool
+    {
+        $accountId = Auth::user()->account_id;
+
+        $request = new \Illuminate\Http\Request($data);
+        $productDetail = ProductDetail::createRecord($request, $accountId, $productId);
+
+        if (! $productDetail) {
+            return false;
+        }
+
+        $inventory = Inventory::where('product_id', $productId)
+            ->where('id', $data['inventory_id'])
+            ->first();
+
+        $inventory->update(['quantity' => $inventory->quantity + $data['quantity']]);
+
+        $purchase = new Purchase();
+        $purchase->items = $data['total_purchase_price'];
+        $purchase->account_id = $accountId;
+        $purchase->total_price = $data['quantity'];
+        $purchase->save();
+
+        $purchaseDetail = new PurchaseDetail();
+        $purchaseDetail->product_id = $productId;
+        $purchaseDetail->purchase_id = $purchase->id;
+        $purchaseDetail->purchase_price = $data['purchase_price'];
+        $purchaseDetail->total_purchase_price = $data['total_purchase_price'];
+        $purchaseDetail->quantity = $data['quantity'];
+        $purchaseDetail->save();
+
+        return true;
+    }
+
+    // ---------------------------------------------------------------
+    // Stock & Inventory Detail Datatables
+    // ---------------------------------------------------------------
+
+    public function getStockDetailData(int $productId): array
+    {
+        $total = Stock::where('product_id', $productId)->count();
+        $data = Stock::with('product')->where('product_id', $productId)->orderBy('id', 'desc')->get();
+
+        return ['data' => $data, 'total' => $total];
+    }
+
+    public function getInventoryDetailData(int $productId): array
+    {
+        $total = Inventory::where('product_id', $productId)->count();
+        $data = Inventory::with('product', 'warehouse', 'centre')
+            ->where('product_id', $productId)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return ['data' => $data, 'total' => $total];
+    }
+
+    // ---------------------------------------------------------------
+    // Transfer from Product page
+    // ---------------------------------------------------------------
+
+    public function getTransferProductData(int $inventoryId): array
+    {
+        $product = Product::join('inventories', 'products.id', 'inventories.product_id')
+            ->select('products.*', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.quantity')
+            ->where('inventories.id', $inventoryId)
+            ->first();
+
+        $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
+        $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
+
+        return [
+            'product' => $product,
+            'centres' => $centres,
+            'warehouse' => $warehouse,
+        ];
+    }
+
+    /**
+     * Process product transfer from product page (with DB transaction).
+     */
+    public function transferProduct(array $data): array
+    {
+        return DB::transaction(function () use ($data) {
+            $request = new \Illuminate\Http\Request($data);
+            $request['type'] = 'product_transfer_create';
+            $request['message'] = 'Product transfer';
+
+            $transferResult = TransferProduct::createRecord($request, Auth::user()->account_id);
+
+            if (! $transferResult['record']) {
+                $message = $transferResult['message'] ?? 'Something went wrong, please try again later.';
+
+                return ['success' => false, 'message' => $message];
+            }
+
+            $productDetail = ProductDetail::createRecordTransferProduct($transferResult['data'], Auth::user()->account_id);
+
+            if (! $productDetail) {
+                return ['success' => false, 'message' => 'Failed to create product detail.'];
+            }
+
+            TransferProduct::where(['id' => $transferResult['record']->id])
+                ->update(['product_detail_id' => $productDetail->id]);
+
+            $productType = Product::find($data['product_id']);
+
+            // Resolve source inventory
+            if ($data['from_warehouse_id'] ?? null) {
+                $minusInventory = Inventory::where('product_id', $data['product_id'])
+                    ->where('warehouse_id', $data['from_warehouse_id'])
+                    ->lockForUpdate()->first();
+            } else {
+                $minusInventory = Inventory::where('product_id', $data['product_id'])
+                    ->where('location_id', $data['from_location_id'])
+                    ->lockForUpdate()->first();
+            }
+
+            // Resolve destination inventory
+            if ($data['to_warehouse_id'] ?? null) {
+                $updateInventory = Inventory::where('product_id', $data['product_id'])
+                    ->where('warehouse_id', $data['to_warehouse_id'])
+                    ->lockForUpdate()->first();
+            } else {
+                $updateInventory = Inventory::where('product_id', $data['product_id'])
+                    ->where('location_id', $data['to_location_id'])
+                    ->lockForUpdate()->first();
+            }
+
+            // Deduct from source
+            $minusInventory->update(['quantity' => $minusInventory->quantity - $data['quantity']]);
+
+            // Add to destination
+            if ($updateInventory) {
+                $updateInventory->update(['quantity' => $updateInventory->quantity + $data['quantity']]);
+            } else {
+                $inventory = new Inventory();
+                $inventory->product_id = $data['product_id'];
+
+                if ($data['to_warehouse_id'] ?? null) {
+                    $inventory->warehouse_id = $data['to_warehouse_id'];
+                } else {
+                    $inventory->location_id = $data['to_location_id'];
+                }
+
+                $inventory->quantity = $data['quantity'];
+                $inventory->is_saleable = $productType->product_type === 'for_sale' ? 1 : 0;
+                $inventory->save();
+            }
+
+            return ['success' => true, 'message' => 'Record has been created successfully.'];
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // Logs
+    // ---------------------------------------------------------------
+
+    public function getActivityLogs(int $productId): \Illuminate\Support\Collection
+    {
+        $productsLogs = Activity::where(['subject_id' => $productId, 'log_name' => 'product'])
+            ->orWhere(['properties->attributes->product_id' => $productId])
+            ->orWhere(['properties->attributes->child_product_id' => $productId])
+            ->get()->toArray();
+
+        $ids = [];
+        $singleLogs = [];
+        $pairedLogs = [];
+        $batchUuids = [];
+
+        $count = count($productsLogs);
+
+        for ($i = 0; $i < $count; $i++) {
+            $foundPair = false;
+            for ($j = $i + 1; $j < $count; $j++) {
+                if (isset($productsLogs[$i]['batch_uuid'], $productsLogs[$j]['batch_uuid'])) {
+                    if ($productsLogs[$i]['batch_uuid'] === $productsLogs[$j]['batch_uuid']) {
+                        if (! in_array($productsLogs[$i]['id'], $ids) && ! in_array($productsLogs[$j]['id'], $ids)) {
+                            $pairedLogs[] = [$productsLogs[$i], $productsLogs[$j]];
+                            $ids[] = $productsLogs[$i]['id'];
+                            $ids[] = $productsLogs[$j]['id'];
+                            $batchUuids[] = $productsLogs[$i]['batch_uuid'];
+                        }
+                        $foundPair = true;
+                    }
+                }
+            }
+
+            if (! $foundPair && ! in_array($productsLogs[$i]['id'], $ids) && ! in_array($productsLogs[$i]['batch_uuid'] ?? null, $batchUuids)) {
+                $singleLogs[] = $productsLogs[$i];
+                $ids[] = $productsLogs[$i]['id'];
+            }
+        }
+
+        $users = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $brands = Brand::getAllRecordsDictionary(Auth::user()->account_id);
+        $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
+        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+        $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
+
+        $records = [];
+        foreach ($singleLogs as $log) {
+            $entry = [];
+            $entry['log_name'] = $log['log_name'];
+            $entry['event'] = $log['event'];
+            $entry['subject_id'] = $log['subject_id'];
+            $entry['causer_id'] = $log['causer_id'];
+            $entry['batch_uuid'] = $log['batch_uuid'];
+            $entry['properties']['attributes'] = $log['properties']['attributes'];
+            $entry['created_at'] = $log['created_at'];
+            $entry['updated_at'] = $log['updated_at'];
+            $records[] = $entry;
+        }
+
+        $records2 = [];
+        foreach ($pairedLogs as $log) {
+            $entry = [];
+            $entry['log_name'] = $log[0]['log_name'];
+            $entry['event'] = $log[0]['event'];
+            $entry['subject_id'] = $log[0]['subject_id'];
+            $entry['causer_id'] = $log[0]['causer_id'];
+            $entry['batch_uuid'] = $log[0]['batch_uuid'];
+            $entry['properties']['attributes'] = array_merge($log[0]['properties']['attributes'], $log[1]['properties']['attributes']);
+            unset($entry['properties']['attributes']['id']);
+            $entry['created_at'] = $log[0]['created_at'];
+            $entry['updated_at'] = $log[0]['updated_at'];
+            $records2[] = $entry;
+        }
+
+        $finalRecords = array_merge($records, $records2);
+
+        return collect($finalRecords)->map(function ($log) use ($productId, $users, $brands, $centres, $warehouse, $products) {
+            $properties = $log['properties']['attributes'] ?? null;
+
+            $brandId = $properties['brand_id'] ?? null;
+            $locationId = $properties['location_id'] ?? null;
+            $warehouseId = $properties['warehouse_id'] ?? null;
+            $createdBy = $properties['created_by'] ?? null;
+            $updatedBy = $properties['updated_by'] ?? null;
+            $toLocationId = $properties['to_location_id'] ?? null;
+            $toWarehouseId = $properties['to_warehouse_id'] ?? null;
+            $fromLocationId = $properties['from_location_id'] ?? null;
+            $fromWarehouseId = $properties['from_warehouse_id'] ?? null;
+            $childProductId = $properties['child_product_id'] ?? null;
+            $productName = $properties['name'] ?? ($properties['product_id'] ?? null);
+            $causerName = (array_key_exists($log['causer_id'], $users)) ? $users[$log['causer_id']]->name : 'N/A';
+
+            $log['product_id'] = $productId;
+            $log['product_name'] = (array_key_exists($productName, $products)) ? $products[$properties['product_id']]->name : $productName;
+            $log['brand_id'] = (array_key_exists($brandId, $brands)) ? $brands[$brandId]->name : 'N/A';
+            $log['location'] = (array_key_exists($locationId, $centres)) ? $centres[$locationId]->name : 'N/A';
+            $log['warehouse'] = (array_key_exists($warehouseId, $warehouse)) ? $warehouse[$warehouseId]->name : 'N/A';
+            $log['to_location'] = (array_key_exists($toLocationId, $centres)) ? $centres[$toLocationId]->name : 'N/A';
+            $log['to_warehouse'] = (array_key_exists($toWarehouseId, $warehouse)) ? $warehouse[$toWarehouseId]->name : 'N/A';
+            $log['from_location'] = (array_key_exists($fromLocationId, $centres)) ? $centres[$fromLocationId]->name : 'N/A';
+            $log['from_warehouse'] = (array_key_exists($fromWarehouseId, $warehouse)) ? $warehouse[$fromWarehouseId]->name : 'N/A';
+            $log['child_product'] = (array_key_exists($childProductId, $products)) ? $products[$childProductId]->name : 'N/A';
+            $log['created_by'] = (array_key_exists($createdBy, $users)) ? $users[$createdBy]->name : $causerName;
+            $log['updated_by'] = (array_key_exists($updatedBy, $users)) ? $users[$updatedBy]->name : $causerName;
+
+            return $log;
+        })->sortByDesc('created_at');
+    }
+
+    // ---------------------------------------------------------------
+    // Allocation
+    // ---------------------------------------------------------------
+
+    public function getLocationAllocation(int $productId): array
+    {
+        $product = Product::find($productId);
+        $location = LocationsWidget::generateDropDownArray(Auth::user()->account_id);
+
+        return [
+            'product' => $product,
+            'location' => $location,
+        ];
+    }
+
+    public function saveAllocation(array $data): void
+    {
+        DB::transaction(function () use ($data) {
+            $inventory = new Inventory();
+            $inventory->product_id = $data['product_id'];
+            $inventory->location_id = $data['location_id'];
+            $inventory->is_saleable = 1;
+            $inventory->quantity = $data['quantity'];
+            $inventory->sale_price = $data['sale_price'];
+            $inventory->save();
+
+            $stock = new Stock();
+            $stock->account_id = 1;
+            $stock->product_id = $data['product_id'];
+            $stock->quantity = $data['quantity'];
+            $stock->location_id = $data['location_id'];
+            $stock->save();
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // Inventory Edit
+    // ---------------------------------------------------------------
+
+    public function getEditInventoryData(int $inventoryId): array
+    {
+        $inventory = Inventory::with('product', 'centre', 'warehouse')->whereId($inventoryId)->first();
+        $warehouses = Warehouse::where('active', 1)->get();
+        $locations = Locations::where('active', 1)->get();
+
+        return [
+            'inventory' => $inventory,
+            'warehouse' => $warehouses,
+            'locations' => $locations,
+        ];
+    }
+
+    // ---------------------------------------------------------------
+    // Search
+    // ---------------------------------------------------------------
+
+    public function searchProducts(string $search): \Illuminate\Database\Eloquent\Collection
+    {
+        return Product::where('account_id', Auth::user()->account_id)
+            ->where('name', 'like', '%' . $search . '%')
+            ->select('id', 'name')
+            ->limit(20)
+            ->get();
+    }
+
+    // ---------------------------------------------------------------
+    // Create form data
+    // ---------------------------------------------------------------
+
+    public function getCreateFormData(): array
+    {
+        $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
+        $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
+        $brands = Brand::whereStatus(1)->pluck('name', 'id');
+
+        return [
+            'centres' => $centres,
+            'warehouse' => $warehouse,
+            'brands' => $brands,
+        ];
+    }
+
+    /**
+     * Get edit form data for a product.
+     */
+    public function getEditFormData(int $id): ?array
+    {
+        $product = $this->find($id);
+
+        if (! $product) {
+            return null;
+        }
+
+        $productDetail = ProductDetail::getProductDetailData($product->id);
+        $quantity = GeneralFunctions::stockCheck($id);
+
+        return [
+            'product' => $product,
+            'product_detail' => $productDetail,
+            'quantity' => $quantity,
+        ];
+    }
+
+    // ---------------------------------------------------------------
+    // Permissions
+    // ---------------------------------------------------------------
+
+    public function getPermissions(): array
+    {
+        return [
+            'active' => Gate::allows('product_active'),
+            'edit' => Gate::allows('product_edit'),
+            'manage' => Gate::allows('product_manage'),
+            'delete' => Gate::allows('product_destroy'),
+            'create' => Gate::allows('product_create'),
+            'sale_price' => Gate::allows('product_sale_price'),
+            'add_stock' => Gate::allows('product_add_stock'),
+            'stock_detail' => Gate::allows('product_stock_detail'),
+            'transfer_product' => Gate::allows('product_transfer'),
+            'log' => Gate::allows('product_log'),
+        ];
+    }
+
+    /**
+     * Get filter values for datatable.
+     */
+    public function getFilterValues(): array
+    {
+        $accountId = Auth::user()->account_id;
+
+        return [
+            'brands' => collect(Brand::getAllRecordsDictionary($accountId))->pluck('name', 'id'),
+            'centres' => collect(Locations::getAllRecordsDictionary($accountId, 'custom', 'id', 'desc', ACL::getUserCentres()))->pluck('name', 'id'),
+            'warehouse' => collect(Warehouse::getAllRecordsDictionary($accountId, ACL::getUserWarehouse()))->pluck('name', 'id'),
+            'status' => config('constants.status'),
+            'sku' => Product::pluck('sku')->toArray(),
+        ];
+    }
+
+    // ---------------------------------------------------------------
+    // Private helpers
+    // ---------------------------------------------------------------
+
+    private function buildFilteredQuery(array $params): \Illuminate\Database\Eloquent\Builder
+    {
+        $where = $this->buildWhereConditions($params);
+
+        return Product::query()
+            ->when(count($where) > 0, fn ($q) => $q->where($where));
+    }
+
+    private function buildWhereConditions(array $params): array
+    {
+        $where = [];
+        $applyFilter = $params['apply_filter'] ?? false;
+
+        if (! $applyFilter) {
+            return $where;
+        }
+
+        $filters = $params['filters'] ?? [];
+
+        if (hasFilter($filters, 'created_at')) {
+            $dateRange = explode(' - ', $filters['created_at']);
+            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
+            $endDateString = new DateTime($dateRange[1]);
+            $endDateString->setTime(23, 59, 0);
+            $endDateTime = $endDateString->format('Y-m-d H:i:s');
+        }
+
+        if (! empty($filters['name'])) {
+            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+        }
+        if (! empty($filters['product_type'])) {
+            $where[][] = ['product_type' => $filters['product_type']];
+        }
+        if (! empty($filters['brand_id'])) {
+            $where[][] = ['brand_id' => $filters['brand_id']];
+        }
+        if (! empty($filters['centre_id'])) {
+            $where[][] = ['location_id' => $filters['centre_id']];
+        }
+        if (! empty($filters['warehouse_id'])) {
+            $where[][] = ['warehouse_id' => $filters['warehouse_id']];
+        }
+        if (! empty($filters['status'])) {
+            $where[][] = ['active' => $filters['status']];
+        }
+        if (isset($startDateTime, $endDateTime)) {
+            $where[] = ['products.created_at', '>=', $startDateTime];
+            $where[] = ['products.created_at', '<=', $endDateTime];
+        }
+
+        return $where;
+    }
+}
