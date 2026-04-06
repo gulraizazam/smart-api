@@ -288,7 +288,7 @@
                                             {!! Form::hidden('appointment_type_id', null, ['id' => 'appointment_type_id-report']) !!}
                                             {!! Form::hidden('city_id', null, ['id' => 'city_id-report']) !!}
                                             <span id="location_id_report_container"></span>
-                                            {!! Form::hidden('location_id_com', null, ['id' => 'location_id_com-report']) !!}
+                                            <span id="location_id_com_report_container"></span>
                                             {!! Form::hidden('region_id', null, ['id' => 'region_id-report']) !!}
                                             {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}
                                             {!! Form::hidden('user_id', null, ['id' => 'user_id-report']) !!}
@@ -331,9 +331,6 @@
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
 
         <script>
-            $("#location_id_com").on('change',function(){
-                $("#location_id_com-report").val($("#location_id_com").val());
-            });
             $(document).ready(function() {
                 if ($('#date_range').data('daterangepicker')) {
                     $('#date_range').data('daterangepicker').remove();
@@ -471,6 +468,14 @@
                 if (selectedLocations && selectedLocations.length) {
                     $.each(selectedLocations, function(i, val) {
                         $('#location_id_report_container').append('<input type="hidden" name="location_id[]" value="' + val + '">');
+                    });
+                }
+                // Dynamically add multiple hidden fields for location_id_com array
+                $('#location_id_com_report_container').empty();
+                var selectedLocationsCom = $('#location_id_com').val();
+                if (selectedLocationsCom && selectedLocationsCom.length) {
+                    $.each(selectedLocationsCom, function(i, val) {
+                        $('#location_id_com_report_container').append('<input type="hidden" name="location_id_com[]" value="' + val + '">');
                     });
                 }
                 $('#service_id-report').val($('#service_id').val());
