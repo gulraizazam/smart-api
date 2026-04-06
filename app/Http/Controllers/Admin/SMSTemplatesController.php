@@ -1,31 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
-use App\Models\SMSTemplates;
+use App\Services\SMS\SMSTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class SMSTemplatesController extends Controller
 {
-    protected $error;
-
-    protected $success;
-
-    protected $unauthorized;
-
-    public function __construct()
-    {
-        $this->error = config('constants.api_status.error');
-        $this->success = config('constants.api_status.success');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly SMSTemplateService $smsTemplateService,
+    ) {}
 
     /**
      * Display a listing of Sms Templates.
@@ -50,61 +39,14 @@ class SMSTemplatesController extends Controller
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $filename = 'sms_templates';
+            $records = $this->smsTemplateService->getDatatableData($request, Auth::User()->account_id, Auth::User()->id);
 
-            $filters = getFilters($request->all());
-
-            $apply_filter = checkFilters($filters, $filename);
-
-            $records = [];
-            $records['data'] = [];
-
-            [$orderBy, $order] = getSortBy($request);
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
-                $SMSTemplates = SMSTemplates::getBulkData($ids);
-                if ($SMSTemplates) {
-                    foreach ($SMSTemplates as $SMSTemplate) {
-                        $SMSTemplate->delete();
-                    }
-                }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
-            }
-
-            // Get Total Records
-            $iTotalRecords = SMSTemplates::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $SMSTemplates = SMSTemplates::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-            $records['data'] = $SMSTemplates;
-            $records['permissions'] = [
-                'edit' => Gate::allows('sms_templates_edit'),
-                'active' => Gate::allows('sms_templates_active'),
-                'inactive' => Gate::allows('sms_templates_inactive'),
-            ];
-            $filters = Filters::all(Auth::User()->id, 'sms_templates');
-            $records['active_filters'] = $filters;
-            $records['filter_values'] = [
-                'status' => config('constants.status'),
-            ];
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
-
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
     }
 
@@ -131,33 +73,19 @@ class SMSTemplatesController extends Controller
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (SMSTemplates::createRecord($request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            $result = $this->smsTemplateService->validateAndCreate($request->all(), Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
+            }
+
+            return $this->successResponse($result['error'], false, $result['errors'] ?? null);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function verifyFields(Request $request)
-    {
-        return $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'content' => 'required',
-        ]);
     }
 
     /**
@@ -169,18 +97,18 @@ class SMSTemplatesController extends Controller
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $sms_template = SMSTemplates::getData($id);
-            if (! $sms_template) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $sms_template->variables = GeneralFunctions::smsTemplateVariables($sms_template->slug);
+            $result = $this->smsTemplateService->getEditData($id);
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $sms_template);
+            if (! $result['success']) {
+                return $this->errorResponse($result['error'], 404);
+            }
+
+            return $this->successResponse('Success', $result['sms_template']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
     }
 
@@ -193,19 +121,18 @@ class SMSTemplatesController extends Controller
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if (SMSTemplates::updateRecord($id, $request, Auth::User()->account_id)) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            $result = $this->smsTemplateService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
+            }
+
+            return $this->successResponse($result['error'], false, $result['errors'] ?? null);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
     }
 
@@ -218,17 +145,18 @@ class SMSTemplatesController extends Controller
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $sms_template = SMSTemplates::getData($id);
-            if (! $sms_template) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-            }
-            $sms_template->delete();
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            $result = $this->smsTemplateService->deleteTemplate($id);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
+            }
+
+            return $this->errorResponse($result['error'], 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
     }
 
@@ -240,27 +168,25 @@ class SMSTemplatesController extends Controller
     public function status(Request $request)
     {
         try {
-            $sms_template = SMSTemplates::getData($request->id);
-            if (! $sms_template) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-            }
             if ($request->status == 0) {
                 if (! Gate::allows('sms_templates_inactive')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $update = $sms_template->update(['active' => 0]);
-
-                return ApiHelper::apiResponse($this->success, 'Record has been inactivated successfully.');
             } else {
                 if (! Gate::allows('sms_templates_active')) {
-                    return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                    return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $update = $sms_template->update(['active' => 1]);
-
-                return ApiHelper::apiResponse($this->success, 'Record has been activated successfully.');
             }
+
+            $result = $this->smsTemplateService->changeStatus($request->id, $request->status);
+
+            if ($result['success']) {
+                return $this->successResponse($result['message']);
+            }
+
+            return $this->errorResponse($result['error'], 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'SMSTemplatesController');
         }
     }
 }

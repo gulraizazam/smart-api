@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class GlobalOperatorSettings extends BaseModal
+class GlobalOperatorSettings extends BaseModel
 {
     use SoftDeletes;
 

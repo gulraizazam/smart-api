@@ -75,7 +75,7 @@ final class BundlesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -91,7 +91,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -111,7 +111,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -127,7 +127,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -147,7 +147,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -171,7 +171,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -191,7 +191,7 @@ final class BundlesController extends Controller
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -295,15 +295,15 @@ final class BundlesController extends Controller
 
     // ── Standardized response helpers ───────────────────
 
-    private function successResponse(string $message, mixed $data = null, bool $success = true): JsonResponse
+    protected function successResponse(string $message, mixed $data = null, int $code = 200): JsonResponse
     {
         return response()->json([
-            'success' => $success,
-            'status'  => $success,
+            'success' => true,
+            'status'  => true,
             'message' => $message,
             'data'    => $data,
             'errors'  => [],
-        ], 200);
+        ], $code);
     }
 
     private function failResponse(string $message, array $errors = []): JsonResponse
@@ -328,7 +328,7 @@ final class BundlesController extends Controller
         ], 403);
     }
 
-    private function errorResponse(\Exception $e): JsonResponse
+    private function exceptionToResponse(\Exception $e): JsonResponse
     {
         $message = config('app.debug')
             ? $e->getMessage() . ' Line ' . $e->getLine() . ' File ' . $e->getFile()

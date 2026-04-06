@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Helpers\GeneralFunctions;
@@ -21,7 +22,7 @@ class SecondSmsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $payload;
+    protected mixed $payload;
 
     /**
      * Create a new job instance.

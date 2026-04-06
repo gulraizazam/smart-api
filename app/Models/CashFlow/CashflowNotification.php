@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashflowNotification extends Model
 {
@@ -35,7 +37,7 @@ class CashflowNotification extends Model
     /**
      * User this notification belongs to.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }

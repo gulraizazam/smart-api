@@ -1,28 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
-use App\Models\DoctorGoogleReview;
-use App\Services\DoctorDashboard\DoctorIdentifier;
+use App\Services\GoogleReview\GoogleReviewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class GoogleReviewsController extends Controller
 {
-    public $success;
-    public $error;
-
-    private DoctorIdentifier $doctorIdentifier;
-
-    public function __construct(DoctorIdentifier $doctorIdentifier)
-    {
+    public function __construct(
+        private readonly GoogleReviewService $googleReviewService,
+    ) {
         $this->middleware('can:google_reviews_manage');
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->doctorIdentifier = $doctorIdentifier;
     }
 
     /**
@@ -47,40 +40,12 @@ class GoogleReviewsController extends Controller
             $month = (int) $request->get('month', now()->month);
             $year = (int) $request->get('year', now()->year);
 
-            // Get all active doctors
-            $doctorIds = $this->doctorIdentifier->getAllActiveDoctorIds($accountId);
-            $doctors = [];
+            $data = $this->googleReviewService->getGridData($accountId, $month, $year);
 
-            foreach ($doctorIds as $docId) {
-                $info = $this->doctorIdentifier->getDoctorInfo($docId);
-                if (!empty($info)) {
-                    $doctors[] = $info;
-                }
-            }
-
-            // Get existing reviews for this month
-            $reviews = DoctorGoogleReview::getForMonth($month, $year, $accountId);
-
-            // Build grid data
-            $grid = [];
-            foreach ($doctors as $doctor) {
-                $review = $reviews->get($doctor['id']);
-                $grid[] = [
-                    'doctor_id' => $doctor['id'],
-                    'doctor_name' => $doctor['name'],
-                    'locations' => collect($doctor['locations'])->pluck('name')->implode(', '),
-                    'review_count' => $review ? (int) $review->review_count : 0,
-                ];
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Reviews data loaded', true, [
-                'grid' => $grid,
-                'month' => $month,
-                'year' => $year,
-            ]);
+            return $this->successResponse('Reviews data loaded', $data, 200);
         } catch (\Exception $e) {
             \Log::error('Google Reviews getData Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -99,25 +64,19 @@ class GoogleReviewsController extends Controller
 
             $accountId = Auth::user()->account_id;
 
-            $review = DoctorGoogleReview::firstOrNew([
-                'account_id' => $accountId,
-                'doctor_id' => $request->doctor_id,
-                'month' => $request->month,
-                'year' => $request->year,
-            ]);
+            $this->googleReviewService->saveReview(
+                $accountId,
+                $request->doctor_id,
+                $request->month,
+                $request->year,
+                $request->review_count,
+                Auth::id(),
+            );
 
-            if (!$review->exists) {
-                $review->created_by = Auth::id();
-            }
-
-            $review->review_count = $request->review_count;
-            $review->updated_by = Auth::id();
-            $review->save();
-
-            return ApiHelper::apiResponse($this->success, 'Review count saved', true);
+            return $this->successResponse('Review count saved', null, 200);
         } catch (\Exception $e) {
             \Log::error('Google Reviews save Error: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App;
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
@@ -45,19 +46,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class InvoicesController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -168,7 +156,7 @@ class InvoicesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'InvoicesController');
         }
     }
 
@@ -233,7 +221,7 @@ class InvoicesController extends Controller
     public function cancel($id)
     {
         if (! Gate::allows('invoices_cancel')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $invoiceinformation = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -243,7 +231,7 @@ class InvoicesController extends Controller
         if ($invoiceinformation->package_id) {
             $package_information = Packages::find($invoiceinformation->package_id);
             if ($package_information->is_refund == '1') {
-                return ApiHelper::apiResponse($this->success, 'Invoice belongs to package that already refunded, so you unable to delete it.', false);
+                return $this->errorResponse('Invoice belongs to package that already refunded, so you unable to delete it.', 200);
             }
 
         }
@@ -293,10 +281,10 @@ class InvoicesController extends Controller
             $service = \App\Models\Services::find($appintment->service_id);
             \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type, $appintment);
 
-            return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
+            return $this->successResponse('Invoice has been canceled successfully.', null, 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record not found.', false);
+        return $this->errorResponse('Record not found.', 200);
 
     }
 
@@ -305,7 +293,7 @@ class InvoicesController extends Controller
     public function displayInvoice($id)
     {
         if (! Gate::allows('invoices_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -350,7 +338,7 @@ class InvoicesController extends Controller
             $Invoiceinfo->created_at = Carbon::parse($Invoiceinfo->created_at)->format('F j,Y');
         }
 
-        return ApiHelper::apiResponse($this->success, 'Recode found.', true, [
+        return $this->successResponse('Recode found.', [
             'Invoiceinfo' => $Invoiceinfo,
             'patient' => $patient,
             'account' => $account,
@@ -360,7 +348,7 @@ class InvoicesController extends Controller
             'company_phone_number' => $company_phone_number,
             'location_info' => $location_info,
             'doctor' => $doctor,
-        ]);
+        ], 200);
     }
 
     /*
@@ -547,7 +535,7 @@ class InvoicesController extends Controller
             'sort' => $order,
         ];
 
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     private function getInvoicesData($id, $request, $orderBy, $order)
@@ -691,9 +679,9 @@ class InvoicesController extends Controller
     {
         $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'SMSLogs' => $SMSLogs,
-        ]);
+        ], 200);
     }
 
     /**

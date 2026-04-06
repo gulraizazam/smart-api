@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Requests\Feedback\FeedbackDatatableRequest;
 use App\Http\Requests\Feedback\GetTreatmentInfoRequest;
 use App\Http\Requests\Feedback\GetTreatmentRequest;
@@ -34,9 +33,9 @@ class FeedbackController extends Controller
         try {
             $records = $this->feedbackService->getDatatableData($request->all());
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 
@@ -52,12 +51,9 @@ class FeedbackController extends Controller
         try {
             $this->feedbackService->update($feedback, (int) $request->validated('rating'));
 
-            return ApiHelper::apiResponse(
-                config('constants.api_status.success'),
-                'Record has been updated successfully.'
-            );
+            return $this->successResponse('Record has been updated successfully.', );
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 
@@ -72,24 +68,13 @@ class FeedbackController extends Controller
                 comment: $validated['comment'] ?? null,
             );
 
-            return ApiHelper::apiResponse(
-                config('constants.api_status.success'),
-                'Record has been created successfully.'
-            );
+            return $this->successResponse('Record has been created successfully.', );
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
-            return ApiHelper::apiResponse(
-                config('constants.api_status.error'),
-                'Referenced record not found.',
-                false
-            );
+            return $this->errorResponse('Referenced record not found.', 200);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return ApiHelper::apiResponse(
-                $e->getStatusCode(),
-                $e->getMessage(),
-                false
-            );
+            return $this->errorResponse($e->getMessage(), 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 
@@ -100,12 +85,9 @@ class FeedbackController extends Controller
         try {
             $this->feedbackService->destroy($feedback);
 
-            return ApiHelper::apiResponse(
-                config('constants.api_status.success'),
-                'Record has been deleted successfully.'
-            );
+            return $this->successResponse('Record has been deleted successfully.', );
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 
@@ -130,7 +112,7 @@ class FeedbackController extends Controller
                 'treatments' => $treatments,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 
@@ -161,7 +143,7 @@ class FeedbackController extends Controller
                 'treatments' => $treatmentData,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'FeedbackController');
         }
     }
 }

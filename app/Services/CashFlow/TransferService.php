@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
@@ -12,14 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class TransferService
 {
-    private CashflowAuditService $auditService;
-    private NotificationService $notificationService;
-
-    public function __construct(CashflowAuditService $auditService, NotificationService $notificationService)
-    {
-        $this->auditService = $auditService;
-        $this->notificationService = $notificationService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+        private readonly NotificationService $notificationService,
+    ) {}
 
     /**
      * Get paginated transfers with filters.

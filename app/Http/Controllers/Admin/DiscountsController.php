@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use PHPUnit\Exception;
@@ -8,7 +10,6 @@ use App\Models\Discounts;
 use App\Models\Locations;
 use App\Helpers\NodesTree;
 use Illuminate\Http\Request;
-use App\HelperModule\ApiHelper;
 use App\Models\GetDiscountService;
 use App\Models\BaseDiscountService;
 use App\Http\Controllers\Controller;
@@ -25,19 +26,6 @@ use Spatie\Permission\Models\Role;
 
 class DiscountsController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     /**
      * Display a listing of the discount in datatable.
      *
@@ -61,23 +49,23 @@ class DiscountsController extends Controller
     {
 
         if (!Gate::allows('discounts_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $roles = Role::pluck('name', 'id')->toArray();
             $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
             $customerTypes = MembershipType::parentsOnly()->where('active', 1)->pluck('name', 'id')->toArray();
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'discount_types' => config('constants.discount_types'),
                 'discount_groups' => config('constants.discount_groups'),
                 'amount_types' => config('constants.amount_types'),
                 'roles'=>$roles,
                 'locations'=>$locations,
                 'customer_types'=>$customerTypes
-            ]);
+            ], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -90,7 +78,7 @@ class DiscountsController extends Controller
     {
 
         if (!Gate::allows('discounts_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -101,7 +89,7 @@ class DiscountsController extends Controller
             }
 
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+                return $this->errorResponse($validator->messages()->first(), 200);
             }
             $data = $request->all();
             $data['account_id'] = Auth::User()->account_id;
@@ -117,20 +105,20 @@ class DiscountsController extends Controller
             if ($request->start <= $request->end) {
                 if ($request->type == "Configurable") {
                     if (Discounts::createConfigurableDiscount($data)) {
-                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                        return $this->successResponse('Record has been created successfully.', null, 200);
                     }
                 }
                 if (Discounts::createDiscount($data)) {
 
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    return $this->successResponse('Record has been created successfully.', null, 200);
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                return $this->errorResponse('Something went wrong, please try again later.', 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
+            return $this->errorResponse('Date range invalid, Kindly define again', 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -260,9 +248,9 @@ class DiscountsController extends Controller
                 'allocate' => Gate::allows('discounts_allocate'),
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -517,7 +505,7 @@ class DiscountsController extends Controller
     public function edit($id)
     {
         if (!Gate::allows('discounts_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -526,7 +514,7 @@ class DiscountsController extends Controller
 
             if ($discount == null) {
 
-                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                return $this->errorResponse('Resource not found.', 200);
             } else {
 
                 $discountServices = explode(',', $discount->service_id);
@@ -557,7 +545,7 @@ class DiscountsController extends Controller
 
                 // 🔹 Get selected role ids for this discount
                 $selected_role_ids = $discount->roles()->pluck('roles.id')->toArray();
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                return $this->successResponse('Record found', [
                     'discount' => $Discount ?? $discount,
                     'locations' => $locations,
                     'services' => $Services,
@@ -566,10 +554,10 @@ class DiscountsController extends Controller
                     'roles' => $roles,
                     'selected_roles' => $selected_role_ids,
                     'customer_types' => $customerTypes,
-                ]);
+                ], 200);
             }
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -583,13 +571,13 @@ class DiscountsController extends Controller
     {
 
         if (!Gate::allows('discounts_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
 
         $data = $request->all();
@@ -606,18 +594,18 @@ class DiscountsController extends Controller
         if ($request->start <= $request->end) {
             if ($request->type == "Configurable") {
                 if (Discounts::updateConfigurableDiscount($data, $id)) {
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    return $this->successResponse('Record has been created successfully.', null, 200);
                 }
             }
             if (Discounts::updateDiscount($data, $id)) {
 
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->successResponse('Record has been updated successfully.', null, 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
+        return $this->errorResponse('Date range invalid, Kindly define again', 200);
     }
 
     /**
@@ -628,7 +616,7 @@ class DiscountsController extends Controller
     public function status(Request $request)
     {
         if (!Gate::allows('discounts_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -640,12 +628,12 @@ class DiscountsController extends Controller
             }
 
             if ($response) {
-                return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+                return $this->successResponse('Status has been changed successfully.', null, 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -658,19 +646,19 @@ class DiscountsController extends Controller
     public function destroy($id)
     {
         if (!Gate::allows('discounts_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
 
             $record = Discounts::deleteRecord($id);
             if ($record) {
-                return ApiHelper::apiResponse($this->success, $record);
+                return $this->successResponse($record, null, 200);
             } else {
-                return ApiHelper::apiResponse($this->success, $record);
+                return $this->errorResponse($record, 200);
             }
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -682,7 +670,7 @@ class DiscountsController extends Controller
     public function displayDlocation($id)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -720,9 +708,9 @@ class DiscountsController extends Controller
                 ];
             }
 
-            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, $responseData);
+            return $this->successResponse('Service Allocated', $responseData, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -734,7 +722,7 @@ class DiscountsController extends Controller
     public function getDservices(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $discount_info = Discounts::find($request->discount_id);
         if ($discount_info->discount_type == Config::get('constants.Service')) {
@@ -747,22 +735,22 @@ class DiscountsController extends Controller
                 ->select('services.name', 'services.id')->where('discount_id', $request->discount_id)->take(1)->get()->toArray();
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'services' => $serive,
             'locaiton_id_1' => $request->id,
-        ]);
+        ], 200);
     }
     public function getDiscountServices(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $serive = ServiceWidget::generateServiceArrayDiscount($request, Auth::User()->account_id);
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'services' => $serive,
             'locaiton_id_1' => $request->id,
-        ]);
+        ], 200);
     }
 
     /**
@@ -773,16 +761,16 @@ class DiscountsController extends Controller
     public function getServicesForConfigurable()
     {
         if (!Gate::allows('discounts_create') && !Gate::allows('discounts_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $services = ServiceWidget::generateServiceArrayDiscount(null, Auth::User()->account_id);
-            return ApiHelper::apiResponse($this->success, 'Services loaded', true, [
+            return $this->successResponse('Services loaded', [
                 'services' => $services,
-            ]);
+            ], 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -795,7 +783,7 @@ class DiscountsController extends Controller
     public function allocateConfigurable(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -805,14 +793,14 @@ class DiscountsController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+                return $this->errorResponse($validator->messages()->first(), 200);
             }
 
             $discount = Discounts::find($request->discount_id);
             
             // Verify this is a configurable discount
             if ($discount->type !== 'Configurable') {
-                return ApiHelper::apiResponse($this->success, 'This method is only for configurable discounts.', false);
+                return $this->errorResponse('This method is only for configurable discounts.', 200);
             }
 
             $location = Locations::find($request->location_id);
@@ -824,7 +812,7 @@ class DiscountsController extends Controller
             ])->first();
 
             if ($existingAllocation) {
-                return ApiHelper::apiResponse($this->success, 'This discount is already allocated to this centre.', false);
+                return $this->errorResponse('This discount is already allocated to this centre.', 200);
             }
 
             // Get the base service from the configurable discount
@@ -874,16 +862,16 @@ class DiscountsController extends Controller
             
             $servicesDisplay = implode(', ', $buyParts) . ' → ' . implode(', ', $getParts);
 
-            return ApiHelper::apiResponse($this->success, 'Discount allocated to centre successfully.', true, [
+            return $this->successResponse('Discount allocated to centre successfully.', [
                 'record' => [
                     'id' => $record->id,
                     'location_name' => $location->city->name . ' - ' . $location->name,
                     'service_name' => $servicesDisplay,
                 ]
-            ]);
+            ], 200);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'DiscountsController');
         }
     }
 
@@ -893,7 +881,7 @@ class DiscountsController extends Controller
     public function saveDservices(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         // Validate required fields for allocation
@@ -905,7 +893,7 @@ class DiscountsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
 
         $location_id = $request->location_id;
@@ -923,7 +911,7 @@ class DiscountsController extends Controller
             ])->exists();
 
             if ($allCentresAllServicesExists) {
-                return ApiHelper::apiResponse($this->success, 'Cannot add more allocations. "All Centres" with "All Services" is already allocated for this discount.', false);
+                return $this->errorResponse('Cannot add more allocations. "All Centres" with "All Services" is already allocated for this discount.', 200);
             }
         }
 
@@ -958,7 +946,7 @@ class DiscountsController extends Controller
         
         // If "All Services" exists and trying to add individual service, block it
         if ($allServicesExists && !$isAllServices) {
-            return ApiHelper::apiResponse($this->success, 'Cannot add individual service. "All Services" is already allocated for this location.', false);
+            return $this->errorResponse('Cannot add individual service. "All Services" is already allocated for this location.', 200);
         }
         
         // Check if any selected child service has its parent already allocated for this location
@@ -977,7 +965,7 @@ class DiscountsController extends Controller
                 $parentNames = $existingParentAllocations->map(function($alloc) {
                     return $alloc->service->name;
                 })->implode(', ');
-                return ApiHelper::apiResponse($this->success, 'Cannot add child service. Parent category "' . $parentNames . '" is already allocated for this location.', false);
+                return $this->errorResponse('Cannot add child service. Parent category "' . $parentNames . '" is already allocated for this location.', 200);
             }
         }
         
@@ -1043,13 +1031,13 @@ class DiscountsController extends Controller
             if ($duplicateCount > 0) {
                 $message .= ' ' . $duplicateCount . ' duplicate(s) skipped.';
             }
-            return ApiHelper::apiResponse($this->success, $message, true, [
+            return $this->successResponse($message, [
                 'records' => $createdRecords,
                 'removed_ids' => $removedIds,
-            ]);
+            ], 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'All selected services already exist for this location.', false);
+        return $this->errorResponse('All selected services already exist for this location.', 200);
     }
 
     /**
@@ -1061,14 +1049,14 @@ class DiscountsController extends Controller
     {
 
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         DiscountHasLocations::find($request->id)->delete();
 
-        return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
+        return $this->successResponse('Row deleted', [
             'id' => $request->id,
-        ]);
+        ], 200);
     }
 
     /**
@@ -1079,19 +1067,19 @@ class DiscountsController extends Controller
     public function deleteDserviceGroup(Request $request)
     {
         if (!Gate::allows('discounts_allocate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $ids = explode(',', $request->ids);
         
         if (empty($ids)) {
-            return ApiHelper::apiResponse($this->error, 'No IDs provided', false);
+            return $this->errorResponse('No IDs provided', 500);
         }
 
         $deletedCount = DiscountHasLocations::whereIn('id', $ids)->delete();
 
-        return ApiHelper::apiResponse($this->success, $deletedCount . ' allocation(s) deleted successfully.', true, [
+        return $this->successResponse($deletedCount . ' allocation(s) deleted successfully.', [
             'deleted_ids' => $ids,
-        ]);
+        ], 200);
     }
 }

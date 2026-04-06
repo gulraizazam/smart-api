@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CentertargetMeta extends Model
 {
@@ -13,20 +15,20 @@ class CentertargetMeta extends Model
         'account_id', 'month', 'year', 'location_id', 'target_amount', 'centertarget_id', 'created_at', 'updated_at', 'deleted_at',
     ];
 
-    protected static $_fillable = [
+    protected static array $_fillable = [
         'account_id', 'month', 'year', 'location_id', 'target_amount', 'centertarget_id',
     ];
 
     protected $table = 'centretargetmeta';
 
-    protected static $_table = 'centretargetmeta';
+    protected static string $_table = 'centretargetmeta';
 
     /**
      * Get the doctors for staff_target.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id');
+        return $this->belongsTo(Locations::class, 'location_id');
     }
 
     /*

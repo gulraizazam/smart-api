@@ -1,48 +1,50 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ResourceHasRota extends BaseModal
+class ResourceHasRota extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['start', 'end', 'created_at', 'updated_at', 'monday', 'monday_off', 'tuesday', 'tuesday_off', 'wednesday', 'wednesday_off', 'thursday', 'thursday_off', 'friday', 'friday_off', 'saturday', 'saturday_off', 'sunday', 'sunday_off', 'active', 'resource_id', 'resource_type_id', 'copy_all', 'account_id', 'region_id', 'city_id', 'location_id', 'is_consultancy', 'is_treatment'];
 
-    protected static $_fillable = ['start', 'end', 'monday', 'monday_off', 'tuesday', 'tuesday_off', 'wednesday', 'wednesday_off', 'thursday', 'thursday_off', 'friday', 'friday_off', 'saturday', 'saturday_off', 'sunday', 'sunday_off', 'active', 'resource_id', 'resource_type_id', 'copy_all', 'region_id', 'city_id', 'location_id', 'is_consultancy', 'is_treatment'];
+    protected static array $_fillable = ['start', 'end', 'monday', 'monday_off', 'tuesday', 'tuesday_off', 'wednesday', 'wednesday_off', 'thursday', 'thursday_off', 'friday', 'friday_off', 'saturday', 'saturday_off', 'sunday', 'sunday_off', 'active', 'resource_id', 'resource_type_id', 'copy_all', 'region_id', 'city_id', 'location_id', 'is_consultancy', 'is_treatment'];
 
     protected $table = 'resource_has_rota';
 
-    protected static $_table = 'resource_has_rota';
+    protected static string $_table = 'resource_has_rota';
 
     /*
      * Get the city from resource has rota against city_id
      */
-    public function city()
+    public function city(): BelongsTo
     {
 
-        return $this->belongsTo('App\Models\Cities', 'city_id')->withTrashed();
+        return $this->belongsTo(Cities::class, 'city_id')->withTrashed();
     }
 
     /*
      * Get the region from resource has rota against region_id
      */
-    public function region()
+    public function region(): BelongsTo
     {
 
-        return $this->belongsTo('App\Models\Regions', 'region_id')->withTrashed();
+        return $this->belongsTo(Regions::class, 'region_id')->withTrashed();
     }
 
     /*
      * Get the city from resource has rota against city_id
      * */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+        return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
 
     /**

@@ -1,17 +1,19 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Auth;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Voucher extends Model
 {
     use HasFactory;
     protected $guarded =[];
 
-    public function voucherHasLocations()
+    public function voucherHasLocations(): HasMany
     {
         return $this->hasMany(VoucherHasLocations::class, 'voucher_id', 'id');
     }
@@ -26,7 +28,7 @@ class Voucher extends Model
 
         return $record;
     }
-    public function userVouchers()
+    public function userVouchers(): HasMany
     {
         return $this->hasMany(UserVouchers::class, 'voucher_id');
     }

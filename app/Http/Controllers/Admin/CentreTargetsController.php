@@ -1,33 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
-use App\Models\Centertarget;
-use App\Models\Locations;
-use Carbon\Carbon;
+use App\Services\CentreTarget\CentreTargetService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class CentreTargetsController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly CentreTargetService $service,
+    ) {}
 
     /**
      * Display a listing of Centre target.
@@ -53,96 +39,13 @@ class CentreTargetsController extends Controller
     {
         try {
 
-            $filename = 'centertarget';
-            $filters = getFilters($request->all());
-            $apply_filter = checkFilters($filters, $filename);
+            $records = $this->service->getDatatableData($request);
 
-            $records = [];
-            $records['data'] = [];
-
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
-                $centretarget = Centertarget::getBulkData($ids);
-                if ($centretarget) {
-                    foreach ($centretarget as $target) {
-                        Centertarget::deleteRecord($target->id);
-                    }
-                }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
-            }
-
-            // Get Total Records
-            $iTotalRecords = Centertarget::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
-            [$orderBy, $order] = getSortBy($request);
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $centretargets = Centertarget::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, $filters);
-
-            $records = $this->getFilterData($records, $filename);
-
-            if ($centretargets) {
-                $months_data = Config::get('constants.months_array');
-                foreach ($centretargets as $centretarget) {
-                    //$month = "constants.month_array[$centretarget->month]";
-                    $records['data'][] = [
-                        'id' => $centretarget->id,
-                        'year' => $centretarget->year,
-                        'month' => $months_data[$centretarget->month],
-                        'created_at' => Carbon::parse($centretarget->created_at)->format('F j,Y h:i A'),
-                    ];
-
-                }
-
-                $records['meta'] = [
-                    'field' => $orderBy,
-                    'page' => $page,
-                    'pages' => $pages,
-                    'perpage' => $iDisplayLength,
-                    'total' => $iTotalRecords,
-                    'sort' => $order,
-                ];
-            }
-
-            $records['permissions'] = [
-                'edit' => Gate::allows('centre_targets_edit'),
-                'delete' => Gate::allows('centre_targets_destroy'),
-                'active' => Gate::allows('centre_targets_active'),
-                'inactive' => Gate::allows('centre_targets_inactive'),
-                'create' => Gate::allows('centre_targets_create'),
-                'allocate' => Gate::allows('centre_targets_allocate'),
-                'manage' => Gate::allows('centre_targets_manage'),
-            ];
-
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CentreTargetsController');
         }
-    }
-
-    private function getFilterData($records, $filename)
-    {
-
-        $months_data = Config::get('constants.months_array');
-        foreach ($months_data as $key => $value) {
-            $months[$key] = $value;
-        }
-
-        $years_data = range(Carbon::now()->year, Carbon::now()->subYears(10)->year);
-        foreach ($years_data as $key => $value) {
-            $years[$value] = $value;
-        }
-
-        $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
-
-        $records['filter_values'] = [
-            'months' => $months,
-            'years' => $years,
-        ];
-
-        return $records;
     }
 
     /*
@@ -153,28 +56,17 @@ class CentreTargetsController extends Controller
     public function create()
     {
         if (! Gate::allows('centre_targets_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
 
-            $months_data = Config::get('constants.months_array');
-            foreach ($months_data as $key => $value) {
-                $months[$key] = $value;
-            }
+            $data = $this->service->getCreateData();
 
-            $years_data = range(Carbon::now()->year, Carbon::now()->subYears(10)->year);
-            foreach ($years_data as $key => $value) {
-                $years[$value] = $value;
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'months' => $months,
-                'years' => $years,
-            ]);
+            return $this->successResponse('Record found', $data, 200);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CentreTargetsController');
         }
     }
 
@@ -185,19 +77,9 @@ class CentreTargetsController extends Controller
      */
     public function leadtargetcentre(Request $request)
     {
-        $locationdata = Locations::LoadtargetLocationdata($request);
+        $data = $this->service->loadTargetCentre($request);
 
-        $targetlocation = $locationdata['CenterTargetArray'];
-
-        $center_target_status = $locationdata['center_target_status'];
-
-        $center_target_working_days = $locationdata['center_target_working_days'];
-
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'center_target_status' => $center_target_status,
-            'center_target_working_days' => $center_target_working_days,
-            'target_location' => $targetlocation,
-        ]);
+        return $this->successResponse('Record found', $data, 200);
     }
 
     /*
@@ -207,51 +89,22 @@ class CentreTargetsController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('centre_targets_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
 
-            $validator = $this->verifyFields($request);
+            $result = $this->service->storeRecord($request);
 
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            if ($result['success']) {
+                return $this->successResponse($result['message'], null, 200);
             }
 
-            $record = Centertarget::where([
-                'month' => $request->get('month'),
-                'year' => $request->get('year'),
-                'account_id' => Auth::User()->account_id,
-            ])->first();
-
-            if ($record) {
-                $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
-            } else {
-                $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
-            }
-
-            if ($staff_target) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.');
+            return $this->errorResponse($result['message'], 200);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CentreTargetsController');
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator $validator;
-     */
-    protected function verifyFields(Request $request)
-    {
-        return Validator::make($request->all(), [
-            'year' => 'required',
-            'month' => 'required',
-        ]);
     }
 
     /**
@@ -264,30 +117,20 @@ class CentreTargetsController extends Controller
     {
 
         if (! Gate::allows('centre_targets_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $center_target = Centertarget::find($id);
+        $result = $this->service->getEditData($id);
 
-        if (! $center_target) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+        if (! isset($result['success']) || ! $result['success']) {
+            return $this->errorResponse($result['message'], 200);
         }
 
-        $months_data = Config::get('constants.months_array');
-        foreach ($months_data as $key => $value) {
-            $months[$key] = $value;
-        }
-
-        $years_data = range(Carbon::now()->year, Carbon::now()->subYears(10)->year);
-        foreach ($years_data as $value) {
-            $years[$value] = $value;
-        }
-
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'center_target' => $center_target,
-            'months' => $months,
-            'years' => $years,
-        ]);
+        return $this->successResponse('Record found.', [
+            'center_target' => $result['center_target'],
+            'months' => $result['months'],
+            'years' => $result['years'],
+        ], 200);
     }
 
     /**
@@ -299,32 +142,16 @@ class CentreTargetsController extends Controller
     public function update(Request $request, $id)
     {
         if (! Gate::allows('centre_targets_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $validator = $this->verifyFields($request);
+        $result = $this->service->updateRecord($request, $id);
 
-        if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
-        }
-        /*$record = Centertarget::where(array(
-            'month' => $request->get('month'),
-            'year' => $request->get('year'),
-            'account_id' => Auth::User()->account_id
-        ))->first();*/
-        $record = Centertarget::find($id);
-
-        if ($record) {
-            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
-        } else {
-            $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
+        if ($result['success']) {
+            return $this->successResponse($result['message'], null, 200);
         }
 
-        if ($staff_target) {
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
-        }
-
-        return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+        return $this->errorResponse($result['message'], 200);
     }
 
     /**
@@ -336,14 +163,12 @@ class CentreTargetsController extends Controller
     public function display($id)
     {
         if (! Gate::allows('centre_targets_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $centertarget = Centertarget::with('center_target_meta.location')->find($id);
+        $data = $this->service->getDisplayData($id);
 
-        return ApiHelper::apiResponse($this->success, 'Record Found.', true, [
-            'center_target' => $centertarget,
-        ]);
+        return $this->successResponse('Record Found.', $data, 200);
 
     }
 
@@ -356,16 +181,16 @@ class CentreTargetsController extends Controller
     public function destroy($id, Request $request)
     {
         if (! Gate::allows('centre_targets_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         try {
 
-            Centertarget::deleteRecord($id);
+            $this->service->deleteRecord($id);
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            return $this->successResponse('Record has been deleted successfully.', null, 200);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'CentreTargetsController');
         }
     }
 
@@ -375,27 +200,18 @@ class CentreTargetsController extends Controller
     public function getSystemTargets()
     {
         try {
-            $accountId = Auth::user()->account_id;
-            $targets = \App\Models\SystemTarget::where('account_id', $accountId)
-                ->get()
-                ->map(function ($t) {
-                    return [
-                        'key' => $t->target_key,
-                        'value' => (float) $t->target_value,
-                        'label' => $t->label,
-                    ];
-                });
+            $targets = $this->service->getSystemTargets();
 
-            return ApiHelper::apiResponse($this->success, 'System targets loaded', true, $targets);
+            return $this->successResponse('System targets loaded', $targets, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
     /**
      * Save a single system-wide target (immediate save).
      */
-    public function saveSystemTarget(\Illuminate\Http\Request $request)
+    public function saveSystemTarget(Request $request)
     {
         try {
             $request->validate([
@@ -403,18 +219,11 @@ class CentreTargetsController extends Controller
                 'value' => 'required|numeric|min:0',
             ]);
 
-            $accountId = Auth::user()->account_id;
+            $this->service->saveSystemTarget($request->key, (float) $request->value);
 
-            \App\Models\SystemTarget::setValue(
-                $request->key,
-                (float) $request->value,
-                $accountId,
-                Auth::id()
-            );
-
-            return ApiHelper::apiResponse($this->success, 'Target saved', true);
+            return $this->successResponse('Target saved', null, 200);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

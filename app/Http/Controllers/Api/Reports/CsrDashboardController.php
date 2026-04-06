@@ -6,14 +6,11 @@ namespace App\Http\Controllers\Api\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Services\Reports\CsrDashboardService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class CsrDashboardController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly CsrDashboardService $dashboardService,
     ) {}

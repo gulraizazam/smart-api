@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
@@ -7,12 +8,12 @@ use Illuminate\Support\Facades\Log;
 
 class MetaConversionApiService
 {
-    protected $pixelId;
-    protected $accessToken;
-    protected $apiVersion;
-    protected $testEventCode;
-    protected $enabled;
-    protected $baseUrl;
+    protected mixed $pixelId;
+    protected mixed $accessToken;
+    protected mixed $apiVersion;
+    protected mixed $testEventCode;
+    protected mixed $enabled;
+    protected string $baseUrl;
 
     public function __construct()
     {

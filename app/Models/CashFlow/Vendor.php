@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Vendor extends Model
 {
@@ -34,7 +37,7 @@ class Vendor extends Model
     /**
      * Transactions for this vendor.
      */
-    public function transactions()
+    public function transactions(): HasMany
     {
         return $this->hasMany(VendorTransaction::class, 'vendor_id');
     }
@@ -42,7 +45,7 @@ class Vendor extends Model
     /**
      * Expenses linked to this vendor.
      */
-    public function expenses()
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class, 'vendor_id');
     }
@@ -50,7 +53,7 @@ class Vendor extends Model
     /**
      * User who created this vendor.
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }

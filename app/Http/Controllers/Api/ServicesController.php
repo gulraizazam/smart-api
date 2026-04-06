@@ -78,7 +78,7 @@ final class ServicesController extends Controller
 
             return response()->json($records);
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -96,7 +96,7 @@ final class ServicesController extends Controller
 
             return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -119,7 +119,7 @@ final class ServicesController extends Controller
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -137,7 +137,7 @@ final class ServicesController extends Controller
 
             return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -155,7 +155,7 @@ final class ServicesController extends Controller
 
             return $this->successResponse('Record found', ['description' => $description]);
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -179,7 +179,7 @@ final class ServicesController extends Controller
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -195,11 +195,13 @@ final class ServicesController extends Controller
         try {
             $result = $this->serviceService->deleteService($id, Auth::user()->account_id);
 
-            return $this->successResponse($result['message'], null, $result['status']);
+            return $result['status']
+                ? $this->successResponse($result['message'])
+                : $this->failResponse($result['message']);
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -222,7 +224,7 @@ final class ServicesController extends Controller
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -240,7 +242,7 @@ final class ServicesController extends Controller
 
             return $this->successResponse('Record found', new ServiceFormDataResource($data));
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -267,7 +269,7 @@ final class ServicesController extends Controller
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -285,7 +287,7 @@ final class ServicesController extends Controller
 
             return $this->successResponse('Success', $services);
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -304,7 +306,7 @@ final class ServicesController extends Controller
                 ? $this->successResponse('Records are sorted successfully!')
                 : $this->failResponse('Something went wrong! Records are not sorted.');
         } catch (\Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -356,15 +358,15 @@ final class ServicesController extends Controller
     // Standardized response helpers
     // ──────────────────────────────────────────────
 
-    private function successResponse(string $message, mixed $data = null, bool $success = true): JsonResponse
+    protected function successResponse(string $message, mixed $data = null, int $code = 200): JsonResponse
     {
         return response()->json([
-            'success' => $success,
-            'status'  => $success,   // backward compat — JS reads response.status
+            'success' => true,
+            'status'  => true,
             'message' => $message,
             'data'    => $data,
             'errors'  => [],
-        ], 200);
+        ], $code);
     }
 
     private function failResponse(string $message, array $errors = []): JsonResponse
@@ -389,7 +391,7 @@ final class ServicesController extends Controller
         ], 403);
     }
 
-    private function errorResponse(\Exception $e): JsonResponse
+    private function exceptionToResponse(\Exception $e): JsonResponse
     {
         $message = config('app.debug')
             ? $e->getMessage() . ' Line ' . $e->getLine() . ' File ' . $e->getFile()

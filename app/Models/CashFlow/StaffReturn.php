@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StaffReturn extends Model
 {
@@ -25,7 +27,7 @@ class StaffReturn extends Model
     /**
      * Staff member who returned cash.
      */
-    public function staffUser()
+    public function staffUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
@@ -33,7 +35,7 @@ class StaffReturn extends Model
     /**
      * Pool the return was deposited to.
      */
-    public function pool()
+    public function pool(): BelongsTo
     {
         return $this->belongsTo(CashPool::class, 'pool_id')->withTrashed();
     }
@@ -41,7 +43,7 @@ class StaffReturn extends Model
     /**
      * User who recorded the return.
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
@@ -49,7 +51,7 @@ class StaffReturn extends Model
     /**
      * User who voided this return.
      */
-    public function voidedByUser()
+    public function voidedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by')->withTrashed();
     }

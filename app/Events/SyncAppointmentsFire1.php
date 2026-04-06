@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
@@ -17,7 +18,7 @@ class SyncAppointmentsFire1 extends Queue
     /**
      * Holds Illuminate\Database\Eloquent\Collection $setting object
      */
-    private $payload;
+    private mixed $payload;
 
     /**
      * Create a new event instance.

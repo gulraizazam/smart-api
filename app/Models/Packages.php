@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
-class Packages extends BaseModal
+class Packages extends BaseModel
 {
     use SoftDeletes;
 

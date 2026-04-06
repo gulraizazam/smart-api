@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Membership;
 
 use App\Exceptions\MembershipCodeException;
@@ -11,12 +12,9 @@ use Illuminate\Support\Facades\Log;
 
 class MembershipCodeService
 {
-    protected MembershipService $membershipService;
-
-    public function __construct(MembershipService $membershipService)
-    {
-        $this->membershipService = $membershipService;
-    }
+    public function __construct(
+        protected readonly MembershipService $membershipService,
+    ) {}
 
     /**
      * Generate membership codes in a range

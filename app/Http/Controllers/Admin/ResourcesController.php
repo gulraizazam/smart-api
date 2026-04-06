@@ -1,23 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\NodesTree;
-use App\Helpers\Widgets\MachineTypeWidget;
 use App\Http\Controllers\Controller;
-use App\Models\Locations;
-use App\Models\MachineType;
-use App\Models\ResourceHasServices;
-use App\Models\Resources;
-use App\Models\ResourceTypes;
-use App\Models\Services;
+use App\Services\Resource\ResourceService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\Resource;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Validator;
 
@@ -29,12 +18,9 @@ class ResourcesController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    public function __construct(
+        private readonly ResourceService $resourceService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -58,32 +44,17 @@ class ResourcesController extends Controller
     public function create()
     {
         if (! Gate::allows('resources_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
 
-            $resource_types = ResourceTypes::getallresource();
+            $data = $this->resourceService->getCreateData();
 
-            $locations = Locations::where([
-                ['active', '=', '1'],
-                ['account_id', '=', Auth::User()->account_id],
-                ['slug', '=', 'custom'],
-            ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
-
-            $machinetypes = MachineType::where([
-                ['active', '=', '1'],
-                ['account_id', '=', '1'],
-            ])->get()->pluck('name', 'id');
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'resource_types' => $resource_types,
-                'locations' => $locations,
-                'machine_types' => $machinetypes,
-            ]);
+            return $this->successResponse('Record found', $data);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ResourcesController');
         }
     }
 
@@ -97,28 +68,12 @@ class ResourcesController extends Controller
         if (! Gate::allows('resources_create')) {
             return abort('401');
         }
-        $locationservice_ids = MachineTypeWidget::loadlocationservice($request->id, Auth::User()->account_id, true);
 
-        $machinetypes = MachineType::where([
-            ['active', '=', '1'],
-            ['account_id', '=', '1'],
-        ])->get();
+        $result = $this->resourceService->getMachineTypesByLocation($request->id);
 
-        $machinetype_ids = [];
+        if ($result['status']) {
+            $machinetypes = $result['machinetypes'];
 
-        foreach ($machinetypes as $machinetype) {
-
-            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::User()->account_id, true);
-
-            $containsSearch = count(array_intersect($machinetypeservice_ids, $locationservice_ids)) == count($machinetypeservice_ids);
-
-            if ($containsSearch) {
-                $machinetype_ids[] = $machinetype->id;
-            }
-        }
-        $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get();
-
-        if (count($machinetypes) > 0) {
             return response()->json([
                 'status' => true,
                 'd' => view('admin.resources.services', compact('machinetypes'))->render(),
@@ -142,42 +97,12 @@ class ResourcesController extends Controller
             return abort('401');
         }
 
-        $status_for_all = false;
-        $allserviceslug = Services::where('slug', '=', 'all')->first();
-        $location_id = $request->id;
-        $Services = [];
-        $result = [];
-        $service_has_lcoation = DB::table('service_has_locations')->where('location_id', '=', $location_id)->get();
-        foreach ($service_has_lcoation as $serviceall) {
-            if ($serviceall->service_id == $allserviceslug->id) {
-                $status_for_all = true;
-            }
-        }
-        if ($status_for_all) {
-            $parentGroups = new NodesTree();
-            $parentGroups->current_id = -1;
-            $parentGroups->build(0, Auth::User()->account_id, true, true);
-            $parentGroups->toList($parentGroups, -1);
-            $Services = $parentGroups->nodeList;
-            foreach ($Services as $key => $ser) {
-                if ($key) {
-                    if ($ser['name'] == $allserviceslug->name) {
-                        unset($Services[$key]);
-                    }
-                }
-            }
-        } else {
-            foreach ($service_has_lcoation as $service) {
-                $service_data = Services::find($service->service_id);
-                $parentGroups = new NodesTree();
-                $parentGroups->current_id = 1;
-                $parentGroups->non_negative_groups = true;
-                $parentGroups->build($service_data->id, Auth::User()->account_id, false, true);
-                $parentGroups->toList($parentGroups, 0);
-                $Services[] = $parentGroups->nodeList;
-            }
-        }
-        if (count($Services) > 0) {
+        $result = $this->resourceService->getServicesByLocation($request->id);
+
+        if ($result['status']) {
+            $Services = $result['Services'];
+            $status_for_all = $result['status_for_all'];
+
             return response()->json([
                 'status' => true,
                 'd' => view('admin.resources.services', compact('Services', 'status_for_all'))->render(),
@@ -199,7 +124,7 @@ class ResourcesController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('resources_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
@@ -207,31 +132,16 @@ class ResourcesController extends Controller
             $validator = $this->verifyFields($request);
 
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+                return $this->successResponse($validator->messages()->first(), false);
             }
-            if ($resource = Resources::createRecord($request, Auth::User()->account_id)) {
-                /*For now I comment that code because that not in use*/
-                //            $data = $request->all();
-                //
-                //            if (isset($data['services']) && count($data['services'])) {
-                //                $servicesData = array();
-                //                foreach ($data['services'] as $service) {
-                //                    $servicesData = array(
-                //                        'resource_id' => $resource->id,
-                //                        'service_id' => $service,
-                //                    );
-                //                    ResourceHasServices::createRecord($servicesData, $resource);
-                //                }
-                //            }
-                /*End*/
-
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            if ($this->resourceService->store($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {
+                return $this->successResponse('Record has been created successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ResourcesController');
         }
     }
 
@@ -259,99 +169,13 @@ class ResourcesController extends Controller
     public function datatable(Request $request)
     {
         try {
-            $filename = 'resources';
-            $filters = getFilters($request->all());
-            $apply_filter = checkFilters($filters, $filename);
+            $records = $this->resourceService->getDatatableData($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id);
 
-            $records = [];
-            $records['data'] = [];
-
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $filters['delete']);
-                $resources = Resources::getBulkData($ids);
-                if ($resources) {
-                    foreach ($resources as $resource) {
-                        // Check if child records exists or not, If exist then disallow to delete it.
-                        if (! Resources::isChildExists($resource->id, Auth::User()->account_id)) {
-                            $resource->delete();
-                        }
-                    }
-                }
-
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
-            }
-            // Get Total Records
-            $iTotalRecords = Resources::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-
-            [$orderBy, $order] = getSortBy($request);
-            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-            $resources = Resources::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-
-            $records = $this->filtersData($records);
-
-            if ($resources) {
-
-                $records['data'] = $resources;
-
-                $records['meta'] = [
-                    'field' => $orderBy,
-                    'page' => $page,
-                    'pages' => $pages,
-                    'perpage' => $iDisplayLength,
-                    'total' => $iTotalRecords,
-                    'sort' => $order,
-                ];
-            }
-
-            $records['permissions'] = [
-                'edit' => Gate::allows('resources_edit'),
-                'delete' => Gate::allows('resources_destroy'),
-                'active' => Gate::allows('resources_active'),
-                'inactive' => Gate::allows('resources_inactive'),
-                'create' => Gate::allows('resources_create'),
-            ];
-
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
 
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ResourcesController');
         }
-    }
-
-    private function filtersData($records)
-    {
-
-        //Here we get all resource except doctor
-        $filters = Filters::all(Auth::User()->id, 'resources');
-
-        $resource_types = ResourceTypes::getallresource();
-
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
-
-        $machinetypes = MachineType::where([
-            ['active', '=', '1'],
-            ['account_id', '=', '1'],
-        ])->get()->pluck('name', 'id');
-
-        $records['filter_values'] = [
-            'machines' => $machinetypes,
-            'resource_types' => $resource_types,
-            'locations' => $locations,
-            'status' => config('constants.status'),
-        ];
-
-        if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
-        }
-        if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
-        }
-
-        $records['active_filters'] = $filters;
-
-        return $records;
     }
 
     /**
@@ -362,23 +186,19 @@ class ResourcesController extends Controller
     public function status(Request $request)
     {
         if (! Gate::allows('resources_active')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         try {
 
-            if ($request->status == 1) {
-                $response = Resources::activeRecord($request->id);
-            } else {
-                $response = Resources::inactiveRecord($request->id);
-            }
+            $response = $this->resourceService->changeStatus($request->id, $request->status);
 
             if ($response) {
-                return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+                return $this->successResponse('Status has been changed successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ResourcesController');
         }
     }
 
@@ -391,52 +211,16 @@ class ResourcesController extends Controller
     public function edit($id)
     {
         if (! Gate::allows('resources_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $resource = Resources::getData($id);
+        $data = $this->resourceService->getEditData($id);
 
-        $resource_types = ResourceTypes::getallresource();
-        $resource_types->prepend('Select a Resource Type', '');
-
-        $locations = Locations::where([
-            //            ['active', '=', '1'],
-            ['account_id', '=', Auth::User()->account_id],
-            ['slug', '=', 'custom'],
-        ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
-
-        $locationservice_ids = MachineTypeWidget::loadlocationservice($resource->location_id, Auth::User()->account_id, true);
-
-        $machinetypes = MachineType::where([
-            ['active', '=', '1'],
-            ['account_id', '=', '1'],
-        ])->get();
-
-        $machinetype_ids = [];
-
-        foreach ($machinetypes as $machinetype) {
-
-            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::User()->account_id, true);
-
-            $containsSearch = count(array_intersect($machinetypeservice_ids, $locationservice_ids)) == count($machinetypeservice_ids);
-
-            if ($containsSearch) {
-                $machinetype_ids[] = $machinetype->id;
-            }
+        if (! $data['resource']) {
+            return $this->errorResponse('Resource not found', 404);
         }
 
-        $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get()->pluck('name', 'id');
-
-        if (! $resource) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
-        }
-
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'resource' => $resource,
-            'resource_types' => $resource_types,
-            'machine_types' => $machinetypes,
-            'locations' => $locations,
-        ]);
+        return $this->successResponse('Record found', $data);
     }
 
     /**
@@ -459,23 +243,7 @@ class ResourcesController extends Controller
             ]);
         }
 
-        if ($resource = Resources::updateRecord($id, $request, Auth::User()->account_id)) {
-            /*For now I comment that code because that not in use*/
-            //            $resource->resource_has_services()->delete();
-            //
-            //            $data = $request->all();
-            //
-            //            if (isset($data['services']) && count($data['services'])) {
-            //                $servicesData = array();
-            //                foreach ($data['services'] as $service) {
-            //                    $servicesData = array(
-            //                        'resource_id' => $resource->id,
-            //                        'service_id' => $service,
-            //                    );
-            //                    ResourceHasServices::updateRecord($servicesData, $resource);
-            //                }
-            //            }
-            /*End*/
+        if ($this->resourceService->update($id, $request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {
             flash('Record has been updated successfully.')->success()->important();
 
             return response()->json([
@@ -499,19 +267,19 @@ class ResourcesController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('resources_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         try {
 
-            $response = Resources::deleteRecord($id);
+            $response = $this->resourceService->destroy($id);
 
             if ($response['status']) {
-                return ApiHelper::apiResponse($this->success, $response['message']);
+                return $this->successResponse($response['message']);
             }
 
-            return ApiHelper::apiResponse($this->success, $response['message'], false);
+            return $this->errorResponse($response['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ResourcesController');
         }
     }
 }

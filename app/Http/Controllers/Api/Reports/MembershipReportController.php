@@ -8,14 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MembershipReportRequest;
 use App\Http\Resources\Reports\MembershipReportResource;
 use App\Services\Reports\MembershipReportService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class MembershipReportController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly MembershipReportService $reportService,
     ) {}

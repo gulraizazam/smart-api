@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorRequest extends Model
 {
@@ -23,7 +25,7 @@ class VendorRequest extends Model
     /**
      * User who requested the vendor.
      */
-    public function requester()
+    public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by')->withTrashed();
     }
@@ -31,7 +33,7 @@ class VendorRequest extends Model
     /**
      * Linked vendor if approved.
      */
-    public function vendor()
+    public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'vendor_id')->withTrashed();
     }

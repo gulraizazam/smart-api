@@ -1,27 +1,32 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use DateTime;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
-class Resources extends BaseModal
+use Illuminate\Support\Facades\DB;use Illuminate\Database\Eloquent\Relations\HasOne;
+
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Resources extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'active', 'account_id', 'resource_type_id', 'external_id', 'machine_type_id', 'created_at', 'updated_at', 'location_id'];
 
-    protected static $_fillable = ['name', 'account_id', 'resource_type_id', 'external_id', 'machine_type_id', 'created_at', 'updated_at', 'location_id'];
+    protected static array $_fillable = ['name', 'account_id', 'resource_type_id', 'external_id', 'machine_type_id', 'created_at', 'updated_at', 'location_id'];
 
     protected $table = 'resources';
 
-    protected static $_table = 'resources';
+    protected static string $_table = 'resources';
 
     protected $casts = [
         'created_at' => 'datetime:F d,Y h:i A',
@@ -68,33 +73,33 @@ class Resources extends BaseModal
     /*
      * Get the Location against service:location_id.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+        return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
 
     /*
     * Get the Location against service:location_id.
     */
-    public function resourcetype()
+    public function resourcetype(): BelongsTo
     {
-        return $this->belongsTo('App\Models\ResourceTypes', 'resource_type_id')->withTrashed();
+        return $this->belongsTo(ResourceTypes::class, 'resource_type_id')->withTrashed();
     }
 
     /**
      * Get the Machine Type.
      */
-    public function MachineType()
+    public function MachineType(): BelongsTo
     {
-        return $this->belongsTo('App\Models\MachineType')->withTrashed();
+        return $this->belongsTo(MachineType::class)->withTrashed();
     }
 
     /*Get the services against location id
      *
      */
-    public function resource_has_services()
+    public function resource_has_services(): HasMany
     {
-        return $this->hasMany('App\Models\ResourceHasServices', 'resource_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(ResourceHasServices::class, 'resource_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     public static function getResourceType($slug)
@@ -417,30 +422,30 @@ class Resources extends BaseModal
         }
     }
 
-    public function resource_rota()
+    public function resource_rota(): HasOne
     {
         return $this->hasOne("\App\Models\ResourceHasRota", 'resource_id');
     }
 
-    public function resourceRota()
+    public function resourceRota(): HasMany
     {
         return $this->hasMany("\App\Models\ResourceHasRota", 'resource_id');
     }
 
-    public function rotas()
+    public function rotas(): HasManyThrough
     {
         return $this->hasManyThrough('\App\Models\ResourceHasRotaDays', '\App\Models\ResourceHasRota', 'resource_id', 'resource_has_rota_id', 'id', 'id');
     }
 
-    public function doctor_rotas()
+    public function doctor_rotas(): HasManyThrough
     {
         return $this->hasManyThrough('\App\Models\ResourceHasRotaDays', '\App\Models\ResourceHasRota', 'resource_id', 'resource_has_rota_id', 'id', 'id');
     }
 
-    public function resource_types()
+    public function resource_types(): BelongsTo
     {
 
-        return $this->belongsTo('App\Models\ResourceTypes', 'resource_type_id');
+        return $this->belongsTo(ResourceTypes::class, 'resource_type_id');
     }
 
     /**

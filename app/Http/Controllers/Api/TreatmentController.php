@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\AppointmentException;
 use App\Exceptions\TreatmentException;
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Treatment\AvailableResourcesRequest;
 use App\Http\Requests\Treatment\CheckPatientLastTreatmentRequest;
@@ -46,11 +45,11 @@ final class TreatmentController extends Controller
 
             $data = $this->treatmentService->getDatatableData($request->all(), $patientId);
 
-            return ApiHelper::apiDataTable($data);
+            return response()->json($data);
         } catch (TreatmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getStatusCode(), $e->getErrorData());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -71,7 +70,7 @@ final class TreatmentController extends Controller
         } catch (TreatmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getStatusCode());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -96,7 +95,7 @@ final class TreatmentController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error updating treatment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -117,7 +116,7 @@ final class TreatmentController extends Controller
         } catch (TreatmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getStatusCode());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -156,7 +155,7 @@ final class TreatmentController extends Controller
         } catch (TreatmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getStatusCode());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -171,7 +170,7 @@ final class TreatmentController extends Controller
 
             return $this->successResponse('Cache cleared successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -203,7 +202,7 @@ final class TreatmentController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error fetching treatments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -226,7 +225,7 @@ final class TreatmentController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error fetching scheduled treatments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -245,7 +244,7 @@ final class TreatmentController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error fetching non-scheduled treatments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -264,7 +263,7 @@ final class TreatmentController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error fetching treatment statistics: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -287,7 +286,7 @@ final class TreatmentController extends Controller
             return $this->successResponse('Available resources retrieved successfully.', $resources);
         } catch (\Exception $e) {
             Log::error('Error fetching available resources: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -307,7 +306,7 @@ final class TreatmentController extends Controller
             return $this->successResponse('Services retrieved successfully.', $services);
         } catch (\Exception $e) {
             Log::error('Error fetching services by location: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'TreatmentController');
         }
     }
 
@@ -315,16 +314,16 @@ final class TreatmentController extends Controller
     //  Standardized response helpers
     // ──────────────────────────────────────────────────
 
-    private function successResponse(string $message, mixed $data = null): JsonResponse
+    protected function successResponse(string $message, mixed $data = null, int $code = 200): JsonResponse
     {
         return response()->json([
             'status'  => true,
             'message' => $message,
             'data'    => $data,
-        ]);
+        ], $code);
     }
 
-    private function errorResponse(string $message, int $code = 400, array $errors = []): JsonResponse
+    protected function errorResponse(string $message, int $code = 400, array $errors = []): JsonResponse
     {
         return response()->json([
             'status'  => false,

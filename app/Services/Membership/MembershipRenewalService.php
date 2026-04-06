@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\Membership;
 
 use App\Exceptions\MembershipException;
@@ -14,16 +15,10 @@ use Illuminate\Support\Facades\Log;
 
 class MembershipRenewalService
 {
-    protected MembershipService $membershipService;
-    protected MembershipAssignmentService $assignmentService;
-
     public function __construct(
-        MembershipService $membershipService,
-        MembershipAssignmentService $assignmentService
-    ) {
-        $this->membershipService = $membershipService;
-        $this->assignmentService = $assignmentService;
-    }
+        protected readonly MembershipService $membershipService,
+        protected readonly MembershipAssignmentService $assignmentService,
+    ) {}
 
     /**
      * Renew membership for patient

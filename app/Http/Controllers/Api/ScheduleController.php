@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\ACL;
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Models\BusinessClosure;
 use App\Models\Doctors;
@@ -28,7 +28,7 @@ class ScheduleController extends Controller
         // Use same method and format as consultancy calendar for consistent ordering
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return ApiHelper::apiResponse(200, 'Locations retrieved successfully', true, [
+        return $this->successResponse('Locations retrieved successfully', [
             'dropdown' => $locations->pluck('name', 'id'),
         ]);
     }
@@ -73,7 +73,7 @@ class ScheduleController extends Controller
                 ];
             });
 
-        return ApiHelper::apiResponse(200, 'Business working days retrieved', true, [
+        return $this->successResponse('Business working days retrieved', [
             'working_days' => $workingDays,
             'exceptions' => $exceptions,
         ]);
@@ -131,7 +131,7 @@ class ScheduleController extends Controller
             }
         }
         
-        return ApiHelper::apiResponse(200, 'Business working days saved successfully', true, [
+        return $this->successResponse('Business working days saved successfully', [
             'working_days' => $validatedDays,
         ]);
     }
@@ -141,20 +141,20 @@ class ScheduleController extends Controller
      */
     public function getShifts(Request $request): JsonResponse
     {
-        $locationId = $request->input('location_id');
-        $resourceTypeId = $request->input('resource_type_id', 2); // Default to Doctor (2)
+        $locationId = (int) $request->input('location_id');
+        $resourceTypeId = (int) $request->input('resource_type_id', 2); // Default to Doctor (2)
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
         if (!$locationId || !$startDate || !$endDate) {
-            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+            return $this->errorResponse('Missing required parameters', 400);
         }
 
         // Get active resources for the location and type
         $resources = $this->getResourcesForLocation($locationId, $resourceTypeId);
 
         if ($resources->isEmpty()) {
-            return ApiHelper::apiResponse(200, 'No resources found', false);
+            return $this->errorResponse('No resources found', 400);
         }
 
         // Get shifts for these resources in the date range
@@ -165,7 +165,7 @@ class ScheduleController extends Controller
         $closures = $this->getBusinessClosures($locationId, $startDate, $endDate);
         $timeOffs = $this->getTimeOffsForResources($resourceIds, $locationId, $startDate, $endDate);
 
-        return ApiHelper::apiResponse(200, 'Shifts retrieved successfully', true, [
+        return $this->successResponse('Shifts retrieved successfully', [
             'resources' => $resources,
             'shifts' => $shifts,
             'closures' => $closures,
@@ -279,13 +279,13 @@ class ScheduleController extends Controller
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$locationId || !$date) {
-            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+            return $this->errorResponse('Missing required parameters', 400);
         }
 
         // Validate shifts - check for overlapping times
         $overlapError = $this->validateShiftOverlaps($shifts);
         if ($overlapError) {
-            return ApiHelper::apiResponse(400, $overlapError, false);
+            return $this->errorResponse($overlapError, 400);
         }
 
         // Find the active rota for this resource at this location that covers this date
@@ -364,7 +364,7 @@ class ScheduleController extends Controller
             $createdShifts[] = $rotaDay;
         }
 
-        return ApiHelper::apiResponse(200, 'Shifts saved successfully', true, [
+        return $this->successResponse('Shifts saved successfully', [
             'shifts' => $createdShifts,
         ]);
     }
@@ -383,7 +383,7 @@ class ScheduleController extends Controller
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$locationId || !$startDateStr || !$endDateStr) {
-            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+            return $this->errorResponse('Missing required parameters', 400);
         }
 
         // Parse dates (format: "February 13, 2026")
@@ -391,7 +391,7 @@ class ScheduleController extends Controller
         $endDate = Carbon::parse($endDateStr);
 
         if ($endDate->lt($startDate)) {
-            return ApiHelper::apiResponse(400, 'End date must be after start date', false);
+            return $this->errorResponse('End date must be after start date', 400);
         }
 
         // Find the active rota for this resource at this location
@@ -427,18 +427,12 @@ class ScheduleController extends Controller
         ];
 
         // Determine week interval based on schedule type
-        $weekInterval = 1;
-        switch ($scheduleType) {
-            case 'every_2_weeks':
-                $weekInterval = 2;
-                break;
-            case 'every_3_weeks':
-                $weekInterval = 3;
-                break;
-            case 'every_4_weeks':
-                $weekInterval = 4;
-                break;
-        }
+        $weekInterval = match ($scheduleType) {
+            'every_2_weeks' => 2,
+            'every_3_weeks' => 3,
+            'every_4_weeks' => 4,
+            default => 1,
+        };
 
         // Build a map of day -> shifts and validate for overlaps
         $dayShifts = [];
@@ -448,7 +442,7 @@ class ScheduleController extends Controller
                 // Validate shifts for this day - check for duplicates and overlaps
                 $overlapError = $this->validateShiftOverlaps($day['shifts']);
                 if ($overlapError) {
-                    return ApiHelper::apiResponse(400, ucfirst($dayName) . ': ' . $overlapError, false);
+                    return $this->errorResponse(ucfirst($dayName) . ': ' . $overlapError, 400);
                 }
                 $dayShifts[$dayMap[$dayName]] = $day['shifts'];
             }
@@ -515,7 +509,7 @@ class ScheduleController extends Controller
             $currentDate->addDay();
         }
 
-        return ApiHelper::apiResponse(200, 'Repeating shifts saved successfully', true, [
+        return $this->successResponse('Repeating shifts saved successfully', [
             'shifts_created' => $createdCount,
             'start_date' => $startDate->format('Y-m-d'),
             'end_date' => $endDate->format('Y-m-d'),
@@ -533,7 +527,7 @@ class ScheduleController extends Controller
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$locationId || !$date) {
-            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+            return $this->errorResponse('Missing required parameters', 400);
         }
 
         // Find the active rota for this resource at this location that covers this date
@@ -556,7 +550,7 @@ class ScheduleController extends Controller
 
         // If no rota found, nothing to delete
         if (!$rota) {
-            return ApiHelper::apiResponse(200, 'No shifts to delete', true);
+            return $this->successResponse('No shifts to delete');
         }
 
         // Delete rota day records for this date that don't have appointments
@@ -569,7 +563,7 @@ class ScheduleController extends Controller
             })
             ->forceDelete();
 
-        return ApiHelper::apiResponse(200, 'Shifts deleted successfully', true, [
+        return $this->successResponse('Shifts deleted successfully', [
             'deleted_count' => $deleted,
         ]);
     }
@@ -582,13 +576,13 @@ class ScheduleController extends Controller
         $shiftId = $request->input('shift_id');
 
         if (!$shiftId) {
-            return ApiHelper::apiResponse(400, 'Shift ID is required', false);
+            return $this->errorResponse('Shift ID is required', 400);
         }
 
         $shift = ResourceHasRotaDays::find($shiftId);
 
         if (!$shift) {
-            return ApiHelper::apiResponse(404, 'Shift not found', false);
+            return $this->errorResponse('Shift not found', 404);
         }
 
         // Use transaction to ensure data integrity
@@ -601,7 +595,7 @@ class ScheduleController extends Controller
             $shift->forceDelete();
         });
 
-        return ApiHelper::apiResponse(200, 'Shift deleted successfully', true);
+        return $this->successResponse('Shift deleted successfully');
     }
 
     /**
@@ -621,7 +615,7 @@ class ScheduleController extends Controller
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$startDate) {
-            return ApiHelper::apiResponse(400, 'Resource and start date are required', false);
+            return $this->errorResponse('Resource and start date are required', 400);
         }
 
         // Parse dates to Y-m-d format (they may come in display format like "Mon, 16 Feb 2026")
@@ -645,7 +639,7 @@ class ScheduleController extends Controller
         );
 
         if ($overlapCheck) {
-            return ApiHelper::apiResponse(400, 'This time off overlaps with an existing time off. Please choose a different time.', false);
+            return $this->errorResponse('This time off overlaps with an existing time off. Please choose a different time.', 400);
         }
 
         // Create time off record
@@ -663,7 +657,7 @@ class ScheduleController extends Controller
             'description' => $description,
         ]);
 
-        return ApiHelper::apiResponse(200, 'Time off saved successfully', true, [
+        return $this->successResponse('Time off saved successfully', [
             'time_off' => $timeOff,
         ]);
     }
@@ -710,7 +704,7 @@ class ScheduleController extends Controller
             ];
         }
 
-        return ApiHelper::apiResponse(200, 'Time offs retrieved successfully', true, [
+        return $this->successResponse('Time offs retrieved successfully', [
             'time_offs' => $result,
         ]);
     }
@@ -723,16 +717,16 @@ class ScheduleController extends Controller
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
-            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+            return $this->errorResponse('Time off ID is required', 400);
         }
 
         $timeOff = ResourceTimeOff::find($timeOffId);
 
         if (!$timeOff) {
-            return ApiHelper::apiResponse(404, 'Time off not found', false);
+            return $this->errorResponse('Time off not found', 404);
         }
 
-        return ApiHelper::apiResponse(200, 'Time off retrieved successfully', true, [
+        return $this->successResponse('Time off retrieved successfully', [
             'time_off' => [
                 'id' => $timeOff->id,
                 'resource_id' => $timeOff->resource_id,
@@ -758,13 +752,13 @@ class ScheduleController extends Controller
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
-            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+            return $this->errorResponse('Time off ID is required', 400);
         }
 
         $timeOff = ResourceTimeOff::find($timeOffId);
 
         if (!$timeOff) {
-            return ApiHelper::apiResponse(404, 'Time off not found', false);
+            return $this->errorResponse('Time off not found', 404);
         }
 
         $type = $request->input('type');
@@ -796,7 +790,7 @@ class ScheduleController extends Controller
         );
 
         if ($overlapCheck) {
-            return ApiHelper::apiResponse(400, 'This time off overlaps with an existing time off. Please choose a different time.', false);
+            return $this->errorResponse('This time off overlaps with an existing time off. Please choose a different time.', 400);
         }
 
         $timeOff->update([
@@ -809,7 +803,7 @@ class ScheduleController extends Controller
             'description' => $description,
         ]);
 
-        return ApiHelper::apiResponse(200, 'Time off updated successfully', true, [
+        return $this->successResponse('Time off updated successfully', [
             'time_off' => $timeOff,
         ]);
     }
@@ -822,18 +816,18 @@ class ScheduleController extends Controller
         $timeOffId = $request->input('time_off_id');
 
         if (!$timeOffId) {
-            return ApiHelper::apiResponse(400, 'Time off ID is required', false);
+            return $this->errorResponse('Time off ID is required', 400);
         }
 
         $timeOff = ResourceTimeOff::find($timeOffId);
 
         if (!$timeOff) {
-            return ApiHelper::apiResponse(404, 'Time off not found', false);
+            return $this->errorResponse('Time off not found', 404);
         }
 
         $timeOff->delete();
 
-        return ApiHelper::apiResponse(200, 'Time off deleted successfully', true);
+        return $this->successResponse('Time off deleted successfully');
     }
 
     /**
@@ -1064,7 +1058,7 @@ class ScheduleController extends Controller
         $accountId = Auth::user()->account_id;
 
         if (!$resourceId || !$locationId || !$startDate || !$endDate) {
-            return ApiHelper::apiResponse(400, 'Missing required parameters', false);
+            return $this->errorResponse('Missing required parameters', 400);
         }
 
         // Parse dates
@@ -1072,7 +1066,7 @@ class ScheduleController extends Controller
         $endDate = Carbon::parse($endDate)->format('Y-m-d');
 
         if ($endDate < $startDate) {
-            return ApiHelper::apiResponse(400, 'End date must be after start date', false);
+            return $this->errorResponse('End date must be after start date', 400);
         }
 
         // Find the active rota for this resource at this location
@@ -1083,7 +1077,7 @@ class ScheduleController extends Controller
             ->first();
 
         if (!$rota) {
-            return ApiHelper::apiResponse(404, 'No active schedule found for this resource', false);
+            return $this->errorResponse('No active schedule found for this resource', 404);
         }
 
         // Get shift IDs to delete
@@ -1093,7 +1087,7 @@ class ScheduleController extends Controller
             ->toArray();
 
         if (empty($shiftIds)) {
-            return ApiHelper::apiResponse(404, 'No shifts found in the selected date range', false);
+            return $this->errorResponse('No shifts found in the selected date range', 404);
         }
 
         // Count appointments linked to these shifts
@@ -1116,7 +1110,7 @@ class ScheduleController extends Controller
             $message .= " ({$appointmentCount} appointments were unlinked)";
         }
 
-        return ApiHelper::apiResponse(200, $message, true, [
+        return $this->successResponse($message, [
             'deleted_count' => $deletedCount,
             'unlinked_appointments' => $appointmentCount,
         ]);

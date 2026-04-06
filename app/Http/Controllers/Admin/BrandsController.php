@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Brand\StoreBrandRequest;
 use App\Services\Brand\BrandService;
@@ -15,18 +14,13 @@ use Illuminate\View\View;
 
 class BrandsController extends Controller
 {
-    private readonly int $success;
 
-    private readonly int $error;
-
-    private readonly int $unauthorized;
 
     public function __construct(
         private readonly BrandService $brandService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(): View
@@ -85,9 +79,9 @@ class BrandsController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BrandsController');
         }
     }
 
@@ -101,12 +95,12 @@ class BrandsController extends Controller
             $record = $this->brandService->create($request->validated());
 
             if ($record) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                return $this->successResponse('Record has been created successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BrandsController');
         }
     }
 
@@ -114,18 +108,18 @@ class BrandsController extends Controller
     {
         try {
             if (! Gate::allows('brand_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $brand = $this->brandService->find($id);
 
             if (! $brand) {
-                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+                return $this->errorResponse('No Record Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $brand);
+            return $this->successResponse('Success', $brand);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BrandsController');
         }
     }
 
@@ -133,18 +127,18 @@ class BrandsController extends Controller
     {
         try {
             if (! Gate::allows('brand_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $record = $this->brandService->update($id, $request->validated());
 
             if ($record) {
-                return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                return $this->successResponse('Record has been updated successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BrandsController');
         }
     }
 
@@ -152,14 +146,14 @@ class BrandsController extends Controller
     {
         try {
             if (! Gate::allows('brand_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->brandService->delete($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'BrandsController');
         }
     }
 
@@ -172,9 +166,9 @@ class BrandsController extends Controller
         $brand = $this->brandService->toggleStatus((int) $request->id, (int) $request->status);
 
         if ($brand) {
-            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+            return $this->successResponse('Status has been changed successfully.');
         }
 
-        return ApiHelper::apiResponse($this->success, 'Brand not found.', false);
+        return $this->errorResponse('Brand not found.', 404);
     }
 }

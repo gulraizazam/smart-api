@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CategoryRequest extends Model
 {
@@ -22,7 +24,7 @@ class CategoryRequest extends Model
     /**
      * User who requested the category.
      */
-    public function requester()
+    public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by')->withTrashed();
     }
@@ -30,7 +32,7 @@ class CategoryRequest extends Model
     /**
      * Linked category if approved.
      */
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class, 'category_id')->withTrashed();
     }

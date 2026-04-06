@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\CustomFormFeedbacks;
@@ -22,12 +22,7 @@ class CustomFormFeedbacksController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the resource.
@@ -110,7 +105,7 @@ class CustomFormFeedbacksController extends Controller
             'manage' => Gate::allows('patients_customform_manage'),
         ];
 
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     private function getFilters($records, $filename)
@@ -141,11 +136,11 @@ class CustomFormFeedbacksController extends Controller
         }
         $patient_name = User::where('id', '=', $custom_form_feedback->reference_id)->first();
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'patient_name' => $patient_name,
             'patient_id' => $patient_id,
-        ], 'admin.patients.card.custom_form_feedbacks.edit');
+        ]);
 
     }
 
@@ -168,11 +163,11 @@ class CustomFormFeedbacksController extends Controller
             return abort(404);
         }
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'thisId' => $id,
             'patientId' => $patient_id,
-        ], 'admin.patients.card.custom_form_feedbacks.filled_preview');
+        ]);
 
     }
 
@@ -277,7 +272,7 @@ class CustomFormFeedbacksController extends Controller
     {
 
         if (! Gate::allows('patients_customform_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $where = [];
@@ -300,7 +295,7 @@ class CustomFormFeedbacksController extends Controller
             $CustomForms = CustomForms::orderBy('sort_number', 'asc')->get();
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+        return $this->successResponse('Record found.', [
             'CustomForms' => $CustomForms,
             'id' => $id,
         ]);
@@ -323,10 +318,10 @@ class CustomFormFeedbacksController extends Controller
 
         $custom_form = CustomForms::get_all_fields_data($form_id);
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form,
             'users' => $users,
             'patient_id' => $patient_id,
-        ], 'admin.patients.card.custom_form_feedbacks.create');
+        ]);
     }
 }

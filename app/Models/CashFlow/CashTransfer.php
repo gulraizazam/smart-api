@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashTransfer extends Model
 {
@@ -31,7 +33,7 @@ class CashTransfer extends Model
     /**
      * Source pool.
      */
-    public function fromPool()
+    public function fromPool(): BelongsTo
     {
         return $this->belongsTo(CashPool::class, 'from_pool_id')->withTrashed();
     }
@@ -39,7 +41,7 @@ class CashTransfer extends Model
     /**
      * Destination pool.
      */
-    public function toPool()
+    public function toPool(): BelongsTo
     {
         return $this->belongsTo(CashPool::class, 'to_pool_id')->withTrashed();
     }
@@ -47,7 +49,7 @@ class CashTransfer extends Model
     /**
      * User who recorded the transfer.
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
@@ -55,7 +57,7 @@ class CashTransfer extends Model
     /**
      * User who voided the transfer.
      */
-    public function voidedByUser()
+    public function voidedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voided_by')->withTrashed();
     }

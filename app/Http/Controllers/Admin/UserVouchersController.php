@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserVoucherStoreRequest;
 use App\Http\Requests\Admin\UserVoucherUpdateRequest;
@@ -15,16 +14,13 @@ use Illuminate\Support\Facades\Gate;
 
 class UserVouchersController extends Controller
 {
-    private readonly int $success;
-    private readonly int $error;
-    private readonly int $unauthorized;
+
 
     public function __construct(
         private readonly UserVoucherService $voucherService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -60,7 +56,7 @@ class UserVouchersController extends Controller
                 'limit' => $iDisplayLength,
             ]);
 
-            return ApiHelper::apiDataTable([
+            return response()->json([
                 'success' => true,
                 'message' => 'Records retrieved successfully.',
                 'data' => $result['data'],
@@ -77,79 +73,79 @@ class UserVouchersController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 
     public function store(UserVoucherStoreRequest $request): JsonResponse
     {
         if (!Gate::allows('vouchers_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $this->voucherService->store($request->validated());
 
-            return ApiHelper::apiResponse($this->success, 'Voucher assigned successfully.');
+            return $this->successResponse('Voucher assigned successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('vouchers_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $editData = $this->voucherService->getEditData($id);
 
             if (!$editData) {
-                return ApiHelper::apiResponse($this->error, 'Record not found.', false);
+                return $this->errorResponse('Record not found.', 500);
             }
 
             if (!empty($editData['restricted'])) {
-                return ApiHelper::apiResponse($this->error, 'This voucher cannot be edited as it is already applied to services.', false);
+                return $this->errorResponse('This voucher cannot be edited as it is already applied to services.', 500);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $editData);
+            return $this->successResponse('Record found', $editData);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 
     public function update(UserVoucherUpdateRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('vouchers_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->voucherService->update($id, $request->validated());
 
             return $result['success']
-                ? ApiHelper::apiResponse($this->success, $result['message'], true, $result['voucher'] ?? null)
-                : ApiHelper::apiResponse($this->error, $result['message'], false);
+                ? $this->successResponse($result['message'], $result['voucher'] ?? null)
+                : $this->errorResponse($result['message'], 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('vouchers_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->voucherService->delete($id);
 
             return $result['success']
-                ? ApiHelper::apiResponse($this->success, $result['message'])
-                : ApiHelper::apiResponse($this->error, $result['message'], false);
+                ? $this->successResponse($result['message'])
+                : $this->errorResponse($result['message'], 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 
@@ -157,7 +153,7 @@ class UserVouchersController extends Controller
     {
         if (!Gate::allows('vouchers_manage')) {
             if ($request->ajax()) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             return abort(401);
@@ -168,7 +164,7 @@ class UserVouchersController extends Controller
 
             if (!$userVoucher) {
                 if ($request->ajax()) {
-                    return ApiHelper::apiResponse($this->error, 'Voucher not found.', false);
+                    return $this->errorResponse('Voucher not found.', 500);
                 }
                 abort(404);
             }
@@ -180,12 +176,12 @@ class UserVouchersController extends Controller
             if ($request->ajax()) {
                 $html = view('admin.vouchers.view_content', compact('voucher', 'user', 'voucherUsageData', 'userVoucher'))->render();
 
-                return ApiHelper::apiResponse($this->success, 'Voucher usage details retrieved successfully.', true, ['html' => $html]);
+                return $this->successResponse('Voucher usage details retrieved successfully.', ['html' => $html]);
             }
 
             return view('admin.vouchers.show', compact('voucher', 'user', 'voucherUsageData', 'userVoucher'));
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserVouchersController');
         }
     }
 }

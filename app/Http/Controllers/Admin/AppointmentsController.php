@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use DateTime;
@@ -40,7 +42,6 @@ use App\Models\InvoiceDetails;
 use App\Models\PackageBundles;
 use App\Models\PackageService;
 use App\Exports\TodayTreatment;
-use App\HelperModule\ApiHelper;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
 use App\Models\ResourceHasRota;
@@ -80,18 +81,6 @@ use App\Services\MetaConversionApiService;
 
 class AppointmentsController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
 
     /**
      * Display a listing of Appointment.
@@ -191,7 +180,7 @@ class AppointmentsController extends Controller
         $datatableService = app(\App\Services\Appointment\ConsultancyDatatableService::class);
         $records = $datatableService->getDatatableData($request, $patientId);
         
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     // REMOVED: getDefaultTreatmentListing() - Migrated to App\Services\Treatment\TreatmentService@getDatatableData
@@ -441,7 +430,7 @@ class AppointmentsController extends Controller
     public function store(Request $request)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         
         try {
@@ -454,18 +443,18 @@ class AppointmentsController extends Controller
             
             $appointment = $consultancyService->createConsultancy($data);
             
-            return ApiHelper::apiResponse($this->success, 'Consultation created successfully.', true, $appointment);
+            return $this->successResponse('Consultation created successfully.', $appointment, 200);
         } catch (\App\Exceptions\AppointmentException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
             \Log::error('Error creating consultation: ' . $e->getMessage());
-            return ApiHelper::apiResponse($this->error, 'Failed to create consultation.', false);
+            return $this->errorResponse('Failed to create consultation.', 500);
         }
         
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $rotaCheck = $this->scheduledConsultancy($request);
         if ($rotaCheck['status']) {
@@ -557,7 +546,7 @@ class AppointmentsController extends Controller
                     if (! $patient) {
                         $patient = Patients::createRecord($appointment_data, 1);
                     } else {
-                        return ApiHelper::apiResponse($this->success, 'Phone number already exist', false);
+                        return $this->errorResponse('Phone number already exist', 200);
                     }
 
                     $checkLeadExistance = Leads::updateOrCreate([
@@ -803,7 +792,7 @@ class AppointmentsController extends Controller
                 ])
             );
 
-            return ApiHelper::apiResponse($this->success, $message, true, [
+            return $this->successResponse($message, [
                 'id' => $appointment->id,
                 'city_id' => $request->city_id,
                 'doctor_id' => $request->doctor_id,
@@ -812,7 +801,7 @@ class AppointmentsController extends Controller
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, $rotaCheck['message'], $rotaCheck['status']);
+        return $rotaCheck['status'] ? $this->successResponse($rotaCheck['message']) : $this->errorResponse($rotaCheck['message'], 400);
         /*This function is also using in leads section*/
     }
 
@@ -901,7 +890,7 @@ class AppointmentsController extends Controller
     public function createTreatmentAppointment(Request $request)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         if (
             $request->location_id &&
@@ -914,7 +903,7 @@ class AppointmentsController extends Controller
             $location_id = 0;
             $doctor_id = 0;
 
-            return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
+            return $this->errorResponse('Invalid request.', 200);
         }
         // Commented out machine rota check for resource calendar view
         // if ($request->start) {
@@ -992,14 +981,14 @@ class AppointmentsController extends Controller
         if (count($serviceIds)) {
             $services = Services::whereIn('id', $serviceIds)->get()->pluck('name', 'id');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Services not found for this doctor.', false);
+            return $this->errorResponse('Services not found for this doctor.', 200);
         }
         $lead_sources = LeadSources::getActiveSorted();
         // Get location based doctors
         $doctors = Doctors::getLocationDoctors();
         $towns = Towns::getActiveTowns();
 
-        return ApiHelper::apiResponse($this->success, $appointment_checkes['message'] ?? 'Record found', $appointment_checkes['status'], [
+        $data = [
             'lead_sources' => $lead_sources,
             'services' => $services,
             'doctors' => $doctors,
@@ -1011,7 +1000,11 @@ class AppointmentsController extends Controller
             'appointment_checkes' => $appointment_checkes,
             'towns' => $towns,
             'genders' => Config::get('constants.gender_array'),
-        ]);
+        ];
+
+        return $appointment_checkes['status']
+            ? $this->successResponse($appointment_checkes['message'] ?? 'Record found', $data)
+            : $this->errorResponse($appointment_checkes['message'] ?? 'Error', 400);
     }
     /*
      * Send SMS on booking of Appointment
@@ -1029,7 +1022,7 @@ class AppointmentsController extends Controller
     public function createConsultingAppointment(Request $request)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         if (
             $request->location_id &&
@@ -1095,7 +1088,7 @@ class AppointmentsController extends Controller
         $lead_sources = LeadSources::getActiveSorted();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
         if ($appointment_checkes['status']) {
-            return ApiHelper::apiResponse($this->success, 'Data Found.', true, [
+            return $this->successResponse('Data Found.', [
                 'lead_sources' => $lead_sources,
                 'services' => $services,
                 'city_id' => '0',
@@ -1110,7 +1103,7 @@ class AppointmentsController extends Controller
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+        return $this->errorResponse($appointment_checkes['message'], 200);
     }
     /*
      * Send SMS Promotion SMS
@@ -1129,7 +1122,7 @@ class AppointmentsController extends Controller
     public function detail($id)
     {
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $invoice = Invoices::where([
@@ -1151,10 +1144,10 @@ class AppointmentsController extends Controller
             'appointment_comments.user'
         )->find($id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
+            return $this->errorResponse('Appointment not found.', 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+        return $this->successResponse('Data found.', [
             'appointment' => $appointment,
             'invoice' => $invoice,
             'invoiceid' => $invoiceid,
@@ -1183,14 +1176,14 @@ class AppointmentsController extends Controller
     public function edit($id)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $locationsids = [];
         $doctorids = [];
         $reverse_process = false;
         $appointment = Appointments::with('lead', 'patient')->find($id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 200);
         }
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
         
@@ -1261,7 +1254,7 @@ class AppointmentsController extends Controller
         $appointmentData['scheduled_date'] = Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
         $appointmentData['scheduled_time'] = Carbon::parse($appointment->scheduled_time)->format('h:i A');
         
-        return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+        return $this->successResponse('Record Found', [
             'appointment' => $appointmentData,
             'services' => $services,
             'doctors' => $doctors,
@@ -1288,14 +1281,14 @@ class AppointmentsController extends Controller
     public function editService($id)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $locationsids = [];
         $doctorids = [];
         $machineids = [];
         $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 200);
         }
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
         $machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
@@ -1364,7 +1357,7 @@ class AppointmentsController extends Controller
         /*End*/
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
-        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+        return $this->successResponse('Data found.', [
             'appointment' => $appointment,
             'cities' => $cities,
             'services' => $services,
@@ -1384,14 +1377,14 @@ class AppointmentsController extends Controller
     public function editAppointmentService($id)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $locationsids = [];
         $doctorids = [];
         $machineids = [];
         $appointment = Appointments::with('patient', 'doctor')->find($id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 200);
         }
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
         $machineHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine);
@@ -1458,7 +1451,7 @@ class AppointmentsController extends Controller
             $appointmentData['first_scheduled_date'] = \Carbon\Carbon::parse($appointment->first_scheduled_date)->format('Y-m-d');
         }
 
-        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+        return $this->successResponse('Data found.', [
             'appointment' => $appointmentData,
             'cities' => $cities,
             'services' => $services,
@@ -1477,7 +1470,7 @@ class AppointmentsController extends Controller
     public function editFeedback($id)
     {
         if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $treatment = Appointments::with(['doctor','location','service'])
@@ -1486,7 +1479,7 @@ class AppointmentsController extends Controller
         ->where('appointment_status_id', 2)
         ->first();
 
-        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+        return $this->successResponse('Data found.', [
             'appointment' => $treatment,
 
         ]);
@@ -1503,18 +1496,18 @@ class AppointmentsController extends Controller
             $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
             $appointment = $updateService->updateConsultation($id, $request->all());
             
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.', true, [
+            return $this->successResponse('Record has been updated successfully.', [
                 'appointment' => $appointment
             ]);
         } catch (\App\Exceptions\AppointmentException $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 200);
         } catch (\Exception $e) {
             \Log::error('Consultation update error', [
                 'appointment_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return ApiHelper::apiResponse($this->success, 'An error occurred while updating the consultation.', false);
+            return $this->errorResponse('An error occurred while updating the consultation.', 200);
         }
     }
 
@@ -1530,18 +1523,18 @@ class AppointmentsController extends Controller
             $updateService = new \App\Services\Appointment\TreatmentUpdateService();
             $appointment = $updateService->updateTreatment($id, $request->all());
             
-            return ApiHelper::apiResponse($this->success, 'Treatment has been updated successfully.', true, [
+            return $this->successResponse('Treatment has been updated successfully.', [
                 'appointment' => $appointment
             ]);
         } catch (\App\Exceptions\AppointmentException $e) {
-            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 200);
         } catch (\Exception $e) {
             \Log::error('Treatment update error', [
                 'appointment_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return ApiHelper::apiResponse($this->success, 'An error occurred while updating the treatment.', false);
+            return $this->errorResponse('An error occurred while updating the treatment.', 200);
         }
     }
 
@@ -1554,7 +1547,7 @@ class AppointmentsController extends Controller
         // Get appointment to check status
         $appointment = Appointments::find($id);
         if (!$appointment) {
-            return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
+            return $this->errorResponse('Appointment not found.', 200);
         }
 
         // Check if appointment is arrived/converted and what permissions user has
@@ -1616,7 +1609,7 @@ class AppointmentsController extends Controller
                         ->exists();
                     
                     if (!$has_all_services && !$has_specific_service) {
-                        return ApiHelper::apiResponse($this->success, 'Current doctor does not have the new service allocated for this location.', false);
+                        return $this->errorResponse('Current doctor does not have the new service allocated for this location.', 200);
                     }
                 }
             }
@@ -1641,7 +1634,7 @@ class AppointmentsController extends Controller
                         ->exists();
                     
                     if (!$has_all_services && !$has_specific_service) {
-                        return ApiHelper::apiResponse($this->success, 'New doctor does not have the required service allocated for this location.', false);
+                        return $this->errorResponse('New doctor does not have the required service allocated for this location.', 200);
                     }
                 }
             }
@@ -1666,7 +1659,7 @@ class AppointmentsController extends Controller
                         ->exists();
                     
                     if (!$has_all_services && !$has_specific_service) {
-                        return ApiHelper::apiResponse($this->success, 'New doctor does not have the new service allocated for this location.', false);
+                        return $this->errorResponse('New doctor does not have the new service allocated for this location.', 200);
                     }
                 }
             }
@@ -1678,7 +1671,7 @@ class AppointmentsController extends Controller
             } elseif ($parent) {
                 $service_id = $parent->parent_id;
             } else {
-                return ApiHelper::apiResponse($this->success, 'Service not found.', false);
+                return $this->errorResponse('Service not found.', 200);
             }
 
             $has_all_services = DoctorHasLocations::where('is_allocated', 1)
@@ -1694,7 +1687,7 @@ class AppointmentsController extends Controller
                 ->exists();
 
             if (!$has_all_services && !$has_specific_service) {
-                return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+                return $this->errorResponse('This doctor does not have the required service allocated for this location.', 200);
             }
         }
         
@@ -1703,13 +1696,13 @@ class AppointmentsController extends Controller
           
             $validator = $this->verifyUpdateFields($request, $id);
             if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+                return $this->errorResponse($validator->messages()->first(), 200);
             }
             $appointment = Appointments::find($id);
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
             // Only check back-date if scheduled_date is provided in request
             if ($request->has('scheduled_date') && $request->scheduled_date && ! Gate::allows('edit_after_arrived') && strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
-                return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
+                return $this->errorResponse('Scheduled date is older than today. Please select today or future date', 200);
             }
             // Check if this is arrived/converted with edit permissions
             $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]);
@@ -1723,24 +1716,24 @@ class AppointmentsController extends Controller
                 if ($appointment) {
                     $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
                     if ($check_invoice) {
-                        return ApiHelper::apiResponse($this->error, 'Invoice already generated. Appointment can not be rescheduled.', false);
+                        return $this->errorResponse('Invoice already generated. Appointment can not be rescheduled.', 500);
                     }
                 }
             }
             $rota = $this->checkRota($appointment, $request);
             if (! $rota['status']) {
-                return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
+                return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 400);
             }
             if (! $appointment) {
-                return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+                return $this->errorResponse('Appointment not found', 200);
             }
             $lead = Leads::find($request->lead_id);
             if (! $lead) {
-                return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                return $this->errorResponse('Lead not found', 200);
             }
             $patient = Patients::find($appointment->patient_id);
             if (! $patient) {
-                return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                return $this->errorResponse('Patient not found', 200);
             }
             $value_of_sending_message = $appointment->send_message;
             
@@ -1912,12 +1905,12 @@ class AppointmentsController extends Controller
             }
             $lead = Leads::find($appointment_data['lead_id']);
             if (! $lead) {
-                return ApiHelper::apiResponse($this->success, 'Lead not found', false);
+                return $this->errorResponse('Lead not found', 200);
             }
             $lead->update($appointment_data);
             $patient = Patients::find($appointment->patient_id);
             if (! $patient) {
-                return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+                return $this->errorResponse('Patient not found', 200);
             }
             $patientData = $appointment_data;
             // Remove fields that don't exist in users table
@@ -2018,9 +2011,9 @@ class AppointmentsController extends Controller
                 ActivityLogger::logAppointmentUpdated($appointment, $patient, $fieldChanges, $location, $service);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.', null, 200);
         } else {
-            return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+            return $this->errorResponse('This doctor does not have the required service allocated for this location.', 200);
         }
     }
 
@@ -2033,11 +2026,11 @@ class AppointmentsController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('appointments_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $response = Appointments::DeleteRecord($id, Auth::User()->account_id);
 
-        return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
+        return $response['status'] ? $this->successResponse($response['message']) : $this->errorResponse($response['message'], 400);
     }
 
     /**
@@ -2133,7 +2126,7 @@ class AppointmentsController extends Controller
             }
         }
 
-        return ApiHelper::apiResponse($this->success, 'data found', true, $data);
+        return $this->successResponse('data found', $data);
     }
 
     /**
@@ -2143,7 +2136,7 @@ class AppointmentsController extends Controller
     {
         $appointment = Appointments::find($request->id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'No record found', false);
+            return $this->errorResponse('No record found', 200);
         }
         $base_appointments = AppointmentStatuses::where(['account_id' => 1])->select('id', 'parent_id', 'is_comment')->get()->keyBy('id');
         /*
@@ -2162,7 +2155,7 @@ class AppointmentsController extends Controller
             $appointment_statuses[''] = '';
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'appointment' => $appointment,
             'base_appointment_statuses' => $base_appointment_statuses,
             'appointment_statuses' => $appointment_statuses,
@@ -2185,7 +2178,7 @@ class AppointmentsController extends Controller
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointment = Appointments::find($request->id);
         if (! $appointment) {
-            return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+            return $this->errorResponse('Appointment not found', 200);
         }
         
         // Store old status for activity logging
@@ -2200,12 +2193,12 @@ class AppointmentsController extends Controller
         ])->get();
         if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_arrived')) {
             if (count($invoiceexit) == 0) {
-                return ApiHelper::apiResponse($this->success, 'Kindly pay invoice first!', false);
+                return $this->errorResponse('Kindly pay invoice first!', 200);
             }
         }
         if ($data['base_appointment_status_id'] != Config::get('constants.appointment_status_arrived')) {
             if (count($invoiceexit) == 1) {
-                return ApiHelper::apiResponse($this->success, 'Invoice paid, you not able to change status!', false);
+                return $this->errorResponse('Invoice paid, you not able to change status!', 200);
             }
         }
         if ($appointment_type->id == $appointment->appointment_type_id) {
@@ -2337,7 +2330,7 @@ class AppointmentsController extends Controller
             ActivityLogger::logAppointmentStatusChange($appointment, $patient, $oldStatus, $newStatus, $location, $service);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Status has been change successfully!', true, ['appontment_type_id' => $request->appointment_type_id]);
+        return $this->successResponse('Status has been change successfully!', ['appontment_type_id' => $request->appointment_type_id]);
     }
 
     /**
@@ -2350,7 +2343,7 @@ class AppointmentsController extends Controller
     {
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'SMSLogs' => $SMSLogs,
             'sms_statuses' => config('constants.sms_array'),
         ]);
@@ -2367,17 +2360,17 @@ class AppointmentsController extends Controller
         $data = $request->all();
         $SMSLog = SMSLogs::find($request->id);
         if (! $SMSLog) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+            return $this->errorResponse('Resource not found', 200);
         }
         if ($SMSLog) {
             $response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->appointment_id);
 
             if ($response['status']) {
-                return ApiHelper::apiResponse($this->success, 'SMS sent successfully.');
+                return $this->successResponse('SMS sent successfully.');
             }
         }
 
-        return ApiHelper::apiResponse($this->success, 'Failed to send SMS.', false);
+        return $this->errorResponse('Failed to send SMS.', 200);
     }
 
     private function resendSMS($smsId, $patient_phone, $preparedText, $appointmentId)
@@ -2452,18 +2445,18 @@ class AppointmentsController extends Controller
                     }
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                return $this->successResponse('Record found', [
                     'dropdown' => $locations,
                 ]);
             }
             $assigned_locations = ACL::getUserCentres();
             $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'dropdown' => $locations->pluck('name', 'id'),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
@@ -2477,11 +2470,11 @@ class AppointmentsController extends Controller
                 }
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'dropdown' => $child_services,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
     /*
@@ -2516,16 +2509,16 @@ class AppointmentsController extends Controller
                     $doctors = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                return $this->successResponse('Record found', [
                     'dropdown' => $doctors,
                 ]);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+            return $this->errorResponse('Record found', 404, [
                 'dropdown' => null,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
     public function loadConsultantDoctorsByLocation(Request $request)
@@ -2535,16 +2528,16 @@ class AppointmentsController extends Controller
                 // Use the proper consultant doctor loader that filters by doctor_has_locations with is_allocated = 1
                 $doctors = LocationsWidget::loadConsultantDoctorByLocation($request->location_id, Auth::User()->account_id);
 
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                return $this->successResponse('Record found', [
                     'dropdown' => $doctors->toArray(),
                 ]);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+            return $this->errorResponse('Record found', 404, [
                 'dropdown' => null,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
@@ -2873,7 +2866,7 @@ class AppointmentsController extends Controller
 
                     if (!$hasService) {
                         \Log::warning('checkAndSaveAppointments: Blocking update - doctor does not have service');
-                        return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+                        return $this->errorResponse('This doctor does not have the required service allocated for this location.', 200);
                     }
                     // Store old values for activity logging
                     $oldDate = $appointment->scheduled_date;
@@ -2892,7 +2885,7 @@ class AppointmentsController extends Controller
                         ['invoice_status_id', '=', $invoicestatus->id],
                     ])->get();
                     if (count($invoice) > 0) {
-                        return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
+                        return $this->errorResponse('Appointment has invoice.', 200);
                     }
                     $record = Appointments::updateRecord($request->id, $data, Auth::User()->account_id);
                     if ($record) {
@@ -2959,17 +2952,17 @@ class AppointmentsController extends Controller
                             ActivityLogger::logAppointmentUpdated($record, $patient, $fieldChanges, $location, $service);
                         }
 
-                        return ApiHelper::apiResponse($this->success, 'Appointment Updated Successfully');
+                        return $this->successResponse('Appointment Updated Successfully');
                     }
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Doctor is not available', false);
+                return $this->errorResponse('Doctor is not available', 200);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Invalid paramters', false);
+            return $this->errorResponse('Invalid paramters', 200);
         }
 
-        return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+        return $this->errorResponse($appointment_checkes['message'], 200);
     }
     /*
      * Save Appointment Data
@@ -2988,14 +2981,14 @@ class AppointmentsController extends Controller
                 $appointment_status = $appointment_status->toArray();
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'dropdown' => count($appointment_statuses) > 0 ? $appointment_statuses : null,
                 'count' => count($appointment_statuses),
                 'appointment_status' => $appointment_status,
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record found', false, [
+        return $this->errorResponse('Record found', 404, [
             'dropdown' => null,
             'count' => 0,
             'appointment_status' => null,
@@ -3021,13 +3014,13 @@ class AppointmentsController extends Controller
                 $base_appointment_status = $base_appointment_status->toArray();
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record Found', true, [
+            return $this->successResponse('Record Found', [
                 'appointment_status' => count($appointment_status) > 0 ? $appointment_status : null,
                 'base_appointment_status' => count($base_appointment_status) > 0 ? $base_appointment_status : null,
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record Found', false, [
+        return $this->errorResponse('Record Found', 404, [
             'appointment_status' => null,
             'base_appointment_status' => null,
         ]);
@@ -3044,7 +3037,7 @@ class AppointmentsController extends Controller
     {
         
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $invoice = Invoices::where([
@@ -3517,7 +3510,7 @@ class AppointmentsController extends Controller
             ['package_id', '=', $request->package_id],
         ])->first();
         if($check_is_setteled){
-            return ApiHelper::apiResponse($this->success, 'This plan is settled out and cannot consume any further treatments.', false,['setteled'=>1]);
+            return $this->errorResponse('This plan is settled out and cannot consume any further treatments.', 404, ['setteled'=>1]);
         }
 
         // ============================================
@@ -3553,7 +3546,7 @@ class AppointmentsController extends Controller
                         ->exists();
 
                     if ($hasUnconsumedPrior) {
-                        return ApiHelper::apiResponse($this->success, 'Cannot consume this service yet. Please consume the paid sessions first before discounted/free sessions.', false, ['consumption_locked' => 1]);
+                        return $this->errorResponse('Cannot consume this service yet. Please consume the paid sessions first before discounted/free sessions.', 404, ['consumption_locked' => 1]);
                     }
                 }
             }
@@ -3567,7 +3560,7 @@ class AppointmentsController extends Controller
 
                 if ($totalPlanPayments < ($totalConsumedValue + $packageService->tax_including_price)) {
                     $shortfall = ceil(($totalConsumedValue + $packageService->tax_including_price) - $totalPlanPayments);
-                    return ApiHelper::apiResponse($this->success, 'Insufficient payment on this plan. Please collect Rs. ' . number_format($shortfall) . ' before consuming this service.', false, ['consumption_locked' => 1]);
+                    return $this->errorResponse('Insufficient payment on this plan. Please collect Rs. ' . number_format($shortfall) . ' before consuming this service.', 200);
                 }
             }
         }
@@ -3871,7 +3864,7 @@ class AppointmentsController extends Controller
             ])
         );
 
-        return ApiHelper::apiResponse($this->success, 'Invoice created successfully', true, [
+        return $this->successResponse('Invoice created successfully', [
             'invoice_id' => $invoice?->id ?? 0,
         ]);
     }
@@ -4246,7 +4239,7 @@ class AppointmentsController extends Controller
                         ['invoice_status_id', '=', $invoicestatus->id],
                     ])->get();
                     if (count($invoice) > 0) {
-                        return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
+                        return $this->errorResponse('Appointment has invoice.', 200);
                     }
                     $record = Appointments::updateServiceRecord($request->id, $data, Auth::User()->account_id);
                     if ($record) {
@@ -4269,19 +4262,19 @@ class AppointmentsController extends Controller
                             ])
                         );
 
-                        return ApiHelper::apiResponse($this->success, 'Appointment Updated Successfully.');
+                        return $this->successResponse('Appointment Updated Successfully.');
                     }
                     
-                    return ApiHelper::apiResponse($this->success, 'Failed to update appointment.', false);
+                    return $this->errorResponse('Failed to update appointment.', 200);
                 } else {
-                    return ApiHelper::apiResponse($this->success, 'Doctor is not available.', false);
+                    return $this->errorResponse('Doctor is not available.', 200);
                 }
             }
 
-            return ApiHelper::apiResponse($this->success, 'Requested parameter not provided.', false);
+            return $this->errorResponse('Requested parameter not provided.', 200);
         }
 
-        return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+        return $this->errorResponse($appointment_checkes['message'], 200);
     }
 
     /**
@@ -4301,7 +4294,7 @@ class AppointmentsController extends Controller
                     ->where('service_id',$request->service_id)
                     ->first();
                     if($machine_services){
-                        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                        return $this->successResponse('Record found', [
                             'services' => $child_services,
                         ]);
                     }else{
@@ -4313,7 +4306,7 @@ class AppointmentsController extends Controller
                         $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
                             return in_array($id, $machine_services->toArray()); // Convert collection to array
                         }, ARRAY_FILTER_USE_BOTH);
-                        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                        return $this->successResponse('Record found', [
                             'services' => $available_services,
                         ]);
                     }
@@ -4321,12 +4314,12 @@ class AppointmentsController extends Controller
             }
             
             // No resource selected or resource not found, return all child services
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'services' => $child_services,
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record not found', false);
+        return $this->errorResponse('Record not found', 200);
     }
 
     /**
@@ -4369,7 +4362,7 @@ class AppointmentsController extends Controller
             $services[$service->id] = $service->name;
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'services' => $services,
         ]);
     }
@@ -4445,12 +4438,12 @@ class AppointmentsController extends Controller
             $machines = Resources::where([['resource_type_id', '=', config('constants.resource_room_type_id')], ['active', '=', '1'], ['location_id', '=', $location_id], ['account_id', '=', Auth::User()->account_id]])->get()->pluck('name', 'id');
         }
         if ($machines) {
-            return ApiHelper::apiResponse($this->success, 'recourd found', true, [
+            return $this->successResponse('recourd found', [
                 'dropdown' => $machines,
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, 'recourd found', false, [
+        return $this->errorResponse('recourd found', 404, [
             'dropdown' => null,
         ]);
     }
@@ -4505,7 +4498,7 @@ class AppointmentsController extends Controller
     public function displayInvoiceAppointment($id)
     {
         if (! Gate::allows('appointments_invoice_display')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
@@ -4917,7 +4910,7 @@ class AppointmentsController extends Controller
                 'contact' => Gate::allows('contact'),
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         }
 
         return $this->viewLogInExcel($id, $data);
@@ -5115,13 +5108,13 @@ class AppointmentsController extends Controller
            
             if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
-                return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
+                return $this->errorResponse('Appointment has Invoice or has been canceled!', 200);
             }
 
             // Validate business closure, working days, and time offs
             $scheduleValidation = $this->validateScheduleDate($appointment, $request);
             if (!$scheduleValidation['status']) {
-                return ApiHelper::apiResponse($this->success, $scheduleValidation['message'], false);
+                return $this->errorResponse($scheduleValidation['message'], 200);
             }
 
             $rota = $this->checkRota($appointment, $request);
@@ -5167,13 +5160,13 @@ class AppointmentsController extends Controller
                     );
                 }
                 
-                return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
+                return $this->successResponse('Record updated successfully!');
             }
 
-            return ApiHelper::apiResponse($this->success, $rota['message'], $rota['status']);
+            return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 400);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Appointment not found!', false);
+        return $this->errorResponse('Appointment not found!', 200);
     }
 
     private function checkRota($appointment, $request)

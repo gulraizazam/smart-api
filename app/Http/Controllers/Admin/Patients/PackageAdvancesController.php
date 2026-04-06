@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
 use App\Helpers\Filters;
@@ -246,16 +247,11 @@ class PackageAdvancesController extends Controller
             $balance = 0;
             foreach ($packagesadvances as $packagesadvances) {
 
-                switch ($packagesadvances->cash_flow) {
-                    case 'in':
-                        $balance = $balance + $packagesadvances->cash_amount;
-                        break;
-                    case 'out':
-                        $balance = $balance - $packagesadvances->cash_amount;
-                        break;
-                    default:
-                        break;
-                }
+                $balance += match ($packagesadvances->cash_flow) {
+                    'in' => $packagesadvances->cash_amount,
+                    'out' => -$packagesadvances->cash_amount,
+                    default => 0,
+                };
                 if ($packagesadvances->cash_amount != 0) {
 
                     if ($packagesadvances->package_id) {

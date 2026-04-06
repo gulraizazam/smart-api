@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
@@ -25,17 +26,6 @@ use Illuminate\Support\Facades\Gate;
 
 class PatientsController extends Controller
 {
-    private readonly int $success;
-    private readonly int $error;
-    private readonly int $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     public function index()
     {
         if (!Gate::allows('patients_manage')) {
@@ -341,12 +331,12 @@ class PatientsController extends Controller
     public function documentstore(PatientDocumentStoreRequest $request): JsonResponse
     {
         if (!Gate::allows('patients_document_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $patient = Patients::getData($request->patient_id);
         if (!$patient) {
-            return ApiHelper::apiResponse($this->success, 'Patient not found', false);
+            return $this->errorResponse('Patient not found', 200);
         }
 
         $file = $request->file('file');
@@ -356,12 +346,12 @@ class PatientsController extends Controller
         try {
             $file->storeAs('public/patient_image', $fileName);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->success, 'Failed to save file: ' . $e->getMessage(), false);
+            return $this->errorResponse('Failed to save file: ' . $e->getMessage(), 200);
         }
 
         Documents::CreateRecord($request, 'patient_image/' . $fileName, $patient->id);
 
-        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+        return $this->successResponse('Record has been created successfully.', null, 200);
     }
 
     public function documentdatatable(int $id, Request $request): JsonResponse
@@ -419,26 +409,26 @@ class PatientsController extends Controller
     public function documentupdate(Request $request, int $id): JsonResponse
     {
         if (!Gate::allows('patients_document_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $request->validate(['name' => 'required|string|max:255']);
 
         if (Documents::updateRecord($id, $request, Auth::user()->account_id)) {
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.', null, 200);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Something went wrong.', false);
+        return $this->errorResponse('Something went wrong.', 200);
     }
 
     public function documentdelete(int $id): JsonResponse
     {
         if (!Gate::allows('patients_document_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         Documents::DeleteRecord($id);
 
-        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+        return $this->successResponse('Record has been deleted successfully.', null, 200);
     }
 }

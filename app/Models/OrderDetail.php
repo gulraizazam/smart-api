@@ -7,14 +7,15 @@ namespace App\Models;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OrderDetail extends BaseModal
+class OrderDetail extends BaseModel
 {
     use HasFactory;
 
     protected $fillable = ['order_id', 'product_id', 'inventory_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason', 'account_id'];
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
@@ -168,14 +169,14 @@ class OrderDetail extends BaseModal
 
     /** Get the patients of order.
      */
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
 
     /** Get the patients of order.
      */
-    public function discount()
+    public function discount(): BelongsTo
     {
         return $this->belongsTo(Discounts::class, 'discount_id');
     }

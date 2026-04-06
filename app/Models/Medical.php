@@ -1,29 +1,31 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Medical extends Model
 {
     protected $fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date'];
+    protected static array $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date'];
 
     protected $table = 'medicals';
 
-    protected static $_table = 'medicals';
+    protected static string $_table = 'medicals';
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function appointment()
+    public function appointment(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Appointments');
+        return $this->belongsTo(Appointments::class);
     }
 
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');
     }

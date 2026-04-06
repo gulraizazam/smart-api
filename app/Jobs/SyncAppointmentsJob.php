@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Accounts;
@@ -19,7 +20,7 @@ class SyncAppointmentsJob implements ShouldQueue
     /**
      * Handle Current Account
      */
-    protected $account;
+    protected Accounts $account;
 
     /**
      * Create a new job instance.

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PabaoRecordPayments extends Model
 {
@@ -18,17 +20,17 @@ class PabaoRecordPayments extends Model
     /**
      * Get the lead that owns the comments.
      */
-    public function pabao_record()
+    public function pabao_record(): BelongsTo
     {
-        return $this->belongsTo('App\Models\PabaoRecords');
+        return $this->belongsTo(PabaoRecords::class);
     }
 
     /**
      * Get the User that owns the Lead comment.
      */
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /*

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Models\CashFlow\CashflowAuditLog;
@@ -9,14 +10,10 @@ use Illuminate\Support\Facades\Cache;
 
 class CategoryService
 {
-    private CashflowAuditService $auditService;
-    private NotificationService $notificationService;
-
-    public function __construct(CashflowAuditService $auditService, NotificationService $notificationService)
-    {
-        $this->auditService = $auditService;
-        $this->notificationService = $notificationService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+        private readonly NotificationService $notificationService,
+    ) {}
 
     /**
      * Get all categories for account.

@@ -8,14 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Reports\OperationsReportRequest;
 use App\Http\Resources\Reports\OperationsReportResource;
 use App\Services\Reports\OperationsReportService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class OperationsReportController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly OperationsReportService $reportService,
     ) {}

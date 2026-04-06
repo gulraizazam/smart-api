@@ -11,9 +11,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Str;use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Product extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Product extends BaseModel
 {
     use  HasFactory;
 
@@ -42,15 +44,15 @@ class Product extends BaseModal
     //     return $this->hasMany(ProductDetail::class, 'product_id');
     // }
 
-    public function stocks()
+    public function stocks(): HasMany
     {
         return $this->hasMany(Stock::class);
     }
-    public function order()
+    public function order(): HasMany
     {
         return $this->hasMany(Order::class)->with('orderDetail');
     }
-    public function orderDetails()
+    public function orderDetails(): HasMany
     {
         return $this->hasMany(OrderDetail::class); // A product has many order details
     }
@@ -457,7 +459,7 @@ class Product extends BaseModal
     //     return $this->hasMany(self::class, 'parent_id');
     // }
 
-    public function parent()
+    public function parent(): HasOne
     {
         return $this->hasOne(self::class, 'id', 'parent_id');
     }

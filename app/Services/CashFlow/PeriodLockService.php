@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
@@ -11,14 +12,10 @@ use Illuminate\Support\Facades\DB;
 
 class PeriodLockService
 {
-    private CashflowAuditService $auditService;
-    private CashflowSettingService $settingService;
-
-    public function __construct(CashflowAuditService $auditService, CashflowSettingService $settingService)
-    {
-        $this->auditService = $auditService;
-        $this->settingService = $settingService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+        private readonly CashflowSettingService $settingService,
+    ) {}
 
     /**
      * Get all period locks for an account.

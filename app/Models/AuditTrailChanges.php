@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AuditTrailChanges extends Model
 {
@@ -10,111 +12,111 @@ class AuditTrailChanges extends Model
 
     protected $table = 'audit_trail_changes';
 
-    public function doctors_before()
+    public function doctors_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Doctors', 'field_before');
+        return $this->belongsTo(Doctors::class, 'field_before');
     }
 
-    public function doctors_after()
+    public function doctors_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Doctors', 'field_after');
+        return $this->belongsTo(Doctors::class, 'field_after');
     }
 
-    public function patients_before()
+    public function patients_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Patients', 'field_before');
+        return $this->belongsTo(Patients::class, 'field_before');
     }
 
-    public function patients_after()
+    public function patients_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Patients', 'field_after');
+        return $this->belongsTo(Patients::class, 'field_after');
     }
 
-    public function accounts_before()
+    public function accounts_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Accounts', 'field_before');
+        return $this->belongsTo(Accounts::class, 'field_before');
     }
 
-    public function accounts_after()
+    public function accounts_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Accounts', 'field_after');
+        return $this->belongsTo(Accounts::class, 'field_after');
     }
 
-    public function invoicestatus_before()
+    public function invoicestatus_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\InvoiceStatuses', 'field_before');
+        return $this->belongsTo(InvoiceStatuses::class, 'field_before');
     }
 
-    public function invoicestatus_after()
+    public function invoicestatus_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\InvoiceStatuses', 'field_after');
+        return $this->belongsTo(InvoiceStatuses::class, 'field_after');
     }
 
-    public function locations_before()
+    public function locations_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'field_before');
+        return $this->belongsTo(Locations::class, 'field_before');
     }
 
-    public function locations_after()
+    public function locations_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'field_after');
+        return $this->belongsTo(Locations::class, 'field_after');
     }
 
-    public function users_before()
+    public function users_before(): BelongsTo
     {
         return $this->belongsTo(User::class, 'field_before');
     }
 
-    public function users_after()
+    public function users_after(): BelongsTo
     {
         return $this->belongsTo(User::class, 'field_after');
     }
 
-    public function services_before()
+    public function services_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'field_before');
+        return $this->belongsTo(Services::class, 'field_before');
     }
 
-    public function services_after()
+    public function services_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services', 'field_after');
+        return $this->belongsTo(Services::class, 'field_after');
     }
 
-    public function discounts_before()
+    public function discounts_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Discounts', 'field_before');
+        return $this->belongsTo(Discounts::class, 'field_before');
     }
 
-    public function discounts_after()
+    public function discounts_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Discounts', 'field_after');
+        return $this->belongsTo(Discounts::class, 'field_after');
     }
 
-    public function payment_mode_before()
+    public function payment_mode_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\PaymentModes', 'field_before');
+        return $this->belongsTo(PaymentModes::class, 'field_before');
     }
 
-    public function payment_mode_after()
+    public function payment_mode_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\PaymentModes', 'field_after');
+        return $this->belongsTo(PaymentModes::class, 'field_after');
     }
 
-    public function appointment_type_before()
+    public function appointment_type_before(): BelongsTo
     {
-        return $this->belongsTo('App\Models\AppointmentTypes', 'field_before');
+        return $this->belongsTo(AppointmentTypes::class, 'field_before');
     }
 
-    public function appointment_type_after()
+    public function appointment_type_after(): BelongsTo
     {
-        return $this->belongsTo('App\Models\AppointmentTypes', 'field_after');
+        return $this->belongsTo(AppointmentTypes::class, 'field_after');
     }
     /*
      * Get base appointment status name
      *
      * */
 
-    public function appointmentStatus()
+    public function appointmentStatus(): BelongsTo
     {
         return $this->belongsTo(AppointmentStatuses::class, 'field_after', 'id');
     }
@@ -124,7 +126,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function appointmentCreatedBy()
+    public function appointmentCreatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'field_after', 'id');
     }
@@ -134,7 +136,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function service()
+    public function service(): BelongsTo
     {
         return $this->belongsTo(Services::class, 'field_after', 'id');
     }
@@ -144,7 +146,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function doctor()
+    public function doctor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'field_after', 'id');
     }
@@ -154,7 +156,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function region()
+    public function region(): BelongsTo
     {
         return $this->belongsTo(Regions::class, 'field_after', 'id');
     }
@@ -163,7 +165,7 @@ class AuditTrailChanges extends Model
      * Get the City
      *
      * */
-    public function city()
+    public function city(): BelongsTo
     {
         return $this->belongsTo(Cities::class, 'field_after', 'id');
     }
@@ -173,7 +175,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function location()
+    public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'field_after', 'id');
     }
@@ -183,7 +185,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function appointmentType()
+    public function appointmentType(): BelongsTo
     {
         return $this->belongsTo(AppointmentTypes::class, 'field_after', 'id');
     }
@@ -193,7 +195,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'field_after', 'id');
     }
@@ -203,7 +205,7 @@ class AuditTrailChanges extends Model
      *
      * */
 
-    public function resource()
+    public function resource(): BelongsTo
     {
         return $this->belongsTo(Resources::class, 'field_after', 'id');
     }

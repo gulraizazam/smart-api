@@ -1,43 +1,35 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Exceptions\AppointmentException;
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Appointment\StoreAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentRequest;
 use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Http\Requests\Appointment\ScheduleAppointmentRequest;
+use App\Models\Appointments;
 use App\Services\Appointment\AppointmentService;
 use App\Services\Appointment\ConsultancyService;
 use App\Services\Appointment\TreatmentService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class AppointmentsController extends Controller
 {
-    protected $appointmentService;
-    protected $consultancyService;
-    protected $treatmentService;
-
     public function __construct(
-        AppointmentService $appointmentService,
-        ConsultancyService $consultancyService,
-        TreatmentService $treatmentService
-    ) {
-        $this->appointmentService = $appointmentService;
-        $this->consultancyService = $consultancyService;
-        $this->treatmentService = $treatmentService;
-    }
+        protected readonly AppointmentService $appointmentService,
+        protected readonly ConsultancyService $consultancyService,
+        protected readonly TreatmentService $treatmentService,
+    ) {}
 
     public function index(Request $request)
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('view', Appointments::class);
 
             $filters = $request->only([
                 'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
@@ -54,125 +46,122 @@ class AppointmentsController extends Controller
                 $appointments = $query->paginate($perPage);
             }
 
-            return ApiHelper::apiResponse(200, 'Appointments retrieved successfully.', true, $appointments);
+            return $this->successResponse('Appointments retrieved successfully.', $appointments);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error fetching appointments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function store(StoreAppointmentRequest $request)
-    
     {
-        
         try {
-            if (!Gate::allows('appointments_manage')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('create', Appointments::class);
 
             $appointment = $this->appointmentService->createAppointment($request->validated());
 
-            return ApiHelper::apiResponse(200, 'Appointment created successfully.', true, $appointment);
+            return $this->successResponse('Appointment created successfully.', $appointment);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error creating appointment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function show($id)
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('view', Appointments::class);
 
             $appointment = $this->appointmentService->getAppointmentById($id);
 
-            return ApiHelper::apiResponse(200, 'Appointment retrieved successfully.', true, $appointment);
+            return $this->successResponse('Appointment retrieved successfully.', $appointment);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error fetching appointment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function update(UpdateAppointmentRequest $request, $id)
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('update', Appointments::class);
 
             $appointment = $this->appointmentService->updateAppointment($id, $request->validated());
 
-            return ApiHelper::apiResponse(200, 'Appointment updated successfully.', true, $appointment);
+            return $this->successResponse('Appointment updated successfully.', $appointment);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error updating appointment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('appointments_destroy')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('delete', Appointments::class);
 
             $this->appointmentService->deleteAppointment($id);
 
-            return ApiHelper::apiResponse(200, 'Appointment deleted successfully.', true);
+            return $this->successResponse('Appointment deleted successfully.');
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error deleting appointment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function updateStatus(UpdateAppointmentStatusRequest $request, $id)
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('updateStatus', Appointments::class);
 
             $appointment = $this->appointmentService->updateAppointmentStatus($id, $request->validated());
 
-            return ApiHelper::apiResponse(200, 'Appointment status updated successfully.', true, $appointment);
+            return $this->successResponse('Appointment status updated successfully.', $appointment);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error updating appointment status: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function updateSchedule(Request $request)
     {
-       
         return $this->schedule($request);
     }
 
     public function schedule(Request $request)
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('manageSchedule', Appointments::class);
 
             // Calendar sends 'id' but service expects 'appointment_id'
             $appointmentId = $request->id ?? $request->appointment_id;
             
             if (!$appointmentId) {
-                return ApiHelper::apiResponse(400, 'Appointment ID is required.', false);
+                return $this->errorResponse('Appointment ID is required.', 400);
             }
 
             $data = [
@@ -185,21 +174,21 @@ class AppointmentsController extends Controller
 
             $appointment = $this->appointmentService->scheduleAppointment($appointmentId, $data);
 
-            return ApiHelper::apiResponse(200, 'Appointment scheduled successfully.', true, $appointment);
+            return $this->successResponse('Appointment scheduled successfully.', $appointment);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage(), false);
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error scheduling appointment: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function scheduled(Request $request)
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('view', Appointments::class);
 
             $account_id = \Illuminate\Support\Facades\Auth::user()->account_id;
 
@@ -296,20 +285,20 @@ class AppointmentsController extends Controller
                 'working_days' => $workingDays,
                 'working_day_exceptions' => $workingDayExceptions,
             ]);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error fetching scheduled appointments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function nonScheduled(Request $request)
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('view', Appointments::class);
 
             $filters = $request->only([
                 'location_id', 'doctor_id', 'service_id', 'appointment_status_id',
@@ -318,21 +307,21 @@ class AppointmentsController extends Controller
 
             $appointments = $this->appointmentService->getNonScheduledAppointments($filters);
 
-            return ApiHelper::apiResponse(200, 'Non-scheduled appointments retrieved successfully.', true, $appointments);
+            return $this->successResponse('Non-scheduled appointments retrieved successfully.', $appointments);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error fetching non-scheduled appointments: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 
     public function statistics(Request $request)
     {
         try {
-            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_view')) {
-                throw AppointmentException::unauthorized();
-            }
+            $this->authorize('view', Appointments::class);
 
             $filters = $request->only([
                 'location_id', 'doctor_id', 'service_id', 'appointment_status_id',
@@ -341,12 +330,14 @@ class AppointmentsController extends Controller
 
             $statistics = $this->appointmentService->getAppointmentStatistics($filters);
 
-            return ApiHelper::apiResponse(200, 'Appointment statistics retrieved successfully.', true, $statistics);
+            return $this->successResponse('Appointment statistics retrieved successfully.', $statistics);
+        } catch (AuthorizationException $e) {
+            return $this->errorResponse($e->getMessage(), 403);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 400);
         } catch (\Exception $e) {
             Log::error('Error fetching appointment statistics: ' . $e->getMessage());
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'AppointmentsController');
         }
     }
 

@@ -1,24 +1,27 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasOne;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Measurement extends Model
 {
     protected $fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'service_id', 'priority', 'type', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'service_id', 'priority', 'type'];
+    protected static array $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'service_id', 'priority', 'type'];
 
     protected $table = 'measurements';
 
-    protected static $_table = 'measurements';
+    protected static string $_table = 'measurements';
 
     /**
      * Get the Locations that owns the City.
      */
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class)->withTrashed();
     }
@@ -26,17 +29,17 @@ class Measurement extends Model
     /**
      * Get the service that owns the measurement.
      */
-    public function service()
+    public function service(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Services')->withTrashed();
+        return $this->belongsTo(Services::class)->withTrashed();
     }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function appointment()
+    public function appointment(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Appointments');
+        return $this->belongsTo(Appointments::class);
     }
 
     /*
@@ -263,7 +266,7 @@ class Measurement extends Model
         return false;
     }
 
-    public function patient()
+    public function patient(): HasOne
     {
         return $this->hasOne(\App\Models\User::class, 'id', 'patient_id');
     }

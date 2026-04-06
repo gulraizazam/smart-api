@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Models\Role;
 
-class Discount extends BaseModal
+class Discount extends BaseModel
 {
     use SoftDeletes;
 

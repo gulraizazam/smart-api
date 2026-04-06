@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Consultancy\ConsultancyInvoiceService;
-use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,8 +19,6 @@ use Illuminate\View\View;
  */
 class ConsultancyInvoiceController extends Controller
 {
-    use ApiResponse;
-
     public function __construct(
         private readonly ConsultancyInvoiceService $invoiceService,
     ) {}

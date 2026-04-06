@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ACL;
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Locations;
 use App\Models\Order;
@@ -25,18 +24,13 @@ use Illuminate\View\View;
 
 class OrdersController extends Controller
 {
-    private readonly int $success;
 
-    private readonly int $error;
-
-    private readonly int $unauthorized;
 
     public function __construct(
         private readonly OrderService $orderService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index(): View
@@ -95,9 +89,9 @@ class OrdersController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -158,9 +152,9 @@ class OrdersController extends Controller
                 'sort' => $order,
             ];
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -168,14 +162,14 @@ class OrdersController extends Controller
     {
         $data = $this->orderService->getProducts($request);
 
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        return $this->successResponse('Record found.', $data);
     }
 
     public function getDiscounts(): JsonResponse
     {
         $data = $this->orderService->getDiscounts();
 
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        return $this->successResponse('Record found.', $data);
     }
 
     public function store(Request $request): JsonResponse
@@ -186,27 +180,27 @@ class OrdersController extends Controller
             }
 
             if ($request->payment_mode === null) {
-                return ApiHelper::apiResponse($this->error, 'Payment method is required.', false);
+                return $this->errorResponse('Payment method is required.', 500);
             }
 
             $stockError = $this->orderService->validateOrderStock($request->all());
             if ($stockError) {
-                return ApiHelper::apiResponse($this->error, $stockError, false);
+                return $this->errorResponse($stockError, 500);
             }
 
             if ($request->sold_to === 'patient' && $request->doctor_id === null) {
-                return ApiHelper::apiResponse($this->error, 'prescribed by field is required', false);
+                return $this->errorResponse('prescribed by field is required', 500);
             }
 
             $order = $this->orderService->createOrder($request->all());
 
             if ($order) {
-                return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
+                return $this->successResponse('Record has been created successfully.', $order->id);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -215,9 +209,9 @@ class OrdersController extends Controller
         try {
             $result = $this->orderService->cancelOrder($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -226,9 +220,9 @@ class OrdersController extends Controller
         try {
             $result = $this->orderService->deleteOrder($id);
 
-            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+            return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -242,12 +236,12 @@ class OrdersController extends Controller
             $order = $this->orderService->getRefundDetail($id);
 
             if (! $order) {
-                return ApiHelper::apiResponse($this->success, 'This Order is already refunded!', false);
+                return $this->errorResponse('This Order is already refunded!', 404);
             }
 
-            return ApiHelper::apiDataTable(['data' => $order]);
+            return response()->json(['data' => $order]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
@@ -260,20 +254,16 @@ class OrdersController extends Controller
 
             $result = $this->orderService->processRefund($id, $request->all());
 
-            return ApiHelper::apiResponse(
-                $result['success'] ? $this->success : $this->error,
-                $result['message'],
-                $result['success'],
-            );
+            return $this->successResponse($result['message'], $result['success']);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'OrdersController');
         }
     }
 
     public function displayInvoiceAppointment(int $id): View|JsonResponse
     {
         if (! Gate::allows('order_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $data = $this->orderService->getInvoiceData($id);

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -8,12 +9,9 @@ use Illuminate\Http\Request;
 
 class MetaConversionController extends Controller
 {
-    protected $metaService;
-
-    public function __construct(MetaConversionApiService $metaService)
-    {
-        $this->metaService = $metaService;
-    }
+    public function __construct(
+        protected readonly MetaConversionApiService $metaService,
+    ) {}
 
     /**
      * Test the Meta Conversion API connection

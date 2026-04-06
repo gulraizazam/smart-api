@@ -15,7 +15,6 @@ use App\Http\Resources\Lead\LeadResource;
 use App\Http\Resources\Lead\LeadDetailResource;
 use App\Http\Resources\Lead\LeadCommentResource;
 use App\Exceptions\LeadException;
-use App\HelperModule\ApiHelper;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
 use App\Exports\ExportLead;
@@ -37,9 +36,8 @@ class LeadsController extends Controller
     public function __construct(
         protected readonly LeadService $leadService,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     // =========================================================================
@@ -56,7 +54,7 @@ class LeadsController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->leadService->bulkDelete($ids);
-                return ApiHelper::apiResponse($this->success, 'Records deleted successfully.', true);
+                return $this->successResponse('Records deleted successfully.');
             }
 
             $datatableData = $this->leadService->getDatatableData($filters, $leadType);
@@ -86,7 +84,7 @@ class LeadsController extends Controller
 
             $filterData = $this->leadService->getFilterData($filename);
 
-            return ApiHelper::apiDataTable([
+            return response()->json([
                 'data' => LeadResource::collection($leads),
                 'permissions' => $this->getPermissions(),
                 'active_filters' => $filterData['active_filters'],
@@ -101,7 +99,7 @@ class LeadsController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -112,13 +110,13 @@ class LeadsController extends Controller
     public function create(): JsonResponse
     {
         if (!Gate::allows('leads_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $this->leadService->getCreateFormData());
+            return $this->successResponse('Record found.', $this->leadService->getCreateFormData());
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -126,51 +124,51 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->createLead($request->validated());
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } catch (LeadException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
     public function detail(int $id): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $lead = $this->leadService->getLeadDetail($id);
 
             if (!$lead) {
-                return ApiHelper::apiResponse($this->error, 'Lead not found.', false);
+                return $this->errorResponse('Lead not found.', 500);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'lead' => new LeadDetailResource($lead),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
     public function edit(int $id): JsonResponse
     {
         if (!Gate::allows('leads_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $editData = $this->leadService->getEditFormData($id);
 
             if (!$editData) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+                return $this->errorResponse('Resource not found', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $editData);
+            return $this->successResponse('Record found.', $editData);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -178,25 +176,25 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->updateLead($id, $request->validated());
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.');
         } catch (LeadException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
     public function destroy(int $id): JsonResponse
     {
         if (!Gate::allows('leads_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $this->leadService->deleteLead($id);
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            return $this->successResponse('Record has been deleted successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -204,11 +202,11 @@ class LeadsController extends Controller
     {
         try {
             $lead = $this->leadService->toggleStatus((int) $request->id, (int) $request->status);
-            return ApiHelper::apiResponse($this->success, 'Status Changed Successfully', true, [
+            return $this->successResponse('Status Changed Successfully', [
                 'lead' => new LeadResource($lead),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -219,16 +217,16 @@ class LeadsController extends Controller
     public function showLeadStatuses(Request $request): JsonResponse
     {
         if (!Gate::allows('leads_lead_status')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $data = $this->leadService->getLeadStatusesWithChildren((int) $request->get('id'));
-            return ApiHelper::apiResponse($this->success, 'Record Found', true, $data);
+            return $this->successResponse('Record Found', $data);
         } catch (LeadException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -236,11 +234,11 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->updateLeadStatus((int) $request->id, $request->validated());
-            return ApiHelper::apiResponse($this->success, 'Status updated successfully!');
+            return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -250,12 +248,12 @@ class LeadsController extends Controller
             $data = $this->leadService->getStatusWithChildren((int) $request->id);
 
             if (!$data) {
-                return ApiHelper::apiResponse($this->error, 'Status not found.', false);
+                return $this->errorResponse('Status not found.', 500);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+            return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -263,9 +261,9 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getChildStatusWithParent((int) $request->id);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+            return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -277,9 +275,9 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getChildServicesWithLead((int) $request->serviceId, (int) $request->leadId);
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $data);
+            return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -287,9 +285,9 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getEditServiceData($leadId, $serviceId);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+            return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -329,9 +327,9 @@ class LeadsController extends Controller
                 $message .= '. Invalid services: ' . implode(', ', $stats['invalid_services']);
             }
 
-            return ApiHelper::apiResponse($this->success, $message);
+            return $this->successResponse($message);
         } catch (\Exception $e) {
-            return ApiHelper::apiResponse($this->error, $e->getMessage());
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 
@@ -348,7 +346,7 @@ class LeadsController extends Controller
 
             return $pdf->download('leads.pdf');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -368,9 +366,9 @@ class LeadsController extends Controller
     {
         try {
             $leads = $this->leadService->searchLeadsById($request->search, Auth::user()->account_id);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, ['leads' => $leads]);
+            return $this->successResponse('Record found.', ['leads' => $leads]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -378,11 +376,11 @@ class LeadsController extends Controller
     {
         try {
             $lead = $this->leadService->findLead((int) $request->lead_id);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            return $this->successResponse('Record found.', [
                 'lead' => $lead ? new LeadResource($lead) : null,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -390,9 +388,9 @@ class LeadsController extends Controller
     {
         try {
             $leads = $this->leadService->searchByPhone($request->search, Auth::user()->account_id);
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, ['leads' => $leads]);
+            return $this->successResponse('Record found.', ['leads' => $leads]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -406,13 +404,13 @@ class LeadsController extends Controller
             $comment = $this->leadService->addComment((int) $request->lead_id, $request->comment);
             $comment->load('user');
 
-            return ApiHelper::apiResponse($this->success, 'Comment added.', true, [
+            return $this->successResponse('Comment added.', [
                 'username' => Auth::user()->name,
                 'lead' => new LeadCommentResource($comment),
                 'leadCommentDate' => $comment->created_at->format('D M, j Y h:i A'),
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -423,19 +421,19 @@ class LeadsController extends Controller
     public function convert(int $id): JsonResponse
     {
         if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $data = $this->leadService->getConversionData($id);
 
             if (!$data) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                return $this->errorResponse('Resource not found.', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+            return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -490,21 +488,21 @@ class LeadsController extends Controller
     public function saveCity(Request $request): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->leadService->updateLeadCity((int) $request->get('pk'), (int) $request->get('value'));
 
             if (!$result) {
-                return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+                return $this->errorResponse('Resource not found.', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'City updated successfully.', true, [
+            return $this->successResponse('City updated successfully.', [
                 'city' => $result['city_name'],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
@@ -515,41 +513,41 @@ class LeadsController extends Controller
                 $this->leadService->resolveLeadData($request->all(), Gate::allows('leads_manage'))
             );
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
     public function sendSms(int $id): JsonResponse
     {
         if (!Gate::allows('leads_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->leadService->sendSmsToLead($id);
 
             return $result['status']
-                ? ApiHelper::apiResponse($this->success, 'SMS has been sent successfully.')
-                : ApiHelper::apiResponse($this->error, 'SMS sending failed.');
+                ? $this->successResponse('SMS has been sent successfully.')
+                : $this->errorResponse('SMS sending failed.', 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 
     public function removeFromJunk(int $id): JsonResponse
     {
         if (!Gate::allows('leads_convert')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->leadService->removeLeadFromJunk($id);
 
             return $result['status']
-                ? ApiHelper::apiResponse($this->success, $result['message'])
-                : ApiHelper::apiResponse($this->error, $result['message']);
+                ? $this->successResponse($result['message'])
+                : $this->errorResponse($result['message'], 500);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'LeadsController');
         }
     }
 

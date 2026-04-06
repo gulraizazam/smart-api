@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\GroupsTree;
@@ -26,12 +26,7 @@ class ServicesController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of Permission.
@@ -97,9 +92,9 @@ class ServicesController extends Controller
 
             } //end
 
-            return ApiHelper::apiDataTable($records);
+            return response()->json($records);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ServicesController');
         }
     }
     public function getSortOrder()
@@ -115,7 +110,7 @@ class ServicesController extends Controller
 
         try {
             if (! Gate::allows('services_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
                 $services = Services::where('slug', '!=', 'all')
@@ -135,9 +130,9 @@ class ServicesController extends Controller
             }
 
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $mergedServices);
+            return $this->successResponse('Success', $mergedServices);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ServicesController');
         }
     }
     public function sortOrderSave(Request $request)
@@ -146,7 +141,7 @@ class ServicesController extends Controller
 
         try {
             if (! Gate::allows('services_sort')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
@@ -155,12 +150,12 @@ class ServicesController extends Controller
                     Services::where('id', '=', $itemID)->update(['sort_number' => $key]);
                 }
 
-                return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
+                return $this->successResponse('Records are sorted Successfully!');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
+            return $this->errorResponse('Something went Wrong! Records are not sorted', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ServicesController');
         }
     }
     private function getExtraData($records = [])
@@ -194,7 +189,7 @@ class ServicesController extends Controller
     public function create()
     {
         if (! Gate::allows('services_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $service = new \stdClass();
@@ -209,7 +204,7 @@ class ServicesController extends Controller
 
         $durations = ServiceHelper::getDurations();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'parent_services' => $Services,
             'service' => $service,
             'durations' => $durations,
@@ -227,21 +222,21 @@ class ServicesController extends Controller
     {
 
         if (! Gate::allows('services_create')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
 
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->successResponse($validator->messages()->first(), false);
         }
 
         if (Services::createRecord($request, Auth::User()->account_id)) {
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return $this->errorResponse('Something went wrong, please try again later.', 404);
         }
     }
 
@@ -267,7 +262,7 @@ class ServicesController extends Controller
     public function edit($id)
     {
         if (! Gate::allows('services_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $service = Services::findOrFail($id);
@@ -292,7 +287,7 @@ class ServicesController extends Controller
 
         $durations = ServiceHelper::getDurations();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'parent_services' => $Services,
             'service' => $service,
             'durations' => $durations,
@@ -317,7 +312,7 @@ class ServicesController extends Controller
 
         // If AJAX request, return JSON with description only
         if ($request->ajax() || $request->wantsJson()) {
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'description' => $service->description,
             ]);
         }
@@ -346,7 +341,7 @@ class ServicesController extends Controller
     public function duplicate($id)
     {
         if (! Gate::allows('services_duplicate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $service = Services::findOrFail($id);
@@ -363,7 +358,7 @@ class ServicesController extends Controller
 
         $durations = ServiceHelper::getDurations();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'parent_services' => $Services,
             'service' => $service,
             'durations' => $durations,
@@ -380,18 +375,18 @@ class ServicesController extends Controller
     public function storeDuplicate(Request $request)
     {
         if (! Gate::allows('services_duplicate')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->successResponse($validator->messages()->first(), false);
         }
 
         if (Services::createRecord($request, Auth::User()->account_id)) {
-            return ApiHelper::apiResponse($this->success, 'Service has been duplicated successfully.');
+            return $this->successResponse('Service has been duplicated successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.');
+            return $this->successResponse('Something went wrong, please try again later.');
         }
     }
 
@@ -404,31 +399,31 @@ class ServicesController extends Controller
     public function update(Request $request, $id)
     {
         if (! Gate::allows('services_edit')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $validator = $this->verifyFields($request);
         if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            return $this->successResponse($validator->messages()->first(), false);
         }
         $service = Services::findOrFail($id);
         if ($service->parent_id > 0 && $request->parent_id == 0) {
             $check_appointment = Appointments::whereServiceId($id)->count();
             if ($check_appointment > 0) {
-                return ApiHelper::apiResponse($this->error, 'Service can not be updated due to one or more treatments are associated with it.', false);
+                return $this->errorResponse('Service can not be updated due to one or more treatments are associated with it.', 500);
             }
         }
         if (
             Services::isChildExists($id, Auth::User()->account_id) &&
             ($service->parent_id != $request->get('parent_id') || $service->end_node != (int) $request->get('end_node'))
         ) {
-            return ApiHelper::apiResponse($this->success, 'Parent Service can not be changed due to one or more services are associated with it.', false);
+            return $this->errorResponse('Parent Service can not be changed due to one or more services are associated with it.', 404);
         }
 
         if (Services::updateRecord($id, $request, Auth::User()->account_id)) {
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.');
+            return $this->successResponse('Something went wrong, please try again later.');
         }
     }
 
@@ -441,16 +436,16 @@ class ServicesController extends Controller
     public function destroy($id)
     {
         if (! Gate::allows('services_destroy')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $result = Services::deleteRecord($id);
 
         if ($result['status']) {
-            return ApiHelper::apiResponse($this->success, $result['message']);
+            return $this->successResponse($result['message']);
         }
 
-        return ApiHelper::apiResponse($this->success, $result['message'], false);
+        return $this->errorResponse($result['message'], 400);
     }
 
     /**
@@ -463,12 +458,12 @@ class ServicesController extends Controller
         try {
 
             if (! Gate::allows('services_active') && ! Gate::allows('services_inactive')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
             $checkService = Services::find($request->id);
 
         if (!$checkService) {
-            return ApiHelper::apiResponse($this->error, 'Service not found.', false);
+            return $this->errorResponse('Service not found.', 500);
         }
 
         // If the request is to deactivate (status = 0) AND service is a parent
@@ -479,7 +474,7 @@ class ServicesController extends Controller
                 ->exists();
 
             if ($activeChildExists) {
-                return ApiHelper::apiResponse($this->error, 'This parent has active child services. Please deactivate them first.', false);
+                return $this->errorResponse('This parent has active child services. Please deactivate them first.', 500);
             }
         }
 
@@ -490,12 +485,12 @@ class ServicesController extends Controller
             }
 
             if ($response) {
-                return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+                return $this->successResponse('Status has been changed successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
+            return $this->errorResponse('Resource not found.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'ServicesController');
         }
 
     }

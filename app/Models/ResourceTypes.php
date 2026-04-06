@@ -1,30 +1,32 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\Resource;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class ResourceTypes extends BaseModal
+class ResourceTypes extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['name', 'slug', 'active', 'updated_by', 'created_by', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['name', 'slug', 'active'];
+    protected static array $_fillable = ['name', 'slug', 'active'];
 
     protected $table = 'resource_types';
 
-    protected static $_table = 'resource_types';
+    protected static string $_table = 'resource_types';
 
     /**
      * sent the resource type name to resource table against resource_type_id.
      */
-    public function resources()
+    public function resources(): HasOne
     {
-        return $this->hasOne('App\Models\Resources', 'resource_type_id');
+        return $this->hasOne(Resources::class, 'resource_type_id');
     }
 
     /**

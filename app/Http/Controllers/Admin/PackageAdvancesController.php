@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
@@ -25,12 +25,7 @@ class PackageAdvancesController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
+    
 
     /**
      * Display a listing of the resource.
@@ -55,17 +50,7 @@ class PackageAdvancesController extends Controller
 
         $balance = $total_cash_in - $total_cash_out;
 
-        /**
-         * I make the response according to request type, api or
-         * web otherwise we need to create extra route for api
-         */
-        return ApiHelper::makeResponse([
-            'paymentmodes' => $paymentmodes,
-            'package' => $package,
-            'total_cash_in' => $total_cash_in,
-            'total_cash_out' => $total_cash_out,
-            'balance' => $balance,
-        ], 'admin.packagesadvances.index');
+        return view('admin.packagesadvances.index', compact('paymentmodes', 'package', 'total_cash_in', 'total_cash_out', 'balance'));
 
     }
 
@@ -78,13 +63,13 @@ class PackageAdvancesController extends Controller
     {
         if (! Gate::allows('finances_create')) {
 
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
         $paymentmodes->prepend('Select Payment Mode', '');
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'paymentmodes' => $paymentmodes,
         ]);
     }
@@ -98,7 +83,7 @@ class PackageAdvancesController extends Controller
 
         $packageinfo = Packages::where('patient_id', '=', $request->id)->get();
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+        return $this->successResponse('Record found', [
             'packageinfo' => $packageinfo,
         ]);
 
@@ -123,13 +108,13 @@ class PackageAdvancesController extends Controller
         if ($cash_amount_sum <= $package_info->total_price) {
             $cash_amount_sum = number_format($cash_amount_sum);
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            return $this->successResponse('Record found', [
                 'cash_amount_sum' => $cash_amount_sum,
                 'total_price' => $total_price,
             ]);
         }
 
-        return ApiHelper::apiResponse($this->success, 'Record not found', false);
+        return $this->errorResponse('Record not found', 404);
 
     }
 
@@ -195,14 +180,14 @@ class PackageAdvancesController extends Controller
             if ($package_advances) {
                 // Update plan_name after payment added
                 $this->updatePlanNameForPackage($request->package_id);
-                return ApiHelper::apiResponse($this->success, 'Record saved successfully.');
+                return $this->successResponse('Record saved successfully.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Failed to save the record.', false);
+            return $this->errorResponse('Failed to save the record.', 404);
 
         }
 
-        return ApiHelper::apiResponse($this->success, 'Cash amount should be less then or equal to total amount.', false);
+        return $this->errorResponse('Cash amount should be less then or equal to total amount.', 404);
     }
 
     /**
@@ -250,17 +235,10 @@ class PackageAdvancesController extends Controller
             $balance = 0;
             foreach ($packagesadvances as $packagesadvances) {
 
-                switch ($packagesadvances->cash_flow) {
-                    case 'in':
-                        $balance = $balance + $packagesadvances->cash_amount;
-                        break;
-                    case 'out':
-                        $balance = $balance - $packagesadvances->cash_amount;
-                        break;
-                    default:
-                        $balance = $balance - $packagesadvances->cash_amount;
-                        break;
-                }
+                $balance += match ($packagesadvances->cash_flow) {
+                    'in' => $packagesadvances->cash_amount,
+                    default => -$packagesadvances->cash_amount,
+                };
                 if ($packagesadvances->package_id) {
                     $transtype = Config::get('constants.trans_type.advance_in');
                 }
@@ -315,7 +293,7 @@ class PackageAdvancesController extends Controller
             ];
         }
 
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     private function getPatientId()

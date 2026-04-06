@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
@@ -14,12 +15,9 @@ use Illuminate\Support\Facades\DB;
 
 class PoolService
 {
-    private CashflowAuditService $auditService;
-
-    public function __construct(CashflowAuditService $auditService)
-    {
-        $this->auditService = $auditService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+    ) {}
 
     /**
      * Get all pools for account with location info.

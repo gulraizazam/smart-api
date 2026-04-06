@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB as FacadesDB;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ResourceHasRotaDays extends Model
 {
@@ -13,11 +15,11 @@ class ResourceHasRotaDays extends Model
 
     protected $fillable = ['date', 'start_time', 'end_time', 'start_off', 'end_off', 'start_timestamp', 'end_timestamp', 'active', 'resource_has_rota_id', 'created_at', 'updated_at'];
 
-    protected static $_fillable = ['date', 'start_time', 'end_time', 'active', 'resource_has_rota_id'];
+    protected static array $_fillable = ['date', 'start_time', 'end_time', 'active', 'resource_has_rota_id'];
 
     protected $table = 'resource_has_rota_days';
 
-    protected static $_table = 'resource_has_rota_days';
+    protected static string $_table = 'resource_has_rota_days';
 
     /*Create Resource has Rota days
      *
@@ -471,7 +473,7 @@ class ResourceHasRotaDays extends Model
     /**
      * Relationship: ResourceHasRotaDays belongs to ResourceHasRota
      */
-    public function resource_rota()
+    public function resource_rota(): BelongsTo
     {
         return $this->belongsTo(\App\Models\ResourceHasRota::class, 'resource_has_rota_id');
     }

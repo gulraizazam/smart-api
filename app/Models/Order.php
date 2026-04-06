@@ -9,9 +9,11 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Order extends BaseModal
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Order extends BaseModel
 {
     use HasFactory;
 
@@ -381,12 +383,12 @@ class Order extends BaseModal
     /**
      * Get the patients of order.
      */
-    public function patients()
+    public function patients(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
     }
 
-    public function orderDetail()
+    public function orderDetail(): HasMany
     {
         return $this->hasMany(OrderDetail::class, 'order_id')->with('product');
     }
@@ -402,11 +404,11 @@ class Order extends BaseModal
 
         return $record;
     }
-    public function centre()
+    public function centre(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id');
     }
-    public function doctor()
+    public function doctor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'prescribed_by');
     }

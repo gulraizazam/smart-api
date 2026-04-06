@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
@@ -14,16 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class StaffAdvanceService
 {
-    private CashflowAuditService $auditService;
-    private CashflowSettingService $settingService;
-    private NotificationService $notificationService;
-
-    public function __construct(CashflowAuditService $auditService, CashflowSettingService $settingService, NotificationService $notificationService)
-    {
-        $this->auditService = $auditService;
-        $this->settingService = $settingService;
-        $this->notificationService = $notificationService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+        private readonly CashflowSettingService $settingService,
+        private readonly NotificationService $notificationService,
+    ) {}
 
     /**
      * Get staff advance summary (grouped by staff member).

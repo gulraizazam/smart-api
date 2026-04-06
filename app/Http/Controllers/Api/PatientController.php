@@ -39,7 +39,7 @@ class PatientController extends Controller
         try {
             return response()->json($this->patientService->getDatatableData($request));
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -51,7 +51,7 @@ class PatientController extends Controller
 
             return $this->success('Patients retrieved.', ['patients' => $patients]);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -70,7 +70,7 @@ class PatientController extends Controller
 
             return $this->success('Record found.', $this->patientService->getCreateData());
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -85,7 +85,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -98,7 +98,7 @@ class PatientController extends Controller
                 ? $this->success('Record found.', $result)
                 : $this->fail('Record not found.');
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -115,7 +115,7 @@ class PatientController extends Controller
                 ? $this->success('Record found.', $data)
                 : $this->notFound('Patient not found.');
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -130,7 +130,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -145,7 +145,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -163,7 +163,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -182,7 +182,7 @@ class PatientController extends Controller
                 ? $this->success('Record found.', $result)
                 : $this->notFound('Record not found.');
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -195,7 +195,7 @@ class PatientController extends Controller
                 ? $this->success('Tab counts retrieved.', $counts)
                 : $this->notFound('Patient not found.');
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -221,7 +221,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], ['image' => $result['image']])
                 : $this->fail($result['message']);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -241,7 +241,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -256,7 +256,7 @@ class PatientController extends Controller
 
             return $this->fromService($result);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -276,7 +276,7 @@ class PatientController extends Controller
                 ])
                 : $this->fail($result['message']);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -294,7 +294,7 @@ class PatientController extends Controller
 
             return response()->json($data);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -306,7 +306,7 @@ class PatientController extends Controller
 
             return response()->json($data);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -318,7 +318,7 @@ class PatientController extends Controller
 
             return response()->json($data);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -345,7 +345,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], new PatientDocumentResource($result['document']))
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -367,7 +367,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], new PatientDocumentResource($result['document']))
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -386,7 +386,7 @@ class PatientController extends Controller
                 ? $this->success('Activity history retrieved.', $activities)
                 : $this->notFound('Patient not found.');
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -403,7 +403,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], $result['data'])
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -424,7 +424,7 @@ class PatientController extends Controller
 
             return $this->success('Notes retrieved.', PatientNoteResource::collection($result['notes']));
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -439,7 +439,7 @@ class PatientController extends Controller
 
             return $this->success('Note added successfully.', new PatientNoteResource($result['note']));
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -452,7 +452,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], new PatientNoteResource($result['note']))
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -465,7 +465,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'])
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -478,7 +478,7 @@ class PatientController extends Controller
                 ? $this->success($result['message'], new PatientNoteResource($result['note']))
                 : $this->respond(false, $result['message'], null, $result['code'] ?? 400);
         } catch (Exception $e) {
-            return $this->errorResponse($e);
+            return $this->exceptionToResponse($e);
         }
     }
 
@@ -529,7 +529,7 @@ class PatientController extends Controller
         return $this->respond($result['status'], $result['message']);
     }
 
-    private function errorResponse(Exception $e): JsonResponse
+    private function exceptionToResponse(Exception $e): JsonResponse
     {
         $message = config('app.debug')
             ? $e->getMessage() . ' Line ' . $e->getLine() . ' File ' . $e->getFile()

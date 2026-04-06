@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
@@ -34,17 +35,11 @@ class VendorService
 
         // Sort
         $sort = $filters['sort'] ?? 'name';
-        switch ($sort) {
-            case 'outstanding_desc':
-                $query->orderByDesc('cached_balance');
-                break;
-            case 'outstanding_asc':
-                $query->orderBy('cached_balance');
-                break;
-            default:
-                $query->orderBy('name');
-                break;
-        }
+        match ($sort) {
+            'outstanding_desc' => $query->orderByDesc('cached_balance'),
+            'outstanding_asc' => $query->orderBy('cached_balance'),
+            default => $query->orderBy('name'),
+        };
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];

@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
@@ -17,19 +17,6 @@ use Illuminate\Support\Facades\Gate;
 
 class MedicalHistoryController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    public function __construct()
-    {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
-    }
-
     /**
      * Display a listing of the resource.
      *
@@ -109,7 +96,7 @@ class MedicalHistoryController extends Controller
             'manage' => Gate::allows('appointments_medical_form_manage'),
         ];
 
-        return ApiHelper::apiDataTable($records);
+        return response()->json($records);
     }
 
     private function getFilters($records)
@@ -143,12 +130,12 @@ class MedicalHistoryController extends Controller
 
         $users = Patients::getActiveOnly()->toArray();
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'users' => $users,
             'patient_id' => $patient_id,
             'medicalinformation' => $medicalinformation,
-        ], 'admin.patients.card.medical.edit');
+        ]);
     }
 
     /**
@@ -183,7 +170,7 @@ class MedicalHistoryController extends Controller
 
         $leadServices = $medicalinformation->service_id;
 
-        return ApiHelper::makeResponse([
+        return $this->successResponse('Record found.', [
             'custom_form' => $custom_form_feedback,
             'patient_id' => $patient_id,
             'medicalinformation' => $medicalinformation,
@@ -191,6 +178,6 @@ class MedicalHistoryController extends Controller
             'Services' => $Services,
             'leadServices' => $leadServices,
             'thisId' => $id,
-        ], 'admin.patients.card.medical.filled_preview');
+        ]);
     }
 }

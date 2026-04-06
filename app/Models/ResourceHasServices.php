@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -8,11 +9,11 @@ class ResourceHasServices extends Model
 {
     protected $fillable = ['resource_id', 'service_id'];
 
-    protected static $_fillable = ['resource_id', 'service_id'];
+    protected static array $_fillable = ['resource_id', 'service_id'];
 
     protected $table = 'resource_has_services';
 
-    protected static $_table = 'resource_has_services';
+    protected static string $_table = 'resource_has_services';
 
     public $timestamps = false;
 

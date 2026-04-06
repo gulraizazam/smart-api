@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\CustomFormHelper;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 
-class CustomFormFeedbackDetails extends BaseModal
+class CustomFormFeedbackDetails extends BaseModel
 {
     use SoftDeletes;
 
@@ -19,9 +20,9 @@ class CustomFormFeedbackDetails extends BaseModal
      *
      * @var array
      */
-    protected static $_fillable = ['field_label', 'field_value', 'custom_form_id', 'custom_form_field_id', 'custom_form_feedback_id'];
+    protected static array $_fillable = ['field_label', 'field_value', 'custom_form_id', 'custom_form_field_id', 'custom_form_feedback_id'];
 
-    protected static $_table = 'custom_form_feedbacks';
+    protected static string $_table = 'custom_form_feedbacks';
 
     const sort_field = 'id';
 

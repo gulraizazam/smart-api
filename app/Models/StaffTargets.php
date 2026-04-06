@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StaffTargets extends BaseModal
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class StaffTargets extends BaseModel
 {
     use SoftDeletes;
 
@@ -15,46 +18,46 @@ class StaffTargets extends BaseModal
         'month', 'year', 'created_at', 'updated_at', 'deleted_at',
     ];
 
-    protected static $_fillable = [
+    protected static array $_fillable = [
         'account_id', 'staff_id', 'location_id', 'total_amount',
         'month', 'year',
     ];
 
     protected $table = 'staff_targets';
 
-    protected static $_table = 'staff_targets';
+    protected static string $_table = 'staff_targets';
 
     /**
      * Get the staff_targets.
      */
-    public function staff_target_services()
+    public function staff_target_services(): HasMany
     {
 
-        return $this->hasMany('App\Models\StaffTargetServices', 'staff_target_id');
+        return $this->hasMany(StaffTargetServices::class, 'staff_target_id');
     }
 
     /**
      * Get the doctors for staff_target.
      */
-    public function staff()
+    public function staff(): BelongsTo
     {
-        return $this->belongsTo('App\Models\User', 'staff_id');
+        return $this->belongsTo(User::class, 'staff_id');
     }
 
     /**
      * Get the doctors for staff_target.
      */
-    public function staff_target()
+    public function staff_target(): BelongsTo
     {
-        return $this->belongsTo('App\Models\StaffTargets', 'staff_target_id');
+        return $this->belongsTo(StaffTargets::class, 'staff_target_id');
     }
 
     /**
      * Get the doctors for staff_target.
      */
-    public function location()
+    public function location(): BelongsTo
     {
-        return $this->belongsTo('App\Models\Locations', 'location_id');
+        return $this->belongsTo(Locations::class, 'location_id');
     }
 
     /**
@@ -393,9 +396,9 @@ class StaffTargets extends BaseModal
         return false;
     }
 
-    public function service_has_staff_targets()
+    public function service_has_staff_targets(): HasMany
     {
-        return $this->hasMany('App\Models\ServiceHasStaffTargets', 'staff_target_id')->withoutGlobalScope(SoftDeletingScope::class);
+        return $this->hasMany(ServiceHasStaffTargets::class, 'staff_target_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
     /**

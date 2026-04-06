@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PeriodLock extends Model
 {
@@ -24,7 +26,7 @@ class PeriodLock extends Model
     /**
      * User who locked the period.
      */
-    public function lockedByUser()
+    public function lockedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'locked_by')->withTrashed();
     }
@@ -32,7 +34,7 @@ class PeriodLock extends Model
     /**
      * User who unlocked the period.
      */
-    public function unlockedByUser()
+    public function unlockedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'unlocked_by')->withTrashed();
     }

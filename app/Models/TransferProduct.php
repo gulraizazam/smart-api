@@ -12,10 +12,13 @@ use App\Models\ProductDetail;
 use Illuminate\Support\Facades\DB;
 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class TransferProduct extends BaseModal
+use Illuminate\Database\Eloquent\Factories\HasFactory;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class TransferProduct extends BaseModel
 {
     use HasFactory;
 
@@ -39,12 +42,12 @@ class TransferProduct extends BaseModal
         return $this->belongsTo(ProductDetail::class, 'product_detail_id');
     } */
 
-    public function parentProduct()
+    public function parentProduct(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
 
-    public function childProduct()
+    public function childProduct(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'child_product_id');
     }
@@ -401,12 +404,12 @@ class TransferProduct extends BaseModal
         return $record;
     }
 
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
     }
 
-    public function parent()
+    public function parent(): HasOne
     {
         return $this->hasOne(self::class, 'id', 'parent_id');
     }

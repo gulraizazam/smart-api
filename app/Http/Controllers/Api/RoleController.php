@@ -1,8 +1,8 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleDatatableRequest;
@@ -21,9 +21,8 @@ class RoleController extends Controller
     public function __construct(
         private readonly RoleService $roleService,
     ) {
-        $this->success = config('constants.api_status.success');
-        $this->error = config('constants.api_status.error');
-        $this->unauthorized = config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -67,7 +66,7 @@ class RoleController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -81,14 +80,14 @@ class RoleController extends Controller
             $mapping = $this->roleService->getAllPermissionsMapping();
             $allowedPermissions = $this->roleService->getAllowedPermissions();
 
-            return ApiHelper::makeResponse([
+            return $this->successResponse('Record found.', [
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
                 'allowed_permissions' => $allowedPermissions,
-            ], 'admin.roles.create');
+            ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -96,16 +95,16 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to create roles.', false);
+                return $this->errorResponse('You are not authorized to create roles.', 401);
             }
 
             $this->roleService->create($request->validated());
 
             session()->flash('success', 'Record has been created successfully.');
 
-            return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            return $this->successResponse('Record has been created successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -120,15 +119,15 @@ class RoleController extends Controller
             $mapping = $this->roleService->getAllPermissionsMapping();
             $allowedPermissions = $this->roleService->getAllowedPermissions($id);
 
-            return ApiHelper::makeResponse([
+            return $this->successResponse('Record found.', [
                 'role' => $role,
                 'allowed_permissions' => $allowedPermissions,
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
-            ], 'admin.roles.edit');
+            ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -136,16 +135,16 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to edit roles.', false);
+                return $this->errorResponse('You are not authorized to edit roles.', 401);
             }
 
             $this->roleService->update($id, $request->validated());
 
             session()->flash('success', 'Record has been updated successfully.');
 
-            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+            return $this->successResponse('Record has been updated successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -168,7 +167,7 @@ class RoleController extends Controller
                 'reports_permissions' => $mapping['reports_permissions'],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -176,16 +175,16 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_duplicate')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to duplicate roles.', false);
+                return $this->errorResponse('You are not authorized to duplicate roles.', 401);
             }
 
             $this->roleService->duplicate($request->validated());
 
             session()->flash('success', 'Role has been duplicated successfully.');
 
-            return ApiHelper::apiResponse($this->success, 'Role has been duplicated successfully.');
+            return $this->successResponse('Role has been duplicated successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 
@@ -193,20 +192,20 @@ class RoleController extends Controller
     {
         try {
             if (!Gate::allows('roles_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to delete roles.', false);
+                return $this->errorResponse('You are not authorized to delete roles.', 401);
             }
 
             $deleted = $this->roleService->delete($id);
 
             if (!$deleted) {
-                return ApiHelper::apiResponse($this->success, 'Child records exist, unable to delete resource.', false);
+                return $this->errorResponse('Child records exist, unable to delete resource.', 404);
             }
 
             session()->flash('success', 'Record has been deleted successfully.');
 
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+            return $this->successResponse('Record has been deleted successfully.');
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'RoleController');
         }
     }
 }

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\Locations;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashPool extends Model
 {
@@ -32,7 +35,7 @@ class CashPool extends Model
     /**
      * Get the location (branch) this pool belongs to.
      */
-    public function location()
+    public function location(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id')->withTrashed();
     }
@@ -40,7 +43,7 @@ class CashPool extends Model
     /**
      * Expenses paid from this pool.
      */
-    public function expenses()
+    public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class, 'paid_from_pool_id');
     }
@@ -48,7 +51,7 @@ class CashPool extends Model
     /**
      * Transfers out from this pool.
      */
-    public function transfersOut()
+    public function transfersOut(): HasMany
     {
         return $this->hasMany(CashTransfer::class, 'from_pool_id');
     }
@@ -56,7 +59,7 @@ class CashPool extends Model
     /**
      * Transfers in to this pool.
      */
-    public function transfersIn()
+    public function transfersIn(): HasMany
     {
         return $this->hasMany(CashTransfer::class, 'to_pool_id');
     }
@@ -64,7 +67,7 @@ class CashPool extends Model
     /**
      * Staff advances from this pool.
      */
-    public function staffAdvances()
+    public function staffAdvances(): HasMany
     {
         return $this->hasMany(StaffAdvance::class, 'pool_id');
     }
@@ -72,7 +75,7 @@ class CashPool extends Model
     /**
      * Staff returns to this pool.
      */
-    public function staffReturns()
+    public function staffReturns(): HasMany
     {
         return $this->hasMany(StaffReturn::class, 'pool_id');
     }

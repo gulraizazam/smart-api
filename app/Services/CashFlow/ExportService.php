@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use Illuminate\Support\Facades\Response;
@@ -24,37 +25,18 @@ class ExportService
         return Response::streamDownload(function () use ($data, $reportType) {
             $handle = fopen('php://output', 'w');
 
-            switch ($reportType) {
-                case 'cashflow-statement':
-                    $this->writeCashFlowStatementCsv($handle, $data);
-                    break;
-                case 'branch-comparison':
-                    $this->writeBranchComparisonCsv($handle, $data);
-                    break;
-                case 'category-trend':
-                    $this->writeCategoryTrendCsv($handle, $data);
-                    break;
-                case 'vendor-outstanding':
-                    $this->writeVendorOutstandingCsv($handle, $data);
-                    break;
-                case 'staff-advance':
-                    $this->writeStaffAdvanceCsv($handle, $data);
-                    break;
-                case 'transfer-log':
-                    $this->writeTransferLogCsv($handle, $data);
-                    break;
-                case 'flagged-entries':
-                    $this->writeFlaggedEntriesCsv($handle, $data);
-                    break;
-                case 'daily-movement':
-                    $this->writeDailyMovementCsv($handle, $data);
-                    break;
-                case 'dormant-vendors':
-                    $this->writeDormantVendorsCsv($handle, $data);
-                    break;
-                default:
-                    $this->writeGenericCsv($handle, $data);
-            }
+            match ($reportType) {
+                'cashflow-statement' => $this->writeCashFlowStatementCsv($handle, $data),
+                'branch-comparison' => $this->writeBranchComparisonCsv($handle, $data),
+                'category-trend' => $this->writeCategoryTrendCsv($handle, $data),
+                'vendor-outstanding' => $this->writeVendorOutstandingCsv($handle, $data),
+                'staff-advance' => $this->writeStaffAdvanceCsv($handle, $data),
+                'transfer-log' => $this->writeTransferLogCsv($handle, $data),
+                'flagged-entries' => $this->writeFlaggedEntriesCsv($handle, $data),
+                'daily-movement' => $this->writeDailyMovementCsv($handle, $data),
+                'dormant-vendors' => $this->writeDormantVendorsCsv($handle, $data),
+                default => $this->writeGenericCsv($handle, $data),
+            };
 
             fclose($handle);
         }, $filename, [
@@ -68,28 +50,18 @@ class ExportService
      */
     private function getReportData(string $reportType, int $accountId, array $filters): array
     {
-        switch ($reportType) {
-            case 'cashflow-statement':
-                return $this->reportService->cashFlowStatement($accountId, $filters);
-            case 'branch-comparison':
-                return $this->reportService->branchComparison($accountId, $filters);
-            case 'category-trend':
-                return $this->reportService->categoryTrend($accountId, $filters);
-            case 'vendor-outstanding':
-                return $this->reportService->vendorOutstanding($accountId);
-            case 'staff-advance':
-                return $this->reportService->staffAdvanceSummary($accountId);
-            case 'transfer-log':
-                return $this->reportService->transferLog($accountId, $filters);
-            case 'flagged-entries':
-                return $this->reportService->flaggedEntries($accountId, $filters);
-            case 'daily-movement':
-                return $this->reportService->dailyMovement($accountId, $filters);
-            case 'dormant-vendors':
-                return $this->reportService->dormantVendors($accountId);
-            default:
-                return [];
-        }
+        return match ($reportType) {
+            'cashflow-statement' => $this->reportService->cashFlowStatement($accountId, $filters),
+            'branch-comparison' => $this->reportService->branchComparison($accountId, $filters),
+            'category-trend' => $this->reportService->categoryTrend($accountId, $filters),
+            'vendor-outstanding' => $this->reportService->vendorOutstanding($accountId),
+            'staff-advance' => $this->reportService->staffAdvanceSummary($accountId),
+            'transfer-log' => $this->reportService->transferLog($accountId, $filters),
+            'flagged-entries' => $this->reportService->flaggedEntries($accountId, $filters),
+            'daily-movement' => $this->reportService->dailyMovement($accountId, $filters),
+            'dormant-vendors' => $this->reportService->dormantVendors($accountId),
+            default => [],
+        };
     }
 
     private function writeCashFlowStatementCsv($handle, array $data): void

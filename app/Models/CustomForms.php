@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use DateTime;
@@ -10,22 +11,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class CustomForms extends BaseModal
+class CustomForms extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'name', 'description', 'form_type', 'content', 'active', 'sort_number', 'created_by', 'updated_by', 'created_at', 'updated_at', 'custom_form_type'];
 
-    protected static $_fillable = ['name', 'description', 'form_type', 'content', 'active', 'sort_number', 'form_type'];
+    protected static array $_fillable = ['name', 'description', 'form_type', 'content', 'active', 'sort_number', 'form_type'];
 
-    public $__fillable = ['name', 'description', 'form_type', 'content', 'active', 'sort_number', 'custom_form_type'];
+    public array $__fillable = ['name', 'description', 'form_type', 'content', 'active', 'sort_number', 'custom_form_type'];
 
     protected $table = 'custom_forms';
 
-    protected static $_table = 'custom_forms';
+    protected static string $_table = 'custom_forms';
 
-    public $__table = 'custom_forms';
+    public string $__table = 'custom_forms';
 
     const sort_field = 'sort_number';
 
@@ -79,10 +81,10 @@ class CustomForms extends BaseModal
 
     }
 
-    public function form_fields()
+    public function form_fields(): HasMany
     {
-        //return $this->hasMany('App\Models\CustomFormFields', 'user_form_id')->where([ ['field_type', '!=', config("constants.custom_form.field_types.title")]])->orderBy(self::sort_field, 'asc');
-        return $this->hasMany('App\Models\CustomFormFields', 'user_form_id')->orderBy(self::sort_field, 'asc');
+        //return $this->hasMany(CustomFormFields::class, 'user_form_id')->where([ ['field_type', '!=', config("constants.custom_form.field_types.title")]])->orderBy(self::sort_field, 'asc');
+        return $this->hasMany(CustomFormFields::class, 'user_form_id')->orderBy(self::sort_field, 'asc');
     }
 
     public static function get_all_fields_data($id)

@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use DateTime;
@@ -7,25 +8,26 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Centertarget extends BaseModal
+class Centertarget extends BaseModel
 {
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'month', 'year', 'working_days', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['account_id', 'month', 'year', 'working_days'];
+    protected static array $_fillable = ['account_id', 'month', 'year', 'working_days'];
 
     protected $table = 'centertarget';
 
-    protected static $_table = 'centertarget';
+    protected static string $_table = 'centertarget';
 
     /**
      * Get the staff_targets.
      */
-    public function center_target_meta()
+    public function center_target_meta(): HasMany
     {
-        return $this->hasMany('App\Models\CentertargetMeta', 'centertarget_id');
+        return $this->hasMany(CentertargetMeta::class, 'centertarget_id');
     }
 
     /**

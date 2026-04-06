@@ -69,9 +69,7 @@ final class PlansController extends Controller
         }
 
         try {
-            return $this->successResponse(
-                $this->planService->getLookupData($patientId),
-            );
+            return $this->successResponse('Success', $this->planService->getLookupData($patientId));
         } catch (\Throwable $e) {
             Log::error('Plans Lookup Data Error: ' . $e->getMessage());
 
@@ -90,7 +88,7 @@ final class PlansController extends Controller
         try {
             $stats = $this->planService->getPatientStatistics($patientId);
 
-            return $this->successResponse(new PlanStatisticsResource($stats));
+            return $this->successResponse('Success', new PlanStatisticsResource($stats));
         } catch (\Throwable $e) {
             Log::error('Plans Statistics Error: ' . $e->getMessage());
 
@@ -143,9 +141,7 @@ final class PlansController extends Controller
         }
 
         try {
-            return $this->successResponse(
-                $this->planService->getGlobalLookupData(),
-            );
+            return $this->successResponse('Success', $this->planService->getGlobalLookupData());
         } catch (\Throwable $e) {
             Log::error('Global Plans Lookup Data Error: ' . $e->getMessage());
 
@@ -280,28 +276,6 @@ final class PlansController extends Controller
             'plans_cash_edit_date'         => Gate::allows('plans_cash_edit_date'),
             'plans_edit_sold_by'           => Gate::allows('plans_edit_sold_by'),
         ];
-    }
-
-    // ── Standard response helpers ───────────────────────
-
-    private function successResponse(mixed $data, string $message = 'Success'): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => $message,
-            'data'    => $data,
-            'errors'  => [],
-        ]);
-    }
-
-    private function errorResponse(string $message, int $status): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => $message,
-            'data'    => null,
-            'errors'  => [],
-        ], $status);
     }
 
     private function unauthorizedResponse(): JsonResponse

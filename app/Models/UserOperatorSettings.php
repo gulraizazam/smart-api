@@ -8,7 +8,7 @@ use App\Helpers\Filters;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
-class UserOperatorSettings extends BaseModal
+class UserOperatorSettings extends BaseModel
 {
     use SoftDeletes;
 

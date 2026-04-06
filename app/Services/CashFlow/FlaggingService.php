@@ -1,5 +1,6 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Services\CashFlow;
 
 use App\Models\CashFlow\CashPool;
@@ -12,12 +13,9 @@ use Illuminate\Support\Facades\DB;
 
 class FlaggingService
 {
-    private CashflowSettingService $settingService;
-
-    public function __construct(CashflowSettingService $settingService)
-    {
-        $this->settingService = $settingService;
-    }
+    public function __construct(
+        private readonly CashflowSettingService $settingService,
+    ) {}
 
     /**
      * Run all applicable flag checks on an expense after create/update.

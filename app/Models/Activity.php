@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Activity extends Model
 {
@@ -21,39 +23,39 @@ class Activity extends Model
         'centre_id' => 'integer',
     ];
 
-    public function plan()
+    public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'planId');
     }
 
-    public function serviceR()
+    public function serviceR(): BelongsTo
     {
         return $this->belongsTo(Services::class, 'service_id');
     }
     
 
-    public function centre()
+    public function centre(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'centre_id');
     }
     
 
-    public function patientR()
+    public function patientR(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
     }
     
     
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
     
-    public function rescheduleBy()
+    public function rescheduleBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rescheduled_by');
     }
-    public function deleteBy()
+    public function deleteBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deleted_by');
     }

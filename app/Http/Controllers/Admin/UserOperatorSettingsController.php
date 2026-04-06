@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserOperatorSettingsUpdateRequest;
 use App\Http\Resources\User\UserOperatorSettingsResource;
@@ -15,16 +14,13 @@ use Illuminate\Support\Facades\Gate;
 
 class UserOperatorSettingsController extends Controller
 {
-    private readonly int $success;
-    private readonly int $error;
-    private readonly int $unauthorized;
+
 
     public function __construct(
         private readonly UserOperatorSettingsService $operatorSettingsService,
     ) {
-        $this->success = (int) config('constants.api_status.success');
-        $this->error = (int) config('constants.api_status.error');
-        $this->unauthorized = (int) config('constants.api_status.unauthorized');
+
+
     }
 
     public function index()
@@ -42,13 +38,13 @@ class UserOperatorSettingsController extends Controller
     {
         try {
             if (!Gate::allows('user_operator_settings_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $filters = getFilters($request->all());
             $applyFilter = checkFilters($filters, 'operators');
 
-            [$orderBy, $order] = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request, 'operator_name');
 
             $params = [
                 'operator_name' => $filters['operator_name'] ?? null,
@@ -82,7 +78,7 @@ class UserOperatorSettingsController extends Controller
                 ],
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserOperatorSettingsController');
         }
     }
 
@@ -90,18 +86,18 @@ class UserOperatorSettingsController extends Controller
     {
         try {
             if (!Gate::allows('user_operator_settings_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $operatorSetting = $this->operatorSettingsService->find($id);
 
             if (!$operatorSetting) {
-                return ApiHelper::apiResponse($this->success, 'No Data Found!', false);
+                return $this->errorResponse('No Data Found!', 404);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $operatorSetting);
+            return $this->successResponse('Success', $operatorSetting);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserOperatorSettingsController');
         }
     }
 
@@ -109,16 +105,16 @@ class UserOperatorSettingsController extends Controller
     {
         try {
             if (!Gate::allows('user_operator_settings_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $result = $this->operatorSettingsService->update($id, $request->validated());
 
             return $result
-                ? ApiHelper::apiResponse($this->success, 'Record has been updated successfully.')
-                : ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                ? $this->successResponse('Record has been updated successfully.')
+                : $this->errorResponse('Something went wrong, please try again later.', 404);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserOperatorSettingsController');
         }
     }
 
@@ -126,7 +122,7 @@ class UserOperatorSettingsController extends Controller
     {
         try {
             if (!Gate::allows('user_operator_settings_manage')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
             $operatorId = (int) $request->input('operator_id');
@@ -152,7 +148,7 @@ class UserOperatorSettingsController extends Controller
                 'operator_setting' => $data,
             ]);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return $this->handleException($e, 'UserOperatorSettingsController');
         }
     }
 }

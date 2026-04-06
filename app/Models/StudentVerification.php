@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class StudentVerification extends Model
 {
@@ -31,32 +33,32 @@ class StudentVerification extends Model
     ];
 
     // Relationships
-    public function patient()
+    public function patient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id');
     }
 
-    public function membership()
+    public function membership(): BelongsTo
     {
         return $this->belongsTo(Membership::class);
     }
 
-    public function membershipType()
+    public function membershipType(): BelongsTo
     {
         return $this->belongsTo(MembershipType::class);
     }
 
-    public function submittedBy()
+    public function submittedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
-    public function reviewedBy()
+    public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    public function package()
+    public function package(): BelongsTo
     {
         return $this->belongsTo(Packages::class, 'package_id');
     }
