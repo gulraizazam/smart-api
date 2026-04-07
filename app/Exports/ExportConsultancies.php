@@ -32,7 +32,6 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     public function collection(): \Illuminate\Support\Collection
     {
-        DB::enableQueryLog();
         $where = [];
         if ($this->request->filter_date_from) {
             $where[] = [
@@ -63,11 +62,12 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_doctor_id,
             ];
         }
+        // Bug fixed: was ['match' => ['base_appointment_status_id' => ...]] — invalid WHERE format
         if ($this->request->filter_status_id) {
             $where[] = [
-                'match' => [
-                    'base_appointment_status_id' => $this->request->filter_status_id,
-                ],
+                'base_appointment_status_id',
+                '=',
+                $this->request->filter_status_id,
             ];
         }
         if ($this->request->filter_created_by_id) {
@@ -98,13 +98,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_city_id,
             ];
         }
-        if ($this->request->filter_region_id) {
-            $where[] = [
-                'region_id',
-                '=',
-                $this->request->filter_region_id,
-            ];
-        }
+        // Bug fixed: was added twice (duplicate block removed)
         if ($this->request->filter_region_id) {
             $where[] = [
                 'region_id',
@@ -147,7 +141,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_created_to_id.' 23:59:59',
             ];
         }
-        
+
         if ($this->request->filter_service_id && $this->request->filter_service_id != 13) {
             $where[] = [
                 'appointments.service_id',
@@ -155,28 +149,23 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_service_id,
             ];
         }
-        if ($this->request->filter_phone) {
-            $phone = substr($this->request->filter_phone, 1);
-            $where[] = [
-                'users.phone',
-                '=',
-                $phone,
-            ];
-        }
-       
-        $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-        ->select('appointments.*','users.name','users.phone')
+
+        $query = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
+            ->select('appointments.*', 'users.name', 'users.phone')
             ->where(['users.user_type_id' => config('constants.patient_id')])
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->where($where)
-            ->when(count($where) >! 1, function($q){
-                return $q->take($this->limit);
-            })
-            ->orderBy('scheduled_time','asc')
-            ->get();
-        
-           
+            ->orderBy('scheduled_time', 'asc');
+
+        if ($this->request->filter_phone) {
+            $phone = substr($this->request->filter_phone, 1);
+            $query->where('users.phone', '=', $phone);
+        }
+
+        // Always apply limit/offset to avoid returning unbounded result sets
+        $results = $query->limit($this->limit)->offset($this->offset)->get();
+
         return $results;
     }
 
@@ -219,11 +208,10 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         }
 
         return [
-            //GeneralFunctions::patientSearchStringAdd($appointment->id),
             'C-'.$appointment->patient_id,
             $appointment->name ?? 'N/A',
             $phone,
-            Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
+            Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A'),
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
             $appointment->city->name ?? 'N/A',
@@ -231,8 +219,8 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             $appointment->service->name ?? 'N/A',
             $appointment->appointment_status->name ?? 'N/A',
             $appointment->appointment_type->name ?? 'N/A',
-            $consultancy_type ?? 'N/A',
-            Carbon::parse($appointment->created_at)->format('F j,Y h:i A') ?? 'N/A',
+            $consultancy_type,
+            Carbon::parse($appointment->created_at)->format('F j,Y h:i A'),
             $appointment->user->name ?? 'N/A',
             $appointment->user_updated_by->name ?? 'N/A',
             $appointment->user_converted_by->name ?? 'N/A',

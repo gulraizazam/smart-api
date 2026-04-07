@@ -22,14 +22,13 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
 
     public function collection(): \Illuminate\Support\Collection
     {
-
-        $leads = $this->filters['leads'];
         $Cities = $this->filters['Cities'];
         $lead_status = $this->filters['lead_status'];
         $services = $this->filters['services'];
-        $todaydate = $this->filters['todaydate'];
         $users = $this->filters['users'];
         $count = 1;
+        $records = [];
+
         foreach ($this->filters['leads'] as $lead) {
 
             if (! Gate::allows('contact')) {
@@ -47,10 +46,10 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
                 'service' => $services[$lead->service_id]->name,
                 'user' => $users[$lead->created_by]->name,
             ];
-            $collection = collect($records);
         }
 
-        return $collection;
+        // Bug fixed: was collect() inside loop — $collection undefined when leads is empty
+        return collect($records);
     }
 
     public function headings(): array

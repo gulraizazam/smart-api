@@ -4,19 +4,21 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
 use App\Helpers\Filters;
-use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
-use App\Models\CustomFormFeedbacks;
 use App\Models\Measurement;
 use App\Models\Medical;
-use App\Models\Patients;
 use App\Models\User;
+use App\Services\Appointment\AppointmentMedicalService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 class MedicalHistoryController extends Controller
 {
+    public function __construct(
+        private readonly AppointmentMedicalService $appointmentMedicalService,
+    ) {}
+
     /**
      * Display a listing of the resource.
      *
@@ -119,23 +121,13 @@ class MedicalHistoryController extends Controller
             return abort(401);
         }
 
-        $medicalinformation = Medical::find($id);
+        $data = $this->appointmentMedicalService->getEditData($id);
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($medicalinformation->custom_form_feedback_id);
-        $patient_id = $custom_form_feedback->reference_id;
-
-        if (! $custom_form_feedback) {
+        if (! empty($data['error'])) {
             return view('error');
         }
 
-        $users = Patients::getActiveOnly()->toArray();
-
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'users' => $users,
-            'patient_id' => $patient_id,
-            'medicalinformation' => $medicalinformation,
-        ]);
+        return $this->successResponse('Record found.', $data);
     }
 
     /**
@@ -149,35 +141,13 @@ class MedicalHistoryController extends Controller
         if (! Gate::allows('appointments_medical_form_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
-        $medicalinformation = Medical::with('patient', 'appointment.location')->findorFail($id);
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($medicalinformation->custom_form_feedback_id);
+        $data = $this->appointmentMedicalService->getFilledPreviewData($id);
 
-        if (! $custom_form_feedback) {
+        if (! empty($data['error'])) {
             return view('error');
         }
 
-        $patient_id = $custom_form_feedback->reference_id;
-
-        $users = Patients::getActiveOnly()->toArray();
-
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::user()->account_id);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
-
-        $leadServices = $medicalinformation->service_id;
-
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'patient_id' => $patient_id,
-            'medicalinformation' => $medicalinformation,
-            'users' => $users,
-            'Services' => $Services,
-            'leadServices' => $leadServices,
-            'thisId' => $id,
-        ]);
+        return $this->successResponse('Record found.', $data);
     }
 }

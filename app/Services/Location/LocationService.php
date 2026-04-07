@@ -162,6 +162,38 @@ class LocationService
     }
 
     /**
+     * Proxy for Locations::getTotalRecords.
+     */
+    public function getTotalRecords(object $request, int $accountId, mixed $applyFilter): mixed
+    {
+        return Locations::getTotalRecords($request, $accountId, $applyFilter);
+    }
+
+    /**
+     * Proxy for Locations::getRecords.
+     */
+    public function getRecords(object $request, int $iDisplayStart, int $iDisplayLength, int $accountId, mixed $applyFilter): mixed
+    {
+        return Locations::getRecords($request, $iDisplayStart, $iDisplayLength, $accountId, $applyFilter);
+    }
+
+    /**
+     * Create a new location record.
+     */
+    public function createLocation(object $request, int $accountId): mixed
+    {
+        return Locations::createRecord($request, $accountId);
+    }
+
+    /**
+     * Update a location record.
+     */
+    public function updateLocation(int $id, object $request, int $accountId): mixed
+    {
+        return Locations::updateRecord($id, $request, $accountId);
+    }
+
+    /**
      * Get data needed for the create form.
      */
     public function getCreateData(int $accountId): array

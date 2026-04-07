@@ -2474,6 +2474,7 @@ function deleteConfigurablePlanRows(btn) {
         if (result.value) {
             var package_total = $('#add_package_total').val();
             // Delete each row via AJAX
+            var hasError = false;
             configRowIds.forEach(function(id) {
                 $.ajax({
                     type: 'post',
@@ -2483,8 +2484,18 @@ function deleteConfigurablePlanRows(btn) {
                         'id': id,
                         'package_total': package_total
                     },
-                    success: function (response) {},
-                    error: function (response) {}
+                    success: function (response) {
+                        if (!response.status && !hasError) {
+                            hasError = true;
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function (response) {
+                        if (!hasError) {
+                            hasError = true;
+                            toastr.error('An error occurred while deleting the service.');
+                        }
+                    }
                 });
             });
             
@@ -2581,7 +2592,7 @@ function deletePlan(id) {
                 }
 
             } else {
-                $('#wrongMessage').show();
+                toastr.error(resposne.message);
             }
         }
     });
