@@ -111,7 +111,7 @@ class TodayTreatment implements FromCollection, WithHeadings, WithMapping, WithE
 
                 $event->sheet->getDelegate()->getStyle('A1:P1')->getFont()->setBold(true);
 
-                $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
+                $event->sheet->getDelegate()->getRowDimension(1)->setRowHeight(30);
 
                 $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(11);
                 $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(11);

@@ -103,7 +103,8 @@
       "Bash(wc -l C:/laragon/www/cutera-upgradation1/routes/*.php)",
       "Bash(bash /tmp/find_mismatches.sh)",
       "Bash(python3 /tmp/scan_mismatches.py)",
-      "Bash(chmod +x analyze_types.sh)"
+      "Bash(chmod +x analyze_types.sh)",
+      "Bash(sed:*)"
     ]
   }
 }
