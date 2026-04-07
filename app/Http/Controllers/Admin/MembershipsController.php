@@ -224,8 +224,13 @@ class MembershipsController extends Controller
         $patient = Patients::find($request->id);
         $membershipType = $membership->membershipType;
 
-        // Cancel the membership
-        Membership::where('patient_id', $request->id)->delete();
+        // Cancel the membership - reset to unassigned state so code can be reused
+        $membership->update([
+            'patient_id' => null,
+            'start_date' => null,
+            'end_date' => null,
+            'assigned_at' => null,
+        ]);
 
         $cancelledReferrals = 0;
 
@@ -234,7 +239,12 @@ class MembershipsController extends Controller
             // Cancel all referrals associated with this parent membership code
             $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                 ->where('is_referral', 1)
-                ->delete();
+                ->update([
+                    'patient_id' => null,
+                    'start_date' => null,
+                    'end_date' => null,
+                    'assigned_at' => null,
+                ]);
         }
 
         // Log activity

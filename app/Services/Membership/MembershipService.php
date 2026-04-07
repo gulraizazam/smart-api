@@ -250,13 +250,23 @@ final class MembershipService
         $patient        = Patients::find($patientId);
         $membershipType = $membership->membershipType;
 
-        Membership::where('patient_id', $patientId)->delete();
+        $membership->update([
+            'patient_id' => null,
+            'start_date' => null,
+            'end_date' => null,
+            'assigned_at' => null,
+        ]);
 
         $cancelledReferrals = 0;
         if (!$isReferral) {
             $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                 ->where('is_referral', true)
-                ->delete();
+                ->update([
+                    'patient_id' => null,
+                    'start_date' => null,
+                    'end_date' => null,
+                    'assigned_at' => null,
+                ]);
         }
 
         if ($patient) {
