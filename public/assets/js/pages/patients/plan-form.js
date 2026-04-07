@@ -2594,6 +2594,10 @@ function deletePlan(id) {
             } else {
                 toastr.error(resposne.message);
             }
+        },
+        error: function (xhr) {
+            var response = xhr.responseJSON;
+            toastr.error(response?.message || 'An error occurred while deleting the service.');
         }
     });
 
@@ -2652,6 +2656,10 @@ function deleteEditPlan(id) {
                 toastr.error(resposne.message);
                 $('#edit_consumeservice').show();
             }
+        },
+        error: function (xhr) {
+            var response = xhr.responseJSON;
+            toastr.error(response?.message || 'An error occurred while deleting the service.');
         }
     });
 

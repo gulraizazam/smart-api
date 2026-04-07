@@ -100,7 +100,9 @@
       "Bash(ls -1 /c/laragon/www/cutera-upgradation1/app/Http/Controllers/Admin/*.php)",
       "Bash(bash /tmp/parse_validations.sh)",
       "Bash(wc -l app/Http/Controllers/Admin/*.php)",
-      "Bash(wc -l C:/laragon/www/cutera-upgradation1/routes/*.php)"
+      "Bash(wc -l C:/laragon/www/cutera-upgradation1/routes/*.php)",
+      "Bash(bash /tmp/find_mismatches.sh)",
+      "Bash(python3 /tmp/scan_mismatches.py)"
     ]
   }
 }

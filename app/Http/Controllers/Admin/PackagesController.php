@@ -1459,7 +1459,7 @@ class PackagesController extends Controller
 
         $content = view('admin.packages.packagepdf', compact('package', 'packagebundles', 'packageservices', 'packageadvances', 'services', 'discount', 'paymentmodes', 'grand_total', 'location_info', 'account_info', 'company_phone_number'));
         $pdf = App::make('dompdf.wrapper');
-        $pdf->loadHTML($content);
+        $pdf->loadHTML($content->render());
 
         return $pdf->stream('treatment-plans-invoice-C-' . $package->patient_id . '.pdf');
     }
