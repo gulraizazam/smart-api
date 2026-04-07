@@ -14,14 +14,18 @@ use Illuminate\Support\Facades\Gate;
 
 class AppointmentFilterService
 {
-    private int|null $userId;
-    private int|null $accountId;
+    private int|null $userId = null;
+    private int|null $accountId = null;
     private string $filename = 'appointments';
 
-    public function __construct()
+    private function userId(): int|null
     {
-        $this->userId = Auth::id();
-        $this->accountId = Auth::user()->account_id;
+        return $this->userId ??= Auth::id();
+    }
+
+    private function accountId(): int|null
+    {
+        return $this->accountId ??= Auth::user()?->account_id;
     }
 
     /**
@@ -150,7 +154,7 @@ class AppointmentFilterService
         // If status is "arrived", include both arrived and converted statuses
         if ($selectedStatus && $selectedStatus->is_arrived == 1) {
             $convertedStatus = AppointmentStatuses::where([
-                'account_id' => $this->accountId,
+                'account_id' => $this->accountId(),
                 'is_converted' => 1
             ])->first();
 
@@ -245,6 +249,6 @@ class AppointmentFilterService
      */
     private function saveFilter(string $key, $value): void
     {
-        Filters::put($this->userId, $this->filename, $key, $value);
+        Filters::put($this->userId(), $this->filename, $key, $value);
     }
 }

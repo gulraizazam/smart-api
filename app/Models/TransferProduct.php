@@ -32,9 +32,9 @@ class TransferProduct extends BaseModel
 
     
 
-    public function transferProductItem()
+    public function transferProductItem(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasmany(TransferProductItems::class, 'transfer_product_id');
+        return $this->hasMany(TransferProductItems::class, 'transfer_product_id');
     }
 
     /* public function productDetail()

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\Filters;
+use App\Http\Requests\Admin\AllocateConfigurableDiscountRequest;
+use App\Http\Requests\Admin\SaveDiscountServicesRequest;
+use App\Http\Requests\Admin\StoreDiscountRequest;
 use App\Models\Discounts;
 use App\Models\Locations;
 use App\Helpers\NodesTree;
@@ -20,7 +23,6 @@ use Illuminate\Support\Facades\Gate;
 use App\Helpers\Widgets\ServiceWidget;
 use Illuminate\Support\Facades\Config;
 use App\Helpers\Widgets\LocationsWidget;
-use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
 
 class DiscountsController extends Controller
@@ -73,7 +75,7 @@ class DiscountsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(StoreDiscountRequest $request): mixed
     {
 
         if (!Gate::allows('discounts_create')) {
@@ -81,15 +83,6 @@ class DiscountsController extends Controller
         }
 
         try {
-            if ($request->type == "Configurable") {
-                $validator = $this->verifyConfigurableFields($request);
-            } else {
-                $validator = $this->verifyFields($request);
-            }
-
-            if ($validator->fails()) {
-                return $this->errorResponse($validator->messages()->first(), 200);
-            }
             $data = $request->all();
             $data['account_id'] = Auth::User()->account_id;
             if ($request->slug == 'custom' || $request->slug == 'default') {
@@ -121,45 +114,6 @@ class DiscountsController extends Controller
         }
     }
 
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator $validator;
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        return Validator::make($request->all(), [
-            'name' => 'required',
-            'discount_type' => 'required',
-            'start' => 'required',
-            'end' => 'required',
-            'roles' => 'required|array',
-            'roles.*' => 'exists:roles,id',
-        ]);
-    }
-    protected function verifyConfigurableFields(Request $request): mixed
-    {
-        $rules = [];
-        $sessions = $request->input('sessions');
-        foreach ($sessions as $key => $value) {
-            $rules["sessions.{$key}"] = 'required';
-            // services_name is not required when same_service is checked for this row
-            $sameService = $request->input("same_service.{$key}");
-            if (!$sameService) {
-                $rules["services_name.{$key}"] = 'required';
-            }
-            $rules["disc_type.{$key}"] = 'required';
-        }
-
-        return Validator::make($request->all(), [
-            'name' => 'required',
-            'type' => 'required',
-            'start' => 'required',
-            'end' => 'required',
-            'sessions_buy' => 'required',
-            'base_service' => 'required',
-        ] + $rules);
-    }
     /**
      * Display the discount in datatable form.
      *
@@ -566,17 +520,11 @@ class DiscountsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(StoreDiscountRequest $request, $id): mixed
     {
 
         if (!Gate::allows('discounts_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->messages()->first(), 200);
         }
 
         $data = $request->all();
@@ -779,22 +727,13 @@ class DiscountsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function allocateConfigurable(Request $request): mixed
+    public function allocateConfigurable(AllocateConfigurableDiscountRequest $request): mixed
     {
         if (!Gate::allows('discounts_allocate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
-            $validator = Validator::make($request->all(), [
-                'discount_id' => 'required|exists:discounts,id',
-                'location_id' => 'required|exists:locations,id',
-            ]);
-
-            if ($validator->fails()) {
-                return $this->errorResponse($validator->messages()->first(), 200);
-            }
-
             $discount = Discounts::find($request->discount_id);
             
             // Verify this is a configurable discount
@@ -877,22 +816,10 @@ class DiscountsController extends Controller
     /**
      * save services against location id.
      */
-    public function saveDservices(Request $request): mixed
+    public function saveDservices(SaveDiscountServicesRequest $request): mixed
     {
         if (!Gate::allows('discounts_allocate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
-        // Validate required fields for allocation
-        $validator = Validator::make($request->all(), [
-            'allocation_type' => 'required|in:Fixed,Percentage',
-            'allocation_amount' => 'required|numeric|min:0',
-            'location_id' => 'required',
-            'service_ids' => 'required|array|min:1',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->messages()->first(), 200);
         }
 
         $location_id = $request->location_id;

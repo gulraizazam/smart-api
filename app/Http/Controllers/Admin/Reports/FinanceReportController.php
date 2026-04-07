@@ -28,6 +28,7 @@ use App\Models\User;
 use App\Reports\Finanaces;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
+use App\Http\Requests\Admin\TaxCalculationReportRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
@@ -3242,14 +3243,8 @@ public static function revenueByGenderAndService($request): mixed
      * @param Request $request
      * @return \Illuminate\Http\Response
      */
-    public function taxCalculationReportLoad(Request $request): mixed
+    public function taxCalculationReportLoad(TaxCalculationReportRequest $request): mixed
     {
-        // Validate request
-        $request->validate([
-            'bank_taxable' => 'nullable|numeric|min:0|max:100',
-            'cash_taxable' => 'nullable|numeric|min:0|max:100',
-            'consultation_amount' => 'nullable|numeric|min:0',
-        ]);
 
         // Parse date range
         $date_range = explode(' - ', $request->get('date_range'));

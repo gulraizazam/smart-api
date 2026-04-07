@@ -463,7 +463,8 @@ class Product extends BaseModel
     {
         return $this->hasOne(self::class, 'id', 'parent_id');
     }
-    public function inventories() {
+    public function inventories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
         return $this->hasMany(Inventory::class, 'product_id');
     }
     

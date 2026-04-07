@@ -3537,7 +3537,7 @@ class CashFlowController extends Controller
 
             // Add inventory sales since go-live to current balance (cash only for branch pools)
 
-            $goLiveDate = app(CashflowSettingService::class)->getGoLiveDate($accountId) ?? '2026-03-08';
+            $goLiveDate = $this->settingService->getGoLiveDate($accountId) ?? '2026-03-08';
 
             $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
 

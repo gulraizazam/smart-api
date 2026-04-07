@@ -10,12 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    
-
     /**
      * Login for Apis
      *

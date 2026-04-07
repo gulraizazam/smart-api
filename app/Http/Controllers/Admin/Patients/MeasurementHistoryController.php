@@ -17,14 +17,6 @@ use Illuminate\Support\Facades\Gate;
 
 class MeasurementHistoryController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    
-
     /**
      * Display a listing of the resource.
      *

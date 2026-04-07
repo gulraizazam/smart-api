@@ -26,10 +26,8 @@ class ApplicationUserController extends Controller
 
     public function __construct(
         private readonly ApplicationUserService $userService,
-    ) {
-
-
-    }
+        private readonly PlanService $planService,
+    ) {}
 
     public function index(): mixed
     {
@@ -317,8 +315,7 @@ class ApplicationUserController extends Controller
     public function getUserCenters(): JsonResponse
     {
         try {
-            $planService = app(PlanService::class);
-            $result = $planService->getUserDefaultCenter();
+            $result = $this->planService->getUserDefaultCenter();
 
             return $result['status']
                 ? $this->successResponse('Center found', ['center' => $result['center']])

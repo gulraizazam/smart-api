@@ -27,6 +27,8 @@ use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\PaymentModes;
 use App\Models\Voucher;
+use App\Http\Requests\Admin\MakePackageServicesRequest;
+use App\Http\Requests\Admin\UpdatePackagesRequest;
 use Illuminate\Http\Request;
 use App\Helpers\TelenorSMSAPI;
 use App\Models\InvoiceDetails;
@@ -642,33 +644,13 @@ class PackagesController extends Controller
     /**
      * Add service/bundle to package (optimized)
      */
-    public function makePackagesServicesData(Request $request): mixed
+    public function makePackagesServicesData(MakePackageServicesRequest $request): mixed
     {
         \Log::info('=== makePackagesServicesData (POST BUNDLE PATH) CALLED ===', [
             'bundle_id_from_request' => $request->bundle_id,
             'discount_id' => $request->discount_id,
             'random_id' => $request->random_id,
         ]);
-
-        // Validate required fields
-        $validator = Validator::make($request->all(), [
-            'bundle_id' => 'required|integer|exists:services,id',
-            'location_id' => 'required|integer|exists:locations,id',
-            'user_id' => 'required|integer|exists:users,id',
-            'random_id' => 'required|string',
-            'net_amount' => 'required|numeric|min:0',
-            'sold_by' => 'nullable|integer|exists:users,id',
-            'discount_id' => 'nullable|integer|exists:discounts,id',
-            'discount_price' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|string',
-            'is_exclusive' => 'nullable|in:0,1',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->errorResponse('Validation failed', 422, [
-                'errors' => $validator->errors()
-            ]);
-        }
 
         try {
             $servicesData = $this->planService->addServiceToPackage($request->all());
@@ -1309,15 +1291,8 @@ class PackagesController extends Controller
     /**
      * Update plan package (optimized)
      */
-    public function updatepackages(Request $request): mixed
+    public function updatepackages(UpdatePackagesRequest $request): mixed
     {
-        $request->validate([
-            'random_id'      => ['required'],
-            'appointment_id' => ['nullable', 'exists:appointments,id'],
-        ], [
-            'random_id.required'    => 'Package identifier is required',
-            'appointment_id.exists' => 'Appointment not found',
-        ]);
 
         try {
             $result = $this->planService->updatePlanPackage($request->all());

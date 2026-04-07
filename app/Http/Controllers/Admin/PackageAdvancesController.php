@@ -19,14 +19,6 @@ use Illuminate\Support\Facades\Gate;
 
 class PackageAdvancesController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    
-
     /**
      * Display a listing of the resource.
      *

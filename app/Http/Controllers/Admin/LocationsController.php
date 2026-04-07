@@ -3,7 +3,7 @@
 declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\Admin\StoreUpdateLocationRequest;
 use App\Models\Locations;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -13,12 +13,6 @@ use App\Services\Location\LocationService;
 
 class LocationsController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
     public function __construct(
         protected readonly LocationService $locationService,
     ) {
@@ -98,17 +92,12 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(StoreUpdateLocationRequest $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $validator = $this->verifyFields($request);
-        if ($validator->fails()) {
-
-            return $this->successResponse($validator->messages()->first(), false);
-        }
         if ($location = Locations::createRecord($request, Auth::User()->account_id)) {
             $this->locationService->handlePostCreation($location, $request->all(), Auth::User()->account_id);
 
@@ -116,27 +105,6 @@ class LocationsController extends Controller
         } else {
             return $this->errorResponse('Something went wrong, please try again later.', 404);
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return Validator $validator;
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        return $validator = \Validator::make($request->all(), [
-            'name' => 'required',
-            'fdo_name' => 'required',
-            'fdo_phone' => 'required',
-            'address' => 'required',
-            'google_map' => 'required',
-            'city_id' => 'required',
-            'ntn' => 'required',
-            'stn' => 'required',
-            /*'ntn' => ['required', 'regex:/^([0-9]|\.|\+|\*|\-|\_|\#)*$/'],
-            'stn' => ['required', 'regex:/^([0-9]|\.|\+|\*|\-|\_|\#)*$/'],*/
-        ]);
     }
 
     /**
@@ -165,15 +133,10 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(StoreUpdateLocationRequest $request, $id): mixed
     {
         if (! Gate::allows('locations_edit')) {
             return abort(401);
-        }
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-            return $this->successResponse($validator->messages()->first());
         }
         if ($location = Locations::updateRecord($id, $request, Auth::User()->account_id)) {
             $this->locationService->handlePostUpdate($location, $request->all(), Auth::User()->account_id);
@@ -266,19 +229,10 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function verify(Request $request): mixed
+    public function verify(StoreUpdateLocationRequest $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return abort(401);
-        }
-
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ]);
         }
 
         return response()->json([
@@ -292,18 +246,10 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function verify_edit(Request $request): mixed
+    public function verify_edit(StoreUpdateLocationRequest $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return abort(401);
-        }
-
-        $validator = $this->verifyFields($request);
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ]);
         }
 
         return response()->json([

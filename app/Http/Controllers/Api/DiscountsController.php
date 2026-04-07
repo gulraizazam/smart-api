@@ -17,10 +17,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use App\Traits\SimpleApiResponse;
 use Illuminate\Support\Facades\Validator;
 
 final class DiscountsController extends Controller
 {
+    use SimpleApiResponse;
+
     public function __construct(
         private readonly DiscountService $discountService,
     ) {}
@@ -405,32 +408,6 @@ final class DiscountsController extends Controller
         ];
     }
 
-    private function success(string $message, mixed $data = null, bool $status = true): JsonResponse
-    {
-        return response()->json([
-            'status'  => $status,
-            'message' => $message,
-            'data'    => $data,
-        ], 200);
-    }
-
-    private function error(string $message): JsonResponse
-    {
-        return response()->json([
-            'status'  => false,
-            'message' => $message,
-            'data'    => null,
-        ], 500);
-    }
-
-    private function unauthorized(): JsonResponse
-    {
-        return response()->json([
-            'status'  => false,
-            'message' => 'You are not authorized to access this resource.',
-            'data'    => null,
-        ], 401);
-    }
 
     // ── Validation ───────────────────────────────────────
 

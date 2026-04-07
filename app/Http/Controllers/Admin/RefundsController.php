@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\User;
 use App\Models\Refunds;
 use App\Helpers\Filters;
+use App\Http\Requests\Admin\RefundCreateRequest;
 use App\Models\Packages;
 use App\Models\Settings;
 use App\Models\Locations;
@@ -484,10 +484,8 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(RefundCreateRequest $request): mixed
     {
-       
-       
         if (! Gate::allows('refunds_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
@@ -497,15 +495,10 @@ class RefundsController extends Controller
             ['cash_amount', '>', 0],
             ['package_id', '=', $request->package_id],
         ])->orderBy('created_at', 'desc')->first();
-      
+
         if(!$package_advance_last_in)
         {
             return $this->errorResponse('No balance available', 200);
-        }
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-            return $this->errorResponse($validator->messages()->first(), 200);
         }
         $record = Refunds::createRecord($request, Auth::User()->account_id);
         if($record == 'setteled'){
@@ -542,26 +535,5 @@ class RefundsController extends Controller
 
     }
 
-    /**
-     * Validate form fields
-     *
-     * @return Validator $validator;
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        $rules = [
-            'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
-            'refund_note' => 'required',
-            'package_id' => 'required',
-            'payment_mode_id' => 'required',
-            'created_at' => ['required', 'date', 'date_format:Y-m-d'],
-        ];
-        $customMessages = [
-            'created_at.required' => 'The created at field is required.',
-            'created_at.date_format' => 'The Date field format is incorrect.',
-        ];
-    
-        return Validator::make($request->all(), $rules, $customMessages);
-    }
 
 }
