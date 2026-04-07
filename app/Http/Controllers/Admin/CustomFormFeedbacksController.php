@@ -76,7 +76,7 @@ class CustomFormFeedbacksController extends Controller
      * @param $field_id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update_field(Request $request, $feedback_id, $feedback_field_id): mixed
+    public function update_field(Request $request, int $feedback_id, int $feedback_field_id): mixed
     {
 
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_edit')) {
@@ -102,7 +102,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function fill_form($form_id): mixed
+    public function fill_form(int $form_id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);
@@ -118,7 +118,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function preview_form($form_id): mixed
+    public function preview_form(int $form_id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);
@@ -149,7 +149,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function submit_form(Request $request, $id): mixed
+    public function submit_form(Request $request, int $id): mixed
     {
 
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_create')) {
@@ -171,7 +171,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_edit')) {
             return $this->errorResponse('Unauthorized.', 403);
@@ -192,7 +192,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function filled_preview($id): mixed
+    public function filled_preview(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return $this->errorResponse('Unauthorized.', 403);
@@ -210,7 +210,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function filledPrint($id): mixed
+    public function filledPrint(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);
@@ -228,7 +228,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function exportPdf($id): mixed
+    public function exportPdf(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);
@@ -260,7 +260,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
 
         if (! Gate::allows('custom_form_feedbacks_edit') && ! Gate::allows('patients_customform_edit')) {
@@ -288,7 +288,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -309,7 +309,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id): mixed
+    public function inactive(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);
@@ -334,7 +334,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id): mixed
+    public function active(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage')) {
             return abort(401);

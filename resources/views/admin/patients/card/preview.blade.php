@@ -243,6 +243,7 @@
         <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient-card-edit.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/feedbacks/feedbacks.js')}}"></script>
     @endpush
 
     {{-- Edit Patient Modal --}}

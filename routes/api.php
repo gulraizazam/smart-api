@@ -92,7 +92,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Meta Conversion API Routes
-Route::prefix('meta')->name('meta.')->group(function () {
+Route::middleware('auth.common')->prefix('meta')->name('meta.')->group(function () {
     Route::post('test-connection', [\App\Http\Controllers\Admin\MetaConversionController::class, 'testConnection'])->name('test');
     Route::post('send-lead-status', [\App\Http\Controllers\Admin\MetaConversionController::class, 'sendLeadStatus'])->name('lead-status');
 });

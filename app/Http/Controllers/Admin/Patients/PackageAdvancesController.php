@@ -14,7 +14,7 @@ use App\Models\Patients;
 use App\Models\Locations;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Config;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -25,7 +25,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('patients_finance_manage')) {
 
@@ -61,7 +61,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id): mixed
+    public function create(int $id): mixed
     {
         if (! Gate::allows('patients_finance_create')) {
 
@@ -203,7 +203,7 @@ class PackageAdvancesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
         $filname = 'patient_packageAdvances';
         $apply_filter = false;
@@ -315,7 +315,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id): mixed
+    public function inactive(int $id): mixed
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -331,7 +331,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id): mixed
+    public function active(int $id): mixed
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -347,7 +347,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('packagesadvances_manage')) {
 
@@ -413,7 +413,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -431,7 +431,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cancel($id): mixed
+    public function cancel(int $id): mixed
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);

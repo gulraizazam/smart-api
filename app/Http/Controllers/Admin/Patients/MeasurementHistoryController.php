@@ -23,7 +23,7 @@ class MeasurementHistoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -40,7 +40,7 @@ class MeasurementHistoryController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
 
         $filename = 'patient_custom_form_feedbacks';
@@ -128,7 +128,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -150,7 +150,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update_measurement_field(Request $request, $id): mixed
+    public function update_measurement_field(Request $request, int $id): mixed
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -171,7 +171,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview($id): mixed
+    public function filled_preview(int $id): mixed
     {
         if (! Gate::allows('appointments_measurement_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);

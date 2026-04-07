@@ -63,7 +63,7 @@ class ResourcesController extends Controller
             return abort('401');
         }
 
-        $result = $this->resourceService->getMachineTypesByLocation($request->id);
+        $result = $this->resourceService->getMachineTypesByLocation((int) $request->id);
 
         if ($result['status']) {
             $machinetypes = $result['machinetypes'];
@@ -91,7 +91,7 @@ class ResourcesController extends Controller
             return abort('401');
         }
 
-        $result = $this->resourceService->getServicesByLocation($request->id);
+        $result = $this->resourceService->getServicesByLocation((int) $request->id);
 
         if ($result['status']) {
             $Services = $result['Services'];
@@ -164,7 +164,7 @@ class ResourcesController extends Controller
         }
         try {
 
-            $response = $this->resourceService->changeStatus($request->id, $request->status);
+            $response = $this->resourceService->changeStatus((int) $request->id, (int) $request->status);
 
             if ($response) {
                 return $this->successResponse('Status has been changed successfully.');
@@ -182,7 +182,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('resources_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -203,7 +203,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(StoreUpdateResourceRequest $request, $id): mixed
+    public function update(StoreUpdateResourceRequest $request, int $id): mixed
     {
         if (! Gate::allows('resources_edit')) {
             return abort('401');
@@ -230,7 +230,7 @@ class ResourcesController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('resources_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

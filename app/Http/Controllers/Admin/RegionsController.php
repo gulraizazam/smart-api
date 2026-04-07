@@ -146,7 +146,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         try {
             if (! Gate::allows('regions_edit')) {
@@ -170,7 +170,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         try {
             if (! Gate::allows('regions_edit')) {
@@ -194,7 +194,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         try {
             if (! Gate::allows('regions_destroy')) {
@@ -227,7 +227,7 @@ class RegionsController extends Controller
                 }
             }
 
-            $response = $this->regionService->changeStatus($request->id, $request->status);
+            $response = $this->regionService->changeStatus((int) $request->id, (int) $request->status);
 
             return $this->successResponse($response['message'], $response['status']);
         } catch (\Exception $e) {

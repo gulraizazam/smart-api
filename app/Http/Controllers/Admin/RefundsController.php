@@ -225,7 +225,7 @@ class RefundsController extends Controller
     /**
      * Patient-specific refunds datatable with all required fields
      */
-    public function patientDatatable(Request $request, $id): mixed
+    public function patientDatatable(Request $request, int $id): mixed
     {
         try {
             $filename = 'patientrefunds';
@@ -336,7 +336,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refund_create($id): mixed
+    public function refund_create(int $id): mixed
     {
         if (! Gate::allows('refunds_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -519,7 +519,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail($id): mixed
+    public function detail(int $id): mixed
     {
 
         if (! Gate::allows('refunds_manage')) {

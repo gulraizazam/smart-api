@@ -32,7 +32,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('patients_refund_manage')) {
             return abort(401);
@@ -60,8 +60,11 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
+        if (! Gate::allows('patients_refund_manage')) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
         $apply_filter = false;
         if ($request->get('action')) {
@@ -134,7 +137,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function refund_create($id): mixed
+    public function refund_create(int $id): mixed
     {
 
         if (! Gate::allows('patients_refund_refund')) {
@@ -288,7 +291,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail($id): mixed
+    public function detail(int $id): mixed
     {
 
         if (! Gate::allows('refunds_manage') || ! Gate::allows('users_manage')) {

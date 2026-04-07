@@ -218,7 +218,7 @@ class InvoicesController extends Controller
 
     }
 
-    public function cancel($id): mixed
+    public function cancel(int $id): mixed
     {
         if (! Gate::allows('invoices_cancel')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -290,7 +290,7 @@ class InvoicesController extends Controller
 
     /*display invoice
      * */
-    public function displayInvoice($id): mixed
+    public function displayInvoice(int $id): mixed
     {
         if (! Gate::allows('invoices_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -354,7 +354,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id, $download = null, $flag = 0): mixed
+    public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): mixed
     {
         if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -464,7 +464,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id, $type, $patient_id = null): mixed
+    public function invoicelog(int $id, string $type, ?int $patient_id = null): mixed
     {
         if (! Gate::allows('invoices_log')) {
             return abort(401);
@@ -519,7 +519,7 @@ class InvoicesController extends Controller
         return $this->invoicelogexcel($id, $finance_log);
     }
 
-    public function invoiceDatatable(Request $request, $id): mixed
+    public function invoiceDatatable(Request $request, int $id): mixed
     {
 
         [$orderBy, $order] = getSortBy($request);
@@ -602,7 +602,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice excel
      */
-    public function invoicelogexcel($id, $finance_log): mixed
+    public function invoicelogexcel(int $id, mixed $finance_log): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -675,7 +675,7 @@ class InvoicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs($id): mixed
+    public function showSMSLogs(int $id): mixed
     {
         $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 

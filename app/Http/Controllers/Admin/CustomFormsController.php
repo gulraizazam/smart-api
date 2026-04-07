@@ -107,7 +107,7 @@ class CustomFormsController extends Controller
         return response()->json($result);
     }
 
-    public function sort_fields(Request $request, $id): mixed
+    public function sort_fields(Request $request, int $id): mixed
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -155,7 +155,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('custom_forms_edit') && ! Gate::allows('custom_forms_create_measurement') && ! Gate::allows('custom_forms_create_general')) {
             return abort(401);
@@ -177,7 +177,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -193,7 +193,7 @@ class CustomFormsController extends Controller
         return redirect()->route('admin.custom_forms.index');
     }
 
-    public function form_update(Request $request, $id): mixed
+    public function form_update(Request $request, int $id): mixed
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -210,7 +210,7 @@ class CustomFormsController extends Controller
         }
     }
 
-    public function create_field(Request $request, $id): mixed
+    public function create_field(Request $request, int $id): mixed
     {
 
         if (! Gate::allows('custom_forms_manage')) {
@@ -222,9 +222,8 @@ class CustomFormsController extends Controller
         if ($result['success']) {
             return response()->json(['request' => $result['request'], 'data' => $result['data']]);
         } else {
-            response()->json(['error' => $result['error'], 'id' => $result['id'], 'data' => $result['data']], 401);
+            return response()->json(['error' => $result['error'], 'id' => $result['id'], 'data' => $result['data']], 401);
         }
-
     }
 
     /**
@@ -232,7 +231,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update_field(Request $request, $form_id, $field_id): mixed
+    public function update_field(Request $request, int $form_id, int $field_id): mixed
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -243,11 +242,11 @@ class CustomFormsController extends Controller
         if ($result['success']) {
             return response()->json(['request' => $result['request'], 'data' => $result['data']]);
         } else {
-            response()->json(['error' => $result['error'], 'form_id' => $result['form_id'], 'field_id' => $result['field_id'], 'data' => $result['data']], 401);
+            return response()->json(['error' => $result['error'], 'form_id' => $result['form_id'], 'field_id' => $result['field_id'], 'data' => $result['data']], 401);
         }
     }
 
-    public function delete_field(Request $request, $form_id, $field_id): mixed
+    public function delete_field(Request $request, int $form_id, int $field_id): mixed
     {
 
         if (! Gate::allows('custom_forms_manage')) {
@@ -266,7 +265,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('custom_forms_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -293,7 +292,7 @@ class CustomFormsController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $result = $this->service->updateStatus($request->id, $request->status);
+        $result = $this->service->updateStatus((int) $request->id, (int) $request->status);
 
         if ($result['success']) {
             return $this->successResponse($result['message'], null, 200);

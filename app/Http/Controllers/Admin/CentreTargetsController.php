@@ -113,7 +113,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id ,$request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
 
         if (! Gate::allows('centre_targets_edit')) {
@@ -139,7 +139,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         if (! Gate::allows('centre_targets_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -160,7 +160,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function display($id): mixed
+    public function display(int $id): mixed
     {
         if (! Gate::allows('centre_targets_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -178,7 +178,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id, Request $request): mixed
+    public function destroy(int $id, Request $request): mixed
     {
         if (! Gate::allows('centre_targets_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

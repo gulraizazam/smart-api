@@ -24,7 +24,7 @@ class WrongConversionsController extends Controller
         return view('admin.wrong_conversions', $data);
     }
 
-    public function reset(Request $request, $id): mixed
+    public function reset(Request $request, int $id): mixed
     {
         $result = $this->wrongConversionService->resetAppointment($id);
 

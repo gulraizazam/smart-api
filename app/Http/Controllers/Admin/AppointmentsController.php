@@ -350,7 +350,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function verifyFields(Request $request, $id = null): mixed
+    protected function verifyFields(Request $request, ?int $id = null): mixed
     {
         $data = $request->all();
         $phone = $data['phone'];
@@ -379,7 +379,7 @@ class AppointmentsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyUpdateFields(Request $request, $id = null): mixed
+    protected function verifyUpdateFields(Request $request, ?int $id = null): mixed
     {
         // Get appointment to check status
         $appointment = null;
@@ -1123,7 +1123,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function detail($id): mixed
+    public function detail(int $id): mixed
     {
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1177,7 +1177,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1282,7 +1282,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function editService($id): mixed
+    public function editService(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1378,7 +1378,7 @@ class AppointmentsController extends Controller
         ]);
     }
 
-    public function editAppointmentService($id): mixed
+    public function editAppointmentService(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1471,7 +1471,7 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
-    public function editFeedback($id): mixed
+    public function editFeedback(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1494,7 +1494,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         try {
             $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
@@ -1521,7 +1521,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateTreatment(Request $request, $id): mixed
+    public function updateTreatment(Request $request, int $id): mixed
     {
         try {
             $updateService = new \App\Services\Appointment\TreatmentUpdateService();
@@ -1545,7 +1545,7 @@ class AppointmentsController extends Controller
     /**
      * OLD UPDATE METHOD - BACKUP (can be removed after testing)
      */
-    public function updateOld(Request $request, $id): mixed
+    public function updateOld(Request $request, int $id): mixed
     {
 
         // Get appointment to check status
@@ -2025,7 +2025,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('appointments_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -2041,7 +2041,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id): mixed
+    public function inactive(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -2059,7 +2059,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id): mixed
+    public function active(int $id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -2339,7 +2339,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs($id): mixed
+    public function showSMSLogs(int $id): mixed
     {
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
@@ -3031,7 +3031,7 @@ class AppointmentsController extends Controller
      * @return mixed
      */
 
-    public function invoice($id): mixed
+    public function invoice(int $id): mixed
     {
         
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
@@ -4489,7 +4489,7 @@ class AppointmentsController extends Controller
         return response()->json($myarray);
     }
 
-    public function displayInvoiceAppointment($id): mixed
+    public function displayInvoiceAppointment(int $id): mixed
     {
         if (! Gate::allows('appointments_invoice_display')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -4811,12 +4811,12 @@ class AppointmentsController extends Controller
         $Excel_writer->save('php://output');
     }
 
-    public function logPage($id): mixed
+    public function logPage(int $id): mixed
     {
         return view('admin.appointments.logs.appointmentlog', compact('id'));
     }
 
-    public function viewLog($id, $type): mixed
+    public function viewLog(int $id, string $type): mixed
     {
         if (! Gate::allows('appointments_log')) {
             abort(404);
@@ -4910,7 +4910,7 @@ class AppointmentsController extends Controller
         return $this->viewLogInExcel($id, $data);
     }
 
-    public function viewLogInExcel($id, $data): mixed
+    public function viewLogInExcel(int $id, mixed $data): mixed
     {
         $appointment = Appointments::withTrashed()->find($id);
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/

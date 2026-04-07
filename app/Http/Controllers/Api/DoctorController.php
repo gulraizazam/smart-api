@@ -178,7 +178,7 @@ class DoctorController extends Controller
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->doctorService->changeStatus($request->id, $request->status);
+            $result = $this->doctorService->changeStatus((int) $request->id, (int) $request->status);
 
             return $result
                 ? $this->successResponse('Status has been changed successfully.')
