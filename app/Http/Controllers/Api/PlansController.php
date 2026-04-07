@@ -35,7 +35,7 @@ final class PlansController extends Controller
             $this->handleFilterCancellation($request, 'patient_packages');
 
             $filters = $request->filters();
-            $datatableData = $this->planService->getDatatableData($filters, $patientId);
+            $datatableData = $this->planService->getDatatableData($filters, (int) $patientId);
 
             $pagination = $request->paginationParams($datatableData['total']);
             $packages = $this->executePaginatedQuery($datatableData, $pagination);
