@@ -7,13 +7,13 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUpdateMachineTypeRequest;
 use App\Models\MachineType;
 use App\Models\MachineTypeHasServices;
 use App\Models\Services;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class MachineTypeController extends Controller
 {
@@ -148,15 +148,11 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(StoreUpdateMachineTypeRequest $request): mixed
     {
         try {
             if (!Gate::allows('machineType_create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return $this->successResponse($validator->errors()->first(), false, $validator->errors());
             }
             if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
                 $data = $request->all();
@@ -185,19 +181,6 @@ class MachineTypeController extends Controller
         } catch (\Exception $e) {
             return $this->handleException($e, 'MachineTypeController');
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        return $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'services' => 'required',
-        ]);
     }
 
     /**
@@ -241,15 +224,11 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(StoreUpdateMachineTypeRequest $request, $id): mixed
     {
         try {
             if (!Gate::allows('machineType_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
-            }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return $this->successResponse($validator->errors()->first(), false, $validator->errors());
             }
 
             if ($machinetype = MachineType::updateRecord($id, $request, Auth::User()->account_id)) {

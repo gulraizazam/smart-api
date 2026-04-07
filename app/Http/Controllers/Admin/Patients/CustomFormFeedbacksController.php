@@ -16,14 +16,6 @@ use Spatie\Browsershot\Browsershot;
 
 class CustomFormFeedbacksController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    
-
     /**
      * Display a listing of the resource.
      *

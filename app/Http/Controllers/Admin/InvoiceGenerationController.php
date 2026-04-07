@@ -8,6 +8,7 @@ use App\Models\Locations;
 use App\Models\User;
 use App\Services\InvoiceGenerationService;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use App\Http\Requests\Admin\InvoiceCalculationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -29,18 +30,9 @@ class InvoiceGenerationController extends Controller
      * Calculate amounts and generate exempt invoices
      * Returns JSON with calculations and invoice data
      */
-    public function calculateAmounts(Request $request): JsonResponse
+    public function calculateAmounts(InvoiceCalculationRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'date_range' => 'required|string',
-            'location_ids' => 'required|array',
-            'location_ids.*' => 'integer',
-            'bank_taxable' => 'required|numeric|min:0|max:100',
-            'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|in:1500,2000',
-            'tax_percent' => 'nullable|numeric|min:0|max:100',
-            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
-        ]);
+        $validated = $request->validated();
 
         // Parse date range
         $dates = $this->parseDateRange($validated['date_range']);
@@ -79,18 +71,9 @@ class InvoiceGenerationController extends Controller
     /**
      * Export exempt invoices to Excel
      */
-    public function exportExemptInvoices(Request $request): mixed
+    public function exportExemptInvoices(InvoiceCalculationRequest $request): mixed
     {
-        $validated = $request->validate([
-            'date_range' => 'required|string',
-            'location_ids' => 'required|array',
-            'location_ids.*' => 'integer',
-            'bank_taxable' => 'required|numeric|min:0|max:100',
-            'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|in:1500,2000',
-            'tax_percent' => 'nullable|numeric|min:0|max:100',
-            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
-        ]);
+        $validated = $request->validated();
 
         // Parse date range
         $dates = $this->parseDateRange($validated['date_range']);
@@ -165,18 +148,9 @@ class InvoiceGenerationController extends Controller
      * Uses ZipStream to avoid writing anything to disk.
      * Processes invoices in chunks to handle 1000+ invoices without memory issues.
      */
-    public function downloadInvoicesZip(Request $request): mixed
+    public function downloadInvoicesZip(InvoiceCalculationRequest $request): mixed
     {
-        $validated = $request->validate([
-            'date_range' => 'required|string',
-            'location_ids' => 'required|array',
-            'location_ids.*' => 'integer',
-            'bank_taxable' => 'required|numeric|min:0|max:100',
-            'cash_percent' => 'required|numeric|min:0|max:100',
-            'consultation_amount' => 'required|numeric|in:1500,2000',
-            'tax_percent' => 'nullable|numeric|min:0|max:100',
-            'max_invoices_per_day' => 'nullable|integer|min:1|max:10',
-        ]);
+        $validated = $request->validated();
 
         // Parse date range
         $dates = $this->parseDateRange($validated['date_range']);

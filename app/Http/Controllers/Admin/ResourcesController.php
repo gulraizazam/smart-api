@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUpdateResourceRequest;
 use App\Services\Resource\ResourceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class ResourcesController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
     public function __construct(
         private readonly ResourceService $resourceService,
     ) {}
@@ -121,7 +115,7 @@ class ResourcesController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request): mixed
+    public function store(StoreUpdateResourceRequest $request): mixed
     {
         if (! Gate::allows('resources_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -129,11 +123,6 @@ class ResourcesController extends Controller
 
         try {
 
-            $validator = $this->verifyFields($request);
-
-            if ($validator->fails()) {
-                return $this->successResponse($validator->messages()->first(), false);
-            }
             if ($this->resourceService->store($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {
                 return $this->successResponse('Record has been created successfully.');
             }
@@ -143,21 +132,6 @@ class ResourcesController extends Controller
         } catch (\Exception $e) {
             return $this->handleException($e, 'ResourcesController');
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return Validator $validator;
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        return Validator::make($request->all(), [
-            'name' => 'required',
-            'resource_type_id' => 'required',
-            'location_id' => 'required',
-            'machine_type_id' => 'required',
-        ]);
     }
 
     /**
@@ -229,18 +203,10 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id): mixed
+    public function update(StoreUpdateResourceRequest $request, $id): mixed
     {
         if (! Gate::allows('resources_edit')) {
             return abort('401');
-        }
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 0,
-                'message' => $validator->messages()->all(),
-            ]);
         }
 
         if ($this->resourceService->update($id, $request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {

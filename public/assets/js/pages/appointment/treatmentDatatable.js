@@ -63,8 +63,22 @@ function setStatusData(response, id) {
             });
         }
         $("#appointment_type_id").val(appointment_type_id);
+        if ($("#base_appointment_status_id").hasClass("select2-hidden-accessible")) {
+            $("#base_appointment_status_id").select2('destroy');
+        }
+        if ($("#appointment_status_id").hasClass("select2-hidden-accessible")) {
+            $("#appointment_status_id").select2('destroy');
+        }
         $("#base_appointment_status_id").html(base_status_option);
         $("#appointment_status_id").html(appoint_status_option);
+        $("#base_appointment_status_id").select2({
+            placeholder: "Select Status",
+            dropdownParent: $("#modal_change_appointment_status")
+        });
+        $("#appointment_status_id").select2({
+            placeholder: "Select Child Status",
+            dropdownParent: $("#modal_change_appointment_status")
+        });
 
         $("#appointment_id").val(id);
         $("#appointment_status_not_show").val(appointment_status_not_show);
@@ -72,16 +86,16 @@ function setStatusData(response, id) {
 
 
         if (appointments?.appointment_status?.parent_id != 0) {
-            $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id);
+            $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id).trigger('change');
         } else {
-            $("#base_appointment_status_id").val(appointments?.appointment_status_id);
+            $("#base_appointment_status_id").val(appointments?.appointment_status_id).trigger('change');
         }
 
         if (appointments?.appointment_status?.parent_id == 0) {
             $("#appointment_status_id_section").hide();
         } else {
             $("#appointment_status_id_section").show();
-            $("#appointment_status_id").val(appointments?.appointment_status?.id);
+            $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
         }
 
         if (appointments?.appointment_status?.parent_id == 0) {
@@ -107,7 +121,7 @@ function setStatusData(response, id) {
                 $("#appointment_reason").show();
                 $("#appointment_status_id_section").show();
                 $("#reason").val(appointments?.reason);
-                $("#appointment_status_id").val(appointments?.appointment_status?.id);
+                $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
             }
         }
 

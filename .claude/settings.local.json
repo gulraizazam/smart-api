@@ -92,7 +92,15 @@
       "Bash(bash /tmp/edge_case_check.sh)",
       "Bash(wc -l /c/laragon/www/cutera-upgradation1/app/Http/Controllers/Admin/*.php)",
       "Bash(git checkout:*)",
-      "Bash(sort -k2)"
+      "Bash(sort -k2)",
+      "Bash(ls /c/laragon/www/cutera-upgradation1/app/Models/*.php)",
+      "Bash(head -5 /c/laragon/www/cutera-upgradation1/app/Models/*.php)",
+      "Bash(ls -1 /c/laragon/www/cutera-upgradation1/app/Http/Requests/*.php)",
+      "Bash(xargs -I {} basename {} .php)",
+      "Bash(ls -1 /c/laragon/www/cutera-upgradation1/app/Http/Controllers/Admin/*.php)",
+      "Bash(bash /tmp/parse_validations.sh)",
+      "Bash(wc -l app/Http/Controllers/Admin/*.php)",
+      "Bash(wc -l C:/laragon/www/cutera-upgradation1/routes/*.php)"
     ]
   }
 }

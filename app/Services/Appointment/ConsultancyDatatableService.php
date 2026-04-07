@@ -20,15 +20,23 @@ use Illuminate\Support\Facades\Gate;
 
 class ConsultancyDatatableService
 {
-    private readonly int $userId;
-    private readonly int $accountId;
+    private int|null $userId = null;
+    private int|null $accountId = null;
     private string $filename = 'appointments';
 
     public function __construct(
         private readonly AppointmentFilterService $filterService,
     ) {
-        $this->userId = (int) Auth::id();
-        $this->accountId = (int) Auth::user()->account_id;
+    }
+
+    private function userId(): int
+    {
+        return $this->userId ??= (int) Auth::id();
+    }
+
+    private function accountId(): int
+    {
+        return $this->accountId ??= (int) Auth::user()->account_id;
     }
 
     /**
@@ -81,8 +89,8 @@ class ConsultancyDatatableService
             $order = 'desc';
         }
 
-        Filters::put($this->userId, 'appointments', 'order_by', $orderBy);
-        Filters::put($this->userId, 'appointments', 'order', $order);
+        Filters::put($this->userId(), 'appointments', 'order_by', $orderBy);
+        Filters::put($this->userId(), 'appointments', 'order', $order);
 
         return [$orderBy, $order];
     }
@@ -170,8 +178,8 @@ class ConsultancyDatatableService
     private function loadReferenceData(mixed $appointments): array
     {
         $invoiceStatus = InvoiceStatuses::where('slug', 'paid')->first();
-        $unscheduledStatus = AppointmentStatuses::getUnScheduledStatusOnly($this->accountId, ['id']);
-        $cancelledStatus = AppointmentStatuses::getCancelledStatusOnly($this->accountId);
+        $unscheduledStatus = AppointmentStatuses::getUnScheduledStatusOnly($this->accountId(), ['id']);
+        $cancelledStatus = AppointmentStatuses::getCancelledStatusOnly($this->accountId());
 
         $userIds = $appointments->pluck('app_created_by')
             ->merge($appointments->pluck('converted_by'))
@@ -265,15 +273,15 @@ class ConsultancyDatatableService
      */
     private function getFiltersData(array $records): array
     {
-        $records['active_filters'] = Filters::all($this->userId, $this->filename);
+        $records['active_filters'] = Filters::all($this->userId(), $this->filename);
 
         $regions = \App\Models\Regions::getActiveSorted(ACL::getUserRegions());
         $cities = \App\Models\Cities::getActiveSortedFeatured(ACL::getUserCities());
-        $doctors = \App\Models\Doctors::getActiveOnly(ACL::getUserCentres(), $this->accountId);
+        $doctors = \App\Models\Doctors::getActiveOnly(ACL::getUserCentres(), $this->accountId());
         $locations = \App\Models\Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
 
-        $appointmentStatuses = AppointmentStatuses::getAllParentRecords($this->accountId);
+        $appointmentStatuses = AppointmentStatuses::getAllParentRecords($this->accountId());
         $appointmentStatuses = $appointmentStatuses?->pluck('name', 'id');
 
         $appointmentTypes = match (true) {
@@ -286,7 +294,7 @@ class ConsultancyDatatableService
             default => collect(),
         };
 
-        $users = User::getAllRecords($this->accountId)->where('active', 1)->pluck('name', 'id');
+        $users = User::getAllRecords($this->accountId())->where('active', 1)->pluck('name', 'id');
 
         $records['filter_values'] = [
             'cities' => $cities,
@@ -312,7 +320,7 @@ class ConsultancyDatatableService
         }
 
         $ids = array_filter(explode(',', $deleteIds), fn ($id) => is_numeric($id));
-        Appointments::where('account_id', $this->accountId)
+        Appointments::where('account_id', $this->accountId())
             ->whereIn('id', $ids)
             ->delete();
 

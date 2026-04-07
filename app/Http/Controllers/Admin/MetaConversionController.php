@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SendLeadStatusRequest;
 use App\Services\MetaConversionApiService;
-use Illuminate\Http\Request;
 
 class MetaConversionController extends Controller
 {
@@ -33,16 +33,8 @@ class MetaConversionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sendLeadStatus(Request $request): mixed
+    public function sendLeadStatus(SendLeadStatusRequest $request): mixed
     {
-        $request->validate([
-            'phone' => 'required|string',
-            'status' => 'required|string',
-            'lead_id' => 'nullable|string',
-            'email' => 'nullable|email',
-            'currency' => 'nullable|string|size:3',
-            'value' => 'nullable|numeric',
-        ]);
 
         $result = $this->metaService->sendLeadStatus(
             $request->phone,

@@ -11,6 +11,7 @@ use App\Http\Requests\Membership\ToggleMembershipTypeStatusRequest;
 use App\Http\Requests\Membership\UpdateMembershipTypeRequest;
 use App\Http\Resources\MembershipTypeResource;
 use App\Services\Membership\MembershipTypeService;
+use App\Traits\SimpleApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Log;
 
 final class MembershipTypesController extends Controller
 {
+    use SimpleApiResponse;
+
     public function __construct(
         private readonly MembershipTypeService $membershipTypeService,
     ) {}
@@ -184,32 +187,4 @@ final class MembershipTypesController extends Controller
         return $this->success('Membership types retrieved successfully.', $data);
     }
 
-    // ── Response Helpers ────────────────────────────────
-
-    private function success(string $message, mixed $data = null, bool $status = true): JsonResponse
-    {
-        return response()->json([
-            'status'  => $status,
-            'message' => $message,
-            'data'    => $data,
-        ], 200);
-    }
-
-    private function error(string $message): JsonResponse
-    {
-        return response()->json([
-            'status'  => false,
-            'message' => $message,
-            'data'    => null,
-        ], 500);
-    }
-
-    private function unauthorized(): JsonResponse
-    {
-        return response()->json([
-            'status'  => false,
-            'message' => 'You are not authorized to access this resource.',
-            'data'    => null,
-        ], 401);
-    }
 }

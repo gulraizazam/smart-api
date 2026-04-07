@@ -9,6 +9,7 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdatePatientDocumentRequest;
 use App\Http\Requests\PatientDocumentStoreRequest;
 use App\Models\Cities;
 use App\Models\Documents;
@@ -406,13 +407,11 @@ class PatientsController extends Controller
         return view('admin.patients.card.documents.edit', compact('documents'));
     }
 
-    public function documentupdate(Request $request, int $id): JsonResponse
+    public function documentupdate(UpdatePatientDocumentRequest $request, int $id): JsonResponse
     {
         if (!Gate::allows('patients_document_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
-
-        $request->validate(['name' => 'required|string|max:255']);
 
         if (Documents::updateRecord($id, $request, Auth::user()->account_id)) {
             return $this->successResponse('Record has been updated successfully.', null, 200);

@@ -184,7 +184,7 @@ class AppointmentsController extends Controller
    private function getDefaultListing(Request $request, $patientId = null): mixed
     {
         // Use optimized ConsultancyDatatableService
-        $records = $this->datatableService->getDatatableData($request, $patientId);
+        $records = $this->datatableService->getDatatableData($request, $patientId !== null ? (int) $patientId : null);
         
         return response()->json($records);
     }
@@ -789,12 +789,11 @@ class AppointmentsController extends Controller
             /**
              * Dispatch Elastic Search Index
              */
-            $this->dispatch(
-                new IndexSingleAppointmentJob([
+            IndexSingleAppointmentJob::dispatch([
                     'account_id' => Auth::User()->account_id,
                     'appointment_id' => $appointment->id,
                     'patient_phone' => $appointment_data['phone'],
-                ])
+                ]
             );
 
             return $this->successResponse($message, [
@@ -1925,12 +1924,10 @@ class AppointmentsController extends Controller
             GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
             $patient = Patients::updateRecord($appointment->patient_id, $patientData);
             $patient->update($patientData);
-            $this->dispatch(
-                new IndexSingleAppointmentJob([
+            IndexSingleAppointmentJob::dispatch([
                     'account_id' => Auth::User()->account_id,
                     'appointment_id' => $appointment->id,
-                ])
-            );
+                ]);
             
             // Log rescheduled activity
             if ($isRescheduled) {
@@ -2215,7 +2212,7 @@ class AppointmentsController extends Controller
         }
         // Set Allow Message Flag
         if (isset($data['base_appointment_status_id'])) {
-            $appointment_status = AppointmentStatuses::getData($data['base_appointment_status_id']);
+            $appointment_status = AppointmentStatuses::getData((int) $data['base_appointment_status_id']);
             $data['appointment_status_allow_message'] = $appointment_status->allow_message;
         }
         if (! isset($data['appointment_status_id']) || $data['appointment_status_id'] == '') {
@@ -2319,13 +2316,11 @@ class AppointmentsController extends Controller
         /**
          * Dispatch Elastic Search Index
          */
-        $this->dispatch(
-            new IndexSingleAppointmentJob([
+        IndexSingleAppointmentJob::dispatch([
                 'account_id' => Auth::User()->account_id,
                 'appointment_id' => $appointment->id,
-            ])
-        );
-        
+            ]);
+
         // Log appointment status change activity
         $newStatus = AppointmentStatuses::find($data['base_appointment_status_id']);
         if ($oldStatus && $newStatus && $oldStatusId != $data['base_appointment_status_id']) {
@@ -2909,12 +2904,10 @@ class AppointmentsController extends Controller
                         /**
                          * Dispatch Elastic Search Index
                          */
-                        $this->dispatch(
-                            new IndexSingleAppointmentJob([
+                        IndexSingleAppointmentJob::dispatch([
                                 'account_id' => Auth::User()->account_id,
                                 'appointment_id' => $appointment->id,
-                            ])
-                        );
+                            ]);
 
                         // Log activity for date, time, or doctor changes
                         $newDate = Carbon::parse($request->start)->format('Y-m-d');
@@ -3862,12 +3855,10 @@ class AppointmentsController extends Controller
         /**
          * Dispatch Elastic Search Index
          */
-        $this->dispatch(
-            new IndexSingleAppointmentJob([
+        IndexSingleAppointmentJob::dispatch([
                 'account_id' => Auth::User()->account_id,
                 'appointment_id' => $appointmentinfo->id,
-            ])
-        );
+            ]);
 
         return $this->successResponse('Invoice created successfully', [
             'invoice_id' => $invoice?->id ?? 0,
@@ -4260,12 +4251,10 @@ class AppointmentsController extends Controller
                                 'send_message' => 1, // Set flag 1 to send message on cron job
                             ]);
                         }
-                        $this->dispatch(
-                            new IndexSingleAppointmentJob([
+                        IndexSingleAppointmentJob::dispatch([
                                 'account_id' => Auth::User()->account_id,
                                 'appointment_id' => $appointment->id,
-                            ])
-                        );
+                            ]);
 
                         return $this->successResponse('Appointment Updated Successfully.');
                     }

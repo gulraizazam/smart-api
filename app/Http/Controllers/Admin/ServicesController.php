@@ -9,6 +9,7 @@ use App\Helpers\GroupsTree;
 use App\Helpers\ServiceHelper;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreUpdateServiceRequest;
 use App\Models\Appointments;
 use App\Models\Services;
 use PDF;
@@ -16,18 +17,9 @@ use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 
 class ServicesController extends Controller
 {
-    public $success;
-
-    public $error;
-
-    public $unauthorized;
-
-    
-
     /**
      * Display a listing of Permission.
      *
@@ -218,18 +210,11 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(StoreUpdateServiceRequest $request): mixed
     {
 
         if (! Gate::allows('services_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
-        $validator = $this->verifyFields($request);
-
-        if ($validator->fails()) {
-
-            return $this->successResponse($validator->messages()->first(), false);
         }
 
         if (Services::createRecord($request, Auth::User()->account_id)) {
@@ -238,19 +223,6 @@ class ServicesController extends Controller
         } else {
             return $this->errorResponse('Something went wrong, please try again later.', 404);
         }
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return Validator $validator;
-     */
-    protected function verifyFields(Request $request): mixed
-    {
-        return $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'parent_id' => 'required',
-        ]);
     }
 
     /**
@@ -372,15 +344,10 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function storeDuplicate(Request $request): mixed
+    public function storeDuplicate(StoreUpdateServiceRequest $request): mixed
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
-        $validator = $this->verifyFields($request);
-        if ($validator->fails()) {
-            return $this->successResponse($validator->messages()->first(), false);
         }
 
         if (Services::createRecord($request, Auth::User()->account_id)) {
@@ -396,14 +363,10 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(StoreUpdateServiceRequest $request, $id): mixed
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-        $validator = $this->verifyFields($request);
-        if ($validator->fails()) {
-            return $this->successResponse($validator->messages()->first(), false);
         }
         $service = Services::findOrFail($id);
         if ($service->parent_id > 0 && $request->parent_id == 0) {
