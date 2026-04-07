@@ -395,6 +395,7 @@ function applyFilters(datatable) {
         let filters = {
             patient_id: $("#search_patient_id").val(),
             name: $("#search_name").val(),
+            phone: $("#search_phone").val(),
             gender: $("#search_gender").val(),
             membership: $("#search_membership").val(),
             created_at: $("#date_range").val(),
@@ -411,17 +412,19 @@ function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function () {
         // Clear all form fields first
         $("#search_name").val('');
+        $("#search_phone").val('');
         $("#search_membership").val('').trigger('change');
         $("#search_gender").val('').trigger('change');
         $("#search_status").val('').trigger('change');
         $("#date_range").val('');
-        
+
         // Clear Select2 patient search value (don't reinitialize, just clear)
         $("#search_patient_id").val(null).trigger('change');
-        
+
         let filters = {
             patient_id: '',
             name: '',
+            phone: '',
             membership: '',
             gender: '',
             created_at: '',
