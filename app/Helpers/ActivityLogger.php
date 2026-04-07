@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Activity;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 
 class ActivityLogger
 {

@@ -12,7 +12,7 @@ class FileUploadPabaoRecordsRequest extends FormRequest
      *
      * @return bool
      */
-    public function authorize()
+    public function authorize(): bool
     {
         return true;
     }
@@ -22,7 +22,7 @@ class FileUploadPabaoRecordsRequest extends FormRequest
      *
      * @return array
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'pabao_records_file' => 'required|max:1000|mimes:xls,xlsx,csv,txt',

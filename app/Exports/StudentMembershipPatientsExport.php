@@ -10,7 +10,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 
 class StudentMembershipPatientsExport implements FromCollection, WithHeadings, WithMapping
 {
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
         return DB::table('packages')
             ->join('package_services', 'packages.id', '=', 'package_services.package_id')

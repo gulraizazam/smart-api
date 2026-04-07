@@ -22,7 +22,7 @@ class MedicalHistoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('appointments_medical_form_manage')) {
             return abort(401);
@@ -41,7 +41,7 @@ class MedicalHistoryController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, $id)
+    public function datatable(Request $request, $id): mixed
     {
 
         $filename = 'patient_custom_form_feedbacks';
@@ -99,7 +99,7 @@ class MedicalHistoryController extends Controller
         return response()->json($records);
     }
 
-    private function getFilters($records)
+    private function getFilters($records): mixed
     {
 
         $records['active_filters'] = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
@@ -113,7 +113,7 @@ class MedicalHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('appointments_medical_edit')) {
             return abort(401);
@@ -144,7 +144,7 @@ class MedicalHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview($id)
+    public function filled_preview($id): mixed
     {
         if (! Gate::allows('appointments_medical_form_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);

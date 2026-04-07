@@ -122,7 +122,6 @@ function createPermission($route) {
 
             makeCreatePopup(response);
 
-            reInitSelect2("#kt_select2_8", "Select an Parent Group");
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -140,8 +139,14 @@ function makeCreatePopup(response) {
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
-
+    if ($(".permissions-dropdown").hasClass("select2-hidden-accessible")) {
+        $(".permissions-dropdown").select2('destroy');
+    }
     $(".permissions-dropdown").html(options);
+    $(".permissions-dropdown").select2({
+        placeholder: "Select an Parent Group",
+        dropdownParent: $("#modal_add_permission")
+    });
 }
 
 function editRow( url) {
@@ -157,7 +162,6 @@ function editRow( url) {
         cache: false,
         success: function (response) {
             makeEditPopup(response);
-            reInitSelect2("#kt_select2_8", "Select an Parent Group");
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -181,13 +185,20 @@ function makeEditPopup(response) {
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';
     });
 
+    if ($(".edit-permissions-dropdown").hasClass("select2-hidden-accessible")) {
+        $(".edit-permissions-dropdown").select2('destroy');
+    }
     $(".edit-permissions-dropdown").html(options);
+    $(".edit-permissions-dropdown").select2({
+        placeholder: "Select an Parent Group",
+        dropdownParent: $("#modal_edit_permission")
+    });
 
     $("#permission_name").val(permission.name);
 
     $("#permission_title").val(permission.title);
 
-    $("#permission_parent").val(permission.parent_id);
+    $(".edit-permissions-dropdown").val(permission.parent_id).trigger('change');
 
 }
 

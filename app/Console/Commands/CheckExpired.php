@@ -43,7 +43,7 @@ class CheckExpired extends Command
      *
      * @return void
      */
-    public function handle()
+    public function handle(): int
     {
         Discounts::whereDate('end', '<', now())->whereActive('1')->update([
             'active' => 0,

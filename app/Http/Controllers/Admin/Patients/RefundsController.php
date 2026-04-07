@@ -15,11 +15,11 @@ use App\Models\PackageService;
 use App\Models\Refunds;
 use App\Models\Settings;
 use App\Models\User;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class RefundsController extends Controller
 {
@@ -32,7 +32,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('patients_refund_manage')) {
             return abort(401);
@@ -60,7 +60,7 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, $id)
+    public function datatable(Request $request, $id): mixed
     {
 
         $apply_filter = false;
@@ -134,7 +134,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function refund_create($id)
+    public function refund_create($id): mixed
     {
 
         if (! Gate::allows('patients_refund_refund')) {
@@ -248,7 +248,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('patients_refund_refund')) {
             return abort(401);
@@ -288,7 +288,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail($id)
+    public function detail($id): mixed
     {
 
         if (! Gate::allows('refunds_manage') || ! Gate::allows('users_manage')) {
@@ -309,7 +309,7 @@ class RefundsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = Validator::make($request->all(), [
             'refund_amount' => 'required',

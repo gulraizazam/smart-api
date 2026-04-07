@@ -41,7 +41,7 @@ class AppointmentsDailyStatsCron extends Command
      *
      * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         try {
             $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;

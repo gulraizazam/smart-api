@@ -17,7 +17,7 @@ class PaymentModesController extends Controller
         private readonly PaymentModeService $paymentModeService,
     ) {}
 
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('payment_modes_manage')) {
             return abort(401);
@@ -32,7 +32,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             if (! Gate::allows('payment_modes_manage')) {
@@ -52,7 +52,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('payment_modes_create')) {
             return abort(401);
@@ -61,7 +61,7 @@ class PaymentModesController extends Controller
         return view('admin.payment_modes.create', compact('city'));
     }
 
-    public function sortorder_save(Request $request)
+    public function sortorder_save(Request $request): mixed
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
@@ -78,7 +78,7 @@ class PaymentModesController extends Controller
         }
     }
 
-    public function sortorder()
+    public function sortorder(): mixed
     {
         if (! Gate::allows('payment_modes_sort')) {
             return abort(401);
@@ -92,7 +92,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderGet()
+    public function sortOrderGet(): mixed
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
@@ -111,7 +111,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         try {
             if (! Gate::allows('payment_modes_create')) {
@@ -135,7 +135,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
@@ -159,7 +159,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
@@ -183,7 +183,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_destroy')) {
@@ -203,7 +203,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         try {
             if ($request->status == 0) {

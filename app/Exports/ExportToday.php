@@ -26,7 +26,7 @@ class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEven
         $this->offset = $offset;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
 
         return Appointments::join('users', function ($join) {

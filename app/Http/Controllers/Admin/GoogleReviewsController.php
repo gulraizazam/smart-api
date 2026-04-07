@@ -21,7 +21,7 @@ class GoogleReviewsController extends Controller
     /**
      * Display Google Reviews management page.
      */
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('google_reviews_manage')) {
             return abort(401);
@@ -33,7 +33,7 @@ class GoogleReviewsController extends Controller
     /**
      * Get reviews grid data for a given month/year.
      */
-    public function getData(Request $request)
+    public function getData(Request $request): mixed
     {
         try {
             $accountId = Auth::user()->account_id;
@@ -52,7 +52,7 @@ class GoogleReviewsController extends Controller
     /**
      * Save a single doctor's review count (immediate save).
      */
-    public function save(Request $request)
+    public function save(Request $request): mixed
     {
         try {
             $request->validate([

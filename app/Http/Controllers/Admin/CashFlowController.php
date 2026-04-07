@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class CashFlowController extends Controller
 {
-    public function dashboard()
+    public function dashboard(): mixed
     {
         if (!Gate::allows('cashflow_dashboard')) {
             return abort(401);
@@ -17,7 +17,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.dashboard');
     }
 
-    public function expenses()
+    public function expenses(): mixed
     {
         if (!Gate::any(['cashflow_expense_view', 'cashflow_expense_create', 'cashflow_expense_approve', 'cashflow_expense_reject', 'cashflow_expense_edit', 'cashflow_expense_void'])) {
             return abort(401);
@@ -25,7 +25,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.expenses');
     }
 
-    public function transfers()
+    public function transfers(): mixed
     {
         if (!Gate::any(['cashflow_transfer_view', 'cashflow_transfer_create', 'cashflow_transfer_edit', 'cashflow_transfer_void'])) {
             return abort(401);
@@ -33,7 +33,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.transfers');
     }
 
-    public function vendors()
+    public function vendors(): mixed
     {
         if (!Gate::any(['cashflow_vendor_view', 'cashflow_vendor_create', 'cashflow_vendor_edit', 'cashflow_vendor_manage', 'cashflow_vendor_ledger_view', 'cashflow_vendor_transaction'])) {
             return abort(401);
@@ -42,7 +42,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.vendors', compact('branches'));
     }
 
-    public function staff()
+    public function staff(): mixed
     {
         if (!Gate::any(['cashflow_staff_advance_view', 'cashflow_staff_advance_create', 'cashflow_staff_advance_edit', 'cashflow_staff_advance_void', 'cashflow_staff_return_create', 'cashflow_staff_return_void'])) {
             return abort(401);
@@ -50,7 +50,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.staff');
     }
 
-    public function reports()
+    public function reports(): mixed
     {
         if (!Gate::allows('cashflow_reports')) {
             return abort(401);
@@ -58,7 +58,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.reports');
     }
 
-    public function settings()
+    public function settings(): mixed
     {
         if (!Gate::allows('cashflow_settings')) {
             return abort(401);
@@ -66,7 +66,7 @@ class CashFlowController extends Controller
         return view('admin.cashflow.settings');
     }
 
-    public function fdmView()
+    public function fdmView(): mixed
     {
         if (!Gate::allows('cashflow_fdm_view')) {
             return abort(401);

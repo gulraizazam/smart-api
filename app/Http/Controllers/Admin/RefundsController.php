@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\User;
@@ -31,7 +31,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('refunds_manage')) {
             return abort(401);
@@ -46,7 +46,7 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request, $id = false)
+    public function datatable(Request $request, $id = false): mixed
     {
         try {
 
@@ -182,7 +182,7 @@ class RefundsController extends Controller
         }
     }
 
-    private function getFiltersData($records, $filename = 'plansrefunds')
+    private function getFiltersData($records, $filename = 'plansrefunds'): mixed
     {
 
         $filters = Filters::all(Auth::User()->id, $filename);
@@ -225,7 +225,7 @@ class RefundsController extends Controller
     /**
      * Patient-specific refunds datatable with all required fields
      */
-    public function patientDatatable(Request $request, $id)
+    public function patientDatatable(Request $request, $id): mixed
     {
         try {
             $filename = 'patientrefunds';
@@ -336,7 +336,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refund_create($id)
+    public function refund_create($id): mixed
     {
         if (! Gate::allows('refunds_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -484,7 +484,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
        
        
@@ -526,7 +526,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail($id)
+    public function detail($id): mixed
     {
 
         if (! Gate::allows('refunds_manage')) {
@@ -547,7 +547,7 @@ class RefundsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         $rules = [
             'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],

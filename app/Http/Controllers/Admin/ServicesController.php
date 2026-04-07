@@ -16,7 +16,7 @@ use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class ServicesController extends Controller
 {
@@ -33,7 +33,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request): mixed
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
@@ -42,7 +42,7 @@ class ServicesController extends Controller
         return view('admin.services.index');
     }
 
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             $filters = getFilters($request->all());
@@ -97,7 +97,7 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    public function getSortOrder()
+    public function getSortOrder(): mixed
     {
         if (! Gate::allows('services_sort')) {
             return abort(401);
@@ -105,7 +105,7 @@ class ServicesController extends Controller
 
         return view('admin.services.Sort');
     }
-    public function sortOrderGet()
+    public function sortOrderGet(): mixed
     {
 
         try {
@@ -135,7 +135,7 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    public function sortOrderSave(Request $request)
+    public function sortOrderSave(Request $request): mixed
     {
 
 
@@ -158,7 +158,7 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    private function getExtraData($records = [])
+    private function getExtraData($records = []): mixed
     {
 
         $filters = Filters::all(Auth::User()->id, 'services');
@@ -186,7 +186,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('services_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -218,7 +218,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
 
         if (! Gate::allows('services_create')) {
@@ -245,7 +245,7 @@ class ServicesController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
@@ -259,7 +259,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -302,7 +302,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id): mixed
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
@@ -338,7 +338,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function duplicate($id)
+    public function duplicate($id): mixed
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -372,7 +372,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function storeDuplicate(Request $request)
+    public function storeDuplicate(Request $request): mixed
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -396,7 +396,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -433,7 +433,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('services_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -453,7 +453,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         try {
 
@@ -495,7 +495,7 @@ class ServicesController extends Controller
 
     }
 
-    public function GetColor(Request $request)
+    public function GetColor(Request $request): mixed
     {
         if ($request->service != 0) {
             $service = Services::where('id', $request->service)->first();
@@ -505,7 +505,7 @@ class ServicesController extends Controller
             return response()->json(['color' => '#000']);
         }
     }
-    public function exportPdf()
+    public function exportPdf(): mixed
     {
         $services = Services::getTreeStructure();
         
@@ -515,7 +515,7 @@ class ServicesController extends Controller
     }
 
     // Helper method to flatten tree for display
-    private function flattenTree($services, $level = 0)
+    private function flattenTree($services, $level = 0): mixed
     {
         $flattened = [];
         
@@ -533,7 +533,7 @@ class ServicesController extends Controller
     }
 
     // Alternative method using flattened approach
-    public function exportPdfFlattened()
+    public function exportPdfFlattened(): mixed
     {
         $services = Services::getTreeStructure();
         $flattenedServices = $this->flattenTree($services);

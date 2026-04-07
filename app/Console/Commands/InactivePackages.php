@@ -38,7 +38,7 @@ class InactivePackages extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         try {
             $today = Carbon::now()->subDay(1)->toDateString();

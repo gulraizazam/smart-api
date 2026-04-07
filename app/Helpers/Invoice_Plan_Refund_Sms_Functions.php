@@ -12,7 +12,7 @@ use App\Models\Settings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
 use App\Models\UserOperatorSettings;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class Invoice_Plan_Refund_Sms_Functions

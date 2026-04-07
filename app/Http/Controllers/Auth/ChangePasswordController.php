@@ -4,10 +4,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class ChangePasswordController extends Controller
 {
@@ -31,7 +31,7 @@ class ChangePasswordController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function showChangePasswordForm()
+    public function showChangePasswordForm(): mixed
     {
         $user = Auth::user();
 
@@ -41,7 +41,7 @@ class ChangePasswordController extends Controller
     /**
      * Change password.
      */
-    public function changePassword(Request $request)
+    public function changePassword(Request $request): mixed
     {
         $user = Auth::user();
 
@@ -76,7 +76,7 @@ class ChangePasswordController extends Controller
      * @param  array  $data
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function validator(Request $request)
+    protected function validator(Request $request): mixed
     {
         $rules = [
             'current_password' => 'required',
@@ -90,6 +90,6 @@ class ChangePasswordController extends Controller
             'new_password.regex' => 'New Password must be a combination of numbers, upper, lower, and special characters',
         ];
 
-        return $validator = Validator::make($request->all(), $rules, $messages);
+        return Validator::make($request->all(), $rules, $messages);
     }
 }

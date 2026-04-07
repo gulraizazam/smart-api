@@ -19,7 +19,7 @@ class MetaConversionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function testConnection(Request $request)
+    public function testConnection(Request $request): mixed
     {
         $result = $this->metaService->testConnection();
         return response()->json($result);
@@ -33,7 +33,7 @@ class MetaConversionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sendLeadStatus(Request $request)
+    public function sendLeadStatus(Request $request): mixed
     {
         $request->validate([
             'phone' => 'required|string',

@@ -8,13 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\FileUploadTownRequest;
 use App\Models\Cities;
 use App\Models\Towns;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class TownController extends Controller
 {
@@ -31,7 +31,7 @@ class TownController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('towns_manage')) {
             return abort(401);
@@ -46,7 +46,7 @@ class TownController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         $filename = 'towns';
 
@@ -127,7 +127,7 @@ class TownController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('towns_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -149,7 +149,7 @@ class TownController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('towns_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -173,7 +173,7 @@ class TownController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
@@ -187,7 +187,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id): mixed
     {
         //
     }
@@ -198,7 +198,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('towns_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -230,7 +230,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (! Gate::allows('towns_edit')) {
             return abort(401);
@@ -266,7 +266,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('towns_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -283,7 +283,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         if (! Gate::allows('towns_active')) {
             return abort(401);
@@ -302,7 +302,7 @@ class TownController extends Controller
     /**
      * Import Town.
      */
-    public function importTowns(Request $request)
+    public function importTowns(Request $request): mixed
     {
         if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();
@@ -320,7 +320,7 @@ class TownController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function uploadLeads(FileUploadTownRequest $request)
+    public function uploadLeads(FileUploadTownRequest $request): mixed
     {
         if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();

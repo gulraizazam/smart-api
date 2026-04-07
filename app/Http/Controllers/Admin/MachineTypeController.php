@@ -26,7 +26,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('machineType_manage')) {
             return abort(401);
@@ -40,7 +40,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             if (!Gate::allows('machineType_manage')) {
@@ -114,7 +114,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
 
         if (!Gate::allows('machineType_create')) {
@@ -148,7 +148,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         try {
             if (!Gate::allows('machineType_create')) {
@@ -192,7 +192,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
@@ -206,7 +206,7 @@ class MachineTypeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id): mixed
     {
         //
     }
@@ -216,7 +216,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         try {
             if (!Gate::allows('machineType_edit')) {
@@ -241,7 +241,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         try {
             if (!Gate::allows('machineType_edit')) {
@@ -288,7 +288,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         try {
             if (!Gate::allows('machineType_destroy')) {
@@ -307,7 +307,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         try {
             if ($request->status == 0) {

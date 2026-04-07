@@ -20,7 +20,7 @@ class LogsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('logs_manage')) {
             return abort(401);
@@ -34,7 +34,7 @@ class LogsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse|\never
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             if (! Gate::allows('logs_manage')) {

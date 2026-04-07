@@ -20,7 +20,7 @@ class EmployeeAppointmentSummmaryExport implements FromCollection, WithHeadings,
 
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
         if ($this->filters['reportData']) {
             $count = 0;

@@ -26,7 +26,7 @@ class AppointmentsController extends Controller
         protected readonly TreatmentService $treatmentService,
     ) {}
 
-    public function index(Request $request)
+    public function index(Request $request): mixed
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -57,7 +57,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function store(StoreAppointmentRequest $request)
+    public function store(StoreAppointmentRequest $request): mixed
     {
         try {
             $this->authorize('create', Appointments::class);
@@ -75,7 +75,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function show($id)
+    public function show($id): mixed
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -93,7 +93,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function update(UpdateAppointmentRequest $request, $id)
+    public function update(UpdateAppointmentRequest $request, $id): mixed
     {
         try {
             $this->authorize('update', Appointments::class);
@@ -111,7 +111,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         try {
             $this->authorize('delete', Appointments::class);
@@ -129,7 +129,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateStatus(UpdateAppointmentStatusRequest $request, $id)
+    public function updateStatus(UpdateAppointmentStatusRequest $request, $id): mixed
     {
         try {
             $this->authorize('updateStatus', Appointments::class);
@@ -147,12 +147,12 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateSchedule(Request $request)
+    public function updateSchedule(Request $request): mixed
     {
         return $this->schedule($request);
     }
 
-    public function schedule(Request $request)
+    public function schedule(Request $request): mixed
     {
         try {
             $this->authorize('manageSchedule', Appointments::class);
@@ -185,7 +185,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function scheduled(Request $request)
+    public function scheduled(Request $request): mixed
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -295,7 +295,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function nonScheduled(Request $request)
+    public function nonScheduled(Request $request): mixed
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -318,7 +318,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function statistics(Request $request)
+    public function statistics(Request $request): mixed
     {
         try {
             $this->authorize('view', Appointments::class);

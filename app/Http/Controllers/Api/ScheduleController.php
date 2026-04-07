@@ -176,7 +176,7 @@ class ScheduleController extends Controller
     /**
      * Get resources (doctors or machines) for a location
      */
-    private function getResourcesForLocation(int $locationId, int $resourceTypeId)
+    private function getResourcesForLocation(int $locationId, int $resourceTypeId): mixed
     {
         $accountId = Auth::user()->account_id;
 

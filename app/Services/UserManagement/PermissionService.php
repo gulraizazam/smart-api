@@ -85,7 +85,9 @@ class PermissionService
             Permission::parentGroups()
                 ->orderBy('sort_order')
                 ->select(['id', 'name', 'title', 'sort_order'])
-                ->each(fn (Permission $p) => $permissions[$p->id] = "{$p->title} ({$p->name})");
+                ->each(function (Permission $p) use (&$permissions) {
+                    $permissions[$p->id] = "{$p->title} ({$p->name})";
+                });
 
             return $permissions;
         });

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateAppointmentRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return Auth::check();
     }
@@ -43,7 +43,7 @@ class UpdateAppointmentRequest extends FormRequest
         $this->replace($data);
     }
 
-    public function rules()
+    public function rules(): array
     {
         $rules = [
             'appointment_type_id' => 'sometimes|exists:appointment_types,id',

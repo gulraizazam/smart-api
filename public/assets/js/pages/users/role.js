@@ -23,7 +23,7 @@ function actions(data) {
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
-    let url = route('admin.roles.edit', {id: id});
+    let url = route('admin.roles.edit.view', {role: id});
     let delete_url = route('admin.roles.destroy', {id: id});
     let duplicate_url = route('admin.roles.duplicate', {id: id});
 

@@ -25,7 +25,7 @@ class DoctorController extends Controller
 
     }
 
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('doctors_manage')) {
             return abort(401);

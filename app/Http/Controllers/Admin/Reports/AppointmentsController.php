@@ -29,7 +29,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AppointmentsController extends Controller
 {
-    public function report()
+    public function report(): mixed
     {
         if (! Gate::allows('appointment_reports_manage')) {
             return abort(401);
@@ -85,7 +85,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function reportLoad(Request $request)
+    public function reportLoad(Request $request): mixed
     {
         switch ($request->get('report_type')) {
             case 'general':
@@ -129,7 +129,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function clientByAppointmentStatusReport(Request $request)
+    public function clientByAppointmentStatusReport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_clients_by_appointment_status')) {
             return abort(401);
@@ -188,7 +188,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -293,7 +293,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function appointmentSummaryByStatusReport(Request $request)
+    public function appointmentSummaryByStatusReport(Request $request): mixed
     {
 
         if (! Gate::allows('appointment_reports_summary_by_appointment_status')) {
@@ -353,7 +353,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function appointmentSummaryByStatusReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function appointmentSummaryByStatusReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -434,7 +434,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function appointmentSummaryByServiceReport(Request $request)
+    public function appointmentSummaryByServiceReport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_summary_by_service')) {
             return abort(401);
@@ -493,7 +493,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function appointmentSummaryByServiceReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function appointmentSummaryByServiceReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -573,7 +573,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function generalReport(Request $request)
+    private static function generalReport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_general_report')) {
             return abort(401);
@@ -635,7 +635,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function AppointmentReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function AppointmentReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -711,7 +711,7 @@ class AppointmentsController extends Controller
      * General report summary
      *
      */
-    public function generalReportSummary(Request $request)
+    public function generalReportSummary(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_general_summary_report')) {
             return abort(401);
@@ -787,7 +787,7 @@ class AppointmentsController extends Controller
     /*
      * General Report Summary
      */
-    public function GeneralReportsummaryExcel($reportData, $filters, $start_date, $end_date, $reportData2)
+    public function GeneralReportsummaryExcel($reportData, $filters, $start_date, $end_date, $reportData2): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -852,7 +852,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function staffReferredByAppointmentScheduleReport(Request $request)
+    public function staffReferredByAppointmentScheduleReport(Request $request): mixed
     {
 
         if (! Gate::allows('appointment_reports_referred_by_staff_appointment')) {
@@ -930,7 +930,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function StaffReferredByAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function StaffReferredByAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1035,7 +1035,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function staffAppointmentScheduleReport(Request $request)
+    public function staffAppointmentScheduleReport(Request $request): mixed
     {
 
         if (! Gate::allows('appointment_reports_staff_appointment')) {
@@ -1108,7 +1108,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function EmployeeAppointmentSummaryReport(Request $request)
+    public function EmployeeAppointmentSummaryReport(Request $request): mixed
     {
 
         if (! Gate::allows('appointment_reports_empolyee_summary')) {
@@ -1183,7 +1183,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function employeeAppointmentSummary($reportData, $filters, $start_date, $end_date)
+    private static function employeeAppointmentSummary($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1235,7 +1235,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function StaffAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function StaffAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1357,7 +1357,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function complianceReport(Request $request)
+    public function complianceReport(Request $request): mixed
     {
 
         if (! Gate::allows('appointment_reports_compliance_reports')) {
@@ -1408,7 +1408,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function complianceReportExcel($reportData, $start_date, $end_date)
+    private static function complianceReportExcel($reportData, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -1491,7 +1491,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function rescheduledcountreport(Request $request)
+    private static function rescheduledcountreport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_rescheduled_count_report')) {
             return abort(401);
@@ -1553,7 +1553,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function RescheduledcountreportExcel($reportData, $filters, $start_date, $end_date)
+    private static function RescheduledcountreportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/

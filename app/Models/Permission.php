@@ -41,7 +41,9 @@ class Permission extends \Spatie\Permission\Models\Permission
 
     public function scopeParentGroups(Builder $query): Builder
     {
-        return $query->where('main_group', 1);
+        return $query->where(function (Builder $q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        });
     }
 
     public function scopeActive(Builder $query): Builder

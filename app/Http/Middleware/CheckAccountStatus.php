@@ -1,29 +1,25 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckAccountStatus
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return mixed
-     */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check() && Auth::user()->active == 1) {
             return $next($request);
-        } else {
-            Auth::guard()->logout();
-            $request->session()->flush();
-
-            return redirect('login');
         }
 
+        Auth::guard()->logout();
+        $request->session()->flush();
+
+        return redirect('login');
     }
 }

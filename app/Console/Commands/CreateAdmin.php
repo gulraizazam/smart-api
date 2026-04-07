@@ -59,7 +59,7 @@ class CreateAdmin extends Command
      *
      * @return void
      */
-    public function handle()
+    public function handle(): int
     {
 
         /*run required seeders before create admin*/
