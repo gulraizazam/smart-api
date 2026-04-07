@@ -20,7 +20,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('centre_targets_manage')) {
             return abort(401);
@@ -35,7 +35,7 @@ class CentreTargetsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
 
@@ -53,7 +53,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('centre_targets_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -75,7 +75,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function leadtargetcentre(Request $request)
+    public function leadtargetcentre(Request $request): mixed
     {
         $data = $this->service->loadTargetCentre($request);
 
@@ -86,7 +86,7 @@ class CentreTargetsController extends Controller
      * Store the centre target
      */
 
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('centre_targets_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -113,7 +113,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id ,$request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
 
         if (! Gate::allows('centre_targets_edit')) {
@@ -139,7 +139,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (! Gate::allows('centre_targets_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -160,7 +160,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function display($id)
+    public function display($id): mixed
     {
         if (! Gate::allows('centre_targets_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -178,7 +178,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id, Request $request)
+    public function destroy($id, Request $request): mixed
     {
         if (! Gate::allows('centre_targets_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -197,7 +197,7 @@ class CentreTargetsController extends Controller
     /**
      * Get all system-wide targets.
      */
-    public function getSystemTargets()
+    public function getSystemTargets(): mixed
     {
         try {
             $targets = $this->service->getSystemTargets();
@@ -211,7 +211,7 @@ class CentreTargetsController extends Controller
     /**
      * Save a single system-wide target (immediate save).
      */
-    public function saveSystemTarget(Request $request)
+    public function saveSystemTarget(Request $request): mixed
     {
         try {
             $request->validate([

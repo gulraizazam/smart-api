@@ -13,7 +13,7 @@ class BusinessClosureController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('business_closures_manage')) {
             return abort('401');

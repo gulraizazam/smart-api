@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class ScheduleAppointmentRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return Auth::check();
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'appointment_id' => 'required|exists:appointments,id',

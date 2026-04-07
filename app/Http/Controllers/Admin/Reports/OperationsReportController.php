@@ -36,7 +36,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function report()
+    public function report(): mixed
     {
         if (! Gate::allows('operations_reports_manage')) {
             return abort(401);
@@ -91,7 +91,7 @@ class OperationsReportController extends Controller
     /*
      * Function for load days
      */
-    public function loaddayarray(Request $request)
+    public function loaddayarray(Request $request): mixed
     {
 
         $days = cal_days_in_month(CAL_GREGORIAN, $request->month, $request->year);
@@ -108,7 +108,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function centertargetreport(Request $request)
+    private static function centertargetreport(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_center_target_report')) {
             return abort(401);
@@ -152,7 +152,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function centretargetreportExcel($reportData, $start_date, $end_date)
+    private static function centretargetreportExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -219,7 +219,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function companyHealth(Request $request)
+    private static function companyHealth(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_operations_company_health')) {
             return abort(401);
@@ -271,7 +271,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $year
      * @return \Illuminate\Http\Response
      */
-    private static function companyHealthExcel($reportData, $month, $year, $start_date, $end_date, $remaining_days, $regions, $account)
+    private static function companyHealthExcel($reportData, $month, $year, $start_date, $end_date, $remaining_days, $regions, $account): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -362,7 +362,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function Highestpayingclients(Request $request)
+    private static function Highestpayingclients(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_Highest_paying_clients')) {
             return abort(401);
@@ -416,7 +416,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function highestpaidclientExcel($reportData, $filters, $month, $year)
+    private static function highestpaidclientExcel($reportData, $filters, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -480,7 +480,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function Listofrefundsforacertainperioddatebased(Request $request)
+    private static function Listofrefundsforacertainperioddatebased(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_List_of_refunds_for_a_certain_period_date_based')) {
             return abort(401);
@@ -571,7 +571,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function ListofClientswhoclaimedrefundsdaysbaseExcel($reportData, $month, $year)
+    private static function ListofClientswhoclaimedrefundsdaysbaseExcel($reportData, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -651,7 +651,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function ListofClientswhoclaimedrefundsdaybasenonplansExcel($reportData, $month, $year)
+    private static function ListofClientswhoclaimedrefundsdaybasenonplansExcel($reportData, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -737,7 +737,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function ListofservicesthatCANbeofferedComplimentary(Request $request)
+    private static function ListofservicesthatCANbeofferedComplimentary(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_List_of_services_that_CAN_be_offered_Complimentary')) {
             return abort(401);
@@ -786,7 +786,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function listofservicethatcanbeofferascomplimentoryExcel($reportData, $month, $year)
+    private static function listofservicethatcanbeofferascomplimentoryExcel($reportData, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -838,7 +838,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function ListofservicesthatCANnotbeofferedComplimentary(Request $request)
+    private static function ListofservicesthatCANnotbeofferedComplimentary(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_List_of_services_that_CAN_not_be_offered_Complimentary')) {
             return abort(401);
@@ -886,7 +886,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function listofservicethatcannotbeofferascomplimentoryExcel($reportData, $month, $year)
+    private static function listofservicethatcannotbeofferascomplimentoryExcel($reportData, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -938,7 +938,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function conversionreportconsultancy(Request $request)
+    private static function conversionreportconsultancy(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_conversion_report_consultancy')) {
             return abort(401);
@@ -985,7 +985,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function conversionreportconsultancyExcel($reportData, $start_date, $end_date)
+    private static function conversionreportconsultancyExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1068,7 +1068,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function conversionreportTreatment(Request $request)
+    private static function conversionreportTreatment(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_conversion_report_treatment')) {
             return abort(401);
@@ -1116,7 +1116,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function conversionreporttreatmentExcel($reportData, $start_date, $end_date)
+    private static function conversionreporttreatmentExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1201,7 +1201,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function complimentoryreport(Request $request)
+    private static function complimentoryreport(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_complimentory_report')) {
             return abort(401);
@@ -1266,7 +1266,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function complimentorytreatmentexcel($reportData, $start_date, $end_date, $filters)
+    private static function complimentorytreatmentexcel($reportData, $start_date, $end_date, $filters): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1334,7 +1334,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function dtrreport(Request $request)
+    private static function dtrreport(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_dtr_report')) {
             return abort(401);
@@ -1383,7 +1383,7 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $month
      * @return \Illuminate\Http\Response
      */
-    private static function dtrreportExcel($reportData, $month, $year)
+    private static function dtrreportExcel($reportData, $month, $year): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreAppointmentRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return Auth::check();
     }
@@ -69,7 +69,7 @@ class StoreAppointmentRequest extends FormRequest
         }
     }
 
-    public function rules()
+    public function rules(): array
     {
         $rules = [
             'appointment_type_id' => 'sometimes|exists:appointment_types,id',

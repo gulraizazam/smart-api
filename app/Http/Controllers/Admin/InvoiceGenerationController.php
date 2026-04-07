@@ -79,7 +79,7 @@ class InvoiceGenerationController extends Controller
     /**
      * Export exempt invoices to Excel
      */
-    public function exportExemptInvoices(Request $request)
+    public function exportExemptInvoices(Request $request): mixed
     {
         $validated = $request->validate([
             'date_range' => 'required|string',
@@ -165,7 +165,7 @@ class InvoiceGenerationController extends Controller
      * Uses ZipStream to avoid writing anything to disk.
      * Processes invoices in chunks to handle 1000+ invoices without memory issues.
      */
-    public function downloadInvoicesZip(Request $request)
+    public function downloadInvoicesZip(Request $request): mixed
     {
         $validated = $request->validate([
             'date_range' => 'required|string',

@@ -35,7 +35,7 @@
                         </div>
                         <div class="card-toolbar">
                             @if(Gate::allows('roles_create'))
-                                <a href="{{ route('admin.roles.create') }}" class="btn btn-primary">
+                                <a href="{{ route('admin.roles.create.view') }}" class="btn btn-primary">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
                                     Add New

@@ -28,7 +28,7 @@ class SyncAppointmentsFire
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
-    public function broadcastOn()
+    public function broadcastOn(): Channel|array
     {
         return new PrivateChannel('channel-name');
     }

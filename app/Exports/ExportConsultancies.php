@@ -30,7 +30,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         $this->request = $request;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
         DB::enableQueryLog();
         $where = [];

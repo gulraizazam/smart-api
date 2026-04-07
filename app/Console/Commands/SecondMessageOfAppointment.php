@@ -53,7 +53,7 @@ class SecondMessageOfAppointment extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         
         $day = Carbon::now()->format('Y-m-d');

@@ -38,7 +38,7 @@ class SyncAppointmentsJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         $total_records = Appointments::where([
             'account_id' => $this->account->id,

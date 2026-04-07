@@ -3,7 +3,7 @@
 declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
-use Validator;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Locations;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -29,7 +29,7 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('locations_manage')) {
             return abort(401);
@@ -44,7 +44,7 @@ class LocationsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         $accountId = Auth::User()->account_id;
         $filters = getFilters($request->all());
@@ -82,7 +82,7 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('locations_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -98,7 +98,7 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -123,7 +123,7 @@ class LocationsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = \Validator::make($request->all(), [
             'name' => 'required',
@@ -145,7 +145,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('locations_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -165,7 +165,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (! Gate::allows('locations_edit')) {
             return abort(401);
@@ -192,7 +192,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('locations_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -206,7 +206,7 @@ class LocationsController extends Controller
         return $this->errorResponse($result['message'], 400);
     }
 
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         if (! Gate::allows('locations_active')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -225,7 +225,7 @@ class LocationsController extends Controller
     /**
      * function for index Sort Order.
      */
-    public function getSortOrder()
+    public function getSortOrder(): mixed
     {
         if (! Gate::allows('locations_sort')) {
             return abort(401);
@@ -234,7 +234,7 @@ class LocationsController extends Controller
         return view('admin.locations.Sort');
     }
 
-    public function sortorder()
+    public function sortorder(): mixed
     {
         if (! Gate::allows('locations_sort')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -247,7 +247,7 @@ class LocationsController extends Controller
     /**
      * function for Sort Order.
      */
-    public function sortorder_save(Request $request)
+    public function sortorder_save(Request $request): mixed
     {
         if (! Gate::allows('locations_sort')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -266,7 +266,7 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function verify(Request $request)
+    public function verify(Request $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return abort(401);
@@ -292,7 +292,7 @@ class LocationsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function verify_edit(Request $request)
+    public function verify_edit(Request $request): mixed
     {
         if (! Gate::allows('locations_create')) {
             return abort(401);
@@ -311,7 +311,7 @@ class LocationsController extends Controller
             'message' => 'Record has been verified successfully.',
         ]);
     }
-    public function getServices(Request $request)
+    public function getServices(Request $request): mixed
     {
         $data = $this->locationService->getServicesForLocation($request->id, Auth::User()->account_id);
 

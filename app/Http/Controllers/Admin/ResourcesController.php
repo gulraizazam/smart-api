@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Resource\ResourceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Validator;
+use Illuminate\Support\Facades\Validator;
 
 class ResourcesController extends Controller
 {
@@ -27,7 +27,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('resources_manage')) {
             return abort('401');
@@ -41,7 +41,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('resources_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -63,7 +63,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function get_machinetype(Request $request)
+    public function get_machinetype(Request $request): mixed
     {
         if (! Gate::allows('resources_create')) {
             return abort('401');
@@ -91,7 +91,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function get_service(Request $request)
+    public function get_service(Request $request): mixed
     {
         if (! Gate::allows('resources_create')) {
             return abort('401');
@@ -121,7 +121,7 @@ class ResourcesController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('resources_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -150,7 +150,7 @@ class ResourcesController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return Validator::make($request->all(), [
             'name' => 'required',
@@ -166,7 +166,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             $records = $this->resourceService->getDatatableData($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id);
@@ -183,7 +183,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         if (! Gate::allows('resources_active')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -208,7 +208,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('resources_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -229,7 +229,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (! Gate::allows('resources_edit')) {
             return abort('401');
@@ -264,7 +264,7 @@ class ResourcesController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('resources_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

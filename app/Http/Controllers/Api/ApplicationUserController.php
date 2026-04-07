@@ -31,7 +31,7 @@ class ApplicationUserController extends Controller
 
     }
 
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('users_manage')) {
             return abort(401);

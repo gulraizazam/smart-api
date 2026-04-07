@@ -26,7 +26,7 @@ class TodayTreatment implements FromCollection, WithHeadings, WithMapping, WithE
         $this->offset = $offset;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
 
         return Appointments::join('users', function ($join) {

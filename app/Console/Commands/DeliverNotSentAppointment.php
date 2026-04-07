@@ -43,7 +43,7 @@ class DeliverNotSentAppointment extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         $start_time = Carbon::parse(Carbon::now())->subMinute(120)->setTimezone('Asia/Karachi')->format('Y-m-d H:i').':00';
         $end_time = Carbon::parse(Carbon::now())->addMinutes(5)->setTimezone('Asia/Karachi')->format('Y-m-d H:i').':59';

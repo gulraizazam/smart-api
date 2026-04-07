@@ -20,7 +20,7 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
         $this->filters = $filters;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
 
         $leads = $this->filters['leads'];

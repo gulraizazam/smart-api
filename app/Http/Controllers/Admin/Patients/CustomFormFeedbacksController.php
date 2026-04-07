@@ -29,7 +29,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -48,7 +48,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, $id)
+    public function datatable(Request $request, $id): mixed
     {
         $filename = 'patient_custom_form_feedbacks';
 
@@ -108,7 +108,7 @@ class CustomFormFeedbacksController extends Controller
         return response()->json($records);
     }
 
-    private function getFilters($records, $filename)
+    private function getFilters($records, $filename): mixed
     {
 
         $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
@@ -122,7 +122,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('patients_customform_edit')) {
             return abort(401);
@@ -150,7 +150,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview($id)
+    public function filled_preview($id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -174,7 +174,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function filledPrint($id)
+    public function filledPrint($id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -192,7 +192,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function exportPdf($id)
+    public function exportPdf($id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -268,7 +268,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return $id
      */
-    public function AddNewForm($id)
+    public function AddNewForm($id): mixed
     {
 
         if (! Gate::allows('patients_customform_create')) {
@@ -306,7 +306,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function fill_form($form_id, $patient_id)
+    public function fill_form($form_id, $patient_id): mixed
     {
         if (! Gate::allows('patients_customform_create')) {
             return abort(401);

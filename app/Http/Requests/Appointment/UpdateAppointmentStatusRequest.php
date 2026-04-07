@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateAppointmentStatusRequest extends FormRequest
 {
-    public function authorize()
+    public function authorize(): bool
     {
         return Auth::check();
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             'appointment_status_id' => 'required|exists:appointment_statuses,id',

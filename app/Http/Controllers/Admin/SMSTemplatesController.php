@@ -21,7 +21,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
@@ -35,7 +35,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
@@ -55,7 +55,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
@@ -69,7 +69,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
@@ -93,7 +93,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
@@ -117,7 +117,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
@@ -141,7 +141,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
@@ -165,7 +165,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         try {
             if ($request->status == 0) {

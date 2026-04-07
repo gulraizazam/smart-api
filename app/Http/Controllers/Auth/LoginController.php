@@ -53,7 +53,7 @@ class LoginController extends Controller
      * @param  mixed  $user
      * @return mixed
      */
-    protected function authenticated()
+    protected function authenticated(): mixed
     {
         $account_id = Auth::User()->account_id;
         session(['account_id' => $account_id]);
@@ -62,7 +62,7 @@ class LoginController extends Controller
 
     }
 
-    public function login(Request $request)
+    public function login(Request $request): mixed
     {
 
         $this->validateLogin($request);
@@ -114,9 +114,9 @@ class LoginController extends Controller
      *
      * @return Response
      */
-    public function checkSession()
+    public function checkSession(): mixed
     {
-        return Response::json(['guest' => Auth::guest()]);
+        return response()->json(['guest' => Auth::guest()]);
     }
 
     /**
@@ -124,7 +124,7 @@ class LoginController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function logout(Request $request)
+    public function logout(Request $request): mixed
     {
         Filters::remove_filters();
 

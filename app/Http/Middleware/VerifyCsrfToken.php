@@ -1,11 +1,14 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken as Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
+use Symfony\Component\HttpFoundation\Response;
 
 class VerifyCsrfToken extends Middleware
 {
@@ -18,11 +21,12 @@ class VerifyCsrfToken extends Middleware
         '/api/*',
     ];
 
-    public function handle($request, Closure $next)
+    public function handle($request, Closure $next): Response
     {
         if ($request->hasHeader('Authorization')) {
             return $next($request);
         }
+
         if (
             $this->isReading($request) ||
             $this->runningUnitTests() ||

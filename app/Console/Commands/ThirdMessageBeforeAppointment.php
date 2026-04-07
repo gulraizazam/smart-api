@@ -46,7 +46,7 @@ class ThirdMessageBeforeAppointment extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
         $start_time = Carbon::parse(Carbon::now())->setTimezone('Asia/Karachi')->format('H:i').':00';
@@ -61,7 +61,7 @@ class ThirdMessageBeforeAppointment extends Command
             strtotime($currentTime) > strtotime($end)
         ) {
             // whatever you have to do here
-            return;
+            return 0;
         }
 
         $where = [];

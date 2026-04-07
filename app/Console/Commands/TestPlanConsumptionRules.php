@@ -15,7 +15,7 @@ class TestPlanConsumptionRules extends Command
     protected $signature = 'test:plan-consumption-rules {package_id?}';
     protected $description = 'Test plan consumption rules against a real package to verify all scenarios';
 
-    public function handle()
+    public function handle(): int
     {
         $packageId = $this->argument('package_id');
 
@@ -29,13 +29,13 @@ class TestPlanConsumptionRules extends Command
             $this->info("  - Fully-paid status and payment coverage");
             $this->info("");
             $this->runAllScenarioChecks();
-            return;
+            return 0;
         }
 
         $package = Packages::find($packageId);
         if (!$package) {
             $this->error("Package #{$packageId} not found.");
-            return;
+            return 0;
         }
 
         $this->inspectPackage($package);

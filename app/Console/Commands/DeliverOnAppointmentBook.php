@@ -46,7 +46,7 @@ class DeliverOnAppointmentBook extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
             ->where(['appointments.send_message' => 1])

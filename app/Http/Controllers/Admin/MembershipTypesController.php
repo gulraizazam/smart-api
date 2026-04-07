@@ -23,7 +23,7 @@ class MembershipTypesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('membershiptypes_manage')) {
             return abort(401);
@@ -37,7 +37,7 @@ class MembershipTypesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
 
         $filename = 'membership_types';
@@ -112,7 +112,7 @@ class MembershipTypesController extends Controller
 
         return response()->json($records);
     }
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
 
         if (!Gate::allows('membershiptypes_create')) {
@@ -134,7 +134,7 @@ class MembershipTypesController extends Controller
             return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = \Validator::make($request->all(), [
             'name' => [
@@ -145,7 +145,7 @@ class MembershipTypesController extends Controller
             'amount' => ['required', 'numeric', 'min:1.00'],
         ]);
     }
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
 
         if (!Gate::allows('membershiptypes_active')) {
@@ -162,7 +162,7 @@ class MembershipTypesController extends Controller
 
         return $this->errorResponse('Resource not found.', 200);
     }
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (!Gate::allows('membershiptypes_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -195,7 +195,7 @@ class MembershipTypesController extends Controller
             'assignedDiscountIds' => $assignedDiscountIds,
         ], 200);
     }
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         $validator = \Validator::make($request->all(), [
             'name' => [
@@ -241,7 +241,7 @@ class MembershipTypesController extends Controller
             return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (!Gate::allows('membershiptypes_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -262,7 +262,7 @@ class MembershipTypesController extends Controller
         }
         return $this->errorResponse('Resource not found', 200);
     }
-    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false): mixed
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
 
@@ -279,7 +279,7 @@ class MembershipTypesController extends Controller
         
         return $query->count();
     }
-    public static function membershiptype_filters($request, $account_id, $apply_filter)
+    public static function membershiptype_filters($request, $account_id, $apply_filter): mixed
     {
         $filters = getFilters($request->all());
         $where = [];
@@ -331,7 +331,7 @@ class MembershipTypesController extends Controller
 
         return $where;
     }
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false): mixed
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
 
@@ -354,7 +354,7 @@ class MembershipTypesController extends Controller
             ->orderby($orderBy, $order)
             ->get();
     }
-    public static function activeRecord($id, $status)
+    public static function activeRecord($id, $status): mixed
     {
 
         $membershipType = MembershipType::find($id);
@@ -366,7 +366,7 @@ class MembershipTypesController extends Controller
         Membership::where('membership_type_id', $id)->update(['active' => 1]);
         return $record;
     }
-    public static function inactiveRecord($id)
+    public static function inactiveRecord($id): mixed
     {
 
         $membershipType = MembershipType::find($id);
@@ -386,7 +386,7 @@ class MembershipTypesController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getActiveTypes(Request $request)
+    public function getActiveTypes(Request $request): mixed
     {
         $patientId = $request->get('patient_id');
         $expiredMembershipTypeId = null;

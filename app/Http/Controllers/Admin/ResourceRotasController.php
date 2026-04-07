@@ -13,7 +13,7 @@ class ResourceRotasController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function scheduleCalendar()
+    public function scheduleCalendar(): mixed
     {
         if (! Gate::allows('resourcerotas_manage')) {
             return abort('401');
@@ -27,7 +27,7 @@ class ResourceRotasController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function repeatingShifts()
+    public function repeatingShifts(): mixed
     {
         if (! Gate::allows('resourcerotas_manage')) {
             return abort('401');

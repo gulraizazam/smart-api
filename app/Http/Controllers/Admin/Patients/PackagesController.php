@@ -39,7 +39,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('patients_plan_manage')) {
             return abort(401);
@@ -66,7 +66,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id)
+    public function create($id): mixed
     {
         if (! Gate::allows('patients_plan_create')) {
             return abort(401);
@@ -92,7 +92,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function getdiscountinfo(Request $request)
+    public function getdiscountinfo(Request $request): mixed
     {
 
         if ($request->discount_id) {
@@ -136,7 +136,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function savepackages_service(Request $request)
+    public function savepackages_service(Request $request): mixed
     {
         $status = true;
         $package_services = PackageBundles::where([
@@ -222,7 +222,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function getdiscountinfocustom(Request $request)
+    public function getdiscountinfocustom(Request $request): mixed
     {
         $service_id = $request->service_id;
         $service_data = Services::find($service_id);
@@ -254,7 +254,7 @@ class PackagesController extends Controller
      *
      * @param  request
      */
-    public function deletepackagesservice(Request $request)
+    public function deletepackagesservice(Request $request): mixed
     {
         $packageService = PackageBundles::find($request->id);
 
@@ -276,7 +276,7 @@ class PackagesController extends Controller
      *
      * @param  request
      */
-    public function savepackages(Request $request)
+    public function savepackages(Request $request): mixed
     {
         if ($request->grand_total < 0) {
             return response()->json([
@@ -315,7 +315,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getserviceinfo(Request $request)
+    public function getserviceinfo(Request $request): mixed
     {
         $service_data = Services::where('id', '=', $request->service_id)->first();
         $net_amount = $service_data->price;
@@ -333,7 +333,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getgrandtotal(Request $request)
+    public function getgrandtotal(Request $request): mixed
     {
         $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
@@ -351,7 +351,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id)
+    public function inactive($id): mixed
     {
         if (! Gate::allows('patients_plan_inactive')) {
             return abort(401);
@@ -369,7 +369,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id)
+    public function active($id): mixed
     {
         if (! Gate::allows('patients_plan_active')) {
             return abort(401);
@@ -387,7 +387,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('patients_plan_edit')) {
             return abort(401);
@@ -472,7 +472,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getgrandtotal_update(Request $request)
+    public function getgrandtotal_update(Request $request): mixed
     {
 
         $package = Packages::where('random_id', '=', $request->random_id)->first();
@@ -505,7 +505,7 @@ class PackagesController extends Controller
      * @param $request
      * @return mixed
      * */
-    public function updatepackages(Request $request)
+    public function updatepackages(Request $request): mixed
     {
 
         if ($request->grand_total < 0) {
@@ -559,7 +559,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('patients_plan_destroy')) {
             return abort(401);
@@ -576,7 +576,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function display($id)
+    public function display($id): mixed
     {
 
         if (! Gate::allows('patients_plan_manage')) {
@@ -622,7 +622,7 @@ class PackagesController extends Controller
     /*
      * $edit the cash that enter in package advances (because of permission we need to duplicate that function but store method same)
      */
-    public function editpackageadvancescashindex($id, $package_id)
+    public function editpackageadvancescashindex($id, $package_id): mixed
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -634,7 +634,7 @@ class PackagesController extends Controller
     /*
      *  Function for log for package
      */
-    public function planlog($id, $patient_id, $type)
+    public function planlog($id, $patient_id, $type): mixed
     {
         if (! Gate::allows('patients_plan_log')) {
             return abort(401);
@@ -724,7 +724,7 @@ class PackagesController extends Controller
      *  Function for log for package excel
      */
 
-    public function packagelogexcel($id, $finance_log)
+    public function packagelogexcel($id, $finance_log): mixed
     {
         if (! Gate::allows('patients_plan_log')) {
             return abort(401);

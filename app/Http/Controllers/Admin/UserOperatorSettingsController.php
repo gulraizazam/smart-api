@@ -23,7 +23,7 @@ class UserOperatorSettingsController extends Controller
 
     }
 
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('user_operator_settings_manage')) {
             return abort(401);

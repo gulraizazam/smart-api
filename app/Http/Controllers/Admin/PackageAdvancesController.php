@@ -32,7 +32,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('finances_manage')) {
 
@@ -59,7 +59,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('finances_create')) {
 
@@ -78,7 +78,7 @@ class PackageAdvancesController extends Controller
      * Get the packages against patient id
      *
      * */
-    public function getpackages(Request $request)
+    public function getpackages(Request $request): mixed
     {
 
         $packageinfo = Packages::where('patient_id', '=', $request->id)->get();
@@ -93,7 +93,7 @@ class PackageAdvancesController extends Controller
      * Get the packages information from packages advances
      *
      * */
-    public function getpackagesinfo(Request $request)
+    public function getpackagesinfo(Request $request): mixed
     {
         $package_info = Packages::where('id', '=', $request->id)->first();
         /*We discuss in future what happen next*/
@@ -122,7 +122,7 @@ class PackageAdvancesController extends Controller
      * Get the packages information from packages advances
      *
      */
-    public function getpackagesinfo_update(Request $request)
+    public function getpackagesinfo_update(Request $request): mixed
     {
         $cash_receive = PackageAdvances::where([
             ['package_id', '=', $request->id],
@@ -154,7 +154,7 @@ class PackageAdvancesController extends Controller
     /*
      * save the information in packages advances
      * */
-    public function savepackagesadvances(Request $request)
+    public function savepackagesadvances(Request $request): mixed
     {
         $cash_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
@@ -196,7 +196,7 @@ class PackageAdvancesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         $jason_var = 'packageAdvances';
 
@@ -296,7 +296,7 @@ class PackageAdvancesController extends Controller
         return response()->json($records);
     }
 
-    private function getPatientId()
+    private function getPatientId(): mixed
     {
 
         $patient_id = false;
@@ -308,7 +308,7 @@ class PackageAdvancesController extends Controller
         return $patient_id;
     }
 
-    private function getFilterData($records, $filename)
+    private function getFilterData($records, $filename): mixed
     {
 
         $filters = Filters::all(Auth::User()->id, $filename);
@@ -347,7 +347,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id)
+    public function inactive($id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -363,7 +363,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id)
+    public function active($id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -379,7 +379,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('finances_manage')) {
 
@@ -405,7 +405,7 @@ class PackageAdvancesController extends Controller
     /*
      * update package advance information
      * */
-    public function updatepackagesadvances(Request $request)
+    public function updatepackagesadvances(Request $request): mixed
     {
         $package_advances_info = PackageAdvances::find($request->package_advance_id);
         $cash_amount_sum = PackageAdvances::where([
@@ -448,7 +448,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -474,7 +474,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cancel($id)
+    public function cancel($id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -555,7 +555,7 @@ class PackageAdvancesController extends Controller
      * Function for update location id in package advances
      */
 
-    public function update_record_final()
+    public function update_record_final(): mixed
     {
         $package_adavances_data = PackageAdvances::get();
         foreach ($package_adavances_data as $package_advance) {

@@ -27,7 +27,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\Settings;
 use App\Models\User;
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Config;
 use DB;
@@ -42,7 +42,7 @@ class InvoicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('patients_invoice_manage')) {
             return abort(401);
@@ -83,7 +83,7 @@ class InvoicesController extends Controller
     /*
        * Show the invoice data in datatable
        * */
-    public function datatable(Request $request, $id)
+    public function datatable(Request $request, $id): mixed
     {
 
         $apply_filter = false;
@@ -151,7 +151,7 @@ class InvoicesController extends Controller
         return response()->json($records);
     }
 
-    public function cancel($id)
+    public function cancel($id): mixed
     {
 
         if (! Gate::allows('patients_invoice_cancel')) {
@@ -208,7 +208,7 @@ class InvoicesController extends Controller
 
     /*display invoice
      * */
-    public function displayInvoice($id)
+    public function displayInvoice($id): mixed
     {
 
         if (! Gate::allows('patients_invoice_manage')) {
@@ -252,7 +252,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id)
+    public function invoice_pdf($id): mixed
     {
 
         if (! Gate::allows('patients_invoice_manage')) {
@@ -321,7 +321,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id, $patient_id, $type)
+    public function invoicelog($id, $patient_id, $type): mixed
     {
         if (! Gate::allows('patients_invoice_log')) {
             return abort(401);
@@ -378,7 +378,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice excel in patient Card
      */
-    public function invoicelogexcel($id, $finance_log)
+    public function invoicelogexcel($id, $finance_log): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/

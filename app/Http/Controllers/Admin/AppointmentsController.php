@@ -78,16 +78,23 @@ use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
 use App\Models\MachineTypeHasServices;
 use App\Services\MetaConversionApiService;
+use App\Services\Appointment\ConsultancyDatatableService;
+use App\Services\Appointment\ConsultancyService;
 
 class AppointmentsController extends Controller
 {
+    public function __construct(
+        protected readonly ConsultancyDatatableService $datatableService,
+        protected readonly ConsultancyService $consultancyService,
+    ) {}
+
 
     /**
      * Display a listing of Appointment.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('appointments_consultancy')) {
             return abort(404);
@@ -101,7 +108,7 @@ class AppointmentsController extends Controller
         ]);
     }
 
-    public function treatment()
+    public function treatment(): mixed
     {
         
         if (! Gate::allows('treatments_manage')) {
@@ -124,7 +131,7 @@ class AppointmentsController extends Controller
      * @param int|null $patientId
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, $patientId = null)
+    public function datatable(Request $request, $patientId = null): mixed
     {
         // Also check for patient_id in query string (for patient card context)
         if (!$patientId && $request->has('patient_id')) {
@@ -135,7 +142,7 @@ class AppointmentsController extends Controller
 
     // REMOVED: treatmentDatatable() - Migrated to App\Http\Controllers\Api\TreatmentsController@datatable
 
-    public function todayexport()
+    public function todayexport(): mixed
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
@@ -145,7 +152,7 @@ class AppointmentsController extends Controller
         return Excel::download(new ExportToday($limit, $offset), 'todayconsultancies.xlsx');
     }
 
-    public function todaytreatments()
+    public function todaytreatments(): mixed
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
@@ -155,7 +162,7 @@ class AppointmentsController extends Controller
         return Excel::download(new TodayTreatment($limit, $offset), 'todaytreatments.xlsx');
     }
 
-    public function downloadExportdata(Request $request)
+    public function downloadExportdata(Request $request): mixed
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
@@ -174,11 +181,10 @@ class AppointmentsController extends Controller
      *
      * @return mixed
      */
-   private function getDefaultListing(Request $request, $patientId = null)
+   private function getDefaultListing(Request $request, $patientId = null): mixed
     {
         // Use optimized ConsultancyDatatableService
-        $datatableService = app(\App\Services\Appointment\ConsultancyDatatableService::class);
-        $records = $datatableService->getDatatableData($request, $patientId);
+        $records = $this->datatableService->getDatatableData($request, $patientId);
         
         return response()->json($records);
     }
@@ -188,7 +194,7 @@ class AppointmentsController extends Controller
     /**
      * @return mixed
      */
-    private function getFiltersData($records, $filename)
+    private function getFiltersData($records, $filename): mixed
     {
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
         $cities = Cities::getActiveSortedFeatured(ACL::getUserCities());
@@ -234,7 +240,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(Request $request)
+    public function create(Request $request): mixed
     {
         $user = Auth::User();
         /*
@@ -344,7 +350,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function verifyFields(Request $request, $id = null)
+    protected function verifyFields(Request $request, $id = null): mixed
     {
         $data = $request->all();
         $phone = $data['phone'];
@@ -373,7 +379,7 @@ class AppointmentsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyUpdateFields(Request $request, $id = null)
+    protected function verifyUpdateFields(Request $request, $id = null): mixed
     {
         // Get appointment to check status
         $appointment = null;
@@ -427,21 +433,20 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         
         try {
-            $consultancyService = app(\App\Services\Appointment\ConsultancyService::class);
             $data = $request->all();
             
             unset($data['resource_id']);
             unset($data['resource_has_rota_day_id']);
             unset($data['resource_has_rota_day_id_for_machine']);
             
-            $appointment = $consultancyService->createConsultancy($data);
+            $appointment = $this->consultancyService->createConsultancy($data);
             
             return $this->successResponse('Consultation created successfully.', $appointment, 200);
         } catch (\App\Exceptions\AppointmentException $e) {
@@ -805,7 +810,7 @@ class AppointmentsController extends Controller
         /*This function is also using in leads section*/
     }
 
-    private function scheduledConsultancy(Request $request)
+    private function scheduledConsultancy(Request $request): mixed
     {
         \Log::info('scheduledConsultancy called', [
             'has_scheduled_date' => $request->has('scheduled_date'),
@@ -834,7 +839,7 @@ class AppointmentsController extends Controller
         ];
     }
 
-    private function sendPromotionSMS($appointmentId, $patient_phone)
+    private function sendPromotionSMS($appointmentId, $patient_phone): mixed
     {
         $apt = Appointments::find($appointmentId);
         if($apt->appointment_type_id==1){
@@ -887,7 +892,7 @@ class AppointmentsController extends Controller
         return $response;
     }
 
-    public function createTreatmentAppointment(Request $request)
+    public function createTreatmentAppointment(Request $request): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1019,7 +1024,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\JsonResponse|\Illuminate\View\View|void
      */
-    public function createConsultingAppointment(Request $request)
+    public function createConsultingAppointment(Request $request): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1119,7 +1124,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function detail($id)
+    public function detail($id): mixed
     {
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1173,7 +1178,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1278,7 +1283,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function editService($id)
+    public function editService($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1374,7 +1379,7 @@ class AppointmentsController extends Controller
         ]);
     }
 
-    public function editAppointmentService($id)
+    public function editAppointmentService($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1467,7 +1472,7 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
-    public function editFeedback($id)
+    public function editFeedback($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -1490,7 +1495,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         try {
             $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
@@ -1517,7 +1522,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function updateTreatment(Request $request, $id)
+    public function updateTreatment(Request $request, $id): mixed
     {
         try {
             $updateService = new \App\Services\Appointment\TreatmentUpdateService();
@@ -1541,7 +1546,7 @@ class AppointmentsController extends Controller
     /**
      * OLD UPDATE METHOD - BACKUP (can be removed after testing)
      */
-    public function updateOld(Request $request, $id)
+    public function updateOld(Request $request, $id): mixed
     {
 
         // Get appointment to check status
@@ -2023,7 +2028,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (! Gate::allows('appointments_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -2039,7 +2044,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id)
+    public function inactive($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -2057,7 +2062,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id)
+    public function active($id): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -2074,7 +2079,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function loadLeadData(Request $request)
+    public function loadLeadData(Request $request): mixed
     {
         $data = [
             'status' => 0,
@@ -2132,7 +2137,7 @@ class AppointmentsController extends Controller
     /**
      * Load all Appointment Statuses.
      */
-    public function showAppointmentStatuses(Request $request)
+    public function showAppointmentStatuses(Request $request): mixed
     {
         $appointment = Appointments::find($request->id);
         if (! $appointment) {
@@ -2171,7 +2176,7 @@ class AppointmentsController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function storeAppointmentStatuses(Request $request)
+    public function storeAppointmentStatuses(Request $request): mixed
     {
        
         $data = $request->all();
@@ -2339,7 +2344,7 @@ class AppointmentsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs($id)
+    public function showSMSLogs($id): mixed
     {
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
@@ -2355,7 +2360,7 @@ class AppointmentsController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sendLogSMS(Request $request)
+    public function sendLogSMS(Request $request): mixed
     {
         $data = $request->all();
         $SMSLog = SMSLogs::find($request->id);
@@ -2373,7 +2378,7 @@ class AppointmentsController extends Controller
         return $this->errorResponse('Failed to send SMS.', 200);
     }
 
-    private function resendSMS($smsId, $patient_phone, $preparedText, $appointmentId)
+    private function resendSMS($smsId, $patient_phone, $preparedText, $appointmentId): mixed
     {
         $appointment = Appointments::find($appointmentId);
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
@@ -2413,7 +2418,7 @@ class AppointmentsController extends Controller
      * @return: array|mixture
      */
 
-    public function loadLocationsByCity(Request $request)
+    public function loadLocationsByCity(Request $request): mixed
     {
 
         try {
@@ -2460,7 +2465,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function LoadChildServices(Request $request)
+    public function LoadChildServices(Request $request): mixed
     {
         try {
             if ($request->serviceId) {
@@ -2485,7 +2490,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function loadDoctorsByLocation(Request $request)
+    public function loadDoctorsByLocation(Request $request): mixed
     {
         try {
             if ($request->location_id) {
@@ -2521,7 +2526,7 @@ class AppointmentsController extends Controller
             return $this->handleException($e, 'AppointmentsController');
         }
     }
-    public function loadConsultantDoctorsByLocation(Request $request)
+    public function loadConsultantDoctorsByLocation(Request $request): mixed
     {
         try {
             if ($request->location_id) {
@@ -2549,7 +2554,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function loadServiceByLocation(Request $request)
+    public function loadServiceByLocation(Request $request): mixed
     {
         if ($request->location_id) {
             $doctors = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
@@ -2575,7 +2580,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function loadRotaByDoctor(Request $request)
+    public function loadRotaByDoctor(Request $request): mixed
     {
         if (
             $request->doctor_id &&
@@ -2702,7 +2707,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getNonScheduledAppointments(Request $request)
+    public function getNonScheduledAppointments(Request $request): mixed
     {
         if (
             $request->city_id &&
@@ -2752,7 +2757,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-     public function getScheduledAppointments(Request $request)
+     public function getScheduledAppointments(Request $request): mixed
      {
          if ($request->location_id) {
             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
@@ -2826,7 +2831,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function checkAndSaveAppointments(Request $request)
+    public function checkAndSaveAppointments(Request $request): mixed
     {
         $appointment_checkes = AppointmentCheckesWidget::AppointmentConsultancyCheckes($request);
         if ($appointment_checkes['status']) {
@@ -2972,7 +2977,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function loadAppointmentStatuses(Request $request)
+    public function loadAppointmentStatuses(Request $request): mixed
     {
         if ($request->appointment_status_id) {
             $appointment_statuses = AppointmentStatuses::getActiveSorted($request->appointment_status_id, Auth::User()->account_id);
@@ -3002,7 +3007,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function loadAppointmentStatusData(Request $request)
+    public function loadAppointmentStatusData(Request $request): mixed
     {
         if ($request->appointment_status_id && $request->base_appointment_status_id) {
             $appointment_status = AppointmentStatuses::find($request->appointment_status_id);
@@ -3033,7 +3038,7 @@ class AppointmentsController extends Controller
      * @return mixed
      */
 
-    public function invoice($id)
+    public function invoice($id): mixed
     {
         
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
@@ -3170,7 +3175,7 @@ class AppointmentsController extends Controller
      *
      * @return mixed
      */
-    public function getplansinformation(Request $request)
+    public function getplansinformation(Request $request): mixed
     {
         // Validate input parameters
         $appointmentId = $request->appointment_id_create;
@@ -3295,7 +3300,7 @@ class AppointmentsController extends Controller
      * @return mixed
      */
 
-     public function getpackageprice(Request $request)
+     public function getpackageprice(Request $request): mixed
      {
          // Validate input parameters
          $appointmentId = $request->appointment_id_create;
@@ -3438,7 +3443,7 @@ class AppointmentsController extends Controller
      * Get the package price against package id
      *
      * */
-    public function getinvoicecalculation(Request $request)
+    public function getinvoicecalculation(Request $request): mixed
     {
         if ($request->cash_create == 0 || $request->cash_create < 0) {
             return response()->json([
@@ -3463,7 +3468,7 @@ class AppointmentsController extends Controller
      * Get the calculation of service price according to exclusive and inclusive check
      *
      * */
-    public function getcalculatedPriceExclusicecheck(Request $request)
+    public function getcalculatedPriceExclusicecheck(Request $request): mixed
     {
         $location_info = Locations::find($request->location_id);
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
@@ -3501,7 +3506,7 @@ class AppointmentsController extends Controller
      * get the value for invoice calucation
      * */
 
-    public function saveinvoice(Request $request)
+    public function saveinvoice(Request $request): mixed
     {
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
@@ -3874,7 +3879,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function createService(Request $request)
+    public function createService(Request $request): mixed
     {
         if (! Gate::allows('treatments_services')) {
             return abort(401);
@@ -3994,7 +3999,7 @@ class AppointmentsController extends Controller
     /************************************************************
      * Appointment Services Start
      */
-    public function getRoomResourcesWithDate(Request $request)
+    public function getRoomResourcesWithDate(Request $request): mixed
     {
         if ($resources = Resources::getMachinesResourcesRotaWithoutDays($request->location_id, $request->machine_id)) {
             return response()->json(['status' => 1, 'data' => $resources], 200);
@@ -4003,7 +4008,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function getRoomResources(Request $request)
+    public function getRoomResources(Request $request): mixed
     {
         return response()->json(['status' => 1, 'data' => Resources::getRoomsWithRotas()->toArray()], 200);
     }
@@ -4016,7 +4021,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getNonScheduledServiceAppointments(Request $request)
+    public function getNonScheduledServiceAppointments(Request $request): mixed
     {
         if (
             $request->city_id &&
@@ -4066,7 +4071,7 @@ class AppointmentsController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    public function getScheduledServiceAppointments(Request $request)
+    public function getScheduledServiceAppointments(Request $request): mixed
     {
 
         $location_id = $request->location_id;
@@ -4205,7 +4210,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function serviceSchedule(Request $request)
+    public function serviceSchedule(Request $request): mixed
     {
         $appointment_checkes = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcard($request);
         if ($appointment_checkes['status']) {
@@ -4280,7 +4285,7 @@ class AppointmentsController extends Controller
     /**
      * @return \Illuminate\Http\JsonResponse
      */
-    public function loadEndServiceByBaseService(Request $request)
+    public function loadEndServiceByBaseService(Request $request): mixed
     {
 
         if ($request->service_id) {
@@ -4328,7 +4333,7 @@ class AppointmentsController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function loadAllChildServices(Request $request)
+    public function loadAllChildServices(Request $request): mixed
     {
         $account_id = Auth::User()->account_id;
 
@@ -4376,7 +4381,7 @@ class AppointmentsController extends Controller
      */
     /*For now that function not use anywhere*/
 
-    private function sendSMS($appointmentId, $patient_phone)
+    private function sendSMS($appointmentId, $patient_phone): mixed
     {
         // Get Appointment
         $appointment = Appointments::find($appointmentId);
@@ -4414,7 +4419,7 @@ class AppointmentsController extends Controller
         return $response;
     }
 
-    public function center_machines(Request $request, $location_id)
+    public function center_machines(Request $request, $location_id): mixed
     {
         if ($request->machine_type_allocation) {
             $machines = Resources::where([['resource_type_id', '=', config('constants.resource_room_type_id')], ['active', '=', '1'], ['location_id', '=', $location_id], ['account_id', '=', Auth::User()->account_id]])->get();
@@ -4460,7 +4465,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function comment_store(StoreUpdateAppointmentCommentsRequest $request)
+    public function comment_store(StoreUpdateAppointmentCommentsRequest $request): mixed
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -4480,7 +4485,7 @@ class AppointmentsController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function AppointmentStoreComment(Request $req)
+    public function AppointmentStoreComment(Request $req): mixed
     {
         $appointmentComment = AppointmentComments::where('appointment_id', '=', $req->appointment_id)->get();
         $appointment = new AppointmentComments();
@@ -4495,7 +4500,7 @@ class AppointmentsController extends Controller
         return response()->json($myarray);
     }
 
-    public function displayInvoiceAppointment($id)
+    public function displayInvoiceAppointment($id): mixed
     {
         if (! Gate::allows('appointments_invoice_display')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -4563,7 +4568,7 @@ class AppointmentsController extends Controller
         return view('admin.appointments..invoice.displayInvoice', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'service_price', 'doctor'));
     }
 
-    public function appointmentexcel(Request $request)
+    public function appointmentexcel(Request $request): mixed
     {
         $today = Carbon::now()->toDateString();
         $this_month = Carbon::now()->firstOfMonth()->toDateString();
@@ -4817,12 +4822,12 @@ class AppointmentsController extends Controller
         $Excel_writer->save('php://output');
     }
 
-    public function logPage($id)
+    public function logPage($id): mixed
     {
         return view('admin.appointments.logs.appointmentlog', compact('id'));
     }
 
-    public function viewLog($id, $type)
+    public function viewLog($id, $type): mixed
     {
         if (! Gate::allows('appointments_log')) {
             abort(404);
@@ -4916,7 +4921,7 @@ class AppointmentsController extends Controller
         return $this->viewLogInExcel($id, $data);
     }
 
-    public function viewLogInExcel($id, $data)
+    public function viewLogInExcel($id, $data): mixed
     {
         $appointment = Appointments::withTrashed()->find($id);
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -5039,7 +5044,7 @@ class AppointmentsController extends Controller
         $Excel_writer->save('php://output');
     }
 
-    public function checkPhoneExist(Request $request)
+    public function checkPhoneExist(Request $request): mixed
     {
         $record = Patients::where('phone', 'like', '%'.GeneralFunctions::cleanNumber($request->input('phone').'%'))->first();
         if ($record) {
@@ -5049,7 +5054,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function export(Request $request)
+    public function export(Request $request): mixed
     {
 
         ini_set('memory_limit', '1024M');
@@ -5058,7 +5063,7 @@ class AppointmentsController extends Controller
         return Excel::download(new ExportAppointment($limit, $offset), 'appointments.xlsx');
     }
 
-    public function getSchedule(Request $request)
+    public function getSchedule(Request $request): mixed
     {
 
         $appointment = Appointments::select('id', 'scheduled_date', 'scheduled_time')->find($request->id);
@@ -5077,7 +5082,7 @@ class AppointmentsController extends Controller
         return response()->json(null);
     }
 
-    public function updateSchedule(Request $request)
+    public function updateSchedule(Request $request): mixed
     {
 
         $data = [];
@@ -5169,7 +5174,7 @@ class AppointmentsController extends Controller
         return $this->errorResponse('Appointment not found!', 200);
     }
 
-    private function checkRota($appointment, $request)
+    private function checkRota($appointment, $request): mixed
     {
 
         $object = new \stdClass();
@@ -5203,7 +5208,7 @@ class AppointmentsController extends Controller
         return $rota;
     }
 
-    private function checkRotaUpdate($appointment, $request)
+    private function checkRotaUpdate($appointment, $request): mixed
     {
 
         $object = new \stdClass();
@@ -5229,7 +5234,7 @@ class AppointmentsController extends Controller
     /**
      * Validate schedule date for business closures, working days, and time offs
      */
-    private function validateScheduleDate($appointment, $request)
+    private function validateScheduleDate($appointment, $request): mixed
     {
         $accountId = Auth::user()->account_id;
         $locationId = $request->location_id ?? $appointment->location_id;
@@ -5313,7 +5318,7 @@ class AppointmentsController extends Controller
         return ['status' => true, 'message' => ''];
     }
 
-    private function SendRescheduleSms($appointmentId, $patient_phone, $log_type, $account_id)
+    private function SendRescheduleSms($appointmentId, $patient_phone, $log_type, $account_id): mixed
     {
         $appointment = Appointments::find($appointmentId);
         if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
@@ -5377,7 +5382,7 @@ class AppointmentsController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getWhatsAppData(Request $request)
+    public function getWhatsAppData(Request $request): mixed
     {
         try {
             $appointmentId = $request->input('id');

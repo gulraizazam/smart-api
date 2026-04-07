@@ -38,7 +38,7 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function showLinkRequestForm()
+    public function showLinkRequestForm(): mixed
     {
         return view('auth.passwords.email');
     }
@@ -48,7 +48,7 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function sendResetLinkEmail(Request $request)
+    public function sendResetLinkEmail(Request $request): mixed
     {
         $this->validateEmail($request);
 

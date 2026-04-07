@@ -1253,7 +1253,7 @@ class CashFlowController extends Controller
 
      */
 
-    public function expensesExport(Request $request)
+    public function expensesExport(Request $request): mixed
 
     {
 
@@ -2223,7 +2223,7 @@ class CashFlowController extends Controller
 
      */
 
-    public function vendorsLedgerExport(Request $request, int $id)
+    public function vendorsLedgerExport(Request $request, int $id): mixed
 
     {
 
@@ -4338,7 +4338,7 @@ class CashFlowController extends Controller
 
      */
 
-    public function reportExport(Request $request, string $type)
+    public function reportExport(Request $request, string $type): mixed
 
     {
 

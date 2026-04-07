@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Gate;
 
 class PatientsController extends Controller
 {
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -35,7 +35,7 @@ class PatientsController extends Controller
         return view('admin.patients.index');
     }
 
-    public function preview(int $id)
+    public function preview(int $id): mixed
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -48,7 +48,7 @@ class PatientsController extends Controller
      * Patient Card V2 - Section-based navigation.
      * Each section is a separate page load to avoid JS conflicts.
      */
-    public function cardV2(int $id, string $section = 'profile')
+    public function cardV2(int $id, string $section = 'profile'): mixed
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -131,7 +131,7 @@ class PatientsController extends Controller
         }
     }
 
-    public function leads(int $id)
+    public function leads(int $id): mixed
     {
         if (!Gate::allows('patients_manage') && !Gate::allows('leads_manage') && !Gate::allows('leads_view')) {
             return abort(401);
@@ -277,7 +277,7 @@ class PatientsController extends Controller
         return response()->json($records);
     }
 
-    public function appointments(int $id)
+    public function appointments(int $id): mixed
     {
         if (!Gate::allows('patients_appointment_manage')) {
             return abort(401);
@@ -286,7 +286,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.appointments.index');
     }
 
-    public function imageindex(int $id)
+    public function imageindex(int $id): mixed
     {
         if (!Gate::allows('patients_manage') && !Gate::allows('users_manage')) {
             return abort(401);
@@ -300,7 +300,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.image.add_image', compact('patient'));
     }
 
-    public function documentindex(int $id)
+    public function documentindex(int $id): mixed
     {
         if (!Gate::allows('patients_document_manage')) {
             return abort(401);
@@ -317,7 +317,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.documents.add_documents', compact('patient', 'filters'));
     }
 
-    public function documentCreate(int $id)
+    public function documentCreate(int $id): mixed
     {
         if (!Gate::allows('patients_document_create')) {
             return abort(401);
@@ -395,7 +395,7 @@ class PatientsController extends Controller
         return response()->json($records);
     }
 
-    public function documentedit(int $id)
+    public function documentedit(int $id): mixed
     {
         if (!Gate::allows('patients_document_edit')) {
             return abort(401);

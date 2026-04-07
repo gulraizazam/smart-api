@@ -91,7 +91,8 @@
       "Bash(bash /tmp/verify_all.sh)",
       "Bash(bash /tmp/edge_case_check.sh)",
       "Bash(wc -l /c/laragon/www/cutera-upgradation1/app/Http/Controllers/Admin/*.php)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(sort -k2)"
     ]
   }
 }

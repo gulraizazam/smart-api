@@ -29,7 +29,7 @@ class MembershipCodeController extends Controller
      * @param GenerateCodesRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function generateCodes(GenerateCodesRequest $request)
+    public function generateCodes(GenerateCodesRequest $request): mixed
     {
         if (!Gate::allows('memberships_create')) {
             return $this->errorResponse('You are not authorized to generate membership codes.', 401);
@@ -61,7 +61,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function previewCodes(Request $request)
+    public function previewCodes(Request $request): mixed
     {
         try {
             $request->validate([
@@ -120,7 +120,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getAvailableCodes(Request $request)
+    public function getAvailableCodes(Request $request): mixed
     {
         try {
             $request->validate([
@@ -147,7 +147,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function searchCodes(Request $request)
+    public function searchCodes(Request $request): mixed
     {
         try {
             $request->validate([

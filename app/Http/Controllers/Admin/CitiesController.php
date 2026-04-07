@@ -21,7 +21,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('cities_manage')) {
             return abort(401);
@@ -39,7 +39,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             if (! Gate::allows('cities_manage')) {
@@ -59,7 +59,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
         if (! Gate::allows('cities_create')) {
             return abort(401);
@@ -70,7 +70,7 @@ class CitiesController extends Controller
         return view('admin.cities.create', ['regions' => $data['regions']]);
     }
 
-    public function sortOrderSave(Request $request)
+    public function sortOrderSave(Request $request): mixed
     {
         try {
             if (! Gate::allows('cities_sort')) {
@@ -87,7 +87,7 @@ class CitiesController extends Controller
         }
     }
 
-    public function sortOrder()
+    public function sortOrder(): mixed
     {
         if (! Gate::allows('cities_sort')) {
             return abort(401);
@@ -101,7 +101,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderGet()
+    public function sortOrderGet(): mixed
     {
         try {
             if (! Gate::allows('cities_sort')) {
@@ -120,7 +120,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         try {
             if (! Gate::allows('cities_create')) {
@@ -144,7 +144,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         try {
             if (! Gate::allows('cities_edit')) {
@@ -168,7 +168,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         try {
             if (! Gate::allows('cities_edit')) {
@@ -192,7 +192,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         try {
             if (! Gate::allows('cities_destroy')) {
@@ -216,7 +216,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         try {
             if ($request->status == 0) {

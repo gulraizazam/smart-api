@@ -28,7 +28,7 @@ use App\Exports\StudentMembershipPatientsExport;
 
 class MembershipsController extends Controller
 {
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('memberships_manage')) {
             return abort(401);
@@ -36,7 +36,7 @@ class MembershipsController extends Controller
         return view('admin.memberships.index');
     }
 
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
 
@@ -122,7 +122,7 @@ class MembershipsController extends Controller
         }
     }
 
-    public function create()
+    public function create(): mixed
     {
         if (!Gate::allows('memberships_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -136,7 +136,7 @@ class MembershipsController extends Controller
 
         ], 200);
     }
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (!Gate::allows('memberships_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -155,7 +155,7 @@ class MembershipsController extends Controller
             return $this->errorResponse('Something went wrong, please try again later.', 200);
         }
     }
-    protected function verifyFields(Request $request)
+    protected function verifyFields(Request $request): mixed
     {
         return $validator = \Validator::make($request->all(), [
             'code' => ['required', Rule::unique('memberships', 'code')],
@@ -163,7 +163,7 @@ class MembershipsController extends Controller
 
         ]);
     }
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         if (!Gate::allows('memberships_active')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -178,7 +178,7 @@ class MembershipsController extends Controller
         }
         return $this->errorResponse('You can not change status of this membership', 500);
     }
-    public function cancelMembership(Request $request)
+    public function cancelMembership(Request $request): mixed
     {
         // Get the membership being cancelled to find its code
         $membership = Membership::where('patient_id', $request->id)->first();
@@ -249,7 +249,7 @@ class MembershipsController extends Controller
 
         return $this->successResponse($message, null, 200);
     }
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (!Gate::allows('memberships_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -262,7 +262,7 @@ class MembershipsController extends Controller
             'membershipType' => $membershipType
         ], 200);
     }
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (!Gate::allows('memberships_edit')) {
             return abort(401);
@@ -282,7 +282,7 @@ class MembershipsController extends Controller
             return $this->errorResponse('Something went wrong, please try again later.', 500);
         }
     }
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (!Gate::allows('memberships_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -295,7 +295,7 @@ class MembershipsController extends Controller
         }
         return $this->errorResponse('Membership not found', 500);
     }
-    public function uploadMemberships(Request $request)
+    public function uploadMemberships(Request $request): mixed
     {
 
 
@@ -358,7 +358,7 @@ class MembershipsController extends Controller
             return $this->errorResponse($e->getMessage(), 200);
         }
     }
-    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false): mixed
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
         $userCentres = \App\Helpers\ACL::getUserCentres();
@@ -439,7 +439,7 @@ class MembershipsController extends Controller
 
         return $query->count();
     }
-    public static function membershiptype_filters($request, $account_id, $apply_filter)
+    public static function membershiptype_filters($request, $account_id, $apply_filter): mixed
     {
         $filters = getFilters($request->all());
 
@@ -617,7 +617,7 @@ class MembershipsController extends Controller
      * Get patient ID filter
      * Returns null if no filter applied, or the patient ID to filter by
      */
-    public static function getPatientIdFilter(Request $request, $apply_filter = false)
+    public static function getPatientIdFilter(Request $request, $apply_filter = false): mixed
     {
         $filters = getFilters($request->all());
         $patientId = null;
@@ -645,7 +645,7 @@ class MembershipsController extends Controller
      * Get location filter - returns patient IDs who have appointments at the selected location
      * Location filter only works for assigned memberships
      */
-    public static function getLocationFilter(Request $request, $apply_filter = false)
+    public static function getLocationFilter(Request $request, $apply_filter = false): mixed
     {
         $filters = getFilters($request->all());
         $locationId = null;
@@ -676,7 +676,7 @@ class MembershipsController extends Controller
      * Get sold by filter - returns membership IDs that have package_services with the specified sold_by user
      * Relationship: memberships.id -> package_bundles.membership_code_id -> package_services.sold_by
      */
-    public static function getSoldByFilter(Request $request, $apply_filter = false)
+    public static function getSoldByFilter(Request $request, $apply_filter = false): mixed
     {
         $filters = getFilters($request->all());
         $soldBy = null;
@@ -708,7 +708,7 @@ class MembershipsController extends Controller
     /**
      * Get sold by users (doctors and FDMs) for a specific location
      */
-    public function getSoldByUsers(Request $request)
+    public function getSoldByUsers(Request $request): mixed
     {
         try {
             $locationId = $request->location_id;
@@ -769,7 +769,7 @@ class MembershipsController extends Controller
         }
     }
 
-    public function exportPdf(Request $request)
+    public function exportPdf(Request $request): mixed
 {
     ini_set('memory_limit', '-1');
     set_time_limit(0);
@@ -806,14 +806,14 @@ class MembershipsController extends Controller
 
     return $pdf->download('memberships.pdf');
 }
-    public function exportDocs(Request $request)
+    public function exportDocs(Request $request): mixed
     {
         
         set_time_limit(0);
         ini_set('memory_limit', '-1');
         return Excel::download(new ExportMembership($request), 'memberships.' . $request->ext);
     }
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false): mixed
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
         $userCentres = \App\Helpers\ACL::getUserCentres();
@@ -900,7 +900,7 @@ class MembershipsController extends Controller
             ->orderby($orderBy, $order)
             ->get();
     }
-    public static function activeRecord($id, $status)
+    public static function activeRecord($id, $status): mixed
     {
 
         $membership = Membership::find($id);
@@ -917,7 +917,7 @@ class MembershipsController extends Controller
 
         return $record;
     }
-    public static function InactiveRecord($id)
+    public static function InactiveRecord($id): mixed
     {
         $membership = Membership::find($id);
         if (!$membership) {
@@ -927,7 +927,7 @@ class MembershipsController extends Controller
 
         return $record;
     }
-    public function downloadStudentMembershipPatients()
+    public function downloadStudentMembershipPatients(): mixed
     {
         return Excel::download(
             new StudentMembershipPatientsExport, 
@@ -938,7 +938,7 @@ class MembershipsController extends Controller
     /**
      * Get student verification details for a membership
      */
-    public function getStudentVerificationDetails($membershipId)
+    public function getStudentVerificationDetails($membershipId): mixed
     {
         try {
             $membership = Membership::with('membershipType')->find($membershipId);

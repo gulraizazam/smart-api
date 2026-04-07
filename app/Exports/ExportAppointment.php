@@ -26,7 +26,7 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
         $this->offset = $offset;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
         return Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')

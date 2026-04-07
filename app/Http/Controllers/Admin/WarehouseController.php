@@ -21,7 +21,7 @@ class WarehouseController extends Controller
      *
      * @return \never
      */
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('warehouse_manage')) {
             return abort(401);
@@ -35,7 +35,7 @@ class WarehouseController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request)
+    public function datatable(Request $request): mixed
     {
         try {
             $records = $this->warehouseService->getDatatableData($request, Auth::User()->account_id);
@@ -51,7 +51,7 @@ class WarehouseController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
+    public function create(): mixed
     {
         if (!Gate::allows('warehouse_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -70,7 +70,7 @@ class WarehouseController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request): mixed
     {
         if (!Gate::allows('warehouse_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -95,7 +95,7 @@ class WarehouseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show($id): mixed
     {
         //
     }
@@ -106,7 +106,7 @@ class WarehouseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (!Gate::allows('warehouse_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -131,7 +131,7 @@ class WarehouseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): mixed
     {
         if (!Gate::allows('warehouse_edit')) {
             return abort(401);
@@ -156,7 +156,7 @@ class WarehouseController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy($id): mixed
     {
         if (!Gate::allows('warehouse_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -171,7 +171,7 @@ class WarehouseController extends Controller
         return $this->errorResponse($result['message'], 400);
     }
 
-    public function status(Request $request)
+    public function status(Request $request): mixed
     {
         if (!Gate::allows('warehouse_active')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

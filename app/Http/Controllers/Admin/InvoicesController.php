@@ -51,7 +51,7 @@ class InvoicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): mixed
     {
         if (! Gate::allows('invoices_manage')) {
             return abort(401);
@@ -63,7 +63,7 @@ class InvoicesController extends Controller
     /*
      * Show the invoice data in datatable
      * */
-    public function datatable(Request $request, $id = false)
+    public function datatable(Request $request, $id = false): mixed
     {
 
         try {
@@ -160,7 +160,7 @@ class InvoicesController extends Controller
         }
     }
 
-    private function filtersData($records)
+    private function filtersData($records): mixed
     {
 
         $parentGroups = new NodesTree();
@@ -218,7 +218,7 @@ class InvoicesController extends Controller
 
     }
 
-    public function cancel($id)
+    public function cancel($id): mixed
     {
         if (! Gate::allows('invoices_cancel')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -290,7 +290,7 @@ class InvoicesController extends Controller
 
     /*display invoice
      * */
-    public function displayInvoice($id)
+    public function displayInvoice($id): mixed
     {
         if (! Gate::allows('invoices_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -354,7 +354,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id, $download = null, $flag = 0)
+    public function invoice_pdf($id, $download = null, $flag = 0): mixed
     {
         if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -464,7 +464,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id, $type, $patient_id = null)
+    public function invoicelog($id, $type, $patient_id = null): mixed
     {
         if (! Gate::allows('invoices_log')) {
             return abort(401);
@@ -519,7 +519,7 @@ class InvoicesController extends Controller
         return $this->invoicelogexcel($id, $finance_log);
     }
 
-    public function invoiceDatatable(Request $request, $id)
+    public function invoiceDatatable(Request $request, $id): mixed
     {
 
         [$orderBy, $order] = getSortBy($request);
@@ -538,7 +538,7 @@ class InvoicesController extends Controller
         return response()->json($records);
     }
 
-    private function getInvoicesData($id, $request, $orderBy, $order)
+    private function getInvoicesData($id, $request, $orderBy, $order): mixed
     {
 
         $action_array = [
@@ -602,7 +602,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice excel
      */
-    public function invoicelogexcel($id, $finance_log)
+    public function invoicelogexcel($id, $finance_log): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -675,7 +675,7 @@ class InvoicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs($id)
+    public function showSMSLogs($id): mixed
     {
         $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
@@ -690,7 +690,7 @@ class InvoicesController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function sendLogSMS(Request $request)
+    public function sendLogSMS(Request $request): mixed
     {
 
         $data = $request->all();
@@ -714,7 +714,7 @@ class InvoicesController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    private function resendSMS($smsId, $patient_phone, $preparedText, $invoice_id)
+    private function resendSMS($smsId, $patient_phone, $preparedText, $invoice_id): mixed
     {
         $Invoice_info = Invoices::find($invoice_id);
 

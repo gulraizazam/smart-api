@@ -29,7 +29,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
         $fromDate = $this->option('from') ?? '2021-07-01';
         $toDate = $this->option('to') ?? '2025-12-31';

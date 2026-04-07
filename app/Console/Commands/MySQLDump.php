@@ -37,7 +37,7 @@ class MySQLDump extends Command
      *
      * @return mixed
      */
-    public function handle()
+    public function handle(): int
     {
         try {
             $ds = DIRECTORY_SEPARATOR;

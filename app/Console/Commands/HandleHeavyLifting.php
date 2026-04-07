@@ -40,7 +40,7 @@ class HandleHeavyLifting extends Command
      *
      * @return void
      */
-    public function handle()
+    public function handle(): int
     {
         try {
 

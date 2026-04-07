@@ -36,7 +36,7 @@ class IndexSingleAppointmentJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle()
+    public function handle(): void
     {
         try {
             $appointment = Appointments::where([

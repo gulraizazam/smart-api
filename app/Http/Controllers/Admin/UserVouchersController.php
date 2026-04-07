@@ -23,7 +23,7 @@ class UserVouchersController extends Controller
 
     }
 
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('vouchers_manage')) {
             return abort(401);

@@ -21,7 +21,7 @@ class AppointmentExport implements FromCollection, WithHeadings, ShouldAutoSize
 
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
 
         foreach ($this->filters['reportData'] as $reportRow) {

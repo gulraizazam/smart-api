@@ -41,7 +41,7 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function showResetForm(Request $request)
+    public function showResetForm(Request $request): mixed
     {
         $token = $request->route()->parameter('token');
 
@@ -52,7 +52,7 @@ class ResetPasswordController extends Controller
         );
     }
 
-    private function isExpired($token, $email)
+    private function isExpired($token, $email): mixed
     {
 
         $hashedToken = DB::table('password_resets')->whereEmail($email)->value('token');
@@ -69,7 +69,7 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function reset(Request $request)
+    public function reset(Request $request): mixed
     {
         $request->validate($this->rules(), $this->validationErrorMessages());
 

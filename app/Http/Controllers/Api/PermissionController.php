@@ -26,7 +26,7 @@ class PermissionController extends Controller
 
     }
 
-    public function index()
+    public function index(): mixed
     {
         if (!Gate::allows('permissions_manage')) {
             return abort(401);

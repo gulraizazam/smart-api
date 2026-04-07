@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class AuthenticateApiWeb
 {
@@ -20,7 +21,7 @@ class AuthenticateApiWeb
 
         if ($request->hasHeader('Authorization')) {
             if (auth()->guard('sanctum')->check()) {
-                auth()->shouldUse('sanctum');
+                Auth::setDefaultDriver('sanctum');
 
                 return $next($request);
             }

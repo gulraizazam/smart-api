@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class JenpharmVoucherReportController extends Controller
 {
-    public function index()
+    public function index(): mixed
     {
         $discount = Discount::where('name', 'Jenpharm Gift Voucher')->first();
 

@@ -30,7 +30,7 @@ class MeasurementHistoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index($id): mixed
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -47,7 +47,7 @@ class MeasurementHistoryController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, $id)
+    public function datatable(Request $request, $id): mixed
     {
 
         $filename = 'patient_custom_form_feedbacks';
@@ -115,7 +115,7 @@ class MeasurementHistoryController extends Controller
         return response()->json($records);
     }
 
-    private function getFiltersData($records, $filename)
+    private function getFiltersData($records, $filename): mixed
     {
 
         $records['filter_values'] = [
@@ -135,7 +135,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit($id)
+    public function edit($id): mixed
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -180,7 +180,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update_measurement_field(Request $request, $id)
+    public function update_measurement_field(Request $request, $id): mixed
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -201,7 +201,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview($id)
+    public function filled_preview($id): mixed
     {
         if (! Gate::allows('appointments_measurement_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);

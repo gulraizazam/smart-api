@@ -47,7 +47,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function report()
+    public function report(): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_manage')) {
             return abort(401);
@@ -100,7 +100,7 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
-    public function serviceBarChart(Request $request,$service_id)
+    public function serviceBarChart(Request $request,$service_id): mixed
     {
         $service = Services::findOrFail($service_id);
         $start_date = $request->query('start_date'); // e.g. '2025-05-20'
@@ -158,7 +158,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function centerperformancestatsbyrevenue(Request $request)
+    private static function centerperformancestatsbyrevenue(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_center_performance_stats_by_revenue_finance')) {
@@ -240,7 +240,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function centerperformancestatsbyrevenueExcel($reportData, $filters, $start_date, $end_date)
+    private static function centerperformancestatsbyrevenueExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -349,7 +349,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function centerperformancestatsbyservicetype(Request $request)
+    private static function centerperformancestatsbyservicetype(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_center_performance_stats_by_service_type_finance')) {
@@ -432,7 +432,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function centerperformancestatsbyservicetypeExcel($reportData, $filters, $start_date, $end_date)
+    private static function centerperformancestatsbyservicetypeExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -539,7 +539,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function accountsalesreportReport(Request $request)
+    private static function accountsalesreportReport(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_account_sales_report')) {
@@ -599,7 +599,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function accountsalesreportReportExcel($reportData, $filters, $start_date, $end_date)
+    private static function accountsalesreportReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -683,7 +683,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    private static function dailyEmployeeStatsSummary(Request $request)
+    private static function dailyEmployeeStatsSummary(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_daily_employee_stats_summary')) {
@@ -739,7 +739,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function dailyEmployeeStatsSummaryExcel($reportData, $start_date, $end_date)
+    private static function dailyEmployeeStatsSummaryExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -790,7 +790,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function salesbyservicecategory(Request $request)
+    public function salesbyservicecategory(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_sales_by_service_category')) {
@@ -850,7 +850,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function salesByServiceCategoryExcel($reportData, $start_date, $end_date)
+    private static function salesByServiceCategoryExcel($reportData, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -931,7 +931,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function discountReport(Request $request)
+    public function discountReport(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_discount_report')) {
@@ -991,7 +991,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function discountreportexcel($reportData, $filters, $start_date, $end_date)
+    private static function discountreportexcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1077,7 +1077,7 @@ class FinanceReportController extends Controller
      * @return \Illuminate\Http\Response
      */
     /** @deprecated Moved to App\Services\Reports\Revenue\GeneralRevenueDetailReport. Called via GeneralSalesReportController. */
-    public function generalrevenuereportdetail(Request $request)
+    public function generalrevenuereportdetail(Request $request): mixed
     {
 
 
@@ -1175,7 +1175,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function GeneralRevenueReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date)
+    private static function GeneralRevenueReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1306,7 +1306,7 @@ class FinanceReportController extends Controller
      * @return \Illuminate\Http\Response
      */
     /** @deprecated Moved to App\Services\Reports\Revenue\GeneralRevenueSummaryReport. Called via GeneralSalesReportController. */
-    public function generalrevenuereportsummary(Request $request)
+    public function generalrevenuereportsummary(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_general_revenue__summary_report')) {
             return abort(401);
@@ -1384,7 +1384,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date)
+    private static function GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1477,7 +1477,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function pabaurecordrevenuereport(Request $request)
+    public function pabaurecordrevenuereport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_pabau_record_revenue_report')) {
             return abort(401);
@@ -1525,7 +1525,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function pabaurevenuerecordreportExcel($reportData, $start_date, $end_date)
+    private static function pabaurevenuerecordreportExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1629,7 +1629,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function machinewiseinvoicerevenuereport(Request $request)
+    public function machinewiseinvoicerevenuereport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_machine_wise_invoice_revenue_report')) {
             return abort(401);
@@ -1677,7 +1677,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function machinewiseinvoicerevenuereportExcel($reportData, $start_date, $end_date)
+    private static function machinewiseinvoicerevenuereportExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1785,7 +1785,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function partnercollectionreport(Request $request)
+    public function partnercollectionreport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_partner_collection_report')) {
             return abort(401);
@@ -1844,7 +1844,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function partnercollectionreportExcel($reportData, $start_date, $end_date)
+    private static function partnercollectionreportExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -1970,7 +1970,7 @@ class FinanceReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function staffwiserevenue(Request $request)
+    public function staffwiserevenue(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_staff_wise_revenue')) {
@@ -2017,7 +2017,7 @@ class FinanceReportController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function staffwiserevenuereportexcel($reportData, $start_date, $end_date)
+    private static function staffwiserevenuereportexcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -2118,7 +2118,7 @@ class FinanceReportController extends Controller
     }
 
     /** @deprecated Moved to App\Services\Reports\Revenue\ConversionReport. Called via GeneralSalesReportController. */
-    public function conversionreport(Request $request)
+    public function conversionreport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_conversion_report')) {
             return abort(404);
@@ -2161,7 +2161,7 @@ class FinanceReportController extends Controller
     }
 
 /** @deprecated Moved to App\Services\Reports\Revenue\ServicesSoldReport. Called via GeneralSalesReportController. */
-public function serviceSoldreport(Request $request)
+public function serviceSoldreport(Request $request): mixed
 {
     // Handle date range
     if ($request->get('date_range')) {
@@ -2252,7 +2252,7 @@ public function serviceSoldreport(Request $request)
     ));
 }
 /** @deprecated Moved to App\Services\Reports\Revenue\GenderWiseRevenueReport. Called via GeneralSalesReportController. */
-public static function revenueByGenderAndService($request)
+public static function revenueByGenderAndService($request): mixed
 {
     // Extract data and account_id from request
     $data = $request->all();
@@ -2397,7 +2397,7 @@ public static function revenueByGenderAndService($request)
         'locationIds' => $location_ids
     ]);
 }
-    private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
+    private static function conversionreportexcel($reportData, $start_date, $end_date, $converted): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -2481,7 +2481,7 @@ public static function revenueByGenderAndService($request)
      *  Collection by Serivce Report
      */
     /** @deprecated Moved to App\Services\Reports\Revenue\CollectionByServiceReport. Called via GeneralSalesReportController. */
-    public function collectionbyservice(Request $request)
+    public function collectionbyservice(Request $request): mixed
     {
 
         if (!Gate::allows('finance_general_revenue_reports_collection_by_service')) {
@@ -2529,7 +2529,7 @@ public static function revenueByGenderAndService($request)
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function collectionbyservuiceExcel($reportData, $start_date, $end_date)
+    private static function collectionbyservuiceExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -2578,7 +2578,7 @@ public static function revenueByGenderAndService($request)
      *
      * @return \Illuminate\Http\Response
      */
-    public function machinewisecollectionreport(Request $request)
+    public function machinewisecollectionreport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_machine_wise_collection_report')) {
             return abort(401);
@@ -2626,7 +2626,7 @@ public static function revenueByGenderAndService($request)
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function machinewisecollectionsseportExcel($reportData, $start_date, $end_date)
+    private static function machinewisecollectionsseportExcel($reportData, $start_date, $end_date): mixed
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -2738,7 +2738,7 @@ public static function revenueByGenderAndService($request)
      *
      * @return \Illuminate\Http\Response
      */
-    public function consumeplanrevenuereport(Request $request)
+    public function consumeplanrevenuereport(Request $request): mixed
     {
         if (!Gate::allows('finance_general_revenue_reports_consume_plan_revenue_report')) {
             return abort(401);
@@ -2785,7 +2785,7 @@ public static function revenueByGenderAndService($request)
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function consumeplanrevenueExcel($reportData, $start_date, $end_date)
+    private static function consumeplanrevenueExcel($reportData, $start_date, $end_date): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -2858,7 +2858,7 @@ public static function revenueByGenderAndService($request)
     /*
  * Function to lead machine
  */
-    public function loadmachine(Request $request)
+    public function loadmachine(Request $request): mixed
     {
         if ($request->location_id) {
             $machines = Resources::where('location_id', '=', $request->location_id)->get();
@@ -2882,7 +2882,7 @@ public static function revenueByGenderAndService($request)
      * Function to get the discounts according to change in report type for account sales report and discount report
      * */
 
-    public function getDiscounts(Request $request)
+    public function getDiscounts(Request $request): mixed
     {
 
         $discounts = Discounts::where('account_id', '=', '1');
@@ -2908,7 +2908,7 @@ public static function revenueByGenderAndService($request)
      * @deprecated Moved to App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController
      */
 
-    public function DailyArrival()
+    public function DailyArrival(): mixed
     {
         $services = Services::where(['parent_id' => 0])->whereNotIn('slug', ['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
@@ -2918,7 +2918,7 @@ public static function revenueByGenderAndService($request)
         return view('admin.reports.dailyarrival', get_defined_vars());
     }
 
-    public function LoadDailyArrival(Request $request)
+    public function LoadDailyArrival(Request $request): mixed
     {
         $where = [];
         if ($request->location_id && $request->location_id) {
@@ -2977,14 +2977,14 @@ public static function revenueByGenderAndService($request)
         return view('admin.reports.daily_arrived', get_defined_vars());
     }
 
-    public function staffWiseArrival()
+    public function staffWiseArrival(): mixed
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
 
         return view('admin.reports.staffwisearrival', get_defined_vars());
     }
-    public function doctorWiseConversion()
+    public function doctorWiseConversion(): mixed
     {
 
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
@@ -2992,7 +2992,7 @@ public static function revenueByGenderAndService($request)
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
-    public function staffWiseArrivalReport(Request $request)
+    public function staffWiseArrivalReport(Request $request): mixed
     {
         $where = [];
         if (isset($request->date_range) && $request->date_range) {
@@ -3111,7 +3111,7 @@ public static function revenueByGenderAndService($request)
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
     }
 
-    public function loadIncentiveReport(Request $request)
+    public function loadIncentiveReport(Request $request): mixed
     {
         // Parse the date range input
         $dates = explode(' - ', $request->input('date_range'));
@@ -3228,7 +3228,7 @@ public static function revenueByGenderAndService($request)
      *
      * @return \Illuminate\Http\Response
      */
-    public function taxCalculationReport()
+    public function taxCalculationReport(): mixed
     {
         
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
@@ -3242,7 +3242,7 @@ public static function revenueByGenderAndService($request)
      * @param Request $request
      * @return \Illuminate\Http\Response
      */
-    public function taxCalculationReportLoad(Request $request)
+    public function taxCalculationReportLoad(Request $request): mixed
     {
         // Validate request
         $request->validate([

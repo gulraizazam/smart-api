@@ -24,7 +24,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
         $this->request = $request;
     }
 
-    public function collection()
+    public function collection(): \Illuminate\Support\Collection
     {
       
         $where = [];

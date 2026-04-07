@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
 
 class ActivitylogsReportController extends Controller
 {
-    public function index(){
+    public function index(): mixed{
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
@@ -34,7 +34,7 @@ class ActivitylogsReportController extends Controller
         return view('admin.reports.activity_logs.index', get_defined_vars());
 
     }
-    public function fetchActivityReport(Request $request)
+    public function fetchActivityReport(Request $request): mixed
     {
         $colorClasses=['text-warning', 'text-success','text-primary','text-danger'];
         
@@ -72,7 +72,7 @@ class ActivitylogsReportController extends Controller
 
         return view('admin.reports.activity_logs.activities', compact('data'));
     }
-    public function InsertLogs()
+    public function InsertLogs(): mixed
     {
         $startDate = '2023-11-01 00:00:00';
         $endDate = '2023-11-05 23:59:59';

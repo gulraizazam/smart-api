@@ -21,7 +21,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request)
+    public function login(Request $request): mixed
     {
         try {
             $rules = [
