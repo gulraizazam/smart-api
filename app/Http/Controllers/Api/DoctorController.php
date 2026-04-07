@@ -272,7 +272,7 @@ class DoctorController extends Controller
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->doctorService->deleteServiceAllocation($request->id);
+            $result = $this->doctorService->deleteServiceAllocation((int) $request->id);
 
             return $result
                 ? $this->successResponse('Location/Service has been unassigned to doctor!', ['id' => $request->id])
