@@ -139,7 +139,7 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
             AfterSheet::class => function (AfterSheet $event): void {
                 $sheet = $event->sheet->getDelegate();
                 $sheet->getStyle('A1:L1')->getFont()->setBold(true);
-                $sheet->getRowDimension('1')->setRowHeight(30);
+                $sheet->getRowDimension(1)->setRowHeight(30);
 
                 foreach (range('A', 'L') as $col) {
                     $width = in_array($col, ['I']) ? 40 : 20;
