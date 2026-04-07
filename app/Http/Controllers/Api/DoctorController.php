@@ -212,7 +212,7 @@ class DoctorController extends Controller
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->doctorService->changePassword($request->validated('id'), $request->validated('password'));
+            $result = $this->doctorService->changePassword((int) $request->validated('id'), $request->validated('password'));
 
             return $result
                 ? $this->successResponse('Password has been changed successfully.')
