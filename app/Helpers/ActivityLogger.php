@@ -282,8 +282,8 @@ class ActivityLogger
         $patientName = $patient->name ?? 'Unknown';
         
         // Format dates for display
-        $oldDateFormatted = $oldDate ? date('M j, Y', strtotime($oldDate)) : '';
-        $newDateFormatted = $newDate ? date('M j, Y', strtotime($newDate)) : '';
+        $oldDateFormatted = $oldDate ? date('M j, Y', strtotime((string) $oldDate)) : '';
+        $newDateFormatted = $newDate ? date('M j, Y', strtotime((string) $newDate)) : '';
         
         // Build description based on what changed
         $description = '<span class="highlight">' . $creatorName . '</span>';
@@ -404,8 +404,8 @@ class ActivityLogger
         $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
         
         // Format old and new datetime
-        $oldDateTime = date('M j, Y', strtotime($oldDate)) . ' ' . date('h:i A', strtotime($oldTime));
-        $newDateTime = date('M j, Y', strtotime($newDate)) . ' ' . date('h:i A', strtotime($newTime));
+        $oldDateTime = date('M j, Y', strtotime((string) $oldDate)) . ' ' . date('h:i A', strtotime((string) $oldTime));
+        $newDateTime = date('M j, Y', strtotime((string) $newDate)) . ' ' . date('h:i A', strtotime((string) $newTime));
         
         // Format: XYZ rescheduled SERVICE_NAME APPOINTMENT_TYPE for PATIENT_NAME from OLD_DATETIME to NEW_DATETIME in LOCATION_NAME
         $description = '<span class="highlight">' . $creatorName . '</span> rescheduled <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> ' . $appointmentType . ' for <span class="highlight-orange">' . $patientName . '</span> from <span class="highlight-purple">' . $oldDateTime . '</span> to <span class="highlight-green">' . $newDateTime . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
