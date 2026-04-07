@@ -1,37 +1,40 @@
 <div class="mt-2 mb-7">
-    <div class="row align-items-end mb-6">
-        <div class="col mb-lg-0 mb-6">
+    <div class="row align-items-center">
+        <div class="advance-search col-md-12 col-lg-12 col-xl-12">
+            <div class="row align-items-center mr-2" style="float: right;">
+                <div class="row">
+                    <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();">
+                        <i class="advance-arrow fa fa-caret-right"></i>
+                        Advance
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Patient Search:</label>
             <select class="form-control select2-patient-search" id="search_patient_id" name="search_patient_id">
                 <option value=""></option>
             </select>
         </div>
-        <div class="col mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Name:</label>
             <input class="form-control filter-field" id="search_name" placeholder="Enter Name">
         </div>
-        <div class="col mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
             <input class="form-control filter-field" id="search_phone" placeholder="Enter Phone">
         </div>
-        <div class="col mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Membership:</label>
             <select class="form-control filter-field select2" id="search_membership">
             </select>
         </div>
-        <div class="col mb-lg-0 mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Gender:</label>
             <select class="form-control filter-field select2" id="search_gender">
             </select>
-        </div>
-        <div class="col-auto mb-lg-0 mb-6">
-            @include('admin.partials.filter-buttons')
-        </div>
-        <div class="col-auto mb-lg-0 mb-6">
-            <button class="btn btn-sm btn-default" onclick="advanceFilters();">
-                <i class="advance-arrow fa fa-caret-right"></i>
-                Advance
-            </button>
         </div>
     </div>
     <div class="row mb-8 advance-filters" style="display: none;">
@@ -48,5 +51,10 @@
             </select>
         </div>
         @endif
+    </div>
+    <div class="row">
+        <div class="col-md-10">
+            @include('admin.partials.filter-buttons')
+        </div>
     </div>
 </div>
