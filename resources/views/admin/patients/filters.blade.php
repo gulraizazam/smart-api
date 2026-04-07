@@ -23,10 +23,6 @@
             <input class="form-control filter-field" id="search_name" placeholder="Enter Name">
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Phone:</label>
-            <input class="form-control filter-field" id="search_phone" placeholder="Enter Phone">
-        </div>
-        <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Membership:</label>
             <select class="form-control filter-field select2" id="search_membership">
             </select>
