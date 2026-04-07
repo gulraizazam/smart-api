@@ -255,7 +255,7 @@ class DoctorController extends Controller
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->doctorService->saveServiceAllocation($request->doctor_id, $request->id);
+            $result = $this->doctorService->saveServiceAllocation((int) $request->doctor_id, $request->id);
 
             return $result['status']
                 ? $this->successResponse($result['message'], $result['data'])
