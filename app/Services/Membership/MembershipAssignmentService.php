@@ -136,14 +136,24 @@ class MembershipAssignmentService
             $patient = Patients::find($patientId);
             $membershipType = $membership->membershipType;
 
-            $membership->delete();
+            $membership->update([
+                'patient_id' => null,
+                'start_date' => null,
+                'end_date' => null,
+                'assigned_at' => null,
+            ]);
 
             $cancelledReferrals = 0;
 
             if (!$isReferral) {
                 $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                     ->where('is_referral', 1)
-                    ->delete();
+                    ->update([
+                        'patient_id' => null,
+                        'start_date' => null,
+                        'end_date' => null,
+                        'assigned_at' => null,
+                    ]);
             }
 
             $this->membershipService->clearPatientMembershipCache($patientId);
