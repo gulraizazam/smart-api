@@ -78,7 +78,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $event->sheet->getDelegate()->getStyle('A1:F1')->getFont()->setBold(true);
-                $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
+                $event->sheet->getDelegate()->getRowDimension(1)->setRowHeight(30);
                 $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('C')->setWidth(20);
