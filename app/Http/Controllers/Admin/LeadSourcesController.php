@@ -197,7 +197,7 @@ class LeadSourcesController extends Controller
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->service->toggleStatus($request->id, (int) $request->status);
+            $result = $this->service->toggleStatus((int) $request->id, (int) $request->status);
 
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (\Exception $e) {

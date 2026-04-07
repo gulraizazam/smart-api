@@ -174,7 +174,7 @@ class ActivityLogger
         $serviceName = $service->name ?? '';
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = \Auth::user()->name ?? 'System';
-        $scheduleDate = $appointment->scheduled_date ? date('M j, Y', strtotime($appointment->scheduled_date)) : '';
+        $scheduleDate = $appointment->scheduled_date ? date('M j, Y', strtotime((string) $appointment->scheduled_date)) : '';
         
         // Format: XYZ booked SERVICE_NAME Treatment for PATIENT_NAME in LOCATION_NAME on DATE
         $description = '<span class="highlight">' . $creatorName . '</span> booked <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> Treatment for <span class="highlight-orange">' . $patientName . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ($scheduleDate ? ' on <span class="highlight-purple">' . $scheduleDate . '</span>' : '');
@@ -712,7 +712,7 @@ class ActivityLogger
         }
         
         if ($appointment->scheduled_date) {
-            $description .= ' scheduled on <span class="highlight-purple">' . date('M j, Y', strtotime($appointment->scheduled_date)) . '</span>';
+            $description .= ' scheduled on <span class="highlight-purple">' . date('M j, Y', strtotime((string) $appointment->scheduled_date)) . '</span>';
         }
         
         return Activity::create([
@@ -783,7 +783,7 @@ class ActivityLogger
         // Get the treatment's scheduled date
         $scheduledDate = '';
         if ($appointment && $appointment->scheduled_date) {
-            $scheduledDate = date('M j, Y', strtotime($appointment->scheduled_date));
+            $scheduledDate = date('M j, Y', strtotime((string) $appointment->scheduled_date));
         }
         
         $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
@@ -932,7 +932,7 @@ class ActivityLogger
         // Get scheduled date
         $scheduledDate = '';
         if ($appointment && $appointment->scheduled_date) {
-            $scheduledDate = date('M j, Y', strtotime($appointment->scheduled_date));
+            $scheduledDate = date('M j, Y', strtotime((string) $appointment->scheduled_date));
         }
         
         $description = '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span>Treatment against <span class="highlight-orange">' . $patientName . '</span>' . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');

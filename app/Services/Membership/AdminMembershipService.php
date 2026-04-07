@@ -435,18 +435,17 @@ class AdminMembershipService
 
             if ($packages->count() > 0) {
                 $restrictedServiceNames = ['Gold Membership Card', 'Student Membership Card'];
+                $packageIds = $packages->pluck('id')->toArray();
 
-                foreach ($packages as $package) {
-                    $hasRestrictedService = DB::table('package_services')
-                        ->join('services', 'package_services.service_id', '=', 'services.id')
-                        ->where('package_services.package_id', $package->id)
-                        ->whereIn('services.name', $restrictedServiceNames)
-                        ->whereNull('services.deleted_at')
-                        ->first();
+                $hasRestrictedService = DB::table('package_services')
+                    ->join('services', 'package_services.service_id', '=', 'services.id')
+                    ->whereIn('package_services.package_id', $packageIds)
+                    ->whereIn('services.name', $restrictedServiceNames)
+                    ->whereNull('services.deleted_at')
+                    ->exists();
 
-                    if ($hasRestrictedService) {
-                        return ['success' => false, 'message' => 'Membership applied on services, you can not cancel it'];
-                    }
+                if ($hasRestrictedService) {
+                    return ['success' => false, 'message' => 'Membership applied on services, you can not cancel it'];
                 }
             }
         }

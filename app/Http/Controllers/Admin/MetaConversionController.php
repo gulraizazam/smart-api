@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SendLeadStatusRequest;
 use App\Services\MetaConversionApiService;
+use Illuminate\Http\Request;
 
 class MetaConversionController extends Controller
 {

@@ -29,8 +29,8 @@ use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-use Config;
-use DB;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use PDF;
@@ -42,7 +42,7 @@ class InvoicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('patients_invoice_manage')) {
             return abort(401);
@@ -83,7 +83,7 @@ class InvoicesController extends Controller
     /*
        * Show the invoice data in datatable
        * */
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
 
         $apply_filter = false;
@@ -151,7 +151,7 @@ class InvoicesController extends Controller
         return response()->json($records);
     }
 
-    public function cancel($id): mixed
+    public function cancel(int $id): mixed
     {
 
         if (! Gate::allows('patients_invoice_cancel')) {
@@ -208,7 +208,7 @@ class InvoicesController extends Controller
 
     /*display invoice
      * */
-    public function displayInvoice($id): mixed
+    public function displayInvoice(int $id): mixed
     {
 
         if (! Gate::allows('patients_invoice_manage')) {
@@ -252,7 +252,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id): mixed
+    public function invoice_pdf(int $id): mixed
     {
 
         if (! Gate::allows('patients_invoice_manage')) {
@@ -321,7 +321,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id, $patient_id, $type): mixed
+    public function invoicelog(int $id, int $patient_id, string $type): mixed
     {
         if (! Gate::allows('patients_invoice_log')) {
             return abort(401);
@@ -378,7 +378,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice excel in patient Card
      */
-    public function invoicelogexcel($id, $finance_log): mixed
+    public function invoicelogexcel(int $id, mixed $finance_log): mixed
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/

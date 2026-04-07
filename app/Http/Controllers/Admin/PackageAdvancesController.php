@@ -339,7 +339,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id): mixed
+    public function inactive(int $id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -355,7 +355,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id): mixed
+    public function active(int $id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -371,7 +371,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('finances_manage')) {
 
@@ -440,7 +440,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);
@@ -466,7 +466,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cancel($id): mixed
+    public function cancel(int $id): mixed
     {
         if (! Gate::allows('finances_manage')) {
             return abort(401);

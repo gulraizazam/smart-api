@@ -93,7 +93,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
@@ -117,7 +117,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
@@ -141,7 +141,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
@@ -178,7 +178,7 @@ class SMSTemplatesController extends Controller
                 }
             }
 
-            $result = $this->smsTemplateService->changeStatus($request->id, $request->status);
+            $result = $this->smsTemplateService->changeStatus((int) $request->id, (int) $request->status);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);

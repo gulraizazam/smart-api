@@ -455,7 +455,7 @@ class DiscountsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (!Gate::allows('discounts_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -520,7 +520,7 @@ class DiscountsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreDiscountRequest $request, $id): mixed
+    public function update(StoreDiscountRequest $request, int $id): mixed
     {
 
         if (!Gate::allows('discounts_edit')) {
@@ -569,9 +569,9 @@ class DiscountsController extends Controller
         try {
 
             if ($request->status == 1) {
-                $response = Discounts::activeRecord($request->id);
+                $response = Discounts::activeRecord((int) $request->id);
             } else {
-                $response = Discounts::inactiveRecord($request->id);
+                $response = Discounts::inactiveRecord((int) $request->id);
             }
 
             if ($response) {
@@ -590,7 +590,7 @@ class DiscountsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (!Gate::allows('discounts_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -614,7 +614,7 @@ class DiscountsController extends Controller
      *
      * @param  int  $id
      */
-    public function displayDlocation($id): mixed
+    public function displayDlocation(int $id): mixed
     {
         if (!Gate::allows('discounts_allocate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

@@ -112,7 +112,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('locations_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -132,7 +132,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreUpdateLocationRequest $request, $id): mixed
+    public function update(StoreUpdateLocationRequest $request, int $id): mixed
     {
         if (! Gate::allows('locations_edit')) {
             return abort(401);
@@ -154,7 +154,7 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('locations_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -174,7 +174,7 @@ class LocationsController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $response = $this->locationService->changeStatus($request->id, $request->status);
+        $response = $this->locationService->changeStatus((int) $request->id, (string) $request->status);
 
         if ($response) {
             return $this->successResponse('Status has been changed successfully.');
@@ -258,7 +258,7 @@ class LocationsController extends Controller
     }
     public function getServices(Request $request): mixed
     {
-        $data = $this->locationService->getServicesForLocation($request->id, Auth::User()->account_id);
+        $data = $this->locationService->getServicesForLocation((int) $request->id, Auth::User()->account_id);
 
         return $this->successResponse('Success', $data);
     }

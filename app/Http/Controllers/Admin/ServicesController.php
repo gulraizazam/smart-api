@@ -231,7 +231,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -274,7 +274,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $id): mixed
+    public function show(Request $request, int $id): mixed
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
@@ -310,7 +310,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function duplicate($id): mixed
+    public function duplicate(int $id): mixed
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -363,7 +363,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreUpdateServiceRequest $request, $id): mixed
+    public function update(StoreUpdateServiceRequest $request, int $id): mixed
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -396,7 +396,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('services_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -423,7 +423,7 @@ class ServicesController extends Controller
             if (! Gate::allows('services_active') && ! Gate::allows('services_inactive')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $checkService = Services::find($request->id);
+            $checkService = Services::find((int) $request->id);
 
         if (!$checkService) {
             return $this->errorResponse('Service not found.', 500);
@@ -442,9 +442,9 @@ class ServicesController extends Controller
         }
 
             if ($request->status == 1) {
-                $response = Services::activeRecord($request->id);
+                $response = Services::activeRecord((int) $request->id);
             } else {
-                $response = Services::inactiveRecord($request->id);
+                $response = Services::inactiveRecord((int) $request->id);
             }
 
             if ($response) {

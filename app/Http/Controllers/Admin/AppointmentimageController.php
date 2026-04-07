@@ -21,7 +21,7 @@ class AppointmentimageController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('appointments_image_manage')) {
             return abort(401);
@@ -31,7 +31,7 @@ class AppointmentimageController extends Controller
         return view('admin.appointments.images.index', compact('appointment'));
     }
 
-    public function imagestore_before(Request $request, $id): mixed
+    public function imagestore_before(Request $request, int $id): mixed
     {
         $result = $this->appointmentImageService->storeImages($request->file, $request->type, $id);
 
@@ -50,14 +50,14 @@ class AppointmentimageController extends Controller
         ]);
     }
 
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
         $records = $this->appointmentImageService->getDatatableData($request, Auth::User()->account_id, $id);
 
         return response()->json($records);
     }
 
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('appointments_image_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

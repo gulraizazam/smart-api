@@ -135,7 +135,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
@@ -159,7 +159,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, $id): mixed
+    public function update(Request $request, int $id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
@@ -183,7 +183,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         try {
             if (! Gate::allows('payment_modes_destroy')) {
@@ -216,7 +216,7 @@ class PaymentModesController extends Controller
                 }
             }
 
-            $response = $this->paymentModeService->changeStatus($request->id, $request->status);
+            $response = $this->paymentModeService->changeStatus((int) $request->id, (int) $request->status);
 
             return $this->successResponse($response['message'], $response['status']);
         } catch (\Exception $e) {

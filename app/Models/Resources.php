@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;use Illuminate\Database\Eloquent\Relations\Ha
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\ResourceHasRota;
+use App\Models\ResourceHasRotaDays;
 
 class Resources extends BaseModel
 {
@@ -424,22 +426,22 @@ class Resources extends BaseModel
 
     public function resource_rota(): HasOne
     {
-        return $this->hasOne("\App\Models\ResourceHasRota", 'resource_id');
+        return $this->hasOne(ResourceHasRota::class, 'resource_id');
     }
 
     public function resourceRota(): HasMany
     {
-        return $this->hasMany("\App\Models\ResourceHasRota", 'resource_id');
+        return $this->hasMany(ResourceHasRota::class, 'resource_id');
     }
 
     public function rotas(): HasManyThrough
     {
-        return $this->hasManyThrough('\App\Models\ResourceHasRotaDays', '\App\Models\ResourceHasRota', 'resource_id', 'resource_has_rota_id', 'id', 'id');
+        return $this->hasManyThrough(ResourceHasRotaDays::class, ResourceHasRota::class, 'resource_id', 'resource_has_rota_id', 'id', 'id');
     }
 
     public function doctor_rotas(): HasManyThrough
     {
-        return $this->hasManyThrough('\App\Models\ResourceHasRotaDays', '\App\Models\ResourceHasRota', 'resource_id', 'resource_has_rota_id', 'id', 'id');
+        return $this->hasManyThrough(ResourceHasRotaDays::class, ResourceHasRota::class, 'resource_id', 'resource_has_rota_id', 'id', 'id');
     }
 
     public function resource_types(): BelongsTo

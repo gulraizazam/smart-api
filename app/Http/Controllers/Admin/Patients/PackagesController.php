@@ -39,7 +39,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('patients_plan_manage')) {
             return abort(401);
@@ -66,7 +66,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create($id): mixed
+    public function create(int $id): mixed
     {
         if (! Gate::allows('patients_plan_create')) {
             return abort(401);
@@ -351,7 +351,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive($id): mixed
+    public function inactive(int $id): mixed
     {
         if (! Gate::allows('patients_plan_inactive')) {
             return abort(401);
@@ -369,7 +369,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active($id): mixed
+    public function active(int $id): mixed
     {
         if (! Gate::allows('patients_plan_active')) {
             return abort(401);
@@ -387,7 +387,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('patients_plan_edit')) {
             return abort(401);
@@ -559,7 +559,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         if (! Gate::allows('patients_plan_destroy')) {
             return abort(401);
@@ -576,7 +576,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function display($id): mixed
+    public function display(int $id): mixed
     {
 
         if (! Gate::allows('patients_plan_manage')) {
@@ -622,7 +622,7 @@ class PackagesController extends Controller
     /*
      * $edit the cash that enter in package advances (because of permission we need to duplicate that function but store method same)
      */
-    public function editpackageadvancescashindex($id, $package_id): mixed
+    public function editpackageadvancescashindex(int $id, int $package_id): mixed
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -634,7 +634,7 @@ class PackagesController extends Controller
     /*
      *  Function for log for package
      */
-    public function planlog($id, $patient_id, $type): mixed
+    public function planlog(int $id, int $patient_id, string $type): mixed
     {
         if (! Gate::allows('patients_plan_log')) {
             return abort(401);
@@ -724,7 +724,7 @@ class PackagesController extends Controller
      *  Function for log for package excel
      */
 
-    public function packagelogexcel($id, $finance_log): mixed
+    public function packagelogexcel(int $id, mixed $finance_log): mixed
     {
         if (! Gate::allows('patients_plan_log')) {
             return abort(401);

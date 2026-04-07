@@ -26,7 +26,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id): mixed
+    public function index(int $id): mixed
     {
         if (! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -45,7 +45,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, $id): mixed
+    public function datatable(Request $request, int $id): mixed
     {
         $filename = 'patient_custom_form_feedbacks';
 
@@ -119,7 +119,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         if (! Gate::allows('patients_customform_edit')) {
             return abort(401);
@@ -142,7 +142,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview($id): mixed
+    public function filled_preview(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -162,7 +162,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function filledPrint($id): mixed
+    public function filledPrint(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -180,7 +180,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function exportPdf($id): mixed
+    public function exportPdf(int $id): mixed
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -251,7 +251,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return $id
      */
-    public function AddNewForm($id): mixed
+    public function AddNewForm(int $id): mixed
     {
 
         if (! Gate::allows('patients_customform_create')) {

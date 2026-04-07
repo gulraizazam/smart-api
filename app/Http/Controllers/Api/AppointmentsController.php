@@ -75,7 +75,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function show($id): mixed
+    public function show(int $id): mixed
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -93,7 +93,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function update(UpdateAppointmentRequest $request, $id): mixed
+    public function update(UpdateAppointmentRequest $request, int $id): mixed
     {
         try {
             $this->authorize('update', Appointments::class);
@@ -111,7 +111,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         try {
             $this->authorize('delete', Appointments::class);
@@ -129,7 +129,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateStatus(UpdateAppointmentStatusRequest $request, $id): mixed
+    public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): mixed
     {
         try {
             $this->authorize('updateStatus', Appointments::class);
@@ -158,7 +158,7 @@ class AppointmentsController extends Controller
             $this->authorize('manageSchedule', Appointments::class);
 
             // Calendar sends 'id' but service expects 'appointment_id'
-            $appointmentId = $request->id ?? $request->appointment_id;
+            $appointmentId = (int) ($request->id ?? $request->appointment_id);
             
             if (!$appointmentId) {
                 return $this->errorResponse('Appointment ID is required.', 400);

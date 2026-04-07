@@ -1195,7 +1195,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id): mixed
+    public function show(int $id): mixed
     {
         //
     }
@@ -1209,7 +1209,7 @@ class PackagesController extends Controller
     /**
      * Get edit form data for package (optimized)
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         $this->authorize('editPlan', Packages::class);
 
@@ -1331,7 +1331,7 @@ class PackagesController extends Controller
     /**
      * Delete plan package (optimized)
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         $this->authorize('destroyPlan', Packages::class);
 
@@ -1357,7 +1357,7 @@ class PackagesController extends Controller
     /**
      * Display package details (optimized)
      */
-    public function display($id): mixed
+    public function display(int $id): mixed
     {
         $this->authorize('managePlans', Packages::class);
 
@@ -1407,7 +1407,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function package_pdf($id): mixed
+    public function package_pdf(int $id): mixed
     {
         $this->authorize('managePlans', Packages::class);
         $package = Packages::find($id);
@@ -1467,7 +1467,7 @@ class PackagesController extends Controller
     /*
      * $edit the cash that enter in package advances
      */
-    public function editpackageadvancescashindex($id, $package_id): mixed
+    public function editpackageadvancescashindex(int $id, int $package_id): mixed
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -1595,7 +1595,7 @@ class PackagesController extends Controller
     /*
      *  Function for log for package
      */
-    public function packagelog($id, $type): mixed
+    public function packagelog(int $id, string $type): mixed
     {
         $this->authorize('viewLog', Packages::class);
 
@@ -1673,7 +1673,7 @@ class PackagesController extends Controller
         return $this->packagelogexcel($id, $finance_log);
     }
 
-    public function planDatatable(Request $request, $id): mixed
+    public function planDatatable(Request $request, int $id): mixed
     {
 
         $records = [];
@@ -1780,7 +1780,7 @@ class PackagesController extends Controller
      *  Function for log for package
      */
 
-    public function packagelogexcel($id, $finance_log): mixed
+    public function packagelogexcel(int $id, mixed $finance_log): mixed
     {
         $this->authorize('viewLog', Packages::class);
 
@@ -1886,7 +1886,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs($id): mixed
+    public function showSMSLogs(int $id): mixed
     {
         $SMSLogs = SMSLogs::where('package_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
@@ -1927,7 +1927,7 @@ class PackagesController extends Controller
         $plans  = Packages::where('patient_id', $request->patient_id)->pluck('name');
         return response()->json(['stataus' => 1, 'message' => 'plan found', 'plans' => $plans]);
     }
-    public function editRefund($id): mixed
+    public function editRefund(int $id): mixed
     {
         $result = $this->planService->getRefundFormData((int) $id);
 
@@ -1965,7 +1965,7 @@ class PackagesController extends Controller
 
         return Validator::make($request->all(), $rules, $customMessages);
     }
-    public function viewPackage($id): mixed
+    public function viewPackage(int $id): mixed
     {
 
         $url = route('admin.packages.edit', $id);

@@ -189,7 +189,7 @@ class MachineTypeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id): mixed
+    public function show(int $id): mixed
     {
         //
     }
@@ -199,7 +199,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit($id): mixed
+    public function edit(int $id): mixed
     {
         try {
             if (!Gate::allows('machineType_edit')) {
@@ -224,7 +224,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreUpdateMachineTypeRequest $request, $id): mixed
+    public function update(StoreUpdateMachineTypeRequest $request, int $id): mixed
     {
         try {
             if (!Gate::allows('machineType_edit')) {
@@ -267,7 +267,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id): mixed
+    public function destroy(int $id): mixed
     {
         try {
             if (!Gate::allows('machineType_destroy')) {
@@ -293,12 +293,12 @@ class MachineTypeController extends Controller
                 if (!Gate::allows('machineType_inactive')) {
                     return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = MachineType::inactiveRecord($request->id);
+                $response = MachineType::inactiveRecord((int) $request->id);
             } else {
                 if (!Gate::allows('machineType_active')) {
                     return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
-                $response = MachineType::activeRecord($request->id);
+                $response = MachineType::activeRecord((int) $request->id);
             }
 
             return $this->successResponse($response->get('message'), $response->get('status'));
