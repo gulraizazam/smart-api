@@ -2,6 +2,12 @@
 
 // Optimised REST API: Appointments, Consultancy, Treatment prefix groups, legacy appointment routes, Appointmentplans, Memberships
 
+use App\Http\Controllers\Admin\AppointmentMedicalController;
+use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\AppointmentsPlansController;
+use App\Http\Controllers\Api\ConsultancyInvoiceController;
+use App\Http\Controllers\Api\MembershipsController;
+use App\Http\Controllers\Api\MembershipTypesController;
 use Illuminate\Support\Facades\Route;
 
     // Appointments API Routes (Optimized)
