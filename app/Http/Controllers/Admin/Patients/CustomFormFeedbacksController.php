@@ -9,6 +9,7 @@ use App\Models\CustomFormFeedbacks;
 use App\Models\CustomForms;
 use App\Models\Patients;
 use App\Models\User;
+use App\Services\CustomForm\CustomFormFeedbackService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +17,10 @@ use Spatie\Browsershot\Browsershot;
 
 class CustomFormFeedbacksController extends Controller
 {
+    public function __construct(
+        private readonly CustomFormFeedbackService $customFormFeedbackService,
+    ) {}
+
     /**
      * Display a listing of the resource.
      *
@@ -119,21 +124,16 @@ class CustomFormFeedbacksController extends Controller
         if (! Gate::allows('patients_customform_edit')) {
             return abort(401);
         }
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
 
-        $patient_id = $custom_form_feedback->reference_id;
+        $data = $this->customFormFeedbackService->getEditData($id);
 
-        if (! $custom_form_feedback) {
+        if (! $data) {
             return abort(404);
         }
-        $patient_name = User::where('id', '=', $custom_form_feedback->reference_id)->first();
 
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'patient_name' => $patient_name,
-            'patient_id' => $patient_id,
-        ]);
+        $data['patient_id'] = $data['custom_form']->reference_id;
 
+        return $this->successResponse('Record found.', $data);
     }
 
     /**
@@ -148,19 +148,15 @@ class CustomFormFeedbacksController extends Controller
             return abort(401);
         }
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
-        $patient_id = $custom_form_feedback->reference_id;
+        $data = $this->customFormFeedbackService->getFilledPreviewData($id);
 
-        if (! $custom_form_feedback) {
+        if (! $data) {
             return abort(404);
         }
 
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'thisId' => $id,
-            'patientId' => $patient_id,
-        ]);
+        $data['patientId'] = $data['custom_form']->reference_id;
 
+        return $this->successResponse('Record found.', $data);
     }
 
     /**
@@ -172,13 +168,13 @@ class CustomFormFeedbacksController extends Controller
             return abort(401);
         }
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
+        $data = $this->customFormFeedbackService->getFilledPrintData($id);
 
-        if (! $custom_form_feedback) {
+        if (! $data) {
             return view('error');
         }
 
-        return view('admin.custom_form_feedbacks.filled_print', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
+        return view('admin.custom_form_feedbacks.filled_print', $data);
     }
 
     /**
@@ -190,25 +186,20 @@ class CustomFormFeedbacksController extends Controller
             return abort(401);
         }
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($id);
+        $data = $this->customFormFeedbackService->getExportPdfData($id);
 
-        if (! $custom_form_feedback) {
+        if (! $data) {
             return view('error');
         }
 
-        //return view('admin.custom_form_feedbacks.filled_export_pdf', ['custom_form' => $custom_form_feedback, 'thisId' => $id]);
+        $custom_form = $data['custom_form'];
+        $thisId = $data['thisId'];
         $pdfName = 'custom_form'.'_'.$id.'_'.date('YmdHis').'.pdf';
-        $custom_form = $custom_form_feedback;
-        $thisId = $id;
         $html = \View::make('admin.custom_form_feedbacks.filled_export_pdf', compact('custom_form', 'thisId'))->render();
         $pdfPath = public_path('pdf_download/'.$pdfName);
-        $file = Browsershot::html($html)
-            //->hideBackground()
+        Browsershot::html($html)
             ->waitUntilNetworkIdle()
             ->landscape()
-            //->showBackground()
-            //->margins(0, 0, 0, 0)
-            //->paperSize(216, 280)
             ->save($pdfPath);
         $headers = [
             'Content-Type: application/pdf',

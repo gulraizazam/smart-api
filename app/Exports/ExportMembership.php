@@ -3,11 +3,7 @@
 declare(strict_types=1);
 namespace App\Exports;
 
-use DateTime;
-use App\Helpers\ACL;
-use App\Models\Leads;
 use App\Models\Membership;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -26,32 +22,28 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
 
     public function collection(): \Illuminate\Support\Collection
     {
-      
-        $where = [];
+        $query = Membership::query();
+
+        // Bug fixed: was using ['<>', null] / ['=', null] in array WHERE — those don't generate IS NULL / IS NOT NULL
         if (!is_null($this->request->assigned) && $this->request->assigned !== '') {
             if ($this->request->assigned == 1) {
-                // patient_id is not null
-                $where[] = ['memberships.patient_id', '<>', null];
+                $query->whereNotNull('memberships.patient_id');
             } elseif ($this->request->assigned == 0) {
-                // patient_id is null
-                $where[] = ['memberships.patient_id', '=', null];
+                $query->whereNull('memberships.patient_id');
             }
         }
-        if ($this->request->membership_type_id != null || $this->request->membership_type_id != '') {
-            $where[] = [['membership_type_id' => $this->request->membership_type_id]];
+
+        // Bug fixed: was `!= null || != ''` (always true) — changed to `!== null && !== ''`
+        // Bug fixed: was [['membership_type_id' => value]] (double-nested, malformed) — fixed to standard tuple
+        if ($this->request->membership_type_id !== null && $this->request->membership_type_id !== '') {
+            $query->where('membership_type_id', '=', $this->request->membership_type_id);
         }
-        if ($this->request->code != null || $this->request->code != '') {
-            $where[] = [['code' => $this->request->code]];
+
+        if ($this->request->code !== null && $this->request->code !== '') {
+            $query->where('code', '=', $this->request->code);
         }
-       
-        
-        
-        
-        $result_query = Membership::where($where)->get();
-        
-       
-       
-        return $result_query;
+
+        return $query->get();
     }
 
     public function headings(): array
@@ -63,22 +55,20 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
             'Patient',
             'Start Date',
             'End Date',
-           
         ];
     }
 
     public function map($membership): array
-{
-    return [
-        $membership->id,
-        $membership->code ?? 'N/A',
-        $membership->membership_type_id == '3' ? 'Gold' : 'Student',
-        optional($membership->patient)->name ?? 'N/A',
-        $membership->start_date ?? 'N/A',
-        $membership->end_date ?? 'N/A',
-    ];
-}
-
+    {
+        return [
+            $membership->id,
+            $membership->code ?? 'N/A',
+            $membership->membership_type_id == '3' ? 'Gold' : 'Student',
+            optional($membership->patient)->name ?? 'N/A',
+            $membership->start_date ?? 'N/A',
+            $membership->end_date ?? 'N/A',
+        ];
+    }
 
     /**
      * Write code on Method
@@ -87,7 +77,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $event->sheet->getDelegate()->getStyle('A1:K1')->getFont()->setBold(true);
+                $event->sheet->getDelegate()->getStyle('A1:F1')->getFont()->setBold(true);
                 $event->sheet->getDelegate()->getRowDimension('1')->setRowHeight(30);
                 $event->sheet->getDelegate()->getColumnDimension('A')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('B')->setWidth(20);
@@ -95,12 +85,6 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
                 $event->sheet->getDelegate()->getColumnDimension('D')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('E')->setWidth(20);
                 $event->sheet->getDelegate()->getColumnDimension('F')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('G')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('H')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('I')->setWidth(40);
-                $event->sheet->getDelegate()->getColumnDimension('J')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('K')->setWidth(20);
-                $event->sheet->getDelegate()->getColumnDimension('L')->setWidth(20);
             },
         ];
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Requests\Admin\StoreUpdateLocationRequest;
-use App\Models\Locations;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -50,11 +49,11 @@ class LocationsController extends Controller
         $apply_filter = checkFilters($filters, 'locations');
 
         // Get Total Records
-        $iTotalRecords = Locations::getTotalRecords($request, $accountId, $apply_filter);
+        $iTotalRecords = $this->locationService->getTotalRecords($request, $accountId, $apply_filter);
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $Locations = Locations::getRecords($request, $iDisplayStart, $iDisplayLength, $accountId, $apply_filter);
+        $Locations = $this->locationService->getRecords($request, $iDisplayStart, $iDisplayLength, $accountId, $apply_filter);
 
         $records = $this->locationService->buildDatatableRows(
             $Locations,
@@ -98,7 +97,7 @@ class LocationsController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        if ($location = Locations::createRecord($request, Auth::User()->account_id)) {
+        if ($location = $this->locationService->createLocation($request, Auth::User()->account_id)) {
             $this->locationService->handlePostCreation($location, $request->all(), Auth::User()->account_id);
 
             return $this->successResponse('Record has been created successfully.');
@@ -138,7 +137,7 @@ class LocationsController extends Controller
         if (! Gate::allows('locations_edit')) {
             return abort(401);
         }
-        if ($location = Locations::updateRecord($id, $request, Auth::User()->account_id)) {
+        if ($location = $this->locationService->updateLocation($id, $request, Auth::User()->account_id)) {
             $this->locationService->handlePostUpdate($location, $request->all(), Auth::User()->account_id);
 
             return $this->successResponse('Record has been updated successfully.');

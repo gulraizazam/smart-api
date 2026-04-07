@@ -17,29 +17,33 @@ class EmployeeAppointmentSummmaryExport implements FromCollection, WithHeadings,
     public function __construct($filters)
     {
         $this->filters = $filters;
-
     }
 
     public function collection(): \Illuminate\Support\Collection
     {
-        if ($this->filters['reportData']) {
-            $count = 0;
-            foreach ($this->filters['reportData'] as $reportpackagedata) {
-                foreach ($reportpackagedata['records'] as $reportRow) {
-                    $created_by = (array_key_exists($reportRow->created_by, $this->filters['users'])) ? $this->filters['users'][$reportRow->created_by]->name : '';
-                    $count++;
+        $records = [];
 
+        if ($this->filters['reportData']) {
+            foreach ($this->filters['reportData'] as $reportpackagedata) {
+                $count = 0;
+                $created_by = '';
+                foreach ($reportpackagedata['records'] as $reportRow) {
+                    $created_by = (array_key_exists($reportRow->created_by, $this->filters['users']))
+                        ? $this->filters['users'][$reportRow->created_by]->name
+                        : '';
+                    $count++;
                 }
                 $records[] = [
                     'Created By' => $created_by,
-                    'Total Appointments ' => $count,
+                    'Total Appointments' => $count,
                 ];
-                $collection = collect($records);
-                $count++;
             }
         }
 
-        return $collection;
+        // Bug fixed: was collect() inside loop — $collection undefined when reportData is empty
+        // Bug fixed: $count was incremented twice per outer iteration (once in inner loop, once after)
+        // Bug fixed: $created_by was potentially undefined if inner records array was empty
+        return collect($records);
     }
 
     public function headings(): array

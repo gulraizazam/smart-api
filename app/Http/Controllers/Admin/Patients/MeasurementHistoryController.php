@@ -4,12 +4,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Patients;
 
 use App\Helpers\Filters;
-use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
-use App\Models\CustomFormFeedbacks;
 use App\Models\Measurement;
-use App\Models\Patients;
-use App\Models\User;
+use App\Services\Appointment\AppointmentMeasurementService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +14,10 @@ use Illuminate\Support\Facades\Gate;
 
 class MeasurementHistoryController extends Controller
 {
+    public function __construct(
+        private readonly AppointmentMeasurementService $appointmentMeasurementService,
+    ) {}
+
     /**
      * Display a listing of the resource.
      *
@@ -133,36 +134,13 @@ class MeasurementHistoryController extends Controller
             return abort(401);
         }
 
-        $measurementinformation = Measurement::find($id);
+        $data = $this->appointmentMeasurementService->getEditData($id);
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($measurementinformation->custom_form_feedback_id);
-
-        $patient_id = $custom_form_feedback->reference_id;
-
-        if (! $custom_form_feedback) {
+        if (! empty($data['error'])) {
             return view('error');
         }
 
-        $users = Patients::getActiveOnly()->toArray();
-
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
-
-        $leadServices = $measurementinformation->service_id;
-
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'users' => $users,
-            'patient_id' => $patient_id,
-            'measurementinformation' => $measurementinformation,
-            'Services' => $Services,
-            'leadServices' => $leadServices,
-        ]);
-
+        return $this->successResponse('Record found.', $data);
     }
 
     /**
@@ -198,36 +176,13 @@ class MeasurementHistoryController extends Controller
         if (! Gate::allows('appointments_measurement_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
-        $measurementinformation = Measurement::with('appointment.location')->findorFail($id);
 
-        $custom_form_feedback = CustomFormFeedbacks::getAllFields($measurementinformation->custom_form_feedback_id);
+        $data = $this->appointmentMeasurementService->getFilledPreviewData($id);
 
-        if (! $custom_form_feedback) {
+        if (! empty($data['error'])) {
             return view('error');
         }
 
-        $patient_id = $custom_form_feedback->reference_id;
-
-        $users = Patients::getActiveOnly()->toArray();
-
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
-        $parentGroups->toList($parentGroups, -1);
-
-        $Services = $parentGroups->nodeList;
-
-        $leadServices = $measurementinformation->service_id;
-
-        return $this->successResponse('Record found.', [
-            'custom_form' => $custom_form_feedback,
-            'patient_id' => $patient_id,
-            'measurementinformation' => $measurementinformation,
-            'users' => $users,
-            'Services' => $Services,
-            'leadServices' => $leadServices,
-            'thisId' => $id,
-        ]);
-
+        return $this->successResponse('Record found.', $data);
     }
 }

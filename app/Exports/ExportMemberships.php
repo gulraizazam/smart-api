@@ -58,15 +58,14 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function map($row): array
     {
+        // Bug fixed: was returning [[...]] (double-wrapped) — each row rendered as a single cell
         return [
-            [
-                $row['user_id'],
-                $row['user_name'] ?? 'N/A',
-                $row['location'] ?? 'N/A',
-                $row['membership_code'] ?? 'N/A',
-                $row['membership_type'] ?? 'N/A',
-                $row['service_status'] ?? 'N/A',
-            ],
+            $row['user_id'],
+            $row['user_name'] ?? 'N/A',
+            $row['location'] ?? 'N/A',
+            $row['membership_code'] ?? 'N/A',
+            $row['membership_type'] ?? 'N/A',
+            $row['service_status'] ?? 'N/A',
         ];
     }
 

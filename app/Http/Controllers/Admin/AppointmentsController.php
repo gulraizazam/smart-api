@@ -5043,7 +5043,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function export(Request $request): mixed
+    public function export(Request $request, int $limit = 1000, int $offset = 0): mixed
     {
 
         ini_set('memory_limit', '1024M');

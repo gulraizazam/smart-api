@@ -18,11 +18,11 @@ class AppointmentExport implements FromCollection, WithHeadings, ShouldAutoSize
     public function __construct(array $filters)
     {
         $this->filters = $filters;
-
     }
 
     public function collection(): \Illuminate\Support\Collection
     {
+        $records = [];
 
         foreach ($this->filters['reportData'] as $reportRow) {
 
@@ -46,10 +46,10 @@ class AppointmentExport implements FromCollection, WithHeadings, ShouldAutoSize
                 'Created At' => \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'),
                 'Created By' => (array_key_exists($reportRow->created_by, $this->filters['users'])) ? $this->filters['users'][$reportRow->created_by]->name : '',
             ];
-            $collection = collect($records);
         }
 
-        return $collection;
+        // Bug fixed: was assign collect() inside loop — $collection undefined when data is empty
+        return collect($records);
     }
 
     public function headings(): array
