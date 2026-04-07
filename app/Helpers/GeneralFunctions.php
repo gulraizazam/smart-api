@@ -31,6 +31,7 @@ class GeneralFunctions
 {
     public static function cleanNumber($phoneNumber)
     {
+        $phoneNumber = (string) $phoneNumber;
         $phoneNumber = str_replace(' ', '', $phoneNumber); // Replaces all spaces with hyphens.
         $phoneNumber = str_replace('-', '', $phoneNumber); // Replaces all spaces with hyphens.
 
