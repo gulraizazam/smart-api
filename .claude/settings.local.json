@@ -120,7 +120,8 @@
       "Bash(bash /tmp/service_audit.shclaude --model claude-opus-4-6 --effort hig)",
       "Bash(chmod +x /tmp/scan_models.sh)",
       "Bash(/tmp/scan_models.sh)",
-      "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/BusinessClosure.php\")"
+      "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/BusinessClosure.php\")",
+      "Bash(xargs -I {} basename {})"
     ]
   }
 }

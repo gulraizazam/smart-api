@@ -47,13 +47,11 @@ class AppServiceProvider extends ServiceProvider
 {
     public const HOME = '/admin/home';
 
-    #[\Override]
     public function register(): void
     {
         //
     }
 
-    #[\Override]
     public function boot(): void
     {
         if (app()->environment('production')) {
