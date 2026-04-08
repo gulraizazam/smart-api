@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class StoreConfigurableDiscountRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return $this->user()?->can('discounts_create') ?? false;
     }
 
-    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -50,7 +48,6 @@ final class StoreConfigurableDiscountRequest extends FormRequest
         return $rules;
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [
@@ -64,7 +61,6 @@ final class StoreConfigurableDiscountRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

@@ -37,7 +37,6 @@ class Patients extends BaseModel
         'account_id', 'created_by', 'updated_by', 'image_src',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

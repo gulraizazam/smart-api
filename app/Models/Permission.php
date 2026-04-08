@@ -22,7 +22,6 @@ class Permission extends \Spatie\Permission\Models\Permission
         'sort_order',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

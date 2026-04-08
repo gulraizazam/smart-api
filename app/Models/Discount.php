@@ -32,7 +32,6 @@ class Discount extends BaseModel
         'customer_type_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

@@ -75,7 +75,6 @@ class PackageAdvances extends BaseModel
 
     protected static string $_table = 'package_advances';
 
-    #[\Override]
     protected function casts(): array
     {
         return [

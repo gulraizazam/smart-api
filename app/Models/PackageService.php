@@ -57,7 +57,6 @@ class PackageService extends Model
         'base_service_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

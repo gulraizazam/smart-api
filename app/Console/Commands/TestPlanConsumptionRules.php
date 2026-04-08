@@ -15,7 +15,6 @@ class TestPlanConsumptionRules extends Command
     protected $signature = 'test:plan-consumption-rules {package_id?}';
     protected $description = 'Test plan consumption rules against a real package to verify all scenarios';
 
-    #[\Override]
     public function handle(): int
     {
         $packageId = $this->argument('package_id');

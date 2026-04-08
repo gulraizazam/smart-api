@@ -19,7 +19,6 @@ class PackageAdvanceObserver
      * cash_flow = 'out' + is_refund = 1 → refund → debit pool
      * cash_flow = 'out' + is_refund = 0 → settlement/invoice → no cash movement
      */
-    #[\Override]
     public function created(PackageAdvances $advance): void
     {
         try {
@@ -63,7 +62,6 @@ class PackageAdvanceObserver
      * 2. Amount changed (e.g. 10000 → 1000) → adjust difference on same pool
      * 3. Payment method changed (cash → bank) → reverse old pool, apply to new pool
      */
-    #[\Override]
     public function updated(PackageAdvances $advance): void
     {
         try {
@@ -155,7 +153,6 @@ class PackageAdvanceObserver
     /**
      * After a PackageAdvance is soft-deleted, reverse its pool impact.
      */
-    #[\Override]
     public function deleted(PackageAdvances $advance): void
     {
         try {

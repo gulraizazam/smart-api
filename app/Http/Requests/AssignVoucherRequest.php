@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class AssignVoucherRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -32,7 +30,6 @@ class AssignVoucherRequest extends FormRequest
         return (int) ($this->input('patient_id') ?? $this->input('id'));
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

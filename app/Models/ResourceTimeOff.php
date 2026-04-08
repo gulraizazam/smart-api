@@ -28,7 +28,6 @@ class ResourceTimeOff extends Model
         'description',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

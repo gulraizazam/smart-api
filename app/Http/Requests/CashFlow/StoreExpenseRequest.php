@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreExpenseRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_expense_create');
     }
 
-    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -69,7 +67,6 @@ class StoreExpenseRequest extends FormRequest
         });
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [

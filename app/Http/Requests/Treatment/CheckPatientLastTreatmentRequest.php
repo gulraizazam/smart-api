@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 final class CheckPatientLastTreatmentRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -18,7 +17,6 @@ final class CheckPatientLastTreatmentRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
-    #[\Override]
     public function rules(): array
     {
         return [

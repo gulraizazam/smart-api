@@ -25,7 +25,6 @@ class BusinessClosure extends Model
         'created_by',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

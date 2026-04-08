@@ -9,7 +9,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ConversionReportResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         $data = $this->resource;

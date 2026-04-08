@@ -31,7 +31,6 @@ class Leads extends BaseModel
         'msg_count', 'service_id', 'town_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

@@ -14,7 +14,6 @@ class LeadStatusResource extends JsonResource
      */
     public static ?array $allStatuses = null;
 
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

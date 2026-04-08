@@ -68,7 +68,6 @@ class Appointments extends Model
         'consultancy_type' => 'in_person',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [
@@ -520,7 +519,6 @@ class Appointments extends Model
         return AppointmentHelper::getNodeServices($serviceId, $account_id, $drop_down, $remove_spaces);
     }
 
-    #[\Override]
     public static function boot()
     {
 

@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Gate;
 
 final class SaveSortOrderRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('services_sort');
@@ -18,7 +17,6 @@ final class SaveSortOrderRequest extends FormRequest
     /**
      * @return array<string, string>
      */
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -30,7 +28,6 @@ final class SaveSortOrderRequest extends FormRequest
     /**
      * @return array<string, string>
      */
-    #[\Override]
     public function messages(): array
     {
         return [

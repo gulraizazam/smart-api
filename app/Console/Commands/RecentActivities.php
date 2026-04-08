@@ -38,7 +38,6 @@ class RecentActivities extends Command
      *
      * @return int
      */
-    #[\Override]
     public function handle(): int
     {
         Activity::whereDate('created_at', '<=', Carbon::now()->subMonths(3))->delete();

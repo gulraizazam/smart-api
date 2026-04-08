@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ApplicationUserDatatableRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -99,7 +97,6 @@ class ApplicationUserDatatableRequest extends FormRequest
         return ($this->getPage() - 1) * $this->getPerPage();
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(response()->json([

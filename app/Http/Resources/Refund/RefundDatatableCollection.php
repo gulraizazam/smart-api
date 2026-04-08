@@ -36,7 +36,6 @@ final class RefundDatatableCollection extends ResourceCollection
     /**
      * @return array<string, mixed>
      */
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

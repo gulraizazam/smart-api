@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreVendorPurchaseRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         // Edit uses route param txId, create does not
@@ -18,7 +17,6 @@ class StoreVendorPurchaseRequest extends FormRequest
         return Auth::user()->can('cashflow_vendor_transaction');
     }
 
-    #[\Override]
     public function rules(): array
     {
         $isDelivered = $this->input('status', 'delivered') === 'delivered';

@@ -10,7 +10,6 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class RefundDatatableRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         $user = $this->user();
@@ -21,7 +20,6 @@ final class RefundDatatableRequest extends FormRequest
         return $user->can('refunds_manage') || $user->can('patients_refund_manage');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -108,7 +106,6 @@ final class RefundDatatableRequest extends FormRequest
         return $action === 'filter';
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

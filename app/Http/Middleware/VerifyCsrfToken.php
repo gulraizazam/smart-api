@@ -21,7 +21,6 @@ class VerifyCsrfToken extends Middleware
         '/api/*',
     ];
 
-    #[\Override]
     public function handle($request, Closure $next): Response
     {
         if ($request->hasHeader('Authorization')) {

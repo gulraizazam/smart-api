@@ -41,7 +41,6 @@ class AppointmentsDailyStatsCron extends Command
      *
      * @return int
      */
-    #[\Override]
     public function handle(): int
     {
         try {

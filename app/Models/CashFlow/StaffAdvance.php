@@ -19,7 +19,6 @@ class StaffAdvance extends Model
         'voided_at', 'void_reason', 'voided_by',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

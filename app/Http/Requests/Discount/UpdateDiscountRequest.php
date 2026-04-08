@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class UpdateDiscountRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return $this->user()?->can('discounts_edit') ?? false;
     }
 
-    #[\Override]
     public function rules(): array
     {
         $isConfigurable = $this->input('type') === 'Configurable';
@@ -38,7 +36,6 @@ final class UpdateDiscountRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [
@@ -53,7 +50,6 @@ final class UpdateDiscountRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

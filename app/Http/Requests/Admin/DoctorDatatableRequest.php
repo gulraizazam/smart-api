@@ -12,7 +12,6 @@ class DoctorDatatableRequest extends FormRequest
     /**
      * Handle a failed validation attempt - return JSON for AJAX requests
      */
-    #[\Override]
     protected function failedValidation(Validator $validator)
     {
         if ($this->expectsJson()) {
@@ -29,7 +28,6 @@ class DoctorDatatableRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      */
-    #[\Override]
     public function authorize(): bool
     {
         return true;
@@ -38,7 +36,6 @@ class DoctorDatatableRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      */
-    #[\Override]
     public function rules(): array
     {
         return [

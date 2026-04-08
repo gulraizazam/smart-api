@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class AllocateDiscountRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return $this->user()?->can('discounts_allocate') ?? false;
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -30,7 +28,6 @@ final class AllocateDiscountRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [
@@ -44,7 +41,6 @@ final class AllocateDiscountRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

@@ -6,7 +6,6 @@ namespace App\Http\Requests\Admin;
 
 class SaveDiscountServicesRequest extends AdminApiFormRequest
 {
-    #[\Override]
     public function rules(): array
     {
         return [

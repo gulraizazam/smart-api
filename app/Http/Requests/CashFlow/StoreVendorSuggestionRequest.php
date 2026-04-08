@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreVendorSuggestionRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_vendor_request');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [

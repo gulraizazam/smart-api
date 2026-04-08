@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Gate;
 
 class ImportLeadsRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('leads_import');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -25,7 +23,6 @@ class ImportLeadsRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [

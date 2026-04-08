@@ -9,7 +9,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserOperatorSettingsResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

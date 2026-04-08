@@ -12,7 +12,6 @@ namespace App\Http\Requests\Admin;
  */
 class StoreDiscountRequest extends AdminApiFormRequest
 {
-    #[\Override]
     public function rules(): array
     {
         if ($this->input('type') === 'Configurable') {

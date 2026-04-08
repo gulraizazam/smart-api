@@ -13,7 +13,6 @@ class LocationCashflowObserver
     /**
      * When a new active location is created, auto-create a branch cash pool.
      */
-    #[\Override]
     public function created(Locations $location): void
     {
         try {
@@ -33,7 +32,6 @@ class LocationCashflowObserver
     /**
      * When a location is updated, handle activation/deactivation.
      */
-    #[\Override]
     public function updated(Locations $location): void
     {
         try {

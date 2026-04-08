@@ -18,7 +18,6 @@ class ExpenseCategory extends Model
         'account_id', 'name', 'description', 'vendor_emphasis', 'is_active', 'sort_order',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

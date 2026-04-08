@@ -30,7 +30,6 @@ class CleanupInactivePatients extends Command
     /**
      * Execute the console command.
      */
-    #[\Override]
     public function handle(): int
     {
         $isDryRun = $this->option('dry-run');

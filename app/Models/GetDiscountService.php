@@ -23,7 +23,6 @@ class GetDiscountService extends Model
         'bundle_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

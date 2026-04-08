@@ -68,7 +68,6 @@ class PackageBundles extends Model
         'active',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

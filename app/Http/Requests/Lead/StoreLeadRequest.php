@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Gate;
 
 class StoreLeadRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('leads_create');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -35,7 +33,6 @@ class StoreLeadRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [
@@ -49,7 +46,6 @@ class StoreLeadRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function prepareForValidation(): void
     {
         if ($this->phone === '***********' && $this->old_phone) {

@@ -21,7 +21,6 @@ final class PlanDatatableResource extends JsonResource
     /**
      * @return array<string, mixed>
      */
-    #[\Override]
     public function toArray(Request $request): array
     {
         $cashReceive = (float) ($this->cash_receive ?? 0);

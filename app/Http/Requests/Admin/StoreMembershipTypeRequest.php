@@ -8,7 +8,6 @@ use Illuminate\Validation\Rule;
 
 class StoreMembershipTypeRequest extends AdminApiFormRequest
 {
-    #[\Override]
     public function rules(): array
     {
         return [

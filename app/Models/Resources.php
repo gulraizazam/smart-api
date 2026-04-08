@@ -29,7 +29,6 @@ class Resources extends BaseModel
 
     protected static string $_table = 'resources';
 
-    #[\Override]
     protected function casts(): array
     {
         return [

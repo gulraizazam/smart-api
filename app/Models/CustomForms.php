@@ -498,7 +498,6 @@ class CustomForms extends BaseModel
     /**
      * Model boot for database events
      */
-    #[\Override]
     public static function boot()
     {
 

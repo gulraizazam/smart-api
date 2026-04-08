@@ -11,13 +11,11 @@ use Illuminate\Validation\Rule;
 
 final class StoreMembershipRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -26,7 +24,6 @@ final class StoreMembershipRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

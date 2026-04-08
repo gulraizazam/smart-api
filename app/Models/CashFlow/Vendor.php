@@ -22,7 +22,6 @@ class Vendor extends Model
         'is_active', 'notes', 'created_by',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

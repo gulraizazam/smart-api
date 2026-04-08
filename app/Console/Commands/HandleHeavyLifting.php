@@ -40,7 +40,6 @@ class HandleHeavyLifting extends Command
      *
      * @return void
      */
-    #[\Override]
     public function handle(): int
     {
         try {

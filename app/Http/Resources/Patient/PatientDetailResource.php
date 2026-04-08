@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Gate;
 
 class PatientDetailResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

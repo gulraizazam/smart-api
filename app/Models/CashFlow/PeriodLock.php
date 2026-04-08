@@ -16,7 +16,6 @@ class PeriodLock extends Model
         'balance_snapshot', 'unlock_reason', 'unlocked_by', 'unlocked_at',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

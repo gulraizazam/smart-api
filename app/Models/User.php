@@ -48,7 +48,6 @@ class User extends Authenticatable
         'password', 'remember_token',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

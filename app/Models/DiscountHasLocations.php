@@ -20,7 +20,6 @@ class DiscountHasLocations extends Model
         'slug',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

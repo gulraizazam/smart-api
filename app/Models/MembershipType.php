@@ -29,7 +29,6 @@ class MembershipType extends Model
         'parent_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

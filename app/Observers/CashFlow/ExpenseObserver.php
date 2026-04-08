@@ -16,7 +16,6 @@ class ExpenseObserver
      * After expense created: decrement pool balance.
      * Per spec: pool balance affected immediately (cash already spent), regardless of approval status.
      */
-    #[\Override]
     public function created(Expense $expense): void
     {
         try {
@@ -41,7 +40,6 @@ class ExpenseObserver
      * 5. Amount AND pool changed → credit old pool full amount, debit new pool new amount
      * 6. Voided → SKIP (handled directly in ExpenseService::void() to avoid double-counting)
      */
-    #[\Override]
     public function updated(Expense $expense): void
     {
         try {

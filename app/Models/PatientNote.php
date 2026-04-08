@@ -21,7 +21,6 @@ class PatientNote extends Model
         'is_pinned',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

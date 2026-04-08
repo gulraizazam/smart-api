@@ -27,7 +27,6 @@ class Expense extends Model
         'voided_at', 'voided_by', 'void_reason', 'edit_reason', 'is_for_general',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

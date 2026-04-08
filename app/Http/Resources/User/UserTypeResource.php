@@ -10,7 +10,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserTypeResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

@@ -6,7 +6,6 @@ namespace App\Http\Requests\Admin;
 
 class StoreUpdateServiceRequest extends AdminApiFormRequest
 {
-    #[\Override]
     public function rules(): array
     {
         return [

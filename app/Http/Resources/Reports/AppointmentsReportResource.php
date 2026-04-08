@@ -9,7 +9,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AppointmentsReportResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         $firstInvoice = $this->hasInvoices->first();
