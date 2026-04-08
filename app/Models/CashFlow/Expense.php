@@ -3,9 +3,11 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Enums\ExpenseStatus;
 use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -25,18 +27,20 @@ class Expense extends Model
         'voided_at', 'voided_by', 'void_reason', 'edit_reason', 'is_for_general',
     ];
 
-    protected $casts = [
-        'expense_date' => 'date:Y-m-d',
-        'amount' => 'decimal:2',
-        'is_flagged' => 'boolean',
-        'is_for_general' => 'boolean',
-        'voided_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'expense_date' => 'date:Y-m-d',
+            'amount' => 'decimal:2',
+            'is_flagged' => 'boolean',
+            'is_for_general' => 'boolean',
+            'voided_at' => 'datetime',
+            'status' => ExpenseStatus::class,
+        ];
+    }
 
-    // Status constants
-    const STATUS_APPROVED = 'approved';
-    const STATUS_PENDING = 'pending';
-    const STATUS_REJECTED = 'rejected';
+    // Status enum: App\Enums\ExpenseStatus
 
     /**
      * Category of the expense.
@@ -140,42 +144,42 @@ class Expense extends Model
 
     // Scopes
 
-    public function scopeForAccount($query, int $accountId)
+    public function scopeForAccount($query, int $accountId): Builder
     {
         return $query->where('expenses.account_id', $accountId);
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved($query): Builder
     {
-        return $query->where('status', self::STATUS_APPROVED);
+        return $query->where('status', ExpenseStatus::Approved);
     }
 
-    public function scopePending($query)
+    public function scopePending($query): Builder
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', ExpenseStatus::Pending);
     }
 
-    public function scopeRejected($query)
+    public function scopeRejected($query): Builder
     {
-        return $query->where('status', self::STATUS_REJECTED);
+        return $query->where('status', ExpenseStatus::Rejected);
     }
 
-    public function scopeFlagged($query)
+    public function scopeFlagged($query): Builder
     {
         return $query->where('is_flagged', 1);
     }
 
-    public function scopeNotVoided($query)
+    public function scopeNotVoided($query): Builder
     {
         return $query->whereNull('voided_at');
     }
 
-    public function scopeVoided($query)
+    public function scopeVoided($query): Builder
     {
         return $query->whereNotNull('voided_at');
     }
 
-    public function scopeForBranch($query, ?int $branchId)
+    public function scopeForBranch($query, ?int $branchId): Builder
     {
         if ($branchId === null) {
             return $query->where('is_for_general', 1);
@@ -183,7 +187,7 @@ class Expense extends Model
         return $query->where('for_branch_id', $branchId);
     }
 
-    public function scopeInDateRange($query, $startDate, $endDate)
+    public function scopeInDateRange($query, $startDate, $endDate): Builder
     {
         return $query->whereBetween('expense_date', [$startDate, $endDate]);
     }
@@ -202,16 +206,16 @@ class Expense extends Model
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === ExpenseStatus::Pending;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === ExpenseStatus::Approved;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
+        return $this->status === ExpenseStatus::Rejected;
     }
 }

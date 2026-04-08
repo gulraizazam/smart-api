@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use App\Enums\AppointmentType;
 
 /**
  * Centralized Upselling Service
@@ -54,9 +55,7 @@ class UpsellingService
             ->join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
             ->where('roles.name', 'FDM')
             ->where('model_has_roles.model_type', 'App\\Models\\User')
-            ->when($centreId !== 'all', function ($q) use ($centreId) {
-                $q->where('user_has_locations.location_id', $centreId);
-            })
+            ->when($centreId !== 'all', fn ($q) => $q->where('user_has_locations.location_id', $centreId))
             ->distinct()
             ->pluck('id');
 
@@ -92,7 +91,7 @@ class UpsellingService
             ->whereIn('packages.location_id', $locationFilter)
             // Exclude self-consultation sales
             ->where(function ($query) {
-                $query->where('appointments.appointment_type_id', '!=', 1)
+                $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                     ->orWhereColumn('appointments.doctor_id', '!=', 'package_services.sold_by');
             })
             ->groupBy('package_services.sold_by')
@@ -104,13 +103,11 @@ class UpsellingService
             ->keyBy('sold_by');
 
         // Combine all users with their upselling data
-        $reportData = $allActiveUsers->map(function ($user) use ($upsellingData) {
-            return (object) [
+        $reportData = $allActiveUsers->map(fn($user) => (object) [
                 'doctor_id' => $user->id,
                 'doctor_name' => $user->name,
                 'total_upselling_amount' => $upsellingData->get($user->id)->total_upselling_amount ?? 0,
-            ];
-        })->sortByDesc('total_upselling_amount')->values()->toArray();
+            ])->sortByDesc('total_upselling_amount')->values()->toArray();
 
         return $reportData;
     }
@@ -173,7 +170,7 @@ class UpsellingService
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by')
             ->where(function($query) {
-                $query->where('appointments.appointment_type_id', '!=', 1)
+                $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                       ->orWhereColumn('appointments.doctor_id', '!=', 'package_services.sold_by');
             })
             ->select(
@@ -225,7 +222,7 @@ class UpsellingService
             ->where('packages.location_id', $locationId)
             // Exclude self-consultation sales
             ->where(function($query) use ($doctorId) {
-                $query->where('appointments.appointment_type_id', '!=', 1)
+                $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                     ->orWhere('appointments.doctor_id', '!=', $doctorId);
             })
             ->select(
@@ -307,7 +304,7 @@ class UpsellingService
             ->where('packages.location_id', $locationId)
             // Exclude self-consultation sales
             ->where(function($query) {
-                $query->where('appointments.appointment_type_id', '!=', 1)
+                $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                     ->orWhereColumn('appointments.doctor_id', '!=', 'package_services.sold_by');
             })
             ->select(
@@ -523,7 +520,7 @@ class UpsellingService
                 $service = $sortedServices[$i];
 
                 // Skip self-consultation sales
-                if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                if ($service->appointment_type_id === AppointmentType::Consultancy->value && $service->appointment_doctor_id == $service->sold_by) {
                     continue;
                 }
 
@@ -557,7 +554,7 @@ class UpsellingService
                           });
                     });
 
-                if ($nextService && !is_null($nextService->created_at)) {
+                if ($nextService && $nextService->created_at !== null) {
                     $nextServiceTime = Carbon::parse($nextService->created_at);
                     if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
                         $paymentsQuery->where(function($q) use ($nextService) {
@@ -615,9 +612,7 @@ class UpsellingService
 
         // Convert to collection and sort by total amount
         $consultantBreakdown = collect($consultantData)
-            ->map(function($data) {
-                return (object)$data;
-            })
+            ->map(fn ($data) => (object) $data)
             ->sortByDesc('total_amount')
             ->values();
 
@@ -655,13 +650,13 @@ class UpsellingService
         $appointmentColumns = Schema::getColumnListing('appointments');
 
         $doctorColumn = null;
-        if (in_array('doctor_id', $appointmentColumns)) {
+        if (in_array('doctor_id', $appointmentColumns, true)) {
             $doctorColumn = 'doctor_id';
-        } elseif (in_array('user_id', $appointmentColumns)) {
+        } elseif (in_array('user_id', $appointmentColumns, true)) {
             $doctorColumn = 'user_id';
-        } elseif (in_array('consultant_id', $appointmentColumns)) {
+        } elseif (in_array('consultant_id', $appointmentColumns, true)) {
             $doctorColumn = 'consultant_id';
-        } elseif (in_array('assigned_doctor_id', $appointmentColumns)) {
+        } elseif (in_array('assigned_doctor_id', $appointmentColumns, true)) {
             $doctorColumn = 'assigned_doctor_id';
         }
 
@@ -708,12 +703,13 @@ class UpsellingService
                     CASE
                         WHEN NOT (appointments.appointment_type_id = 1 AND appointments.{$doctorColumn} = package_services.sold_by)
                         AND package_services.is_consumed = 1
-                        AND package_services.consumed_at BETWEEN '{$filters['start_date']}' AND '{$filters['end_date']}'
+                        AND package_services.consumed_at BETWEEN ? AND ?
                         THEN package_services.tax_including_price
                         ELSE 0
                     END as consumed_amount
                 ")
             )
+            ->addBinding([$filters['start_date'], $filters['end_date']], 'select')
             ->where(DB::raw("
                 CASE
                     WHEN NOT (appointments.appointment_type_id = 1 AND appointments.{$doctorColumn} = package_services.sold_by)
@@ -933,7 +929,7 @@ class UpsellingService
         }
 
         // Set first sheet as active
-        if (count($allCentreData) > 0) {
+        if (!empty($allCentreData)) {
             $spreadsheet->setActiveSheetIndex(0);
         }
 
@@ -1064,9 +1060,7 @@ class UpsellingService
 
         foreach ($servicesByPackage as $packageId => $services) {
             // Filter out any services with null created_at BEFORE grouping
-            $servicesWithTimestamps = $services->filter(function($service) {
-                return !is_null($service->created_at) && !is_null($service->sold_by);
-            });
+            $servicesWithTimestamps = $services->filter(fn($service) => $service->created_at !== null && $service->sold_by !== null);
 
             if ($servicesWithTimestamps->isEmpty()) {
                 continue;
@@ -1080,7 +1074,7 @@ class UpsellingService
 
             foreach ($sortedServices as $index => $service) {
                 // Skip self-consultation sales
-                if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                if ($service->appointment_type_id === AppointmentType::Consultancy->value && $service->appointment_doctor_id == $service->sold_by) {
                     continue;
                 }
 
@@ -1135,13 +1129,11 @@ class UpsellingService
         }
 
         // Prepare the final report data
-        $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
-            return (object)[
+        $reportData = $allActiveUsers->map(fn($user) => (object)[
                 'doctor_id' => $user->id,
                 'doctor_name' => $user->name,
                 'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
-            ];
-        })->sortByDesc('total_upselling_amount')->values();
+            ])->sortByDesc('total_upselling_amount')->values();
 
         return ['empty' => false, 'data' => $reportData];
     }

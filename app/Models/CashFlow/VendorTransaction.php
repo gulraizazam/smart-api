@@ -3,10 +3,13 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Enums\VendorTransactionStatus;
+use App\Enums\VendorTransactionType;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorTransaction extends Model
 {
@@ -21,19 +24,20 @@ class VendorTransaction extends Model
         'created_by',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'transaction_date' => 'date:Y-m-d',
-        'is_for_general' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'transaction_date' => 'date:Y-m-d',
+            'is_for_general' => 'boolean',
+            'type' => VendorTransactionType::class,
+            'status' => VendorTransactionStatus::class,
+        ];
+    }
 
-    // Type constants
-    const TYPE_PURCHASE = 'purchase';
-    const TYPE_PAYMENT = 'payment';
-
-    // Status constants (for purchase transactions)
-    const STATUS_ORDERED = 'ordered';
-    const STATUS_DELIVERED = 'delivered';
+    // Type enum: App\Enums\VendorTransactionType
+    // Status enum: App\Enums\VendorTransactionStatus
 
     /**
      * Vendor this transaction belongs to.
@@ -69,18 +73,18 @@ class VendorTransaction extends Model
 
     // Scopes
 
-    public function scopeForAccount($query, int $accountId)
+    public function scopeForAccount($query, int $accountId): Builder
     {
         return $query->where('account_id', $accountId);
     }
 
-    public function scopePurchases($query)
+    public function scopePurchases($query): Builder
     {
-        return $query->where('type', self::TYPE_PURCHASE);
+        return $query->where('type', VendorTransactionType::Purchase);
     }
 
-    public function scopePayments($query)
+    public function scopePayments($query): Builder
     {
-        return $query->where('type', self::TYPE_PAYMENT);
+        return $query->where('type', VendorTransactionType::Payment);
     }
 }

@@ -15,6 +15,7 @@ class TestPlanConsumptionRules extends Command
     protected $signature = 'test:plan-consumption-rules {package_id?}';
     protected $description = 'Test plan consumption rules against a real package to verify all scenarios';
 
+    #[\Override]
     public function handle(): int
     {
         $packageId = $this->argument('package_id');
@@ -41,7 +42,7 @@ class TestPlanConsumptionRules extends Command
         $this->inspectPackage($package);
     }
 
-    private function inspectPackage(Packages $package)
+    private function inspectPackage(Packages $package): void
     {
         $this->info("=== Plan #{$package->id}: {$package->plan_name} ===");
         $this->info("Total Price: {$package->total_price}");
@@ -100,7 +101,7 @@ class TestPlanConsumptionRules extends Command
         $this->info("");
 
         // Config group analysis
-        if (count($configGroups) > 0) {
+        if (!empty($configGroups)) {
             $this->info("--- Config Group Analysis ---");
             foreach ($configGroups as $groupId => $groupBundles) {
                 $this->info("Group: {$groupId}");
@@ -120,7 +121,7 @@ class TestPlanConsumptionRules extends Command
         $this->info("Add Button Locked: " . ($hasOutOfOrderAny ? 'YES (out-of-order config group consumption)' : 'NO (can add services)'));
     }
 
-    private function checkDeleteEligibility(PackageBundles $bundle, $allServices)
+    private function checkDeleteEligibility(PackageBundles $bundle, mixed $allServices): string
     {
         $bundleServices = $allServices->where('package_bundle_id', $bundle->id);
 
@@ -144,7 +145,7 @@ class TestPlanConsumptionRules extends Command
         return 'YES';
     }
 
-    private function checkOutOfOrderConsumption($configGroupId, $packageId)
+    private function checkOutOfOrderConsumption(int $configGroupId, int $packageId): bool
     {
         return PackageService::where('package_services.package_id', $packageId)
             ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
@@ -162,7 +163,7 @@ class TestPlanConsumptionRules extends Command
             ->exists();
     }
 
-    private function checkOutOfOrderConsumptionForPlan($packageId)
+    private function checkOutOfOrderConsumptionForPlan(int $packageId): bool
     {
         return PackageService::where('package_services.package_id', $packageId)
             ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
@@ -180,7 +181,7 @@ class TestPlanConsumptionRules extends Command
             ->exists();
     }
 
-    private function runAllScenarioChecks()
+    private function runAllScenarioChecks(): void
     {
         $this->info("=== Scenario Test Matrix ===");
         $this->info("");

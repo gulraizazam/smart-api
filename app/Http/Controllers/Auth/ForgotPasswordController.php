@@ -10,24 +10,8 @@ use Illuminate\Support\Facades\Password;
 
 class ForgotPasswordController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Password Reset Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller is responsible for handling password reset emails and
-    | includes a trait which assists in sending these notifications from
-    | your application to your users. Feel free to explore this trait.
-    |
-    */
-
     use SendsPasswordResetEmails;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest');
@@ -38,7 +22,8 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function showLinkRequestForm(): mixed
+    #[\Override]
+    public function showLinkRequestForm(): \Illuminate\View\View
     {
         return view('auth.passwords.email');
     }
@@ -48,7 +33,8 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function sendResetLinkEmail(Request $request): mixed
+    #[\Override]
+    public function sendResetLinkEmail(Request $request): \Illuminate\Http\RedirectResponse
     {
         $this->validateEmail($request);
 

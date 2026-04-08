@@ -23,7 +23,7 @@ class UserVouchersController extends Controller
 
     }
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('vouchers_manage')) {
             return abort(401);
@@ -149,7 +149,7 @@ class UserVouchersController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): mixed
+    public function show(Request $request, int $id): \Illuminate\View\View
     {
         if (!Gate::allows('vouchers_manage')) {
             if ($request->ajax()) {

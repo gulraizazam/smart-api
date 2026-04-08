@@ -20,7 +20,7 @@ class LogsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('logs_manage')) {
             return abort(401);
@@ -34,7 +34,7 @@ class LogsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse|\never
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('logs_manage')) {
@@ -47,7 +47,7 @@ class LogsController extends Controller
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $audittrails = AuditTrails::getRecords($iDisplayStart, $iDisplayLength, Auth::User()->account_id);
+            $audittrails = AuditTrails::getRecords($iDisplayStart, $iDisplayLength, Auth::user()->account_id);
 
             $records['data'] = $audittrails;
             $records['meta'] = [

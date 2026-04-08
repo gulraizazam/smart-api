@@ -32,7 +32,7 @@ class MembershipsController extends Controller
         private readonly AdminMembershipService $adminMembershipService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('memberships_manage')) {
             return abort(401);
@@ -89,7 +89,7 @@ class MembershipsController extends Controller
                 foreach ($memberships as $membership) {
                     $patient              = User::whereId($membership->patient_id)->first();
                     $membershipTypeName   = $membership->membershipType->name ?? 'N/A';
-                    $isStudentMembership  = stripos($membershipTypeName, 'student') !== false;
+                    $isStudentMembership  = str_contains(strtolower($membershipTypeName), 'student');
 
                     $records['data'][] = [
                         'id'                      => $membership->id,
@@ -100,9 +100,9 @@ class MembershipsController extends Controller
                         'membership_type_id'      => $membershipTypeName,
                         'membership_type_id_raw'  => $membership->membership_type_id,
                         'is_student_membership'   => $isStudentMembership,
-                        'patient'                 => $patient ? $patient->name : 'N/A',
-                        'patient_id'              => $patient ? $patient->id : 'N/A',
-                        'patient_unique_id'       => $patient ? $patient->unique_id : null,
+                        'patient'                 => $patient?->name ?? 'N/A',
+                        'patient_id'              => $patient?->id ?? 'N/A',
+                        'patient_unique_id'       => $patient?->unique_id,
                         'created_at'              => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
                 }
@@ -302,7 +302,8 @@ class MembershipsController extends Controller
 
             return $this->successResponse('Memberships has been imported', null, 200);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 200);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 200);
         }
     }
 
@@ -315,26 +316,27 @@ class MembershipsController extends Controller
 
             return response()->json(['success' => true, 'data' => ['users' => $users]]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
         }
     }
 
-    public function exportPdf(Request $request): mixed
+    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
         $query = Membership::with('membershiptype');
 
-        if (! is_null($request->membership_type_id) && $request->membership_type_id !== '') {
+        if ($request->membership_type_id !== null && $request->membership_type_id !== '') {
             $query->where('membership_type_id', $request->membership_type_id);
         }
 
-        if (! is_null($request->code) && $request->code !== '') {
+        if ($request->code !== null && $request->code !== '') {
             $query->where('code', $request->code);
         }
 
-        if (! is_null($request->assigned) && $request->assigned !== '') {
+        if ($request->assigned !== null && $request->assigned !== '') {
             if ($request->assigned == 1) {
                 $query->whereNotNull('memberships.patient_id');
             } elseif ($request->assigned == 0) {
@@ -342,7 +344,7 @@ class MembershipsController extends Controller
             }
         }
 
-        if (! is_null($request->status) && $request->status !== '') {
+        if ($request->status !== null && $request->status !== '') {
             if ($request->status == 1) {
                 $query->where('memberships.active', '==', 1);
             } elseif ($request->status == 0) {
@@ -359,7 +361,7 @@ class MembershipsController extends Controller
         return $pdf->download('memberships.pdf');
     }
 
-    public function exportDocs(Request $request): mixed
+    public function exportDocs(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         set_time_limit(0);
         ini_set('memory_limit', '-1');
@@ -367,7 +369,7 @@ class MembershipsController extends Controller
         return Excel::download(new ExportMembership($request), 'memberships.' . $request->ext);
     }
 
-    public function downloadStudentMembershipPatients(): mixed
+    public function downloadStudentMembershipPatients(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         return Excel::download(
             new StudentMembershipPatientsExport(),

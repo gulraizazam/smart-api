@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
@@ -138,9 +138,7 @@ class Product extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -267,7 +265,7 @@ class Product extends BaseModel
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (self::isChildExists($id, Auth::User()->account_id)) {
+        if (self::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         Stock::where(['product_id' => $product->id])->delete();
@@ -314,9 +312,7 @@ class Product extends BaseModel
                 ->whereIn('products.id', $productIds)
                 ->where('products.status', '1')
                 ->where('products.account_id', $account_id)
-                ->when($request->type == 'order', function ($q) {
-                    return $q->where('products.product_type', 'for_sale');
-                })
+                ->when($request->type == 'order', fn ($q) => $q->where('products.product_type', 'for_sale'))
                 ->orderBy('products.name', 'asc')
                 ->get();
             
@@ -352,14 +348,14 @@ class Product extends BaseModel
                 $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
                 
                 $result->push((object)[
-                    'inventory_id' => $inventory ? $inventory->id : null,
+                    'inventory_id' => $inventory?->id,
                     'id' => $product->id,
                     'name' => $product->name,
                     'product_type' => $product->product_type,
                     'sale_price' => $salePrice,
                     'location_id' => $location_id,
                     'available_quantity' => $totalAvailable,
-                    'inventory_date' => $inventory ? $inventory->created_at : null,
+                    'inventory_date' => $inventory?->created_at,
                 ]);
             }
         
@@ -369,17 +365,13 @@ class Product extends BaseModel
                 ['products.status', '=', '1'],
                 ['products.account_id', '=', $account_id],
                 ['products.id', $request->product_id],
-            ])->when($request->type == 'order', function ($q) {
-                return $q->where(['product_type' => 'for_sale']);
-            })->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
+            ])->when($request->type == 'order', fn ($q) => $q->where(['product_type' => 'for_sale']))->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
         } else if ($request['request_from'] == 'order') {
             return self::join('inventories','products.id','inventories.product_id')->where([
                 ['products.status', '=', '1'],
                 ['products.account_id', '=', $account_id],
                 [$request['from_key'], $request['from_id']]
-            ])->when(isset($request->type) && $request->type == 'order', function ($q) {
-                return $q->where(['product_type' => 'for_sale']);
-            })->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
+            ])->when(isset($request->type) && $request->type == 'order', fn ($q) => $q->where(['product_type' => 'for_sale']))->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
         }
     }
 

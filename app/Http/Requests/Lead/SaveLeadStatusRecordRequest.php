@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 class SaveLeadStatusRecordRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return $this->isMethod('POST')
@@ -16,6 +17,7 @@ class SaveLeadStatusRecordRequest extends FormRequest
             : Gate::allows('lead_statuses_edit');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -31,6 +33,7 @@ class SaveLeadStatusRecordRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

@@ -17,18 +17,11 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private int $limit = 10000;
-
-    private int $offset = 0;
-
-    private mixed $request;
-
-    public function __construct($limit, $offset, $request)
-    {
-        $this->limit = $limit;
-        $this->offset = $offset;
-        $this->request = $request;
-    }
+    public function __construct(
+        private readonly int $limit = 10000,
+        private readonly int $offset = 0,
+        private readonly mixed $request = null,
+    ) {}
 
     public function collection(): \Illuminate\Support\Collection
     {

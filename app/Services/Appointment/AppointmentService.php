@@ -10,6 +10,7 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
+use App\Enums\AppointmentType;
 use App\Models\AppointmentsDailyStats;
 use App\Models\Activity;
 use App\Models\AuditTrails;
@@ -203,7 +204,7 @@ class AppointmentService
                     'referred_by' => $data['referred_by'] ?? null,
                     'account_id' => $this->getAccountId(),
                     'user_type_id' => 3, // Patient user type
-                    'password' => \Hash::make('12345678'),
+                    'password' => \Hash::make(\Illuminate\Support\Str::random(16)),
                     'active' => 1,
                 ];
                 
@@ -308,7 +309,7 @@ class AppointmentService
                         'referred_by' => $lead->referred_by ?? $data['referred_by'] ?? null,
                         'account_id' => $this->getAccountId(),
                         'user_type_id' => 3, // Patient user type
-                        'password' => \Hash::make('12345678'),
+                        'password' => \Hash::make(\Illuminate\Support\Str::random(16)),
                         'active' => 1,
                     ];
                     
@@ -445,7 +446,7 @@ class AppointmentService
                                 'lead_id' => $lead->id,
                                 'service_id' => $appointment->service_id,
                                 'account_id' => $this->getAccountId(),
-                                'lead_status_id' => $bookedStatus ? $bookedStatus->id : null,
+                                'lead_status_id' => $bookedStatus?->id,
                                 'status' => 1,
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now()
@@ -835,7 +836,7 @@ class AppointmentService
             }
             
             // If appointment has NULL account_id, set it to current user's account
-            if (is_null($appointment->account_id)) {
+            if ($appointment->account_id === null) {
                 $appointment->account_id = $accountId;
             }
 
@@ -999,7 +1000,7 @@ class AppointmentService
         }
 
         // Validate rota for consultancy appointments
-        if (isset($data['appointment_type_id']) && $data['appointment_type_id'] == 1) {
+        if (isset($data['appointment_type_id']) && $data['appointment_type_id'] == AppointmentType::Consultancy->value) {
             $this->validateRotaAvailability($data);
         }
     }

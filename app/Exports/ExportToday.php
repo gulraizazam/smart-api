@@ -16,15 +16,10 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportToday implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private int $limit = 1000;
-
-    private int $offset = 0;
-
-    public function __construct($limit = 1000, $offset = 0)
-    {
-        $this->limit = $limit;
-        $this->offset = $offset;
-    }
+    public function __construct(
+        private readonly int $limit = 1000,
+        private readonly int $offset = 0,
+    ) {}
 
     public function collection(): \Illuminate\Support\Collection
     {

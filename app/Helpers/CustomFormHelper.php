@@ -20,18 +20,15 @@ class CustomFormHelper
      * @param $content json string
      * @return array
      */
-    public static function getContentArrayTest($content)
+    public static function getContentArrayTest(string $content): array
     {
-
-        $data = [
+        return [
             'title' => 'what are your skills? ',
             'options' => [
                 ['label' => 'Adobe'],
                 ['label' => 'programming'],
             ],
         ];
-
-        return $data;
     }
 
     /**
@@ -40,25 +37,24 @@ class CustomFormHelper
      * @param $content json string
      * @return array
      */
-    public static function getContentArray($content)
+    public static function getContentArray(string $content): array
     {
-
         $json_content = json_decode($content, true);
         if (isset($json_content) && is_array($json_content)) {
             $data = [];
-            if (array_key_exists('title', $json_content) && isset($json_content['title'])) {
+            if (isset($json_content['title'])) {
                 $data['title'] = $json_content['title'];
             } else {
                 $data['title'] = DefaultField::FIELD_CONTENT['title'];
             }
 
-            if (array_key_exists('rows', $json_content) && isset($json_content['rows'])) {
+            if (isset($json_content['rows'])) {
                 $data['rows'] = $json_content['rows'];
             } else {
                 $data['rows'] = 0;
             }
 
-            if (array_key_exists('options', $json_content) && is_array($json_content['options'])) {
+            if (isset($json_content['options']) && is_array($json_content['options'])) {
                 $options = [];
                 foreach ($json_content['options'] as $option) {
                     if (is_array($option['label'])) {
@@ -86,7 +82,7 @@ class CustomFormHelper
 
     }
 
-    public static function getContentJson(Request $request)
+    public static function getContentJson(Request $request): string
     {
         $data = [];
         if ($request->has('question')) {

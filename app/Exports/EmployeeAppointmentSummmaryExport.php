@@ -12,12 +12,9 @@ class EmployeeAppointmentSummmaryExport implements FromCollection, WithHeadings,
 {
     use Exportable;
 
-    private array $filters = [];
-
-    public function __construct($filters)
-    {
-        $this->filters = $filters;
-    }
+    public function __construct(
+        private readonly array $filters,
+    ) {}
 
     public function collection(): \Illuminate\Support\Collection
     {

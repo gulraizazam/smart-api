@@ -93,7 +93,7 @@ class MachineTypeWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (! in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array, true)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -184,7 +184,7 @@ class MachineTypeWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (! in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array, true)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }

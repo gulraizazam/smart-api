@@ -20,11 +20,15 @@ class CashTransfer extends Model
         'voided_at', 'void_reason', 'voided_by',
     ];
 
-    protected $casts = [
-        'transfer_date' => 'date:Y-m-d',
-        'amount' => 'decimal:2',
-        'voided_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'transfer_date' => 'date:Y-m-d',
+            'amount' => 'decimal:2',
+            'voided_at' => 'datetime',
+        ];
+    }
 
     // Method constants
     const METHOD_PHYSICAL_CASH = 'physical_cash';

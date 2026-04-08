@@ -29,7 +29,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AppointmentsController extends Controller
 {
-    public function report(): mixed
+    public function report(): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_reports_manage')) {
             return abort(401);
@@ -51,7 +51,7 @@ class AppointmentsController extends Controller
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
         $services = $parentGroups->nodeList;
 
@@ -62,17 +62,17 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::User()->account_id);
+        $appointment_statuses = AppointmentStatuses::getAllParentRecords(Auth::user()->account_id);
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
         }
         $appointment_statuses->prepend('All', '');
 
-        $appointment_types = AppointmentTypes::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $appointment_types = AppointmentTypes::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $appointment_types->prepend('All', '');
 
-        $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $employees = User::getAllActiveEmployeeRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $operators = User::getAllActivePractionersRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
 
         $users = ($select_All + $employees->toArray() + $operators->toArray());
@@ -85,43 +85,21 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function reportLoad(Request $request): mixed
+    public function reportLoad(Request $request): \Illuminate\View\View|\Illuminate\Http\Response|null
     {
-        switch ($request->get('report_type')) {
-            case 'general':
-                return self::generalReport($request);
-                break;
-            case 'general_summary':
-                return self::generalReportSummary($request);
-                break;
-            case 'staff_appointment':
-                return self::staffAppointmentScheduleReport($request);
-                break;
-            case 'referred_by_staff_appointment':
-                return self::staffReferredByAppointmentScheduleReport($request);
-                break;
-            case 'empolyee_summary':
-                return self::EmployeeAppointmentSummaryReport($request);
-                break;
-            case 'summary_by_service':
-                return self::appointmentSummaryByServiceReport($request);
-                break;
-            case 'summary_by_appointment_status':
-                return self::appointmentSummaryByStatusReport($request);
-                break;
-            case 'clients_by_appointment_status':
-                return self::clientByAppointmentStatusReport($request);
-                break;
-            case 'compliance_report':
-                return self::complianceReport($request);
-                break;
-            case 'rescheduled_count_report':
-                return self::rescheduledcountreport($request);
-                break;
-            default:
-                return self::generalReport($request);
-                break;
-        }
+        return match ($request->get('report_type')) {
+            'general' => self::generalReport($request),
+            'general_summary' => self::generalReportSummary($request),
+            'staff_appointment' => self::staffAppointmentScheduleReport($request),
+            'referred_by_staff_appointment' => self::staffReferredByAppointmentScheduleReport($request),
+            'empolyee_summary' => self::EmployeeAppointmentSummaryReport($request),
+            'summary_by_service' => self::appointmentSummaryByServiceReport($request),
+            'summary_by_appointment_status' => self::appointmentSummaryByStatusReport($request),
+            'clients_by_appointment_status' => self::clientByAppointmentStatusReport($request),
+            'compliance_report' => self::complianceReport($request),
+            'rescheduled_count_report' => self::rescheduledcountreport($request),
+            default => self::generalReport($request),
+        };
     }
 
     /**
@@ -129,7 +107,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function clientByAppointmentStatusReport(Request $request): mixed
+    public function clientByAppointmentStatusReport(Request $request): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_reports_clients_by_appointment_status')) {
             return abort(401);
@@ -146,13 +124,13 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $reportData = Appointments::getClientByAppointmentStatusReport($request->all(), $filters, Auth::User()->account_id);
+        $filters['regions'] = Regions::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $reportData = Appointments::getClientByAppointmentStatusReport($request->all(), $filters, Auth::user()->account_id);
 
         $filters['reportData'] = $reportData;
 
@@ -188,7 +166,7 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
-    private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date): mixed
+    private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date): void
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -293,7 +271,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function appointmentSummaryByStatusReport(Request $request): mixed
+    public function appointmentSummaryByStatusReport(Request $request): \Illuminate\View\View
     {
 
         if (! Gate::allows('appointment_reports_summary_by_appointment_status')) {
@@ -311,15 +289,15 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $reportData = Appointments::getAppointmentSummaryByStatusReport($request->all(), $filters, Auth::User()->account_id);
+        $filters['regions'] = Regions::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $reportData = Appointments::getAppointmentSummaryByStatusReport($request->all(), $filters, Auth::user()->account_id);
 
         $filters['reportData'] = $reportData;
 
@@ -434,7 +412,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function appointmentSummaryByServiceReport(Request $request): mixed
+    public function appointmentSummaryByServiceReport(Request $request): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_reports_summary_by_service')) {
             return abort(401);
@@ -451,15 +429,15 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $reportData = Appointments::getAppointmentSummaryByServiceReport($request->all(), $filters, Auth::User()->account_id);
+        $filters['regions'] = Regions::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $reportData = Appointments::getAppointmentSummaryByServiceReport($request->all(), $filters, Auth::user()->account_id);
 
         $filters['reportData'] = $reportData;
 
@@ -589,19 +567,19 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $reportData = Appointments::getGeneralReport($request->all(), Auth::User()->account_id);
+        $reportData = Appointments::getGeneralReport($request->all(), Auth::user()->account_id);
 
         $filters['reportData'] = $reportData;
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -711,7 +689,7 @@ class AppointmentsController extends Controller
      * General report summary
      *
      */
-    public function generalReportSummary(Request $request): mixed
+    public function generalReportSummary(Request $request): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_reports_general_summary_report')) {
             return abort(401);
@@ -727,10 +705,10 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $reportData = Appointments::getGeneralReport($request->all(), Auth::User()->account_id);
+        $reportData = Appointments::getGeneralReport($request->all(), Auth::user()->account_id);
 
         $slugs = AppointmentTypes::get()->pluck('id')->toArray();
 
@@ -742,7 +720,7 @@ class AppointmentsController extends Controller
         $services = [];
 
         foreach ($reportData as $reportsingle) {
-            if (! in_array($reportsingle->service_id, $services)) {
+            if (! in_array($reportsingle->service_id, $services, true)) {
                 $reportData2[$reportsingle->appointment_type_id][$reportsingle->service_id] = [
                     'name' => $reportsingle->service->name,
                     'count' => 0,
@@ -753,13 +731,13 @@ class AppointmentsController extends Controller
         }
 
         $filters['reportData'] = $reportData;
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -787,7 +765,7 @@ class AppointmentsController extends Controller
     /*
      * General Report Summary
      */
-    public function GeneralReportsummaryExcel($reportData, $filters, $start_date, $end_date, $reportData2): mixed
+    public function GeneralReportsummaryExcel($reportData, $filters, $start_date, $end_date, $reportData2): void
     {
 
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -852,7 +830,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function staffReferredByAppointmentScheduleReport(Request $request): mixed
+    public function staffReferredByAppointmentScheduleReport(Request $request): \Illuminate\View\View
     {
 
         if (! Gate::allows('appointment_reports_referred_by_staff_appointment')) {
@@ -870,18 +848,18 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
-        $reportData = Appointments::getStaffReferredByAppointmentScheduleReport($request->all(), $filters, Auth::User()->account_id);
+        $reportData = Appointments::getStaffReferredByAppointmentScheduleReport($request->all(), $filters, Auth::user()->account_id);
 
         foreach ($reportData as $key1 => $report_Data) {
             foreach ($report_Data['records'] as $key2 => $report_row) {
@@ -1035,7 +1013,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function staffAppointmentScheduleReport(Request $request): mixed
+    public function staffAppointmentScheduleReport(Request $request): \Illuminate\View\View
     {
 
         if (! Gate::allows('appointment_reports_staff_appointment')) {
@@ -1053,16 +1031,16 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
         $reportData = Appointments::getStaffAppointmentScheduleReport($request->all(), $filters);
 
@@ -1108,7 +1086,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function EmployeeAppointmentSummaryReport(Request $request): mixed
+    public function EmployeeAppointmentSummaryReport(Request $request): \Illuminate\View\View
     {
 
         if (! Gate::allows('appointment_reports_empolyee_summary')) {
@@ -1126,17 +1104,17 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $reportData = Appointments::getEmployeeAppointmentSummaryReport($request->all(), $filters, Auth::User()->account_id);
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $reportData = Appointments::getEmployeeAppointmentSummaryReport($request->all(), $filters, Auth::user()->account_id);
 
         foreach ($reportData as $key1 => $report_Data) {
             foreach ($report_Data['records'] as $key2 => $report_row) {
@@ -1357,7 +1335,7 @@ class AppointmentsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function complianceReport(Request $request): mixed
+    public function complianceReport(Request $request): \Illuminate\View\View
     {
 
         if (! Gate::allows('appointment_reports_compliance_reports')) {
@@ -1507,19 +1485,19 @@ class AppointmentsController extends Controller
 
         $filters = [];
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $reportData = Appointments::rescheduledcount($request->all(), Auth::User()->account_id);
+        $reportData = Appointments::rescheduledcount($request->all(), Auth::user()->account_id);
 
         $filters['reportData'] = $reportData;
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
         switch ($request->get('medium_type')) {
             case 'web':

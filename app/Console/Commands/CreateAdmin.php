@@ -25,33 +25,25 @@ class CreateAdmin extends Command
      */
     protected $description = 'Command description';
 
-    /**
-     * User model.
-     *
-     * @var object
-     */
-    private $user;
+    private AccountsSeeder $account;
 
-    private $user_type;
+    private UserTypes $user_type;
 
-    private $resource_type;
-
-    private $account;
+    private ResourceTypes $resource_type;
 
     /**
      * Create a new command instance.
      *
      * @return void
      */
-    public function __construct(User $user)
-    {
+    public function __construct(
+        private readonly User $user,
+    ) {
         parent::__construct();
 
         $this->account = new AccountsSeeder();
         $this->user_type = new UserTypes();
         $this->resource_type = new ResourceTypes();
-
-        $this->user = $user;
     }
 
     /**
@@ -59,6 +51,7 @@ class CreateAdmin extends Command
      *
      * @return void
      */
+    #[\Override]
     public function handle(): int
     {
 
@@ -81,14 +74,14 @@ class CreateAdmin extends Command
      *
      * @return mixed array | boolean
      */
-    private function getDetails()
+    private function getDetails(): array
     {
         $details['name'] = $this->ask('Name', 'Super Admin');
         $details['email'] = $this->ask('Email', 'admin@admin.com');
         if ($this->isExist($details['email'])) {
             $this->error('This email already in use, can you enter different one.');
 
-            return false;
+            return [];
         }
 
         $password = $this->ask('Password', '12345678');
@@ -106,20 +99,20 @@ class CreateAdmin extends Command
             if (! $this->isRequiredLength($password)) {
                 $this->error('Password must be more that six characters');
 
-                return false;
+                return [];
             }
 
             if (! $this->isMatch($password, $confirm_password)) {
                 $this->error('Password and Confirm password do not match');
 
-                return false;
+                return [];
             }
         }
 
         return $details;
     }
 
-    private function isExist($email): bool
+    private function isExist(string $email): bool
     {
         return User::where('email', $email)->exists();
     }

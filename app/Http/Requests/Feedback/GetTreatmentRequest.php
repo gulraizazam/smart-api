@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Gate;
 
 class GetTreatmentRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('feedbacks_create');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

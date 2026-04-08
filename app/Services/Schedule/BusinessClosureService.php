@@ -121,7 +121,7 @@ class BusinessClosureService
             ['active', '=', '1'],
         ]);
         
-        if ($userCentres && is_array($userCentres) && count($userCentres) > 0) {
+        if ($userCentres && is_array($userCentres) && !empty($userCentres)) {
             $locationsQuery->whereIn('id', $userCentres);
         }
         
@@ -154,7 +154,7 @@ class BusinessClosureService
                 'created_by' => $userId,
             ]);
 
-            if (!empty($data['location_ids']) && !in_array('all', $data['location_ids'])) {
+            if (!empty($data['location_ids']) && !in_array('all', $data['location_ids'], true)) {
                 $closure->locations()->sync($data['location_ids']);
             }
 
@@ -189,7 +189,7 @@ class BusinessClosureService
                 'end_date' => $data['end_date'],
             ]);
 
-            if (!empty($data['location_ids']) && !in_array('all', $data['location_ids'])) {
+            if (!empty($data['location_ids']) && !in_array('all', $data['location_ids'], true)) {
                 $closure->locations()->sync($data['location_ids']);
             } else {
                 $closure->locations()->detach();

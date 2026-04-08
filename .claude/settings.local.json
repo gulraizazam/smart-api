@@ -104,7 +104,23 @@
       "Bash(bash /tmp/find_mismatches.sh)",
       "Bash(python3 /tmp/scan_mismatches.py)",
       "Bash(chmod +x analyze_types.sh)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(xargs -0 grep \"public function.*Request\\\\|public function.*FormRequest\")",
+      "Bash(xargs -0 grep \"public function.*\\(\\\\s*Request \")",
+      "Bash(git rm:*)",
+      "Bash(xargs -I {} sh -c 'if head -3 \"{}\" | grep -q \"declare\\(strict_types=1\\)\"; then echo \"OK: {}\"; else echo \"MISSING: {}\"; fi')",
+      "Bash(ls:*)",
+      "Bash(xargs -0 grep -A 5 \"public function __construct\")",
+      "Bash(git check-ignore:*)",
+      "Bash(xargs -0 -P 8 -n 20 php -l)",
+      "Bash(python3)",
+      "Bash(xargs -I{} basename {} .php)",
+      "Bash(head -40 /c/laragon/www/cutera-upgradation1/app/Http/Requests/*.php)",
+      "Bash(bash /tmp/model_audit.sh)",
+      "Bash(bash /tmp/service_audit.shclaude --model claude-opus-4-6 --effort hig)",
+      "Bash(chmod +x /tmp/scan_models.sh)",
+      "Bash(/tmp/scan_models.sh)",
+      "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/BusinessClosure.php\")"
     ]
   }
 }

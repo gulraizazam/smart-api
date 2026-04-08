@@ -8,6 +8,7 @@ use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
+use App\Services\Phone\PhoneFormattingService;
 use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\AuditTrails;
@@ -149,7 +150,7 @@ class PatientService
     private function applyOptimizedFilters(Builder $query, array $filters, bool $applyFilter, int $userId): void
     {
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'patient_id', function ($q, $value): void {
-            $q->where('id', 'like', '%' . GeneralFunctions::patientSearch($value) . '%');
+            $q->where('id', 'like', '%' . PatientSearchService::patientSearch($value) . '%');
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'name', function ($q, $value): void {
@@ -161,7 +162,7 @@ class PatientService
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'phone', function ($q, $value): void {
-            $q->where('phone', 'like', '%' . GeneralFunctions::cleanNumber($value) . '%');
+            $q->where('phone', 'like', '%' . PhoneFormattingService::cleanNumber($value) . '%');
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'status', function ($q, $value): void {
@@ -245,7 +246,7 @@ class PatientService
     public function create(array $data): array
     {
         $user = Auth::user();
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
         $data['created_by'] = $user->id;
         $data['updated_by'] = $user->id;
         $data['user_type_id'] = Config::get('constants.patient_id');
@@ -285,7 +286,7 @@ class PatientService
         $oldPhone = $data['old_phone'] ?? null;
         unset($data['old_phone']);
 
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
 
         $oldPatient = $this->findPatient($id);
         $oldValues = $oldPatient ? array_intersect_key(
@@ -523,7 +524,7 @@ class PatientService
             return ['status' => false, 'message' => 'Membership is already assigned to this patient.'];
         }
 
-        if (is_null($membership->patient_id)) {
+        if ($membership->patient_id === null) {
             return ['status' => false, 'message' => 'This membership code is not assigned to any patient, so referral cannot be added.'];
         }
 
@@ -591,8 +592,8 @@ class PatientService
     public function searchPatients(string $search, int $accountId): array
     {
         $originalSearch = $search;
-        $search = GeneralFunctions::patientSearch($search);
-        $cleanedSearch = GeneralFunctions::clearnString($search);
+        $search = PatientSearchService::patientSearch($search);
+        $cleanedSearch = PhoneFormattingService::clearnString($search);
 
         $baseQuery = Patients::where('user_type_id', Config::get('constants.patient_id'))
             ->where('active', 1)
@@ -606,7 +607,7 @@ class PatientService
                 return [$exactMatch->toArray()];
             }
 
-            $phone = GeneralFunctions::cleanNumber($originalSearch);
+            $phone = PhoneFormattingService::cleanNumber($originalSearch);
             return (clone $baseQuery)
                 ->where(fn ($q) => $q->where('id', 'LIKE', "%{$numericValue}%")->orWhere('phone', 'LIKE', "%{$phone}%"))
                 ->select('name', 'id', 'phone')
@@ -1061,9 +1062,16 @@ class PatientService
         return $fieldChanges;
     }
 
+    private const ALLOWED_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
+
     private function storeUploadedFile(UploadedFile $file): string
     {
-        $ext = $file->getClientOriginalExtension() ?: ($file->guessExtension() ?: 'bin');
+        $ext = strtolower($file->getClientOriginalExtension() ?: ($file->guessExtension() ?: ''));
+
+        if (!in_array($ext, self::ALLOWED_UPLOAD_EXTENSIONS, true)) {
+            throw new \InvalidArgumentException('File type not allowed. Allowed: ' . implode(', ', self::ALLOWED_UPLOAD_EXTENSIONS));
+        }
+
         $fileName = time() . '_' . uniqid() . '.' . $ext;
 
         $storagePath = storage_path('app/' . self::STORAGE_PATH);

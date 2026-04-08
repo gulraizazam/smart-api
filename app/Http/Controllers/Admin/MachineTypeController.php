@@ -26,7 +26,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('machineType_manage')) {
             return abort(401);
@@ -40,7 +40,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('machineType_manage')) {
@@ -62,7 +62,7 @@ class MachineTypeController extends Controller
                 if ($machinetypes) {
                     foreach ($machinetypes as $machinetype) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!MachineType::isChildExists($machinetype->id, Auth::User()->account_id)) {
+                        if (!MachineType::isChildExists($machinetype->id, Auth::user()->account_id)) {
                             $machinetype->delete();
                         }
                     }
@@ -72,12 +72,12 @@ class MachineTypeController extends Controller
             }
 
             // Get Total Records
-            $iTotalRecords = MachineType::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+            $iTotalRecords = MachineType::getTotalRecords($request, Auth::user()->account_id, $apply_filter);
 
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $machinetypes = MachineType::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+            $machinetypes = MachineType::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter);
 
             $services = GeneralFunctions::ServicesTreeMachineType();
 
@@ -88,7 +88,7 @@ class MachineTypeController extends Controller
                 'active' => Gate::allows('machineType_active'),
                 'inactive' => Gate::allows('machineType_inactive'),
             ];
-            $filters = Filters::all(Auth::User()->id, 'machinetypes');
+            $filters = Filters::all(Auth::user()->id, 'machinetypes');
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
                 'services' => $services,
@@ -114,18 +114,18 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
 
         if (!Gate::allows('machineType_create')) {
-            return abort('401');
+            return abort(401);
         }
         /*Get Service as we get in resouce create module*/
         $allserviceslug = Services::where('slug', '=', 'all')->first();
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id, true, true);
+        $parentGroups->build(0, Auth::user()->account_id, true, true);
         $parentGroups->toList($parentGroups, -1);
         $Services = $parentGroups->nodeList;
         foreach ($Services as $key => $ser) {
@@ -148,13 +148,13 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreUpdateMachineTypeRequest $request): mixed
+    public function store(StoreUpdateMachineTypeRequest $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('machineType_create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
+            if ($machinetype = MachineType::createRecord($request, Auth::user()->account_id)) {
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
                     $services = $data['services'];
@@ -189,7 +189,7 @@ class MachineTypeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(int $id): mixed
+    public function show(int $id): void
     {
         //
     }
@@ -199,7 +199,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('machineType_edit')) {
@@ -224,14 +224,14 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreUpdateMachineTypeRequest $request, int $id): mixed
+    public function update(StoreUpdateMachineTypeRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('machineType_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            if ($machinetype = MachineType::updateRecord($id, $request, Auth::User()->account_id)) {
+            if ($machinetype = MachineType::updateRecord($id, $request, Auth::user()->account_id)) {
                 $machinetype->machinetype_has_services()->delete();
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
@@ -267,7 +267,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('machineType_destroy')) {
@@ -286,7 +286,7 @@ class MachineTypeController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {

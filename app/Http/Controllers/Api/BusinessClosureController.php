@@ -17,17 +17,9 @@ use Carbon\Carbon;
 
 class BusinessClosureController extends Controller
 {
-    protected BusinessClosureService $service;
-    protected string $success;
-    protected string $error;
-    protected string $unauthorized;
-
-    public function __construct(BusinessClosureService $service)
-    {
-        $this->service = $service;
-
-
-    }
+    public function __construct(
+        protected readonly BusinessClosureService $service,
+    ) {}
 
     /**
      * Get business closures datatable data
@@ -120,7 +112,7 @@ class BusinessClosureController extends Controller
                 ['active', '=', '1'],
             ]);
             
-            if ($userCentres && is_array($userCentres) && count($userCentres) > 0) {
+            if ($userCentres && is_array($userCentres) && !empty($userCentres)) {
                 $locationsQuery->whereIn('id', $userCentres);
             }
             
@@ -176,7 +168,7 @@ class BusinessClosureController extends Controller
                 ['active', '=', '1'],
             ]);
             
-            if ($userCentres && is_array($userCentres) && count($userCentres) > 0) {
+            if ($userCentres && is_array($userCentres) && !empty($userCentres)) {
                 $locationsQuery->whereIn('id', $userCentres);
             }
             

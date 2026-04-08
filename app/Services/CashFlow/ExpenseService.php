@@ -3,6 +3,8 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\ExpenseStatus;
+use App\Enums\VendorTransactionType;
 use App\Exceptions\CashflowException;
 use App\Helpers\CashflowHelper;
 use App\Models\CashFlow\CashflowAuditLog;
@@ -24,7 +26,7 @@ class ExpenseService
     /**
      * Get paginated expenses with filters for datatable.
      */
-    public function getExpenses(int $accountId, array $filters = [], int $perPage = 25)
+    public function getExpenses(int $accountId, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = Expense::forAccount($accountId)
             ->with([
@@ -51,9 +53,9 @@ class ExpenseService
             } elseif ($status === 'edited') {
                 $query->whereNotNull('edit_reason')->whereNull('voided_at');
             } elseif ($status === 'my_pending') {
-                $query->where('status', 'pending')->where('created_by', Auth::id())->whereNull('voided_at');
+                $query->where('status', ExpenseStatus::Pending)->where('created_by', Auth::id())->whereNull('voided_at');
             } elseif ($status === 'my_rejected') {
-                $query->where('status', 'rejected')->where('created_by', Auth::id())->whereNull('voided_at');
+                $query->where('status', ExpenseStatus::Rejected)->where('created_by', Auth::id())->whereNull('voided_at');
             } else {
                 $query->where('status', $status)->whereNull('voided_at');
             }
@@ -132,8 +134,8 @@ class ExpenseService
         // Determine status based on threshold
         $threshold = $this->settingService->getApprovalThreshold($accountId);
         $status = (float) $data['amount'] <= $threshold
-            ? Expense::STATUS_APPROVED
-            : Expense::STATUS_PENDING;
+            ? ExpenseStatus::Approved
+            : ExpenseStatus::Pending;
 
         return DB::transaction(function () use ($data, $accountId, $user, $status) {
             $expense = Expense::create([
@@ -151,7 +153,7 @@ class ExpenseService
                 'attachment_url' => $data['attachment_url'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'status' => $status,
-                'verified_by' => $status === Expense::STATUS_APPROVED ? $user->id : null,
+                'verified_by' => $status === ExpenseStatus::Approved ? $user->id : null,
                 'is_flagged' => 0,
                 'is_for_general' => !empty($data['is_for_general']) ? 1 : 0,
                 'created_by' => $user->id,
@@ -162,7 +164,7 @@ class ExpenseService
                 VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $expense->vendor_id,
-                    'type' => VendorTransaction::TYPE_PAYMENT,
+                    'type' => VendorTransactionType::Payment,
                     'amount' => $expense->amount,
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
@@ -186,7 +188,7 @@ class ExpenseService
             );
 
             // Notify admins if pending
-            if ($status === Expense::STATUS_PENDING) {
+            if ($status === ExpenseStatus::Pending) {
                 $this->notificationService->notifyExpensePending($expense, $accountId);
             }
 
@@ -230,7 +232,7 @@ class ExpenseService
         $oldValues = $expense->only(['status', 'verified_by']);
 
         $updateData = [
-            'status' => Expense::STATUS_APPROVED,
+            'status' => ExpenseStatus::Approved,
             'verified_by' => Auth::id(),
         ];
 
@@ -247,7 +249,7 @@ class ExpenseService
             CashflowAuditLog::ENTITY_EXPENSE,
             $expense->id,
             $oldValues,
-            ['status' => Expense::STATUS_APPROVED, 'verified_by' => Auth::id()]
+            ['status' => ExpenseStatus::Approved, 'verified_by' => Auth::id()]
         );
 
         $this->notificationService->notifyExpenseApproved($expense);
@@ -279,7 +281,7 @@ class ExpenseService
             }
 
             $expense->update([
-                'status' => Expense::STATUS_REJECTED,
+                'status' => ExpenseStatus::Rejected,
                 'verified_by' => Auth::id(),
                 'rejection_reason' => $reason,
             ]);
@@ -289,7 +291,7 @@ class ExpenseService
                 CashflowAuditLog::ENTITY_EXPENSE,
                 $expense->id,
                 $oldValues,
-                ['status' => Expense::STATUS_REJECTED, 'rejection_reason' => $reason]
+                ['status' => ExpenseStatus::Rejected, 'rejection_reason' => $reason]
             );
 
             $this->notificationService->notifyExpenseRejected($expense);
@@ -314,7 +316,7 @@ class ExpenseService
         $oldVendorId = $expense->vendor_id;
 
         $updateData = [
-            'status' => Expense::STATUS_PENDING,
+            'status' => ExpenseStatus::Pending,
             'verified_by' => null,
             'rejection_reason' => null,
         ];
@@ -360,7 +362,7 @@ class ExpenseService
 
             // Now set status to pending — observer will re-debit pool with updated amount/pool
             $expense->update([
-                'status' => Expense::STATUS_PENDING,
+                'status' => ExpenseStatus::Pending,
                 'verified_by' => null,
                 'rejection_reason' => null,
             ]);
@@ -381,7 +383,7 @@ class ExpenseService
                 VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $newVendorId,
-                    'type' => VendorTransaction::TYPE_PAYMENT,
+                    'type' => VendorTransactionType::Payment,
                     'amount' => $freshExpense->amount,
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
@@ -482,7 +484,7 @@ class ExpenseService
                 VendorTransaction::create([
                     'account_id' => $accountId,
                     'vendor_id' => $newVendorId,
-                    'type' => VendorTransaction::TYPE_PAYMENT,
+                    'type' => VendorTransactionType::Payment,
                     'amount' => $newAmount,
                     'expense_id' => $expense->id,
                     'description' => 'Payment via expense #' . $expense->id,
@@ -564,7 +566,7 @@ class ExpenseService
 
         return DB::transaction(function () use ($expense, $reason, $accountId, $oldValues) {
             // Reverse pool balance: increment pool (give money back)
-            if ($expense->status !== Expense::STATUS_REJECTED && $expense->paid_from_pool_id) {
+            if ($expense->status !== ExpenseStatus::Rejected && $expense->paid_from_pool_id) {
                 DB::table('cash_pools')
                     ->where('id', $expense->paid_from_pool_id)
                     ->increment('cached_balance', $expense->amount);
@@ -619,7 +621,7 @@ class ExpenseService
         }
 
         // Self-approval check
-        if ($expense->status === Expense::STATUS_APPROVED && $expense->created_by === $expense->verified_by) {
+        if ($expense->status === ExpenseStatus::Approved && $expense->created_by === $expense->verified_by) {
             $flags[] = 'Self-approved expense';
         }
 
@@ -627,7 +629,7 @@ class ExpenseService
         $dailyLimit = (float) $this->settingService->get('daily_auto_approved_limit', $accountId, 50000);
         $dailyTotal = Expense::forAccount($accountId)
             ->where('expense_date', $expense->expense_date)
-            ->where('status', Expense::STATUS_APPROVED)
+            ->where('status', ExpenseStatus::Approved)
             ->where('created_by', $expense->created_by)
             ->sum('amount');
 

@@ -8,11 +8,13 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class AppointmentsReportRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

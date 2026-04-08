@@ -64,14 +64,12 @@ class ScheduleController extends Controller
         $exceptions = \App\Models\WorkingDayException::where('account_id', $accountId)
             ->orderBy('exception_date', 'asc')
             ->get()
-            ->map(function ($exc) {
-                return [
+            ->map(fn($exc) => [
                     'id' => $exc->id,
                     'exception_date' => $exc->exception_date->format('Y-m-d'),
                     'exception_date_formatted' => $exc->exception_date->format('l, d M Y'),
                     'is_working' => $exc->is_working,
-                ];
-            });
+                ]);
 
         return $this->successResponse('Business working days retrieved', [
             'working_days' => $workingDays,
@@ -176,7 +174,7 @@ class ScheduleController extends Controller
     /**
      * Get resources (doctors or machines) for a location
      */
-    private function getResourcesForLocation(int $locationId, int $resourceTypeId): mixed
+    private function getResourcesForLocation(int $locationId, int $resourceTypeId): \Illuminate\Database\Eloquent\Collection
     {
         $accountId = Auth::user()->account_id;
 
@@ -243,10 +241,7 @@ class ScheduleController extends Controller
         $allRotaDays = ResourceHasRotaDays::whereIn('resource_has_rota_id', $rotaIds)->get();
         
         // Filter by date range
-        $rotaDays = $allRotaDays->filter(function ($day) use ($startDate, $endDate) {
-            $dayDate = date('Y-m-d', strtotime($day->date));
-            return $dayDate >= $startDate && $dayDate <= $endDate;
-        });
+        $rotaDays = $allRotaDays->filter(fn($day) => date('Y-m-d', strtotime($day->date)) >= $startDate && date('Y-m-d', strtotime($day->date)) <= $endDate);
 
         // Build shifts array
         foreach ($rotaDays as $rotaDay) {
@@ -906,9 +901,7 @@ class ScheduleController extends Controller
         }
 
         // Sort by start time
-        usort($timeRanges, function($a, $b) {
-            return $a['start'] - $b['start'];
-        });
+        usort($timeRanges, fn($a, $b) => $a['start'] - $b['start']);
 
         // Check for overlaps
         for ($i = 0; $i < count($timeRanges) - 1; $i++) {

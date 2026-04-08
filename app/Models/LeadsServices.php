@@ -19,6 +19,7 @@ class LeadsServices extends Model
         'meta_lead_id', 'lead_status_id', 'consultancy_id',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

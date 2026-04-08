@@ -13,15 +13,44 @@ class Activity extends Model
 
     protected $table = 'activities';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'account_id',
+        'plan_id',
+        'package_id',
+        'appointment_id',
+        'action',
+        'activity_type',
+        'description',
+        'service',
+        'service_id',
+        'appointment_type',
+        'patient_name',
+        'patient',
+        'patient_id',
+        'received_by',
+        'centre_id',
+        'user_id',
+        'created_by',
+        'schedule_date',
+        'lead_id',
+        'lead_status',
+        'lead_status_id',
+        'deleted_by',
+        'rescheduled_by',
+        'deleted_date',
+    ];
 
     public $timestamps = false;
     
-    protected $casts = [
-        'created_by' => 'integer',
-        'patient_id' => 'integer',
-        'centre_id' => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'created_by' => 'integer',
+            'patient_id' => 'integer',
+            'centre_id' => 'integer',
+        ];
+    }
 
     public function plan(): BelongsTo
     {

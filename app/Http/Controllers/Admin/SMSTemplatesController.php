@@ -21,7 +21,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
@@ -35,14 +35,14 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $records = $this->smsTemplateService->getDatatableData($request, Auth::User()->account_id, Auth::User()->id);
+            $records = $this->smsTemplateService->getDatatableData($request, Auth::user()->account_id, Auth::user()->id);
 
             return response()->json($records);
         } catch (\Exception $e) {
@@ -55,7 +55,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
         if (! Gate::allows('sms_templates_manage')) {
             return abort(401);
@@ -69,14 +69,14 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->smsTemplateService->validateAndCreate($request->all(), Auth::User()->account_id);
+            $result = $this->smsTemplateService->validateAndCreate($request->all(), Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -93,7 +93,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
@@ -117,14 +117,14 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('sms_templates_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->smsTemplateService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+            $result = $this->smsTemplateService->validateAndUpdate($request->all(), $id, Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -141,7 +141,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('sms_templates_manage')) {
@@ -165,7 +165,7 @@ class SMSTemplatesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {

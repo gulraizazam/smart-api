@@ -10,11 +10,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UserTypeRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -23,6 +25,7 @@ class UserTypeRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -33,6 +36,7 @@ class UserTypeRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(response()->json([

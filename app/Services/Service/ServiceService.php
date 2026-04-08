@@ -56,7 +56,7 @@ final class ServiceService
         foreach ($parents as $parent) {
             $nameFilter = $filters['name'] ?? null;
             $statusFilter = $filters['status'] ?? null;
-            $parentMatches = ! $nameFilter || stripos($parent->name, $nameFilter) !== false;
+            $parentMatches = ! $nameFilter || str_contains(strtolower($parent->name), strtolower($nameFilter));
 
             $childQuery = Services::where('parent_id', $parent->id)
                 ->when(! $canViewInactive, fn ($q) => $q->isActive())

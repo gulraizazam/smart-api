@@ -12,11 +12,13 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class InvoiceCalculationRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

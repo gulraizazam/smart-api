@@ -45,6 +45,7 @@ class Bundles extends BaseModel
         'tax_treatment_type_id',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

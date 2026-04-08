@@ -19,11 +19,15 @@ class CashflowAuditLog extends Model
         'entity_id', 'old_values', 'new_values', 'reason', 'ip_address', 'created_at',
     ];
 
-    protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
-        'created_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'old_values' => 'array',
+            'new_values' => 'array',
+            'created_at' => 'datetime',
+        ];
+    }
 
     // Action constants
     const ACTION_CREATED = 'created';

@@ -5,9 +5,10 @@ namespace App\Models;
 
 use DB;
 use Illuminate\Support\Facades\Auth;
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -204,9 +205,7 @@ class Invoices extends Model
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -301,14 +300,14 @@ class Invoices extends Model
             $where[] = [
                 'invoices.patient_id',
                 '=',
-                \App\Helpers\GeneralFunctions::patientSearch($filters['id']),
+                PatientSearchService::patientSearch($filters['id']),
             ];
-            Filters::put(Auth::user()->id, $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
+            Filters::put(Auth::user()->id, $filename, 'id', PatientSearchService::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, $filename, 'id');
             } else {
-                if (! is_null(Filters::get(Auth::user()->id, $filename, 'id'))) {
+                if (Filters::get(Auth::user()->id, $filename, 'id') !== null) {
 
                     /* $where[] = array(
                          'invoices.patient_id',
@@ -385,16 +384,16 @@ class Invoices extends Model
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['invoices.created_at', '>=', $start_date_time];
             $where[] = ['invoices.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, $filename, 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'created_at');
+                Filters::forget(Auth::user()->id, $filename, 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'created_at')) {
+                if (Filters::get(Auth::user()->id, $filename, 'created_at')) {
                     $where[] = [
                         'invoices.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_at'),
+                        Filters::get(Auth::user()->id, $filename, 'created_at'),
                     ];
                 }
             }

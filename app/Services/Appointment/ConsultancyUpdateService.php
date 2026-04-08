@@ -373,7 +373,7 @@ class ConsultancyUpdateService
             );
         }
 
-        GeneralFunctions::saveAppointmentLogs('updated', 'Consultancy', $appointment);
+        ActivityLogger::saveAppointmentLogs('updated', 'Consultancy', $appointment);
     }
 
     // =========================================================================

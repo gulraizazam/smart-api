@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Reports;
 
+use App\Enums\AppointmentType;
 use App\Helpers\ACL;
 use App\Helpers\NodesTree;
 use App\Models\Appointments;
@@ -154,8 +155,8 @@ class Invoices
         }
         $serviceArr = [];
         foreach ($records as $record) {
-            if (! in_array($record->id, $service_data_ids)) {
-                array_push($serviceArr, $record->service_id);
+            if (! in_array($record->id, $service_data_ids, true)) {
+                $serviceArr[] = $record->service_id;
             }
 
         }
@@ -163,7 +164,7 @@ class Invoices
         $reportdata = [];
         if (isset($data['service_id']) && $data['service_id']) {
             foreach ($filters['services'] as $service) {
-                if ($service->id == $data['service_id'] || in_array($service->id, $serviceArr)) {
+                if ($service->id == $data['service_id'] || in_array($service->id, $serviceArr, true)) {
                     $reportdata[$service->id] = [
                         'id' => $service->id,
                         'name' => $service->name,
@@ -290,7 +291,7 @@ class Invoices
 
                 $doctor = User::find($record->doctor_id, ['id', 'name']);
                 if($doctor){
-                    if (! in_array($record->doctor_id, $doctor_Array)) {
+                    if (! in_array($record->doctor_id, $doctor_Array, true)) {
 
                         $reportdata[$doctor->id] = [
                             'id' => $doctor->id,
@@ -305,7 +306,7 @@ class Invoices
 
                 $service = Services::find($record->service_id, ['id', 'name']);
 
-                if (! in_array($record->service_id, $servicedata) && $record->total_price > 0) {
+                if (! in_array($record->service_id, $servicedata, true) && $record->total_price > 0) {
                     $reportdata[$doctor->id]['records'][$service->id] = [
                         'id' => $service->id,
                         'name' => $service->name,
@@ -391,9 +392,9 @@ class Invoices
                     'records' => [],
                 ];
 
-                $services = self::getNodeServices($serviceshead->id, Auth::User()->account_id, true, true);
+                $services = self::getNodeServices($serviceshead->id, Auth::user()->account_id, true, true);
 
-                if (count($services) > 0) {
+                if (!empty($services)) {
                     if (isset($data['service_id']) && $data['service_id']) {
                         $serviceinfo = Services::find($data['service_id']);
                         foreach ($services as $se) {
@@ -643,7 +644,7 @@ class Invoices
                     ['account_id', '=', $account_id],
                     ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
-            if (count($packagesadvances) > 0) {
+            if (!empty($packagesadvances)) {
 
                 if ($packagesadvances) {
 
@@ -674,14 +675,14 @@ class Invoices
 
                                     $appointinfor = Appointments::where([
                                         ['id', '=', $packagesadvance->appointment_id],
-                                        ['appointment_type_id', '=', '2'],
+                                        ['appointment_type_id', '=', AppointmentType::Treatment->value],
                                     ])->first();
 
                                     if ($appointinfor) {
 
                                         $serviceinfor = Services::find($appointinfor->service_id);
 
-                                        if (! in_array($serviceinfor->id, $bundles)) {
+                                        if (! in_array($serviceinfor->id, $bundles, true)) {
 
                                             $serviceinfor = Services::find($appointinfor->service_id);
 
@@ -708,13 +709,13 @@ class Invoices
                                                     ['is_consumed', '=', '1'],
                                                     ['package_id', '=', $packageinfo->id],
                                                 ])->whereNotNull('package_services.package_id')->get();
-                                            if (count($total_consume_service) > 0) {
+                                            if (!empty($total_consume_service)) {
                                                 $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
                                                     ->whereDate('updated_at', '<=', $end_date)
                                                     ->where([
                                                         ['is_consumed', '=', '1'],
                                                         ['package_id', '=', $packageinfo->id],
-                                                    ])->whereNotNull('package_id')->get()->pluck('id')->toArray();
+                                                    ])->whereNotNull('package_id')->pluck('id')->toArray();
 
                                                 $total_consume = PackageService::whereDate('updated_at', '>=', $start_date)
                                                     ->whereDate('updated_at', '<=', $end_date)
@@ -727,7 +728,7 @@ class Invoices
                                                 $total_consume = 0;
                                             }
 
-                                            if (count($total_consume_service) > 0) {
+                                            if (!empty($total_consume_service)) {
 
                                                 $package_services = PackageService::whereIn('id', $total_consume_packageservice_ids)
                                                     ->where('package_id', '=', $packageinfo->id)->whereNotNull('package_id')->get();
@@ -740,7 +741,7 @@ class Invoices
 
                                                     $divide_amount = $package_service->tax_including_price;
 
-                                                    if (! in_array($bundle_info->id, $bundles)) {
+                                                    if (! in_array($bundle_info->id, $bundles, true)) {
 
                                                         $report_data[$bundle_info->id] = [
                                                             'package_bundle_id' => $package_service->package_bundle_id,
@@ -778,7 +779,7 @@ class Invoices
 
                                                 $divide_amount = ($package_service->tax_including_price / $total_price) * $remaining_amount;
 
-                                                if (! in_array($bundle_info->id, $bundles)) {
+                                                if (! in_array($bundle_info->id, $bundles, true)) {
 
                                                     $report_data[$bundle_info->id] = [
                                                         'id' => $bundle_info->id,
@@ -800,7 +801,7 @@ class Invoices
 
                                     $appointinfor = Appointments::find($packagesadvance->appointment_id);
 
-                                    if (! in_array($appointinfor->service_id, $bundles)) {
+                                    if (! in_array($appointinfor->service_id, $bundles, true)) {
 
                                         $serviceinfo = Services::find($appointinfor->service_id);
 
@@ -833,7 +834,7 @@ class Invoices
 
                                         $divide_amount = ($package_service->tax_including_price * $remaining_amount) / $total_amount;
 
-                                        if (! in_array($bundle_info->id, $bundles)) {
+                                        if (! in_array($bundle_info->id, $bundles, true)) {
 
                                             $report_data[$bundle_info->id] = [
                                                 'id' => $bundle_info->id,
@@ -850,7 +851,6 @@ class Invoices
                         }
 
                     }
-                    // dd($report_data);
                 }
             }
         }

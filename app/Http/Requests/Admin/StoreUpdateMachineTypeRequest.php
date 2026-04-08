@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin;
 
 class StoreUpdateMachineTypeRequest extends AdminApiFormRequest
 {
+    #[\Override]
     public function rules(): array
     {
         return [

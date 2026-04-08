@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -26,28 +27,28 @@ class Discounts extends BaseModel
 
     protected static string $_table = 'discounts';
 
-    protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A',
-    ];
-
-    public function setStartAttribute($start)
+    #[\Override]
+    protected function casts(): array
     {
-        $this->attributes['start'] = $this->dateFormat($start);
+        return [
+            'created_at' => 'datetime:F d,Y h:i A',
+        ];
     }
 
-    public function setEndAttribute($end)
+    protected function start(): Attribute
     {
-        $this->attributes['end'] = $this->dateFormat($end);
+        return Attribute::make(
+            get: fn (string $value): string => $this->dateFormat($value, 'F d,Y'),
+            set: fn (string $value): string => $this->dateFormat($value),
+        );
     }
 
-    public function getStartAttribute($start)
+    protected function end(): Attribute
     {
-        return $this->dateFormat($start, 'F d,Y');
-    }
-
-    public function getEndAttribute($end)
-    {
-        return $this->dateFormat($end, 'F d,Y');
+        return Attribute::make(
+            get: fn (string $value): string => $this->dateFormat($value, 'F d,Y'),
+            set: fn (string $value): string => $this->dateFormat($value),
+        );
     }
 
     /**
@@ -410,7 +411,7 @@ class Discounts extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Discounts::isChildExists($id, Auth::User()->account_id)) {
+        if (Discounts::isChildExists($id, Auth::user()->account_id)) {
 
             flash('Child records exist, unable to delete resource.')->error()->important();
         }

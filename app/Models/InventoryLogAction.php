@@ -9,4 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryLogAction extends Model
 {
     use HasFactory;
+
+    protected $fillable = [];
 }

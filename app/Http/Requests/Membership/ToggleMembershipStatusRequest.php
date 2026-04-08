@@ -10,11 +10,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class ToggleMembershipStatusRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -23,6 +25,7 @@ final class ToggleMembershipStatusRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

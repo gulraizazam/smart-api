@@ -22,7 +22,7 @@ class BundlesController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|never
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('packages_manage')) {
             return abort(401);

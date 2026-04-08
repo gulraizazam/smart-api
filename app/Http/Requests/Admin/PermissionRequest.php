@@ -12,6 +12,7 @@ class PermissionRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      */
+    #[\Override]
     public function authorize(): bool
     {
         return true;
@@ -20,6 +21,7 @@ class PermissionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      */
+    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -42,6 +44,7 @@ class PermissionRequest extends FormRequest
     /**
      * Get custom messages for validator errors.
      */
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -55,6 +58,7 @@ class PermissionRequest extends FormRequest
     /**
      * Handle a failed validation attempt.
      */
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

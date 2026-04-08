@@ -13,6 +13,7 @@ use Carbon\Carbon;
 
 class LeadDetailResource extends JsonResource
 {
+    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

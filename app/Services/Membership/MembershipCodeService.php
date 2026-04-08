@@ -241,7 +241,7 @@ class MembershipCodeService
      * @param int $limit
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getAvailableCodes(int $membershipTypeId, int $limit = 100)
+    public function getAvailableCodes(int $membershipTypeId, int $limit = 100): \Illuminate\Database\Eloquent\Collection
     {
         return Membership::where('membership_type_id', $membershipTypeId)
             ->whereNull('patient_id')
@@ -259,7 +259,7 @@ class MembershipCodeService
      * @param bool $availableOnly
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function searchCodes(string $search, ?int $membershipTypeId = null, bool $availableOnly = false)
+    public function searchCodes(string $search, ?int $membershipTypeId = null, bool $availableOnly = false): \Illuminate\Database\Eloquent\Collection
     {
         $query = Membership::with(['membershipType', 'patient'])
             ->where('code', 'like', "%{$search}%");

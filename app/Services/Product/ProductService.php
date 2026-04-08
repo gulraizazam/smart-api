@@ -21,7 +21,7 @@ use App\Models\TransferProduct;
 use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\Warehouse;
-use DateTime;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -401,7 +401,7 @@ class ProductService
             for ($j = $i + 1; $j < $count; $j++) {
                 if (isset($productsLogs[$i]['batch_uuid'], $productsLogs[$j]['batch_uuid'])) {
                     if ($productsLogs[$i]['batch_uuid'] === $productsLogs[$j]['batch_uuid']) {
-                        if (! in_array($productsLogs[$i]['id'], $ids) && ! in_array($productsLogs[$j]['id'], $ids)) {
+                        if (! in_array($productsLogs[$i]['id'], $ids, true) && ! in_array($productsLogs[$j]['id'], $ids, true)) {
                             $pairedLogs[] = [$productsLogs[$i], $productsLogs[$j]];
                             $ids[] = $productsLogs[$i]['id'];
                             $ids[] = $productsLogs[$j]['id'];
@@ -412,7 +412,7 @@ class ProductService
                 }
             }
 
-            if (! $foundPair && ! in_array($productsLogs[$i]['id'], $ids) && ! in_array($productsLogs[$i]['batch_uuid'] ?? null, $batchUuids)) {
+            if (! $foundPair && ! in_array($productsLogs[$i]['id'], $ids, true) && ! in_array($productsLogs[$i]['batch_uuid'] ?? null, $batchUuids, true)) {
                 $singleLogs[] = $productsLogs[$i];
                 $ids[] = $productsLogs[$i]['id'];
             }
@@ -582,7 +582,7 @@ class ProductService
         }
 
         $productDetail = ProductDetail::getProductDetailData($product->id);
-        $quantity = GeneralFunctions::stockCheck($id);
+        $quantity = self::stockCheck($id);
 
         return [
             'product' => $product,
@@ -636,7 +636,7 @@ class ProductService
         $where = $this->buildWhereConditions($params);
 
         return Product::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where));
+            ->when(!empty($where), fn ($q) => $q->where($where));
     }
 
     private function buildWhereConditions(array $params): array
@@ -653,9 +653,7 @@ class ProductService
         if (hasFilter($filters, 'created_at')) {
             $dateRange = explode(' - ', $filters['created_at']);
             $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateString = new DateTime($dateRange[1]);
-            $endDateString->setTime(23, 59, 0);
-            $endDateTime = $endDateString->format('Y-m-d H:i:s');
+            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         }
 
         if (! empty($filters['name'])) {
@@ -682,5 +680,36 @@ class ProductService
         }
 
         return $where;
+    }
+
+    public static function stockCheck(int|string $id): array
+    {
+        $in = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $out = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+        $stock_quantity = $in - $out;
+
+        return [
+            'stock_quantity' => $stock_quantity,
+            'stock_available' => $stock_quantity > 0,
+        ];
+    }
+
+    public static function inventoryCheck(mixed $request): int|float
+    {
+        if ($request->from_location_id) {
+            $record = Inventory::where(['product_id' => $request->product_id, 'location_id' => $request->from_location_id])->first();
+        } else {
+            $record = Inventory::where(['product_id' => $request->product_id, 'warehouse_id' => $request->from_warehouse_id])->first();
+        }
+
+        return $record->quantity;
+    }
+
+    public static function stockC(int|string $id): int|float
+    {
+        $in = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $out = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+
+        return $in - $out;
     }
 }

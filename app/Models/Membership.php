@@ -31,12 +31,16 @@ class Membership extends Model
         'parent_membership_code',
     ];
 
-    protected $casts = [
-        'active'             => 'boolean',
-        'is_referral'        => 'boolean',
-        'membership_type_id' => 'integer',
-        'patient_id'         => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'active'             => 'boolean',
+            'is_referral'        => 'boolean',
+            'membership_type_id' => 'integer',
+            'patient_id'         => 'integer',
+        ];
+    }
 
     // ── Relationships ────────────────────────────────────
 

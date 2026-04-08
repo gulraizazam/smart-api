@@ -52,7 +52,7 @@ class Incentive
                     ['role_id', '=', $data['role_id']],
                     ['user_id', '=', $user['id']],
                 ])->get();
-                if (count($userrole) > 0) {
+                if (!empty($userrole)) {
                     $userrolearray[] = $user;
                 }
             }
@@ -150,7 +150,7 @@ class Incentive
                     ['role_id', '=', $data['role_id']],
                     ['user_id', '=', $user['id']],
                 ])->get();
-                if (count($userrole) > 0) {
+                if (!empty($userrole)) {
                     $userrolearray[] = $user;
                 }
             }

@@ -15,7 +15,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(Request $request): mixed
+    public function login(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $rules = [
@@ -42,7 +42,8 @@ class AuthController extends Controller
             return $this->errorResponse(__('auth.failed'), 401);
 
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 }

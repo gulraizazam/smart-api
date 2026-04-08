@@ -122,8 +122,8 @@ class Refunds extends Model
         $data['patient_id'] = $request->get('patient_id');
         $data['payment_mode_id'] = $request->payment_mode_id;
         $data['account_id'] = $id;
-        $data['created_by'] = Auth::User()->id;
-        $data['updated_by'] = Auth::User()->id;
+        $data['created_by'] = Auth::user()->id;
+        $data['updated_by'] = Auth::user()->id;
         $data['refund_note'] = $request->refund_note;
         $data['package_id'] = $request->package_id;
         $data['patient_id'] = $packageinformation->patient_id;
@@ -204,8 +204,8 @@ class Refunds extends Model
                 $data_adjustment['patient_id'] = $request->get('patient_id');
                 $data_adjustment['payment_mode_id'] = 5;
                 $data_adjustment['account_id'] = $id;
-                $data_adjustment['created_by'] = Auth::User()->id;
-                $data_adjustment['updated_by'] = Auth::User()->id;
+                $data_adjustment['created_by'] = Auth::user()->id;
+                $data_adjustment['updated_by'] = Auth::user()->id;
                 $data_adjustment['package_id'] = $request->package_id;
                 $data_adjustment['patient_id'] = $packageinformation->patient_id;
                 $data_adjustment['location_id'] = $packageinformation->location_id;
@@ -215,11 +215,11 @@ class Refunds extends Model
                 $record = PackageAdvances::create($data_adjustment);
                 if($amount_left > 0){
                     $dataInvoice['total_price'] = $amount_left;
-                    $dataInvoice['account_id'] = Auth::User()->account_id;
+                    $dataInvoice['account_id'] = Auth::user()->account_id;
                     $dataInvoice['patient_id'] = $packageinformation->patient_id;
                     $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
                     $dataInvoice['invoice_status_id'] = 3;
-                    $dataInvoice['created_by'] = Auth::User()->id;
+                    $dataInvoice['created_by'] = Auth::user()->id;
                     $dataInvoice['location_id'] =$packageinformation->location_id;
                     $dataInvoice['doctor_id'] =$find_doc->doctor_id;
                     $dataInvoice['active'] = 1;

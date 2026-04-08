@@ -13,15 +13,9 @@ class SyncAppointmentsFire
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Variable holding account object
-     */
-    protected Accounts $account;
-
-    public function __construct(Accounts $account)
-    {
-        $this->account = $account;
-    }
+    public function __construct(
+        protected readonly Accounts $account,
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.

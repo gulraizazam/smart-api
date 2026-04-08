@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CustomDiscountRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -17,6 +18,7 @@ class CustomDiscountRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -33,6 +35,7 @@ class CustomDiscountRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

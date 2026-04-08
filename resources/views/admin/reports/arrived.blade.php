@@ -98,7 +98,7 @@
                                                 @foreach($services as $service)
 
                                                     <option value="{{$service->id}}">
-                                                            <b>{!! $service['name'] !!}</b></option>
+                                                            <b>{{ $service['name'] }}</b></option>
                                                 @endforeach
                                             </select>
                                             <span id="service_id_handler"></span>

@@ -113,7 +113,7 @@ class StudentVerificationService
     {
         $membershipType = MembershipType::find($membershipTypeId);
 
-        return $membershipType !== null && stripos($membershipType->name, 'student') !== false;
+        return $membershipType !== null && str_contains(strtolower($membershipType->name), 'student');
     }
 
     public function getVerificationByMembership(int $patientId, int $membershipId): ?StudentVerification

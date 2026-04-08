@@ -213,7 +213,7 @@ final class VoucherTypeService
 
         $baseQuery = Discounts::where('discount_type', self::DISCOUNT_TYPE);
 
-        if (count($where) > 0) {
+        if (!empty($where)) {
             $baseQuery->where($where);
         }
 

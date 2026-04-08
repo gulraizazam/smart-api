@@ -12,6 +12,7 @@ class StoreUpdateAppointmentsRequest extends FormRequest
      *
      * @return bool
      */
+    #[\Override]
     public function authorize(): bool
     {
         return true;
@@ -22,6 +23,7 @@ class StoreUpdateAppointmentsRequest extends FormRequest
      *
      * @return array
      */
+    #[\Override]
     public function rules(): array
     {
         return [

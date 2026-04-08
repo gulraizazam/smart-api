@@ -26,7 +26,7 @@ class ArrivedNotConvertedController extends Controller
         $cities = Cities::getActiveOnly(false, Auth::user()->account_id)->pluck('full_name', 'id');
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return view('admin.reports.arrived', get_defined_vars());
+        return view('admin.reports.arrived', compact('services', 'cities', 'locations'));
     }
 
     public function reportLoad(ArrivedNotConvertedRequest $request): View

@@ -37,7 +37,7 @@ class CustomFormFeedbackService
             if ($CustomFormFeedbacks) {
                 foreach ($CustomFormFeedbacks as $custom_form_feedback) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::User()->account_id)) {
+                    if (! CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::user()->account_id)) {
                         $custom_form_feedback->delete();
                     }
                 }
@@ -49,13 +49,13 @@ class CustomFormFeedbackService
         $request = new Request($requestData);
 
         // Get Total Records
-        $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::User()->account_id, $applyFilter, false, self::FILTER_KEY);
+        $iTotalRecords = CustomFormFeedbacks::getTotalRecords($request, Auth::user()->account_id, $applyFilter, false, self::FILTER_KEY);
 
         [$orderBy, $order] = getSortBy($request);
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $CustomFormFeedbacks = CustomFormFeedbacks::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $applyFilter, false, self::FILTER_KEY);
+        $CustomFormFeedbacks = CustomFormFeedbacks::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $applyFilter, false, self::FILTER_KEY);
 
         $records = $this->getFilters($records);
 
@@ -65,7 +65,7 @@ class CustomFormFeedbackService
                     'id' => $custom_form_feedback->internal_id,
                     'patient_id' => $custom_form_feedback->user ? \App\Helpers\GeneralFunctions::patientSearchStringAdd($custom_form_feedback->user->id) : null,
                     'form_name' => $custom_form_feedback->form_name,
-                    'patient_name' => $custom_form_feedback->user ? $custom_form_feedback->user->name : null,
+                    'patient_name' => $custom_form_feedback->user?->name,
                     'created_at' => Carbon::parse($custom_form_feedback->created_at)->format('F j,Y h:i A'),
                 ];
             }
@@ -93,7 +93,7 @@ class CustomFormFeedbackService
 
     private function getFilters(array $records): array
     {
-        $records['active_filters'] = Filters::all(Auth::User()->id, self::FILTER_KEY);
+        $records['active_filters'] = Filters::all(Auth::user()->id, self::FILTER_KEY);
 
         return $records;
     }
@@ -104,7 +104,7 @@ class CustomFormFeedbackService
 
     public function getAllForms(): array|null
     {
-        $forms = CustomForms::getAllForms(Auth::User()->account_id)->toArray();
+        $forms = CustomForms::getAllForms(Auth::user()->account_id)->toArray();
 
         return $forms ?: null;
     }
@@ -132,7 +132,7 @@ class CustomFormFeedbackService
     public function updateField(array $requestData, int|string $feedbackId, int|string $feedbackFieldId): array
     {
         $request = new Request($requestData);
-        $data = CustomFormFeedbackDetails::updateRecord($request, Auth::User()->account_id, Auth::id(), $feedbackId, $feedbackFieldId);
+        $data = CustomFormFeedbackDetails::updateRecord($request, Auth::user()->account_id, Auth::id(), $feedbackId, $feedbackFieldId);
 
         if ($data) {
             return ['success' => true, 'data' => $data];
@@ -148,7 +148,7 @@ class CustomFormFeedbackService
     public function submitForm(array $requestData, int|string $id): array
     {
         $request = new Request($requestData);
-        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::User()->account_id, Auth::id());
+        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::user()->account_id, Auth::id());
 
         if (! $custom_form_feedback) {
             return ['success' => false];
@@ -231,7 +231,7 @@ class CustomFormFeedbackService
     {
         $request = new Request($requestData);
 
-        return (bool) CustomFormFeedbacks::updateRecord($id, $request, Auth::User()->account_id, Auth::id());
+        return (bool) CustomFormFeedbacks::updateRecord($id, $request, Auth::user()->account_id, Auth::id());
     }
 
     // =========================================================================
@@ -247,7 +247,7 @@ class CustomFormFeedbackService
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (CustomFormFeedbacks::isChildExists($id, Auth::User()->account_id)) {
+        if (CustomFormFeedbacks::isChildExists($id, Auth::user()->account_id)) {
             return ['success' => false, 'message' => 'Child records exist, unable to delete resource.'];
         }
 

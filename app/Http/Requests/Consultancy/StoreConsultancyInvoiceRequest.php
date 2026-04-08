@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreConsultancyInvoiceRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -17,6 +18,7 @@ class StoreConsultancyInvoiceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -38,6 +40,7 @@ class StoreConsultancyInvoiceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

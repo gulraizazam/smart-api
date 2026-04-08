@@ -32,6 +32,7 @@ class BackfillConvertedAt extends Command
      *
      * @return int
      */
+    #[\Override]
     public function handle(): int
     {
         $this->info('Starting backfill of converted_at column...');

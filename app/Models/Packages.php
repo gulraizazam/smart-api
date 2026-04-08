@@ -8,6 +8,7 @@ use App\Enums\PlanType;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -58,6 +59,7 @@ class Packages extends BaseModel
         'deleted_at',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -198,7 +200,7 @@ class Packages extends BaseModel
     {
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
 
-        $query = self::when(count($where) > 0, fn ($q) => $q->where($where))
+        $query = self::when(!empty($where), fn ($q) => $q->where($where))
             ->whereIn('location_id', ACL::getUserCentres());
 
         if (!Gate::allows('view_inactive_plans')) {
@@ -220,7 +222,7 @@ class Packages extends BaseModel
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'updated_at', 'DESC');
 
-        $query = self::when(count($where) > 0, fn ($q) => $q->where($where))
+        $query = self::when(!empty($where), fn ($q) => $q->where($where))
             ->whereIn('location_id', ACL::getUserCentres())
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
@@ -245,9 +247,7 @@ class Packages extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $dateRange = explode(' - ', $filters['created_at']);
             $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateString = new \DateTime($dateRange[1]);
-            $endDateString->setTime(23, 59, 0);
-            $endDateTime = $endDateString->format('Y-m-d H:i:s');
+            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         }
 
         $userId = Auth::id();

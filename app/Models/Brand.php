@@ -120,7 +120,7 @@ class Brand extends BaseModel
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (self::isChildExists($id, Auth::User()->account_id)) {
+        if (self::isChildExists($id, Auth::user()->account_id)) {
             $brand->update(['status'=>0]);
             return collect(['status' => false, 'message' => 'Brand Deactived Successfully!']);
         }

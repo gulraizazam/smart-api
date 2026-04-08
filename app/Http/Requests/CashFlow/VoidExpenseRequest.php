@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class VoidExpenseRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_expense_void');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -20,6 +22,7 @@ class VoidExpenseRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

@@ -12,6 +12,7 @@ class StaffAdvanceObserver
     /**
      * After advance created: decrement pool balance (cash given out).
      */
+    #[\Override]
     public function created(StaffAdvance $advance): void
     {
         try {

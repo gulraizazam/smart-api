@@ -8,6 +8,7 @@ use App\Models\Appointments;
 use App\Models\InvoiceStatuses;
 use App\User;
 use Config;
+use Illuminate\Database\Eloquent\Collection;
 
 class Treatments
 {
@@ -17,7 +18,7 @@ class Treatments
      * @param  (mixed)  $request
      * @return (mixed)
      */
-    public static function clientcompletedtreatment($data)
+    public static function clientcompletedtreatment(array $data): Collection
     {
 
         $where = [];
@@ -72,7 +73,7 @@ class Treatments
             ->get();
     }
 
-    public static function ClientWithNocompletedtreatment($data)
+    public static function ClientWithNocompletedtreatment(array $data): Collection
     {
         $where = [];
 
@@ -126,7 +127,7 @@ class Treatments
             ->get();
     }
 
-    public static function clientwithtreatmentsinparticularmonth($data)
+    public static function clientwithtreatmentsinparticularmonth(array $data): Collection
     {
         $where = [];
 
@@ -181,7 +182,7 @@ class Treatments
      * @param  (mixed)  $request
      * @return (mixed)
      */
-    public static function clientswithbirthday($data)
+    public static function clientswithbirthday(array $data): Collection
     {
         $where = [];
         if (isset($data['patient_id']) && $data['patient_id']) {

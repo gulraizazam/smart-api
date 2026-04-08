@@ -65,7 +65,7 @@ class TownService
             ['account_id', '=', $accountId],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        ])->pluck('name', 'id');
 
         $cities->prepend('Select a City', '');
 
@@ -81,7 +81,7 @@ class TownService
             ['account_id', '=', $accountId],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
 
         $cities->prepend('Select a City', '');
 
@@ -98,7 +98,7 @@ class TownService
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
 
         $cities->prepend('Select a City', '');
 

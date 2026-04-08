@@ -4,6 +4,26 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Activity;
+use App\Models\AppointmentLog;
+use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
+use App\Models\AppointmentTypes;
+use App\Enums\AppointmentType;
+use App\Models\Feedback;
+use App\Models\Invoices;
+use App\Models\Leads;
+use App\Models\Locations;
+use App\Models\Membership;
+use App\Models\MembershipType;
+use App\Models\PackageAdvances;
+use App\Models\Packages;
+use App\Models\Patients;
+use App\Models\Refunds;
+use App\Models\Services;
+use App\Models\UserVouchers;
+use App\Models\Voucher;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ActivityLogger
@@ -12,7 +32,7 @@ class ActivityLogger
      * Log a lead created activity
      * Format: XYZ created a SERVICE_NAME lead for PATIENT_NAME in LOCATION_NAME
      */
-    public static function logLeadCreated($lead, $location = null, $service = null)
+    public static function logLeadCreated(Leads $lead, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -50,7 +70,7 @@ class ActivityLogger
      * Log a lead status change to Booked (consultation created)
      * Format: SERVICE_NAME lead status changed to LEAD_STATUS_NAME against PATIENT_NAME in LOCATION_NAME
      */
-    public static function logLeadBooked($lead, $appointment = null, $location = null, $service = null)
+    public static function logLeadBooked(Leads $lead, ?Appointments $appointment = null, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -90,7 +110,7 @@ class ActivityLogger
      * Log a lead status change to Arrived (invoice created / consultation completed)
      * Format: SERVICE_NAME lead status changed to LEAD_STATUS_NAME for PATIENT_NAME in LOCATION_NAME
      */
-    public static function logLeadArrived($lead, $appointment = null, $invoice = null, $location = null, $service = null)
+    public static function logLeadArrived(Leads $lead, ?Appointments $appointment = null, ?Invoices $invoice = null, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -131,7 +151,7 @@ class ActivityLogger
     /**
      * Log consultation booked activity
      */
-    public static function logConsultationBooked($appointment, $patient, $location = null, $service = null)
+    public static function logConsultationBooked(Appointments $appointment, Patients $patient, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -164,7 +184,7 @@ class ActivityLogger
     /**
      * Log treatment booked activity
      */
-    public static function logTreatmentBooked($appointment, $patient, $location = null, $service = null)
+    public static function logTreatmentBooked(Appointments $appointment, Patients $patient, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -203,7 +223,7 @@ class ActivityLogger
     /**
      * Log package created activity
      */
-    public static function logPackageCreated($package, $patient, $location = null)
+    public static function logPackageCreated(Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -232,7 +252,7 @@ class ActivityLogger
     /**
      * Log payment received activity
      */
-    public static function logPaymentReceived($payment, $package, $patient, $location = null)
+    public static function logPaymentReceived(PackageAdvances $payment, Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -269,7 +289,7 @@ class ActivityLogger
     /**
      * Log payment updated activity
      */
-    public static function logPaymentUpdated($oldAmount, $newAmount, $oldDate, $newDate, $amountChanged, $dateChanged, $package, $patient, $location = null)
+    public static function logPaymentUpdated(float|int $oldAmount, float|int $newAmount, ?string $oldDate, ?string $newDate, bool $amountChanged, bool $dateChanged, Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -323,7 +343,7 @@ class ActivityLogger
     /**
      * Log payment deleted activity
      */
-    public static function logPaymentDeleted($amount, $package, $patient, $location = null)
+    public static function logPaymentDeleted(float|int $amount, Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -360,7 +380,7 @@ class ActivityLogger
     /**
      * Log refund made activity
      */
-    public static function logRefundMade($refund, $package, $patient, $location = null)
+    public static function logRefundMade(Refunds $refund, Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -389,7 +409,7 @@ class ActivityLogger
     /**
      * Log appointment rescheduled activity
      */
-    public static function logAppointmentRescheduled($appointment, $patient, $oldDate, $oldTime, $newDate, $newTime, $location = null, $service = null)
+    public static function logAppointmentRescheduled(Appointments $appointment, Patients $patient, string $oldDate, string $oldTime, string $newDate, string $newTime, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -401,8 +421,8 @@ class ActivityLogger
         $creatorName = \Auth::user()->name ?? 'System';
         
         // Determine appointment type
-        $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
-        
+        $appointmentType = $appointment->appointment_type_id === AppointmentType::Consultancy->value ? 'Consultation' : 'Treatment';
+
         // Format old and new datetime
         $oldDateTime = date('M j, Y', strtotime((string) $oldDate)) . ' ' . date('h:i A', strtotime((string) $oldTime));
         $newDateTime = date('M j, Y', strtotime((string) $newDate)) . ' ' . date('h:i A', strtotime((string) $newTime));
@@ -433,7 +453,7 @@ class ActivityLogger
     /**
      * Log appointment status change activity
      */
-    public static function logAppointmentStatusChange($appointment, $patient, $oldStatus, $newStatus, $location = null, $service = null)
+    public static function logAppointmentStatusChange(Appointments $appointment, Patients $patient, AppointmentStatuses $oldStatus, AppointmentStatuses $newStatus, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -447,8 +467,8 @@ class ActivityLogger
         $creatorName = \Auth::user()->name ?? 'System';
         
         // Determine appointment type
-        $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
-        
+        $appointmentType = $appointment->appointment_type_id === AppointmentType::Consultancy->value ? 'Consultation' : 'Treatment';
+
         // Format: XYZ changed SERVICE_NAME APPOINTMENT_TYPE status from OLD_STATUS to NEW_STATUS for PATIENT_NAME in LOCATION_NAME
         $description = '<span class="highlight">' . $creatorName . '</span> changed <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> ' . $appointmentType . ' status from <span class="highlight-purple">' . $oldStatusName . '</span> to <span class="highlight-green">' . $newStatusName . '</span> for <span class="highlight-orange">' . $patientName . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
         
@@ -474,7 +494,7 @@ class ActivityLogger
     /**
      * Log appointment updated activity (for field changes like doctor, service, location, patient info)
      */
-    public static function logAppointmentUpdated($appointment, $patient, $changes, $location = null, $service = null)
+    public static function logAppointmentUpdated(Appointments $appointment, Patients $patient, array $changes, ?Locations $location = null, ?Services $service = null): ?Activity
     {
         if (empty($changes)) {
             return null;
@@ -490,8 +510,8 @@ class ActivityLogger
         $creatorName = \Auth::user()->name ?? 'System';
         
         // Determine appointment type
-        $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
-        
+        $appointmentType = $appointment->appointment_type_id === AppointmentType::Consultancy->value ? 'Consultation' : 'Treatment';
+
         // Build changes description - shorter format
         $changeDescriptions = [];
         foreach ($changes as $field => $change) {
@@ -525,7 +545,7 @@ class ActivityLogger
     /**
      * Log invoice created activity
      */
-    public static function logInvoiceCreated($invoice, $appointment, $patient, $location = null, $service = null)
+    public static function logInvoiceCreated(Invoices $invoice, Appointments $appointment, Patients $patient, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -557,7 +577,7 @@ class ActivityLogger
     /**
      * Log membership assigned activity
      */
-    public static function logMembershipAssigned($patient, $membership, $membershipType = null)
+    public static function logMembershipAssigned(Patients $patient, Membership $membership, ?MembershipType $membershipType = null): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
@@ -582,7 +602,7 @@ class ActivityLogger
     /**
      * Log membership cancelled activity
      */
-    public static function logMembershipCancelled($patient, $membership, $membershipType = null)
+    public static function logMembershipCancelled(Patients $patient, Membership $membership, ?MembershipType $membershipType = null): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
@@ -607,7 +627,7 @@ class ActivityLogger
     /**
      * Log appointment converted activity
      */
-    public static function logAppointmentConverted($appointment, $patient, $location = null, $service = null, $paymentAmount = null, $planId = null)
+    public static function logAppointmentConverted(Appointments $appointment, Patients $patient, ?Locations $location = null, ?Services $service = null, float|int|null $paymentAmount = null, ?int $planId = null): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $serviceName = $service->name ?? '';
@@ -651,7 +671,7 @@ class ActivityLogger
     /**
      * Log lead converted activity
      */
-    public static function logLeadConverted($lead, $appointment = null, $location = null, $service = null, $paymentAmount = null)
+    public static function logLeadConverted(Leads $lead, ?Appointments $appointment = null, ?Locations $location = null, ?Services $service = null, float|int|null $paymentAmount = null): Activity
     {
         $patientName = $lead->name ?? ($appointment->patient->name ?? 'Unknown');
         $serviceName = $service->name ?? '';
@@ -690,7 +710,7 @@ class ActivityLogger
     /**
      * Log appointment deleted activity (consultation or treatment)
      */
-    public static function logAppointmentDeleted($appointment, $patient, $location = null, $service = null)
+    public static function logAppointmentDeleted(Appointments $appointment, Patients $patient, ?Locations $location = null, ?Services $service = null): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
@@ -701,8 +721,8 @@ class ActivityLogger
         }
         
         // Determine if consultation or treatment
-        $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
-        $activityType = $appointment->appointment_type_id == 1 ? 'consultation_deleted' : 'treatment_deleted';
+        $appointmentType = $appointment->appointment_type_id === AppointmentType::Consultancy->value ? 'Consultation' : 'Treatment';
+        $activityType = $appointment->appointment_type_id === AppointmentType::Consultancy->value ? 'consultation_deleted' : 'treatment_deleted';
         
         // Format: User deleted Patient's Service Consultation/Treatment in Location
         $description = '<span class="highlight">' . $creatorName . '</span> deleted <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> ' . $appointmentType;
@@ -738,7 +758,7 @@ class ActivityLogger
     /**
      * Log patient information updated activity
      */
-    public static function logPatientUpdated($patient, $fieldChanges)
+    public static function logPatientUpdated(Patients $patient, array $fieldChanges): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
@@ -768,7 +788,7 @@ class ActivityLogger
     /**
      * Log invoice cancelled activity
      */
-    public static function logInvoiceCancelled($invoice, $patient, $location = null, $service = null, $appointmentType = null, $appointment = null)
+    public static function logInvoiceCancelled(Invoices $invoice, Patients $patient, ?Locations $location = null, ?Services $service = null, ?AppointmentTypes $appointmentType = null, ?Appointments $appointment = null): Activity
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
@@ -813,7 +833,7 @@ class ActivityLogger
      * Log voucher assigned activity
      * Format: USERNAME assigned VOUCHERNAME voucher of Rs. AMOUNT to PATIENTNAME
      */
-    public static function logVoucherAssigned($userVoucher, $patient, $voucher)
+    public static function logVoucherAssigned(UserVouchers $userVoucher, Patients $patient, Voucher $voucher): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -840,7 +860,7 @@ class ActivityLogger
      * Log voucher refunded/reset activity
      * Format: Rs. AMOUNT refunded to VOUCHERNAME voucher for PATIENTNAME
      */
-    public static function logVoucherRefunded($amount, $patient, $voucher)
+    public static function logVoucherRefunded(float|int $amount, Patients $patient, Voucher $voucher): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -866,7 +886,7 @@ class ActivityLogger
      * Log voucher consumed activity
      * Format: Rs. AMOUNT consumed from VOUCHERNAME voucher against PATIENTNAME - Balance Left: Rs. BALANCE
      */
-    public static function logVoucherConsumed($amount, $patient, $voucher, $balanceLeft = 0)
+    public static function logVoucherConsumed(float|int $amount, Patients $patient, Voucher $voucher, float|int $balanceLeft = 0): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -892,7 +912,7 @@ class ActivityLogger
      * Log voucher updated activity
      * Format: USERNAME updated VOUCHERNAME voucher amount from Rs. OLDAMOUNT to Rs. NEWAMOUNT for PATIENTNAME
      */
-    public static function logVoucherUpdated($userVoucher, $patient, $voucher, $oldAmount, $newAmount)
+    public static function logVoucherUpdated(UserVouchers $userVoucher, Patients $patient, Voucher $voucher, float|int $oldAmount, float|int $newAmount): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -915,10 +935,67 @@ class ActivityLogger
     }
 
     /**
+     * Save appointment log entry to AppointmentLog model.
+     * Extracted from GeneralFunctions::saveAppointmentLogs.
+     */
+    public static function saveAppointmentLogs(string $action, string $screen, Model $data): void
+    {
+        try {
+            AppointmentLog::create([
+                'user_id' => auth()->id(),
+                'action_by' => auth()->user()->name ?? 'Admin',
+                'action_for' => $data->name ?? '',
+                'action' => $action,
+                'screen' => $screen,
+                'address' => Locations::find($data->location_id ?? 0)->name ?? '',
+                'date' => Carbon::now()->timezone('Asia/Karachi')->format('Y-m-d'),
+                'time' => Carbon::now()->timezone('Asia/Karachi')->format('H:i:s'),
+                'type' => $action,
+            ]);
+        } catch (\Exception $e) {
+            //
+        }
+    }
+
+    /**
+     * Save activity log entry to Activity model.
+     * Extracted from GeneralFunctions::saveActivityLogs.
+     */
+    public static function saveActivityLogs(string $action, string $activityType, array $data, int $appointment_id): bool
+    {
+        try {
+            $location = Locations::find($data['location_id']);
+            $service = Services::find($data['service_id']);
+            $patient = Patients::find($data['patient_id']);
+
+            Activity::create([
+                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'appointment_type' => $activityType,
+                'appointment_id' => $appointment_id,
+                'activity_type' => $activityType,
+                'location' => $location?->name ?? '',
+                'centre_id' => $location?->id,
+                'service_id' => $service?->id,
+                'service' => $service?->name,
+                'patient_id' => $patient ? $patient->id : null,
+                'patient' => $patient ? $patient->name : null,
+                'schedule_date' => $data['scheduled_date'],
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Log feedback added activity
      * Format: USERNAME added feedback for SERVICENAME against PATIENTNAME scheduled on SCHEDULED DATE
      */
-    public static function logFeedbackAdded($feedback, $appointment, $patient, $service, $location = null)
+    public static function logFeedbackAdded(Feedback $feedback, Appointments $appointment, Patients $patient, Services $service, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {

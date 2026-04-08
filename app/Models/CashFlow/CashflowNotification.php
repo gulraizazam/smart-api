@@ -3,9 +3,11 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Enums\CashflowNotificationType;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashflowNotification extends Model
 {
@@ -17,22 +19,18 @@ class CashflowNotification extends Model
         'account_id', 'user_id', 'type', 'title', 'message', 'data', 'read_at', 'created_at',
     ];
 
-    protected $casts = [
-        'data' => 'array',
-        'read_at' => 'datetime',
-        'created_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'data' => 'array',
+            'read_at' => 'datetime',
+            'created_at' => 'datetime',
+            'type' => CashflowNotificationType::class,
+        ];
+    }
 
-    // Notification type constants
-    const TYPE_EXPENSE_PENDING = 'expense_pending';
-    const TYPE_EXPENSE_APPROVED = 'expense_approved';
-    const TYPE_EXPENSE_REJECTED = 'expense_rejected';
-    const TYPE_VENDOR_REQUEST = 'vendor_request';
-    const TYPE_CATEGORY_REQUEST = 'category_request';
-    const TYPE_STAFF_ADVANCE = 'staff_advance';
-    const TYPE_NEGATIVE_POOL = 'negative_pool';
-    const TYPE_EXPENSE_FOR_BRANCH = 'expense_for_branch';
-    const TYPE_TRANSFER_FOR_BRANCH = 'transfer_for_branch';
+    // Notification type enum: App\Enums\CashflowNotificationType
 
     /**
      * User this notification belongs to.
@@ -44,17 +42,17 @@ class CashflowNotification extends Model
 
     // Scopes
 
-    public function scopeForUser($query, int $userId)
+    public function scopeForUser($query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
 
-    public function scopeUnread($query)
+    public function scopeUnread($query): Builder
     {
         return $query->whereNull('read_at');
     }
 
-    public function scopeRecent($query, int $limit = 20)
+    public function scopeRecent($query, int $limit = 20): Builder
     {
         return $query->orderBy('created_at', 'desc')->limit($limit);
     }

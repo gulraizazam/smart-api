@@ -21,12 +21,12 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\never
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('regions_manage')) {
             return abort(401);
         }
-        $data = $this->regionService->getIndexData(Auth::User()->id);
+        $data = $this->regionService->getIndexData(Auth::user()->id);
 
         return view('admin.regions.index', ['filters' => $data['filters']]);
     }
@@ -36,19 +36,17 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_manage')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $records = $this->regionService->getDatatableData($request, Auth::User()->account_id, Auth::User()->id);
+            $records = $this->regionService->getDatatableData($request, Auth::user()->account_id, Auth::user()->id);
 
             return response()->json($records);
         } catch (\Exception $e) {
-            dd($e);
-
             return $this->handleException($e, 'RegionsController');
         }
     }
@@ -58,13 +56,13 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
         if (! Gate::allows('regions_create')) {
             return abort(401);
         }
 
-        return view('admin.regions.create', compact('city'));
+        return view('admin.regions.create');
     }
 
     /**
@@ -72,7 +70,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderSave(Request $request): mixed
+    public function sortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_sort')) {
@@ -89,7 +87,7 @@ class RegionsController extends Controller
         }
     }
 
-    public function sortOrder(): mixed
+    public function sortOrder(): \Illuminate\View\View
     {
         if (! Gate::allows('regions_sort')) {
             return abort(401);
@@ -103,13 +101,13 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderGet(): mixed
+    public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_sort')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $regions = $this->regionService->getSortedRegions(Auth::User()->account_id);
+            $regions = $this->regionService->getSortedRegions(Auth::user()->account_id);
 
             return $this->successResponse('Success', $regions);
         } catch (\Exception $e) {
@@ -122,14 +120,14 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->regionService->validateAndCreate($request->all(), Auth::User()->account_id);
+            $result = $this->regionService->validateAndCreate($request->all(), Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -146,7 +144,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_edit')) {
@@ -170,14 +168,14 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->regionService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+            $result = $this->regionService->validateAndUpdate($request->all(), $id, Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -194,7 +192,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('regions_destroy')) {
@@ -214,7 +212,7 @@ class RegionsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {

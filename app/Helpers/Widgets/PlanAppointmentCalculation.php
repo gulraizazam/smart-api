@@ -112,7 +112,7 @@ class PlanAppointmentCalculation
     {
         if ($location_id) {
 
-            $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($location_id, Auth::User()->account_id);
+            $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($location_id, Auth::user()->account_id);
             foreach ($doctors_no_final as $key => $doctor) {
 
                 $resource = Resources::where('external_id', '=', $key)->first();
@@ -125,10 +125,10 @@ class PlanAppointmentCalculation
                     ->where('resource_has_rota_days.date', '=', Carbon::now()->toDateString())
                     ->get();
 
-                if (count($doctor_rota) == 0) {
+                if (empty($doctor_rota)) {
                     unset($doctors[$key]);
                 } else {
-                    if (in_array($key, $doctorids)) {
+                    if (in_array($key, $doctorids, true)) {
                         unset($doctors[$key]);
                     }
                 }
@@ -174,7 +174,7 @@ class PlanAppointmentCalculation
         $appointmentData['dob'] = $user_info->dob;
 
         // Store form data in a variable
-        $appointmentData['account_id'] = Auth::User()->account_id;
+        $appointmentData['account_id'] = Auth::user()->account_id;
         $appointmentData['phone'] = GeneralFunctions::cleanNumber($appointmentData['phone']);
         $appointmentData['created_by'] = Auth::user()->id;
         $appointmentData['updated_by'] = Auth::user()->id;
@@ -190,7 +190,7 @@ class PlanAppointmentCalculation
         }
 
         // Set default appointment status i.e. 'pending'
-        $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+        $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::user()->account_id);
 
         if ($appointment_status) {
             $appointmentData['appointment_status_id'] = $appointment_status->id;
@@ -240,7 +240,7 @@ class PlanAppointmentCalculation
             $leadObj['patient_id'] = $patient->id;
             // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where([
-                'account_id' => Auth::User()->account_id,
+                'account_id' => Auth::user()->account_id,
                 'is_converted' => 1,
             ])->first();
             if ($DefaultConvertedLeadStatus) {
@@ -264,7 +264,7 @@ class PlanAppointmentCalculation
          */
         $appointmentData['created_at'] = date('Y-m-d H:i:s');
         $appointmentData['updated_at'] = date('Y-m-d H:i:s');
-        $appointmentData['updated_by'] = Auth::User()->id;
+        $appointmentData['updated_by'] = Auth::user()->id;
 
         $appointment = Appointments::create($appointmentData);
 
@@ -285,7 +285,7 @@ class PlanAppointmentCalculation
          * case 2: If 'un-scheduled' is not set then set defautl status i.e. 'pending'
          */
         if (! $appointment->scheduled_date && ! $appointment->scheduled_time) {
-            $appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id);
+            $appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::user()->account_id);
             if ($appointment_status) {
                 $appointment->update([
                     'appointment_status_id' => $appointment_status->id,
@@ -294,7 +294,7 @@ class PlanAppointmentCalculation
                 ]);
             } else {
                 // Set default appointment status i.e. 'pending'
-                $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+                $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::user()->account_id);
                 if ($appointment_status) {
                     $appointment->update([
                         'appointment_status_id' => $appointment_status->id,
@@ -318,7 +318,7 @@ class PlanAppointmentCalculation
          */
         $this->dispatch(
             new IndexSingleAppointmentJob([
-                'account_id' => Auth::User()->account_id,
+                'account_id' => Auth::user()->account_id,
                 'appointment_id' => $appointment->id,
             ])
         );
@@ -333,7 +333,7 @@ class PlanAppointmentCalculation
     public static function getserviceparentinfo($request)
     {
         $searchServices = Services::where([
-            'account_id' => Auth::User()->account_id,
+            'account_id' => Auth::user()->account_id,
             'active' => 1,
         ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
@@ -350,7 +350,7 @@ class PlanAppointmentCalculation
     public static function getserviceparentinfo_direct($request)
     {
         $searchServices = Services::where([
-            'account_id' => Auth::User()->account_id,
+            'account_id' => Auth::user()->account_id,
             'active' => 1,
         ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
@@ -415,11 +415,11 @@ class PlanAppointmentCalculation
         $appointmentinfo = Appointments::find($appointment_id);
 
         $data['total_price'] = $req['price'];
-        $data['account_id'] = Auth::User()->account_id;
+        $data['account_id'] = Auth::user()->account_id;
         $data['patient_id'] = $appointmentinfo->patient_id;
         $data['appointment_id'] = $req['appointment_id'];
         $data['invoice_status_id'] = $invoicestatus->id;
-        $data['created_by'] = Auth::User()->id;
+        $data['created_by'] = Auth::user()->id;
         $data['location_id'] = $appointmentinfo->location_id;
         $data['doctor_id'] = $appointmentinfo->doctor_id;
         $data['is_exclusive'] = $req['is_exclusive'];
@@ -457,13 +457,13 @@ class PlanAppointmentCalculation
         $data_package['cash_amount'] = $req['cash'];
         $data_package['patient_id'] = $appointmentinfo->patient_id;
         $data_package['payment_mode_id'] = $req['payment_mode_id'];
-        $data_package['account_id'] = Auth::User()->account_id;
+        $data_package['account_id'] = Auth::user()->account_id;
         $data_package['appointment_type_id'] = $appointmentinfo->appointment_type_id;
         $data_package['appointment_id'] = $req['appointment_id'];
         $data_package['invoice_id'] = $invoice->id;
         $data_package['location_id'] = $appointmentinfo->location_id;
-        $data_package['created_by'] = Auth::User()->id;
-        $data_package['updated_by'] = Auth::User()->id;
+        $data_package['created_by'] = Auth::user()->id;
+        $data_package['updated_by'] = Auth::user()->id;
 
         $data_package['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
         $data_package['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
@@ -487,13 +487,13 @@ class PlanAppointmentCalculation
             $data_package['cash_amount'] = $trans;
             $data_package['patient_id'] = $appointmentinfo->patient_id;
             $data_package['payment_mode_id'] = $paymentmode_settle->id;
-            $data_package['account_id'] = Auth::User()->account_id;
+            $data_package['account_id'] = Auth::user()->account_id;
             $data_package['appointment_type_id'] = $appointmentinfo->appointment_type_id;
             $data_package['appointment_id'] = $req['appointment_id'];
             $data_package['invoice_id'] = $invoice->id;
             $data_package['location_id'] = $appointmentinfo->location_id;
-            $data_package['created_by'] = Auth::User()->id;
-            $data_package['updated_by'] = Auth::User()->id;
+            $data_package['created_by'] = Auth::user()->id;
+            $data_package['updated_by'] = Auth::user()->id;
             $data_package['created_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
             $data_package['updated_at'] = $req['created_at'].' '.Carbon::now()->toTimeString();
             if ($invoice_detail->package_id != null) {
@@ -523,7 +523,7 @@ class PlanAppointmentCalculation
         }
 
         // In case of auto change status we need to update by so that s why we did
-        $appointment_data_status['converted_by'] = Auth::User()->id;
+        $appointment_data_status['converted_by'] = Auth::user()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
 
@@ -532,7 +532,7 @@ class PlanAppointmentCalculation
          */
         $this->dispatch(
             new IndexSingleAppointmentJob([
-                'account_id' => Auth::User()->account_id,
+                'account_id' => Auth::user()->account_id,
                 'appointment_id' => $appointmentinfo->id,
             ])
         );
@@ -572,11 +572,11 @@ class PlanAppointmentCalculation
         $resource = Resources::where([
             'external_id' => $appointmentData['doctor_id'],
             'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
-            'account_id' => Auth::User()->account_id,
+            'account_id' => Auth::user()->account_id,
         ])->first();
 
         if ($resource) {
-            $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $appointmentData['scheduled_date'], Auth::User()->account_id, $appointmentData['location_id']);
+            $resource_has_rota_day = ResourceHasRotaDays::getSingleDayRotaWithResourceID($resource->id, $appointmentData['scheduled_date'], Auth::user()->account_id, $appointmentData['location_id']);
             if (count($resource_has_rota_day)) {
                 $appointmentData['resource_id'] = $resource->id;
                 $appointmentData['resource_has_rota_day_id'] = $resource_has_rota_day['id'];
@@ -595,7 +595,7 @@ class PlanAppointmentCalculation
          */
         $this->dispatch(
             new IndexSingleAppointmentJob([
-                'account_id' => Auth::User()->account_id,
+                'account_id' => Auth::user()->account_id,
                 'appointment_id' => $appointment->id,
             ])
         );

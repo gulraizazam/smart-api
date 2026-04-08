@@ -9,7 +9,7 @@ use App\Models\User;
  * Authorization policy for Appointments.
  *
  * All methods delegate to Spatie permission strings so the logic stays
- * in one place. The Gate::before() Super-Admin bypass in AuthServiceProvider
+ * in one place. The Gate::before() Super-Admin bypass in AppServiceProvider
  * means Super-Admin users automatically pass every check here.
  */
 class AppointmentPolicy

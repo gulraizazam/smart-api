@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Gate;
 
 class StoreLeadStatusRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('lead_statuses_create');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -28,6 +30,7 @@ class StoreLeadStatusRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

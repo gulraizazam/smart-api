@@ -43,7 +43,7 @@ class DashboardHelper
      */
     public static function getUserCentres(): array
     {
-        return once(fn (): array => auth()->id() == 1 ? [] : ACL::getUserCentres());
+        return once(fn (): array => auth()->id() === 1 ? [] : ACL::getUserCentres());
     }
 
     /**

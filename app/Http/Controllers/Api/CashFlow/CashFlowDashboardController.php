@@ -1,0 +1,774 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api\CashFlow;
+
+use App\Exceptions\CashflowException;
+use App\Helpers\CashflowHelper;
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Services\CashFlow\CashflowSettingService;
+use App\Services\CashFlow\DashboardService;
+use App\Services\CashFlow\NotificationService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+
+class CashFlowDashboardController extends Controller
+{
+    public function __construct(
+        private readonly DashboardService $dashboardService,
+        private readonly NotificationService $notificationService,
+        private readonly CashflowSettingService $settingService,
+    ) {}
+
+    /**
+     * Dashboard data endpoint.
+     */
+    public function dashboardData(Request $request): JsonResponse
+    {
+
+        try {
+
+            $accountId = Auth::user()->account_id;
+
+            $filters = $request->only(['date_from', 'date_to', 'branch_id']);
+
+
+
+            $data = $this->dashboardService->getDashboardData($accountId, $filters);
+
+
+
+            // Add accountant widgets if user is accountant
+
+            if (Gate::allows('cashflow_expense_create') && !Gate::allows('cashflow_settings')) {
+
+                $data['accountant_widgets'] = $this->dashboardService->getAccountantWidgets($accountId, Auth::id());
+
+            }
+
+
+
+            return response()->json(['success' => true, 'data' => $data]);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+
+    /**
+     * Reconciliation check (admin only).
+     */
+    public function dashboardReconciliation(): JsonResponse
+    {
+
+        try {
+
+            if (!Gate::allows('cashflow_settings')) {
+
+                throw CashflowException::unauthorized('run reconciliation');
+
+            }
+
+
+
+            $accountId = Auth::user()->account_id;
+
+            $result = $this->dashboardService->reconciliationCheck($accountId);
+
+
+
+            return response()->json(['success' => true, 'data' => $result]);
+
+        } catch (CashflowException $e) {
+
+            return $e->render(request());
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+
+    /**
+     * FDM Cash View data — read-only, shows all assigned branches.
+     * Returns: current balance, opening balance (Sunday), transfers, expenses, staff advances for the current week.
+     */
+    public function fdmData(Request $request): JsonResponse
+    {
+
+        try {
+
+            $accountId = Auth::user()->account_id;
+
+            $userBranches = CashflowHelper::getUserBranches();
+
+            if ($userBranches->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No branch assigned.'], 403);
+            }
+
+            // Return branches list for dropdown if requested
+            if ($request->has('branches_only')) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'branches' => $userBranches->map(fn($b) => ['id' => $b->id, 'name' => $b->name])->values(),
+                    ],
+                ]);
+            }
+
+            // Filter by single branch if provided
+            $filterBranchId = $request->input('branch_id');
+            if ($filterBranchId && $userBranches->pluck('id')->contains((int) $filterBranchId)) {
+                $branchIds = [(int) $filterBranchId];
+                $branchName = $userBranches->firstWhere('id', (int) $filterBranchId)->name;
+            } else {
+                $branchIds = $userBranches->pluck('id')->toArray();
+                $branchName = $userBranches->count() === 1
+                    ? $userBranches->first()->name
+                    : 'All Centres';
+            }
+
+            // Get branch cash pools for selected branches
+            $pools = \App\Models\CashFlow\CashPool::forAccount($accountId)
+                ->whereIn('location_id', $branchIds)
+                ->where('type', 'branch_cash')
+                ->get();
+
+
+
+            $poolIds = $pools->pluck('id')->toArray();
+
+            $currentBalance = (float) $pools->sum('cached_balance');
+
+
+
+            // Add inventory sales since go-live to current balance (cash only for branch pools)
+
+            $goLiveDate = $this->settingService->getGoLiveDate($accountId) ?? '2026-03-08';
+
+            $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
+
+            $inventoryCashSales = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->sum('total_price');
+
+            $inventoryCashRefunds = (float) Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                ->sum('total_price');
+
+            $currentBalance += $inventoryCashSales - $inventoryCashRefunds;
+
+            // Week range: Sunday (start) to today - for opening balance calculation
+            $sunday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->toDateString();
+            $today = \Carbon\Carbon::now()->toDateString();
+            $sundayStart = $sunday . ' 00:00:00';
+            $nowEnd = $today . ' 23:59:59';
+
+            // Debug information
+            $debugInfo = [
+                'cached_balance' => (float) $pools->sum('cached_balance'),
+                'inventory_cash_sales' => $inventoryCashSales,
+                'inventory_cash_refunds' => $inventoryCashRefunds,
+                'total_current_balance' => $currentBalance,
+                'static_opening_balance' => (float) $pools->sum('opening_balance'),
+                'current_date' => \Carbon\Carbon::now()->toDateTimeString(),
+                'calculated_sunday' => $sunday,
+                'calculated_today' => $today,
+            ];
+
+            // Last 7 days range - for transaction records display
+            $sevenDaysAgo = \Carbon\Carbon::now()->subDays(6)->toDateString(); // 7 days including today
+            $sevenDaysAgoStart = $sevenDaysAgo . ' 00:00:00';
+
+
+
+            // ---- Individual records for the last 7 days ----
+
+
+
+            // Cash Transfers (involving these pools)
+
+            $transfers = [];
+
+            if (!empty($poolIds)) {
+
+                $transfers = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+
+                    ->whereNull('voided_at')
+
+                    ->where(function ($q) use ($poolIds) {
+
+                        $q->whereIn('from_pool_id', $poolIds)
+
+                          ->orWhereIn('to_pool_id', $poolIds);
+
+                    })
+
+                    ->whereBetween('transfer_date', [$sevenDaysAgo, $today])
+
+                    ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name'])
+
+                    ->orderBy('transfer_date', 'desc')
+
+                    ->get()
+
+                    ->map(function ($t) use ($poolIds) {
+
+                        $direction = in_array($t->from_pool_id, $poolIds, true) ? 'out' : 'in';
+
+                        return [
+
+                            'id' => $t->id,
+
+                            'date' => $t->transfer_date->format('Y-m-d'),
+
+                            'amount' => (float) $t->amount,
+
+                            'direction' => $direction,
+
+                            'from_pool' => $t->fromPool?->name ?? 'N/A',
+
+                            'to_pool' => $t->toPool?->name ?? 'N/A',
+
+                            'description' => $t->description,
+
+                            'method' => $t->method,
+
+                            'created_by' => $t->creator?->name ?? 'N/A',
+
+                        ];
+
+                    })->toArray();
+
+            }
+
+
+
+            // Expenses (paid from these pools)
+
+            $expenses = [];
+
+            if (!empty($poolIds)) {
+
+                $expenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+
+                    ->whereNull('voided_at')
+
+                    ->where('status', '!=', 'rejected')
+
+                    ->whereIn('paid_from_pool_id', $poolIds)
+
+                    ->whereBetween('expense_date', [$sevenDaysAgo, $today])
+
+                    ->with(['category:id,name', 'paidFromPool:id,name'])
+
+                    ->orderBy('expense_date', 'desc')
+
+                    ->get()
+
+                    ->map(fn($e) => [
+
+                            'id' => $e->id,
+
+                            'date' => $e->expense_date->format('Y-m-d'),
+
+                            'amount' => (float) $e->amount,
+
+                            'description' => $e->description,
+
+                            'category' => $e->category?->name ?? 'N/A',
+
+                            'pool' => $e->paidFromPool?->name ?? 'N/A',
+
+                            'status' => $e->status,
+
+                        ])->toArray();
+
+            }
+
+
+
+            // Staff Advances (from these pools)
+
+            $staffAdvances = [];
+
+            if (!empty($poolIds)) {
+
+                $staffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+
+                    ->whereNull('voided_at')
+
+                    ->whereIn('pool_id', $poolIds)
+
+                    ->whereBetween('created_at', [$sevenDaysAgoStart, $nowEnd])
+
+                    ->with(['staffUser:id,name', 'pool:id,name'])
+
+                    ->orderBy('created_at', 'desc')
+
+                    ->get()
+
+                    ->map(fn($a) => [
+
+                            'id' => $a->id,
+
+                            'date' => $a->created_at->format('Y-m-d'),
+
+                            'amount' => (float) $a->amount,
+
+                            'staff_name' => $a->staffUser?->name ?? 'N/A',
+
+                            'pool' => $a->pool?->name ?? 'N/A',
+
+                            'description' => $a->description,
+
+                        ])->toArray();
+
+            }
+
+            // Get cash payment mode IDs (needed for opening balance calculation)
+            $cashModeIds = \App\Models\PaymentModes::where('active', 1)
+                ->get()
+                ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
+                ->pluck('id')
+                ->toArray();
+
+            // ---- Calculate opening balance (last week's closing balance) ----
+            // If we're in the first week since go-live, use the static opening balance
+            // Otherwise, calculate what the balance was at the end of last Saturday
+            $lastSaturday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::SUNDAY)->subDay()->endOfDay();
+
+            if ($lastSaturday->lt(\Carbon\Carbon::parse($goLiveDate))) {
+                // We're in the first week, use static opening balance
+                $openingBalance = (float) $pools->sum('opening_balance');
+            } else {
+                // Calculate balance at end of last Saturday
+                // Start with static opening balance
+                $openingBalance = (float) $pools->sum('opening_balance');
+
+                // Add all transactions from go-live to end of last Saturday
+                $branchPoolMap = $pools->pluck('id', 'location_id')->toArray();
+
+                // Add package advances (services cash inflows)
+                $servicesIn = 0;
+                $servicesOut = 0;
+                if (!empty($cashModeIds)) {
+                    // Services inflows
+                    $servicesIn = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'in')
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                        ->sum('cash_amount');
+                    $openingBalance += (float) $servicesIn;
+
+                    // Services refunds (outflows)
+                    $servicesOut = \App\Models\PackageAdvances::where('account_id', $accountId)
+                        ->where('cash_flow', 'out')
+                        ->where('is_refund', 1)
+                        ->where('is_cancel', 0)
+                        ->whereNull('deleted_at')
+                        ->whereIn('payment_mode_id', $cashModeIds)
+                        ->whereIn('location_id', array_keys($branchPoolMap))
+                        ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                        ->sum('cash_amount');
+                    $openingBalance -= (float) $servicesOut;
+                }
+
+                // Add inventory cash sales
+                $inventorySales = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'sale')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                    ->sum('total_price');
+                $openingBalance += $inventorySales;
+
+                // Subtract inventory cash refunds
+                $inventoryRefunds = (float) Order::where('account_id', $accountId)
+                    ->where('order_type', 'refund')
+                    ->where('payment_mode', 1)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                    ->sum('total_price');
+                $openingBalance -= $inventoryRefunds;
+
+                // Subtract expenses
+                $obExpenses = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance -= (float) $obExpenses;
+
+                // Handle transfers
+                $transfersOut = 0;
+                $transfersIn = 0;
+                $transfersOut = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('from_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance -= (float) $transfersOut;
+
+                $transfersIn = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [\Carbon\Carbon::parse($goLiveDate)->toDateString(), $lastSaturday->toDateString()])
+                    ->sum('amount');
+                $openingBalance += (float) $transfersIn;
+
+                // Subtract staff advances
+                $obStaffAdvances = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                    ->sum('amount');
+                $openingBalance -= (float) $obStaffAdvances;
+
+                // Add staff returns
+                $obStaffReturns = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastSaturday])
+                    ->sum('amount');
+                $openingBalance += (float) $obStaffReturns;
+
+                // Debug opening balance calculation
+                $debugInfo['opening_balance_calc'] = [
+                    'static_opening' => (float) $pools->sum('opening_balance'),
+                    'services_in' => (float) $servicesIn,
+                    'services_out' => (float) $servicesOut,
+                    'inventory_sales' => $inventorySales,
+                    'inventory_refunds' => $inventoryRefunds,
+                    'expenses' => (float) $obExpenses,
+                    'transfers_out' => (float) $transfersOut,
+                    'transfers_in' => (float) $transfersIn,
+                    'staff_advances' => (float) $obStaffAdvances,
+                    'staff_returns' => (float) $obStaffReturns,
+                    'calculated_opening' => $openingBalance,
+                    'last_saturday' => $lastSaturday->toDateTimeString(),
+                ];
+            }
+
+            // ---- Calculate current week card totals (all NET values) ----
+
+            // Services Cash Inflows: NET = inflows - refunds
+            $servicesCashInflows = 0;
+            $servicesCashInflowsCount = 0;
+            if (!empty($cashModeIds)) {
+                // Inflows
+                $svcInQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_cancel', 0)
+                    ->whereNull('deleted_at')
+                    ->where('cash_amount', '>', 0)
+                    ->whereIn('payment_mode_id', $cashModeIds)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereDate('system_created_at', '>=', $sunday)
+                    ->whereDate('system_created_at', '<=', $today);
+                $svcIn = (float) $svcInQuery->sum('cash_amount');
+                $svcInCount = $svcInQuery->count();
+
+                // Refunds (outflows)
+                $svcOutQuery = \App\Models\PackageAdvances::where('account_id', $accountId)
+                    ->where('cash_flow', 'out')
+                    ->where('is_refund', 1)
+                    ->where('is_cancel', 0)
+                    ->whereNull('deleted_at')
+                    ->whereIn('payment_mode_id', $cashModeIds)
+                    ->whereIn('location_id', array_keys($branchPoolMap))
+                    ->whereDate('system_created_at', '>=', $sunday)
+                    ->whereDate('system_created_at', '<=', $today);
+                $svcOut = (float) $svcOutQuery->sum('cash_amount');
+                $svcOutCount = $svcOutQuery->count();
+
+                $servicesCashInflows = $svcIn - $svcOut;
+                $servicesCashInflowsCount = $svcInCount + $svcOutCount;
+            }
+
+            // Inventory Cash Inflows (sales minus refunds)
+            $inventorySalesQuery = Order::where('account_id', $accountId)
+                ->where('order_type', 'sale')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->whereDate('created_at', '>=', $sunday)
+                ->whereDate('created_at', '<=', $today);
+            $inventorySalesAmount = (float) $inventorySalesQuery->sum('total_price');
+            $inventorySalesCount = $inventorySalesQuery->count();
+
+            $inventoryRefundsQuery = Order::where('account_id', $accountId)
+                ->where('order_type', 'refund')
+                ->where('payment_mode', 1)
+                ->whereIn('location_id', array_keys($branchPoolMap))
+                ->whereDate('created_at', '>=', $sunday)
+                ->whereDate('created_at', '<=', $today);
+            $inventoryRefundsAmount = (float) $inventoryRefundsQuery->sum('total_price');
+            $inventoryRefundsCount = $inventoryRefundsQuery->count();
+
+            $inventoryCashInflows = $inventorySalesAmount - $inventoryRefundsAmount;
+            $inventoryCashInflowsCount = $inventorySalesCount + $inventoryRefundsCount;
+
+            // Expenses Total (current week)
+            $weekExpensesTotal = 0;
+            $weekExpensesCount = 0;
+            if (!empty($poolIds)) {
+                $weekExpensesQuery = \App\Models\CashFlow\Expense::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('paid_from_pool_id', $poolIds)
+                    ->whereBetween('expense_date', [$sunday, $today]);
+                $weekExpensesTotal = (float) $weekExpensesQuery->sum('amount');
+                $weekExpensesCount = $weekExpensesQuery->count();
+            }
+
+            // Cash Transfers Total: NET = out - in (current week)
+            $weekTransfersTotal = 0;
+            $weekTransfersCount = 0;
+            if (!empty($poolIds)) {
+                // Transfers OUT of branch pools
+                $trfOutQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('from_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [$sunday, $today]);
+                $trfOut = (float) $trfOutQuery->sum('amount');
+                $trfOutCount = $trfOutQuery->count();
+
+                // Transfers IN to branch pools
+                $trfInQuery = \App\Models\CashFlow\CashTransfer::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('to_pool_id', $poolIds)
+                    ->whereBetween('transfer_date', [$sunday, $today]);
+                $trfIn = (float) $trfInQuery->sum('amount');
+                $trfInCount = $trfInQuery->count();
+
+                $weekTransfersTotal = $trfOut - $trfIn;
+                $weekTransfersCount = $trfOutCount + $trfInCount;
+            }
+
+            // Staff Advances Total: NET = advances - returns (current week)
+            $weekAdvancesTotal = 0;
+            $weekAdvancesCount = 0;
+            if (!empty($poolIds)) {
+                $advQuery = \App\Models\CashFlow\StaffAdvance::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
+                $advOut = (float) $advQuery->sum('amount');
+                $advOutCount = $advQuery->count();
+
+                $retQuery = \App\Models\CashFlow\StaffReturn::forAccount($accountId)
+                    ->whereNull('voided_at')
+                    ->whereIn('pool_id', $poolIds)
+                    ->whereBetween('created_at', [$sundayStart, $nowEnd]);
+                $retIn = (float) $retQuery->sum('amount');
+                $retInCount = $retQuery->count();
+
+                $weekAdvancesTotal = $advOut - $retIn;
+                $weekAdvancesCount = $advOutCount + $retInCount;
+            }
+
+            // ---- Live Cash Balance = Opening + Services + Inventory - Expenses - Transfers - Advances ----
+            $liveCashBalance = round($openingBalance, 2)
+                + $servicesCashInflows
+                + $inventoryCashInflows
+                - $weekExpensesTotal
+                - $weekTransfersTotal
+                - $weekAdvancesTotal;
+
+            return response()->json([
+
+                'success' => true,
+
+                'data' => [
+
+                    'branch_name' => $branchName,
+
+                    'pool_balance' => round($liveCashBalance, 2),
+
+                    'opening_balance' => round($openingBalance, 2),
+
+                    'week_start' => $sunday,
+
+                    'records_period_start' => $sevenDaysAgo,
+
+                    'records_period_end' => $today,
+
+                    'services_cash_inflows' => (float) $servicesCashInflows,
+
+                    'services_cash_inflows_count' => $servicesCashInflowsCount,
+
+                    'inventory_cash_inflows' => (float) $inventoryCashInflows,
+
+                    'inventory_cash_inflows_count' => $inventoryCashInflowsCount,
+
+                    'week_expenses_total' => (float) $weekExpensesTotal,
+
+                    'week_expenses_count' => $weekExpensesCount,
+
+                    'week_transfers_total' => (float) $weekTransfersTotal,
+
+                    'week_transfers_count' => $weekTransfersCount,
+
+                    'week_advances_total' => (float) $weekAdvancesTotal,
+
+                    'week_advances_count' => $weekAdvancesCount,
+
+                    'transfers' => $transfers,
+
+                    'expenses' => $expenses,
+
+                    'staff_advances' => $staffAdvances,
+
+                    'debug' => array_merge($debugInfo, [
+                        'live_balance_formula' => [
+                            'opening_balance' => round($openingBalance, 2),
+                            'services_net' => $servicesCashInflows,
+                            'inventory' => $inventoryCashInflows,
+                            'expenses' => $weekExpensesTotal,
+                            'transfers_net' => $weekTransfersTotal,
+                            'advances_net' => $weekAdvancesTotal,
+                            'live_cash_balance' => round($liveCashBalance, 2),
+                        ],
+                    ]),
+
+                ],
+
+            ]);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+
+    /**
+     * Get notifications for current user.
+     */
+    public function notificationsIndex(): JsonResponse
+    {
+
+        try {
+
+            $userId = Auth::id();
+
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'data' => $this->notificationService->getForUser($userId),
+
+                'unread_count' => $this->notificationService->getUnreadCount($userId),
+
+            ]);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+
+    /**
+     * Mark notifications as read.
+     */
+    public function notificationsMarkRead(Request $request): JsonResponse
+    {
+
+        try {
+
+            $userId = Auth::id();
+
+
+
+            if ($request->has('notification_id')) {
+
+                $this->notificationService->markRead($request->input('notification_id'), $userId);
+
+            } else {
+
+                $this->notificationService->markAllRead($userId);
+
+            }
+
+
+
+            return response()->json(['success' => true, 'message' => 'Notifications marked as read.']);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+
+    /**
+     * Get common lookup data used across multiple screens.
+     */
+    public function lookups(): JsonResponse
+    {
+
+        try {
+
+            $accountId = Auth::user()->account_id;
+
+
+
+            return response()->json([
+
+                'success' => true,
+
+                'data' => [
+
+                    'pools' => CashflowHelper::getActivePools($accountId),
+
+                    'categories' => CashflowHelper::getActiveCategories($accountId),
+
+                    'branches' => CashflowHelper::getActiveBranches($accountId),
+
+                    'payment_modes' => CashflowHelper::getActivePaymentModes(),
+
+                    'vendors' => CashflowHelper::getActiveVendors($accountId),
+
+                ],
+
+            ]);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+
+    }
+}

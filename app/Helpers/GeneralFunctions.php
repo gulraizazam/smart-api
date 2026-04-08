@@ -29,136 +29,52 @@ use Illuminate\Support\Facades\Gate;
 
 class GeneralFunctions
 {
-    public static function cleanNumber($phoneNumber)
+    public static function cleanNumber(string|int|null $phoneNumber): string
     {
-        $phoneNumber = (string) $phoneNumber;
-        $phoneNumber = str_replace(' ', '', $phoneNumber); // Replaces all spaces with hyphens.
-        $phoneNumber = str_replace('-', '', $phoneNumber); // Replaces all spaces with hyphens.
-
-        return self::cleanCountryCodes(preg_replace('/[^0-9\-]/', '', $phoneNumber)); // Removes special chars.
+        return \App\Services\Phone\PhoneFormattingService::cleanNumber($phoneNumber);
     }
 
-    private static function cleanCountryCodes($phoneNumber)
+    private static function cleanCountryCodes(string|int|null $phoneNumber): string
     {
-        //if($_SERVER['REMOTE_ADDR'] == '202.166.167.242'){dd($phoneNumber);}
-        // Remove Zero Leading
-        if ($phoneNumber[0] == '0') {
-            return $phoneNumber = substr($phoneNumber, 1);
-        }
-        // Remove Coutnry
-        if ($phoneNumber[0] == '9' && $phoneNumber[1] == '2') {
-            return $phoneNumber = substr($phoneNumber, 2);
-        }
-        // Remove Zero Leading
-        if ($phoneNumber[0] == '0') {
-            return $phoneNumber = substr($phoneNumber, 1);
-        }
-
-        return $phoneNumber;
+        return \App\Services\Phone\PhoneFormattingService::cleanNumber($phoneNumber);
     }
 
-    public static function prepareNumber($phoneNumber)
+    public static function prepareNumber(string $phoneNumber): string
     {
-        // Adjust Country Code for Pakistan
-        if ($phoneNumber[0] == '3' && (strlen($phoneNumber) >= 9 && strlen($phoneNumber) <= 11)) {
-            return '92' . $phoneNumber;
-        } else {
-            return $phoneNumber;
-        }
+        return \App\Services\Phone\PhoneFormattingService::prepareNumber($phoneNumber);
     }
 
-    public static function prepareNumber4Call($phoneNumber, $type = 0)
+    public static function prepareNumber4Call(string $phoneNumber, int $type = 0): string
     {
-
-        if (!Gate::allows('contact')) {
-            return '***********';
-        } else {
-
-            if (isset($phoneNumber) && $phoneNumber != '') {
-                if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 0) {
-                    return '+92' . $phoneNumber;
-                } elseif ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 1) {
-                    return '0' . $phoneNumber;
-                } else {
-                    return $phoneNumber;
-                }
-            } else {
-                return $phoneNumber;
-            }
-            // Adjust Country Code for Pakistan
-
-        }
+        return \App\Services\Phone\PhoneFormattingService::prepareNumber4Call($phoneNumber, $type);
     }
 
-    public static function prepareNumber4CallSMS($phoneNumber)
+    public static function prepareNumber4CallSMS(string $phoneNumber): string
     {
-        // Adjust Country Code for Pakistan
-        if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10) {
-            return '+92' . $phoneNumber;
-        } else {
-            return $phoneNumber;
-        }
+        return \App\Services\Phone\PhoneFormattingService::prepareNumber4CallSMS($phoneNumber);
     }
 
-    /**
-     * @param $type in string form
-     * @return number numeric constant value
-     */
-    public static function AppointmentType($type)
+    public static function contactStatus(?string $contact): string
     {
-        return $type == config('constants.appointment_type_consultancy_string') ? config('constants.appointment_type_consultancy') : config('constants.appointment_type_service');
+        return \App\Services\PatientManagement\PatientSearchService::contactStatus($contact);
     }
 
-    public static function contactStatus($contact)
+    public static function patientSearch(string|int $id): string|int
     {
-        if (!Gate::allows('contact')) {
-            return '***********';
-        } else {
-            return $contact;
-        }
+        return \App\Services\PatientManagement\PatientSearchService::patientSearch($id);
     }
 
-    public static function patientSearch($id)
+    public static function patientSearchStringAdd(string|int $id): string
     {
-        if (is_numeric($id)) {
-            return $id;
-        } else {
-            if (strpos($id, 'C-') == 0) {
-                $id = str_replace('C-', '', $id);
-                if (strpos($id, 'c-') == 0) {
-                    return str_replace('c-', '', $id);
-                } else {
-                    return $id;
-                }
-            } else {
-                return $id;
-            }
-        }
+        return \App\Services\PatientManagement\PatientSearchService::patientSearchStringAdd($id);
     }
 
-    public static function patientSearchStringAdd($id)
+    public static function clearnString(string $string): string
     {
-        if (is_numeric($id)) {
-            return 'C-' . $id;
-        } else {
-            return $id;
-        }
+        return \App\Services\Phone\PhoneFormattingService::clearnString($string);
     }
 
-    public static function clearnString($string)
-    {
-
-        return str_replace([' ', '-', '+'], '', $string);
-    }
-
-    public static function getAppointmentType($appointment_id)
-    {
-        $appointment = Appointments::select('appointment_type_id')->find($appointment_id);
-
-        return $appointment->appointment_type_id ?? 0;
-    }
-
-    public static function servicesList($request = null, $total = 0)
+    public static function servicesList(?\Illuminate\Http\Request $request = null, int $total = 0): ?array
     {
         $where = [];
         if ($total >= 0) {
@@ -170,7 +86,7 @@ class GeneralFunctions
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
-                        Filters::forget(Auth::User()->id, $filename, 'name');
+                        Filters::forget(Auth::user()->id, $filename, 'name');
                     }
                 }
                 if (hasFilter($filters, 'status')) {
@@ -196,7 +112,7 @@ class GeneralFunctions
             $mergedServices = [];
             foreach ($services as $service) {
                 // Check if parent matches the name filter
-                $parentMatches = !hasFilter($filters, 'name') || stripos($service->name, $filters['name']) !== false;
+                $parentMatches = !hasFilter($filters, 'name') || str_contains(strtolower($service->name), strtolower($filters['name']));
 
                 if ($parentMatches) {
                     // Parent matches: get ALL children (only filter by status, not by name)
@@ -233,7 +149,7 @@ class GeneralFunctions
                     }
 
                     // Only include parent if it has matching children
-                    if (count($children) > 0) {
+                    if (!empty($children)) {
                         $mergedServices[] = $service->toArray();
                         foreach ($children as $child) {
                             $mergedServices[] = $child;
@@ -246,7 +162,7 @@ class GeneralFunctions
         }
     }
 
-    public static function ServicesTree($request = null, $total = 0)
+    public static function ServicesTree(?\Illuminate\Http\Request $request = null, int $total = 0): array|\Illuminate\Database\Eloquent\Collection|null
     {
         $where = [];
         if ($total >= 0) {
@@ -260,9 +176,9 @@ class GeneralFunctions
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
-                        Filters::forget(Auth::User()->id, $filename, 'name');
+                        Filters::forget(Auth::user()->id, $filename, 'name');
                     } else {
-                        if (Filters::get(Auth::User()->id, $filename, 'name')) {
+                        if (Filters::get(Auth::user()->id, $filename, 'name')) {
                             $where[] = ['name', 'like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%'];
                         }
                     }
@@ -289,7 +205,7 @@ class GeneralFunctions
                         ->where('slug', '!=', 'all')
                         ->where($where);
                     $services = $query->get();
-                    if (count($services) > 0) {
+                    if (!empty($services)) {
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
                             $serv = Services::where('id', $service->id)->first();
@@ -323,7 +239,7 @@ class GeneralFunctions
                         ->where('slug', '!=', 'all')
                         ->where('name', 'like', '%' . $filters['name'] . '%');
                     $services = $query->get();
-                    if (count($services) > 0) {
+                    if (!empty($services)) {
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
                             $serv = Services::where(['id' => $service->id])->first();
@@ -397,7 +313,7 @@ class GeneralFunctions
                 if (hasFilter($filters, 'name')) {
                     $query = Services::with('children')
                         ->where('slug', '!=', 'all')
-                        ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
+                        ->when(isset($where) && !empty($where), fn ($q) => $q->where($where));
                     $services = $query->get();
                     $mergedServices = [];
                     foreach ($services as $key => $service) {
@@ -418,7 +334,7 @@ class GeneralFunctions
             $query = Services::with('children')
                 ->where(['parent_id' => 0])
                 //->where('slug', '!=', 'all')
-                ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
+                ->when(isset($where) && !empty($where), fn ($q) => $q->where($where));
             $services = $query->get();
             $mergedServices = [];
             foreach ($services as $key => $service) {
@@ -437,7 +353,7 @@ class GeneralFunctions
             return $mergedServices;
         }
     }
-    public static function ServicesTreeMachineType()
+    public static function ServicesTreeMachineType(): array
     {
 
 
@@ -463,7 +379,7 @@ class GeneralFunctions
 
         return $mergedServices;
     }
-    public static function ServicesTreeList($request = null, $total = 0, $id = null)
+    public static function ServicesTreeList(?\Illuminate\Http\Request $request = null, int $total = 0, ?int $id = null): array|false|null
     {
         $where = [];
         if ($total >= 0 && $id == null) {
@@ -481,9 +397,9 @@ class GeneralFunctions
                         Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                     } else {
                         if ($apply_filter) {
-                            Filters::forget(Auth::User()->id, $filename, 'name');
+                            Filters::forget(Auth::user()->id, $filename, 'name');
                         } else {
-                            if (Filters::get(Auth::User()->id, $filename, 'name')) {
+                            if (Filters::get(Auth::user()->id, $filename, 'name')) {
                                 $where[] = [
                                     'name', 'like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
                                 ];
@@ -515,7 +431,7 @@ class GeneralFunctions
                             ->where('slug', '!=', 'all')
                             ->where($where);
                         $services = $query->get();
-                        if (count($services) > 0) {
+                        if (!empty($services)) {
                             $mergedServices = [];
                             foreach ($services as $key => $service) {
                                 $serv = Services::where('id', $service->id)->first();
@@ -557,7 +473,7 @@ class GeneralFunctions
                                 '%' . $filters['name'] . '%'
                             );
                         $services = $query->get();
-                        if (count($services) > 0) {
+                        if (!empty($services)) {
                             $mergedServices = [];
                             foreach ($services as $key => $service) {
                                 $serv = Services::where(['id' => $service->id])->first();
@@ -635,7 +551,7 @@ class GeneralFunctions
                     if (hasFilter($filters, 'name')) {
                         $query = Services::with('children')
                             ->where('slug', '!=', 'all')
-                            ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
+                            ->when(isset($where) && !empty($where), fn ($q) => $q->where($where));
                         $services = $query->get();
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
@@ -658,7 +574,7 @@ class GeneralFunctions
                 }])
                     ->where(['parent_id' => 0])
                     ->where('slug', '!=', 'all')
-                    ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
+                    ->when(isset($where) && !empty($where), fn ($q) => $q->where($where));
                 $services = $query->get()->toArray();
 
                 $allserviceslug = Services::where(['slug' => 'all'])->first();
@@ -690,7 +606,7 @@ class GeneralFunctions
         }
     }
 
-    public static function getServiceId($service_id)
+    public static function getServiceId(string $service_id): string
     {
         if (str_contains($service_id, 'bold-')) {
             return str_replace('bold-', '', $service_id);
@@ -699,7 +615,7 @@ class GeneralFunctions
         return $service_id;
     }
 
-    private static function appendAllService()
+    private static function appendAllService(): array
     {
         $allService = [];
         $allService['id'] = 0;
@@ -715,27 +631,12 @@ class GeneralFunctions
         return $allService;
     }
 
-    public static function duration()
-    {
-        $timeStep = 5;
-        $timeArray = [];
-        $startTime = new \DateTime('00:00');
-        $endTime = new \DateTime('23:55');
-
-        while ($startTime <= $endTime) {
-            $timeArray[] = $startTime->format('H:i');
-            $startTime->add(new \DateInterval('PT' . $timeStep . 'M'));
-        }
-
-        return $timeArray;
-    }
-
-    public static function parentServices()
+    public static function parentServices(): \Illuminate\Database\Eloquent\Collection
     {
         return Services::where('parent_id', 0)->where('slug', '!=', 'all')->get(['id', 'name']);
     }
 
-    public static function smsTemplateVariables($slug)
+    public static function smsTemplateVariables(string $slug): array
     {
         $options = [];
         if ($slug == 'invoice-ringup') {
@@ -783,137 +684,32 @@ class GeneralFunctions
         return $options;
     }
 
-    public static function saveAppointmentLogs($action, $screen, $data)
+    public static function saveAppointmentLogs(string $action, string $screen, mixed $data): void
     {
-
-        try {
-
-            AppointmentLog::create([
-                'user_id' => auth()->id(),
-                'action_by' => auth()->user()->name ?? 'Admin',
-                'action_for' => $data->name ?? '',
-                'action' => $action,
-                'screen' => $screen,
-                'address' => Locations::find($data->location_id ?? 0)->name ?? '',
-                'date' => Carbon::now()->timezone('Asia/Karachi')->format('Y-m-d'),
-                'time' => Carbon::now()->timezone('Asia/Karachi')->format('H:i:s'),
-                'type' => $action,
-            ]);
-        } catch (\Exception $e) {
-            //
-        }
+        \App\Helpers\ActivityLogger::saveAppointmentLogs($action, $screen, $data);
     }
 
-    public static function getFDM($location_ids = null)
+    public static function getFDM(?array $location_ids = null): array
     {
-        $fdo_ids = [];
-        $fdm_ids = [];
-        if ($location_ids && count($location_ids) > 0) {
-            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');
-            if ($fdo_phones->count()) {
-                foreach ($fdo_phones as $fdo_phone) {
-                    $fdo_ids[] = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))
-                        ->where('user_type_id', 2)->value('id');
-                }
-            }
-
-            $fdm_ids = count($fdo_ids) > 0 ? array_filter($fdo_ids) : [0];
-        }
-
-        if (count($fdm_ids) > 0) {
-            return $fdm_ids;
-        }
-
-        $fdm_ids = DB::table('role_has_users')
-            ->whereIn('role_id', ['4'])
-            ->pluck('user_id')->toArray();
-
-        return $fdm_ids;
+        return \App\Services\Location\LocationService::getFDM($location_ids);
     }
 
-    public static function getCSR()
+    public static function getCSR(): array
     {
-        $csr_user_ids = DB::table('role_has_users')
-            ->whereIn('role_id', ['2', '3'])
-            ->pluck('user_id')->toArray();
-
-        return $csr_user_ids;
+        return \App\Services\Location\LocationService::getCSR();
     }
 
-    public static function getLocationIds($location_id)
+    public static function getLocationIds(mixed $location_id): ?array
     {
-        if ($location_id) {
-
-            $location_ids = null;
-            if (is_string($location_id)) {
-                $location_id = explode(',', $location_id);
-            }
-            $locationIds = array_filter($location_id);
-            if (isset($locationIds) && count($locationIds)) {
-                $location_ids = $locationIds;
-            }
-
-            return $location_ids;
-        }
-
-        return null;
+        return \App\Services\Location\LocationService::getLocationIds($location_id);
     }
 
-    public static function patientNameUpdate($phone, $name)
+    public static function patientNameUpdate(string $phone, string $name): void
     {
-        $accountId = Auth::user()->account_id;
-        $patient_phone = GeneralFunctions::cleanNumber($phone);
-        Leads::where(['phone' => $patient_phone])->update([
-            'name' => $name,
-        ]);
-
-        Patients::where([
-            'phone' => $patient_phone,
-            'user_type_id' => Config::get('constants.patient_id'),
-            'account_id' => $accountId,
-        ])->update(['name' => $name]);
-
-        Appointments::whereIn('patient_id', function ($query) use ($patient_phone, $accountId) {
-            $query->select('id')
-                ->from('users')
-                ->where([
-                    'phone' => $patient_phone,
-                    'user_type_id' => Config::get('constants.patient_id'),
-                    'account_id' => $accountId,
-                ]);
-        })->update(['name' => $name]);
+        \App\Services\PatientManagement\PatientSearchService::patientNameUpdate($phone, $name);
     }
-    public static function GetPeriods()
-    {
-        $periods = [
-            'today' => [
-                'start_date' => Carbon::now()->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
-            ],
-            'yesterday' => [
-                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'last7days' => [
-                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
-            ],
-            'week' => [
-                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
-            ],
-            'thismonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
-            ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonthNoOverflow()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonthNoOverflow()->endOfMonth()->format('Y-m-d')
-            ]
-        ];
-        return $periods;
-    }
-    public static function genericfunctionforstaffwiserevenue($packagesadvance)
+
+    public static function genericfunctionforstaffwiserevenue(PackageAdvances $packagesadvance): ?array
     {
         $balance = 0;
         $total_balance = 0;
@@ -928,16 +724,11 @@ class GeneralFunctions
                 $packagesadvance->is_refund == '1'
             )
         ) {
-            switch ($packagesadvance->cash_flow) {
-                case 'in':
-                    $balance = $balance + $packagesadvance->cash_amount;
-                    break;
-                case 'out':
-                    $balance = $balance - $packagesadvance->cash_amount;
-                    break;
-                default:
-                    break;
-            }
+            $balance += match ($packagesadvance->cash_flow) {
+                'in' => $packagesadvance->cash_amount,
+                'out' => -$packagesadvance->cash_amount,
+                default => 0,
+            };
             $total_balance = $balance;
             if ($packagesadvance->cash_amount != 0) {
                 if ($packagesadvance->package_id) {
@@ -984,67 +775,32 @@ class GeneralFunctions
             }
         }
     }
-    public static function GetConvertedAppointments($period, $periods, $consultant)
-    {
-        $converted_appointments =  Appointments::with('location:id,name')
-            ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
-            ->whereIn('appointments.doctor_id', $consultant)
-            ->where('package_advances.cash_amount', '>', 0)
-            ->select('appointments.service_id', 'appointments.id')
-            ->when($period == 'today', function ($query) use ($periods, $period) {
-                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-            })
-            ->when($period != 'today', function ($query) use ($periods, $period) {
-                $query->whereBetween('package_advances.created_at', [
-                    $periods[$period]['start_date'],
-                    $periods[$period]['end_date']
-                ]);
-            })
-            ->get();
 
-        $total_appointments =  Appointments::with('location:id,name')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
-            ->whereIn('appointments.doctor_id', $consultant)
-            ->select('appointments.*')
-            ->when($period == 'today', function ($query) use ($periods, $period) {
-                $query->whereDate('appointments.scheduled_date', $periods[$period]['start_date']);
-            })
-            ->when($period != 'today', function ($query) use ($periods, $period) {
-                $query->whereBetween('appointments.scheduled_date', [
-                    $periods[$period]['start_date'],
-                    $periods[$period]['end_date']
-                ]);
-            })
-            ->get();
-        $total_appointments->merge($converted_appointments);
-        return $total_appointments;
-    }
-    public static function PatientFollowUpReport($data, $where)
+    public static function PatientFollowUpReport(array $data, array $where): array
     {
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
-        $centerIdsStr = implode(',', array_map('intval', $center_id));
+        $centerIds = array_map('intval', $center_id);
+        $centerPlaceholders = implode(',', array_fill(0, count($centerIds), '?'));
         $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
         $today = Carbon::now()->format('Y-m-d');
-        
+
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
-        $statusCondition = $convertedStatusId 
-            ? "base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
-            : "base_appointment_status_id = {$arrivedStatusId}";
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = (int) ($arrivedStatus ? $arrivedStatus->id : 2);
+        $convertedStatusId = $convertedStatus ? (int) $convertedStatus->id : null;
+
+        if ($convertedStatusId) {
+            $statusCondition = 'base_appointment_status_id IN (?, ?)';
+            $statusBindings = [$arrivedStatusId, $convertedStatusId];
+        } else {
+            $statusCondition = 'base_appointment_status_id = ?';
+            $statusBindings = [$arrivedStatusId];
+        }
 
         // Optimized single query approach - patients with NO treatment appointments
         $sqlNoTreatment = "
-            SELECT 
+            SELECT
                 u.id as patient_id,
                 u.name,
                 u.phone,
@@ -1057,12 +813,12 @@ class GeneralFunctions
             INNER JOIN (
                 SELECT DISTINCT patient_id
                 FROM appointments
-                WHERE appointment_type_id = 1 
+                WHERE appointment_type_id = 1
                     AND {$statusCondition}
-                    AND location_id IN ({$centerIdsStr})
+                    AND location_id IN ({$centerPlaceholders})
             ) apt ON u.id = apt.patient_id
             INNER JOIN (
-                SELECT 
+                SELECT
                     patient_id,
                     COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
                     COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
@@ -1076,15 +832,16 @@ class GeneralFunctions
                 AND bal.conversion_date IS NOT NULL
                 AND bal.conversion_date <= ?
                 AND NOT EXISTS (
-                    SELECT 1 FROM appointments t 
-                    WHERE t.patient_id = u.id 
+                    SELECT 1 FROM appointments t
+                    WHERE t.patient_id = u.id
                     AND t.appointment_type_id = 2
-                    AND t.location_id IN ({$centerIdsStr})
+                    AND t.location_id IN ({$centerPlaceholders})
                 )
             ORDER BY bal.conversion_date DESC
         ";
 
-        $patientsNoTreatment = DB::select($sqlNoTreatment, [$sevenDaysAgo]);
+        $bindings = array_merge($statusBindings, $centerIds, [$sevenDaysAgo], $centerIds);
+        $patientsNoTreatment = DB::select($sqlNoTreatment, $bindings);
         
         $patient_data = [];
         foreach ($patientsNoTreatment as $p) {
@@ -1102,10 +859,11 @@ class GeneralFunctions
 
         return $patient_data;
     }
-    public static function LoadPatientFollowUpReportMonthly($data, $where)
+    public static function LoadPatientFollowUpReportMonthly(array $data, array $where): array
     {
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
-        $centerIdsStr = implode(',', array_map('intval', $center_id));
+        $centerIds = array_map('intval', $center_id);
+        $centerPlaceholders = implode(',', array_fill(0, count($centerIds), '?'));
         $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
         $today = Carbon::now()->format('Y-m-d');
 
@@ -1116,7 +874,7 @@ class GeneralFunctions
         // 3. No future treatments scheduled
         // 4. Balance > 500
         $sql = "
-            SELECT 
+            SELECT
                 u.id as patient_id,
                 u.name,
                 u.phone,
@@ -1130,13 +888,13 @@ class GeneralFunctions
                 SELECT patient_id, MAX(scheduled_date) as last_arrived
                 FROM appointments
                 WHERE appointment_type_id = 2
-                    AND base_appointment_status_id = 2 
-                    AND location_id IN ({$centerIdsStr})
+                    AND base_appointment_status_id = 2
+                    AND location_id IN ({$centerPlaceholders})
                 GROUP BY patient_id
                 HAVING MAX(scheduled_date) <= ?
             ) apt ON u.id = apt.patient_id
             INNER JOIN (
-                SELECT 
+                SELECT
                     patient_id,
                     COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
                     COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
@@ -1147,16 +905,17 @@ class GeneralFunctions
             ) bal ON u.id = bal.patient_id
             WHERE u.user_type_id = 3 AND u.active = 1
                 AND NOT EXISTS (
-                    SELECT 1 FROM appointments f 
-                    WHERE f.patient_id = u.id 
+                    SELECT 1 FROM appointments f
+                    WHERE f.patient_id = u.id
                     AND f.appointment_type_id = 2
                     AND f.scheduled_date >= ?
-                    AND f.location_id IN ({$centerIdsStr})
+                    AND f.location_id IN ({$centerPlaceholders})
                 )
             ORDER BY apt.last_arrived DESC
         ";
 
-        $patients = DB::select($sql, [$thirtyOneDaysAgo, $today]);
+        $bindings = array_merge($centerIds, [$thirtyOneDaysAgo], [$today], $centerIds);
+        $patients = DB::select($sql, $bindings);
         
         $patient_data = [];
         foreach ($patients as $p) {
@@ -1176,65 +935,22 @@ class GeneralFunctions
     }
 
 
-    public static function stockCheck($id)
+    public static function stockCheck(int|string $id): array
     {
-        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
-        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
-        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
-        $stock_available = ($stock_quantity > 0) ? true : false;
-
-        return [
-            'stock_quantity' => $stock_quantity,
-            'stock_available' => $stock_available,
-        ];
+        return \App\Services\Product\ProductService::stockCheck($id);
     }
-    public static function inventoryCheck($request)
-    {
-        if ($request->from_location_id) {
-            $count_product_in_quantity = Inventory::where(['product_id' => $request->product_id, 'location_id' => $request->from_location_id])->first();
-        } else {
-            $count_product_in_quantity = Inventory::where(['product_id' => $request->product_id, 'warehouse_id' => $request->from_warehouse_id])->first();
-        }
 
-        return $count_product_in_quantity->quantity;
+    public static function inventoryCheck(mixed $request): int|float
+    {
+        return \App\Services\Product\ProductService::inventoryCheck($request);
     }
-    public static function stockC($id)
-    {
-        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
-        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
-        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
 
-        return $stock_quantity;
+    public static function stockC(int|string $id): int|float
+    {
+        return \App\Services\Product\ProductService::stockC($id);
     }
-    public static function saveActivityLogs($action, $activityType, $data, $appointment_id)
+    public static function saveActivityLogs(string $action, string $activityType, array $data, int|string $appointment_id): bool
     {
-
-        try {
-            $location = Locations::find($data['location_id']);
-            $service = Services::find($data['service_id']);
-            $patient = Patients::find($data['patient_id']);
-
-            Activity::create([
-                'created_by' => auth()->id(),
-                'user_id' => auth()->id(),
-                'action' => $action,
-                'appointment_type' => $activityType,
-                'appointment_id' => $appointment_id,
-                'activity_type' => $activityType,
-                'location' => $location ? $location->name : '',
-                'centre_id' => $location ? $location->id : NULL,
-                'service_id' => $service ? $service->id : NULL,
-                'service' => $service ? $service->name : NULL,
-                'patient_id' => $patient ? $patient->id : NULL,
-                'patient' => $patient ? $patient->name : NULL,
-                'schedule_date' => $data['scheduled_date'],
-                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
-                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
-
-            ]);
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
+        return \App\Helpers\ActivityLogger::saveActivityLogs($action, $activityType, $data, $appointment_id);
     }
 }

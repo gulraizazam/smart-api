@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Observers\CashFlow;
 
+use App\Enums\ExpenseStatus;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\Expense;
 use App\Models\CashFlow\Vendor;
@@ -15,6 +16,7 @@ class ExpenseObserver
      * After expense created: decrement pool balance.
      * Per spec: pool balance affected immediately (cash already spent), regardless of approval status.
      */
+    #[\Override]
     public function created(Expense $expense): void
     {
         try {
@@ -39,6 +41,7 @@ class ExpenseObserver
      * 5. Amount AND pool changed → credit old pool full amount, debit new pool new amount
      * 6. Voided → SKIP (handled directly in ExpenseService::void() to avoid double-counting)
      */
+    #[\Override]
     public function updated(Expense $expense): void
     {
         try {
@@ -48,7 +51,7 @@ class ExpenseObserver
             }
 
             // --- Status changed to rejected — reverse the pool deduction ---
-            if ($expense->isDirty('status') && $expense->status === Expense::STATUS_REJECTED) {
+            if ($expense->isDirty('status') && $expense->status === ExpenseStatus::Rejected) {
                 if (!$expense->paid_from_pool_id) return;
                 $this->incrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
                 Log::info('CashFlow: Expense rejected, pool reversed', [
@@ -60,8 +63,8 @@ class ExpenseObserver
 
             // --- Status changed from rejected to pending (resubmission) — re-apply deduction ---
             if ($expense->isDirty('status')
-                && $expense->status === Expense::STATUS_PENDING
-                && $expense->getOriginal('status') === Expense::STATUS_REJECTED
+                && $expense->status === ExpenseStatus::Pending
+                && $expense->getOriginal('status') === ExpenseStatus::Rejected
             ) {
                 if (!$expense->paid_from_pool_id) return;
                 $this->decrementPoolBalance($expense->paid_from_pool_id, $expense->amount);
@@ -73,7 +76,7 @@ class ExpenseObserver
             }
 
             // --- Admin edit: amount and/or pool changed on non-rejected, non-voided expense ---
-            if ($expense->isVoided() || $expense->status === Expense::STATUS_REJECTED) {
+            if ($expense->isVoided() || $expense->status === ExpenseStatus::Rejected) {
                 return; // no pool impact on voided/rejected expenses
             }
 

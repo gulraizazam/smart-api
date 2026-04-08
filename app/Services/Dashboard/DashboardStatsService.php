@@ -80,13 +80,15 @@ class DashboardStatsService
         $userCentres ??= DashboardHelper::getUserCentres();
         $statusIds ??= DashboardHelper::getArrivedAndConvertedStatusIds();
 
+        $statusPlaceholders = implode(',', array_fill(0, count($statusIds), '?'));
         $counts = Appointments::query()
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('location_id', $userCentres)
             ->selectRaw(
-                'COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN ('. implode(',', array_map('intval', $statusIds)) .') THEN 1 ELSE 0 END) as done_count'
+                "COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN ({$statusPlaceholders}) THEN 1 ELSE 0 END) as done_count"
             )
+            ->addBinding($statusIds, 'select')
             ->first();
 
         return [

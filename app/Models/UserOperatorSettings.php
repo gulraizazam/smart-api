@@ -29,6 +29,7 @@ class UserOperatorSettings extends BaseModel
 
     protected $hidden = ['password'];
 
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -94,7 +95,7 @@ class UserOperatorSettings extends BaseModel
     {
         $where = self::operators_filters($request, $accountId, $applyFilter);
 
-        return count($where) > 0 ? self::where($where)->count() : self::count();
+        return !empty($where) ? self::where($where)->count() : self::count();
     }
 
     /**
@@ -105,7 +106,7 @@ class UserOperatorSettings extends BaseModel
         $where = self::operators_filters($request, $accountId, $applyFilter);
         [$orderBy, $order] = getSortBy($request);
 
-        return self::when(count($where) > 0, fn ($q) => $q->where($where))
+        return self::when(!empty($where), fn ($q) => $q->where($where))
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->when($orderBy !== 'name', fn ($q) => $q->orderBy($orderBy, $order))

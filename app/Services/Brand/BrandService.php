@@ -167,6 +167,6 @@ class BrandService
         }
 
         return Brand::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where));
+            ->when(!empty($where), fn ($q) => $q->where($where));
     }
 }

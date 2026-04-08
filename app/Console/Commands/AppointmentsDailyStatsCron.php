@@ -41,11 +41,12 @@ class AppointmentsDailyStatsCron extends Command
      *
      * @return int
      */
+    #[\Override]
     public function handle(): int
     {
         try {
             $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
-            $locations = Locations::whereActive(1)->get()->pluck('id');
+            $locations = Locations::whereActive(1)->pluck('id');
             $today = Carbon::now()->format('Y-m-d');
              $tomorrow = Carbon::now()->addDay()->format('Y-m-d');
             foreach ($locations as $location) {
@@ -59,7 +60,7 @@ class AppointmentsDailyStatsCron extends Command
                     ->select('id', 'location_id', 'scheduled_date', 'base_appointment_status_id', 'created_by')
                     ->get();
                     
-                if (count($appointments) > 0) {
+                if (!empty($appointments)) {
                     foreach ($appointments as $appointment) {
                         AppointmentsDailyStats::updateOrCreate(
                             [

@@ -62,7 +62,7 @@ class Settings extends BaseModel
     {
         $where = self::settings_filters($request, $account_id, $apply_filter);
 
-        return count($where) > 0 ? self::where($where)->count() : self::count();
+        return !empty($where) ? self::where($where)->count() : self::count();
     }
 
     /**
@@ -73,7 +73,7 @@ class Settings extends BaseModel
         $where = self::settings_filters($request, $account_id, $apply_filter);
         [$orderBy, $order] = getSortBy($request);
 
-        return self::when(count($where) > 0, fn ($q) => $q->where($where))
+        return self::when(!empty($where), fn ($q) => $q->where($where))
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)

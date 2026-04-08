@@ -31,7 +31,7 @@ class CustomFormService
             if ($CustomForms) {
                 foreach ($CustomForms as $custom_form) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! CustomForms::isChildExists($custom_form->id, Auth::User()->account_id)) {
+                    if (! CustomForms::isChildExists($custom_form->id, Auth::user()->account_id)) {
                         $custom_form->delete();
                     }
                 }
@@ -41,13 +41,13 @@ class CustomFormService
         }
 
         // Get Total Records
-        $iTotalRecords = CustomForms::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+        $iTotalRecords = CustomForms::getTotalRecords($request, Auth::user()->account_id, $apply_filter);
 
         [$orderBy, $order] = getSortBy($request);
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $CustomForms = CustomForms::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+        $CustomForms = CustomForms::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter);
 
         $records = $this->getFilters($records);
 
@@ -85,7 +85,7 @@ class CustomFormService
             '2' => 'Medical Form',
         ];
 
-        $records['active_filters'] = Filters::all(Auth::User()->id, 'custom_forms');
+        $records['active_filters'] = Filters::all(Auth::user()->id, 'custom_forms');
 
         $records['filter_values'] = [
             'form_types' => $form_types,
@@ -98,7 +98,7 @@ class CustomFormService
     public function createGeneralForm(): int
     {
         $data['custom_form_type'] = '0';
-        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+        $form = CustomForms::createForm(Auth::user()->account_id, $data);
 
         return $form;
     }
@@ -106,7 +106,7 @@ class CustomFormService
     public function createMeasurementForm(): int
     {
         $data['custom_form_type'] = '1';
-        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+        $form = CustomForms::createForm(Auth::user()->account_id, $data);
 
         return $form;
     }
@@ -114,14 +114,14 @@ class CustomFormService
     public function createMedicalForm(): int
     {
         $data['custom_form_type'] = '2';
-        $form = CustomForms::createForm(Auth::User()->account_id, $data);
+        $form = CustomForms::createForm(Auth::user()->account_id, $data);
 
         return $form;
     }
 
     public function saveSortOrder(): array
     {
-        $custom_forms = DB::table('custom_forms')->where(['account_id' => Auth::User()->account_id])->orderBy('sort_number', 'ASC')->get();
+        $custom_forms = DB::table('custom_forms')->where(['account_id' => Auth::user()->account_id])->orderBy('sort_number', 'ASC')->get();
         $itemID = Input::get('itemID');
         $itemIndex = Input::get('itemIndex');
         if ($itemID) {
@@ -137,17 +137,17 @@ class CustomFormService
 
     public function sortFields(object $request, int $id): bool
     {
-        return (bool) CustomFormFields::sortFields($request, $id, Auth::User()->account_id, Auth::id());
+        return (bool) CustomFormFields::sortFields($request, $id, Auth::user()->account_id, Auth::id());
     }
 
     public function getSortOrderData(): object
     {
-        return DB::table('custom_forms')->where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+        return DB::table('custom_forms')->where(['account_id' => Auth::user()->account_id])->orderby('sort_number', 'ASC')->get();
     }
 
     public function storeRecord(object $request): bool
     {
-        return (bool) CustomForms::createRecord($request, Auth::User()->account_id, Auth::id());
+        return (bool) CustomForms::createRecord($request, Auth::user()->account_id, Auth::id());
     }
 
     public function getEditData(int $id): array
@@ -163,12 +163,12 @@ class CustomFormService
 
     public function updateRecord(int $id, object $request): bool
     {
-        return (bool) CustomForms::updateRecord($id, $request, Auth::User()->account_id);
+        return (bool) CustomForms::updateRecord($id, $request, Auth::user()->account_id);
     }
 
     public function formUpdate(int $id, object $request): array
     {
-        $custom_form = CustomForms::updateRecord($id, $request, Auth::User()->account_id, Auth::id());
+        $custom_form = CustomForms::updateRecord($id, $request, Auth::user()->account_id, Auth::id());
         if ($custom_form) {
             return ['success' => true, 'data' => $custom_form];
         }
@@ -178,7 +178,7 @@ class CustomFormService
 
     public function createField(object $request, int $id): array
     {
-        $data = CustomFormFields::createRecord($request, Auth::User()->account_id, Auth::id(), $id);
+        $data = CustomFormFields::createRecord($request, Auth::user()->account_id, Auth::id(), $id);
         if ($data) {
             return ['success' => true, 'request' => $request->all(), 'data' => $data];
         }
@@ -188,7 +188,7 @@ class CustomFormService
 
     public function updateField(object $request, int $formId, int $fieldId): array
     {
-        $data = CustomFormFields::updateRecord($request, Auth::User()->account_id, Auth::id(), $formId, $fieldId);
+        $data = CustomFormFields::updateRecord($request, Auth::user()->account_id, Auth::id(), $formId, $fieldId);
 
         if ($data) {
             return ['success' => true, 'request' => $request->all(), 'data' => $data];
@@ -219,7 +219,7 @@ class CustomFormService
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (CustomForms::isChildExists($id, Auth::User()->account_id)) {
+        if (CustomForms::isChildExists($id, Auth::user()->account_id)) {
             return ['success' => false, 'message' => 'Child records exist, unable to delete resource.'];
         }
 

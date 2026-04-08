@@ -99,7 +99,7 @@ class WarehouseService
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
 
         return ['cities' => $cities];
     }
@@ -135,7 +135,7 @@ class WarehouseService
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
         return [

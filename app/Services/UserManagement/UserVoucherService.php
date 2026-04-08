@@ -265,7 +265,7 @@ final class UserVoucherService
         $where = $this->buildWhereConditions($params, $userId, $applyFilter);
 
         return UserVouchers::query()
-            ->when(count($where) > 0, fn (Builder $q): Builder => $q->where($where));
+            ->when(!empty($where), fn (Builder $q): Builder => $q->where($where));
     }
 
     private function buildUsedVouchersLookup(Collection $vouchers): array

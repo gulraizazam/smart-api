@@ -109,10 +109,10 @@ class TransferProductService
     public function validateTransfer(array $data, bool $isUpdate = false): ?array
     {
         if ($isUpdate) {
-            $stockCheck = GeneralFunctions::stockC($data['product_id']);
+            $stockCheck = \App\Services\Product\ProductService::stockC($data['product_id']);
         } else {
             $request = new \Illuminate\Http\Request($data);
-            $stockCheck = GeneralFunctions::inventoryCheck($request);
+            $stockCheck = \App\Services\Product\ProductService::inventoryCheck($request);
         }
 
         if ($stockCheck < $data['quantity']) {
@@ -379,7 +379,7 @@ class TransferProductService
         }
 
         return TransferProduct::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where))
+            ->when(!empty($where), fn ($q) => $q->where($where))
             ->when($productId !== null, fn ($q) => $q->whereIn('product_id', $productId))
             ->where(fn ($query) => $query->whereIn('from_location_id', ACL::getUserCentres()));
     }

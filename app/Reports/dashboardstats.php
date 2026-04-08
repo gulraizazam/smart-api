@@ -37,7 +37,7 @@ class dashboardreport
             ->select('invoice_details.*', 'invoices.*');
 
         if ($performance == '1') {
-            $invoices = $invoices->where('invoices.created_by', '=', Auth::User()->id);
+            $invoices = $invoices->where('invoices.created_by', '=', Auth::user()->id);
         }
 
         $invoices = $invoices->get();
@@ -80,16 +80,11 @@ class dashboardreport
                             $packagesadvance->is_refund == '1'
                         )
                     ) {
-                        switch ($packagesadvance->cash_flow) {
-                            case 'in':
-                                $balance = $balance + $packagesadvance->cash_amount;
-                                break;
-                            case 'out':
-                                $balance = $balance - $packagesadvance->cash_amount;
-                                break;
-                            default:
-                                break;
-                        }
+                        $balance += match ($packagesadvance->cash_flow) {
+                            'in' => $packagesadvance->cash_amount,
+                            'out' => -$packagesadvance->cash_amount,
+                            default => 0,
+                        };
                         $total_balance = $balance;
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
@@ -177,7 +172,7 @@ class dashboardreport
             $wherecondtion[] = [
                 'created_by',
                 '=',
-                Auth::User()->id,
+                Auth::user()->id,
             ];
         }
         foreach ($location_information as $key => $location_infomation) {
@@ -230,16 +225,11 @@ class dashboardreport
                             $packagesadvance->is_cancel == '0'
                         )
                     ) {
-                        switch ($packagesadvance->cash_flow) {
-                            case 'in':
-                                $balance = $balance + $packagesadvance->cash_amount;
-                                break;
-                            case 'out':
-                                $balance = $balance - $packagesadvance->cash_amount;
-                                break;
-                            default:
-                                break;
-                        }
+                        $balance += match ($packagesadvance->cash_flow) {
+                            'in' => $packagesadvance->cash_amount,
+                            'out' => -$packagesadvance->cash_amount,
+                            default => 0,
+                        };
                         $total_balance = $balance;
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
@@ -328,7 +318,7 @@ class dashboardreport
             $where[] = [
                 'created_by',
                 '=',
-                Auth::User()->id,
+                Auth::user()->id,
             ];
 
         }
@@ -374,7 +364,7 @@ class dashboardreport
         $count = 0;
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (! in_array($appointment->base_appointment_status_id, $statuses)) {
+                if (! in_array($appointment->base_appointment_status_id, $statuses, true)) {
 
                     $report_data[$appointment->base_appointment_status_id] = [
                         'status_name' => $appointment->appointment_status_base->name,
@@ -403,7 +393,7 @@ class dashboardreport
                     'created_by' => $appointment->user->name,
                     'converted_by' => $appointment->user_converted_by->name,
                     'rescheduled_by' => $appointment->user_updated_by->name,
-                    'referred_by' => $user_info ? $user_info->name : '',
+                    'referred_by' => $user_info?->name ?? '',
                 ];
 
             }
@@ -425,7 +415,7 @@ class dashboardreport
             $where[] = [
                 'invoices.created_by',
                 '=',
-                Auth::User()->id,
+                Auth::user()->id,
             ];
             $where[] = [
                 'invoices.invoice_status_id',
@@ -454,7 +444,7 @@ class dashboardreport
         $services = [];
 
         foreach ($records as $record) {
-            if (! in_array($record->service_id, $services)) {
+            if (! in_array($record->service_id, $services, true)) {
                 $serviceinfo = Services::find($record->service_id);
                 $reportdata[$record->service_id] = [
                     'id' => $record->service_id,
@@ -480,7 +470,7 @@ class dashboardreport
             $where[] = [
                 'appointments.created_by',
                 '=',
-                Auth::User()->id,
+                Auth::user()->id,
             ];
         }
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
@@ -496,7 +486,7 @@ class dashboardreport
         $count = 0;
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (! in_array($appointment->appointment_type_id, $types)) {
+                if (! in_array($appointment->appointment_type_id, $types, true)) {
                     $report_data[$appointment->appointment_type_id] = [
                         'type_name' => $appointment->appointment_type->name,
                         'appointment_data' => [],
@@ -520,7 +510,7 @@ class dashboardreport
                     'created_by' => $appointment->user->name,
                     'converted_by' => $appointment->user_converted_by->name,
                     'rescheduled_by' => $appointment->user_updated_by->name,
-                    'referred_by' => $user_info ? $user_info->name : '',
+                    'referred_by' => $user_info?->name ?? '',
                 ];
             }
         }

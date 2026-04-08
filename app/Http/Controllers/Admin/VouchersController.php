@@ -27,7 +27,7 @@ class VouchersController extends Controller
 
     }
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('voucher_types_manage')) {
             return abort(401);

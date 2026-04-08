@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
+use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,31 +16,10 @@ use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
     use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
+    protected $redirectTo = AppServiceProvider::HOME;
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
@@ -53,16 +32,18 @@ class LoginController extends Controller
      * @param  mixed  $user
      * @return mixed
      */
-    protected function authenticated(): mixed
+    #[\Override]
+    protected function authenticated(): void
     {
-        $account_id = Auth::User()->account_id;
+        $account_id = Auth::user()->account_id;
         session(['account_id' => $account_id]);
         $account = DB::table('accounts')->find($account_id);
         session(['account' => $account]);
 
     }
 
-    public function login(Request $request): mixed
+    #[\Override]
+    public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
 
         $this->validateLogin($request);
@@ -114,7 +95,7 @@ class LoginController extends Controller
      *
      * @return Response
      */
-    public function checkSession(): mixed
+    public function checkSession(): \Illuminate\Http\JsonResponse
     {
         return response()->json(['guest' => Auth::guest()]);
     }
@@ -124,7 +105,8 @@ class LoginController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function logout(Request $request): mixed
+    #[\Override]
+    public function logout(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
         Filters::remove_filters();
 

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin;
 
 class RefundCreateRequest extends AdminApiFormRequest
 {
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -17,6 +18,7 @@ class RefundCreateRequest extends AdminApiFormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

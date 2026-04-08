@@ -21,10 +21,10 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('resources_manage')) {
-            return abort('401');
+            return abort(401);
         }
 
         return view('admin.resources.index');
@@ -35,7 +35,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create(): mixed
+    public function create(): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -57,10 +57,10 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function get_machinetype(Request $request): mixed
+    public function get_machinetype(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_create')) {
-            return abort('401');
+            return abort(401);
         }
 
         $result = $this->resourceService->getMachineTypesByLocation((int) $request->id);
@@ -85,10 +85,10 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function get_service(Request $request): mixed
+    public function get_service(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_create')) {
-            return abort('401');
+            return abort(401);
         }
 
         $result = $this->resourceService->getServicesByLocation((int) $request->id);
@@ -115,7 +115,7 @@ class ResourcesController extends Controller
      * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreUpdateResourceRequest $request): mixed
+    public function store(StoreUpdateResourceRequest $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -123,7 +123,7 @@ class ResourcesController extends Controller
 
         try {
 
-            if ($this->resourceService->store($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {
+            if ($this->resourceService->store($request->all(), \Illuminate\Support\Facades\Auth::user()->account_id)) {
                 return $this->successResponse('Record has been created successfully.');
             }
 
@@ -140,10 +140,10 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $records = $this->resourceService->getDatatableData($request->all(), \Illuminate\Support\Facades\Auth::User()->account_id);
+            $records = $this->resourceService->getDatatableData($request->all(), \Illuminate\Support\Facades\Auth::user()->account_id);
 
             return response()->json($records);
 
@@ -157,7 +157,7 @@ class ResourcesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_active')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -182,7 +182,7 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -203,13 +203,13 @@ class ResourcesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(StoreUpdateResourceRequest $request, int $id): mixed
+    public function update(StoreUpdateResourceRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_edit')) {
-            return abort('401');
+            return abort(401);
         }
 
-        if ($this->resourceService->update($id, $request->all(), \Illuminate\Support\Facades\Auth::User()->account_id)) {
+        if ($this->resourceService->update($id, $request->all(), \Illuminate\Support\Facades\Auth::user()->account_id)) {
             flash('Record has been updated successfully.')->success()->important();
 
             return response()->json([
@@ -230,7 +230,7 @@ class ResourcesController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('resources_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

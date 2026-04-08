@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -88,12 +89,12 @@ class Cities extends BaseModel
         }
         if ($cityId) {
             return self::whereIn('id', $cityId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['slug', '=', 'custom'],
-            ])->get()->pluck('name', 'id');
+            ])->pluck('name', 'id');
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['slug', '=', 'custom'],
             ])->pluck('name', 'id');
         }
@@ -113,7 +114,7 @@ class Cities extends BaseModel
             $query->whereIn('id', $cityId);
         }
 
-        return $query->get()->pluck($name, 'id');
+        return $query->pluck($name, 'id');
     }
 
     /**
@@ -141,9 +142,11 @@ class Cities extends BaseModel
     /**
      * Get the Location name with City Name.
      */
-    public function getFullNameAttribute($value)
+    protected function fullName(): Attribute
     {
-        return ucfirst($this->region->name).' - '.ucfirst($this->name);
+        return Attribute::make(
+            get: fn (): string => ucfirst($this->region->name) . ' - ' . ucfirst($this->name),
+        );
     }
 
     /**
@@ -234,16 +237,16 @@ class Cities extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'cities', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'cities', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'cities', 'account_id');
+                Filters::forget(Auth::user()->id, 'cities', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'cities', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'cities', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'account_id'),
+                        Filters::get(Auth::user()->id, 'cities', 'account_id'),
                     ];
                 }
             }
@@ -254,16 +257,16 @@ class Cities extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'cities', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'cities', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'cities', 'name');
+                Filters::forget(Auth::user()->id, 'cities', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'cities', 'name')) {
+                if (Filters::get(Auth::user()->id, 'cities', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'cities', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'cities', 'name').'%',
                     ];
                 }
             }
@@ -274,16 +277,16 @@ class Cities extends BaseModel
                 '=',
                 $filters['is_featured'],
             ];
-            Filters::put(Auth::User()->id, 'cities', 'is_featured', $filters['is_featured']);
+            Filters::put(Auth::user()->id, 'cities', 'is_featured', $filters['is_featured']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'cities', 'is_featured');
+                Filters::forget(Auth::user()->id, 'cities', 'is_featured');
             } else {
-                if (Filters::get(Auth::User()->id, 'cities', 'is_featured')) {
+                if (Filters::get(Auth::user()->id, 'cities', 'is_featured')) {
                     $where[] = [
                         'is_featured',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'is_featured'),
+                        Filters::get(Auth::user()->id, 'cities', 'is_featured'),
                     ];
                 }
             }
@@ -294,16 +297,16 @@ class Cities extends BaseModel
                 '=',
                 $filters['region_id'],
             ];
-            Filters::put(Auth::User()->id, 'cities', 'region_id', $filters['region_id']);
+            Filters::put(Auth::user()->id, 'cities', 'region_id', $filters['region_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'cities', 'region_id');
+                Filters::forget(Auth::user()->id, 'cities', 'region_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'cities', 'region_id')) {
+                if (Filters::get(Auth::user()->id, 'cities', 'region_id')) {
                     $where[] = [
                         'region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'cities', 'region_id'),
+                        Filters::get(Auth::user()->id, 'cities', 'region_id'),
                     ];
                 }
             }
@@ -403,7 +406,7 @@ class Cities extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Cities::isChildExists($id, Auth::User()->account_id)) {
+        if (Cities::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
 
@@ -511,9 +514,9 @@ class Cities extends BaseModel
     {
 
         return self::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
-        ])->OrderBy('sort_number', 'asc')->get()->pluck('name', 'id');
+        ])->OrderBy('sort_number', 'asc')->pluck('name', 'id');
 
     }
 }

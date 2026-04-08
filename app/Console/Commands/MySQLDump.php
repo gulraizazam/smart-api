@@ -37,19 +37,27 @@ class MySQLDump extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         try {
             $ds = DIRECTORY_SEPARATOR;
-            $host = env('DB_HOST');
-            $username = env('DB_USERNAME');
-            $password = env('DB_PASSWORD');
-            $database = env('DB_DATABASE');
+            $host = config('database.connections.mysql.host');
+            $username = config('database.connections.mysql.username');
+            $password = config('database.connections.mysql.password');
+            $database = config('database.connections.mysql.database');
 
             $ts = time();
             $path = database_path().$ds.'backups'.$ds;
             $file = date('Y-m-d-His', $ts).'-dump-'.$database.'.sql.gz';
-            $command = sprintf('mysqldump -h %s -u %s -p\'%s\' %s | gzip -9 -c > %s', $host, $username, $password, $database, $path.$file);
+            $command = sprintf(
+                'mysqldump -h %s -u %s -p%s %s | gzip -9 -c > %s',
+                escapeshellarg($host),
+                escapeshellarg($username),
+                escapeshellarg($password),
+                escapeshellarg($database),
+                escapeshellarg($path . $file)
+            );
 
             is_dir($path) ?: mkdir($path, 0755, true);
 
@@ -61,7 +69,7 @@ class MySQLDump extends Command
             ]);
 
         } catch (\Exception $exception) {
-
+            \Log::error('MySQLDump failed', ['error' => $exception->getMessage()]);
         }
     }
 }

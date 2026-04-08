@@ -22,12 +22,16 @@ class Permission extends \Spatie\Permission\Models\Permission
         'sort_order',
     ];
 
-    protected $casts = [
-        'main_group' => 'boolean',
-        'status' => 'boolean',
-        'parent_id' => 'integer',
-        'sort_order' => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'main_group' => 'boolean',
+            'status' => 'boolean',
+            'parent_id' => 'integer',
+            'sort_order' => 'integer',
+        ];
+    }
 
     public function parent(): BelongsTo
     {

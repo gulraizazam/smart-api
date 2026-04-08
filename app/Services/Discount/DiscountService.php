@@ -439,7 +439,7 @@ final class DiscountService
         // Filter children when parent is also selected
         $serviceIds = $this->filterRedundantChildren($serviceIds);
 
-        $isAllServices = $allServicesId && in_array($allServicesId, $serviceIds);
+        $isAllServices = $allServicesId && in_array($allServicesId, $serviceIds, true);
 
         // Check parent/child conflicts
         $conflictMessage = $this->checkAllocationConflicts(
@@ -504,7 +504,7 @@ final class DiscountService
             $createdIds[] = $record->id;
         }
 
-        if (count($createdIds) === 0) {
+        if (empty($createdIds)) {
             return [
                 'success'     => false,
                 'message'     => 'All selected services already exist for this location.',

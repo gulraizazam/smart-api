@@ -12,6 +12,7 @@ class CashTransferObserver
     /**
      * After transfer created: decrement source pool, increment destination pool.
      */
+    #[\Override]
     public function created(CashTransfer $transfer): void
     {
         try {

@@ -3,6 +3,9 @@
 // Consultancy Datatable, Appointment Misc, Inventory (Warehouse, Brands, Products, Transfer, Orders), Reports API
 
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\Appointments\AppointmentStatusController;
+use App\Http\Controllers\Admin\Appointments\AppointmentCommunicationController;
+use App\Http\Controllers\Admin\Appointments\AppointmentScheduleController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\InventoryReportController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -14,20 +17,20 @@ use Illuminate\Support\Facades\Route;
     /*Appointment routes*/
     Route::post('consultancy/datatable', [AppointmentsController::class, 'datatable'])->name('consultancy.datatable');
     // MIGRATED TO: Route::post('treatments/datatable') - admin.treatments.datatable
-    Route::get('appointments/show/status', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
-    Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
-    Route::put('appointments/store/appointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
-    Route::post('appointments/load-child-appointment/status-data', [AppointmentsController::class, 'loadAppointmentStatusData'])->name('appointments.load_child_appointment_status_data');
+    Route::get('appointments/show/status', [AppointmentStatusController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
+    Route::post('appointments/load-child-appointment-statuses', [AppointmentStatusController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
+    Route::put('appointments/store/appointmentstatus', [AppointmentStatusController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
+    Route::post('appointments/load-child-appointment/status-data', [AppointmentStatusController::class, 'loadAppointmentStatusData'])->name('appointments.load_child_appointment_status_data');
     /*Appointment routes*/
 
-    Route::get('appointments/sms_logs/{id}', [AppointmentsController::class, 'showSMSLogs'])->name('appointments.sms_logs');
+    Route::get('appointments/sms_logs/{id}', [AppointmentCommunicationController::class, 'showSMSLogs'])->name('appointments.sms_logs');
 
-    Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
+    Route::put('appointments/send/logged_sms', [AppointmentCommunicationController::class, 'sendLogSMS'])->name('appointments.resend_sms');
 
     // Legacy consultancy resource route - DEPRECATED, use /api/consultancy/* routes instead
     // Route::resource('consultancy', AppointmentsController::class)->except('index');
 
-    Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
+    Route::post('appointments/load-doctor-rota', [AppointmentScheduleController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
 
     /*Inventory Routes Start*/
 

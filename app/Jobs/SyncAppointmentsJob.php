@@ -18,19 +18,14 @@ class SyncAppointmentsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Handle Current Account
-     */
-    protected Accounts $account;
-
-    /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct(Accounts $account)
-    {
+    public function __construct(
+        protected readonly Accounts $account,
+    ) {
         $this->queue = 'high';
-        $this->account = $account;
     }
 
     /**

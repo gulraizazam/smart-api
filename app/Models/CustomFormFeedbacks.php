@@ -3,8 +3,9 @@
 declare(strict_types=1);
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\Filters;
+use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -66,15 +67,15 @@ class CustomFormFeedbacks extends BaseModel
 
             [$orderBy, $order] = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
 
-            Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, $filename, 'order', $order);
+            Filters::put(Auth::user()->id, $filename, 'order_by', $orderBy);
+            Filters::put(Auth::user()->id, $filename, 'order', $order);
         } else {
             if (
-                Filters::get(Auth::User()->id, $filename, 'order_by')
-                && Filters::get(Auth::User()->id, $filename, 'order')
+                Filters::get(Auth::user()->id, $filename, 'order_by')
+                && Filters::get(Auth::user()->id, $filename, 'order')
             ) {
-                $orderBy = Filters::get(Auth::User()->id, $filename, 'order_by');
-                $order = Filters::get(Auth::User()->id, $filename, 'order');
+                $orderBy = Filters::get(Auth::user()->id, $filename, 'order_by');
+                $order = Filters::get(Auth::user()->id, $filename, 'order');
 
                 if ($orderBy == 'created_at') {
                     $orderBy = 'custom_form_feedbacks.created_at';
@@ -86,8 +87,8 @@ class CustomFormFeedbacks extends BaseModel
                     $orderBy = 'custom_form_feedbacks.created_at';
                 }
 
-                Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, $filename, 'order', $order);
+                Filters::put(Auth::user()->id, $filename, 'order_by', $orderBy);
+                Filters::put(Auth::user()->id, $filename, 'order', $order);
             }
         }
 
@@ -122,9 +123,7 @@ class CustomFormFeedbacks extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -157,17 +156,17 @@ class CustomFormFeedbacks extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, $filename, 'account_id', $account_id);
+            Filters::put(Auth::user()->id, $filename, 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'account_id');
+                Filters::forget(Auth::user()->id, $filename, 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'account_id')) {
+                if (Filters::get(Auth::user()->id, $filename, 'account_id')) {
                     $where[] = [
                         'users.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, $filename, 'account_id'),
+                        Filters::get(Auth::user()->id, $filename, 'account_id'),
                     ];
                 }
             }
@@ -179,16 +178,16 @@ class CustomFormFeedbacks extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
+            Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'name');
+                Filters::forget(Auth::user()->id, $filename, 'name');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'name')) {
+                if (Filters::get(Auth::user()->id, $filename, 'name')) {
                     $where[] = [
                         'custom_form_feedbacks.form_name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, $filename, 'name').'%',
                     ];
                 }
             }
@@ -198,18 +197,18 @@ class CustomFormFeedbacks extends BaseModel
             $where[] = [
                 'users.id',
                 'like',
-                '%'.\App\Helpers\GeneralFunctions::patientSearch($filters['id']).'%',
+                '%'.PatientSearchService::patientSearch($filters['id']).'%',
             ];
-            Filters::put(Auth::User()->id, $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
+            Filters::put(Auth::user()->id, $filename, 'id', PatientSearchService::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'id');
+                Filters::forget(Auth::user()->id, $filename, 'id');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'id')) {
+                if (Filters::get(Auth::user()->id, $filename, 'id')) {
                     $where[] = [
                         'users.id',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'id').'%',
+                        '%'.Filters::get(Auth::user()->id, $filename, 'id').'%',
                     ];
                 }
             }
@@ -221,16 +220,16 @@ class CustomFormFeedbacks extends BaseModel
                 'like',
                 '%'.$filters['patient_name'].'%',
             ];
-            Filters::put(Auth::User()->id, $filename, 'patient_name', $filters['patient_name']);
+            Filters::put(Auth::user()->id, $filename, 'patient_name', $filters['patient_name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'patient_name');
+                Filters::forget(Auth::user()->id, $filename, 'patient_name');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'patient_name')) {
+                if (Filters::get(Auth::user()->id, $filename, 'patient_name')) {
                     $where[] = [
                         'users.name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'patient_name').'%',
+                        '%'.Filters::get(Auth::user()->id, $filename, 'patient_name').'%',
                     ];
                 }
             }
@@ -238,16 +237,16 @@ class CustomFormFeedbacks extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['custom_form_feedbacks.created_at', '>=', $start_date_time];
             $where[] = ['custom_form_feedbacks.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, $filename, 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'created_at');
+                Filters::forget(Auth::user()->id, $filename, 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'created_at')) {
+                if (Filters::get(Auth::user()->id, $filename, 'created_at')) {
                     $where[] = [
                         'custom_form_feedbacks.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_at'),
+                        Filters::get(Auth::user()->id, $filename, 'created_at'),
                     ];
                 }
             }
@@ -264,7 +263,7 @@ class CustomFormFeedbacks extends BaseModel
 
     public static function records()
     {
-        return self::where(['account_id' => Auth::User()->account_id])->with(['user'])->get();
+        return self::where(['account_id' => Auth::user()->account_id])->with(['user'])->get();
     }
 
     public static function deleteRecord($id)
@@ -393,7 +392,7 @@ class CustomFormFeedbacks extends BaseModel
 
         return self::where([
             ['id', '=', $id],
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->with(['form_fields', 'patient'])->first();
     }
 

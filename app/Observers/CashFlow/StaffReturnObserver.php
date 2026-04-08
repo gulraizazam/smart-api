@@ -12,6 +12,7 @@ class StaffReturnObserver
     /**
      * After return created: increment pool balance (cash returned).
      */
+    #[\Override]
     public function created(StaffReturn $return): void
     {
         try {

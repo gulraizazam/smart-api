@@ -10,12 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class GoogleReviewService
 {
-    private DoctorIdentifier $doctorIdentifier;
-
-    public function __construct(DoctorIdentifier $doctorIdentifier)
-    {
-        $this->doctorIdentifier = $doctorIdentifier;
-    }
+    public function __construct(
+        private readonly DoctorIdentifier $doctorIdentifier,
+    ) {}
 
     public function getGridData(int $accountId, int $month, int $year): array
     {

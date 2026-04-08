@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\Brand;
 use App\Models\DoctorHasLocations;
@@ -39,9 +39,7 @@ class InventoryReportService
         if (isset($requestData['date_range'])) {
             $date_range = explode(' - ', $requestData['date_range']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -79,16 +77,10 @@ class InventoryReportService
         $products = collect($products)->map(function ($product) use ($centres, $warehouse) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
             $product->available_stock = $product->getAvailableStockAttribute();
-            $product->order_quantity = $product['order']->filter(function ($order) {
-                return $order['order_type'] === 'sale' && $order['refund_order_id'] == null;
-            })->sum(function ($order) {
-                return $order['orderDetail']['quantity'];
-            });
-            $product->order_sale_price = $product['order']->filter(function ($order) {
-                return $order['order_type'] === 'sale' && $order['refund_order_id'] == null;
-            })->sum(function ($order) {
-                return $order['orderDetail']['sale_price'];
-            });
+            $product->order_quantity = $product['order']->filter(fn($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
+                ->sum(fn($order) => $order['orderDetail']['quantity']);
+            $product->order_sale_price = $product['order']->filter(fn($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
+                ->sum(fn($order) => $order['orderDetail']['sale_price']);
             $product->location = ($product->location_id != null) ? ((array_key_exists($product->location_id, $centres)) ? $centres[$product->location_id]->name : 'N/A') : ((array_key_exists($product->warehouse_id, $warehouse)) ? $warehouse[$product->warehouse_id]->name : 'N/A');
             return $product;
         });
@@ -98,9 +90,9 @@ class InventoryReportService
 
     public function getInventoryReportPageData(): array
     {
-        $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $Users = User::getAllRecords(Auth::user()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
         $brands = Brand::where('status', 1)->get();
 
         return [
@@ -253,17 +245,13 @@ class InventoryReportService
             $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
 
             // Process each order detail to calculate sales data
-            $productSales = $doctorOrders->flatMap(function ($order) {
-                return $order->orderDetail->map(function ($detail) use ($order) {
-                    return [
+            $productSales = $doctorOrders->flatMap(fn($order) => $order->orderDetail->map(fn($detail) => [
                         'product_id' => $detail->product_id,
                         'product_name' => $detail->product->name ?? 'Unknown Product',
                         'total_quantity' => $detail->quantity,
                         'subtotal' => $detail->quantity * ($detail->sale_price ?? $detail->product->sale_price ?? 0),
                         'order_date' => $order->created_at->format('d M Y'), // Adding order date
-                    ];
-                });
-            })->groupBy('product_id')->map(function ($orderDetails) {
+                    ]))->groupBy('product_id')->map(function ($orderDetails) {
                 $firstDetail = $orderDetails->first();
 
                 return [
@@ -314,16 +302,9 @@ class InventoryReportService
 
         // Aggregate data
         $reportData = $orders->map(function ($order) {
-            $totalRevenue = $order->orderDetail->sum(function ($detail) {
-
-                return $detail->quantity * $detail->sale_price;
-            });
-            $productNames = $order->orderDetail->map(function ($detail) {
-                return $detail->product->name ?? 'N/A';
-            })->unique()->join(', '); // Join multiple product names if needed
-            $quantity = $order->orderDetail->map(function ($detail) {
-                return $detail->quantity ?? 'N/A';
-            })->join(', '); // No unique() to avoid filtering out duplicate quantities
+            $totalRevenue = $order->orderDetail->sum(fn ($detail) => $detail->quantity * $detail->sale_price);
+            $productNames = $order->orderDetail->map(fn ($detail) => $detail->product->name ?? 'N/A')->unique()->join(', '); // Join multiple product names if needed
+            $quantity = $order->orderDetail->map(fn ($detail) => $detail->quantity ?? 'N/A')->join(', '); // No unique() to avoid filtering out duplicate quantities
             return [
                 'order_id' => $order->id,
                 'location_name' => $order->centre->name ?? 'N/A',
@@ -372,12 +353,12 @@ class InventoryReportService
         ->where('stocks.stock_type', 'in');
 
         // Apply location filter if provided
-        if (!is_null($locationId) && $locationId !== '') {
+        if ($locationId !== null && $locationId !== '') {
             $query->where('stocks.location_id', $locationId);
         }
 
         // Apply brand filter if provided
-        if (!is_null($brandId) && $brandId !== '') {
+        if ($brandId !== null && $brandId !== '') {
             $query->where('products.brand_id', $brandId);
         }
 
@@ -414,9 +395,7 @@ class InventoryReportService
 
         // Aggregate data
         $reportData = $orders->map(function ($order) {
-            $totalRevenue = $order->orderDetails->sum(function ($detail) {
-                return $detail->quantity * $detail->price;
-            });
+            $totalRevenue = $order->orderDetails->sum(fn ($detail) => $detail->quantity * $detail->price);
 
             return [
                 'order_id' => $order->id,

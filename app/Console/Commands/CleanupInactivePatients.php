@@ -30,6 +30,7 @@ class CleanupInactivePatients extends Command
     /**
      * Execute the console command.
      */
+    #[\Override]
     public function handle(): int
     {
         $isDryRun = $this->option('dry-run');
@@ -150,7 +151,7 @@ class CleanupInactivePatients extends Command
     /**
      * Build the query for inactive patients
      */
-    private function buildInactivePatientsQuery()
+    private function buildInactivePatientsQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return Patients::where('user_type_id', 3)
             ->whereNull('deleted_at')
@@ -174,7 +175,7 @@ class CleanupInactivePatients extends Command
     /**
      * Show breakdown by year
      */
-    private function showYearBreakdown(?string $filterYear = null)
+    private function showYearBreakdown(?string $filterYear = null): void
     {
         $query = $this->buildInactivePatientsQuery();
 
@@ -188,9 +189,7 @@ class CleanupInactivePatients extends Command
             ->get();
 
         $this->info('Breakdown by Year:');
-        $tableData = $byYear->map(function ($row) {
-            return [$row->year ?? 'NULL', number_format($row->count)];
-        })->toArray();
+        $tableData = $byYear->map(fn ($row) => [$row->year ?? 'NULL', number_format($row->count)])->toArray();
 
         $this->table(['Year', 'Count'], $tableData);
         $this->newLine();

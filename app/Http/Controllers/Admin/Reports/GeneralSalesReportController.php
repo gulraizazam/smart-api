@@ -103,7 +103,7 @@ class GeneralSalesReportController extends Controller
         }
 
         // Use the same PDF generation pattern as the original code
-        if (in_array($reportType, [ReportType::DailyEmployeeStats, ReportType::CollectionByService])) {
+        if (in_array($reportType, [ReportType::DailyEmployeeStats, ReportType::CollectionByService], true)) {
             $pdf = Pdf::loadView($pdfView, $result);
         } else {
             $content = view($pdfView, $result)->render();

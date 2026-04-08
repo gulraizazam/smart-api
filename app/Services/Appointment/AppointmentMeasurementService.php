@@ -23,13 +23,13 @@ class AppointmentMeasurementService
         $appointment = Appointments::findorfail($id);
 
         $patients = User::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
             ['user_type_id', '=', '3'],
         ])->pluck('name', 'id');
 
         $users = User::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
             ['user_type_id', '!=', '3'],
         ])->pluck('name', 'id');
@@ -45,14 +45,14 @@ class AppointmentMeasurementService
     {
         $where = [];
 
-        if (Auth::User()->account_id) {
+        if (Auth::user()->account_id) {
             $where[] = [
                 'account_id',
                 '=',
-                Auth::User()->account_id,
+                Auth::user()->account_id,
             ];
         }
-        if (Auth::User()->account_id) {
+        if (Auth::user()->account_id) {
             $where[] = [
                 'custom_form_type',
                 '=',
@@ -87,7 +87,7 @@ class AppointmentMeasurementService
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
@@ -107,11 +107,11 @@ class AppointmentMeasurementService
     public function submitForm(object $request, int $id, int $appointmentId): array
     {
         $data['custom_form_type'] = 1;
-        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::User()->account_id, Auth::id(), $data);
+        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::user()->account_id, Auth::id(), $data);
         if (! $custom_form_feedback) {
             return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
         } else {
-            $measurement = Measurement::CreateRecord($request, $custom_form_feedback->id, Auth::User()->id);
+            $measurement = Measurement::CreateRecord($request, $custom_form_feedback->id, Auth::user()->id);
             if (! $measurement) {
                 return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
             }
@@ -133,7 +133,7 @@ class AppointmentMeasurementService
             if ($appointmentmeasurements) {
                 foreach ($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::User()->account_id)) {
+                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::user()->account_id)) {
                         $appointmentmeasurement->delete();
                     }
                 }
@@ -143,12 +143,12 @@ class AppointmentMeasurementService
         }
 
         // Get Total Records
-        $iTotalRecords = Measurement::getTotalRecords($request, Auth::User()->account_id, $id);
+        $iTotalRecords = Measurement::getTotalRecords($request, Auth::user()->account_id, $id);
 
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id);
+        $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id);
 
         if ($appointmentmeasurements) {
             foreach ($appointmentmeasurements as $appointmentmeasurement) {
@@ -198,7 +198,7 @@ class AppointmentMeasurementService
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
@@ -217,7 +217,7 @@ class AppointmentMeasurementService
 
     public function updateMeasurementField(object $request): array
     {
-        if (Measurement::updateRecord($request, Auth::User()->account_id, Auth::id())) {
+        if (Measurement::updateRecord($request, Auth::user()->account_id, Auth::id())) {
             return ['success' => true, 'message' => 'your Feedback is updated successfully', 'code' => 200];
         } else {
             return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
@@ -239,7 +239,7 @@ class AppointmentMeasurementService
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;

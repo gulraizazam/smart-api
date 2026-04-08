@@ -7,6 +7,7 @@ namespace App\Services\UserManagement;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Services\Phone\PhoneFormattingService;
 use App\Http\Resources\User\ApplicationUserResource;
 use App\Models\AuditTrails;
 use App\Models\Locations;
@@ -75,13 +76,13 @@ class ApplicationUserService
         $where = $this->addFilter($where, $params, 'email', 'users.email', 'like', $userId, $applyFilter);
 
         if (!empty($params['phone'])) {
-            $phone = GeneralFunctions::cleanNumber($params['phone']);
+            $phone = PhoneFormattingService::cleanNumber($params['phone']);
             $where[] = ['users.phone', 'like', "%{$phone}%"];
             Filters::put($userId, self::FILTER_KEY, 'phone', $params['phone']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'phone');
         } elseif ($storedPhone = Filters::get($userId, self::FILTER_KEY, 'phone')) {
-            $where[] = ['users.phone', 'like', '%' . GeneralFunctions::cleanNumber($storedPhone) . '%'];
+            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($storedPhone) . '%'];
         }
 
         $where = $this->addFilter($where, $params, 'gender', 'users.gender', '=', $userId, $applyFilter);
@@ -198,7 +199,7 @@ class ApplicationUserService
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
-            'phone' => GeneralFunctions::cleanNumber($data['phone'] ?? ''),
+            'phone' => PhoneFormattingService::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
             'account_id' => $accountId,
             'main_account' => '0',
@@ -262,7 +263,7 @@ class ApplicationUserService
 
         $userData = [
             'name' => $data['name'],
-            'phone' => GeneralFunctions::cleanNumber($data['phone'] ?? ''),
+            'phone' => PhoneFormattingService::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
         ];
 
@@ -382,7 +383,7 @@ class ApplicationUserService
     {
         $query = Warehouse::where('active', 1);
 
-        if (!in_array('all', $warehouseIds)) {
+        if (!in_array('all', $warehouseIds, true)) {
             $query->whereIn('id', $warehouseIds);
         }
 

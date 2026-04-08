@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    protected string $success;
-    protected string $error;
-
     public function __construct(
         protected readonly DashboardStatsService $statsService,
         protected readonly DashboardRevenueService $revenueService,

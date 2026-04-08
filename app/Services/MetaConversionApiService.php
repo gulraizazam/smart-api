@@ -126,7 +126,7 @@ class MetaConversionApiService
         // Add currency and value for Purchase events (required by Meta)
         if ($statusMapping['event'] === 'Purchase') {
             $customData['currency'] = $currency ?? 'PKR';
-            $customData['value'] = floatval($value ?? 0);
+            $customData['value'] = (float) ($value ?? 0);
         }
 
         // Build the event data
@@ -172,7 +172,7 @@ class MetaConversionApiService
         }
 
         // Negative or unknown statuses return null (won't be sent)
-        if (in_array($normalizedStatus, $negativeStatuses)) {
+        if (in_array($normalizedStatus, $negativeStatuses, true)) {
             return null;
         }
 
@@ -192,7 +192,7 @@ class MetaConversionApiService
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
         // If starts with 0, replace with country code (Pakistan: 92)
-        if (substr($phone, 0, 1) === '0') {
+        if (str_starts_with($phone, '0')) {
             $phone = '92' . substr($phone, 1);
         }
 

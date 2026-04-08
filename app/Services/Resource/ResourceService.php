@@ -28,14 +28,14 @@ class ResourceService
 
         $locations = Locations::where([
             ['active', '=', '1'],
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['slug', '=', 'custom'],
-        ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
+        ])->whereIn('id', ACL::getUserCentres())->pluck('full_address', 'id');
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
             ['account_id', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        ])->pluck('name', 'id');
 
         return [
             'resource_types' => $resource_types,
@@ -49,7 +49,7 @@ class ResourceService
      */
     public function getMachineTypesByLocation(int $locationId): array
     {
-        $locationservice_ids = MachineTypeWidget::loadlocationservice($locationId, Auth::User()->account_id, true);
+        $locationservice_ids = MachineTypeWidget::loadlocationservice($locationId, Auth::user()->account_id, true);
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
@@ -60,7 +60,7 @@ class ResourceService
 
         foreach ($machinetypes as $machinetype) {
 
-            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::User()->account_id, true);
+            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::user()->account_id, true);
 
             $containsSearch = count(array_intersect($machinetypeservice_ids, $locationservice_ids)) == count($machinetypeservice_ids);
 
@@ -71,7 +71,7 @@ class ResourceService
         $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get();
 
         return [
-            'status' => count($machinetypes) > 0,
+            'status' => !empty($machinetypes),
             'machinetypes' => $machinetypes,
         ];
     }
@@ -95,7 +95,7 @@ class ResourceService
         if ($status_for_all) {
             $parentGroups = new NodesTree();
             $parentGroups->current_id = -1;
-            $parentGroups->build(0, Auth::User()->account_id, true, true);
+            $parentGroups->build(0, Auth::user()->account_id, true, true);
             $parentGroups->toList($parentGroups, -1);
             $Services = $parentGroups->nodeList;
             foreach ($Services as $key => $ser) {
@@ -111,14 +111,14 @@ class ResourceService
                 $parentGroups = new NodesTree();
                 $parentGroups->current_id = 1;
                 $parentGroups->non_negative_groups = true;
-                $parentGroups->build($service_data->id, Auth::User()->account_id, false, true);
+                $parentGroups->build($service_data->id, Auth::user()->account_id, false, true);
                 $parentGroups->toList($parentGroups, 0);
                 $Services[] = $parentGroups->nodeList;
             }
         }
 
         return [
-            'status' => count($Services) > 0,
+            'status' => !empty($Services),
             'Services' => $Services,
             'status_for_all' => $status_for_all,
         ];
@@ -205,7 +205,7 @@ class ResourceService
     private function getFiltersData(array $records): array
     {
         //Here we get all resource except doctor
-        $filters = Filters::all(Auth::User()->id, 'resources');
+        $filters = Filters::all(Auth::user()->id, 'resources');
 
         $resource_types = ResourceTypes::getallresource();
 
@@ -214,7 +214,7 @@ class ResourceService
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
             ['account_id', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        ])->pluck('name', 'id');
 
         $records['filter_values'] = [
             'machines' => $machinetypes,
@@ -261,11 +261,11 @@ class ResourceService
 
         $locations = Locations::where([
             //            ['active', '=', '1'],
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['slug', '=', 'custom'],
-        ])->whereIn('id', ACL::getUserCentres())->get()->pluck('full_address', 'id');
+        ])->whereIn('id', ACL::getUserCentres())->pluck('full_address', 'id');
 
-        $locationservice_ids = MachineTypeWidget::loadlocationservice($resource->location_id, Auth::User()->account_id, true);
+        $locationservice_ids = MachineTypeWidget::loadlocationservice($resource->location_id, Auth::user()->account_id, true);
 
         $machinetypes = MachineType::where([
             ['active', '=', '1'],
@@ -276,7 +276,7 @@ class ResourceService
 
         foreach ($machinetypes as $machinetype) {
 
-            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::User()->account_id, true);
+            $machinetypeservice_ids = MachineTypeWidget::loadmachinetypeservice($machinetype->id, Auth::user()->account_id, true);
 
             $containsSearch = count(array_intersect($machinetypeservice_ids, $locationservice_ids)) == count($machinetypeservice_ids);
 
@@ -285,7 +285,7 @@ class ResourceService
             }
         }
 
-        $machinetypes = MachineType::whereIn('id', $machinetype_ids)->get()->pluck('name', 'id');
+        $machinetypes = MachineType::whereIn('id', $machinetype_ids)->pluck('name', 'id');
 
         return [
             'resource' => $resource,

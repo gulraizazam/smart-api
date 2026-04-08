@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Gate;
 
 class PatientsController extends Controller
 {
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -36,7 +36,7 @@ class PatientsController extends Controller
         return view('admin.patients.index');
     }
 
-    public function preview(int $id): mixed
+    public function preview(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -49,7 +49,7 @@ class PatientsController extends Controller
      * Patient Card V2 - Section-based navigation.
      * Each section is a separate page load to avoid JS conflicts.
      */
-    public function cardV2(int $id, string $section = 'profile'): mixed
+    public function cardV2(int $id, string $section = 'profile'): \Illuminate\View\View
     {
         if (!Gate::allows('patients_manage')) {
             return abort(401);
@@ -128,11 +128,12 @@ class PatientsController extends Controller
 
             return response()->json(['status' => false, 'message' => 'No previous appointment found']);
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['status' => false, 'message' => 'An error occurred. Please try again.'], 500);
         }
     }
 
-    public function leads(int $id): mixed
+    public function leads(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_manage') && !Gate::allows('leads_manage') && !Gate::allows('leads_view')) {
             return abort(401);
@@ -229,9 +230,9 @@ class PatientsController extends Controller
 
         $iTotalRecords = $baseQuery()->count();
 
-        $iDisplayLength = intval($request->get('length'));
+        $iDisplayLength = (int) $request->get('length');
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
+        $iDisplayStart = (int) $request->get('start');
 
         $Leads = $baseQuery()
             ->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')
@@ -256,9 +257,9 @@ class PatientsController extends Controller
                 'PatientId' => $lead->PatientId,
                 'name' => $lead->name,
                 'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($lead->patient->phone) : '***********',
-                'city_id' => $lead->city_id ? $lead->city->name : '',
-                'lead_status_id' => $lead->lead_status_id ? $lead->lead_status->name : '',
-                'service_id' => $lead->service_id ? $lead->service->name : '',
+                'city_id' => $lead->city?->name ?? '',
+                'lead_status_id' => $lead->lead_status?->name ?? '',
+                'service_id' => $lead->service?->name ?? '',
                 'created_at' => Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A'),
                 'created_by' => array_key_exists($lead->lead_created_by, $Users) ? $Users[$lead->lead_created_by]->name : 'N/A',
             ];
@@ -271,14 +272,14 @@ class PatientsController extends Controller
             $records['customActionMessage'] = 'Records has been deleted successfully!';
         }
 
-        $records['draw'] = intval($request->get('draw'));
+        $records['draw'] = (int) $request->get('draw');
         $records['recordsTotal'] = $iTotalRecords;
         $records['recordsFiltered'] = $iTotalRecords;
 
         return response()->json($records);
     }
 
-    public function appointments(int $id): mixed
+    public function appointments(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_appointment_manage')) {
             return abort(401);
@@ -287,7 +288,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.appointments.index');
     }
 
-    public function imageindex(int $id): mixed
+    public function imageindex(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_manage') && !Gate::allows('users_manage')) {
             return abort(401);
@@ -301,7 +302,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.image.add_image', compact('patient'));
     }
 
-    public function documentindex(int $id): mixed
+    public function documentindex(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_document_manage')) {
             return abort(401);
@@ -318,7 +319,7 @@ class PatientsController extends Controller
         return view('admin.patients.card.documents.add_documents', compact('patient', 'filters'));
     }
 
-    public function documentCreate(int $id): mixed
+    public function documentCreate(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_document_create')) {
             return abort(401);
@@ -347,7 +348,8 @@ class PatientsController extends Controller
         try {
             $file->storeAs('public/patient_image', $fileName);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to save file: ' . $e->getMessage(), 200);
+            \Illuminate\Support\Facades\Log::error('Failed to save file: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('Failed to save file. Please try again.', 200);
         }
 
         Documents::CreateRecord($request, 'patient_image/' . $fileName, $patient->id);
@@ -396,7 +398,7 @@ class PatientsController extends Controller
         return response()->json($records);
     }
 
-    public function documentedit(int $id): mixed
+    public function documentedit(int $id): \Illuminate\View\View
     {
         if (!Gate::allows('patients_document_edit')) {
             return abort(401);

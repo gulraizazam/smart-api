@@ -16,9 +16,6 @@ use Illuminate\Support\Facades\Gate;
 
 class LeadSourcesController extends Controller
 {
-    protected int $success;
-    protected int $unauthorized;
-
     public function __construct(
         protected readonly LeadSourceService $service,
     ) {

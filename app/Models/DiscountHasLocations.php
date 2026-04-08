@@ -20,9 +20,13 @@ class DiscountHasLocations extends Model
         'slug',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+        ];
+    }
 
     // ── Relationships ────────────────────────────────────
 

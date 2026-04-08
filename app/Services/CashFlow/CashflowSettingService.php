@@ -15,7 +15,7 @@ class CashflowSettingService
     /**
      * Get a single setting value.
      */
-    public function get(string $key, int $accountId, $default = null)
+    public function get(string $key, int $accountId, $default = null): mixed
     {
         $all = $this->getAll($accountId);
         return $all[$key] ?? $default;

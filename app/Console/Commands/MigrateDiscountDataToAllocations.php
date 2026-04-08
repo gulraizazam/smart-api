@@ -28,6 +28,7 @@ class MigrateDiscountDataToAllocations extends Command
      *
      * @return int
      */
+    #[\Override]
     public function handle(): int
     {
         $dryRun = $this->option('dry-run');

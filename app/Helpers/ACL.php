@@ -27,7 +27,7 @@ class ACL
         $user = Auth::user();
 
         $locations = match (true) {
-            $user->id == 1 => Locations::where('active', 1)
+            $user->id === 1 => Locations::where('active', 1)
                 ->where('name', '!=', 'All Centres')
                 ->pluck('id'),
 
@@ -68,7 +68,7 @@ class ACL
         $user = Auth::user();
         $accountId = $user->account_id;
 
-        $regions = $user->id == 1
+        $regions = $user->id === 1
             ? Regions::where('account_id', $accountId)->pluck('id')
             : Regions::whereIn('id', Cities::getActiveOnly(self::getUserCities(), $accountId)->pluck('region_id'))
                 ->where('account_id', $accountId)
@@ -96,7 +96,7 @@ class ACL
         $accountId = $user->account_id;
 
         $cities = match (true) {
-            $user->id == 1 => Cities::where('account_id', $accountId)->pluck('id'),
+            $user->id === 1 => Cities::where('account_id', $accountId)->pluck('id'),
 
             $user->user_type_id == Config::get('constants.practitioner_id') =>
                 Locations::whereIn('id',

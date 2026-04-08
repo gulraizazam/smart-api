@@ -8,6 +8,7 @@ use App\Helpers\NodesTree;
 use App\Helpers\AppointmentHelper;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
@@ -67,18 +68,22 @@ class Appointments extends Model
         'consultancy_type' => 'in_person',
     ];
 
-    protected $casts = [
-        'scheduled_date' => 'date',
-        'first_scheduled_date' => 'date',
-        'arrived_at' => 'datetime',
-        'converted_at' => 'datetime',
-        'send_message' => 'boolean',
-        'appointment_status_allow_message' => 'boolean',
-        'active' => 'boolean',
-        'meta_purchase_sent' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'scheduled_date' => 'date',
+            'first_scheduled_date' => 'date',
+            'arrived_at' => 'datetime',
+            'converted_at' => 'datetime',
+            'send_message' => 'boolean',
+            'appointment_status_allow_message' => 'boolean',
+            'active' => 'boolean',
+            'meta_purchase_sent' => 'boolean',
+        ];
+    }
 
-    public function scopeWithRelations($query)
+    public function scopeWithRelations($query): Builder
     {
         return $query->with([
             'appointment_type',
@@ -91,49 +96,49 @@ class Appointments extends Model
         ]);
     }
 
-    public function scopeScheduled($query)
+    public function scopeScheduled($query): Builder
     {
         return $query->whereNotNull('scheduled_date')
                      ->whereNotNull('scheduled_time');
     }
 
-    public function scopeNonScheduled($query)
+    public function scopeNonScheduled($query): Builder
     {
         return $query->whereNull('scheduled_date')
                      ->whereNull('scheduled_time');
     }
 
-    public function scopeByAccount($query, $account_id)
+    public function scopeByAccount($query, $account_id): Builder
     {
         return $query->where('account_id', $account_id);
     }
 
-    public function scopeByType($query, $appointment_type_id)
+    public function scopeByType($query, $appointment_type_id): Builder
     {
         return $query->where('appointment_type_id', $appointment_type_id);
     }
 
-    public function scopeByStatus($query, $appointment_status_id)
+    public function scopeByStatus($query, $appointment_status_id): Builder
     {
         return $query->where('appointment_status_id', $appointment_status_id);
     }
 
-    public function scopeByLocation($query, $location_id)
+    public function scopeByLocation($query, $location_id): Builder
     {
         return $query->where('location_id', $location_id);
     }
 
-    public function scopeByDoctor($query, $doctor_id)
+    public function scopeByDoctor($query, $doctor_id): Builder
     {
         return $query->where('doctor_id', $doctor_id);
     }
 
-    public function scopeByPatient($query, $patient_id)
+    public function scopeByPatient($query, $patient_id): Builder
     {
         return $query->where('patient_id', $patient_id);
     }
 
-    public function scopeExcludeCancelled($query, $account_id)
+    public function scopeExcludeCancelled($query, $account_id): Builder
     {
         $cancelledStatus = AppointmentHelper::getCancelledStatus($account_id);
         if ($cancelledStatus) {
@@ -145,17 +150,17 @@ class Appointments extends Model
         return $query;
     }
 
-    public function scopeToday($query)
+    public function scopeToday($query): Builder
     {
         return $query->whereDate('scheduled_date', Carbon::today());
     }
 
-    public function scopeUpcoming($query)
+    public function scopeUpcoming($query): Builder
     {
         return $query->where('scheduled_date', '>=', Carbon::today());
     }
 
-    public function scopeDateRange($query, $start_date, $end_date)
+    public function scopeDateRange($query, $start_date, $end_date): Builder
     {
         return $query->whereBetween('scheduled_date', [$start_date, $end_date]);
     }
@@ -165,7 +170,7 @@ class Appointments extends Model
         // Set Account ID
         $appointment_data['account_id'] = $account_id;
         $appointment_data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        $appointment_data['converted_by'] = Auth::User()->id;
+        $appointment_data['converted_by'] = Auth::user()->id;
 
         if (isset($appointment_data['start'])) {
             $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
@@ -515,6 +520,7 @@ class Appointments extends Model
         return AppointmentHelper::getNodeServices($serviceId, $account_id, $drop_down, $remove_spaces);
     }
 
+    #[\Override]
     public static function boot()
     {
 

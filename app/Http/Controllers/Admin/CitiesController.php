@@ -21,12 +21,12 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('cities_manage')) {
             return abort(401);
         }
-        $data = $this->cityService->getIndexData(Auth::User()->id);
+        $data = $this->cityService->getIndexData(Auth::user()->id);
 
         return view('admin.cities.index', [
             'regions' => $data['regions'],
@@ -39,14 +39,14 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_manage')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $records = $this->cityService->getDatatableData($request, Auth::User()->account_id);
+            $records = $this->cityService->getDatatableData($request, Auth::user()->account_id);
 
             return response()->json($records);
         } catch (\Exception $e) {
@@ -59,7 +59,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
         if (! Gate::allows('cities_create')) {
             return abort(401);
@@ -70,7 +70,7 @@ class CitiesController extends Controller
         return view('admin.cities.create', ['regions' => $data['regions']]);
     }
 
-    public function sortOrderSave(Request $request): mixed
+    public function sortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_sort')) {
@@ -87,7 +87,7 @@ class CitiesController extends Controller
         }
     }
 
-    public function sortOrder(): mixed
+    public function sortOrder(): \Illuminate\View\View
     {
         if (! Gate::allows('cities_sort')) {
             return abort(401);
@@ -101,13 +101,13 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderGet(): mixed
+    public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_sort')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $cities = $this->cityService->getSortedCities(Auth::User()->account_id);
+            $cities = $this->cityService->getSortedCities(Auth::user()->account_id);
 
             return $this->successResponse('Success', $cities, 200);
         } catch (\Exception $e) {
@@ -120,14 +120,14 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->cityService->validateAndCreate($request->all(), Auth::User()->account_id);
+            $result = $this->cityService->validateAndCreate($request->all(), Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message'], null, 200);
@@ -144,7 +144,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_edit')) {
@@ -168,14 +168,14 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->cityService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+            $result = $this->cityService->validateAndUpdate($request->all(), $id, Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message'], null, 200);
@@ -192,7 +192,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('cities_destroy')) {
@@ -216,7 +216,7 @@ class CitiesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {

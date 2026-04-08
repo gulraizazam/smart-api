@@ -66,7 +66,7 @@
                                                 <option value="">Select Service</option>
                                                 @foreach($services as $service)
                                                     <option value="{{$service->id}}">
-                                                            <b>{!! $service['name'] !!}</b></option>
+                                                            <b>{{ $service['name'] }}</b></option>
                                                 @endforeach
                                             </select>
                                             <span id="service_id_handler"></span>
@@ -77,7 +77,7 @@
                                                <option value="">All</option>
                                                @foreach($Users as $user)
                                                    <option value="{{$user->id}}">
-                                                           <b>{!! $user['name'] !!}</b></option>
+                                                           <b>{{ $user['name'] }}</b></option>
                                                @endforeach
                                            </select>
                                            <span id="created_by_handler"></span>

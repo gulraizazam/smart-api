@@ -287,8 +287,8 @@ return [
         1 => [
             'id' => 1,
             'operator_name' => 'Telenor Corporate SMS',
-            'username' => '923458232889',
-            'password' => '3646',
+            'username' => env('SMS_TELENOR_USERNAME', ''),
+            'password' => env('SMS_TELENOR_PASSWORD', ''),
             'mask' => '',
             'test_mode' => 1,
             'url' => 'https://telenorcsms.com.pk:27677',
@@ -302,8 +302,8 @@ return [
         2 => [
             'id' => 2,
             'operator_name' => 'Jazz Corporate SMS',
-            'username' => '03011156718',
-            'password' => 'Muna@muchbad2',
+            'username' => env('SMS_JAZZ_USERNAME', ''),
+            'password' => env('SMS_JAZZ_PASSWORD', ''),
             'mask' => '',
             'test_mode' => 1,
             'url' => 'https://enterprise.jazzcmt.com',

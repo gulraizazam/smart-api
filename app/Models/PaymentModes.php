@@ -56,7 +56,7 @@ class PaymentModes extends BaseModel
             $cityId = [$cityId];
         }
         if ($cityId) {
-            return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
+            return self::whereIn('id', $cityId)->pluck('name', 'id');
         } else {
             return self::get()->pluck('name', 'id');
         }
@@ -147,16 +147,16 @@ class PaymentModes extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'payment_modes', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'payment_modes', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'payment_modes', 'account_id');
+                Filters::forget(Auth::user()->id, 'payment_modes', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'payment_modes', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'payment_modes', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'account_id'),
+                        Filters::get(Auth::user()->id, 'payment_modes', 'account_id'),
                     ];
                 }
             }
@@ -167,16 +167,16 @@ class PaymentModes extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'payment_modes', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'payment_modes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'payment_modes', 'name');
+                Filters::forget(Auth::user()->id, 'payment_modes', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'payment_modes', 'name')) {
+                if (Filters::get(Auth::user()->id, 'payment_modes', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'payment_modes', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'payment_modes', 'name').'%',
                     ];
                 }
             }
@@ -187,16 +187,16 @@ class PaymentModes extends BaseModel
                 '=',
                 $filters['payment_type'],
             ];
-            Filters::put(Auth::User()->id, 'payment_modes', 'payment_type', $filters['payment_type']);
+            Filters::put(Auth::user()->id, 'payment_modes', 'payment_type', $filters['payment_type']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'payment_modes', 'payment_type');
+                Filters::forget(Auth::user()->id, 'payment_modes', 'payment_type');
             } else {
-                if (Filters::get(Auth::User()->id, 'payment_modes', 'payment_type')) {
+                if (Filters::get(Auth::user()->id, 'payment_modes', 'payment_type')) {
                     $where[] = [
                         'payment_type',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'payment_type'),
+                        Filters::get(Auth::user()->id, 'payment_modes', 'payment_type'),
                     ];
                 }
             }
@@ -207,16 +207,16 @@ class PaymentModes extends BaseModel
                 '=',
                 $filters['type'],
             ];
-            Filters::put(Auth::User()->id, 'payment_modes', 'type', $filters['type']);
+            Filters::put(Auth::user()->id, 'payment_modes', 'type', $filters['type']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'payment_modes', 'type');
+                Filters::forget(Auth::user()->id, 'payment_modes', 'type');
             } else {
-                if (Filters::get(Auth::User()->id, 'payment_modes', 'type')) {
+                if (Filters::get(Auth::user()->id, 'payment_modes', 'type')) {
                     $where[] = [
                         'type',
                         '=',
-                        Filters::get(Auth::User()->id, 'payment_modes', 'type'),
+                        Filters::get(Auth::user()->id, 'payment_modes', 'type'),
                     ];
                 }
             }
@@ -331,7 +331,7 @@ class PaymentModes extends BaseModel
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (PaymentModes::isChildExists($id, Auth::User()->account_id)) {
+        if (PaymentModes::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $record = $payment_mode->delete();

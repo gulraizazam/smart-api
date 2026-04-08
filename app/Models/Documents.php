@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,13 +26,13 @@ class Documents extends BaseModel
     /**
      * Get the full URL for the document
      */
-    public function getFullUrlAttribute()
+    protected function fullUrl(): Attribute
     {
-        if ($this->url) {
-            // Use url() instead of asset() to avoid /public prefix
-            return url('storage/app/public/' . $this->url);
-        }
-        return null;
+        return Attribute::make(
+            get: fn (): ?string => $this->url
+                ? url('storage/app/public/' . $this->url)
+                : null,
+        );
     }
 
     /*

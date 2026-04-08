@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
@@ -85,24 +85,20 @@ class Order extends BaseModel
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
                     });
-                }, function ($q) {
-                    return $q->with('orderDetail.product');
-                })
+                }, fn ($q) => $q->with('orderDetail.product'))
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres());
                 })
-               
+
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-           
+
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
                     });
-                }, function ($q) {
-                    return $q->with('orderDetail.product');
-                })
+                }, fn ($q) => $q->with('orderDetail.product'))
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres());
                 })
@@ -125,9 +121,7 @@ class Order extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -146,7 +140,7 @@ class Order extends BaseModel
                 } else if ($filters['location_type'] == 'warehouse') {
                     $where[][] = ['warehouse_id' => $filters['location']];
                 } else {
-                    Filters::forget(Auth::User()->id, 'location', 'name');
+                    Filters::forget(Auth::user()->id, 'location', 'name');
                 }
             }
             if (hasFilter($filters, 'created_by')) {
@@ -189,8 +183,8 @@ class Order extends BaseModel
         // Iterate through the arrays
         for ($i = 0; $i < count($data['product_id']); $i++) {
             $productId = $data['product_id'][$i];
-            $productPrice = floatval($data['product_price'][$i]);
-            $quantity = intval($data['quantity'][$i]);
+            $productPrice = (float) $data['product_price'][$i];
+            $quantity = (int) $data['quantity'][$i];
             // Calculate the total for this product
             $total = $productPrice * $quantity;
             // Store the total in the result array, using the product ID as the key
@@ -269,7 +263,7 @@ class Order extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (self::isChildExists($id, Auth::User()->account_id)) {
+        if (self::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = OrderDetail::where('order_id', $id)->get();
@@ -306,8 +300,8 @@ class Order extends BaseModel
         // Iterate through the arrays
         for ($i = 0; $i < count($request['product_id']); $i++) {
             $productId = $request['product_id'][$i];
-            $productPrice = floatval($request['product_price'][$i]);
-            $quantity = intval($request['quantity'][$i]);
+            $productPrice = (float) $request['product_price'][$i];
+            $quantity = (int) $request['quantity'][$i];
             // Calculate the total for this product
             $total = $productPrice * $quantity;
             // Store the total in the result array, using the product ID as the key

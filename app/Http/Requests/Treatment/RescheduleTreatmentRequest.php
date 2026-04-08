@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 final class RescheduleTreatmentRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -17,6 +18,7 @@ final class RescheduleTreatmentRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -31,6 +33,7 @@ final class RescheduleTreatmentRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

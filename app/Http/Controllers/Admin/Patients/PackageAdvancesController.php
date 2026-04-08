@@ -25,7 +25,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_finance_manage')) {
 
@@ -45,7 +45,7 @@ class PackageAdvancesController extends Controller
 
             $balance = $total_cash_in - $total_cash_out;
 
-            $filters = Filters::all(Auth::User()->id, 'patient_packageAdvances');
+            $filters = Filters::all(Auth::user()->id, 'patient_packageAdvances');
 
             return view('admin.patients.card.packagesadvances.index', compact('patient', 'paymentmodes', 'package', 'total_cash_in', 'total_cash_out', 'balance', 'filters'));
 
@@ -61,7 +61,7 @@ class PackageAdvancesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(int $id): mixed
+    public function create(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_finance_create')) {
 
@@ -78,7 +78,7 @@ class PackageAdvancesController extends Controller
     * Get the packages against patient id
     *
     * */
-    public function getpackages(Request $request): mixed
+    public function getpackages(Request $request): \Illuminate\Http\JsonResponse
     {
 
         $packageinfo = Packages::where('patient_id', '=', $request->id)->get();
@@ -95,7 +95,7 @@ class PackageAdvancesController extends Controller
      * Get the packages information from packages advances
      *
      * */
-    public function getpackagesinfo(Request $request): mixed
+    public function getpackagesinfo(Request $request): \Illuminate\Http\JsonResponse
     {
         $package_info = Packages::where('id', '=', $request->id)->first();
         $cash_amount = number_format(PackageAdvances::where([
@@ -125,7 +125,7 @@ class PackageAdvancesController extends Controller
      * Get the packages information from packages advances
      *
      */
-    public function getpackagesinfo_update(Request $request): mixed
+    public function getpackagesinfo_update(Request $request): \Illuminate\Http\JsonResponse
     {
         $cash_receive = PackageAdvances::where([
             ['package_id', '=', $request->id],
@@ -157,7 +157,7 @@ class PackageAdvancesController extends Controller
     /*
      * save the information in packages advances
      * */
-    public function savepackagesadvances(Request $request): mixed
+    public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
         $cash_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
@@ -172,9 +172,9 @@ class PackageAdvancesController extends Controller
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::User()->account_id;
-            $data['created_by'] = Auth::User()->id;
-            $data['updated_by'] = Auth::User()->id;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['created_by'] = Auth::user()->id;
+            $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;
 
             $package_advances = PackageAdvances::createRecord_onlyadvances($data);
@@ -203,14 +203,14 @@ class PackageAdvancesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         $filname = 'patient_packageAdvances';
         $apply_filter = false;
         if ($request->get('action')) {
             $action = $request->get('action');
             if (isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, $filname);
+                Filters::flush(Auth::user()->id, $filname);
             } elseif ($action == 'filter') {
                 $apply_filter = true;
             }
@@ -224,7 +224,7 @@ class PackageAdvancesController extends Controller
             if ($packagesadvances) {
                 foreach ($packagesadvances as $packageadvances) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! PackageAdvances::isChildExists($packageadvances->id, Auth::User()->account_id)) {
+                    if (! PackageAdvances::isChildExists($packageadvances->id, Auth::user()->account_id)) {
                         $packageadvances->delete();
                     }
                 }
@@ -234,14 +234,14 @@ class PackageAdvancesController extends Controller
         }
 
         // Get Total Records
-        $iTotalRecords = PackageAdvances::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filname);
+        $iTotalRecords = PackageAdvances::getTotalRecords($request, Auth::user()->account_id, $id, $apply_filter, $filname);
 
-        $iDisplayLength = intval($request->get('length'));
+        $iDisplayLength = (int) $request->get('length');
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $iDisplayStart = (int) $request->get('start');
+        $sEcho = (int) $request->get('draw');
 
-        $packagesadvances = PackageAdvances::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filname);
+        $packagesadvances = PackageAdvances::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, $filname);
 
         if ($packagesadvances) {
             $balance = 0;
@@ -315,7 +315,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive(int $id): mixed
+    public function inactive(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -331,7 +331,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active(int $id): mixed
+    public function active(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -347,7 +347,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('packagesadvances_manage')) {
 
@@ -373,7 +373,7 @@ class PackageAdvancesController extends Controller
     /*
      * update package advance information
      * */
-    public function updatepackagesadvances(Request $request): mixed
+    public function updatepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
         $package_advances_info = PackageAdvances::find($request->package_advance_id);
         $cash_amount_sum = PackageAdvances::where([
@@ -390,9 +390,9 @@ class PackageAdvancesController extends Controller
             $data['cash_amount'] = $request->cash_amount;
             $data['patient_id'] = $request->patient_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::User()->account_id;
-            $data['created_by'] = Auth::User()->id;
-            $data['updated_by'] = Auth::User()->id;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['created_by'] = Auth::user()->id;
+            $data['updated_by'] = Auth::user()->id;
             $data['package_id'] = $request->package_id;
 
             $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
@@ -413,7 +413,7 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
@@ -431,12 +431,12 @@ class PackageAdvancesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function cancel(int $id): mixed
+    public function cancel(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('packagesadvances_manage')) {
             return abort(401);
         }
-        $packageadvances = PackageAdvances::CancelRecord($id, Auth::User()->account_id);
+        $packageadvances = PackageAdvances::CancelRecord($id, Auth::user()->account_id);
 
         $package_advnaces = (PackageAdvances::find($id))->toArray();
         if ($package_advnaces['cash_flow'] == 'in') {

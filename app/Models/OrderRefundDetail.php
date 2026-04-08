@@ -12,7 +12,13 @@ use Illuminate\Support\Facades\Auth;
 class OrderRefundDetail extends Model
 {
     use HasFactory;
-    protected $guarded =[];
+    protected $fillable = [
+        'account_id',
+        'order_refund_id',
+        'product_id',
+        'quantity',
+        'sale_price',
+    ];
     protected $table = 'order_refund_details';
 
     public static function refund($location_id,$id, $new_order_id, $request, $account_id)

@@ -111,9 +111,9 @@ class Regions extends BaseModel
             $regionId = [$regionId];
         }
         if ($regionId) {
-            return self::where(['active' => 1, 'slug' => 'custom'])->whereIn('id', $regionId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
+            return self::where(['active' => 1, 'slug' => 'custom'])->whereIn('id', $regionId)->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
         } else {
-            return self::where(['active' => 1, 'slug' => 'custom'])->where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
+            return self::where(['active' => 1, 'slug' => 'custom'])->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
         }
     }
 
@@ -219,17 +219,17 @@ class Regions extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'regions', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'regions', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'regions', 'account_id');
+                Filters::forget(Auth::user()->id, 'regions', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'regions', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'regions', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'regions', 'account_id'),
+                        Filters::get(Auth::user()->id, 'regions', 'account_id'),
                     ];
                 }
             }
@@ -240,16 +240,16 @@ class Regions extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'regions', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'regions', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'regions', 'name');
+                Filters::forget(Auth::user()->id, 'regions', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'regions', 'name')) {
+                if (Filters::get(Auth::user()->id, 'regions', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'regions', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'regions', 'name').'%',
                     ];
                 }
             }
@@ -340,7 +340,7 @@ class Regions extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Regions::isChildExists($id, Auth::User()->account_id)) {
+        if (Regions::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
 
@@ -457,9 +457,9 @@ class Regions extends BaseModel
     {
 
         return self::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
-        ])->OrderBy('sort_number', 'asc')->get()->pluck('name', 'id');
+        ])->OrderBy('sort_number', 'asc')->pluck('name', 'id');
 
     }
 }

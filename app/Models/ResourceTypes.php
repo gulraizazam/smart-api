@@ -42,13 +42,13 @@ class ResourceTypes extends BaseModel
         }
 
         if ($skip_ids && $include_ids) {
-            return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } elseif ($skip_ids) {
-            return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } elseif ($include_ids) {
-            return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } else {
-            return self::where(['active' => 1])->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->OrderBy('name', 'asc')->pluck('name', 'id');
         }
     }
 
@@ -126,8 +126,8 @@ class ResourceTypes extends BaseModel
 
         $data = $request->all();
         $data['slug'] = $request->name;
-        $data['created_by'] = Auth::User()->id;
-        $data['updated_by'] = Auth::User()->id;
+        $data['created_by'] = Auth::user()->id;
+        $data['updated_by'] = Auth::user()->id;
 
         $record = self::create($data);
 
@@ -189,7 +189,7 @@ class ResourceTypes extends BaseModel
     {
         $resource_types = ResourceTypes::findOrFail($id);
 
-        if (ResourceTypes::isExists($id, Auth::User()->account_id)) {
+        if (ResourceTypes::isExists($id, Auth::user()->account_id)) {
 
             flash('Child record exist, unable to delete')->error()->important();
 
@@ -216,7 +216,7 @@ class ResourceTypes extends BaseModel
         $old_data = (ResourceTypes::find($id))->toArray();
 
         $data = $request->all();
-        $data['updated_by'] = Auth::User()->id;
+        $data['updated_by'] = Auth::user()->id;
 
         $record = self::where([
             'id' => $id,
@@ -257,7 +257,7 @@ class ResourceTypes extends BaseModel
      */
     public static function getResourceType()
     {
-        return self::where('slug', '=', 'Machine')->orwhere('slug', '=', 'Doctor')->get()->pluck('name', 'id');
+        return self::where('slug', '=', 'Machine')->orwhere('slug', '=', 'Doctor')->pluck('name', 'id');
 
     }
 
@@ -278,6 +278,6 @@ class ResourceTypes extends BaseModel
      */
     public static function getallresource()
     {
-        return self::where('slug', '!=', 'Doctor')->get()->pluck('name', 'id');
+        return self::where('slug', '!=', 'Doctor')->pluck('name', 'id');
     }
 }

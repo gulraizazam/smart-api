@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\Auth;
 
 class ConversionReportController extends Controller
 {
-    public function index()
+    public function index(): \Illuminate\View\View
     {
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
-        $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $employees = User::getAllActiveEmployeeRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $operators = User::getAllActivePractionersRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
         $users = ($select_All + $employees->toArray() + $operators->toArray());
         $operators->prepend('All', '');
@@ -28,12 +28,12 @@ class ConversionReportController extends Controller
         }
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 
-        return view('admin.reports.conversion', get_defined_vars());
+        return view('admin.reports.conversion', compact('services', 'users', 'operators', 'locations', 'locations_com'));
     }
 
 
 
-    public function LoadConversionReport(Request $request)
+    public function LoadConversionReport(Request $request): \Illuminate\View\View
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
@@ -45,8 +45,13 @@ class ConversionReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        list($report_data, $locationData, $maxConversion, $minConversion, $CategoryConversionData, $arrival_to_conversion_ratio, $average_client_coversion, $conversionsByPatient, $total_conversion, $total_arrival, $avg_cxlient_valu) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+        [$report_data, $locationData, $maxConversion, $minConversion, $CategoryConversionData, $arrival_to_conversion_ratio, $average_client_coversion, $conversionsByPatient, $total_conversion, $total_arrival, $avg_cxlient_valu] = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
 
-        return view('admin.reports.conversion_report', get_defined_vars());
+        return view('admin.reports.conversion_report', compact(
+            'report_data', 'locationData', 'maxConversion', 'minConversion',
+            'CategoryConversionData', 'arrival_to_conversion_ratio', 'average_client_coversion',
+            'conversionsByPatient', 'total_conversion', 'total_arrival', 'avg_cxlient_valu',
+            'start_date', 'end_date'
+        ));
     }
 }

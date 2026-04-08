@@ -319,7 +319,7 @@ class StaffTargets extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (StaffTargets::isChildExists($id, Auth::User()->account_id)) {
+        if (StaffTargets::isChildExists($id, Auth::user()->account_id)) {
             flash('Child records exist, unable to delete resource')->error()->important();
 
             return redirect()->route('admin.staff_targets.index');

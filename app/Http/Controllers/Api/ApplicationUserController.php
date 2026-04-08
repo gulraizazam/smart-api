@@ -29,7 +29,7 @@ class ApplicationUserController extends Controller
         private readonly PlanService $planService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('users_manage')) {
             return abort(401);

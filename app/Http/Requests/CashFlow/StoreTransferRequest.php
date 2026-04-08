@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreTransferRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_transfer_create');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -28,6 +30,7 @@ class StoreTransferRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

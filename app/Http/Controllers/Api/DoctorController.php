@@ -14,18 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 class DoctorController extends Controller
 {
-    private int $success;
-    private int $error;
-    private int $unauthorized;
-
     public function __construct(
         private readonly DoctorService $doctorService,
-    ) {
+    ) {}
 
-
-    }
-
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('doctors_manage')) {
             return abort(401);

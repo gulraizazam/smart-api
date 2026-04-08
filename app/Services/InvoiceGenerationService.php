@@ -100,7 +100,7 @@ class InvoiceGenerationService
 
         // Step 9b: Apply mixing rule if maxInvoicesPerDay > 2
         if ($this->maxInvoicesPerDay > 2) {
-            list($exemptInvoices, $taxableInvoices) = $this->redistributeInvoicesForMixing($exemptInvoices, $taxableInvoices);
+            [$exemptInvoices, $taxableInvoices] = $this->redistributeInvoicesForMixing($exemptInvoices, $taxableInvoices);
         }
 
         // Step 10: Calculate final summary
@@ -243,9 +243,7 @@ class InvoiceGenerationService
 
         // Filter workingDays to only include days with revenue
         $revenueDates = array_keys($this->dailyRevenue);
-        $this->workingDays = array_values(array_filter($this->workingDays, function ($day) use ($revenueDates) {
-            return in_array($day->format('Y-m-d'), $revenueDates);
-        }));
+        $this->workingDays = array_values(array_filter($this->workingDays, fn($day) => in_array($day->format('Y-m-d'), $revenueDates, true)));
 
         // Calculate weight (proportion) for each revenue day
         if ($totalDailyPool > 0) {
@@ -650,9 +648,7 @@ class InvoiceGenerationService
         unset($data);
 
         // Sort by pool_share descending
-        uasort($patients, function ($a, $b) {
-            return $b['pool_share'] <=> $a['pool_share'];
-        });
+        uasort($patients, fn ($a, $b) => $b['pool_share'] <=> $a['pool_share']);
 
         return array_values($patients);
     }
@@ -819,9 +815,7 @@ class InvoiceGenerationService
         }
 
         // Sort by pool_share descending
-        usort($distribution, function ($a, $b) {
-            return $b['pool_share'] <=> $a['pool_share'];
-        });
+        usort($distribution, fn($a, $b) => $b['pool_share'] <=> $a['pool_share']);
 
         // Patients with exempt < smallest denomination get 0 exempt, full pool_share as taxable
         $smallestDenom = min($this->consultationAmounts);
@@ -875,9 +869,7 @@ class InvoiceGenerationService
                     $mediumIndices[] = $i;
                 }
             }
-            usort($mediumIndices, function ($a, $b) use ($distribution) {
-                return $distribution[$b]['pool_share'] <=> $distribution[$a]['pool_share'];
-            });
+            usort($mediumIndices, fn($a, $b) => $distribution[$b]['pool_share'] <=> $distribution[$a]['pool_share']);
 
             foreach ($mediumIndices as $i) {
                 if ($deficit < $adjustDenom) break;
@@ -980,9 +972,7 @@ class InvoiceGenerationService
             }
         }
 
-        usort($invoices, function ($a, $b) {
-            return strcmp($a['invoice_date'], $b['invoice_date']);
-        });
+        usort($invoices, fn($a, $b) => strcmp($a['invoice_date'], $b['invoice_date']));
 
         return [
             'invoices' => $invoices,
@@ -1041,7 +1031,7 @@ class InvoiceGenerationService
             }
 
             // If there's still a small remainder, add it to the last invoice
-            if ($remainingAmount > 0 && count($invoiceAmounts) > 0) {
+            if ($remainingAmount > 0 && !empty($invoiceAmounts)) {
                 $invoiceAmounts[count($invoiceAmounts) - 1] += round($remainingAmount, 2);
             } elseif ($remainingAmount > 0) {
                 $invoiceAmounts[] = round($remainingAmount, 2);
@@ -1090,9 +1080,7 @@ class InvoiceGenerationService
         }
 
         // Sort invoices by date (ascending)
-        usort($invoices, function ($a, $b) {
-            return strcmp($a['invoice_date'], $b['invoice_date']);
-        });
+        usort($invoices, fn($a, $b) => strcmp($a['invoice_date'], $b['invoice_date']));
 
         return $invoices;
     }
@@ -1502,13 +1490,9 @@ class InvoiceGenerationService
         }
         
         // Re-sort invoices by date
-        usort($exemptInvoices, function ($a, $b) {
-            return strcmp($a['invoice_date'], $b['invoice_date']);
-        });
-        
-        usort($taxableInvoices, function ($a, $b) {
-            return strcmp($a['invoice_date'], $b['invoice_date']);
-        });
+        usort($exemptInvoices, fn($a, $b) => strcmp($a['invoice_date'], $b['invoice_date']));
+
+        usort($taxableInvoices, fn($a, $b) => strcmp($a['invoice_date'], $b['invoice_date']));
         
         return [$exemptInvoices, $taxableInvoices];
     }

@@ -4,14 +4,13 @@ declare(strict_types=1);
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CashflowException extends Exception
 {
-    protected int $statusCode;
-
-    public function __construct(string $message = '', int $statusCode = 422, ?\Throwable $previous = null)
+    public function __construct(string $message = '', protected readonly int $statusCode = 422, ?\Throwable $previous = null)
     {
-        $this->statusCode = $statusCode;
         parent::__construct($message, $statusCode, $previous);
     }
 
@@ -20,7 +19,7 @@ class CashflowException extends Exception
         return $this->statusCode;
     }
 
-    public function render($request)
+    public function render(Request $request): JsonResponse
     {
         return response()->json([
             'success' => false,
@@ -33,7 +32,7 @@ class CashflowException extends Exception
         return new self("Period {$month}/{$year} is locked. No modifications allowed.", 403);
     }
 
-    public static function insufficientBalance(string $poolName, $balance, $required): self
+    public static function insufficientBalance(string $poolName, float|int|string $balance, float|int|string $required): self
     {
         return new self("Insufficient balance in '{$poolName}'. Available: {$balance}, Required: {$required}.", 422);
     }

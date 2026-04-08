@@ -3,9 +3,11 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Enums\RequestStatus;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorRequest extends Model
 {
@@ -17,10 +19,15 @@ class VendorRequest extends Model
         'requested_by', 'status', 'admin_notes', 'vendor_id',
     ];
 
-    // Status constants
-    const STATUS_PENDING = 'pending';
-    const STATUS_APPROVED = 'approved';
-    const STATUS_DISMISSED = 'dismissed';
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'status' => RequestStatus::class,
+        ];
+    }
+
+    // Status enum: App\Enums\RequestStatus
 
     /**
      * User who requested the vendor.
@@ -40,13 +47,13 @@ class VendorRequest extends Model
 
     // Scopes
 
-    public function scopeForAccount($query, int $accountId)
+    public function scopeForAccount($query, int $accountId): Builder
     {
         return $query->where('account_id', $accountId);
     }
 
-    public function scopePending($query)
+    public function scopePending($query): Builder
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', RequestStatus::Pending);
     }
 }

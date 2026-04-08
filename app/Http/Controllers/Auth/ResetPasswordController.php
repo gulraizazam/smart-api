@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Providers\RouteServiceProvider;
+use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,7 +32,7 @@ class ResetPasswordController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = RouteServiceProvider::HOME;
+    protected $redirectTo = AppServiceProvider::HOME;
 
     /**
      * Display the password reset view for the given token.
@@ -41,7 +41,8 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function showResetForm(Request $request): mixed
+    #[\Override]
+    public function showResetForm(Request $request): \Illuminate\View\View
     {
         $token = $request->route()->parameter('token');
 
@@ -69,7 +70,8 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function reset(Request $request): mixed
+    #[\Override]
+    public function reset(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate($this->rules(), $this->validationErrorMessages());
 

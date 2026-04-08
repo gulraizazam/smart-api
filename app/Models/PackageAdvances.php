@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AppointmentType;
 use App\Enums\CashFlow;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
+use App\Services\PatientManagement\PatientSearchService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -26,8 +27,6 @@ class PackageAdvances extends BaseModel
     public $incrementing = true;
 
     protected $keyType = 'int';
-
-    protected $guarded = ['id'];
 
     protected $fillable = [
         'cash_flow',
@@ -76,6 +75,7 @@ class PackageAdvances extends BaseModel
 
     protected static string $_table = 'package_advances';
 
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -204,7 +204,7 @@ class PackageAdvances extends BaseModel
             if ($newPackageServices > 0) {
                 $latestArrivedAppointment = Appointments::where([
                     'patient_id'                => $data['patient_id'],
-                    'appointment_type_id'       => 1,
+                    'appointment_type_id'       => AppointmentType::Consultancy->value,
                     'base_appointment_status_id' => $arrivedStatus->id,
                 ])
                     ->where('updated_at', '>', $packageCreatedAt)
@@ -473,7 +473,7 @@ class PackageAdvances extends BaseModel
     {
         $where = self::filters_packageAdvances($request, $accountId, $id, $applyFilter, $filename);
 
-        return self::when(count($where) > 0, fn ($q) => $q->where($where))
+        return self::when(!empty($where), fn ($q) => $q->where($where))
             ->where('cash_amount', '!=', 0)
             ->count();
     }
@@ -490,7 +490,7 @@ class PackageAdvances extends BaseModel
         [$orderBy, $order] = getSortBy($request, 'created_at', 'DESC');
         $where = self::filters_packageAdvances($request, $accountId, $id, $applyFilter, $filename);
 
-        return self::when(count($where) > 0, fn ($q) => $q->where($where))
+        return self::when(!empty($where), fn ($q) => $q->where($where))
             ->where('cash_amount', '!=', 0)
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
@@ -510,9 +510,7 @@ class PackageAdvances extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $dateRange = explode(' - ', $filters['created_at']);
             $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateString = new \DateTime($dateRange[1]);
-            $endDateString->setTime(23, 59, 0);
-            $endDateTime = $endDateString->format('Y-m-d H:i:s');
+            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         }
 
         if ($id !== false) {
@@ -534,7 +532,7 @@ class PackageAdvances extends BaseModel
         }
 
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = ['patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id'])];
+            $where[] = ['patient_id', '=', PatientSearchService::patientSearch($filters['patient_id'])];
             Filters::put($userId, $filename, 'patient_id', $filters['patient_id']);
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, 'patient_id');
@@ -605,7 +603,7 @@ class PackageAdvances extends BaseModel
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
-        $query = self::when(count($where) > 0, fn ($q) => $q->where($where))
+        $query = self::when(!empty($where), fn ($q) => $q->where($where))
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
@@ -632,7 +630,7 @@ class PackageAdvances extends BaseModel
         $where = self::filters($request, $accountId, $patientId, $applyFilter, $filename);
 
         $query = self::with(['user', 'location.city', 'package'])
-            ->when(count($where) > 0, fn ($q) => $q->where($where))
+            ->when(!empty($where), fn ($q) => $q->where($where))
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
@@ -659,7 +657,7 @@ class PackageAdvances extends BaseModel
         $query = Packages::where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (count($where) > 0) {
+        if (!empty($where)) {
             $query->where($where);
         }
 
@@ -681,7 +679,7 @@ class PackageAdvances extends BaseModel
 
         $query = Packages::whereIn('location_id', ACL::getUserCentres());
 
-        if (count($where) > 0) {
+        if (!empty($where)) {
             $query->where($where)->where('is_refund', 1);
         }
 
@@ -727,7 +725,7 @@ class PackageAdvances extends BaseModel
         }
 
         if (hasFilter($filters, 'id')) {
-            $patientId = GeneralFunctions::patientSearch($filters['id']);
+            $patientId = PatientSearchService::patientSearch($filters['id']);
             $where[] = ['patient_id', '=', $patientId];
             Filters::put($userId, $filename, 'patient_id', $patientId);
             Filters::put($userId, $filename, 'id', $patientId);

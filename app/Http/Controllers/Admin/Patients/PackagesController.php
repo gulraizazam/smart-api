@@ -39,7 +39,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_plan_manage')) {
             return abort(401);
@@ -52,7 +52,7 @@ class PackagesController extends Controller
             $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
             $locations->prepend('All', '');
 
-            $filters = Filters::all(Auth::User()->id, 'patient_packages');
+            $filters = Filters::all(Auth::user()->id, 'patient_packages');
 
             return view('admin.patients.card.plans.index', compact('patient', 'package', 'locations', 'filters'));
         } else {
@@ -66,7 +66,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(int $id): mixed
+    public function create(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_plan_create')) {
             return abort(401);
@@ -92,7 +92,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function getdiscountinfo(Request $request): mixed
+    public function getdiscountinfo(Request $request): \Illuminate\Http\JsonResponse
     {
 
         if ($request->discount_id) {
@@ -136,7 +136,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function savepackages_service(Request $request): mixed
+    public function savepackages_service(Request $request): \Illuminate\Http\JsonResponse
     {
         $status = true;
         $package_services = PackageBundles::where([
@@ -222,7 +222,7 @@ class PackagesController extends Controller
      *
      * @return Response
      */
-    public function getdiscountinfocustom(Request $request): mixed
+    public function getdiscountinfocustom(Request $request): \Illuminate\Http\JsonResponse
     {
         $service_id = $request->service_id;
         $service_data = Services::find($service_id);
@@ -254,7 +254,7 @@ class PackagesController extends Controller
      *
      * @param  request
      */
-    public function deletepackagesservice(Request $request): mixed
+    public function deletepackagesservice(Request $request): \Illuminate\Http\JsonResponse
     {
         $packageService = PackageBundles::find($request->id);
 
@@ -276,7 +276,7 @@ class PackagesController extends Controller
      *
      * @param  request
      */
-    public function savepackages(Request $request): mixed
+    public function savepackages(Request $request): \Illuminate\Http\JsonResponse
     {
         if ($request->grand_total < 0) {
             return response()->json([
@@ -287,18 +287,18 @@ class PackagesController extends Controller
         $data_package = $request->all();
         $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $data_package['sessioncount'] = '1';
-        $data_package['account_id'] = Auth::User()->account_id;
+        $data_package['account_id'] = Auth::user()->account_id;
         $package = Packages::createRecord($data_package);
         /*End*/
 
         /*Save data in package advances*/
         $data_packageAdvances['cash_flow'] = 'in';
         $data_packageAdvances['cash_amount'] = $request->cash_amount;
-        $data_packageAdvances['account_id'] = Auth::User()->account_id;
+        $data_packageAdvances['account_id'] = Auth::user()->account_id;
         $data_packageAdvances['patient_id'] = $request->patient_id;
         $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
-        $data_packageAdvances['created_by'] = Auth::User()->id;
-        $data_packageAdvances['updated_by'] = Auth::User()->id;
+        $data_packageAdvances['created_by'] = Auth::user()->id;
+        $data_packageAdvances['updated_by'] = Auth::user()->id;
         $data_packageAdvances['package_id'] = $package->id;
         /*End*/
 
@@ -315,7 +315,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getserviceinfo(Request $request): mixed
+    public function getserviceinfo(Request $request): \Illuminate\Http\JsonResponse
     {
         $service_data = Services::where('id', '=', $request->service_id)->first();
         $net_amount = $service_data->price;
@@ -333,7 +333,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getgrandtotal(Request $request): mixed
+    public function getgrandtotal(Request $request): \Illuminate\Http\JsonResponse
     {
         $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
@@ -351,7 +351,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function inactive(int $id): mixed
+    public function inactive(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('patients_plan_inactive')) {
             return abort(401);
@@ -369,7 +369,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function active(int $id): mixed
+    public function active(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('patients_plan_active')) {
             return abort(401);
@@ -387,7 +387,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_plan_edit')) {
             return abort(401);
@@ -405,12 +405,12 @@ class PackagesController extends Controller
             //['is_refund', '=', '0']
         ])->get();
 
-        $user_has_location = UserHasLocations::where('user_id', '=', Auth::User()->id)->get()->toArray();
+        $user_has_location = UserHasLocations::where('user_id', '=', Auth::user()->id)->get()->toArray();
         if ($user_has_location) {
             foreach ($user_has_location as $userhaslocation) {
                 $location = Locations::where([
                     ['id', '=', $userhaslocation['location_id']],
-                    ['account_id', '=', Auth::User()->account_id],
+                    ['account_id', '=', Auth::user()->account_id],
                 ])->first();
                 if ($location) {
                     if ($location->slug == 'custom') {
@@ -448,7 +448,7 @@ class PackagesController extends Controller
 
         $service_has_location = ServiceHasLocations::where('location_id', '=', $package->location_id)->get();
         if ($service_has_location) {
-            $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
+            $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::user()->account_id);
         }
 
         $finance_editing_days = Settings::where('slug', '=', 'sys-financeediting')->first();
@@ -472,7 +472,7 @@ class PackagesController extends Controller
      * @param  request
      * @return mixed
      */
-    public function getgrandtotal_update(Request $request): mixed
+    public function getgrandtotal_update(Request $request): \Illuminate\Http\JsonResponse
     {
 
         $package = Packages::where('random_id', '=', $request->random_id)->first();
@@ -505,7 +505,7 @@ class PackagesController extends Controller
      * @param $request
      * @return mixed
      * */
-    public function updatepackages(Request $request): mixed
+    public function updatepackages(Request $request): \Illuminate\Http\JsonResponse
     {
 
         if ($request->grand_total < 0) {
@@ -517,7 +517,7 @@ class PackagesController extends Controller
         $data_package = $request->all();
         $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $data_package['sessioncount'] = '1';
-        $data_package['account_id'] = Auth::User()->account_id;
+        $data_package['account_id'] = Auth::user()->account_id;
         $random_id = $request->random_id;
 
         $package = Packages::updateRecord($data_package, $random_id);
@@ -530,11 +530,11 @@ class PackagesController extends Controller
             /*Save data in package advances*/
             $data_packageAdvances['cash_flow'] = 'in';
             $data_packageAdvances['cash_amount'] = $request->cash_amount;
-            $data_packageAdvances['account_id'] = Auth::User()->account_id;
+            $data_packageAdvances['account_id'] = Auth::user()->account_id;
             $data_packageAdvances['patient_id'] = $request->patient_id;
             $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
-            $data_packageAdvances['created_by'] = Auth::User()->id;
-            $data_packageAdvances['updated_by'] = Auth::User()->id;
+            $data_packageAdvances['created_by'] = Auth::user()->id;
+            $data_packageAdvances['updated_by'] = Auth::user()->id;
             $data_packageAdvances['package_id'] = $package->id;
             /*End*/
 
@@ -559,7 +559,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('patients_plan_destroy')) {
             return abort(401);
@@ -576,7 +576,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function display(int $id): mixed
+    public function display(int $id): \Illuminate\View\View
     {
 
         if (! Gate::allows('patients_plan_manage')) {
@@ -612,7 +612,7 @@ class PackagesController extends Controller
         $grand_total = number_format($package->total_price - $cash_amount_in);
 
         $services = Services::getServices();
-        $discount = Discounts::getDiscount(Auth::User()->account_id);
+        $discount = Discounts::getDiscount(Auth::user()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
         $paymentmodes->prepend('Select Payment Mode', '');
 
@@ -622,7 +622,7 @@ class PackagesController extends Controller
     /*
      * $edit the cash that enter in package advances (because of permission we need to duplicate that function but store method same)
      */
-    public function editpackageadvancescashindex(int $id, int $package_id): mixed
+    public function editpackageadvancescashindex(int $id, int $package_id): \Illuminate\View\View
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -634,7 +634,7 @@ class PackagesController extends Controller
     /*
      *  Function for log for package
      */
-    public function planlog(int $id, int $patient_id, string $type): mixed
+    public function planlog(int $id, int $patient_id, string $type): ?\Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('patients_plan_log')) {
             return abort(401);
@@ -655,7 +655,7 @@ class PackagesController extends Controller
 
         $find_ids = PackageAdvances::withTrashed()->where('package_id', '=', $id)->pluck('id')->toArray();
 
-        array_push($find_ids, $id);
+        $find_ids[] = $id;
 
         $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)->where('audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log'))->orderBy('created_at', 'asc')->get();
 
@@ -717,17 +717,19 @@ class PackagesController extends Controller
             ]);
         }
 
-        return $this->packagelogexcel($id, $finance_log);
+        $this->packagelogexcel($id, $finance_log);
+
+        return null;
     }
 
     /*
      *  Function for log for package excel
      */
 
-    public function packagelogexcel(int $id, mixed $finance_log): mixed
+    public function packagelogexcel(int $id, mixed $finance_log): void
     {
         if (! Gate::allows('patients_plan_log')) {
-            return abort(401);
+            abort(401);
         }
 
         $spreadsheet = new Spreadsheet();
@@ -767,21 +769,21 @@ class PackagesController extends Controller
         foreach ($finance_log as $log) {
             if ((isset($log['package_id']) && $log['package_id'] == $id) || ! isset($log['package_id'])) {
                 $activeSheet->setCellValue('A'.$counter, $count++);
-                $activeSheet->setCellValue('B'.$counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
-                $activeSheet->setCellValue('C'.$counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
-                $activeSheet->setCellValue('D'.$counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
-                $activeSheet->setCellValue('E'.$counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
-                $activeSheet->setCellValue('F'.$counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
-                $activeSheet->setCellValue('G'.$counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
+                $activeSheet->setCellValue('B'.$counter, $log['cash_flow'] ?? '-');
+                $activeSheet->setCellValue('C'.$counter, $log['cash_amount'] ?? '-');
+                $activeSheet->setCellValue('D'.$counter, $log['is_refund'] ?? '-');
+                $activeSheet->setCellValue('E'.$counter, $log['is_adjustment'] ?? '-');
+                $activeSheet->setCellValue('F'.$counter, $log['is_tax'] ?? '-');
+                $activeSheet->setCellValue('G'.$counter, $log['is_cancel'] ?? '-');
                 $activeSheet->setCellValue('H'.$counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
-                $activeSheet->setCellValue('I'.$counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
-                $activeSheet->setCellValue('J'.$counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
-                $activeSheet->setCellValue('K'.$counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
-                $activeSheet->setCellValue('L'.$counter, isset($log['location_id']) ? $log['location_id'] : '-');
-                $activeSheet->setCellValue('M'.$counter, isset($log['created_by']) ? $log['created_by'] : '-');
-                $activeSheet->setCellValue('N'.$counter, isset($log['cash_flow']) ? isset($log['updated_by']) ? $log['updated_by'] : '-' : $log['user_id']);
-                $activeSheet->setCellValue('O'.$counter, isset($log['package_id']) ? $log['package_id'] : '-');
-                $activeSheet->setCellValue('P'.$counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
+                $activeSheet->setCellValue('I'.$counter, $log['refund_note'] ?? '-');
+                $activeSheet->setCellValue('J'.$counter, $log['payment_mode_id'] ?? '-');
+                $activeSheet->setCellValue('K'.$counter, $log['appointment_type_id'] ?? '-');
+                $activeSheet->setCellValue('L'.$counter, $log['location_id'] ?? '-');
+                $activeSheet->setCellValue('M'.$counter, $log['created_by'] ?? '-');
+                $activeSheet->setCellValue('N'.$counter, isset($log['cash_flow']) ? ($log['updated_by'] ?? '-') : $log['user_id']);
+                $activeSheet->setCellValue('O'.$counter, $log['package_id'] ?? '-');
+                $activeSheet->setCellValue('P'.$counter, $log['invoice_id'] ?? '-');
                 $activeSheet->setCellValue('Q'.$counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
                 $activeSheet->setCellValue('R'.$counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
 
@@ -810,9 +812,9 @@ class PackagesController extends Controller
 
                     foreach ($log['detail_log'] as $detail) {
                         $activeSheet->setCellValue('H'.$counter, $countt++);
-                        $activeSheet->setCellValue('I'.$counter, isset($detail['field_name']) ? $detail['field_name'] : '-');
-                        $activeSheet->setCellValue('J'.$counter, isset($detail['field_before']) ? $detail['field_before'] : '-');
-                        $activeSheet->setCellValue('K'.$counter, isset($detail['field_after']) ? $detail['field_after'] : '-');
+                        $activeSheet->setCellValue('I'.$counter, $detail['field_name'] ?? '-');
+                        $activeSheet->setCellValue('J'.$counter, $detail['field_before'] ?? '-');
+                        $activeSheet->setCellValue('K'.$counter, $detail['field_after'] ?? '-');
 
                         $counter++;
                     }

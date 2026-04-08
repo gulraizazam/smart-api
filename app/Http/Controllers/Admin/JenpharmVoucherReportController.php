@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class JenpharmVoucherReportController extends Controller
 {
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         $discount = Discount::where('name', 'Jenpharm Gift Voucher')->first();
 
@@ -33,7 +33,7 @@ class JenpharmVoucherReportController extends Controller
                 $location = Locations::withTrashed()->find($item->location_id);
                 return (object) [
                     'location_id' => $item->location_id,
-                    'location_name' => $location ? $location->name : 'N/A',
+                    'location_name' => $location?->name ?? 'N/A',
                     'total_plans' => $item->total_plans,
                 ];
             })

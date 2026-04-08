@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -41,17 +42,21 @@ class Services extends BaseModel
         'sort_number',
     ];
 
-    protected $casts = [
-        'parent_id'             => 'integer',
-        'end_node'              => 'integer',
-        'complimentory'         => 'integer',
-        'active'                => 'integer',
-        'tax_treatment_type_id' => 'integer',
-        'price'                 => 'float',
-        'account_id'            => 'integer',
-        'sort_no'               => 'integer',
-        'sort_number'           => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'parent_id'             => 'integer',
+            'end_node'              => 'integer',
+            'complimentory'         => 'integer',
+            'active'                => 'integer',
+            'tax_treatment_type_id' => 'integer',
+            'price'                 => 'float',
+            'account_id'            => 'integer',
+            'sort_no'               => 'integer',
+            'sort_number'           => 'integer',
+        ];
+    }
 
     /**
      * @deprecated Use ServiceService fillable list. Kept for legacy Admin controller.
@@ -170,16 +175,22 @@ class Services extends BaseModel
     // Accessors
     // ──────────────────────────────────────────────
 
-    public function getDurationInMinutesAttribute(): int
+    protected function durationInMinutes(): Attribute
     {
-        $parts = explode(':', (string) $this->duration);
+        return Attribute::make(
+            get: function (): int {
+                $parts = explode(':', (string) $this->duration);
 
-        return ((int) ($parts[0] ?? 0) * 60) + (int) ($parts[1] ?? 0);
+                return ((int) ($parts[0] ?? 0) * 60) + (int) ($parts[1] ?? 0);
+            },
+        );
     }
 
-    public function getIsParentAttribute(): bool
+    protected function isParent(): Attribute
     {
-        return $this->parent_id === 0;
+        return Attribute::make(
+            get: fn (): bool => $this->parent_id === 0,
+        );
     }
 
     // ──────────────────────────────────────────────
@@ -301,7 +312,7 @@ class Services extends BaseModel
             $query->whereNotIn('id', $skip_ids);
         }
 
-        $records = $query->get()->pluck('name', 'id');
+        $records = $query->pluck('name', 'id');
 
         if ($prepend_dropdown_text) {
             $records->prepend($prepend_dropdown_text, '');

@@ -18,6 +18,7 @@ class LeadComments extends Model
         'comment', 'lead_id', 'created_by', 'created_at', 'updated_at',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

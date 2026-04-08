@@ -13,10 +13,10 @@ class ResourceRotasController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function scheduleCalendar(): mixed
+    public function scheduleCalendar(): \Illuminate\View\View
     {
         if (! Gate::allows('resourcerotas_manage')) {
-            return abort('401');
+            return abort(401);
         }
 
         return view('admin.resourcerotas.schedule-calendar');
@@ -27,10 +27,10 @@ class ResourceRotasController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function repeatingShifts(): mixed
+    public function repeatingShifts(): \Illuminate\View\View
     {
         if (! Gate::allows('resourcerotas_manage')) {
-            return abort('401');
+            return abort(401);
         }
 
         return view('admin.resourcerotas.repeating-shifts');

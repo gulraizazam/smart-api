@@ -23,12 +23,16 @@ class GetDiscountService extends Model
         'bundle_id',
     ];
 
-    protected $casts = [
-        'service_price'   => 'decimal:2',
-        'sessions'        => 'integer',
-        'discount_amount' => 'decimal:2',
-        'same_service'    => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'service_price'   => 'decimal:2',
+            'sessions'        => 'integer',
+            'discount_amount' => 'decimal:2',
+            'same_service'    => 'boolean',
+        ];
+    }
 
     // ── Relationships ────────────────────────────────────
 

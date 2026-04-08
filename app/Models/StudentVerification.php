@@ -26,11 +26,15 @@ class StudentVerification extends Model
         'reviewed_at',
     ];
 
-    protected $casts = [
-        'document_paths' => 'array',
-        'submitted_at' => 'datetime',
-        'reviewed_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'document_paths' => 'array',
+            'submitted_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+        ];
+    }
 
     // Relationships
     public function patient(): BelongsTo

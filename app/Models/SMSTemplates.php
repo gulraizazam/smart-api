@@ -91,17 +91,17 @@ class SMSTemplates extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'sms_templates', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'sms_templates', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'sms_templates', 'account_id');
+                Filters::forget(Auth::user()->id, 'sms_templates', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'sms_templates', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'sms_templates', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'sms_templates', 'account_id'),
+                        Filters::get(Auth::user()->id, 'sms_templates', 'account_id'),
                     ];
                 }
             }
@@ -112,16 +112,16 @@ class SMSTemplates extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'sms_templates', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'sms_templates', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'sms_templates', 'name');
+                Filters::forget(Auth::user()->id, 'sms_templates', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'sms_templates', 'name')) {
+                if (Filters::get(Auth::user()->id, 'sms_templates', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'sms_templates', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'sms_templates', 'name').'%',
                     ];
                 }
             }
@@ -132,16 +132,16 @@ class SMSTemplates extends BaseModel
                 'like',
                 '%'.$filters['slug'].'%',
             ];
-            Filters::put(Auth::User()->id, 'sms_templates', 'slug', $filters['slug']);
+            Filters::put(Auth::user()->id, 'sms_templates', 'slug', $filters['slug']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'sms_templates', 'slug');
+                Filters::forget(Auth::user()->id, 'sms_templates', 'slug');
             } else {
-                if (Filters::get(Auth::User()->id, 'sms_templates', 'slug')) {
+                if (Filters::get(Auth::user()->id, 'sms_templates', 'slug')) {
                     $where[] = [
                         'slug',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'sms_templates', 'slug').'%',
+                        '%'.Filters::get(Auth::user()->id, 'sms_templates', 'slug').'%',
                     ];
                 }
             }

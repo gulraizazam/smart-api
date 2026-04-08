@@ -24,12 +24,12 @@ class MedicalHistoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_medical_form_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
+        $filters = Filters::all(Auth::user()->id, 'patient_custom_form_feedbacks');
         $patient = User::finduser($id);
 
         return view('admin.patients.card.medical.index', compact('patient', 'filters'));
@@ -43,7 +43,7 @@ class MedicalHistoryController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
 
         $filename = 'patient_custom_form_feedbacks';
@@ -70,13 +70,13 @@ class MedicalHistoryController extends Controller
         }
 
         // Get Total Records
-        $iTotalRecords = Medical::getTotalRecords($request, Auth::User()->account_id, $id, 1);
+        $iTotalRecords = Medical::getTotalRecords($request, Auth::user()->account_id, $id, 1);
 
         [$orderBy, $order] = getSortBy($request, 'created_at', 'desc', 'medicals');
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, 1);
+        $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, 1);
 
         $records = $this->getFilters($records);
 
@@ -101,10 +101,10 @@ class MedicalHistoryController extends Controller
         return response()->json($records);
     }
 
-    private function getFilters($records): mixed
+    private function getFilters($records): array
     {
 
-        $records['active_filters'] = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
+        $records['active_filters'] = Filters::all(Auth::user()->id, 'patient_custom_form_feedbacks');
 
         return $records;
     }
@@ -115,7 +115,7 @@ class MedicalHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_medical_edit')) {
             return abort(401);
@@ -136,7 +136,7 @@ class MedicalHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview(int $id): mixed
+    public function filled_preview(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_medical_form_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);

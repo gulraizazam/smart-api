@@ -9,4 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 class Purchase extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'account_id',
+        'items',
+        'total_price',
+    ];
 }

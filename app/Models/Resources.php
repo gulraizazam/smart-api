@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Support\Facades\Auth;
-use DateTime;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
@@ -30,9 +29,13 @@ class Resources extends BaseModel
 
     protected static string $_table = 'resources';
 
-    protected $casts = [
-        'created_at' => 'datetime:F d,Y h:i A',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime:F d,Y h:i A',
+        ];
+    }
 
     /**
      * Get minTime of resource rota days with respect to doctor and machine
@@ -113,7 +116,7 @@ class Resources extends BaseModel
     {
         $where = [];
         $where[] = ['id', '=', $resource_id];
-        $where[] = ['account_id', '=', Auth::User()->account_id];
+        $where[] = ['account_id', '=', Auth::user()->account_id];
 
         return self::where($where)->with('doctor_rotas')->get();
     }
@@ -285,7 +288,7 @@ class Resources extends BaseModel
         $where = [];
         $where[] = array("external_id", "=", $doctor_id);
         $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
-        $where[] = array("account_id", "=", Auth::User()->account_id);
+        $where[] = array("account_id", "=", Auth::user()->account_id);
         return self::where($where)->with(["resource_rota", "doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
             $query->where(["resource_has_rota.location_id" => $location_id]);
@@ -297,25 +300,24 @@ class Resources extends BaseModel
     {
         $where = [];
         $where[] = ['resource_type_id', '=', self::getResourceType('room')];
-        $where[] = ['account_id', '=', Auth::User()->account_id];
+        $where[] = ['account_id', '=', Auth::user()->account_id];
 
         return self::where($where)->with('rotas')->get();
     }
 
     public static function getRoomsResourceRotaWithoutDays($location_id)
     {
-        $account_id = Auth::User()->account_id;
+        $account_id = Auth::user()->account_id;
         $resource_type_id = self::getResourceType('Machine');
-        $location_id = $location_id;
-        $resources = DB::select("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' ");
-        $resources_array = [];
-        foreach ($resources as $r) {
-            $r = $r->id;
-            $resources_array[] = Resources::where(['id' => $r])->with("resource_rota")->first();
-        }
 
-        return $resources_array;
-        //return self::join('resources','locations.id  resources.location_id','=','resources.location_id')->where($where)->select('resources.*')->with("resource_rota")->get();
+        $resourceIds = DB::select(
+            'SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id = locations.id WHERE resources.account_id = ? AND resources.resource_type_id = ? AND resources.location_id = ?',
+            [$account_id, $resource_type_id, $location_id]
+        );
+
+        $ids = array_map(fn ($r) => $r->id, $resourceIds);
+
+        return $ids ? Resources::whereIn('id', $ids)->with('resource_rota')->get()->all() : [];
     }
 
     /**
@@ -325,23 +327,24 @@ class Resources extends BaseModel
      */
     public static function getMachinesResourcesRotaWithoutDays($location_id, $machine_id)
     {
-        $account_id = Auth::User()->account_id;
+        $account_id = Auth::user()->account_id;
         $resource_type_id = self::getResourceType('Machine');
-        $resources = DB::select("SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id=locations.id WHERE resources.account_id = '$account_id' AND resources.id = '$machine_id' AND resources.resource_type_id ='$resource_type_id'  AND resources.location_id ='$location_id' ");
-        $resources_array = [];
-        foreach ($resources as $r) {
-            $r = $r->id;
-            $resources_array[] = Resources::where(['id' => $r])->with("resource_rota")->first();
-        }
 
-        return $resources_array;
+        $resourceIds = DB::select(
+            'SELECT resources.id FROM resources INNER JOIN locations ON resources.location_id = locations.id WHERE resources.account_id = ? AND resources.id = ? AND resources.resource_type_id = ? AND resources.location_id = ?',
+            [$account_id, $machine_id, $resource_type_id, $location_id]
+        );
+
+        $ids = array_map(fn ($r) => $r->id, $resourceIds);
+
+        return $ids ? Resources::whereIn('id', $ids)->with('resource_rota')->get()->all() : [];
     }
 
     public static function getRoomsWithRotasWithSpecificDate($start_date, $end_date, $range = false)
     {
         $where = [];
         $where[] = ['resource_type_id', '=', self::getResourceType('room')];
-        $where[] = ['account_id', '=', Auth::User()->account_id];
+        $where[] = ['account_id', '=', Auth::user()->account_id];
 
         return self::where($where)->with(['rotas' => function ($query) use ($start_date, $end_date, $range) {
             if ($range) {
@@ -357,7 +360,7 @@ class Resources extends BaseModel
         $where = [];
         $where[] = ['external_id', '=', $doctor_id];
         $where[] = ['resource_type_id', '=', self::getResourceType('doctor')];
-        $where[] = ['account_id', '=', Auth::User()->account_id];
+        $where[] = ['account_id', '=', Auth::user()->account_id];
 
         return self::where($where)->with(['doctor_rotas' => function ($query) use ($location_id, $start_date, $end_date) {
             $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
@@ -463,13 +466,13 @@ class Resources extends BaseModel
         }
 
         if ($skip_ids && $include_ids) {
-            return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereIn('id', $include_ids)->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } elseif ($skip_ids) {
-            return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereNotIn('id', $skip_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } elseif ($include_ids) {
-            return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->whereIn('id', $include_ids)->OrderBy('name', 'asc')->pluck('name', 'id');
         } else {
-            return self::where(['active' => 1])->OrderBy('name', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1])->OrderBy('name', 'asc')->pluck('name', 'id');
         }
     }
 
@@ -511,19 +514,19 @@ class Resources extends BaseModel
         [$orderBy, $order] = getSortBy($request);
 
         if ($request->has('sort')) {
-            Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'resources', 'order', $order);
+            Filters::put(Auth::user()->id, 'resources', 'order_by', $orderBy);
+            Filters::put(Auth::user()->id, 'resources', 'order', $order);
         } else {
             if (
-                Filters::get(Auth::User()->id, 'resources', 'order_by')
-                && Filters::get(Auth::User()->id, 'resources', 'order')
+                Filters::get(Auth::user()->id, 'resources', 'order_by')
+                && Filters::get(Auth::user()->id, 'resources', 'order')
             ) {
-                $orderBy = Filters::get(Auth::User()->id, 'resources', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'resources', 'order');
+                $orderBy = Filters::get(Auth::user()->id, 'resources', 'order_by');
+                $order = Filters::get(Auth::user()->id, 'resources', 'order');
             } else {
 
-                Filters::put(Auth::User()->id, 'resources', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'resources', 'order', $order);
+                Filters::put(Auth::user()->id, 'resources', 'order_by', $orderBy);
+                Filters::put(Auth::user()->id, 'resources', 'order', $order);
             }
         }
         if (count($where)) {
@@ -571,9 +574,7 @@ class Resources extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -581,62 +582,62 @@ class Resources extends BaseModel
 
         if ($account_id) {
             $where[] = array(['account_id' => $account_id]);
-            Filters::put(Auth::User()->id, 'resources', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'resources', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'account_id');
+                Filters::forget(Auth::user()->id, 'resources', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'account_id')) {
-                    $where[] = array(['account_id' => Filters::get(Auth::User()->id, 'resources', 'account_id')]);
+                if (Filters::get(Auth::user()->id, 'resources', 'account_id')) {
+                    $where[] = array(['account_id' => Filters::get(Auth::user()->id, 'resources', 'account_id')]);
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
             $where[] = ['name', 'like', '%' . $filters['name'] . '%',];
-            Filters::put(Auth::User()->id, 'resources', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'resources', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'name');
+                Filters::forget(Auth::user()->id, 'resources', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'name')) {
-                    $where[] = ['name', 'like', '%' . Filters::get(Auth::User()->id, 'resources', 'name') . '%',];
+                if (Filters::get(Auth::user()->id, 'resources', 'name')) {
+                    $where[] = ['name', 'like', '%' . Filters::get(Auth::user()->id, 'resources', 'name') . '%',];
                 }
             }
         }
         if (hasFilter($filters, 'resource_type_id')) {
             $where[] = array(['resource_type_id' => $filters['resource_type_id']]);
-            Filters::put(Auth::User()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
+            Filters::put(Auth::user()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'resource_type_id');
+                Filters::forget(Auth::user()->id, 'resources', 'resource_type_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'resource_type_id')) {
-                    $where[] = array(['resource_type_id' => Filters::get(Auth::User()->id, 'resources', 'resource_type_id')]);
+                if (Filters::get(Auth::user()->id, 'resources', 'resource_type_id')) {
+                    $where[] = array(['resource_type_id' => Filters::get(Auth::user()->id, 'resources', 'resource_type_id')]);
                 }
             }
         }
         if (hasFilter($filters, 'location_id')) {
             $where[] = array(['location_id' => $filters['location_id']]);
-            Filters::put(Auth::User()->id, 'resources', 'location_id', $filters['location_id']);
+            Filters::put(Auth::user()->id, 'resources', 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'location_id');
+                Filters::forget(Auth::user()->id, 'resources', 'location_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'location_id')) {
-                    $where[] = array(['location_id' => Filters::get(Auth::User()->id, 'resources', 'location_id')]);
+                if (Filters::get(Auth::user()->id, 'resources', 'location_id')) {
+                    $where[] = array(['location_id' => Filters::get(Auth::user()->id, 'resources', 'location_id')]);
                 }
             }
         }
 
         if (hasFilter($filters, 'machine_type_id')) {
             $where[] = array(['machine_type_id' => $filters['machine_type_id']]);
-            Filters::put(Auth::User()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
+            Filters::put(Auth::user()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'machine_type_id');
+                Filters::forget(Auth::user()->id, 'resources', 'machine_type_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'machine_type_id')) {
-                    $where[] = array(['machine_type_id' => Filters::get(Auth::User()->id, 'resources', 'machine_type_id')]);
+                if (Filters::get(Auth::user()->id, 'resources', 'machine_type_id')) {
+                    $where[] = array(['machine_type_id' => Filters::get(Auth::user()->id, 'resources', 'machine_type_id')]);
                 }
             }
         }
@@ -644,13 +645,13 @@ class Resources extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['resources.created_at', '>=', $start_date_time];
             $where[] = ['resources.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'resources', 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, 'resources', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'created_at');
+                Filters::forget(Auth::user()->id, 'resources', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'created_at')) {
-                    $where[] = ['resources.created_at', '>=', Filters::get(Auth::User()->id, 'resources', 'created_at')];
+                if (Filters::get(Auth::user()->id, 'resources', 'created_at')) {
+                    $where[] = ['resources.created_at', '>=', Filters::get(Auth::user()->id, 'resources', 'created_at')];
                 }
             }
         }
@@ -773,7 +774,7 @@ class Resources extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Resources::isChildExists($id, Auth::User()->account_id)) {
+        if (Resources::isChildExists($id, Auth::user()->account_id)) {
 
             return [
                 'status' => false,

@@ -55,7 +55,7 @@ class WrongConversionService
             'totalConverted' => $allConverted->count(),
             'validCount' => count($validIds),
             'invalidCount' => count($invalidAppointments),
-            'arrivedStatusId' => $arrivedStatus ? $arrivedStatus->id : null,
+            'arrivedStatusId' => $arrivedStatus?->id,
         ];
     }
 

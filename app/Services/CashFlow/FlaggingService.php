@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\ExpenseStatus;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\Expense;
 use App\Models\CashFlow\StaffAdvance;
@@ -54,7 +55,7 @@ class FlaggingService
         }
 
         // 4. Admin self-approval
-        if ($expense->status === Expense::STATUS_APPROVED
+        if ($expense->status === ExpenseStatus::Approved
             && $expense->verified_by
             && $expense->verified_by === $expense->created_by) {
             $reasons[] = 'Self-approved by admin';
@@ -79,7 +80,7 @@ class FlaggingService
 
         $dailyTotal = (float) Expense::forAccount($accountId)
             ->whereDate('expense_date', $expense->expense_date)
-            ->where('status', Expense::STATUS_APPROVED)
+            ->where('status', ExpenseStatus::Approved)
             ->where('amount', '<', $approvalThreshold)
             ->whereNull('voided_at')
             ->sum('amount');
@@ -182,6 +183,6 @@ class FlaggingService
         $paymentMode = \App\Models\PaymentModes::find($expense->payment_method_id);
         if (!$paymentMode) return false;
 
-        return stripos($paymentMode->name, 'cash') !== false;
+        return str_contains(strtolower($paymentMode->name), 'cash');
     }
 }
