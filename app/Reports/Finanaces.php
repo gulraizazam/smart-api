@@ -13,7 +13,6 @@ use App\Models\Locations;
 use App\Models\Resources;
 use App\Models\MachineType;
 use App\Models\Appointments;
-use App\Models\PabaoRecords;
 use App\Models\InvoiceDetails;
 use App\Models\PackageBundles;
 use App\Models\PackageService;
@@ -25,7 +24,6 @@ use App\Helpers\GeneralFunctions;
 use App\Models\DoctorHasLocations;
 use App\Services\Conversion\ConversionService;
 use Illuminate\Support\Facades\DB;
-use App\Models\PabaoRecordPayments;
 use App\Helpers\Widgets\AppointmentEditWidget;
 
 class Finanaces
@@ -105,11 +103,6 @@ class Finanaces
     public static function generalrevenuereportsummary(array $data, int $account_id): array
     {
         return \App\Reports\Finance\FinanceRevenueReport::generalrevenuereportsummary($data, $account_id);
-    }
-
-    public static function pabaurecordrevenuereport(array $data, int $account_id): array
-    {
-        return \App\Reports\Finance\FinanceRevenueReport::pabaurecordrevenuereport($data, $account_id);
     }
 
     public static function machinewiseinvoicerevenuereport(array $data, int $account_id): array

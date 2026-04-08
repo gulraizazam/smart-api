@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -145,7 +146,7 @@ class PackagesController extends Controller
         ])->first();
 
         /*set variable total for total value of package*/
-        $total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        $total = sanitize_money($request->package_total);
 
         if ($package_services != null) {
             if ($package_services->service_id == $request->service_id && $package_services->net_amount != $request->net_amount) {
@@ -258,7 +259,7 @@ class PackagesController extends Controller
     {
         $packageService = PackageBundles::find($request->id);
 
-        $package_total = filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = sanitize_money($request->package_total);
 
         $total = $package_total - $packageService->net_amount;
 
@@ -283,30 +284,33 @@ class PackagesController extends Controller
                 'status' => false,
             ]);
         }
-        /*save Package information and also update random id in package service table*/
-        $data_package = $request->all();
-        $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
-        $data_package['sessioncount'] = '1';
-        $data_package['account_id'] = Auth::user()->account_id;
-        $package = Packages::createRecord($data_package);
-        /*End*/
 
-        /*Save data in package advances*/
-        $data_packageAdvances['cash_flow'] = 'in';
-        $data_packageAdvances['cash_amount'] = $request->cash_amount;
-        $data_packageAdvances['account_id'] = Auth::user()->account_id;
-        $data_packageAdvances['patient_id'] = $request->patient_id;
-        $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
-        $data_packageAdvances['created_by'] = Auth::user()->id;
-        $data_packageAdvances['updated_by'] = Auth::user()->id;
-        $data_packageAdvances['package_id'] = $package->id;
-        /*End*/
+        return DB::transaction(function () use ($request) {
+            /*save Package information and also update random id in package service table*/
+            $data_package = $request->all();
+            $data_package['total_price'] = sanitize_money($request->total);
+            $data_package['sessioncount'] = '1';
+            $data_package['account_id'] = Auth::user()->account_id;
+            $package = Packages::createRecord($data_package);
+            /*End*/
 
-        $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
+            /*Save data in package advances*/
+            $data_packageAdvances['cash_flow'] = 'in';
+            $data_packageAdvances['cash_amount'] = $request->cash_amount;
+            $data_packageAdvances['account_id'] = Auth::user()->account_id;
+            $data_packageAdvances['patient_id'] = $request->patient_id;
+            $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
+            $data_packageAdvances['created_by'] = Auth::user()->id;
+            $data_packageAdvances['updated_by'] = Auth::user()->id;
+            $data_packageAdvances['package_id'] = $package->id;
+            /*End*/
 
-        return response()->json([
-            'status' => true,
-        ]);
+            $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
+
+            return response()->json([
+                'status' => true,
+            ]);
+        });
     }
 
     /**
@@ -335,7 +339,7 @@ class PackagesController extends Controller
      */
     public function getgrandtotal(Request $request): \Illuminate\Http\JsonResponse
     {
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = sanitize_money($request->total);
         $grand_total = number_format($package_total - $request->cash_amount);
 
         return response()->json([
@@ -491,7 +495,7 @@ class PackagesController extends Controller
 
         $package_advances_cash_amount = $package_advances_cash_amount_1;
 
-        $package_total = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = sanitize_money($request->total);
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
 
         return response()->json([
@@ -507,50 +511,52 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request): \Illuminate\Http\JsonResponse
     {
-
         if ($request->grand_total < 0) {
             return response()->json([
                 'status' => false,
             ]);
         }
-        /*save Package information and also update random id in package service table*/
-        $data_package = $request->all();
-        $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
-        $data_package['sessioncount'] = '1';
-        $data_package['account_id'] = Auth::user()->account_id;
-        $random_id = $request->random_id;
 
-        $package = Packages::updateRecord($data_package, $random_id);
-        /*End*/
-        if ($request->cash_amount == '0') {
-            return response()->json([
-                'status' => true,
-            ]);
-        } else {
-            /*Save data in package advances*/
-            $data_packageAdvances['cash_flow'] = 'in';
-            $data_packageAdvances['cash_amount'] = $request->cash_amount;
-            $data_packageAdvances['account_id'] = Auth::user()->account_id;
-            $data_packageAdvances['patient_id'] = $request->patient_id;
-            $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
-            $data_packageAdvances['created_by'] = Auth::user()->id;
-            $data_packageAdvances['updated_by'] = Auth::user()->id;
-            $data_packageAdvances['package_id'] = $package->id;
+        return DB::transaction(function () use ($request) {
+            /*save Package information and also update random id in package service table*/
+            $data_package = $request->all();
+            $data_package['total_price'] = sanitize_money($request->total);
+            $data_package['sessioncount'] = '1';
+            $data_package['account_id'] = Auth::user()->account_id;
+            $random_id = $request->random_id;
+
+            $package = Packages::updateRecord($data_package, $random_id);
             /*End*/
+            if ($request->cash_amount == '0') {
+                return response()->json([
+                    'status' => true,
+                ]);
+            } else {
+                /*Save data in package advances*/
+                $data_packageAdvances['cash_flow'] = 'in';
+                $data_packageAdvances['cash_amount'] = $request->cash_amount;
+                $data_packageAdvances['account_id'] = Auth::user()->account_id;
+                $data_packageAdvances['patient_id'] = $request->patient_id;
+                $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
+                $data_packageAdvances['created_by'] = Auth::user()->id;
+                $data_packageAdvances['updated_by'] = Auth::user()->id;
+                $data_packageAdvances['package_id'] = $package->id;
+                /*End*/
 
-            $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
-            
-            // Log payment received activity
-            $patient = User::find($request->patient_id);
-            $location = Locations::with('city')->find($package->location_id);
-            if ($packageAdavances && $package && $patient) {
-                ActivityLogger::logPaymentReceived($packageAdavances, $package, $patient, $location);
+                $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
+
+                // Log payment received activity
+                $patient = User::find($request->patient_id);
+                $location = Locations::with('city')->find($package->location_id);
+                if ($packageAdavances && $package && $patient) {
+                    ActivityLogger::logPaymentReceived($packageAdavances, $package, $patient, $location);
+                }
+
+                return response()->json([
+                    'status' => true,
+                ]);
             }
-
-            return response()->json([
-                'status' => true,
-            ]);
-        }
+        });
     }
 
     /**

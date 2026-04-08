@@ -124,23 +124,35 @@ class InvoicesController extends Controller
         $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, 'patient_invoices');
 
         if ($invoice) {
-            foreach ($invoice as $invoice) {
-                $location_info = Locations::find($invoice->location_id);
-                $user = User::where('id', '=', $invoice->patient_id)->first();
-                $service = Services::where('id', '=', $invoice->service_id)->first();
-                $cancel = InvoiceStatuses::where('slug', '=', 'cancelled')->first();
-                $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
+            // Batch-load related data to eliminate N+1 (was 5+ queries per row)
+            $invoiceCollection = collect($invoice);
+            $locationIds = $invoiceCollection->pluck('location_id')->unique()->filter();
+            $patientIds = $invoiceCollection->pluck('patient_id')->unique()->filter();
+            $serviceIds = $invoiceCollection->pluck('service_id')->unique()->filter();
+            $statusIds = $invoiceCollection->pluck('invoice_status_id')->unique()->filter();
+
+            $locationsMap = Locations::with(['region', 'city'])->whereIn('id', $locationIds)->get()->keyBy('id');
+            $usersMap = User::whereIn('id', $patientIds)->get()->keyBy('id');
+            $servicesMap = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+            $statusesMap = InvoiceStatuses::whereIn('id', $statusIds)->get()->keyBy('id');
+            $cancel = InvoiceStatuses::where('slug', '=', 'cancelled')->first();
+
+            foreach ($invoice as $inv) {
+                $location_info = $locationsMap[$inv->location_id] ?? null;
+                $user = $usersMap[$inv->patient_id] ?? null;
+                $service = $servicesMap[$inv->service_id] ?? null;
+                $invoicestatus = $statusesMap[$inv->invoice_status_id] ?? null;
                 $records['data'][] = [
-                    'name' => $user->name,
-                    'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone) : '***********',
-                    'region' => $location_info->region->name,
-                    'city' => $location_info->city->name,
-                    'location' => $location_info->name,
-                    'service' => $service->name,
-                    'invoice_status' => $invoicestatus->name,
-                    'price' => number_format($invoice->total_price),
-                    'created_at' => Carbon::parse($invoice->created_at)->format('F j,Y h:i A'),
-                    'actions' => view('admin.patients.card.invoices.actions', compact('invoice', 'cancel'))->render(),
+                    'name' => $user->name ?? '',
+                    'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone ?? '') : '***********',
+                    'region' => $location_info?->region?->name ?? '',
+                    'city' => $location_info?->city?->name ?? '',
+                    'location' => $location_info->name ?? '',
+                    'service' => $service->name ?? '',
+                    'invoice_status' => $invoicestatus->name ?? '',
+                    'price' => number_format($inv->total_price),
+                    'created_at' => Carbon::parse($inv->created_at)->format('F j,Y h:i A'),
+                    'actions' => view('admin.patients.card.invoices.actions', ['invoice' => $inv, 'cancel' => $cancel])->render(),
                 ];
             }
         }

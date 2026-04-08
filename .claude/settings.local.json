@@ -123,7 +123,14 @@
       "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/BusinessClosure.php\")",
       "Bash(xargs -I {} basename {})",
       "Bash(python3:*)",
-      "Bash(xxd app/Observers/CashFlow/LocationCashflowObserver.php)"
+      "Bash(xxd app/Observers/CashFlow/LocationCashflowObserver.php)",
+      "Read(//c/laragon/bin/**)",
+      "Read(//c/laragon/bin/mysql/**)",
+      "Bash(dir C:\\\\laragon\\\\bin\\\\mariadb:*)",
+      "Bash(cmd:*)",
+      "Bash(mysql:*)",
+      "Bash(to)",
+      "Bash(text)"
     ]
   }
 }

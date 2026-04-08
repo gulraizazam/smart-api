@@ -7,7 +7,7 @@ namespace App\Reports\Finance;
 use App\Enums\AppointmentType;
 use Config;
 use Carbon\Carbon;
-use App\User;
+use App\Models\User;
 use App\Helpers\ACL;
 use App\Models\Packages;
 use App\Models\Locations;
@@ -75,29 +75,36 @@ class FinanceStaffReport
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Preload lookup maps to prevent N+1 on join results
+        $allLocationIds = $revenue_plan_information->pluck('location_id')->unique();
+        $allDoctorIds = $revenue_plan_information->pluck('doctor_id')->unique();
+        $locationsMap = Locations::with(['city', 'region'])->whereIn('id', $allLocationIds)->get()->keyBy('id');
+        $doctorsMap = User::whereIn('id', $allDoctorIds)->pluck('name', 'id');
+
         if ($revenue_plan_information) {
 
             $doctors = [];
             $locations = [];
 
             foreach ($revenue_plan_information as $revenueinformation) {
-                if (!in_array($revenueinformation->location_id, $locations, true)) {
+                $loc = $locationsMap[$revenueinformation->location_id] ?? null;
+                if (!in_array($revenueinformation->location_id, $locations, true) && $loc) {
                     $report[$revenueinformation->location_id] = [
-                        'centre' => $revenueinformation->location->name,
-                        'city' => $revenueinformation->location->city->name,
-                        'region' => $revenueinformation->location->region->name,
+                        'centre' => $loc->name,
+                        'city' => $loc->city->name,
+                        'region' => $loc->region->name,
                         'doctor_info' => [],
                     ];
 
                     $locations[] = $revenueinformation->location_id;
                 }
 
-                if (!in_array($revenueinformation->doctor_id, $doctors, true)) {
+                if (!in_array($revenueinformation->doctor_id, $doctors, true) && $loc) {
                     $report[$revenueinformation->location_id]['doctor_info'][$revenueinformation->doctor_id] = [
-                        'doctor' => $revenueinformation->doctor->name,
-                        'centre' => $revenueinformation->location->name,
-                        'city' => $revenueinformation->location->city->name,
-                        'region' => $revenueinformation->location->region->name,
+                        'doctor' => $doctorsMap[$revenueinformation->doctor_id] ?? '',
+                        'centre' => $loc->name,
+                        'city' => $loc->city->name,
+                        'region' => $loc->region->name,
                         'doctor_revenue' => [],
                     ];
                     $doctors[] = $revenueinformation->doctor_id;
@@ -126,44 +133,62 @@ class FinanceStaffReport
 
         if ($revenue_treatment_information) {
 
+            // Preload linked appointments to prevent N+1
+            $linkedIds = $revenue_treatment_information->pluck('appointmentlinkid')->unique();
+            $linkedAppointments = Appointments::whereIn('id', $linkedIds)->get()->keyBy('id');
+            // Merge any new location/doctor IDs into the maps
+            $newLocIds = $linkedAppointments->pluck('location_id')->unique()->diff($locationsMap->keys());
+            if ($newLocIds->isNotEmpty()) {
+                $locationsMap = $locationsMap->merge(Locations::with(['city', 'region'])->whereIn('id', $newLocIds)->get()->keyBy('id'));
+            }
+            $newDocIds = $linkedAppointments->pluck('doctor_id')->unique()->filter()->diff($doctorsMap->keys());
+            if ($newDocIds->isNotEmpty()) {
+                $doctorsMap = $doctorsMap->merge(User::whereIn('id', $newDocIds)->pluck('name', 'id'));
+            }
+
             $doctors_2 = $doctors;
             $locations_2 = $locations;
             $count = 0;
 
             foreach ($revenue_treatment_information as $revenueinformation_treat) {
 
-                $link_doctor_id = Appointments::where('id', '=', $revenueinformation_treat->appointmentlinkid)->first();
+                $link_doctor_id = $linkedAppointments[$revenueinformation_treat->appointmentlinkid] ?? null;
+                if (!$link_doctor_id) {
+                    continue;
+                }
+                $loc = $locationsMap[$link_doctor_id->location_id] ?? null;
+                $docName = $doctorsMap[$link_doctor_id->doctor_id] ?? '';
 
-                if (!in_array($link_doctor_id->location_id, $locations_2, true)) {
+                if (!in_array($link_doctor_id->location_id, $locations_2, true) && $loc) {
                     $report[$link_doctor_id->location_id] = [
-                        'centre' => $link_doctor_id->location->name,
-                        'city' => $link_doctor_id->location->city->name,
-                        'region' => $link_doctor_id->location->region->name,
+                        'centre' => $loc->name,
+                        'city' => $loc->city->name,
+                        'region' => $loc->region->name,
                         'doctor_info' => [],
                     ];
 
                     $locations_2[] = $link_doctor_id->location_id;
-                } else {
-                    $report[$link_doctor_id->location_id]['centre'] = $link_doctor_id->location->name;
-                    $report[$link_doctor_id->location_id]['city'] = $link_doctor_id->location->city->name;
-                    $report[$link_doctor_id->location_id]['region'] = $link_doctor_id->location->region->name;
+                } elseif ($loc) {
+                    $report[$link_doctor_id->location_id]['centre'] = $loc->name;
+                    $report[$link_doctor_id->location_id]['city'] = $loc->city->name;
+                    $report[$link_doctor_id->location_id]['region'] = $loc->region->name;
                 }
 
-                if (!in_array($link_doctor_id->doctor_id, $doctors_2, true)) {
+                if (!in_array($link_doctor_id->doctor_id, $doctors_2, true) && $loc) {
                     $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id] = [
-                        'doctor' => $link_doctor_id->doctor->name,
-                        'centre' => $link_doctor_id->location->name,
-                        'city' => $link_doctor_id->location->city->name,
-                        'region' => $link_doctor_id->location->region->name,
+                        'doctor' => $docName,
+                        'centre' => $loc->name,
+                        'city' => $loc->city->name,
+                        'region' => $loc->region->name,
                         'doctor_revenue' => [],
                     ];
                     $doctors_2[] = $link_doctor_id->doctor_id;
-                } else {
+                } elseif ($loc) {
 
-                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['doctor'] = $link_doctor_id->doctor->name;
-                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['centre'] = $link_doctor_id->location->name;
-                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['city'] = $link_doctor_id->location->city->name;
-                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['region'] = $link_doctor_id->location->region->name;
+                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['doctor'] = $docName;
+                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['centre'] = $loc->name;
+                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['city'] = $loc->city->name;
+                    $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id]['region'] = $loc->region->name;
                 }
 
                 $child_array = [];
@@ -181,15 +206,13 @@ class FinanceStaffReport
 
                 if (!isset($value['doctor'])) {
 
-                    $doctor_latest = User::find($doctor_id);
-
-                    $location_latest = Locations::find($location_id);
+                    $loc = $locationsMap[$location_id] ?? null;
 
                     $report[$location_id]['doctor_info'][$doctor_id] = [
-                        'doctor' => $doctor_latest->name,
-                        'centre' => $location_latest->name,
-                        'city' => $location_latest->city->name,
-                        'region' => $location_latest->region->name,
+                        'doctor' => $doctorsMap[$doctor_id] ?? '',
+                        'centre' => $loc?->name ?? '',
+                        'city' => $loc?->city?->name ?? '',
+                        'region' => $loc?->region?->name ?? '',
                         'doctor_revenue' => $report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'],
                     ];
                 }

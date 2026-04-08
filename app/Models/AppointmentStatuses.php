@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,19 @@ use Illuminate\Http\Request;
 class AppointmentStatuses extends BaseModel
 {
     use SoftDeletes;
+
+    protected static function booted(): void
+    {
+        $clearCache = function (self $model): void {
+            $id = $model->account_id;
+            Cache::forget("appt_status_default_{$id}");
+            Cache::forget("appt_status_cancelled_{$id}");
+            Cache::forget("appt_status_unscheduled_{$id}_" . md5(serialize(['*'])));
+            Cache::forget("appt_statuses_dict_{$id}");
+        };
+        static::saved($clearCache);
+        static::deleted($clearCache);
+    }
 
     protected $fillable = ['name', 'sort_no', 'active', 'created_at', 'updated_at', 'deleted_at', 'is_comment', 'is_arrived', 'is_converted', 'parent_id', 'account_id', 'allow_message', 'is_default', 'is_cancelled', 'is_unscheduled'];
 
@@ -74,7 +88,7 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getADefaultStatusOnly($account_id)
     {
-        return self::where(['is_default' => '1', 'account_id' => $account_id])->first();
+        return Cache::remember("appt_status_default_{$account_id}", 3600, fn () => self::where(['is_default' => '1', 'account_id' => $account_id])->first());
     }
 
     /**
@@ -82,7 +96,7 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getCancelledStatusOnly($account_id)
     {
-        return self::where(['is_cancelled' => '1', 'account_id' => $account_id])->first();
+        return Cache::remember("appt_status_cancelled_{$account_id}", 3600, fn () => self::where(['is_cancelled' => '1', 'account_id' => $account_id])->first());
     }
 
     /**
@@ -90,7 +104,8 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getUnScheduledStatusOnly($account_id, $columns = ['*'])
     {
-        return self::where(['is_unscheduled' => '1', 'account_id' => $account_id])->first($columns);
+        $colKey = md5(serialize($columns));
+        return Cache::remember("appt_status_unscheduled_{$account_id}_{$colKey}", 3600, fn () => self::where(['is_unscheduled' => '1', 'account_id' => $account_id])->first($columns));
     }
 
     /**
@@ -238,7 +253,7 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getAllRecordsDictionary($account_id)
     {
-        return self::where(['account_id' => $account_id])->where('active',1)->get()->getDictionary();
+        return Cache::remember("appt_statuses_dict_{$account_id}", 3600, fn () => self::where(['account_id' => $account_id])->where('active', 1)->get()->getDictionary());
     }
 
     /**

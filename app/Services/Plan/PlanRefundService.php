@@ -45,7 +45,7 @@ final class PlanRefundService
             ['package_id', '=', $packageInformation->id],
         ])->orderBy('created_at', 'desc')->first();
 
-        $dateBackend = date('Y-m-d', strtotime($packageAdvanceLastIn->created_at));
+        $dateBackend = date('Y-m-d', strtotime((string) $packageAdvanceLastIn->created_at));
         $bundleInformation = PackageBundles::where('package_id', '=', $packageId)->first();
         $taxPercentage = $bundleInformation->tax_percenatage ?? '';
         $isAdjustmentAmount = 0;
@@ -342,7 +342,7 @@ final class PlanRefundService
         $activity->patient_id = $patient->id ?? null;
         $activity->appointment_type = 'Plan';
         $activity->created_by = Auth::id();
-        $activity->planId = $data['package_id'];
+        $activity->plan_id = $data['package_id'];
         $activity->amount = $refundAmount;
         $activity->location = $locationName;
         $activity->centre_id = $packageInfo->location_id;

@@ -12,6 +12,7 @@ use App\Models\Settings;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class CsrDashboardService
@@ -28,34 +29,38 @@ class CsrDashboardService
      */
     public function generate(): array
     {
-        $today = Carbon::today();
-        $endDate = Carbon::today()->addDays(self::DASHBOARD_DAYS - 1);
         $accountId = Auth::user()->account_id;
         $userCentres = ACL::getUserCentres();
-        $consultationTypeId = config('constants.appointment_type_consultancy', 1);
+        $cacheKey = 'csr_dashboard_' . $accountId . '_' . md5(serialize($userCentres));
 
-        $dateRange = $this->buildDateRange($today);
-        $locations = Locations::getActiveSorted($userCentres);
+        return Cache::remember($cacheKey, 300, function () use ($accountId, $userCentres) {
+            $today = Carbon::today();
+            $endDate = Carbon::today()->addDays(self::DASHBOARD_DAYS - 1);
+            $consultationTypeId = config('constants.appointment_type_consultancy', 1);
 
-        $appointments = $this->getAppointments($userCentres, $accountId, $consultationTypeId, $today, $endDate);
-        $locationStats = $this->buildLocationStats($locations, $dateRange, $appointments);
-        $totalByDate = $this->calculateTotalsByDate($dateRange, $locationStats);
+            $dateRange = $this->buildDateRange($today);
+            $locations = Locations::getActiveSorted($userCentres);
 
-        $csrStats = $this->buildCsrStats(
-            $userCentres, $accountId, $consultationTypeId, $today, $endDate, $dateRange
-        );
+            $appointments = $this->getAppointments($userCentres, $accountId, $consultationTypeId, $today, $endDate);
+            $locationStats = $this->buildLocationStats($locations, $dateRange, $appointments);
+            $totalByDate = $this->calculateTotalsByDate($dateRange, $locationStats);
 
-        $csrTarget = $this->getCsrTarget($accountId);
+            $csrStats = $this->buildCsrStats(
+                $userCentres, $accountId, $consultationTypeId, $today, $endDate, $dateRange
+            );
 
-        return [
-            'locationStats' => $locationStats,
-            'dateRange' => $dateRange,
-            'totalAppointments' => $appointments->count(),
-            'totalByDate' => $totalByDate,
-            'csrStats' => $csrStats,
-            'today' => $today,
-            'csrTarget' => $csrTarget,
-        ];
+            $csrTarget = $this->getCsrTarget($accountId);
+
+            return [
+                'locationStats' => $locationStats,
+                'dateRange' => $dateRange,
+                'totalAppointments' => $appointments->count(),
+                'totalByDate' => $totalByDate,
+                'csrStats' => $csrStats,
+                'today' => $today,
+                'csrTarget' => $csrTarget,
+            ];
+        });
     }
 
     /**

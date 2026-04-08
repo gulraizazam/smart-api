@@ -173,7 +173,6 @@
             Gate::allows('finances_manage') ||
             Gate::allows('invoices_manage') ||
             Gate::allows('refunds_manage') ||
-            Gate::allows('pabao_records_manage') ||
             Gate::allows('machineType_manage') ||
             Gate::allows('towns_manage')
 
@@ -207,7 +206,6 @@
                     $request->segment(2) == 'packagesadvances' ||
                     $request->segment(2) == 'invoices' ||
                     $request->segment(2) == 'refunds' ||
-                    $request->segment(2) == 'pabao_records' ||
                     $request->segment(2) == 'machinetypes' ||
                     $request->segment(2) == 'towns'
 
@@ -413,13 +411,6 @@
             <li class="nav-item start {{ $request->segment(2) == 'refunds' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.refunds.index') }}">
                     <span class="title">@lang('global.refunds.title')</span>
-                </a>
-            </li>
-            @endif
-            @if(Gate::allows('pabao_records_manage'))
-            <li class="nav-item start {{ $request->segment(2) == 'pabao_records' ? 'active active-sub' : '' }}">
-                <a href="{{ route('admin.pabao_records.index') }}">
-                    <span class="title">@lang('global.pabao_records.title')</span>
                 </a>
             </li>
             @endif

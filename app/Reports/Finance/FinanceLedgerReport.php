@@ -53,7 +53,8 @@ class FinanceLedgerReport
             $account_id,
         ];
 
-        $packagesadvances = PackageAdvances::whereDate('created_at', '=', $start_date)
+        $packagesadvances = PackageAdvances::with(['user:id,name,phone', 'location:id,name'])
+            ->whereDate('created_at', '=', $start_date)
             ->whereDate('created_at', '=', $end_date);
 
         if (count($where)) {
@@ -159,9 +160,9 @@ class FinanceLedgerReport
             $account_id,
         ];
         if (count($where)) {
-            $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
-            $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
         $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
@@ -175,7 +176,8 @@ class FinanceLedgerReport
                 'total_price' => $packagerow->total_price,
                 'children' => [],
             ];
-            $packagesadvances = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
+            $packagesadvances = PackageAdvances::with(['user:id,name,phone'])
+                ->whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
                 ->where('package_id', '=', $packagerow->id)
                 ->orderBy('created_at', 'asc')
@@ -286,9 +288,9 @@ class FinanceLedgerReport
             $account_id,
         ];
         if (count($where)) {
-            $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
-            $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
         $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
@@ -396,9 +398,9 @@ class FinanceLedgerReport
             $account_id,
         ];
         if (count($where)) {
-            $appointmentinfo = Appointments::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
+            $appointmentinfo = Appointments::with(['patient:id,phone,email'])->where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
-            $appointmentinfo = Appointments::whereIn('location_id', ACL::getUserCentres())->get();
+            $appointmentinfo = Appointments::with(['patient:id,phone,email'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
         $appointmenttrans = [];
         foreach ($appointmentinfo as $appointment) {
@@ -504,9 +506,9 @@ class FinanceLedgerReport
             '1',
         ];
         if (count($where)) {
-            $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->where($where)->whereIn('location_id', ACL::getUserCentres())->get();
         } else {
-            $packageinfo = Packages::whereIn('location_id', ACL::getUserCentres())->get();
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
         $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
@@ -653,7 +655,7 @@ class FinanceLedgerReport
             ];
         }
 
-        $packageinfo = Packages::where($where)->whereIn('location_id', ACL::getUserCentres())->get();
+        $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->where($where)->whereIn('location_id', ACL::getUserCentres())->get();
 
         $packagetrans = [];
 
@@ -835,13 +837,15 @@ class FinanceLedgerReport
             $account_id,
         ];
         if (count($where)) {
-            $packageinfo = Packages::whereDate('packages.created_at', '>=', $start_date)
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])
+                ->whereDate('packages.created_at', '>=', $start_date)
                 ->whereDate('packages.created_at', '<=', $end_date)
                 ->where($where)
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
         } else {
-            $packageinfo = Packages::whereDate('packages.created_at', '>=', $start_date)
+            $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])
+                ->whereDate('packages.created_at', '>=', $start_date)
                 ->whereDate('packages.created_at', '<=', $end_date)
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();

@@ -11,10 +11,8 @@ use App\Helpers\ACL;
 use App\Models\Locations;
 use App\Models\Resources;
 use App\Models\Appointments;
-use App\Models\PabaoRecords;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
-use App\Models\PabaoRecordPayments;
 use Illuminate\Support\Facades\DB;
 
 class FinanceRevenueReport
@@ -47,9 +45,13 @@ class FinanceRevenueReport
     if (empty($locationIds)) {
         $locationIds = is_array($userCentres) ? $userCentres : [$userCentres];
     }
+    // Preload all locations with city/region to prevent N+1
+    $locationsMap = Locations::with(['city', 'region'])->whereIn('id', $locationIds)->get()->keyBy('id');
+
     $report_data = [];
     foreach ($locationIds as $location) {
-        $query = PackageAdvances::whereDate('created_at', '>=', $start_date)
+        $query = PackageAdvances::with(['user:id,name,gender,phone', 'paymentmode:id,name'])
+            ->whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where('location_id', '=', $location)
             ->where($where)
@@ -64,7 +66,7 @@ class FinanceRevenueReport
 
         $packagesadvances = $query->get();
 
-        $location_single_info = Locations::find($location);
+        $location_single_info = $locationsMap[$location] ?? null;
 
         if (!$location_single_info) {
             continue;
@@ -247,7 +249,7 @@ class FinanceRevenueReport
 
     foreach ($location_information as $key => $location_infomation) {
 
-        $packagesadvances = PackageAdvances::with('user:id,gender') // Add relationship to get user gender
+        $packagesadvances = PackageAdvances::with(['user:id,gender', 'paymentmode:id,name'])
             ->whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where([
@@ -255,7 +257,7 @@ class FinanceRevenueReport
                 ['location_id', '=', $key],
             ])->orderBy('created_at', 'asc')->get();
 
-        $location_single_info = Locations::find($key);
+        $location_single_info = Locations::with(['city', 'region'])->find($key);
 
         if ($packagesadvances) {
             $balance = 0;
@@ -394,101 +396,6 @@ class FinanceRevenueReport
 }
 
     /**
-     * General Reveneue report
-     *
-     * @param  (mixed)  $request
-     * @return (mixed)
-     */
-    public static function pabaurecordrevenuereport($data, $account_id)
-    {
-
-        $where = [];
-
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        if (isset($data['location_id']) && $data['location_id']) {
-            $location_info = Locations::where([
-                ['account_id', '=', Auth::user()->account_id],
-                ['active', '=', '1'],
-                ['slug', '=', 'custom'],
-                ['id', '=', $data['location_id']],
-            ])->pluck('name', 'id');
-        } else {
-            $location_info = Locations::getActiveSorted(ACL::getUserCentres());
-        }
-
-        $report_data = [];
-
-        foreach ($location_info as $key => $location) {
-
-            $loc_inform = Locations::find($key);
-
-            $report_data[$loc_inform->id] = [
-                'id' => $key,
-                'name' => $location,
-                'region' => $loc_inform->region->name,
-                'city' => $loc_inform->city->name,
-                'pabau_rocord' => [],
-            ];
-
-            $pabau_record = PabaoRecords::where('location_id', '=', $key)->get();
-
-            if (!empty($pabau_record)) {
-                $count = 0;
-                foreach ($pabau_record as $pabau) {
-
-                    $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id] = [
-                        'id' => $pabau->id,
-                        'name' => $pabau->client,
-                        'phone' => $pabau->phone,
-                        'invoice_no' => $pabau->invoice_no,
-                        'total_amount' => $pabau->total_amount,
-                        'paid_amount' => '',
-                        'outstanding_amount' => '',
-                        'issue_date' => $pabau->issue_date,
-                        'pabau_record_payment' => [],
-                    ];
-
-                    $pabau_record_payment = PabaoRecordPayments::whereDate('date_paid', '>=', $start_date)
-                        ->whereDate('date_paid', '<=', $end_date)
-                        ->where('pabao_record_id', '=', $pabau->id)
-                        ->get();
-
-                    if (!empty($pabau_record_payment)) {
-                        $count++;
-                        $sum_amount = 0;
-                        foreach ($pabau_record_payment as $pabau_payment) {
-                            $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['pabau_record_payment'][$pabau_payment->id] = [
-                                'id' => $pabau_payment->id,
-                                'amount' => $pabau_payment->amount,
-                                'Date' => $pabau_payment->date_paid,
-                            ];
-                            $sum_amount += $pabau_payment->amount;
-                        }
-                        $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['paid_amount'] = $pabau->paid_amount + $sum_amount;
-                        $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['outstanding_amount'] = $pabau->outstanding_amount - $sum_amount;
-                    } else {
-                        unset($report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]);
-                    }
-                }
-                if ($count == 0) {
-                    unset($report_data[$loc_inform->id]);
-                }
-            } else {
-                unset($report_data[$loc_inform->id]);
-            }
-        }
-
-        return $report_data;
-    }
-
-    /**
      * Machine Wise Revenue Report
      *
      * @param  (mixed)  $request
@@ -544,12 +451,13 @@ class FinanceRevenueReport
         }
 
         $location_info = Locations::whereIn('id', $where)->pluck('name', 'id');
+        $locationsMap2 = Locations::with(['city', 'region'])->whereIn('id', $where)->get()->keyBy('id');
 
         $report_data = [];
 
         foreach ($location_info as $key => $location) {
 
-            $loc_inform = Locations::find($key);
+            $loc_inform = $locationsMap2[$key] ?? Locations::with(['city', 'region'])->find($key);
 
             $report_data[$loc_inform->id] = [
                 'id' => $key,

@@ -5,6 +5,22 @@ use App\Helpers\Filters;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Safely parse a monetary string to float, preserving decimal precision.
+ * Strips commas and non-numeric characters except digits, dots, and minus.
+ * Replaces FILTER_SANITIZE_NUMBER_INT which destroys decimal points.
+ */
+function sanitize_money(mixed $value): float
+{
+    if (is_numeric($value)) {
+        return (float) $value;
+    }
+
+    $cleaned = preg_replace('/[^\d.\-]/', '', (string) $value);
+
+    return (float) $cleaned;
+}
+
 function getSortBy(\Illuminate\Http\Request $request, string $orderBy = 'name', string $order = 'asc', ?string $prefix = null): array
 {
 

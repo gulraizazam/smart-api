@@ -148,10 +148,14 @@ class LocationsWidget
                 }
 
                 $centers = array_unique($centers);
+                $centersMap = Locations::whereIn('id', $centers)->get()->keyBy('id');
 
                 foreach ($centers as $center) {
 
-                    $location = Locations::find($center);
+                    $location = $centersMap[$center] ?? null;
+                    if (!$location) {
+                        continue;
+                    }
 
                     $location_array[] = [
                         'user_id' => $user_id,
@@ -201,23 +205,34 @@ class LocationsWidget
                     'active' => 1,
                 ])->select('id', 'name', 'region_id')->get();
                 if ($region_centres) {
-
+                    // Batch-load all child location IDs and center locations
+                    $allChildIds = [];
                     foreach ($region_centres as $region_centre) {
-
                         if ($collection->search($region_centre->id) && isset($regions_mapping[$region_centre->region_id]['children'])) {
                             foreach ($regions_mapping[$region_centre->region_id]['children'] as $child) {
-                                $region_id = Locations::find($child['id']);
-                                $location_array_1[] = $region_id->id;
-
-                                $array1[] = $region_id->region_id;
-
+                                $allChildIds[] = $child['id'];
                                 break;
                             }
+                        }
+                    }
+                    $centerIds = collect($centers)->toArray();
+                    $allLocationIds = array_unique(array_merge($allChildIds, $centerIds));
+                    $locationsMap = Locations::whereIn('id', $allLocationIds)->get()->keyBy('id');
 
+                    foreach ($region_centres as $region_centre) {
+                        if ($collection->search($region_centre->id) && isset($regions_mapping[$region_centre->region_id]['children'])) {
+                            foreach ($regions_mapping[$region_centre->region_id]['children'] as $child) {
+                                $region_id = $locationsMap[$child['id']] ?? null;
+                                if ($region_id) {
+                                    $location_array_1[] = $region_id->id;
+                                    $array1[] = $region_id->region_id;
+                                }
+                                break;
+                            }
                         }
                     }
                     foreach ($centers as $centerlives) {
-                        $locationchecked = Locations::find($centerlives);
+                        $locationchecked = $locationsMap[$centerlives] ?? null;
                         if ($locationchecked && ! in_array($locationchecked->region_id, $array1, true)) {
                             $location_array_1[] = $centerlives;
                         }
@@ -256,8 +271,12 @@ class LocationsWidget
 
                 return $service_array;
             } else {
-                foreach ($store_service as $service) {
-                    $service = Services::find($service);
+                $servicesMap = Services::whereIn('id', $store_service)->get()->keyBy('id');
+                foreach ($store_service as $serviceId) {
+                    $service = $servicesMap[$serviceId] ?? null;
+                    if (!$service) {
+                        continue;
+                    }
                     if ($service->end_node == '0') {
                         $servicechild = Services::where('parent_id', '=', $service->id)->get();
                         foreach ($servicechild as $servicechild) {
@@ -327,6 +346,8 @@ class LocationsWidget
     */
     public static function loadAppointmentDoctorByLocation($location_id, $account_id)
     {
+        $location_id = (int) $location_id;
+        $account_id = (int) $account_id;
 
         /*
          * Strategy:
@@ -414,6 +435,8 @@ class LocationsWidget
     */
     public static function loadAppointmentServiceByLocation($location_id, $account_id)
     {
+        $location_id = (int) $location_id;
+        $account_id = (int) $account_id;
 
         /*
          * Strategy:

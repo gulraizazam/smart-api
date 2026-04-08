@@ -237,7 +237,6 @@ class ActivityLogger
             'description' => 'Package Created - Plan Id: ' . $package->id . ' (' . ($package->name ?? 'Package') . ') for Rs. ' . number_format($package->total_price) . ($locationName ? ' at ' . $locationName : ''),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $package->patient_id,
-            'planId' => $package->id,
             'plan_id' => $package->id,
             'package_id' => $package->id,
             'amount' => number_format($package->total_price),
@@ -274,7 +273,6 @@ class ActivityLogger
             'description' => $description,
             'patient' => $patientName,
             'patient_id' => $patientId,
-            'planId' => $package->id,
             'plan_id' => $package->id,
             'package_id' => $package->id,
             'amount' => number_format($payment->cash_amount),
@@ -289,7 +287,7 @@ class ActivityLogger
     /**
      * Log payment updated activity
      */
-    public static function logPaymentUpdated(float|int $oldAmount, float|int $newAmount, ?string $oldDate, ?string $newDate, bool $amountChanged, bool $dateChanged, Packages $package, Patients $patient, ?Locations $location = null): Activity
+    public static function logPaymentUpdated(float|int $oldAmount, float|int $newAmount, \DateTimeInterface|string|null $oldDate, \DateTimeInterface|string|null $newDate, bool $amountChanged, bool $dateChanged, Packages $package, Patients $patient, ?Locations $location = null): Activity
     {
         $locationName = '';
         if ($location) {
@@ -328,7 +326,6 @@ class ActivityLogger
             'description' => $description,
             'patient' => $patientName,
             'patient_id' => $patientId,
-            'planId' => $package->id,
             'plan_id' => $package->id,
             'package_id' => $package->id,
             'amount' => number_format($newAmount),
@@ -365,7 +362,6 @@ class ActivityLogger
             'description' => $description,
             'patient' => $patientName,
             'patient_id' => $patientId,
-            'planId' => $package->id,
             'plan_id' => $package->id,
             'package_id' => $package->id,
             'amount' => number_format($amount),
@@ -394,7 +390,6 @@ class ActivityLogger
             'description' => 'Refund Made Rs. ' . number_format($refund->cash_amount) . ' to ' . ($patient->name ?? 'Unknown') . ' for Plan Id: ' . $package->id . ($locationName ? ' at ' . $locationName : ''),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $package->patient_id,
-            'planId' => $package->id,
             'plan_id' => $package->id,
             'package_id' => $package->id,
             'amount' => number_format($refund->cash_amount),
@@ -409,7 +404,7 @@ class ActivityLogger
     /**
      * Log appointment rescheduled activity
      */
-    public static function logAppointmentRescheduled(Appointments $appointment, Patients $patient, string $oldDate, string $oldTime, string $newDate, string $newTime, ?Locations $location = null, ?Services $service = null): Activity
+    public static function logAppointmentRescheduled(Appointments $appointment, Patients $patient, \DateTimeInterface|string $oldDate, \DateTimeInterface|string $oldTime, \DateTimeInterface|string $newDate, \DateTimeInterface|string $newTime, ?Locations $location = null, ?Services $service = null): Activity
     {
         $locationName = '';
         if ($location) {

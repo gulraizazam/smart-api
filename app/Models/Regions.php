@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Helpers\Filters;
 use App\Helpers\Widgets\RegionsWidget;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -110,11 +111,17 @@ class Regions extends BaseModel
         if ($regionId && ! is_array($regionId)) {
             $regionId = [$regionId];
         }
-        if ($regionId) {
-            return self::where(['active' => 1, 'slug' => 'custom'])->whereIn('id', $regionId)->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
-        } else {
-            return self::where(['active' => 1, 'slug' => 'custom'])->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
-        }
+        $accountId = Auth::user()->account_id;
+        $cacheKey = 'regions_active_sorted_' . $accountId . '_' . ($regionId ? md5(serialize($regionId)) : 'all');
+
+        return Cache::remember($cacheKey, 3600, function () use ($regionId, $accountId) {
+            $query = self::where(['active' => 1, 'slug' => 'custom'])->where('account_id', '=', $accountId);
+            if ($regionId) {
+                $query->whereIn('id', $regionId);
+            }
+
+            return $query->pluck('name', 'id');
+        });
     }
 
     /**
@@ -289,7 +296,7 @@ class Regions extends BaseModel
      */
     public static function getAllRecordsDictionary($account_id)
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
+        return Cache::remember("regions_dict_{$account_id}", 3600, fn () => self::where(['account_id' => $account_id])->get()->getDictionary());
     }
 
     /**

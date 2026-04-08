@@ -241,7 +241,7 @@ class ScheduleController extends Controller
         $allRotaDays = ResourceHasRotaDays::whereIn('resource_has_rota_id', $rotaIds)->get();
         
         // Filter by date range
-        $rotaDays = $allRotaDays->filter(fn($day) => date('Y-m-d', strtotime($day->date)) >= $startDate && date('Y-m-d', strtotime($day->date)) <= $endDate);
+        $rotaDays = $allRotaDays->filter(fn($day) => date('Y-m-d', strtotime((string) $day->date)) >= $startDate && date('Y-m-d', strtotime((string) $day->date)) <= $endDate);
 
         // Build shifts array
         foreach ($rotaDays as $rotaDay) {

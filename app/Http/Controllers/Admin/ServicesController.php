@@ -110,14 +110,19 @@ class ServicesController extends Controller
                     ->orderBy('id', 'asc')
                     ->get();
 
+            // Batch-load all children grouped by parent_id (N+1 fix)
+            $parentIds = $services->pluck('id')->all();
+            $childrenByParent = Services::whereIn('parent_id', $parentIds)
+                ->orderBy('sort_number', 'ASC')
+                ->get()
+                ->groupBy('parent_id');
+
             $mergedServices = [];
             foreach ($services as $service) {
-
-                    $children = Services::where(['parent_id' => $service->id])->orderby('sort_number', 'ASC')->get()->toArray();
-
                 $mergedServices[] = $service->toArray();
+                $children = $childrenByParent->get($service->id, collect());
                 foreach ($children as $child) {
-                    $mergedServices[] = $child;
+                    $mergedServices[] = $child->toArray();
                 }
             }
 

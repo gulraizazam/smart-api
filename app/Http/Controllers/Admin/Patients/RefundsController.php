@@ -106,7 +106,7 @@ class RefundsController extends Controller
                 ])->sum('cash_amount');
                 
                 // Refunded amount from refunds table
-                $refunded_amount = Refunds::where('package_id', $package->id)->sum('amount');
+                $refunded_amount = Refunds::where('package_id', $package->id)->sum('cash_amount');
                 
                 if ($cash_in != 0) {
                     $records['data'][] = [
@@ -151,7 +151,7 @@ class RefundsController extends Controller
             ['cash_amount', '>', 0],
             ['package_id', '=', $package_information->id],
         ])->orderBy('created_at', 'desc')->first();
-        $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
+        $date_backend = date('Y-m-d', strtotime((string) $package_advance_last_in->created_at));
         /*end*/
 
         /*first need to tax percentage*/

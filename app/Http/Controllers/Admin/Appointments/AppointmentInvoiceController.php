@@ -462,7 +462,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 $activity->created_by = Auth::user()->id;
                 $activity->account_id = Auth::user()->account_id;
                 $activity->invoice_id = $invoice->id;
-                $activity->planId = $package_advances->package_id;
+                $activity->plan_id = $package_advances->package_id;
                 $activity->amount = $request->cash;
                 $activity->location = $location->name;
                 $activity->centre_id = $appointmentinfo->location_id;
@@ -502,7 +502,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $serviceName = $servicename->name ?? 'Service';
         $locationName = $location->name ?? '';
         $amount = number_format($invoice_detail->net_amount);
-        $scheduleDate = $appointmentinfo->scheduled_date ? date('M j, Y', strtotime($appointmentinfo->scheduled_date)) : '';
+        $scheduleDate = $appointmentinfo->scheduled_date ? date('M j, Y', strtotime((string) $appointmentinfo->scheduled_date)) : '';
 
         // Format description with highlights
         $description = '<span class="highlight">' . $creatorName . '</span> consumed <span class="highlight-green">Rs. ' . $amount . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">' . $serviceName . '</span> Treatment' . ($locationName ? ' at <span class="highlight">' . $locationName . '</span>' : '') . ($scheduleDate ? ' on <span class="highlight-purple">' . $scheduleDate . '</span>' : '');

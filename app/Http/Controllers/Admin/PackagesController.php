@@ -1975,35 +1975,37 @@ class PackagesController extends Controller
         $packageBundledata['random_id'] = $package->random_id;
         $packageBundledata['is_allocate'] = 1;
         if (isset($request['package_bundles'])) {
-            foreach ($request['package_bundles'] as $packageBundle) {
-                $packageBundledata['qty'] = 1;
-                $packageBundledata['discount_name'] = $packageBundle['DiscountName'];
-                $packageBundledata['discount_type'] = $packageBundle['Type'];
-                $packageBundledata['discount_price'] = $packageBundle['DiscountValue'];
-                $packageBundledata['service_price'] = str_replace(',', '', $packageBundle['RegularPrice']);
-                $packageBundledata['net_amount'] = str_replace(',', '', $packageBundle['RegularPrice']);
-                $packageBundledata['discount_id'] = 1;
-                $packageBundledata['bundle_id'] = $packageBundle['bundleId'];
-                $packageBundledata['package_id'] = $package->id;
-                $packageBundledata['tax_exclusive_net_amount'] = str_replace(',', '', $packageBundle['Amount']);
-                $packageBundledata['tax_percentage'] = 1;
-                $packageBundledata['tax_price'] = $packageBundle['Tax'];
-                $packageBundledata['tax_including_price'] = $packageBundle['Total'];
-                $packageBundledata['location_id'] = $request->location_id;
-                $packageBundleRecord = PackageBundles::create($packageBundledata);
-                $bundleServices = BundleHasServices::where('bundle_id', '=', $packageBundleRecord->bundle_id)->get();
-                $service_data = Bundles::find($packageBundle['bundleId']);
-                $calculable_servcies = [];
-                foreach ($bundleServices as $bundleService) {
-                    $calculable_servcies[] = [
-                        'service_price' => $bundleService->calculated_price,
-                        'calculated_price' => $bundleService->calculated_price,
-                        'service_id' => $bundleService->service_id,
-                    ];
-                }
-                $calculatedServicesPrice = Bundles::calculatePrices($calculable_servcies, str_replace(',', '', $packageBundle['RegularPrice']), $packageBundle['Total']);
+            return DB::transaction(function () use ($package, $request, &$packageBundledata) {
+                // Hoist location lookup outside loop — same location_id for all bundles
                 $location_information = Locations::find($request->location_id);
-                foreach ($calculatedServicesPrice as $calculatedServicePrice) {
+                foreach ($request['package_bundles'] as $packageBundle) {
+                    $packageBundledata['qty'] = 1;
+                    $packageBundledata['discount_name'] = $packageBundle['DiscountName'];
+                    $packageBundledata['discount_type'] = $packageBundle['Type'];
+                    $packageBundledata['discount_price'] = $packageBundle['DiscountValue'];
+                    $packageBundledata['service_price'] = str_replace(',', '', $packageBundle['RegularPrice']);
+                    $packageBundledata['net_amount'] = str_replace(',', '', $packageBundle['RegularPrice']);
+                    $packageBundledata['discount_id'] = 1;
+                    $packageBundledata['bundle_id'] = $packageBundle['bundleId'];
+                    $packageBundledata['package_id'] = $package->id;
+                    $packageBundledata['tax_exclusive_net_amount'] = str_replace(',', '', $packageBundle['Amount']);
+                    $packageBundledata['tax_percentage'] = 1;
+                    $packageBundledata['tax_price'] = $packageBundle['Tax'];
+                    $packageBundledata['tax_including_price'] = $packageBundle['Total'];
+                    $packageBundledata['location_id'] = $request->location_id;
+                    $packageBundleRecord = PackageBundles::create($packageBundledata);
+                    $bundleServices = BundleHasServices::where('bundle_id', '=', $packageBundleRecord->bundle_id)->get();
+                    $service_data = Bundles::find($packageBundle['bundleId']);
+                    $calculable_servcies = [];
+                    foreach ($bundleServices as $bundleService) {
+                        $calculable_servcies[] = [
+                            'service_price' => $bundleService->calculated_price,
+                            'calculated_price' => $bundleService->calculated_price,
+                            'service_id' => $bundleService->service_id,
+                        ];
+                    }
+                    $calculatedServicesPrice = Bundles::calculatePrices($calculable_servcies, str_replace(',', '', $packageBundle['RegularPrice']), $packageBundle['Total']);
+                    foreach ($calculatedServicesPrice as $calculatedServicePrice) {
                     $data_service['random_id'] = $request->random_id;
                     $data_service['package_bundle_id'] = $packageBundleRecord->id;
                     $data_service['service_id'] = $calculatedServicePrice['service_id'];
@@ -2045,8 +2047,9 @@ class PackagesController extends Controller
                     $data_service['sold_by'] =$packageBundle['sold_by'] ;
                     $packageservice = PackageService::createPackageService($data_service);
                 }
-            }
-            return true;
+                }
+                return true;
+            });
         }
     }
     public function deleteplanrowtem(Request $request): \Illuminate\Http\JsonResponse

@@ -113,24 +113,29 @@ class PlanAppointmentCalculation
         if ($location_id) {
 
             $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($location_id, Auth::user()->account_id);
+
+            // Batch-load resources by external_id (N+1 fix)
+            $externalIds = array_keys($doctors_no_final);
+            $resourcesMap = Resources::whereIn('external_id', $externalIds)->get()->keyBy('external_id');
+
+            // Batch-load rota days for all resources at this location for today
+            $resourceIds = $resourcesMap->pluck('id')->all();
+            $todayRotaResourceIds = ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
+                ->whereIn('resource_has_rota.resource_id', $resourceIds)
+                ->where('resource_has_rota.is_consultancy', '=', '1')
+                ->where('resource_has_rota.location_id', '=', $location_id)
+                ->where('resource_has_rota.active', '=', '1')
+                ->where('resource_has_rota_days.date', '=', Carbon::now()->toDateString())
+                ->pluck('resource_has_rota.resource_id')
+                ->unique()
+                ->all();
+
             foreach ($doctors_no_final as $key => $doctor) {
+                $resource = $resourcesMap->get($key);
+                $hasRota = $resource && in_array($resource->id, $todayRotaResourceIds, true);
 
-                $resource = Resources::where('external_id', '=', $key)->first();
-
-                $doctor_rota = ResourceHasRota::join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_days.resource_has_rota_id')
-                    ->where('resource_has_rota.resource_id', '=', $resource?->id)
-                    ->where('resource_has_rota.is_consultancy', '=', '1')
-                    ->where('resource_has_rota.location_id', '=', $location_id)
-                    ->where('resource_has_rota.active', '=', '1')
-                    ->where('resource_has_rota_days.date', '=', Carbon::now()->toDateString())
-                    ->get();
-
-                if (empty($doctor_rota)) {
+                if (!$hasRota || in_array($key, $doctorids, true)) {
                     unset($doctors[$key]);
-                } else {
-                    if (in_array($key, $doctorids, true)) {
-                        unset($doctors[$key]);
-                    }
                 }
             }
 

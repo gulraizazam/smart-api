@@ -86,8 +86,8 @@ class ConsultancyUpdateService
             }
             $this->validateDoctorHasServiceForConsultancy((int) $newDoctorId, (int) $appointment->service_id, $locationId);
 
-            $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
-            $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+            $scheduledDate = $requestData['scheduled_date'] ?? (string) $appointment->scheduled_date;
+            $scheduledTime = $requestData['scheduled_time'] ?? (string) $appointment->scheduled_time;
             $this->validateDoctorRota((int) $newDoctorId, $scheduledDate, $scheduledTime, $locationId);
         }
 
@@ -99,8 +99,8 @@ class ConsultancyUpdateService
             }
 
             $doctorId = (int) ($requestData['doctor_id'] ?? $appointment->doctor_id);
-            $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
-            $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+            $scheduledDate = $requestData['scheduled_date'] ?? (string) $appointment->scheduled_date;
+            $scheduledTime = $requestData['scheduled_time'] ?? (string) $appointment->scheduled_time;
             $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId);
         }
     }
@@ -120,8 +120,8 @@ class ConsultancyUpdateService
 
         $this->validateDoctorHasServiceForConsultancy($doctorId, $serviceId, $locationId);
 
-        $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
-        $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+        $scheduledDate = $requestData['scheduled_date'] ?? (string) $appointment->scheduled_date;
+        $scheduledTime = $requestData['scheduled_time'] ?? (string) $appointment->scheduled_time;
         $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId);
     }
 

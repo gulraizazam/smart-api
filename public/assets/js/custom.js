@@ -668,20 +668,20 @@ function closeAllPopup(modal) {
 function reInitTable(page = null) {
     setTimeout(function () {
         if (page == 'treatment') {
+            if (typeof patientId !== 'undefined' && patientId) {
+                location.reload();
+                return;
+            }
             if (typeof datatable !== 'undefined') {
                 treatmentFilters();
             }
-            // Also reload patient card datatable if exists
-            if (typeof window.treatmentsDatatable !== 'undefined') {
-                window.treatmentsDatatable.reload();
-            }
         } else if (page == 'consultancy') {
+            if (typeof patientId !== 'undefined' && patientId) {
+                location.reload();
+                return;
+            }
             if (typeof datatable !== 'undefined') {
                 consultancyFilters();
-            }
-            // Also reload patient card datatable if exists
-            if (typeof window.consultationsDatatable !== 'undefined') {
-                window.consultationsDatatable.reload();
             }
         } else if (page == "user") {
             if (typeof datatable !== 'undefined') {

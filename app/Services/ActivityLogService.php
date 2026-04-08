@@ -93,7 +93,7 @@ class ActivityLogService
         $service = e($activity->serviceR->name ?? $activity->service ?? '');
         $location = e($activity->centre->name ?? $activity->location ?? '');
         $amount = $activity->amount ?? '';
-        $planId = $activity->planId ?? $activity->plan_id ?? '';
+        $planId = $activity->plan_id ?? '';
         $appointmentType = e($activity->appointment_type ?? '');
         $scheduleDate = $activity->schedule_date ?? '';
         $createdBy = $activity->created_by ?? '';
@@ -106,7 +106,7 @@ class ActivityLogService
         if ($scheduleDate) {
             $dateStr = date('M j, Y', strtotime($scheduleDate));
         } elseif ($activity->created_at) {
-            $dateStr = date('M j, Y', strtotime($activity->created_at));
+            $dateStr = date('M j, Y', strtotime((string) $activity->created_at));
         }
         
         $type = $activity->activity_type ?? '';

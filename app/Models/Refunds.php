@@ -27,6 +27,17 @@ class Refunds extends Model
     protected static string $_table = 'package_advances';
 
     /**
+     * Scope Refunds to only refund records (cash_flow=out, is_refund=1).
+     * Prevents querying advance payment records through the Refunds model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('refunds_only', function (\Illuminate\Database\Eloquent\Builder $builder) {
+            $builder->where('cash_flow', 'out')->where('is_refund', '1');
+        });
+    }
+
+    /**
      * Get the user information that present in packages_advances.
      */
     public function user(): BelongsTo
@@ -159,7 +170,7 @@ class Refunds extends Model
         $activity->patient_id = $patient->id;
         $activity->appointment_type = 'Plan';
         $activity->created_by = Auth::user()->id;
-        $activity->planId = $request->package_id;
+        $activity->plan_id = $request->package_id;
         $activity->amount = $refundAmount;
         $activity->location = $locationName;
         $activity->centre_id = $request->location_id;
