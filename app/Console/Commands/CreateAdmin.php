@@ -51,7 +51,6 @@ class CreateAdmin extends Command
      *
      * @return void
      */
-    #[\Override]
     public function handle(): int
     {
 

@@ -19,7 +19,6 @@ class CashflowAuditLog extends Model
         'entity_id', 'old_values', 'new_values', 'reason', 'ip_address', 'created_at',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

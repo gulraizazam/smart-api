@@ -32,7 +32,6 @@ class PlanInvoice extends Model
         'invoice_type',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

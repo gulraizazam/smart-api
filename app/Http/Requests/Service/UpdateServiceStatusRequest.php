@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Gate;
 
 final class UpdateServiceStatusRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('services_active') || Gate::allows('services_inactive');
@@ -18,7 +17,6 @@ final class UpdateServiceStatusRequest extends FormRequest
     /**
      * @return array<string, string>
      */
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -30,7 +28,6 @@ final class UpdateServiceStatusRequest extends FormRequest
     /**
      * @return array<string, string>
      */
-    #[\Override]
     public function messages(): array
     {
         return [

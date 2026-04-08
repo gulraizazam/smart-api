@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreStaffAdvanceRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_staff_advance_create');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [

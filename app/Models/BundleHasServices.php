@@ -30,7 +30,6 @@ class BundleHasServices extends Model
         'end_node',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

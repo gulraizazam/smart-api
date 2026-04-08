@@ -27,7 +27,6 @@ class Discounts extends BaseModel
 
     protected static string $_table = 'discounts';
 
-    #[\Override]
     protected function casts(): array
     {
         return [

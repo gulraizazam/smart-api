@@ -10,13 +10,11 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ApplicationUserRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
-    #[\Override]
     public function rules(): array
     {
         $userId = $this->route('user') ?? $this->route('id');
@@ -44,7 +42,6 @@ class ApplicationUserRequest extends FormRequest
         return $rules;
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [
@@ -60,7 +57,6 @@ class ApplicationUserRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(response()->json([

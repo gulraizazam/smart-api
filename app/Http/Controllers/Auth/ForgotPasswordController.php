@@ -22,7 +22,6 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    #[\Override]
     public function showLinkRequestForm(): \Illuminate\View\View
     {
         return view('auth.passwords.email');
@@ -33,7 +32,6 @@ class ForgotPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    #[\Override]
     public function sendResetLinkEmail(Request $request): \Illuminate\Http\RedirectResponse
     {
         $this->validateEmail($request);

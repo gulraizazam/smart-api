@@ -18,7 +18,6 @@ class CategoryRequest extends Model
         'requested_by', 'status', 'admin_notes', 'category_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

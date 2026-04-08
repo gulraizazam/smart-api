@@ -24,7 +24,6 @@ class MachineType extends BaseModel
 
     protected static string $_table = 'machine_types';
 
-    #[\Override]
     protected function casts(): array
     {
         return [

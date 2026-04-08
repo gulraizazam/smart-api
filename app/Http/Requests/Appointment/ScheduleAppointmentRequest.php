@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class ScheduleAppointmentRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -27,7 +25,6 @@ class ScheduleAppointmentRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages()
     {
         return [

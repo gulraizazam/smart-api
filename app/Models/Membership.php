@@ -31,7 +31,6 @@ class Membership extends Model
         'parent_membership_code',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

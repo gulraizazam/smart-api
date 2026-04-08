@@ -17,7 +17,6 @@ class FeedbackDatatableResource extends JsonResource
      */
     public static array $usersLookup = [];
 
-    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

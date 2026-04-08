@@ -32,7 +32,6 @@ class LoginController extends Controller
      * @param  mixed  $user
      * @return mixed
      */
-    #[\Override]
     protected function authenticated(): void
     {
         $account_id = Auth::user()->account_id;
@@ -42,7 +41,6 @@ class LoginController extends Controller
 
     }
 
-    #[\Override]
     public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
 
@@ -105,7 +103,6 @@ class LoginController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    #[\Override]
     public function logout(Request $request): \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
         Filters::remove_filters();

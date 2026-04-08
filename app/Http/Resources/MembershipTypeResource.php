@@ -9,7 +9,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class MembershipTypeResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

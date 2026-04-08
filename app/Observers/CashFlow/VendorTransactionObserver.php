@@ -16,7 +16,6 @@ class VendorTransactionObserver
      * Purchase (owe more): balance increases.
      * Payment (owe less): balance decreases.
      */
-    #[\Override]
     public function created(VendorTransaction $transaction): void
     {
         try {

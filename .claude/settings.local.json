@@ -121,7 +121,9 @@
       "Bash(chmod +x /tmp/scan_models.sh)",
       "Bash(/tmp/scan_models.sh)",
       "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/BusinessClosure.php\")",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(python3:*)",
+      "Bash(xxd app/Observers/CashFlow/LocationCashflowObserver.php)"
     ]
   }
 }

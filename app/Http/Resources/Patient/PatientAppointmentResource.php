@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Gate;
 
 class PatientAppointmentResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

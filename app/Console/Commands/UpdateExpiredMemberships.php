@@ -12,7 +12,6 @@ class UpdateExpiredMemberships extends Command
     protected $signature = 'memberships:expire';
     protected $description = 'Update expired memberships and set status to 0';
 
-    #[\Override]
     public function handle(): void
     {
         $count = Membership::where('end_date', '<', Carbon::today())

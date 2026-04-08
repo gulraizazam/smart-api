@@ -15,7 +15,6 @@ class BackfillMissingPackages extends Command
 
     protected $description = 'Restore deleted packages rows from package_advances/package_bundles/package_services data, or delete the orphaned child records';
 
-    #[\Override]
     public function handle(): int
     {
         $isDryRun = $this->option('dry-run');

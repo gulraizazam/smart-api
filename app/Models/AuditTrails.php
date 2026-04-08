@@ -14,7 +14,6 @@ class AuditTrails extends BaseModel
 
     protected $table = 'audit_trails';
 
-    #[\Override]
     protected function casts(): array
     {
         return [

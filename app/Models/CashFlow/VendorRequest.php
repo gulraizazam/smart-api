@@ -19,7 +19,6 @@ class VendorRequest extends Model
         'requested_by', 'status', 'admin_notes', 'vendor_id',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

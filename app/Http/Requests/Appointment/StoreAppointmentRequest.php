@@ -8,13 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreAppointmentRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
-    #[\Override]
     protected function prepareForValidation()
     {
         $isConsultation = false;
@@ -71,7 +69,6 @@ class StoreAppointmentRequest extends FormRequest
         }
     }
 
-    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -115,7 +112,6 @@ class StoreAppointmentRequest extends FormRequest
         return $rules;
     }
 
-    #[\Override]
     public function messages()
     {
         return [

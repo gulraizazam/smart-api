@@ -29,7 +29,6 @@ class UserOperatorSettings extends BaseModel
 
     protected $hidden = ['password'];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

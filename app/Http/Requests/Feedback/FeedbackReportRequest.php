@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Gate;
 
 class FeedbackReportRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('feedbacks_manage');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -26,7 +24,6 @@ class FeedbackReportRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [

@@ -41,7 +41,6 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    #[\Override]
     public function showResetForm(Request $request): \Illuminate\View\View
     {
         $token = $request->route()->parameter('token');
@@ -70,7 +69,6 @@ class ResetPasswordController extends Controller
      *
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    #[\Override]
     public function reset(Request $request): \Illuminate\Http\RedirectResponse
     {
         $request->validate($this->rules(), $this->validationErrorMessages());

@@ -22,7 +22,6 @@ class CashPool extends Model
         'opening_balance', 'cached_balance', 'is_active', 'opening_balance_frozen',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

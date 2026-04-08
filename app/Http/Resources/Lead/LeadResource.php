@@ -19,7 +19,6 @@ class LeadResource extends JsonResource
      */
     public static array $statusLookup = [];
 
-    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

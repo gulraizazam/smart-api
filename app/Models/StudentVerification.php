@@ -26,7 +26,6 @@ class StudentVerification extends Model
         'reviewed_at',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

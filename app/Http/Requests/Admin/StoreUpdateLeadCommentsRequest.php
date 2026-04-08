@@ -9,13 +9,11 @@ use Illuminate\Support\Facades\Gate;
 
 class StoreUpdateLeadCommentsRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('leads_manage');
     }
 
-    #[\Override]
     public function rules(): array
     {
         return [
@@ -24,7 +22,6 @@ class StoreUpdateLeadCommentsRequest extends FormRequest
         ];
     }
 
-    #[\Override]
     public function messages(): array
     {
         return [

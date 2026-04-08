@@ -10,7 +10,6 @@ use Carbon\Carbon;
 
 class LeadCommentResource extends JsonResource
 {
-    #[\Override]
     public function toArray(Request $request): array
     {
         return [

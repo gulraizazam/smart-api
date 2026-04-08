@@ -19,7 +19,6 @@ class CashflowNotification extends Model
         'account_id', 'user_id', 'type', 'title', 'message', 'data', 'read_at', 'created_at',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

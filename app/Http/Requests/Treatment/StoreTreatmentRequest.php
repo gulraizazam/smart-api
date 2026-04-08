@@ -10,13 +10,11 @@ use Illuminate\Support\Facades\Auth;
 
 final class StoreTreatmentRequest extends FormRequest
 {
-    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
-    #[\Override]
     protected function prepareForValidation(): void
     {
         $data = [];
@@ -56,7 +54,6 @@ final class StoreTreatmentRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
-    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -94,7 +91,6 @@ final class StoreTreatmentRequest extends FormRequest
     /**
      * @return array<string, string>
      */
-    #[\Override]
     public function messages(): array
     {
         return [

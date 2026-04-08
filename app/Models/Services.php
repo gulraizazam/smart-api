@@ -42,7 +42,6 @@ class Services extends BaseModel
         'sort_number',
     ];
 
-    #[\Override]
     protected function casts(): array
     {
         return [

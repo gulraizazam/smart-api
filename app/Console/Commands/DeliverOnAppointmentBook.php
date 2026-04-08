@@ -46,7 +46,6 @@ class DeliverOnAppointmentBook extends Command
      *
      * @return mixed
      */
-    #[\Override]
     public function handle(): int
     {
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
