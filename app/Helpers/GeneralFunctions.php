@@ -774,6 +774,8 @@ class GeneralFunctions
                 return $report_data;
             }
         }
+
+        return null;
     }
 
     public static function PatientFollowUpReport(array $data, array $where): array
