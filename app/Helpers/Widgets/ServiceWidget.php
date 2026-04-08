@@ -124,8 +124,13 @@ class ServiceWidget
         $services = [];
         $Services = [];
         $allService = Services::where(['slug' => 'all'])->select('id')->first();
+        $serviceIds = collect($service_has_location)->pluck('service_id')->unique()->filter();
+        $servicesMap = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
         foreach ($service_has_location as $servicehaslocation) {
-            $service_data = Services::find($servicehaslocation->service_id);
+            $service_data = $servicesMap[$servicehaslocation->service_id] ?? null;
+            if (!$service_data) {
+                continue;
+            }
             if ($service_data->slug == 'all') {
                 $parentGroups = new NodesTree();
                 $parentGroups->current_id = 0;

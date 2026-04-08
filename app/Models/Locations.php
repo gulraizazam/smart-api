@@ -9,6 +9,7 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -17,6 +18,17 @@ use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\R
 class Locations extends BaseModel
 {
     use SoftDeletes;
+
+    protected static function booted(): void
+    {
+        $clearCache = function (self $model): void {
+            $pattern = 'locations_active_sorted_' . $model->account_id;
+            Cache::forget($pattern . '_name_all');
+            Cache::forget('locations_dict_' . $model->account_id . '_0_0_0_all');
+        };
+        static::saved($clearCache);
+        static::deleted($clearCache);
+    }
 
     protected $fillable = [
 
@@ -150,19 +162,21 @@ class Locations extends BaseModel
         if ($locationId && ! is_array($locationId)) {
             $locationId = [$locationId];
         }
-        if ($locationId) {
-            return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::user()->account_id],
+        $accountId = Auth::user()->account_id;
+        $cacheKey = 'locations_active_sorted_' . $accountId . '_' . $name . '_' . ($locationId ? md5(serialize($locationId)) : 'all');
+
+        return Cache::remember($cacheKey, 3600, function () use ($locationId, $name, $accountId) {
+            $query = self::where([
+                ['account_id', '=', $accountId],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-            ])->pluck($name, 'id');
-        } else {
-            return self::where([
-                ['account_id', '=', Auth::user()->account_id],
-                ['active', '=', '1'],
-                ['slug', '=', 'custom'],
-            ])->pluck($name, 'id');
-        }
+            ]);
+            if ($locationId) {
+                $query->whereIn('id', $locationId);
+            }
+
+            return $query->pluck($name, 'id');
+        });
     }
 
     public static function getActiveSortedLocations($locationId = false)
@@ -750,35 +764,22 @@ class Locations extends BaseModel
         if ($locationids && ! is_array($locationids)) {
             $locationids = [$locationids];
         }
-        if ($locationids) {
+        $cacheKey = 'locations_dict_' . $account_id . '_' . ($get_slug ?: '0') . '_' . ($order_by ?: '0') . '_' . ($order ?: '0') . '_' . ($locationids ? md5(serialize($locationids)) : 'all');
+
+        return Cache::remember($cacheKey, 3600, function () use ($account_id, $get_slug, $order_by, $order, $locationids) {
+            $query = self::where('account_id', '=', $account_id);
             if ($get_slug) {
-                if ($order_by && $order) {
-                    return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->whereIn('id', $locationids)->orderBy($order_by, $order)->get()->getDictionary();
-                }
-
-                return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->whereIn('id', $locationids)->get()->getDictionary();
-            } else {
-                if ($order_by && $order) {
-                    return self::where('account_id', '=', $account_id)->orderBy($order_by, $order)->whereIn('id', $locationids)->get()->getDictionary();
-                }
-
-                return self::where('account_id', '=', $account_id)->whereIn('id', $locationids)->get()->getDictionary();
+                $query->where('slug', '=', $get_slug);
             }
-        } else {
-            if ($get_slug) {
-                if ($order_by && $order) {
-                    return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->orderBy($order_by, $order)->get()->getDictionary();
-                }
-
-                return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->get()->getDictionary();
-            } else {
-                if ($order_by && $order) {
-                    return self::where('account_id', '=', $account_id)->orderBy($order_by, $order)->get()->getDictionary();
-                }
-
-                return self::where('account_id', '=', $account_id)->get()->getDictionary();
+            if ($locationids) {
+                $query->whereIn('id', $locationids);
             }
-        }
+            if ($order_by && $order) {
+                $query->orderBy($order_by, $order);
+            }
+
+            return $query->get()->getDictionary();
+        });
     }
 
     /**

@@ -11,6 +11,8 @@ var table_columns = (typeof getTreatmentColumns === 'function')
     ? getTreatmentColumns(includePatientColumn, null)
     : [];
 
+var skipLoadChildStatuses = false;
+
 function editStatus(id) {
 
     $("#modal_change_appointment_status").modal("show");
@@ -85,6 +87,7 @@ function setStatusData(response, id) {
         $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
 
 
+        skipLoadChildStatuses = true;
         if (appointments?.appointment_status?.parent_id != 0) {
             $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id).trigger('change');
         } else {
@@ -99,7 +102,6 @@ function setStatusData(response, id) {
         }
 
         if (appointments?.appointment_status?.parent_id == 0) {
-
             if (appointments.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
@@ -107,23 +109,19 @@ function setStatusData(response, id) {
                 $("#reason").val(appointments?.reason);
             }
         } else {
-            if(base_appointments[appointments.appointment_status?.parent_id]?.is_comment == 0
-                && appointments?.appointment_status?.is_comment == 0) {
-            } else {
-                $("#appointment_reason").hide();
-                $("#appointment_status_id_section").hide();
+            var baseIsComment = base_appointments[appointments.appointment_status?.parent_id]?.is_comment;
+            var childIsComment = appointments?.appointment_status?.is_comment;
 
-            }
-            if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
-                && appointments?.appointment_status?.is_comment == 0) {
-                $("#appointment_reason").hide();
-            } else {
+            if (baseIsComment == 1 || childIsComment == 1) {
                 $("#appointment_reason").show();
-                $("#appointment_status_id_section").show();
                 $("#reason").val(appointments?.reason);
-                $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
+            } else {
+                $("#appointment_reason").hide();
             }
+
+            $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
         }
+        skipLoadChildStatuses = false;
 
     } catch (error) {
         showException(error);
@@ -141,6 +139,7 @@ const extraValidate = {
 };
 
 let loadChildStatuses = function (appointmentStatusId) {
+    if (skipLoadChildStatuses) return;
 
     statusValidate.addField('appointment_status_id', extraValidate);
     statusValidate.addField('reason', extraValidate);
@@ -161,7 +160,7 @@ let loadChildStatuses = function (appointmentStatusId) {
             cache: false,
             success: function(response) {
                 if(response.status) {
-                    if (response.data.dropdown) {
+                    if (response.data.dropdown && Object.keys(response.data.dropdown).length > 0) {
                         setChildStatusData(response);
                         $('.appointment_status_id').show();
                         statusValidate.addField('appointment_status_id', extraValidate);
@@ -173,9 +172,6 @@ let loadChildStatuses = function (appointmentStatusId) {
                     }
                 } else {
                     resetDropdowns();
-                }
-                if(parseInt(response.count) > 1) {
-                    $('.appointment_status_id').show();
                 }
                 if(response.status && response.data.appointment_status.is_comment == '1') {
                     $('.reason').show();
@@ -226,6 +222,7 @@ var resetChildStatuses = function () {
 }
 
 let statusListener = function (appointmentStatusId) {
+    if (skipLoadChildStatuses) return;
 
     statusValidate.addField('reason', extraValidate);
     statusValidate.removeField('reason', '');

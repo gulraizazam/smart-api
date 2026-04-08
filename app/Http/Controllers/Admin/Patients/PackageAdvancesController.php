@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class PackageAdvancesController extends Controller
@@ -102,7 +103,7 @@ class PackageAdvancesController extends Controller
             ['package_id', '=', $request->id],
             ['cash_flow', '=', 'in'],
         ])->sum('cash_amount'));
-        $cash_amount_sum = (filter_var($cash_amount, FILTER_SANITIZE_NUMBER_INT) + $request->cash_amount);
+        $cash_amount_sum = (sanitize_money($cash_amount) + $request->cash_amount);
         $total_price = number_format($package_info->total_price);
 
         if ($cash_amount_sum <= $package_info->total_price) {
@@ -135,7 +136,7 @@ class PackageAdvancesController extends Controller
 
         $cash_amount_sum = $cash_receive_forupdate + $request->cash_amount;
 
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+        $total_price = sanitize_money($request->total_price);
 
         if ($cash_amount_sum <= $total_price) {
             $cash_amount_sum = number_format($cash_amount_sum);
@@ -159,42 +160,44 @@ class PackageAdvancesController extends Controller
      * */
     public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        $cash_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
-        $cash_amount_check = $cash_amount + $request->cash_amount;
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+        return DB::transaction(function () use ($request) {
+            $cash_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'in'],
+            ])->lockForUpdate()->sum('cash_amount');
+            $cash_amount_check = $cash_amount + $request->cash_amount;
+            $total_price = sanitize_money($request->total_price);
 
-        if ($cash_amount_check <= $total_price) {
+            if ($cash_amount_check <= $total_price) {
 
-            $data['cash_flow'] = 'in';
-            $data['cash_amount'] = $request->cash_amount;
-            $data['patient_id'] = $request->patient_id;
-            $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
-            $data['created_by'] = Auth::user()->id;
-            $data['updated_by'] = Auth::user()->id;
-            $data['package_id'] = $request->package_id;
+                $data['cash_flow'] = 'in';
+                $data['cash_amount'] = $request->cash_amount;
+                $data['patient_id'] = $request->patient_id;
+                $data['payment_mode_id'] = $request->payment_mode_id;
+                $data['account_id'] = Auth::user()->account_id;
+                $data['created_by'] = Auth::user()->id;
+                $data['updated_by'] = Auth::user()->id;
+                $data['package_id'] = $request->package_id;
 
-            $package_advances = PackageAdvances::createRecord_onlyadvances($data);
-            
-            // Log payment received activity
-            $package = Packages::find($request->package_id);
-            $patient = Patients::find($request->patient_id);
-            $location = $package ? Locations::with('city')->find($package->location_id) : null;
-            if ($package_advances && $package && $patient) {
-                ActivityLogger::logPaymentReceived($package_advances, $package, $patient, $location);
+                $package_advances = PackageAdvances::createRecord_onlyadvances($data);
+
+                // Log payment received activity
+                $package = Packages::find($request->package_id);
+                $patient = Patients::find($request->patient_id);
+                $location = $package ? Locations::with('city')->find($package->location_id) : null;
+                if ($package_advances && $package && $patient) {
+                    ActivityLogger::logPaymentReceived($package_advances, $package, $patient, $location);
+                }
+
+                return response()->json([
+                    'status' => true,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                ]);
             }
-
-            return response()->json([
-                'status' => true,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+        });
     }
 
     /**
@@ -375,36 +378,38 @@ class PackageAdvancesController extends Controller
      * */
     public function updatepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        $package_advances_info = PackageAdvances::find($request->package_advance_id);
-        $cash_amount_sum = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
-        $cash_amount = $cash_amount_sum - $package_advances_info->cash_amount;
-        $cash_amount_check = $cash_amount + $request->cash_amount;
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+        return DB::transaction(function () use ($request) {
+            $package_advances_info = PackageAdvances::find($request->package_advance_id);
+            $cash_amount_sum = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'in'],
+            ])->lockForUpdate()->sum('cash_amount');
+            $cash_amount = $cash_amount_sum - $package_advances_info->cash_amount;
+            $cash_amount_check = $cash_amount + $request->cash_amount;
+            $total_price = sanitize_money($request->total_price);
 
-        if ($cash_amount_check <= $total_price) {
+            if ($cash_amount_check <= $total_price) {
 
-            $data['cash_flow'] = 'in';
-            $data['cash_amount'] = $request->cash_amount;
-            $data['patient_id'] = $request->patient_id;
-            $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
-            $data['created_by'] = Auth::user()->id;
-            $data['updated_by'] = Auth::user()->id;
-            $data['package_id'] = $request->package_id;
+                $data['cash_flow'] = 'in';
+                $data['cash_amount'] = $request->cash_amount;
+                $data['patient_id'] = $request->patient_id;
+                $data['payment_mode_id'] = $request->payment_mode_id;
+                $data['account_id'] = Auth::user()->account_id;
+                $data['created_by'] = Auth::user()->id;
+                $data['updated_by'] = Auth::user()->id;
+                $data['package_id'] = $request->package_id;
 
-            $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
+                $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
 
-            return response()->json([
-                'status' => true,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+                return response()->json([
+                    'status' => true,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                ]);
+            }
+        });
     }
 
     /**

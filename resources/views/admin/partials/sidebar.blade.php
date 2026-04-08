@@ -487,7 +487,6 @@
                 Gate::allows('logs_manage') ||
                 Gate::allows('finances_manage') ||
                 Gate::allows('invoices_manage') ||
-                Gate::allows('pabao_records_manage') ||
                 Gate::allows('machineType_manage') ||
                 Gate::allows('towns_manage'))
 

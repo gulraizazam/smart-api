@@ -4,10 +4,12 @@
 var KTSummernoteDemo = function () {
     // Private functions
     var demos = function () {
-        $('.summernote').summernote({
-            height: 400,
-            tabsize: 2
-        });
+        if ($('.summernote').length) {
+            $('.summernote').summernote({
+                height: 400,
+                tabsize: 2
+            });
+        }
     }
 
     return {

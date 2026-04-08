@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class PackageAdvancesController extends Controller
@@ -94,7 +95,7 @@ class PackageAdvancesController extends Controller
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
         ])->sum('cash_amount'));
-        $cash_amount_sum = (filter_var($cash_amount, FILTER_SANITIZE_NUMBER_INT) + $request->cash_amount);
+        $cash_amount_sum = (sanitize_money($cash_amount) + $request->cash_amount);
         $total_price = number_format($package_info->total_price);
 
         if ($cash_amount_sum <= $package_info->total_price) {
@@ -124,7 +125,7 @@ class PackageAdvancesController extends Controller
 
         $cash_amount_sum = $cash_receive_forupdate + $request->cash_amount;
 
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+        $total_price = sanitize_money($request->total_price);
 
         if ($cash_amount_sum <= $total_price) {
             $cash_amount_sum = number_format($cash_amount_sum);
@@ -148,38 +149,40 @@ class PackageAdvancesController extends Controller
      * */
     public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        $cash_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
+        return DB::transaction(function () use ($request) {
+            $cash_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'in'],
+            ])->lockForUpdate()->sum('cash_amount');
 
-        $cash_amount_check = $cash_amount + $request->cash_amount;
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+            $cash_amount_check = $cash_amount + $request->cash_amount;
+            $total_price = sanitize_money($request->total_price);
 
-        if ($cash_amount_check <= $total_price) {
+            if ($cash_amount_check <= $total_price) {
 
-            $data['cash_flow'] = 'in';
-            $data['cash_amount'] = $request->cash_amount;
-            $data['patient_id'] = $request->patient_id;
-            $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
-            $data['created_by'] = Auth::user()->id;
-            $data['updated_by'] = Auth::user()->id;
-            $data['package_id'] = $request->package_id;
+                $data['cash_flow'] = 'in';
+                $data['cash_amount'] = $request->cash_amount;
+                $data['patient_id'] = $request->patient_id;
+                $data['payment_mode_id'] = $request->payment_mode_id;
+                $data['account_id'] = Auth::user()->account_id;
+                $data['created_by'] = Auth::user()->id;
+                $data['updated_by'] = Auth::user()->id;
+                $data['package_id'] = $request->package_id;
 
-            $package_advances = PackageAdvances::createRecord_onlyadvances($data);
+                $package_advances = PackageAdvances::createRecord_onlyadvances($data);
 
-            if ($package_advances) {
-                // Update plan_name after payment added
-                $this->updatePlanNameForPackage($request->package_id);
-                return $this->successResponse('Record saved successfully.');
+                if ($package_advances) {
+                    // Update plan_name after payment added
+                    $this->updatePlanNameForPackage($request->package_id);
+                    return $this->successResponse('Record saved successfully.');
+                }
+
+                return $this->errorResponse('Failed to save the record.', 404);
+
             }
 
-            return $this->errorResponse('Failed to save the record.', 404);
-
-        }
-
-        return $this->errorResponse('Cash amount should be less then or equal to total amount.', 404);
+            return $this->errorResponse('Cash amount should be less then or equal to total amount.', 404);
+        });
     }
 
     /**
@@ -399,39 +402,41 @@ class PackageAdvancesController extends Controller
      * */
     public function updatepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
-        $package_advances_info = PackageAdvances::find($request->package_advance_id);
-        $cash_amount_sum = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
-        $cash_amount = $cash_amount_sum - $package_advances_info->cash_amount;
-        $cash_amount_check = $cash_amount + $request->cash_amount;
-        $total_price = filter_var($request->total_price, FILTER_SANITIZE_NUMBER_INT);
+        return DB::transaction(function () use ($request) {
+            $package_advances_info = PackageAdvances::find($request->package_advance_id);
+            $cash_amount_sum = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'in'],
+            ])->lockForUpdate()->sum('cash_amount');
+            $cash_amount = $cash_amount_sum - $package_advances_info->cash_amount;
+            $cash_amount_check = $cash_amount + $request->cash_amount;
+            $total_price = sanitize_money($request->total_price);
 
-        if ($cash_amount_check <= $total_price) {
+            if ($cash_amount_check <= $total_price) {
 
-            $data['cash_flow'] = 'in';
-            $data['cash_amount'] = $request->cash_amount;
-            $data['patient_id'] = $request->patient_id;
-            $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['account_id'] = Auth::user()->account_id;
-            $data['created_by'] = Auth::user()->id;
-            $data['updated_by'] = Auth::user()->id;
-            $data['package_id'] = $request->package_id;
+                $data['cash_flow'] = 'in';
+                $data['cash_amount'] = $request->cash_amount;
+                $data['patient_id'] = $request->patient_id;
+                $data['payment_mode_id'] = $request->payment_mode_id;
+                $data['account_id'] = Auth::user()->account_id;
+                $data['created_by'] = Auth::user()->id;
+                $data['updated_by'] = Auth::user()->id;
+                $data['package_id'] = $request->package_id;
 
-            $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
+                $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
 
-            // Update plan_name after payment updated
-            $this->updatePlanNameForPackage($request->package_id);
+                // Update plan_name after payment updated
+                $this->updatePlanNameForPackage($request->package_id);
 
-            return response()->json([
-                'status' => true,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+                return response()->json([
+                    'status' => true,
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                ]);
+            }
+        });
     }
 
     /**

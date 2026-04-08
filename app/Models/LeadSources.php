@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class LeadSources extends BaseModel
 {
@@ -64,7 +65,9 @@ class LeadSources extends BaseModel
 
     public static function getActiveSorted(): \Illuminate\Support\Collection
     {
-        return self::forAccount()->active()->sorted()->pluck('name', 'id');
+        $accountId = Auth::user()->account_id;
+
+        return Cache::remember("lead_sources_active_{$accountId}", 3600, fn () => self::forAccount()->active()->sorted()->pluck('name', 'id'));
     }
 
     public static function getActiveOnly(): Collection

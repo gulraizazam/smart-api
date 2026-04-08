@@ -86,8 +86,12 @@ class MembershipsController extends Controller
             ];
 
             if ($memberships->count()) {
+                // Batch-load patients to avoid N+1
+                $patientIds = $memberships->pluck('patient_id')->unique()->filter()->all();
+                $patientsMap = User::whereIn('id', $patientIds)->get()->keyBy('id');
+
                 foreach ($memberships as $membership) {
-                    $patient              = User::whereId($membership->patient_id)->first();
+                    $patient              = $patientsMap->get($membership->patient_id);
                     $membershipTypeName   = $membership->membershipType->name ?? 'N/A';
                     $isStudentMembership  = str_contains(strtolower($membershipTypeName), 'student');
 

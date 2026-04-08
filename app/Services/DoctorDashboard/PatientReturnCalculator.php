@@ -56,7 +56,7 @@ class PatientReturnCalculator
             $hasReturn = false;
 
             foreach ($patientAppts as $treatment) {
-                $windowEnd = date('Y-m-d', strtotime($treatment->scheduled_date . ' +' . self::RETURN_WINDOW_DAYS . ' days'));
+                $windowEnd = date('Y-m-d', strtotime((string) $treatment->scheduled_date . ' +' . self::RETURN_WINDOW_DAYS . ' days'));
 
                 // Check if this patient has ANY arrived treatment within the 45-day window
                 // (by any doctor, not just this doctor)

@@ -356,7 +356,7 @@ class RefundsController extends Controller
         ])->orderBy('created_at', 'desc')->first();
       
         if($package_advance_last_in){
-            $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
+            $date_backend = date('Y-m-d', strtotime((string) $package_advance_last_in->created_at));
         }else{
             return response()->json(['status'=>404,'msg'=>'No balance found against this plan','data'=>$package_information->id]);
         }

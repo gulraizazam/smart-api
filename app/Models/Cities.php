@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -108,13 +109,16 @@ class Cities extends BaseModel
         if ($cityId && ! is_array($cityId)) {
             $cityId = [$cityId];
         }
+        $cacheKey = 'cities_active_featured_' . $name . '_' . ($cityId ? md5(serialize($cityId)) : 'all');
 
-        $query = self::where(['active' => 1, 'is_featured' => 1]);
-        if ($cityId) {
-            $query->whereIn('id', $cityId);
-        }
+        return Cache::remember($cacheKey, 3600, function () use ($cityId, $name) {
+            $query = self::where(['active' => 1, 'is_featured' => 1]);
+            if ($cityId) {
+                $query->whereIn('id', $cityId);
+            }
 
-        return $query->pluck($name, 'id');
+            return $query->pluck($name, 'id');
+        });
     }
 
     /**
@@ -354,11 +358,16 @@ class Cities extends BaseModel
         if ($citiesids && ! is_array($citiesids)) {
             $citiesids = [$citiesids];
         }
-        if ($citiesids) {
-            return self::where(['account_id' => $account_id,'active'=>1,'is_featured'=>1])->whereIn('id', $citiesids)->get()->getDictionary();
-        } else {
-            return self::where(['account_id' => $account_id,'active'=>1,'is_featured'=>1])->get()->getDictionary();
-        }
+        $cacheKey = 'cities_dict_' . $account_id . '_' . ($citiesids ? md5(serialize($citiesids)) : 'all');
+
+        return Cache::remember($cacheKey, 3600, function () use ($account_id, $citiesids) {
+            $query = self::where(['account_id' => $account_id, 'active' => 1, 'is_featured' => 1]);
+            if ($citiesids) {
+                $query->whereIn('id', $citiesids);
+            }
+
+            return $query->get()->getDictionary();
+        });
     }
 
     /**

@@ -21,7 +21,7 @@ class AppointmentsReportResource extends JsonResource
             'location' => $this->location?->name ?? 'N/A',
             'created_at' => $this->created_at?->format('d-m-Y H:i:s'),
             'arrival_date_time' => $firstInvoice
-                ? date('d-m-Y H:i:s', strtotime($firstInvoice->created_at))
+                ? date('d-m-Y H:i:s', strtotime((string) $firstInvoice->created_at))
                 : 'N/A',
             'created_by' => $this->user?->name ?? 'N/A',
         ];

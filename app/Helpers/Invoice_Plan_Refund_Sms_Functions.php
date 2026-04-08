@@ -167,10 +167,10 @@ class Invoice_Plan_Refund_Sms_Functions
         $SMSLog = array_merge($SMSObj, $response);
         if ($packageAdavances->package_id) {
             $SMSLog['package_id'] = $packageAdavances->package_id;
-            $SMSLog['is_refund'] = 'Yes';
+            $SMSLog['is_refund'] = 1;
         } else {
             $SMSLog['appointment_id'] = $packageAdavances->appointment_id;
-            $SMSLog['is_refund'] = 'Yes';
+            $SMSLog['is_refund'] = 1;
         }
         $SMSLog['created_by'] = Auth::user()->id;
         if ($setting->data == 2) {

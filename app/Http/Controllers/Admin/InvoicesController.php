@@ -105,26 +105,38 @@ class InvoicesController extends Controller
             $records = $this->filtersData($records);
 
             if ($invoice) {
-                foreach ($invoice as $invoice) {
-                    $location_info = Locations::find($invoice->location_id);
-                    $user = User::where('id', '=', $invoice->patient_id)->first();
-                    $service = Services::where('id', '=', $invoice->service_id)->first();
-                    $cancel = InvoiceStatuses::where('slug', '=', 'cancelled')->first();
-                    $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
+                // Batch-load related data to eliminate N+1 (was 5 queries per row)
+                $invoiceCollection = collect($invoice);
+                $locationIds = $invoiceCollection->pluck('location_id')->unique()->filter();
+                $patientIds = $invoiceCollection->pluck('patient_id')->unique()->filter();
+                $serviceIds = $invoiceCollection->pluck('service_id')->unique()->filter();
+                $statusIds = $invoiceCollection->pluck('invoice_status_id')->unique()->filter();
+
+                $locationsMap = Locations::whereIn('id', $locationIds)->get()->keyBy('id');
+                $usersMap = User::whereIn('id', $patientIds)->get()->keyBy('id');
+                $servicesMap = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+                $statusesMap = InvoiceStatuses::whereIn('id', $statusIds)->get()->keyBy('id');
+                $cancel = InvoiceStatuses::where('slug', '=', 'cancelled')->first();
+
+                foreach ($invoice as $inv) {
+                    $location_info = $locationsMap[$inv->location_id] ?? null;
+                    $user = $usersMap[$inv->patient_id] ?? null;
+                    $service = $servicesMap[$inv->service_id] ?? null;
+                    $invoicestatus = $statusesMap[$inv->invoice_status_id] ?? null;
                     $records['data'][] = [
-                        'id' => $invoice->id,
-                        'invoice_number' => sprintf('%05d', $invoice->id),
-                        'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id),
-                        'name' => $user->name,
-                        'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone) : '***********',
-                        'location' => $location_info->name,
-                        'service' => $service->name,
-                        'invoice_status' => $invoicestatus->name,
-                        'appointment_type_id' => ($invoice->appointment_type_id === AppointmentType::Consultancy->value) ? Config::get('constants.Consultancy') : Config::get('constants.Service'),
-                        'price' => number_format($invoice->total_price),
-                        'created_at' => Carbon::parse($invoice->created_at)->format('F j,Y h:i A'),
+                        'id' => $inv->id,
+                        'invoice_number' => sprintf('%05d', $inv->id),
+                        'patient_id' => $user ? \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id) : '',
+                        'name' => $user->name ?? '',
+                        'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone ?? '') : '***********',
+                        'location' => $location_info->name ?? '',
+                        'service' => $service->name ?? '',
+                        'invoice_status' => $invoicestatus->name ?? '',
+                        'appointment_type_id' => ($inv->appointment_type_id === AppointmentType::Consultancy->value) ? Config::get('constants.Consultancy') : Config::get('constants.Service'),
+                        'price' => number_format($inv->total_price),
+                        'created_at' => Carbon::parse($inv->created_at)->format('F j,Y h:i A'),
                         'cancel' => $cancel,
-                        'invoice' => $invoice,
+                        'invoice' => $inv,
                     ];
                 }
 
@@ -228,64 +240,70 @@ class InvoicesController extends Controller
             ->where('invoices.id', '=', $id)
             ->select('invoice_details.package_id')->first();
 
-        if ($invoiceinformation->package_id) {
+        if ($invoiceinformation?->package_id) {
             $package_information = Packages::find($invoiceinformation->package_id);
-            if ($package_information->is_refund == '1') {
+            if ($package_information?->is_refund == '1') {
                 return $this->errorResponse('Invoice belongs to package that already refunded, so you unable to delete it.', 200);
             }
-
         }
 
-        $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
+        return DB::transaction(function () use ($id) {
+            $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
 
-        $invocies = Invoices::find($id);
-
-        $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
-
-        if ($invoice_detail->package_id) {
-
-            $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
-        }
-
-        $appintment = Appointments::find($invocies->appointment_id);
-         $appintment->update([
-            'base_appointment_status_id' => 1,
-            'appointment_status_id' => 1,
-            'arrived_at' => null,
-            'converted_at' => null
-         ]);
-        $appointment_type = AppointmentTypes::where('id', '=', $appintment?->appointment_type_id)->first();
-        PackageAdvances::where('invoice_id', '=', $id)->where('cash_flow', '=', 'out')->delete();
-        if ($appointment_type && $appintment && $invocies) {
-            $data_package['cash_flow'] = 'in';
-            $data_package['cash_amount'] = $invocies->total_price ?? 0;
-            $data_package['patient_id'] = $invocies->patient_id ?? 0;
-            $data_package['payment_mode_id'] = '1';
-            $data_package['account_id'] = Auth::user()->account_id;
-            $data_package['appointment_type_id'] = $appointment_type->id ?? 0;
-            $data_package['appointment_id'] = $invocies->appointment_id ?? 0;
-            $data_package['location_id'] = $appintment->location_id ?? 0;
-            $data_package['created_by'] = Auth::user()->id;
-            $data_package['updated_by'] = Auth::user()->id;
-            $data_package['invoice_id'] = $id;
-            $data_package['is_cancel'] = '1';
-
-            if ($invoice_detail->package_id != null) {
-                $data_package['package_id'] = $invoice_detail->package_id;
+            $invocies = Invoices::find($id);
+            if (!$invocies) {
+                return $this->errorResponse('Invoice not found.', 404);
             }
-            //$package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
-            // Log invoice cancelled activity
-            $patient = \App\Models\Patients::find($invocies->patient_id);
-            $location = \App\Models\Locations::with('city')->find($appintment->location_id);
-            $service = \App\Models\Services::find($appintment->service_id);
-            \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type, $appintment);
+            $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
 
-            return $this->successResponse('Invoice has been canceled successfully.', null, 200);
-        }
+            if ($invoice_detail?->package_id) {
+                $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
+            }
 
-        return $this->errorResponse('Record not found.', 200);
+            $appintment = Appointments::find($invocies->appointment_id);
+            if (!$appintment) {
+                return $this->errorResponse('Related appointment not found.', 404);
+            }
 
+            $appintment->update([
+                'base_appointment_status_id' => 1,
+                'appointment_status_id' => 1,
+                'arrived_at' => null,
+                'converted_at' => null
+            ]);
+            $appointment_type = AppointmentTypes::where('id', '=', $appintment->appointment_type_id)->first();
+            PackageAdvances::where('invoice_id', '=', $id)->where('cash_flow', '=', 'out')->delete();
+
+            if ($appointment_type && $appintment && $invocies) {
+                $data_package['cash_flow'] = 'in';
+                $data_package['cash_amount'] = $invocies->total_price ?? 0;
+                $data_package['patient_id'] = $invocies->patient_id ?? 0;
+                $data_package['payment_mode_id'] = '1';
+                $data_package['account_id'] = Auth::user()->account_id;
+                $data_package['appointment_type_id'] = $appointment_type->id ?? 0;
+                $data_package['appointment_id'] = $invocies->appointment_id ?? 0;
+                $data_package['location_id'] = $appintment->location_id ?? 0;
+                $data_package['created_by'] = Auth::user()->id;
+                $data_package['updated_by'] = Auth::user()->id;
+                $data_package['invoice_id'] = $id;
+                $data_package['is_cancel'] = '1';
+
+                if ($invoice_detail?->package_id !== null) {
+                    $data_package['package_id'] = $invoice_detail->package_id;
+                }
+
+                // Log invoice cancelled activity
+                $patient = \App\Models\Patients::find($invocies->patient_id);
+                $location = \App\Models\Locations::with('city')->find($appintment->location_id);
+                $service = \App\Models\Services::find($appintment->service_id);
+                \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type, $appintment);
+
+                return $this->successResponse('Invoice has been canceled successfully.', null, 200);
+            }
+
+            return $this->errorResponse('Record not found.', 200);
+        });
     }
 
     /*display invoice

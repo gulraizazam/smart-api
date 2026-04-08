@@ -605,6 +605,11 @@ class DiscountWidget
             ['active', '=', '1'],
         ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
         /*Now Checked Brithday promotion valid or not*/
+        $patient_info = null;
+        $hasBirthdayDiscount = $discounts->contains('slug', 'birthday');
+        if ($hasBirthdayDiscount) {
+            $patient_info = User::find($appointment->patient_id);
+        }
         foreach ($discounts as $key => $discount) {
 
             if ($discount->slug == 'birthday') {
@@ -620,8 +625,6 @@ class DiscountWidget
                 /*get the date range to checked patient birthday exist between or not*/
                 $predate = $today_1->subDay($pre_days)->format('Y-m-d');
                 $postdate = $today_2->addDay($post_days)->format('Y-m-d');
-
-                $patient_info = User::find($appointment->patient_id);
 
                 /*Now checked birthday valid or not*/
                 if ($patient_info->dob) {

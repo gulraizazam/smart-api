@@ -53,7 +53,7 @@ class Activity extends Model
 
     public function plan(): BelongsTo
     {
-        return $this->belongsTo(Plan::class, 'planId');
+        return $this->belongsTo(Plan::class, 'plan_id');
     }
 
     public function serviceR(): BelongsTo

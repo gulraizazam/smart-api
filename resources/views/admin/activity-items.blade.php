@@ -16,7 +16,7 @@
                     <strong>Rs. {{ round($log['amount']) }}</strong> from
                 @endif
                 <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
-                <span style="color: #F5B183;">Plan Id: <a href="{{ route('admin.packages.view.package', $log['planId']) }}">{{ $log['planId'] }}</a></span>
+                <span style="color: #F5B183;">Plan Id: <a href="{{ route('admin.packages.view.package', $log['plan_id']) }}">{{ $log['plan_id'] }}</a></span>
                 at {{ $log->centre->name ?? $log['location'] }} Centre.
             </div>
         </div>

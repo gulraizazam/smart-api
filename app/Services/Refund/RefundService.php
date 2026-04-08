@@ -649,7 +649,7 @@ final class RefundService
         $activity->patient_id = $patient?->id;
         $activity->appointment_type = 'Plan';
         $activity->created_by = Auth::id();
-        $activity->planId = $data['package_id'];
+        $activity->plan_id = $data['package_id'];
         $activity->amount = $refundAmount;
         $activity->location = $locationName;
         $activity->centre_id = $packageInfo->location_id;

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class LeadStatuses extends BaseModel
 {
@@ -110,13 +111,17 @@ class LeadStatuses extends BaseModel
 
     public static function getLeadStatuses(int|false $excludeIds = false): \Illuminate\Support\Collection
     {
-        $query = self::forAccount()->active()->parentsOnly();
+        $accountId = Auth::user()->account_id;
+        $cacheKey = 'lead_statuses_' . $accountId . '_' . ($excludeIds ? md5(serialize($excludeIds)) : 'all');
 
-        if ($excludeIds) {
-            $query->whereNotIn('id', (array) $excludeIds);
-        }
+        return Cache::remember($cacheKey, 3600, function () use ($excludeIds) {
+            $query = self::forAccount()->active()->parentsOnly();
+            if ($excludeIds) {
+                $query->whereNotIn('id', (array) $excludeIds);
+            }
 
-        return $query->sorted()->pluck('name', 'id');
+            return $query->sorted()->pluck('name', 'id');
+        });
     }
 
     public static function getParentRecords(

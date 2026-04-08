@@ -1874,7 +1874,7 @@ final class PlanService
             'appointment_type' => 'Plan',
             'created_by'       => Auth::id(),
             'account_id'       => Auth::user()->account_id,
-            'planId'           => $package->id,
+            'plan_id'          => $package->id,
             'amount'           => $data['cash_amount'],
             'location'         => $locationName,
             'centre_id'        => $data['location_id'],
@@ -2149,7 +2149,7 @@ final class PlanService
         }
 
         $status = $this->determineMembershipStatus($membership);
-        $expiryFormatted = $membership->end_date ? date('M d, Y', strtotime($membership->end_date)) : '';
+        $expiryFormatted = $membership->end_date ? date('M d, Y', strtotime((string) $membership->end_date)) : '';
 
         if ($membership->is_referral == 1) {
             return "Ref: ({$membership->code})-{$status}" . ($expiryFormatted ? " (Exp: {$expiryFormatted})" : '');
@@ -3039,7 +3039,7 @@ final class PlanService
 
         if ($getPackageUseAmount <= $getPackageUnusedAmountExceptEdit) {
             $record = PackageAdvances::deletefinaceRecord((object) $data);
-            $cashReceiveRemain = number_format(filter_var($data['cash_receveive_remain'], FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
+            $cashReceiveRemain = number_format(sanitize_money($data['cash_receveive_remain']) + $packageadvanceinfo->cash_amount);
 
             // Sync plan_invoices table - soft delete the corresponding plan_invoice
             $planInvoice = PlanInvoice::where('package_advance_id', $data['package_advance_id'])->first();
