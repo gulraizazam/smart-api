@@ -29,6 +29,7 @@ class LeadStatuses extends BaseModel
         'is_booked', 'is_arrived', 'is_converted', 'is_junk',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

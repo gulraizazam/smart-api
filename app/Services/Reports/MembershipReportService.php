@@ -43,9 +43,7 @@ class MembershipReportService
                     $q->whereHas('user.membership', fn ($mq) => $mq->where('membership_type_id', $membershipTypeId));
                 }
             })
-            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
-                $q->whereHas('user.membership', fn ($mq) => $mq->whereBetween('assigned_at', [$startDate, $endDate]));
-            })
+            ->when($startDate && $endDate, fn ($q) => $q->whereHas('user.membership', fn ($mq) => $mq->whereBetween('assigned_at', [$startDate, $endDate])))
             ->get();
 
         return $packages->map(function ($package) use ($serviceIds) {

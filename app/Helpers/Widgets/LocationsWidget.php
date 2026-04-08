@@ -113,7 +113,7 @@ class LocationsWidget
                 'slug' => 'all',
             ])->select('id', 'name')->first();
 
-            if ($first_child && in_array($first_child->id, $centers)) {
+            if ($first_child && in_array($first_child->id, $centers, true)) {
 
                 $all_location = Locations::where([
                     ['account_id', '=', $account_id],
@@ -139,7 +139,7 @@ class LocationsWidget
 
                 if ($region_centres) {
                     foreach ($region_centres as $region_centre) {
-                        if (in_array($region_centre->id, $centers) && count($regions_mapping[$region_centre->region_id]['children'])) {
+                        if (in_array($region_centre->id, $centers, true) && count($regions_mapping[$region_centre->region_id]['children'])) {
                             foreach ($regions_mapping[$region_centre->region_id]['children'] as $child) {
                                 $centers[] = $child['id'];
                             }
@@ -178,7 +178,7 @@ class LocationsWidget
         $location_array_1 = [];
         $collection = $centers;
 
-        if (count($collection) > 0) {
+        if (!empty($collection)) {
 
             $first_child = Locations::where([
                 'account_id' => $account_id,
@@ -218,13 +218,13 @@ class LocationsWidget
                     }
                     foreach ($centers as $centerlives) {
                         $locationchecked = Locations::find($centerlives);
-                        if ($locationchecked && ! in_array($locationchecked->region_id, $array1)) {
+                        if ($locationchecked && ! in_array($locationchecked->region_id, $array1, true)) {
                             $location_array_1[] = $centerlives;
                         }
                     }
 
                 }
-                if (count($location_array_1) == 0) {
+                if (empty($location_array_1)) {
                     $location_array_2 = $centers;
                     $location_array_1 = $location_array_2->toArray();
                 }
@@ -250,7 +250,7 @@ class LocationsWidget
                 'active' => 1,
             ])->select('id', 'name')->first();
 
-            if ($first_child && in_array($first_child->id, $store_service)) {
+            if ($first_child && in_array($first_child->id, $store_service, true)) {
 
                 $service_array[] = $first_child->id;
 
@@ -685,7 +685,7 @@ class LocationsWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (! in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array, true)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -763,7 +763,7 @@ class LocationsWidget
                             );
                         } else {
                             $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                            if (! in_array($rootService, $doctor_services_array)) {
+                            if (! in_array($rootService, $doctor_services_array, true)) {
                                 $doctor_services_array[] = $rootService;
                             }
                         }
@@ -850,7 +850,7 @@ class LocationsWidget
                                 );
                             } else {
                                 $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                if (! in_array($rootService, $doctor_services_array)) {
+                                if (! in_array($rootService, $doctor_services_array, true)) {
                                     $doctor_services_array[] = $rootService;
                                 }
                             }
@@ -922,7 +922,7 @@ class LocationsWidget
                                     );
                                 } else {
                                     $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                    if (! in_array($rootService, $doctor_services_array)) {
+                                    if (! in_array($rootService, $doctor_services_array, true)) {
                                         $doctor_services_array[] = $rootService;
                                     }
                                 }
@@ -1073,7 +1073,7 @@ class LocationsWidget
             if ($machineervices->count()) {
                 foreach ($machineervices as $resourceservice) {
                     $rootService = self::findRoot($resourceservice->service_id, $searchServices);
-                    if (! in_array($rootService, $resource_machine_type_services_array)) {
+                    if (! in_array($rootService, $resource_machine_type_services_array, true)) {
                         $resource_machine_type_services_array[] = $rootService;
                     }
                 }

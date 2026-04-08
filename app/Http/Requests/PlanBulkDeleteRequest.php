@@ -10,11 +10,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class PlanBulkDeleteRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return $this->user()?->can('plans_destroy') ?? false;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -23,6 +25,7 @@ final class PlanBulkDeleteRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -32,6 +35,7 @@ final class PlanBulkDeleteRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

@@ -31,7 +31,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('refunds_manage')) {
             return abort(401);
@@ -46,7 +46,7 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request, $id = false): mixed
+    public function datatable(Request $request, $id = false): \Illuminate\Http\JsonResponse
     {
         try {
 
@@ -60,12 +60,12 @@ class RefundsController extends Controller
             $records['data'] = [];
 
             // Get Total Records
-            $iTotalRecords = PackageAdvances::getTotalRefundedRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $iTotalRecords = PackageAdvances::getTotalRefundedRecords($request, Auth::user()->account_id, $id, $apply_filter, $filename);
 
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $packages = PackageAdvances::getRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $packages = PackageAdvances::getRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, $filename);
 
             $records = $this->getFiltersData($records, $filename);
           
@@ -182,12 +182,12 @@ class RefundsController extends Controller
         }
     }
 
-    private function getFiltersData($records, $filename = 'plansrefunds'): mixed
+    private function getFiltersData($records, $filename = 'plansrefunds'): array
     {
 
-        $filters = Filters::all(Auth::User()->id, $filename);
+        $filters = Filters::all(Auth::user()->id, $filename);
 
-        if ($user_id = Filters::get(Auth::User()->id, $filename, 'patient_id')) {
+        if ($user_id = Filters::get(Auth::user()->id, $filename, 'patient_id')) {
             $patient = User::where([
                 'id' => $user_id,
             ])->first();
@@ -197,7 +197,7 @@ class RefundsController extends Controller
         } else {
             $patient = [];
         }
-        $package_id = Filters::get(Auth::User()->id, $filename, 'package_id');
+        $package_id = Filters::get(Auth::user()->id, $filename, 'package_id');
         if ($package_id) {
             $package = Packages::where([
                 'id' => $package_id,
@@ -225,7 +225,7 @@ class RefundsController extends Controller
     /**
      * Patient-specific refunds datatable with all required fields
      */
-    public function patientDatatable(Request $request, int $id): mixed
+    public function patientDatatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             $filename = 'patientrefunds';
@@ -236,13 +236,13 @@ class RefundsController extends Controller
             $records['data'] = [];
 
             // Get Total Records for patient
-            $iTotalRecords = PackageAdvances::getTotalPatientRefundedRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $iTotalRecords = PackageAdvances::getTotalPatientRefundedRecords($request, Auth::user()->account_id, $id, $apply_filter, $filename);
 
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             // Get patient refunds with eager loading
-            $packages = PackageAdvances::getPatientRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $packages = PackageAdvances::getPatientRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, $filename);
 
             $records = $this->getFiltersData($records, $filename);
 
@@ -284,7 +284,7 @@ class RefundsController extends Controller
                         // Get plan total directly from packages table
                         $packageInfo = Packages::find($package->package_id);
                         $planTotal = $packageInfo ? $packageInfo->total_price : 0;
-                        $locationName = ($package->location && $package->location->city ? $package->location->city->name . '-' : '') . ($package->location ? $package->location->name : '');
+                        $locationName = ($package->location?->city?->name ? $package->location->city->name . '-' : '') . ($package->location?->name ?? '');
                         
                         // Check if case is settled
                         $is_case_setteled = PackageAdvances::where([
@@ -336,7 +336,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refund_create(int $id): mixed
+    public function refund_create(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('refunds_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -464,7 +464,7 @@ class RefundsController extends Controller
             $document = false;
         }
        
-        $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->get()->pluck('name', 'id');
+        $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->pluck('name', 'id');
         return $this->successResponse('Record found', [
             'id' => $id,
             'refundable_amount' => $refundable_amount,
@@ -484,7 +484,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(RefundCreateRequest $request): mixed
+    public function store(RefundCreateRequest $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('refunds_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -500,7 +500,7 @@ class RefundsController extends Controller
         {
             return $this->errorResponse('No balance available', 200);
         }
-        $record = Refunds::createRecord($request, Auth::User()->account_id);
+        $record = Refunds::createRecord($request, Auth::user()->account_id);
         if($record == 'setteled'){
             return $this->errorResponse('Plan is already settled. you can not refund amount against this plan.', 200);
         }else if($record == 'amountexceed'){
@@ -519,7 +519,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail(int $id): mixed
+    public function detail(int $id): \Illuminate\View\View
     {
 
         if (! Gate::allows('refunds_manage')) {

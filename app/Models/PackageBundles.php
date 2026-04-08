@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\AppointmentType;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -67,6 +68,7 @@ class PackageBundles extends Model
         'active',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [
@@ -166,7 +168,7 @@ class PackageBundles extends Model
             ->select('appointments.id', 'appointments.service_id')
             ->where([
                 'appointments.patient_id'        => $getPackage->patient_id,
-                'appointments.appointment_type_id' => 1,
+                'appointments.appointment_type_id' => AppointmentType::Consultancy->value,
             ])
             ->latest('invoices.created_at')
             ->first();
@@ -223,7 +225,7 @@ class PackageBundles extends Model
             ->select('appointments.id', 'appointments.service_id')
             ->where([
                 'appointments.patient_id'        => $package->patient_id,
-                'appointments.appointment_type_id' => 1,
+                'appointments.appointment_type_id' => AppointmentType::Consultancy->value,
             ])
             ->latest('invoices.created_at')
             ->first();

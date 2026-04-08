@@ -4,6 +4,10 @@
 
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\Appointments\AppointmentExportController;
+use App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController;
+use App\Http\Controllers\Admin\Appointments\AppointmentLookupController;
+use App\Http\Controllers\Admin\Appointments\AppointmentScheduleController;
 use App\Http\Controllers\Admin\AppointmentsPlansController;
 use App\Http\Controllers\Api\ConsultancyInvoiceController;
 use App\Http\Controllers\Api\MembershipsController;
@@ -65,20 +69,20 @@ use Illuminate\Support\Facades\Route;
     // Legacy routes still using Admin controller (to be migrated)
     Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
     Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
-    Route::get('appointments/center_machines/{location_id}', [AppointmentsController::class, 'center_machines'])->name('appointments.center_machines');
+    Route::get('appointments/center_machines/{location_id}', [AppointmentLookupController::class, 'center_machines'])->name('appointments.center_machines');
     Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
-    Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
-    Route::post('appointments/load-all-child-services', [AppointmentsController::class, 'loadAllChildServices'])->name('appointments.load_all_child_services');
+    Route::post('appointments/load-node-services', [AppointmentLookupController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
+    Route::post('appointments/load-all-child-services', [AppointmentLookupController::class, 'loadAllChildServices'])->name('appointments.load_all_child_services');
     // MIGRATED TO: Route::post('treatments/store') - admin.treatments.store
-    Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
-    Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
+    Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentScheduleController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
+    Route::post('appointments/check-and-save-service-appointment', [AppointmentScheduleController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
     // MIGRATED TO: Route::post('treatments/drag-drop-reschedule') - admin.treatments.drag_drop_reschedule
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
-    Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
-    Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
+    Route::get('appointments/invoice/{id}', [AppointmentInvoiceController::class, 'invoice'])->name('appointments.invoicecreate');
+    Route::get('appointments/displayInvoice/{id}', [AppointmentInvoiceController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
     Route::get('appointments/invoice-consultancy/{id}/{type?}', [\App\Http\Controllers\Admin\ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
-    Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
+    Route::any('appointments/viewlog/{id}/{type}', [AppointmentExportController::class, 'viewLog'])->name('appointments.viewlog');
 
     Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');
 

@@ -22,6 +22,7 @@ class LeadSources extends BaseModel
 
     public static array $_fillable = ['name', 'active'];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

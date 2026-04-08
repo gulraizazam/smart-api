@@ -5,7 +5,7 @@ use App\Helpers\Filters;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Auth;
 
-function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null)
+function getSortBy(\Illuminate\Http\Request $request, string $orderBy = 'name', string $order = 'asc', ?string $prefix = null): array
 {
 
     if ($request->has('sort')) {
@@ -20,14 +20,14 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null)
     return [$orderBy, $order];
 }
 
-function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 30)
+function getPaginationElement(\Illuminate\Http\Request $request, int $iTotalRecords, int $defaultPerPage = 30): array
 {
 
-    $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
+    $iDisplayLength = (int) ($request->pagination['perpage'] ?? $defaultPerPage);
 
     $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-    $iDisplayStart = intval(isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
-    $page = intval($request->pagination['page'] ?? 1);
+    $iDisplayStart = (int) (isset($request->pagination['page']) ? (($request->pagination['page'] - 1) * $iDisplayLength) : 0);
+    $page = (int) ($request->pagination['page'] ?? 1);
     $pages = 7;
 
     if ($iDisplayLength >= $iTotalRecords) {
@@ -42,7 +42,7 @@ function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 30)
     ];
 }
 
-function getFilters($filters)
+function getFilters(array $filters): array|string
 {
     if (isset($filters['query']) && isset($filters['query']['search'])) {
         return $filters['query']['search'];
@@ -51,22 +51,22 @@ function getFilters($filters)
     return [];
 }
 
-function hasFilter($filters, $key): bool
+function hasFilter(array $filters, string $key): bool
 {
-    if (isset($filters) && count($filters) > 0 && isset($filters[$key]) && $filters[$key] != '' && $filters[$key] != null) {
+    if (isset($filters) && !empty($filters) && isset($filters[$key]) && $filters[$key] != '' && $filters[$key] != null) {
         return true;
     }
 
     return false;
 }
 
-function checkFilters($filters, $key): bool
+function checkFilters(array $filters, string $key): bool
 {
     $apply_filter = false;
-    if (count($filters) > 0 && hasFilter($filters, 'filter')) {
+    if (!empty($filters) && hasFilter($filters, 'filter')) {
         $action = $filters['filter'];
         if ($action == 'filter_cancel') {
-            Filters::flush(Auth::User()->id, $key);
+            Filters::flush(Auth::user()->id, $key);
         } elseif ($action == 'filter') {
             $apply_filter = true;
         }
@@ -75,16 +75,16 @@ function checkFilters($filters, $key): bool
     return $apply_filter;
 }
 
-function openMenu($routes, $class = 'menu-item-open')
+function openMenu(array $routes, string $class = 'menu-item-open'): string
 {
-    if (in_array(request()->route()->getName(), $routes)) {
+    if (in_array(request()->route()->getName(), $routes, true)) {
         return $class;
     }
 
     return '';
 }
 
-function activeMenu($route, $class = 'menu-item-active', $queryString = null)
+function activeMenu(string $route, string $class = 'menu-item-active', ?string $queryString = null): string
 {
 
     if ($queryString && request('tab') != null && request('tab') != '') {
@@ -100,7 +100,7 @@ function activeMenu($route, $class = 'menu-item-active', $queryString = null)
     return '';
 }
 
-function isActive($url, $query = 'junk')
+function isActive(string $url, string $query = 'junk'): string
 {
 
     if ($query == 'junk' && request()->fullUrl() == $url) {
@@ -114,12 +114,12 @@ function isActive($url, $query = 'junk')
     return '';
 }
 
-function getPatientName($id)
+function getPatientName(int|string $id): string
 {
     return \App\Models\Patients::find($id)?->name ?? '';
 }
 
-function getPatientInfo()
+function getPatientInfo(): array
 {
     $total_cash_in = PackageAdvances::where('cash_flow', '=', 'in')
         ->where('patient_id', request('id'))

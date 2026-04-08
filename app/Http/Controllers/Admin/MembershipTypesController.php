@@ -19,7 +19,7 @@ class MembershipTypesController extends Controller
         private readonly MembershipTypeService $membershipTypeService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('membershiptypes_manage')) {
             return abort(401);
@@ -73,9 +73,9 @@ class MembershipTypesController extends Controller
                     'active'       => $membershipType->active,
                     'created_at'   => Carbon::parse($membershipType->created_at)->format('F j,Y h:i A'),
                     'parent_id'    => $membershipType->parent_id,
-                    'parent_name'  => $membershipType->parent ? $membershipType->parent->name : '-',
+                    'parent_name'  => $membershipType->parent?->name ?? '-',
                     'children'     => $children,
-                    'has_children' => count($children) > 0,
+                    'has_children' => !empty($children),
                 ];
             }
 

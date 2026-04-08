@@ -24,7 +24,7 @@ class StaffAdvanceService
     /**
      * Get staff advance summary (grouped by staff member).
      */
-    public function getStaffSummary(int $accountId)
+    public function getStaffSummary(int $accountId): \Illuminate\Support\Collection
     {
         $advances = StaffAdvance::forAccount($accountId)
             ->whereNull('voided_at')
@@ -69,7 +69,7 @@ class StaffAdvanceService
     /**
      * Get advances and returns for a specific staff member.
      */
-    public function getStaffLedger(int $userId, int $accountId)
+    public function getStaffLedger(int $userId, int $accountId): array
     {
         $advances = StaffAdvance::forAccount($accountId)
             ->forStaff($userId)
@@ -336,7 +336,7 @@ class StaffAdvanceService
     /**
      * Get advance-eligible staff for dropdown.
      */
-    public function getEligibleStaff(int $accountId)
+    public function getEligibleStaff(int $accountId): \Illuminate\Support\Collection
     {
         return CashflowHelper::getAdvanceEligibleStaff($accountId);
     }
@@ -355,8 +355,8 @@ class StaffAdvanceService
             ->map(fn($a) => [
                 'id'          => $a->id,
                 'description' => $a->description,
-                'staff_name'  => optional($a->staffUser)->name,
-                'pool_name'   => optional($a->pool)->name,
+                'staff_name'  => $a->staffUser?->name,
+                'pool_name'   => $a->pool?->name,
                 'amount'      => (float) $a->amount,
                 'date'        => $a->created_at?->toDateString(),
             ]);
@@ -370,8 +370,8 @@ class StaffAdvanceService
             ->map(fn($r) => [
                 'id'          => $r->id,
                 'description' => $r->description,
-                'staff_name'  => optional($r->staffUser)->name,
-                'pool_name'   => optional($r->pool)->name,
+                'staff_name'  => $r->staffUser?->name,
+                'pool_name'   => $r->pool?->name,
                 'amount'      => (float) $r->amount,
                 'date'        => $r->created_at?->toDateString(),
             ]);

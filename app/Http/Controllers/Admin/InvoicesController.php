@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App;
+use App\Enums\AppointmentType;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
@@ -40,7 +41,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use PDF;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -51,7 +51,7 @@ class InvoicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('invoices_manage')) {
             return abort(401);
@@ -63,7 +63,7 @@ class InvoicesController extends Controller
     /*
      * Show the invoice data in datatable
      * */
-    public function datatable(Request $request, $id = false): mixed
+    public function datatable(Request $request, $id = false): \Illuminate\Http\JsonResponse
     {
 
         try {
@@ -83,7 +83,7 @@ class InvoicesController extends Controller
                 if ($invoices) {
                     foreach ($invoices as $invoices) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (! Invoices::isChildExists($invoices->id, Auth::User()->account_id)) {
+                        if (! Invoices::isChildExists($invoices->id, Auth::user()->account_id)) {
                             $invoices->delete();
                         }
                     }
@@ -96,11 +96,11 @@ class InvoicesController extends Controller
             [$orderBy, $order] = getSortBy($request);
 
             // Get Total Records
-            $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, 'invoices');
+            $iTotalRecords = Invoices::getTotalRecords($request, Auth::user()->account_id, $id, $apply_filter, 'invoices');
 
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, 'invoices');
+            $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, 'invoices');
 
             $records = $this->filtersData($records);
 
@@ -120,7 +120,7 @@ class InvoicesController extends Controller
                         'location' => $location_info->name,
                         'service' => $service->name,
                         'invoice_status' => $invoicestatus->name,
-                        'appointment_type_id' => ($invoice->appointment_type_id === 1) ? Config::get('constants.Consultancy') : Config::get('constants.Service'),
+                        'appointment_type_id' => ($invoice->appointment_type_id === AppointmentType::Consultancy->value) ? Config::get('constants.Consultancy') : Config::get('constants.Service'),
                         'price' => number_format($invoice->total_price),
                         'created_at' => Carbon::parse($invoice->created_at)->format('F j,Y h:i A'),
                         'cancel' => $cancel,
@@ -160,12 +160,12 @@ class InvoicesController extends Controller
         }
     }
 
-    private function filtersData($records): mixed
+    private function filtersData($records): array
     {
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
@@ -179,11 +179,11 @@ class InvoicesController extends Controller
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
 
-        $appointment_types = AppointmentTypes::where('account_id', '=', '1')->get()->pluck('name', 'id');
+        $appointment_types = AppointmentTypes::where('account_id', '=', '1')->pluck('name', 'id');
 
-        $filters = Filters::all(Auth::User()->id, 'invoices');
+        $filters = Filters::all(Auth::user()->id, 'invoices');
 
-        if ($user_id = Filters::get(Auth::User()->id, 'invoices', 'patient_id')) {
+        if ($user_id = Filters::get(Auth::user()->id, 'invoices', 'patient_id')) {
             $patient = User::where([
                 'id' => $user_id,
             ])->first();
@@ -218,7 +218,7 @@ class InvoicesController extends Controller
 
     }
 
-    public function cancel(int $id): mixed
+    public function cancel(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('invoices_cancel')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -236,7 +236,7 @@ class InvoicesController extends Controller
 
         }
 
-        $invoice = Invoices::CancelRecord($id, Auth::User()->account_id);
+        $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
 
         $invocies = Invoices::find($id);
 
@@ -244,7 +244,7 @@ class InvoicesController extends Controller
 
         if ($invoice_detail->package_id) {
 
-            $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::User()->account_id);
+            $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
         }
 
         $appintment = Appointments::find($invocies->appointment_id);
@@ -261,12 +261,12 @@ class InvoicesController extends Controller
             $data_package['cash_amount'] = $invocies->total_price ?? 0;
             $data_package['patient_id'] = $invocies->patient_id ?? 0;
             $data_package['payment_mode_id'] = '1';
-            $data_package['account_id'] = Auth::User()->account_id;
+            $data_package['account_id'] = Auth::user()->account_id;
             $data_package['appointment_type_id'] = $appointment_type->id ?? 0;
             $data_package['appointment_id'] = $invocies->appointment_id ?? 0;
             $data_package['location_id'] = $appintment->location_id ?? 0;
-            $data_package['created_by'] = Auth::User()->id;
-            $data_package['updated_by'] = Auth::User()->id;
+            $data_package['created_by'] = Auth::user()->id;
+            $data_package['updated_by'] = Auth::user()->id;
             $data_package['invoice_id'] = $id;
             $data_package['is_cancel'] = '1';
 
@@ -290,7 +290,7 @@ class InvoicesController extends Controller
 
     /*display invoice
      * */
-    public function displayInvoice(int $id): mixed
+    public function displayInvoice(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('invoices_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -354,7 +354,7 @@ class InvoicesController extends Controller
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): mixed
+    public function invoice_pdf(int $id, mixed $download = null, int $flag = 0): \Illuminate\View\View
     {
         if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
@@ -414,11 +414,11 @@ class InvoicesController extends Controller
             $service_price_display = $package_service->actual_price;
         }
 
-        if ($appointment_info?->appointment_type_id == 1 && $flag == 0) {
+        if ($appointment_info?->appointment_type_id === AppointmentType::Consultancy->value && $flag == 0) {
 
             $setting_info = Settings::where('slug', '=', 'sys-consultancy-invoice-medical-operator')->first();
 
-            if ($setting_info->data = 1) {
+            if ($setting_info->data === '1') {
 
                 if ($download) {
 
@@ -464,7 +464,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice
      */
-    public function invoicelog(int $id, string $type, ?int $patient_id = null): mixed
+    public function invoicelog(int $id, string $type, ?int $patient_id = null): \Illuminate\View\View
     {
         if (! Gate::allows('invoices_log')) {
             return abort(401);
@@ -519,7 +519,7 @@ class InvoicesController extends Controller
         return $this->invoicelogexcel($id, $finance_log);
     }
 
-    public function invoiceDatatable(Request $request, int $id): mixed
+    public function invoiceDatatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
 
         [$orderBy, $order] = getSortBy($request);
@@ -538,7 +538,7 @@ class InvoicesController extends Controller
         return response()->json($records);
     }
 
-    private function getInvoicesData($id, $request, $orderBy, $order): mixed
+    private function getInvoicesData($id, $request, $orderBy, $order): array
     {
 
         $action_array = [
@@ -602,7 +602,7 @@ class InvoicesController extends Controller
     /*
      *  Function for log for invoice excel
      */
-    public function invoicelogexcel(int $id, mixed $finance_log): mixed
+    public function invoicelogexcel(int $id, mixed $finance_log): void
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -639,20 +639,20 @@ class InvoicesController extends Controller
 
             foreach ($finance_log as $log) {
                 $activeSheet->setCellValue('A'.$counter, $count++);
-                $activeSheet->setCellValue('B'.$counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
-                $activeSheet->setCellValue('C'.$counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
-                $activeSheet->setCellValue('D'.$counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
-                $activeSheet->setCellValue('E'.$counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
-                $activeSheet->setCellValue('F'.$counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
-                $activeSheet->setCellValue('G'.$counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
-                $activeSheet->setCellValue('H'.$counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
-                $activeSheet->setCellValue('I'.$counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
-                $activeSheet->setCellValue('J'.$counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
-                $activeSheet->setCellValue('K'.$counter, isset($log['location_id']) ? $log['location_id'] : '-');
-                $activeSheet->setCellValue('L'.$counter, isset($log['created_by']) ? $log['created_by'] : '-');
-                $activeSheet->setCellValue('M'.$counter, isset($log['updated_by']) ? $log['updated_by'] : '-');
-                $activeSheet->setCellValue('N'.$counter, isset($log['package_id']) ? $log['package_id'] : '-');
-                $activeSheet->setCellValue('O'.$counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
+                $activeSheet->setCellValue('B'.$counter, $log['cash_flow'] ?? '-');
+                $activeSheet->setCellValue('C'.$counter, $log['cash_amount'] ?? '-');
+                $activeSheet->setCellValue('D'.$counter, $log['is_refund'] ?? '-');
+                $activeSheet->setCellValue('E'.$counter, $log['is_adjustment'] ?? '-');
+                $activeSheet->setCellValue('F'.$counter, $log['is_tax'] ?? '-');
+                $activeSheet->setCellValue('G'.$counter, $log['is_cancel'] ?? '-');
+                $activeSheet->setCellValue('H'.$counter, $log['refund_note'] ?? '-');
+                $activeSheet->setCellValue('I'.$counter, $log['payment_mode_id'] ?? '-');
+                $activeSheet->setCellValue('J'.$counter, $log['appointment_type_id'] ?? '-');
+                $activeSheet->setCellValue('K'.$counter, $log['location_id'] ?? '-');
+                $activeSheet->setCellValue('L'.$counter, $log['created_by'] ?? '-');
+                $activeSheet->setCellValue('M'.$counter, $log['updated_by'] ?? '-');
+                $activeSheet->setCellValue('N'.$counter, $log['package_id'] ?? '-');
+                $activeSheet->setCellValue('O'.$counter, $log['invoice_id'] ?? '-');
                 $activeSheet->setCellValue('P'.$counter, isset($log['created_at']) ? \Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
                 $activeSheet->setCellValue('Q'.$counter, isset($log['updated_at']) ? \Carbon\Carbon::parse($log['updated_at'])->format('F j,Y h:i A') : '-');
 
@@ -675,7 +675,7 @@ class InvoicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs(int $id): mixed
+    public function showSMSLogs(int $id): \Illuminate\Http\JsonResponse
     {
         $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
@@ -690,7 +690,7 @@ class InvoicesController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function sendLogSMS(Request $request): mixed
+    public function sendLogSMS(Request $request): \Illuminate\Http\JsonResponse
     {
 
         $data = $request->all();
@@ -714,7 +714,7 @@ class InvoicesController extends Controller
      * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
-    private function resendSMS($smsId, $patient_phone, $preparedText, $invoice_id): mixed
+    private function resendSMS($smsId, $patient_phone, $preparedText, $invoice_id): array
     {
         $Invoice_info = Invoices::find($invoice_id);
 

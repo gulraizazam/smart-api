@@ -19,6 +19,7 @@ class PackageAdvanceObserver
      * cash_flow = 'out' + is_refund = 1 → refund → debit pool
      * cash_flow = 'out' + is_refund = 0 → settlement/invoice → no cash movement
      */
+    #[\Override]
     public function created(PackageAdvances $advance): void
     {
         try {
@@ -62,6 +63,7 @@ class PackageAdvanceObserver
      * 2. Amount changed (e.g. 10000 → 1000) → adjust difference on same pool
      * 3. Payment method changed (cash → bank) → reverse old pool, apply to new pool
      */
+    #[\Override]
     public function updated(PackageAdvances $advance): void
     {
         try {
@@ -112,8 +114,8 @@ class PackageAdvanceObserver
             $oldPool = $this->resolvePool($advance->account_id, $oldPaymentModeId, $oldLocationId);
             $newPool = $this->resolvePool($advance->account_id, $advance->payment_mode_id, $advance->location_id);
 
-            $oldPoolId = $oldPool ? $oldPool->id : null;
-            $newPoolId = $newPool ? $newPool->id : null;
+            $oldPoolId = $oldPool?->id;
+            $newPoolId = $newPool?->id;
 
             if ($oldPoolId === $newPoolId) {
                 // Same pool — just adjust the difference in amount
@@ -153,6 +155,7 @@ class PackageAdvanceObserver
     /**
      * After a PackageAdvance is soft-deleted, reverse its pool impact.
      */
+    #[\Override]
     public function deleted(PackageAdvances $advance): void
     {
         try {
@@ -262,7 +265,7 @@ class PackageAdvanceObserver
         if ($paymentModeId) {
             $paymentMode = PaymentModes::find($paymentModeId);
             if ($paymentMode) {
-                $isCash = stripos($paymentMode->name, 'cash') !== false;
+                $isCash = str_contains(strtolower($paymentMode->name), 'cash');
             }
         }
 

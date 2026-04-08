@@ -78,7 +78,7 @@ class CityService
         ];
 
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
-        $filters = Filters::all(Auth::User()->id, 'cities');
+        $filters = Filters::all(Auth::user()->id, 'cities');
         $records['active_filters'] = $filters;
         $records['filter_values'] = [
             'regions' => $regions,

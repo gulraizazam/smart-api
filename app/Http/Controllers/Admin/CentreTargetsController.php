@@ -20,7 +20,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('centre_targets_manage')) {
             return abort(401);
@@ -35,7 +35,7 @@ class CentreTargetsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
 
@@ -53,7 +53,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('centre_targets_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -75,7 +75,7 @@ class CentreTargetsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function leadtargetcentre(Request $request): mixed
+    public function leadtargetcentre(Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $this->service->loadTargetCentre($request);
 
@@ -86,7 +86,7 @@ class CentreTargetsController extends Controller
      * Store the centre target
      */
 
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('centre_targets_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -113,7 +113,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id ,$request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
 
         if (! Gate::allows('centre_targets_edit')) {
@@ -139,7 +139,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('centre_targets_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -160,7 +160,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function display(int $id): mixed
+    public function display(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('centre_targets_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -178,7 +178,7 @@ class CentreTargetsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id, Request $request): mixed
+    public function destroy(int $id, Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('centre_targets_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -197,21 +197,22 @@ class CentreTargetsController extends Controller
     /**
      * Get all system-wide targets.
      */
-    public function getSystemTargets(): mixed
+    public function getSystemTargets(): \Illuminate\Http\JsonResponse
     {
         try {
             $targets = $this->service->getSystemTargets();
 
             return $this->successResponse('System targets loaded', $targets, 200);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
     /**
      * Save a single system-wide target (immediate save).
      */
-    public function saveSystemTarget(Request $request): mixed
+    public function saveSystemTarget(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $request->validate([
@@ -223,7 +224,8 @@ class CentreTargetsController extends Controller
 
             return $this->successResponse('Target saved', null, 200);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 }

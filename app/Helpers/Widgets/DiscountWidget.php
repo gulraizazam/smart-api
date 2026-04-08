@@ -273,7 +273,7 @@ class DiscountWidget
 
             if ($rootdiscounts->count()) {
                 foreach ($rootdiscounts as $rootdiscount) {
-                    if (! in_array($rootdiscount->discount_id, $discount_array)) {
+                    if (! in_array($rootdiscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $rootdiscount->discount_id;
                     }
                 }
@@ -294,7 +294,7 @@ class DiscountWidget
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -343,7 +343,7 @@ class DiscountWidget
 
             if ($regiondiscounts->count()) {
                 foreach ($regiondiscounts as $regiondiscount) {
-                    if (! in_array($regiondiscount->discount_id, $discount_array)) {
+                    if (! in_array($regiondiscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $regiondiscount->discount_id;
                     }
                 }
@@ -365,7 +365,7 @@ class DiscountWidget
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -386,7 +386,7 @@ class DiscountWidget
         ])->get();
         if ($centrediscounts->count()) {
             foreach ($centrediscounts as $centrediscount) {
-                if (! in_array($centrediscount->discount_id, $discount_array)) {
+                if (! in_array($centrediscount->discount_id, $discount_array, true)) {
                     $discount_array[] = $centrediscount->discount_id;
                 }
             }
@@ -403,7 +403,7 @@ class DiscountWidget
 
         if ($centreservicediscounts->count()) {
             foreach ($centreservicediscounts as $centreservicediscount) {
-                if (! in_array($centreservicediscount->discount_id, $discount_array)) {
+                if (! in_array($centreservicediscount->discount_id, $discount_array, true)) {
                     $discount_array[] = $centreservicediscount->discount_id;
                 }
             }
@@ -449,7 +449,7 @@ class DiscountWidget
 
             if ($rootvouchers->count()) {
                 foreach ($rootvouchers as $rootvoucher) {
-                    if (! in_array($rootvoucher->voucher_id, $discount_array)) {
+                    if (! in_array($rootvoucher->voucher_id, $discount_array, true)) {
                         $discount_array[] = $rootvoucher->voucher_id;
                     }
                 }
@@ -470,7 +470,7 @@ class DiscountWidget
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -519,7 +519,7 @@ class DiscountWidget
            
             if ($regionvouchers->count()) {
                 foreach ($regionvouchers as $regionvoucher) {
-                    if (! in_array($regionvoucher->voucher_id, $discount_array)) {
+                    if (! in_array($regionvoucher->voucher_id, $discount_array, true)) {
                         $discount_array[] = $regionvoucher->voucher_id;
                     }
                 }
@@ -541,7 +541,7 @@ class DiscountWidget
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array, true)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -563,7 +563,7 @@ class DiscountWidget
       
         if ($centrediscounts->count()) {
             foreach ($centrediscounts as $centrediscount) {
-                if (! in_array($centrediscount->discount_id, $discount_array)) {
+                if (! in_array($centrediscount->discount_id, $discount_array, true)) {
                     $discount_array[] = $centrediscount->discount_id;
                 }
             }
@@ -580,7 +580,7 @@ class DiscountWidget
           
         if ($centreservicediscounts->count()) {
             foreach ($centreservicediscounts as $centreservicediscount) {
-                if (! in_array($centreservicediscount->voucher_id, $discount_array)) {
+                if (! in_array($centreservicediscount->voucher_id, $discount_array, true)) {
                     $discount_array[] = $centreservicediscount->voucher_id;
                 }
             }

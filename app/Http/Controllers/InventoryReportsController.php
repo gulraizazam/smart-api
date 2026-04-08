@@ -13,18 +13,18 @@ class InventoryReportsController extends Controller
         private readonly InventoryReportService $service,
     ) {}
 
-    public function inventoryReport()
+    public function inventoryReport(): \Illuminate\View\View
     {
         $data = $this->service->getInventoryReportPageData();
         $Users = $data['Users'];
         $locations = $data['locations'];
         $brands = $data['brands'];
 
-        return view('admin.reports.inventory_report', get_defined_vars());
+        return view('admin.reports.inventory_report', compact('Users', 'locations', 'brands'));
 
     }
 
-    public function loadInventoryReport(Request $request)
+    public function loadInventoryReport(Request $request): \Illuminate\View\View
     {
 
         $validated = $request->validate([
@@ -44,7 +44,7 @@ class InventoryReportsController extends Controller
             $report = $result['report'];
             $overallTotal = $result['overallTotal'];
 
-            return view('admin.reports.doctor_wise_sales', get_defined_vars());
+            return view('admin.reports.doctor_wise_sales', compact('report', 'overallTotal'));
         }
 
         if ($request->report_type == "sales_report") {
@@ -55,18 +55,18 @@ class InventoryReportsController extends Controller
             $bankTransferTotal = $result['bankTransferTotal'];
             $overallTotal = $result['overallTotal'];
 
-            return view('admin.reports.inventory_sales', get_defined_vars());
+            return view('admin.reports.inventory_sales', compact('reportData', 'cashTotal', 'cardTotal', 'bankTransferTotal', 'overallTotal'));
         }
         if ($request->report_type == "addition_report") {
             $result = $this->service->loadAdditionReport($params);
             $stocks = $result['stocks'];
 
-            return view('admin.reports.addition_report', get_defined_vars());
+            return view('admin.reports.addition_report', compact('stocks'));
         }
 
     }
 
-    public function getSalesReport(Request $request)
+    public function getSalesReport(Request $request): \Illuminate\View\View
     {
         // Validate filters
         $request->validate([
@@ -77,6 +77,6 @@ class InventoryReportsController extends Controller
         $reportData = $result['reportData'];
         $overallTotal = $result['overallTotal'];
 
-        return view('admin.reports.inventory_sales', get_defined_vars());
+        return view('admin.reports.inventory_sales', compact('reportData', 'overallTotal'));
     }
 }

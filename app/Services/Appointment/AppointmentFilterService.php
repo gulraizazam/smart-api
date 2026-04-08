@@ -31,7 +31,7 @@ class AppointmentFilterService
     /**
      * Build optimized query filters for appointments datatable
      */
-    public function buildFilters($query, array $filters)
+    public function buildFilters(mixed $query, array $filters): mixed
     {
         // Apply basic where conditions
         $whereConditions = $this->buildWhereConditions($filters);
@@ -210,7 +210,7 @@ class AppointmentFilterService
     /**
      * Build base query with ACL and permissions
      */
-    public function buildBaseQuery()
+    public function buildBaseQuery(): \Illuminate\Database\Eloquent\Builder
     {
         // Use config constant for consultancy type ID (same as TreatmentService approach)
         $consultancyTypeId = config('constants.appointment_type_consultancy');

@@ -161,7 +161,7 @@ class Operations
         }
         $start_date = Carbon::createFromDate($data['year'], $data['month'], '1')->toDateString();
 
-        $record = Centertarget::where(['month' => $data['month'], 'year' => $data['year'], 'account_id' => Auth::User()->account_id])->first();
+        $record = Centertarget::where(['month' => $data['month'], 'year' => $data['year'], 'account_id' => Auth::user()->account_id])->first();
 
         if (isset($data['completed_working_days'])) {
             if ($data['completed_working_days'] <= $data['days_count']) {
@@ -199,7 +199,7 @@ class Operations
                     'Pecentage' => ($achieved_amount / $centergetlocationdata->target_amount) * 100,
                 ];
 
-                if (! in_array($centergetlocationdata->location->region->id, $regions)) {
+                if (! in_array($centergetlocationdata->location->region->id, $regions, true)) {
                     $regions[$centergetlocationdata->location->region->id] = [
                         'region_id' => $centergetlocationdata->location->region->id,
                         'region_name' => $centergetlocationdata->location->region->name,
@@ -276,7 +276,7 @@ class Operations
                 'clients' => [],
             ];
             $locationclients = Appointments::where('location_id', '=', $location['id'])->groupBy('patient_id')->select('patient_id')->get();
-            if (count($locationclients) > 0) {
+            if (!empty($locationclients)) {
                 $c = 0;
                 foreach ($locationclients as $client) {
                     $clientinformation = User::find($client->patient_id);
@@ -748,7 +748,7 @@ class Operations
             if ($appointment->appointment_type->slug == 'consultancy' && ($appointment->appointment_status->is_arrived == '1' || $appointment->appointment_status->is_converted == '1')) {
                 $arrived_count[$appointment->location->id][] = 1;
                 $locationData[$appointment->location->name]['consultantarrived'] = count($arrived_count[$appointment->location->id]);
-                $locationData[$appointment->location->name]['walking'] = isset($walkinAppointment[$appointment->location_id]) ? $walkinAppointment[$appointment->location_id] : 0;
+                $locationData[$appointment->location->name]['walking'] = $walkinAppointment[$appointment->location_id] ?? 0;
             }
 
         }
@@ -821,7 +821,7 @@ class Operations
                 'appointment_status_isarrived' => $appointment->appointment_status->is_arrived,
             ];
 
-            $locationData[$appointment->location->name]['walkin'] = isset($walkinAppointment[$appointment->location_id]) ? $walkinAppointment[$appointment->location_id] : 0;
+            $locationData[$appointment->location->name]['walkin'] = $walkinAppointment[$appointment->location_id] ?? 0;
 
         }
 
@@ -1014,7 +1014,7 @@ class Operations
                 [$where],
                 ['location_id', '=', $location->id],
             ])->get();
-            if (count($staff_target) > 0) {
+            if (!empty($staff_target)) {
                 $location_staff[$location->id] = [
                     'id' => $location->id,
                     'location' => $location->name,
@@ -1024,7 +1024,7 @@ class Operations
                 ];
                 foreach ($staff_target as $staff) {
                     $staff_target_service = StaffTargetServices::where('staff_target_id', '=', $staff->id)->get();
-                    if (count($staff_target_service) > 0) {
+                    if (!empty($staff_target_service)) {
                         foreach ($staff_target_service as $staffservice) {
                             $appointmentinformtion = count(Appointments::join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
                                 ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1100,16 +1100,11 @@ class Operations
                         $packagesadvance->is_refund == '1'
                     )
                 ) {
-                    switch ($packagesadvance->cash_flow) {
-                        case 'in':
-                            $balance = $balance + $packagesadvance->cash_amount;
-                            break;
-                        case 'out':
-                            $balance = $balance - $packagesadvance->cash_amount;
-                            break;
-                        default:
-                            break;
-                    }
+                    $balance += match ($packagesadvance->cash_flow) {
+                        'in' => $packagesadvance->cash_amount,
+                        'out' => -$packagesadvance->cash_amount,
+                        default => 0,
+                    };
                     $total_balance = $balance;
                     if ($packagesadvance->cash_amount != 0) {
                         if ($packagesadvance->package_id) {

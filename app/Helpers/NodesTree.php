@@ -186,7 +186,7 @@ class NodesTree
             $this->nodeList[0] = $this->default_text;
         }
         /* Add child nodes */
-        if (count($tree->children_nodes) > 0) {
+        if (!empty($tree->children_nodes)) {
             $c++;
             foreach ($tree->children_nodes as $id => $data) {
                 $node_name = $data['name'];

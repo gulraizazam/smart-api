@@ -18,9 +18,9 @@ use Illuminate\Support\Facades\DB;
 
 class ActivitylogsReportController extends Controller
 {
-    public function index(): mixed{
+    public function index(): \Illuminate\View\View{
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
-        $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $employees = User::getAllActiveEmployeeRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
         $operators = ($select_All + $employees->toArray() );
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
@@ -31,10 +31,10 @@ class ActivitylogsReportController extends Controller
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 
 
-        return view('admin.reports.activity_logs.index', get_defined_vars());
+        return view('admin.reports.activity_logs.index', compact('services', 'operators', 'locations', 'locations_com'));
 
     }
-    public function fetchActivityReport(Request $request): mixed
+    public function fetchActivityReport(Request $request): \Illuminate\View\View
     {
         $colorClasses=['text-warning', 'text-success','text-primary','text-danger'];
         
@@ -72,7 +72,7 @@ class ActivitylogsReportController extends Controller
 
         return view('admin.reports.activity_logs.activities', compact('data'));
     }
-    public function InsertLogs(): mixed
+    public function InsertLogs(): bool
     {
         $startDate = '2023-11-01 00:00:00';
         $endDate = '2023-11-05 23:59:59';
@@ -106,12 +106,12 @@ class ActivitylogsReportController extends Controller
                 'appointment_type' => $activityType,
                 'appointment_id' => $appointment->id,
                 'activity_type' => $activityType,
-                'location' => $location ? $location->name : '',
-                'centre_id' => $location ? $location->id : null,
-                'service_id' => $service ? $service->id : null,
-                'service' => $service ? $service->name : null,
-                'patient_id' => $patient ? $patient->id : null,
-                'patient' => $patient ? $patient->name : null,
+                'location' => $location?->name ?? '',
+                'centre_id' => $location?->id,
+                'service_id' => $service?->id,
+                'service' => $service?->name,
+                'patient_id' => $patient?->id,
+                'patient' => $patient?->name,
                 'schedule_date' => $appointment->scheduled_date,
                 'created_at' => $appointment->created_at,
                 'updated_at' => $appointment->updated_at,

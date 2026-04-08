@@ -15,9 +15,6 @@ use Illuminate\Support\Facades\Gate;
 
 class LeadStatusesController extends Controller
 {
-    protected int $success;
-    protected int $unauthorized;
-
     public function __construct(
         protected readonly LeadStatusService $service,
     ) {

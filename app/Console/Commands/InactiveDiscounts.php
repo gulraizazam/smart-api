@@ -15,6 +15,7 @@ final class InactiveDiscounts extends Command
 
     protected $description = 'Deactivate expired discounts (runs nightly at 1 AM)';
 
+    #[\Override]
     public function handle(): int
     {
         try {

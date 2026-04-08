@@ -43,6 +43,7 @@ class DeliverNotSentAppointment extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         $start_time = Carbon::parse(Carbon::now())->subMinute(120)->setTimezone('Asia/Karachi')->format('Y-m-d H:i').':00';
@@ -93,7 +94,7 @@ class DeliverNotSentAppointment extends Command
 
             $UserOperatorSettings = UserOperatorSettings::getRecord($appointment->account_id, $setting->data);
 
-            if ($setting->data == 1) {
+            if ($setting->data === '1') {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password

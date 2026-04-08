@@ -1,8 +1,5 @@
 <?php
 
-use App\Models\Leads;
-use App\Models\Services;
-use App\Models\Appointments;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
@@ -26,7 +23,6 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\VouchersController;
-use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
@@ -83,81 +79,60 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/package-advances-sum', function () {
-    $sum = PackageAdvances::where('cash_flow', 'in')
-        ->where('payment_mode_id', 4)
-        ->whereNull('deleted_at')
-        ->whereBetween('created_at', ['2024-07-01 00:00:00', '2025-06-30 23:59:59'])
-        ->sum('cash_amount');
-    
-    return response()->json(['sum' => $sum]);
-});
-Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
-Route::get('/download-student-membership-patients', [ApiMembershipsController::class, 'downloadStudentMembershipPatients'])
-    ->name('download.student.membership.patients');
 Route::get('/unauthorized', function () {
     return view('unathorized');
 })->name('unauthorized');
-Route::get('/download-doctor-upselling-excel', [UpsellingReportController::class, 'downloadDoctorUpsellingExcel'])->name('download.doctor.upselling');
+
 Auth::routes();
 // Authentication Routes...
 
     Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
 
-    Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('auth.admin.login');
+    Route::post('login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware('throttle:5,1')->name('auth.admin.login');
 
-Route::get('/deliver-on-appointment-book', function () {
-    \Artisan::call('appointment:deliver-on-appointment-book');
+// Protected data exports and reports — require authentication
+Route::middleware(['auth.common'])->group(function () {
+    Route::get('/package-advances-sum', fn () => response()->json([
+        'sum' => PackageAdvances::where('cash_flow', 'in')
+            ->where('payment_mode_id', 4)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', ['2024-07-01 00:00:00', '2025-06-30 23:59:59'])
+            ->sum('cash_amount'),
+    ]))->name('package_advances.sum');
+    Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
+    Route::get('/download-student-membership-patients', [ApiMembershipsController::class, 'downloadStudentMembershipPatients'])
+        ->name('download.student.membership.patients');
+    Route::get('/download-doctor-upselling-excel', [UpsellingReportController::class, 'downloadDoctorUpsellingExcel'])->name('download.doctor.upselling');
+    Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 });
-Route::get('/2nd-message-on-appointment-day', function () {
-    \Artisan::call('appointment:2nd-message-on-appointment-day');
-});
-Route::get('/3rd-message-before-appointment', function () {
-    \Artisan::call('appointment:3rd-message-before-appointment');
-});
-Route::get('/check-expired-records', function () {
-    \Artisan::call('check:expired');
-});
-Route::get('/daily-stats', function () {
-    \Artisan::call('appointments:daily-stats');
-});
-Route::get('/check-memberships', function () {
-    \Artisan::call('memberships:expire');
-});
-Route::get('/get_deleted', function () {
-    $appointments = Appointments::onlyTrashed()->where('deleted_by', 4)->get();
-    return view('deleted', get_defined_vars());
-});
-Route::get('getservices', function () {
 
-    $services = Services::where('slug', '!=', 'all')
-        ->where(['parent_id' => 0])
-
-        ->orderBy('id', 'asc')
-        ->get();
-
-    $mergedServices = [];
-    foreach ($services as $service) {
-
-        $children = Services::where(['parent_id' => $service->id])
-
-            ->orderBy('id', 'asc')->get()->toArray();
-
-        $mergedServices[] = $service->toArray();
-        foreach ($children as $child) {
-            $mergedServices[] = $child;
-        }
-    }
-    return view('deleted', compact('mergedServices'));
+// Artisan command routes — protected and rate-limited (these are also handled by scheduler)
+Route::middleware(['auth.common', 'throttle:5,1'])->group(function () {
+    Route::get('/deliver-on-appointment-book', function () {
+        \Artisan::call('appointment:deliver-on-appointment-book');
+        return response()->json(['status' => 'ok']);
+    });
+    Route::get('/2nd-message-on-appointment-day', function () {
+        \Artisan::call('appointment:2nd-message-on-appointment-day');
+        return response()->json(['status' => 'ok']);
+    });
+    Route::get('/3rd-message-before-appointment', function () {
+        \Artisan::call('appointment:3rd-message-before-appointment');
+        return response()->json(['status' => 'ok']);
+    });
+    Route::get('/check-expired-records', function () {
+        \Artisan::call('check:expired');
+        return response()->json(['status' => 'ok']);
+    });
+    Route::get('/daily-stats', function () {
+        \Artisan::call('appointments:daily-stats');
+        return response()->json(['status' => 'ok']);
+    });
+    Route::get('/check-memberships', function () {
+        \Artisan::call('memberships:expire');
+        return response()->json(['status' => 'ok']);
+    });
 });
-Route::get('testupdate', function () {
-    $packageService = PackageService::find(198286);
-    $packageService->sold_by = auth()->id(); // or any value
-    $packageService->save();
-
-\Log::info('Sold by updated to: ' . $packageService->sold_by);
-});
-Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
 // Check Session
 Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
@@ -169,11 +144,14 @@ Route::get('password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordCon
 Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('auth.password.resettoken');
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
-Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
-    Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
-        require __DIR__ . '/web/admin-core.php';
-        require __DIR__ . '/web/admin-catalogue.php';
-        require __DIR__ . '/web/admin-appointments.php';
-        require __DIR__ . '/web/admin-reports.php';
+Route::middleware(['auth.common', 'checkAccount'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
+            require __DIR__ . '/web/admin-core.php';
+            require __DIR__ . '/web/admin-catalogue.php';
+            require __DIR__ . '/web/admin-appointments.php';
+            require __DIR__ . '/web/admin-reports.php';
+        });
     });
-});

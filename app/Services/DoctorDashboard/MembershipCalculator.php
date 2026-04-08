@@ -174,14 +174,12 @@ class MembershipCalculator
      */
     public function getGoldMembershipServiceIds(int $accountId): array
     {
-        return Cache::remember("gold_membership_service_ids_{$accountId}", 3600, function () use ($accountId) {
-            return DB::table('services')
+        return Cache::remember("gold_membership_service_ids_{$accountId}", 3600, fn() => DB::table('services')
                 ->where('account_id', $accountId)
                 ->where('name', 'LIKE', '%Gold%')
                 ->whereNull('deleted_at')
                 ->pluck('id')
-                ->toArray();
-        });
+                ->toArray());
     }
 
     /**

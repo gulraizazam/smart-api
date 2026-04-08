@@ -15,18 +15,11 @@ use Illuminate\Support\Facades\Gate;
 
 class PermissionController extends Controller
 {
-    private int $success;
-    private int $error;
-    private int $unauthorized;
-
     public function __construct(
         private readonly PermissionService $permissionService,
-    ) {
+    ) {}
 
-
-    }
-
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('permissions_manage')) {
             return abort(401);

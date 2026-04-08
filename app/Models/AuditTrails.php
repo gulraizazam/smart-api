@@ -14,9 +14,13 @@ class AuditTrails extends BaseModel
 
     protected $table = 'audit_trails';
 
-    protected $casts = [
-        'created_at' => 'datetime:D M, j Y, h:i:a',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'created_at' => 'datetime:D M, j Y, h:i:a',
+        ];
+    }
 
     /**
      * sent the location name to resource with location_id.
@@ -60,7 +64,7 @@ class AuditTrails extends BaseModel
         }
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
 
         $audit_tailObj = self::create($audit_tail);
 
@@ -95,7 +99,7 @@ class AuditTrails extends BaseModel
 
         $action = AuditTrailActions::where('name', '=', $table_action)->select('id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('id')->first();
-        if (is_null($table)) {
+        if ($table === null) {
             \Log::info("Add Entity name to log it : $table_name");
         }
         $audit_tail['audit_trail_action_name'] = $action->id ?? 0;
@@ -103,7 +107,7 @@ class AuditTrails extends BaseModel
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
 
         $audit_tailObj = self::create($audit_tail);
 
@@ -139,7 +143,7 @@ class AuditTrails extends BaseModel
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
 
         $audit_tailObj = self::create($audit_tail);
 
@@ -175,7 +179,7 @@ class AuditTrails extends BaseModel
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
 
         $audit_tailObj = self::create($audit_tail);
 
@@ -216,7 +220,7 @@ class AuditTrails extends BaseModel
 
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
         $audit_tail['created_at'] = date('Y-m-d H:i:s');
         $audit_tail['updated_at'] = date('Y-m-d H:i:s');
 
@@ -242,8 +246,8 @@ class AuditTrails extends BaseModel
                         $audit_changes[] = [
                             'audit_trail_id' => $audit_tailObj->id,
                             'field_name' => $fills,
-                            'field_before' => is_null($old_data[$fills]) ? '' : $old_data[$fills],
-                            'field_after' => is_null($table_request[$fills]) ? '' : $table_request[$fills],
+                            'field_before' => $old_data[$fills] ?? '',
+                            'field_after' => $table_request[$fills] ?? '',
                             'created_at' => Carbon::now(),
                             'updated_at' => Carbon::now(),
                         ];
@@ -306,7 +310,7 @@ class AuditTrails extends BaseModel
 
         $action = AuditTrailActions::where('name', '=', $table_action)->select('id')->first();
         $table = AuditTrailTables::where('name', '=', $table_name)->select('id')->first();
-        if (is_null($table)) {
+        if ($table === null) {
             exit("Add Entity name to log it : $table_name");
         }
         $audit_tail['audit_trail_action_name'] = $action->id;
@@ -314,7 +318,7 @@ class AuditTrails extends BaseModel
         $audit_tail['table_record_id'] = $record_id;
         $audit_tail['parent_id'] = $parent_id;
 
-        $audit_tail['user_id'] = Auth::User()->id;
+        $audit_tail['user_id'] = Auth::user()->id;
 
         $audit_tailObj = self::create($audit_tail);
 

@@ -26,7 +26,7 @@ class Invoice_Plan_Refund_Sms_Functions
     public static function PlanCashReceived_SMS($package_id, $packageAdavances)
     {
         // SEND SMS for Appointment Booked
-        $SMSTemplate = SMSTemplates::getBySlug('plan-cash', Auth::User()->account_id);
+        $SMSTemplate = SMSTemplates::getBySlug('plan-cash', Auth::user()->account_id);
 
         if (! $SMSTemplate) {
             // SMS Promotion is disabled
@@ -45,7 +45,7 @@ class Invoice_Plan_Refund_Sms_Functions
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
-        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
+        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::user()->account_id, $setting->data);
 
         if ($setting->data == 1) {
 
@@ -120,7 +120,7 @@ class Invoice_Plan_Refund_Sms_Functions
     public static function RefundCashReceived_SMS($packageAdavances)
     {
         // SEND SMS for Appointment Booked
-        $SMSTemplate = SMSTemplates::getBySlug('refund-amount', Auth::User()->account_id);
+        $SMSTemplate = SMSTemplates::getBySlug('refund-amount', Auth::user()->account_id);
 
         if (! $SMSTemplate) {
             // SMS Promotion is disabled
@@ -137,7 +137,7 @@ class Invoice_Plan_Refund_Sms_Functions
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
-        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
+        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::user()->account_id, $setting->data);
 
         if ($setting->data == 1) {
 
@@ -217,7 +217,7 @@ class Invoice_Plan_Refund_Sms_Functions
     public static function InvoiceCashReceived_SMS($invoice, $invoice_detail, $package_id = false)
     {
         // SEND SMS for Appointment Booked
-        $SMSTemplate = SMSTemplates::getBySlug('invoice-ringup', Auth::User()->account_id);
+        $SMSTemplate = SMSTemplates::getBySlug('invoice-ringup', Auth::user()->account_id);
 
         if (! $SMSTemplate) {
             // SMS Promotion is disabled
@@ -251,7 +251,7 @@ class Invoice_Plan_Refund_Sms_Functions
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
-        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
+        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::user()->account_id, $setting->data);
 
         if ($setting->data == 1) {
 

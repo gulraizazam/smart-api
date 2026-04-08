@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
@@ -65,20 +65,16 @@ class TransferProduct extends BaseModel
         $product_id = [];
         if ($request['query'] != null) {
             if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->get()->pluck('id');
+                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->pluck('id');
             }
         }
         if (count($where)) {
-            return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
-                $q->whereIn('product_id', $product_id);
-            })
+            return self::where($where)->when($product_id != null, fn ($q) => $q->whereIn('product_id', $product_id))
                 ->where(function ($query) {
                     $query->whereIn('from_location_id', ACL::getUserCentres());
                 })->count();
         } else {
-            return self::when($product_id != null, function ($q) use ($product_id) {
-                $q->whereIn('product_id', $product_id);
-            })
+            return self::when($product_id != null, fn ($q) => $q->whereIn('product_id', $product_id))
                 ->where(function ($query) {
                     $query->whereIn('from_location_id', ACL::getUserCentres());
                 })->count();
@@ -100,21 +96,17 @@ class TransferProduct extends BaseModel
 
         if ($request['query'] != null) {
             if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->get()->pluck('id');
+                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->pluck('id');
             }
         }
         if (count($where)) {
-            return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
-                return $q->whereIn('product_id', $product_id);
-            })
+            return self::where($where)->when($product_id != null, fn ($q) => $q->whereIn('product_id', $product_id))
                 ->where(function ($query) {
                     $query->whereIn('from_location_id', ACL::getUserCentres());
                 })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-            return self::when($product_id != null, function ($q) use ($product_id) {
-                return $q->whereIn('product_id', $product_id);
-            })
+            return self::when($product_id != null, fn ($q) => $q->whereIn('product_id', $product_id))
                 ->where(function ($query) {
                     $query->whereIn('from_location_id', ACL::getUserCentres());
                 })
@@ -136,9 +128,7 @@ class TransferProduct extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -310,7 +300,7 @@ class TransferProduct extends BaseModel
                 return collect(['status' => false, 'message' => 'Resource not found.']);
             }
             // Check if child records exists or not, If exist then disallow to delete it.
-            if (self::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
+            if (self::isChildExists($transfer_product->child_product_id, Auth::user()->account_id)) {
                 return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
             }
 

@@ -12,6 +12,7 @@ class SettingResource extends JsonResource
 {
     private static ?SettingsService $settingsService = null;
 
+    #[\Override]
     public function toArray(Request $request): array
     {
         self::$settingsService ??= app(SettingsService::class);

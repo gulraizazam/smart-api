@@ -20,7 +20,7 @@ class CashflowSetting extends Model
             ->where('key', $key)
             ->first();
 
-        return $setting ? $setting->value : $default;
+        return $setting?->value ?? $default;
     }
 
     /**

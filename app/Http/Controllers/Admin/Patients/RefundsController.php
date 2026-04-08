@@ -32,7 +32,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_refund_manage')) {
             return abort(401);
@@ -45,7 +45,7 @@ class RefundsController extends Controller
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
         $locations->prepend('All', '');
 
-        $filters = Filters::all(Auth::User()->id, 'patient_refunds');
+        $filters = Filters::all(Auth::user()->id, 'patient_refunds');
 
         if ($patient) {
             return view('admin.patients.card.refunds.index', compact('patient', 'package', 'locations', 'filters'));
@@ -60,7 +60,7 @@ class RefundsController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('patients_refund_manage')) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -70,7 +70,7 @@ class RefundsController extends Controller
         if ($request->get('action')) {
             $action = $request->get('action');
             if (isset($action[0]) && $action[0] == 'filter_cancel') {
-                Filters::flush(Auth::User()->id, 'patient_refunds');
+                Filters::flush(Auth::user()->id, 'patient_refunds');
             } elseif ($action == 'filter') {
                 $apply_filter = true;
             }
@@ -80,14 +80,14 @@ class RefundsController extends Controller
         $records['data'] = [];
 
         // Get Total Records
-        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, 'patient_refunds');
+        $iTotalRecords = Packages::getTotalRecords($request, Auth::user()->account_id, $id, $apply_filter, 'patient_refunds');
 
-        $iDisplayLength = intval($request->get('length'));
+        $iDisplayLength = (int) $request->get('length');
         $iDisplayLength = $iDisplayLength < 0 ? $iTotalRecords : $iDisplayLength;
-        $iDisplayStart = intval($request->get('start'));
-        $sEcho = intval($request->get('draw'));
+        $iDisplayStart = (int) $request->get('start');
+        $sEcho = (int) $request->get('draw');
 
-        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, 'patient_refunds');
+        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, $apply_filter, 'patient_refunds');
 
         if ($packages) {
             foreach ($packages as $package) {
@@ -137,7 +137,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function refund_create(int $id): mixed
+    public function refund_create(int $id): \Illuminate\View\View
     {
 
         if (! Gate::allows('patients_refund_refund')) {
@@ -251,7 +251,7 @@ class RefundsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('patients_refund_refund')) {
             return abort(401);
@@ -268,7 +268,7 @@ class RefundsController extends Controller
 
         $package_information = Packages::find($request->package_id);
 
-        if (Refunds::createRecord($request, Auth::User()->account_id)) {
+        if (Refunds::createRecord($request, Auth::user()->account_id)) {
 
             return response()->json([
                 'status' => 1,
@@ -291,7 +291,7 @@ class RefundsController extends Controller
      *
      * @return information of patient ledger
      */
-    public function detail(int $id): mixed
+    public function detail(int $id): \Illuminate\View\View
     {
 
         if (! Gate::allows('refunds_manage') || ! Gate::allows('users_manage')) {
@@ -312,7 +312,7 @@ class RefundsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyFields(Request $request): mixed
+    protected function verifyFields(Request $request): \Illuminate\Contracts\Validation\Validator
     {
         return $validator = Validator::make($request->all(), [
             'refund_amount' => 'required',

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Reports;
 
+use App\Enums\AppointmentType;
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointmentimage;
@@ -201,7 +202,7 @@ class Appointments
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (! in_array($recod->created_by, $created_byArray)) {
+                if (! in_array($recod->created_by, $created_byArray, true)) {
                     $created_byArray[] = $recod->created_by;
                     $data[$recod->created_by] = [
                         'id' => $recod->created_by,
@@ -313,7 +314,7 @@ class Appointments
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (! in_array($recod->referred_by, $created_byArray)) {
+                if (! in_array($recod->referred_by, $created_byArray, true)) {
                     $created_byArray[] = $recod->referred_by;
                     $data[$recod->referred_by] = [
                         'id' => $recod->created_by,
@@ -415,7 +416,7 @@ class Appointments
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (! in_array($recod->created_by, $created_byArray)) {
+                if (! in_array($recod->created_by, $created_byArray, true)) {
                     $created_byArray[] = $recod->created_by;
                     $data[$recod->created_by] = [
                         'id' => $recod->created_by,
@@ -590,7 +591,7 @@ class Appointments
                 if (isset($data['service_id']) && $data['service_id']) {
                     $service_info = Services::find($data['service_id']);
                     if (! $service_info->parent_id && ! $service_info->end_node && $service_info->active == '1') {
-                        $services = \App\Models\Appointments::getNodeServices($data['service_id'], Auth::User()->account_id, true, true);
+                        $services = \App\Models\Appointments::getNodeServices($data['service_id'], Auth::user()->account_id, true, true);
                         if (count($services) > 1) {
                             foreach ($services as $key => $service) {
                                 $ids[] = $key;
@@ -1018,7 +1019,7 @@ class Appointments
                 'centre' => $appointment->location->name,
                 'service' => $appointment->service->name,
                 'status' => $appointment->appointment_status_base->name,
-                'type' => ($appointment->appointment_type_id === 1) ? config('constants.Consultancy') : config('constants.Service'),
+                'type' => ($appointment->appointment_type_id === AppointmentType::Consultancy->value) ? config('constants.Consultancy') : config('constants.Service'),
                 'consultancy_type' => $consultancy_type,
                 'created_at' => $appointment->created_at,
                 'created_by' => $appointment->user->name,
@@ -1033,7 +1034,7 @@ class Appointments
                 $reportData[$appointment->id]['invoice'] = 'No';
             }
 
-            if ($appointment->appointment_type_id === 1) {
+            if ($appointment->appointment_type_id === AppointmentType::Consultancy->value) {
                 if (Medical::where('appointment_id', '=', $appointment->id)->exists()) {
                     $reportData[$appointment->id]['medical_form'] = 'Yes';
                 } else {

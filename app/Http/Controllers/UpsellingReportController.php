@@ -17,21 +17,21 @@ class UpsellingReportController extends Controller
     ) {
     }
 
-    public function index()
+    public function index(): \Illuminate\View\View
     {
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return view('admin.reports.upselling', get_defined_vars());
+        return view('admin.reports.upselling', compact('locations'));
     }
 
-    public function consultantRevenueReport()
+    public function consultantRevenueReport(): \Illuminate\View\View
     {
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return view('admin.reports.consultant_revenue', get_defined_vars());
+        return view('admin.reports.consultant_revenue', compact('locations'));
     }
 
-    public function loadUpsellingReport(Request $request)
+    public function loadUpsellingReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
             'centre_id' => 'required|integer|exists:locations,id',
@@ -75,7 +75,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.upsellingReport', compact('reportData'));
     }
 
-    public function doctorUpsellingDetail($doctorId)
+    public function doctorUpsellingDetail(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('upselling_filters');
 
@@ -93,7 +93,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.doctorUpsellingDetail', $data);
     }
 
-    public function doctorConsultantBreakdown($doctorId)
+    public function doctorConsultantBreakdown(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('upselling_filters');
 
@@ -115,7 +115,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantSellerDetail', $data);
     }
 
-    public function loadConsultantRevenueReport(Request $request)
+    public function loadConsultantRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
             'centre_id' => 'required|integer|exists:locations,id',
@@ -150,7 +150,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantRevenueReport', compact('reportData'));
     }
 
-    public function consultantRevenueDetail($consultantId)
+    public function consultantRevenueDetail(int $consultantId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('consultant_revenue_filters');
 
@@ -163,7 +163,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantRevenueDetail', $data);
     }
 
-    public function getDoctorUpsellingData(Request $request)
+    public function getDoctorUpsellingData(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $centreId = $request->centre_id;
@@ -190,7 +190,7 @@ class UpsellingReportController extends Controller
         }
     }
 
-    public function doctorConsultantBreakdown1($sellerId)
+    public function doctorConsultantBreakdown1(int $sellerId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('upselling_filters');
 
@@ -207,7 +207,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.doctorConsultantBreakdown', $data);
     }
 
-    public function consultantSellerDetail($consultantId, $sellerId)
+    public function consultantSellerDetail(int $consultantId, int $sellerId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('upselling_filters');
 
@@ -228,7 +228,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantSellerDetail', $data);
     }
 
-    public function downloadDoctorUpsellingExcel(Request $request)
+    public function downloadDoctorUpsellingExcel(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         try {
             $period = $request->period ?: 'september2025';
@@ -253,7 +253,7 @@ class UpsellingReportController extends Controller
         }
     }
 
-    public function getDoctorPaymentBasedUpsellingData(Request $request)
+    public function getDoctorPaymentBasedUpsellingData(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $centreId = $request->centre_id;
@@ -289,11 +289,11 @@ class UpsellingReportController extends Controller
     /**
      * Display the Doctor Revenue Report page
      */
-    public function doctorRevenueReport()
+    public function doctorRevenueReport(): \Illuminate\View\View
     {
-        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return view('admin.reports.doctor_revenue', get_defined_vars());
+        return view('admin.reports.doctor_revenue', compact('locations'));
     }
 
     /**
@@ -301,7 +301,7 @@ class UpsellingReportController extends Controller
      * Flow: package_advances (cash_flow='in', cash_amount > 0) -> packages -> appointments -> doctors
      * Date filter applied to package_advances.created_at
      */
-    public function loadDoctorRevenueReport(Request $request)
+    public function loadDoctorRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
             'centre_id' => 'required|integer|exists:locations,id',
@@ -338,7 +338,7 @@ class UpsellingReportController extends Controller
     /**
      * Doctor Revenue Detail - shows individual payments for a specific doctor
      */
-    public function doctorRevenueDetail($doctorId)
+    public function doctorRevenueDetail(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         $filters = session('doctor_revenue_filters');
 

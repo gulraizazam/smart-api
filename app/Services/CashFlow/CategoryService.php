@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\RequestStatus;
 use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\CategoryRequest;
 use App\Models\CashFlow\ExpenseCategory;
@@ -18,7 +19,7 @@ class CategoryService
     /**
      * Get all categories for account.
      */
-    public function getAll(int $accountId)
+    public function getAll(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         return ExpenseCategory::forAccount($accountId)
             ->sorted()
@@ -28,7 +29,7 @@ class CategoryService
     /**
      * Get active categories for dropdown.
      */
-    public function getActive(int $accountId)
+    public function getActive(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         return ExpenseCategory::forAccount($accountId)
             ->active()
@@ -116,7 +117,7 @@ class CategoryService
     /**
      * Get category requests.
      */
-    public function getCategoryRequests(int $accountId, ?string $status = null, int $perPage = 25)
+    public function getCategoryRequests(int $accountId, ?string $status = null, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = CategoryRequest::forAccount($accountId)
             ->with('requester:id,name')
@@ -139,7 +140,7 @@ class CategoryService
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'requested_by' => \Illuminate\Support\Facades\Auth::id(),
-            'status' => CategoryRequest::STATUS_PENDING,
+            'status' => RequestStatus::Pending,
         ]);
 
         $this->auditService->log(
@@ -166,7 +167,7 @@ class CategoryService
     {
         $catRequest = CategoryRequest::forAccount($accountId)->findOrFail($requestId);
 
-        if ($catRequest->status !== CategoryRequest::STATUS_PENDING) {
+        if ($catRequest->status !== RequestStatus::Pending) {
             throw new \App\Exceptions\CashflowException('Only pending requests can be approved.');
         }
 
@@ -177,7 +178,7 @@ class CategoryService
             ], $accountId);
 
             $catRequest->update([
-                'status' => CategoryRequest::STATUS_APPROVED,
+                'status' => RequestStatus::Approved,
                 'category_id' => $category->id,
             ]);
 
@@ -200,12 +201,12 @@ class CategoryService
     {
         $catRequest = CategoryRequest::forAccount($accountId)->findOrFail($requestId);
 
-        if ($catRequest->status !== CategoryRequest::STATUS_PENDING) {
+        if ($catRequest->status !== RequestStatus::Pending) {
             throw new \App\Exceptions\CashflowException('Only pending requests can be dismissed.');
         }
 
         $catRequest->update([
-            'status' => CategoryRequest::STATUS_DISMISSED,
+            'status' => RequestStatus::Dismissed,
             'admin_notes' => $adminNotes,
         ]);
 

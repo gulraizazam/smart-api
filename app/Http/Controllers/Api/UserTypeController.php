@@ -18,10 +18,7 @@ class UserTypeController extends Controller
 
     public function __construct(
         private readonly UserTypeService $userTypeService,
-    ) {
-
-
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {

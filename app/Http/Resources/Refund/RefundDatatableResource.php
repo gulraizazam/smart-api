@@ -16,6 +16,7 @@ final class RefundDatatableResource extends JsonResource
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function toArray(Request $request): array
     {
         // Data is already a formatted array from the service layer

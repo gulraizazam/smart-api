@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
+use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,12 +37,16 @@ class Patients extends BaseModel
         'account_id', 'created_by', 'updated_by', 'image_src',
     ];
 
-    protected $casts = [
-        'active' => 'boolean',
-        'dob' => 'date',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'active' => 'boolean',
+            'dob' => 'date',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+        ];
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -239,7 +244,7 @@ class Patients extends BaseModel
     {
         $users = collect();
 
-        if (stripos($name, 'C-') !== false) {
+        if (str_contains(strtolower($name), 'c-')) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
             $users = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId)
@@ -253,7 +258,7 @@ class Patients extends BaseModel
         }
 
         if ($users->isEmpty()) {
-            $search = GeneralFunctions::patientSearch($name);
+            $search = PatientSearchService::patientSearch($name);
             $phoneNumeric = GeneralFunctions::clearnString($search);
 
             $query = self::patientsOnly()->active()->forAccount($accountId);
@@ -286,7 +291,7 @@ class Patients extends BaseModel
 
     public static function getPatientidAjax(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        if (stripos($name, 'C-') !== false) {
+        if (str_contains(strtolower($name), 'c-')) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
             return self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId)
@@ -304,7 +309,7 @@ class Patients extends BaseModel
             }
         }
 
-        $search = GeneralFunctions::patientSearch($name);
+        $search = PatientSearchService::patientSearch($name);
         $phoneNumeric = GeneralFunctions::clearnString($search);
 
         $query = self::patientsOnly()->active()->forAccount($accountId);

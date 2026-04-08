@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -21,11 +22,15 @@ class Vendor extends Model
         'is_active', 'notes', 'created_by',
     ];
 
-    protected $casts = [
-        'opening_balance' => 'decimal:2',
-        'cached_balance' => 'decimal:2',
-        'is_active' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'opening_balance' => 'decimal:2',
+            'cached_balance' => 'decimal:2',
+            'is_active' => 'boolean',
+        ];
+    }
 
     // Payment terms constants
     const TERMS_UPFRONT = 'upfront';
@@ -60,12 +65,12 @@ class Vendor extends Model
 
     // Scopes
 
-    public function scopeActive($query)
+    public function scopeActive($query): Builder
     {
         return $query->where('is_active', 1);
     }
 
-    public function scopeForAccount($query, int $accountId)
+    public function scopeForAccount($query, int $accountId): Builder
     {
         return $query->where('account_id', $accountId);
     }

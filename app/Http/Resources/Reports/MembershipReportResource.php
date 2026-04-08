@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class MembershipReportResource extends JsonResource
 {
+    #[\Override]
     public function toArray(Request $request): array
     {
         $data = is_array($this->resource) ? $this->resource : (array) $this->resource;

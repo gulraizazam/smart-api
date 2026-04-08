@@ -33,10 +33,10 @@ class AppointmentsElastic
             $hosts = [
                 // This is effectively equal to: "https://username:password!#$?*abc@foo.com:9200/elastic"
                 [
-                    'host' => env('ELASTICSEARCH_HOST'),
-                    'port' => env('ELASTICSEARCH_PORT'),
-                    'user' => env('ELASTICSEARCH_USER'),
-                    'pass' => env('ELASTICSEARCH_PASS'),
+                    'host' => config('elasticsearch.host'),
+                    'port' => config('elasticsearch.port'),
+                    'user' => config('elasticsearch.user'),
+                    'pass' => config('elasticsearch.pass'),
                 ],
             ];
 
@@ -60,7 +60,7 @@ class AppointmentsElastic
         $elastic_object = self::prepareObject($appointment);
 
         $data = [
-            'index' => env('ELASTICSEARCH_INDEX'),
+            'index' => config('elasticsearch.index'),
             'type' => 'appointments',
             'id' => $elastic_object['id'],
             'body' => $elastic_object['body'],
@@ -90,7 +90,7 @@ class AppointmentsElastic
         self::__init();
 
         $data = [
-            'index' => env('ELASTICSEARCH_INDEX'),
+            'index' => config('elasticsearch.index'),
             'type' => 'appointments',
             'id' => $id,
         ];
@@ -115,11 +115,8 @@ class AppointmentsElastic
     public static function getAllObjects($match, $filter, $iDisplayStart, $iDisplayLength, $orderBy, $order)
     {
         self::__init();
-        //dd($filter);
-        //dd($match);
-
         $params = [
-            'index' => env('ELASTICSEARCH_INDEX'),
+            'index' => config('elasticsearch.index'),
             'type' => 'appointments',
             'body' => [
                 'track_total_hits' => true,
@@ -145,10 +142,6 @@ class AppointmentsElastic
                 'filter' => $filter,
             ];
         }
-
-        //        echo '<pre>';
-        //        print_r($params);
-        //        exit;
 
         try {
             if (self::$elastic_client) {
@@ -243,7 +236,7 @@ class AppointmentsElastic
                  */
                 'appointment_type_id' => $appointment->appointment_type_id,
                 'consultancy_type' => $appointment->consultancy_type,
-                'coming_from' => $appointment->coming_from ? $appointment->coming_from : null,
+                'coming_from' => $appointment->coming_from ?: null,
                 'appointment_type_name' => $appointment->appointment_type->name,
 
                 /**

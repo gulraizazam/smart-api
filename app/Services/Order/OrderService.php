@@ -493,10 +493,8 @@ class OrderService
         $productId = $this->resolveProductFilter($params);
 
         return Order::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where))
-            ->when($productId !== null && count($productId) > 0, function ($q) use ($productId) {
-                return $q->whereHas('orderDetail.product', fn ($q) => $q->whereIn('id', $productId));
-            })
+            ->when(!empty($where), fn ($q) => $q->where($where))
+            ->when($productId !== null && !empty($productId), fn ($q) => $q->whereHas('orderDetail.product', fn ($q) => $q->whereIn('id', $productId)))
             ->where(fn ($query) => $query->whereIn('location_id', ACL::getUserCentres()))
             ->where('order_type', 'sale');
     }

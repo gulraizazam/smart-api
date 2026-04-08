@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Auth;
 class Voucher extends Model
 {
     use HasFactory;
-    protected $guarded =[];
+    protected $fillable = [
+        'slug',
+        'name',
+        'start',
+        'end',
+        'active',
+        'account_id',
+    ];
 
     public function voucherHasLocations(): HasMany
     {
@@ -97,7 +104,7 @@ class Voucher extends Model
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Voucher::isChildExists($id, Auth::User()->account_id)) {
+        if (Voucher::isChildExists($id, Auth::user()->account_id)) {
 
             flash('Child records exist, unable to delete resource.')->error()->important();
         }

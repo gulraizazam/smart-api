@@ -130,7 +130,7 @@
                                                         @php($tmp_id = ($id * 1))
                                                     @endif
                                                     <option value="@if($id < 0){{ ($id * -1) }}@else{{ $id }}@endif">@if($id < 0)
-                                                            <b>{!! $service['name'] !!}</b>@else{!! $service['name'] !!}@endif</option>
+                                                            <b>{{ $service['name'] }}</b>@else{{ $service['name'] }}@endif</option>
                                                 @endforeach
                                             </select>
                                             <span id="service_id_handler"></span>

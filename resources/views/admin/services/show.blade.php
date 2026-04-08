@@ -141,7 +141,7 @@
                             <div class="col-md-12">
                                 <h4 class="mb-4">Description</h4>
                                 <div class="service-description">
-                                    {!! $service->description !!}
+                                    {{ $service->description }}
                                 </div>
                             </div>
                         </div>

@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Gate;
 
 class FeedbackDatatableRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('feedbacks_manage');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

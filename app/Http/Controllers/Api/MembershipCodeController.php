@@ -13,15 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class MembershipCodeController extends Controller
 {
-    protected MembershipCodeService $codeService;
-
-
-    public function __construct(MembershipCodeService $codeService)
-    {
-        $this->codeService = $codeService;
-
-
-    }
+    public function __construct(
+        protected readonly MembershipCodeService $codeService,
+    ) {}
 
     /**
      * Generate membership codes in bulk
@@ -29,7 +23,7 @@ class MembershipCodeController extends Controller
      * @param GenerateCodesRequest $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function generateCodes(GenerateCodesRequest $request): mixed
+    public function generateCodes(GenerateCodesRequest $request): \Illuminate\Http\JsonResponse
     {
         if (!Gate::allows('memberships_create')) {
             return $this->errorResponse('You are not authorized to generate membership codes.', 401);
@@ -61,7 +55,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function previewCodes(Request $request): mixed
+    public function previewCodes(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $request->validate([
@@ -110,7 +104,8 @@ class MembershipCodeController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
@@ -120,7 +115,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getAvailableCodes(Request $request): mixed
+    public function getAvailableCodes(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $request->validate([
@@ -137,7 +132,8 @@ class MembershipCodeController extends Controller
                 'codes' => $codes
             ]);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
@@ -147,7 +143,7 @@ class MembershipCodeController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function searchCodes(Request $request): mixed
+    public function searchCodes(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $request->validate([
@@ -167,7 +163,8 @@ class MembershipCodeController extends Controller
                 'count' => $codes->count()
             ]);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 }

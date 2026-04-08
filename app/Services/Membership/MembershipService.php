@@ -21,7 +21,6 @@ use App\Models\StudentVerification;
 use App\Models\User;
 use App\Models\UserHasLocations;
 use Carbon\Carbon;
-use DateTime;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -58,14 +57,12 @@ final class MembershipService
     {
         $cacheKey = "patient_active_membership_{$patientId}";
 
-        return Cache::remember($cacheKey, 300, function () use ($patientId) {
-            return Membership::with(['membershipType'])
+        return Cache::remember($cacheKey, 300, fn() => Membership::with(['membershipType'])
                 ->where('patient_id', $patientId)
                 ->active()
                 ->notExpired()
                 ->orderByDesc('assigned_at')
-                ->first();
-        });
+                ->first());
     }
 
     public function getPatientMembershipHistory(int $patientId): Collection
@@ -524,12 +521,10 @@ final class MembershipService
     {
         $cacheKey = "membership_type_{$membershipTypeId}_available_codes";
 
-        return Cache::remember($cacheKey, 1800, function () use ($membershipTypeId) {
-            return Membership::where('membership_type_id', $membershipTypeId)
+        return Cache::remember($cacheKey, 1800, fn() => Membership::where('membership_type_id', $membershipTypeId)
                 ->unassigned()
                 ->active()
-                ->count();
-        });
+                ->count());
     }
 
     public function getAssignedCodesCount(int $membershipTypeId): int
@@ -756,9 +751,7 @@ final class MembershipService
         if ($dateRange) {
             $parts         = explode(' - ', $dateRange);
             $startDateTime = date('Y-m-d 00:00:00', strtotime($parts[0]));
-            $endDateObj    = new DateTime($parts[1]);
-            $endDateObj->setTime(23, 59, 59);
-            $endDateTime = $endDateObj->format('Y-m-d H:i:s');
+            $endDateTime = Carbon::parse($parts[1])->setTime(23, 59, 59)->format('Y-m-d H:i:s');
 
             $where[] = ['memberships.assigned_at', '>=', $startDateTime];
             $where[] = ['memberships.assigned_at', '<=', $endDateTime];

@@ -21,11 +21,15 @@ class PatientNote extends Model
         'is_pinned',
     ];
 
-    protected $casts = [
-        'is_pinned' => 'boolean',
-        'patient_id' => 'integer',
-        'created_by' => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'is_pinned' => 'boolean',
+            'patient_id' => 'integer',
+            'created_by' => 'integer',
+        ];
+    }
 
     /*
     |--------------------------------------------------------------------------

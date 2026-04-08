@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Gate;
 
 class StoreLeadSourceRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('lead_sources_create');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -22,6 +24,7 @@ class StoreLeadSourceRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

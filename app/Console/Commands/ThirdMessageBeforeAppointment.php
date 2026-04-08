@@ -46,6 +46,7 @@ class ThirdMessageBeforeAppointment extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');

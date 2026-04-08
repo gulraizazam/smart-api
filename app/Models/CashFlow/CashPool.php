@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\Locations;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -20,12 +22,16 @@ class CashPool extends Model
         'opening_balance', 'cached_balance', 'is_active', 'opening_balance_frozen',
     ];
 
-    protected $casts = [
-        'opening_balance' => 'decimal:2',
-        'cached_balance' => 'decimal:2',
-        'is_active' => 'boolean',
-        'opening_balance_frozen' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'opening_balance' => 'decimal:2',
+            'cached_balance' => 'decimal:2',
+            'is_active' => 'boolean',
+            'opening_balance_frozen' => 'boolean',
+        ];
+    }
 
     // Pool types
     const TYPE_BRANCH_CASH = 'branch_cash';
@@ -82,17 +88,17 @@ class CashPool extends Model
 
     // Scopes
 
-    public function scopeActive($query)
+    public function scopeActive($query): Builder
     {
         return $query->where('is_active', 1);
     }
 
-    public function scopeForAccount($query, int $accountId)
+    public function scopeForAccount($query, int $accountId): Builder
     {
         return $query->where('account_id', $accountId);
     }
 
-    public function scopeBranchPools($query)
+    public function scopeBranchPools($query): Builder
     {
         return $query->where('type', self::TYPE_BRANCH_CASH);
     }
@@ -100,15 +106,19 @@ class CashPool extends Model
     /**
      * Get display name with type label.
      */
-    public function getDisplayNameAttribute(): string
+    protected function displayName(): Attribute
     {
-        $typeLabels = [
-            self::TYPE_BRANCH_CASH => 'Branch',
-            self::TYPE_HEAD_OFFICE_CASH => 'Head Office',
-            self::TYPE_BANK_ACCOUNT => 'Bank',
-        ];
+        return Attribute::make(
+            get: function (): string {
+                $typeLabels = [
+                    self::TYPE_BRANCH_CASH => 'Branch',
+                    self::TYPE_HEAD_OFFICE_CASH => 'Head Office',
+                    self::TYPE_BANK_ACCOUNT => 'Bank',
+                ];
 
-        $typeLabel = $typeLabels[$this->type] ?? '';
-        return $this->name . ' (' . $typeLabel . ')';
+                $typeLabel = $typeLabels[$this->type] ?? '';
+                return $this->name . ' (' . $typeLabel . ')';
+            },
+        );
     }
 }

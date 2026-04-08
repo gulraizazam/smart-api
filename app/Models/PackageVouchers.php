@@ -22,6 +22,7 @@ class PackageVouchers extends Model
         'main_service_id',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

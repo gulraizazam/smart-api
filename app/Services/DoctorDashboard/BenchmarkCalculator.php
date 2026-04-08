@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
+use App\Enums\AppointmentType;
 use App\Helpers\DoctorDashboardHelper;
 use App\Models\DoctorGoogleReview;
 use Illuminate\Support\Facades\Cache;
@@ -20,34 +21,16 @@ class BenchmarkCalculator
      */
     const CACHE_TTL = 3600;
 
-    private DoctorIdentifier $doctorIdentifier;
-    private ConversionCalculator $conversionCalculator;
-    private RevenueCalculator $revenueCalculator;
-    private UpsellCalculator $upsellCalculator;
-    private FeedbackCalculator $feedbackCalculator;
-    private ProductRevenueCalculator $productRevenueCalculator;
-    private MembershipCalculator $membershipCalculator;
-    private PatientReturnCalculator $patientReturnCalculator;
-
     public function __construct(
-        DoctorIdentifier $doctorIdentifier,
-        ConversionCalculator $conversionCalculator,
-        RevenueCalculator $revenueCalculator,
-        UpsellCalculator $upsellCalculator,
-        FeedbackCalculator $feedbackCalculator,
-        ProductRevenueCalculator $productRevenueCalculator,
-        MembershipCalculator $membershipCalculator,
-        PatientReturnCalculator $patientReturnCalculator
-    ) {
-        $this->doctorIdentifier = $doctorIdentifier;
-        $this->conversionCalculator = $conversionCalculator;
-        $this->revenueCalculator = $revenueCalculator;
-        $this->upsellCalculator = $upsellCalculator;
-        $this->feedbackCalculator = $feedbackCalculator;
-        $this->productRevenueCalculator = $productRevenueCalculator;
-        $this->membershipCalculator = $membershipCalculator;
-        $this->patientReturnCalculator = $patientReturnCalculator;
-    }
+        private readonly DoctorIdentifier $doctorIdentifier,
+        private readonly ConversionCalculator $conversionCalculator,
+        private readonly RevenueCalculator $revenueCalculator,
+        private readonly UpsellCalculator $upsellCalculator,
+        private readonly FeedbackCalculator $feedbackCalculator,
+        private readonly ProductRevenueCalculator $productRevenueCalculator,
+        private readonly MembershipCalculator $membershipCalculator,
+        private readonly PatientReturnCalculator $patientReturnCalculator,
+    ) {}
 
     /**
      * Calculate best-in-network benchmarks for all KPIs.
@@ -67,9 +50,7 @@ class BenchmarkCalculator
         $cacheKey = $this->buildCacheKey($startDate, $accountId);
 
         // Get or compute the raw best values (shared across all doctors)
-        $bestValues = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($startDate, $endDate, $accountId) {
-            return $this->computeAllBestValues($startDate, $endDate, $accountId);
-        });
+        $bestValues = Cache::remember($cacheKey, self::CACHE_TTL, fn() => $this->computeAllBestValues($startDate, $endDate, $accountId));
 
         if (empty($bestValues) || ($bestValues['doctor_count'] ?? 0) === 0) {
             return $this->emptyResult();
@@ -244,7 +225,7 @@ class BenchmarkCalculator
             ->whereIn('ps.sold_by', $doctorIds)
             // Exclude only self-consultation sales (type=1 where seller == consulting doctor)
             ->where(function ($q) {
-                $q->where('a.appointment_type_id', '!=', 1)
+                $q->where('a.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                   ->orWhereColumn('a.doctor_id', '!=', 'ps.sold_by');
             })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])

@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ConsultancyInvoiceResource extends JsonResource
 {
+    #[\Override]
     public function toArray(Request $request): array
     {
         return [

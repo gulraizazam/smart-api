@@ -299,7 +299,7 @@ class GeneralRevenueDetailReport
             return match (true) {
                 $paymentName === 'Cash' => [$advance->cash_amount, 0, 0, 0],
                 $paymentName === 'Card' => [0, $advance->cash_amount, 0, 0],
-                in_array($paymentName, ['Bank/Wire Transfer', 'Bank']) => [0, 0, $advance->cash_amount, 0],
+                in_array($paymentName, ['Bank/Wire Transfer', 'Bank'], true) => [0, 0, $advance->cash_amount, 0],
                 default => [$advance->cash_amount, 0, 0, 0],
             };
         }
@@ -315,7 +315,7 @@ class GeneralRevenueDetailReport
             return match (true) {
                 $paymentName === 'Cash' => [$advance->cash_amount, 0, 0],
                 $paymentName === 'Card' => [0, $advance->cash_amount, 0],
-                in_array($paymentName, ['Bank/Wire Transfer', 'Bank']) => [0, 0, $advance->cash_amount],
+                in_array($paymentName, ['Bank/Wire Transfer', 'Bank'], true) => [0, 0, $advance->cash_amount],
                 default => [$advance->cash_amount, 0, 0],
             };
         }

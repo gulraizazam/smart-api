@@ -26,7 +26,7 @@ class AppointmentsController extends Controller
         protected readonly TreatmentService $treatmentService,
     ) {}
 
-    public function index(Request $request): mixed
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -57,7 +57,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function store(StoreAppointmentRequest $request): mixed
+    public function store(StoreAppointmentRequest $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('create', Appointments::class);
@@ -75,7 +75,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function show(int $id): mixed
+    public function show(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -93,7 +93,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function update(UpdateAppointmentRequest $request, int $id): mixed
+    public function update(UpdateAppointmentRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('update', Appointments::class);
@@ -111,7 +111,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('delete', Appointments::class);
@@ -129,7 +129,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): mixed
+    public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('updateStatus', Appointments::class);
@@ -147,12 +147,12 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function updateSchedule(Request $request): mixed
+    public function updateSchedule(Request $request): \Illuminate\Http\JsonResponse
     {
         return $this->schedule($request);
     }
 
-    public function schedule(Request $request): mixed
+    public function schedule(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('manageSchedule', Appointments::class);
@@ -185,7 +185,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function scheduled(Request $request): mixed
+    public function scheduled(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -295,7 +295,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function nonScheduled(Request $request): mixed
+    public function nonScheduled(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -318,7 +318,7 @@ class AppointmentsController extends Controller
         }
     }
 
-    public function statistics(Request $request): mixed
+    public function statistics(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $this->authorize('view', Appointments::class);
@@ -509,12 +509,10 @@ class AppointmentsController extends Controller
 
         $exceptions = \App\Models\WorkingDayException::where('account_id', $accountId)
             ->get()
-            ->map(function ($exc) {
-                return [
+            ->map(fn($exc) => [
                     'date' => $exc->exception_date->format('Y-m-d'),
                     'is_working' => $exc->is_working,
-                ];
-            })
+                ])
             ->toArray();
 
         return $exceptions;

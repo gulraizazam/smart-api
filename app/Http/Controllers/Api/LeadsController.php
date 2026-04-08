@@ -29,16 +29,9 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class LeadsController extends Controller
 {
-    protected int $success;
-    protected int $error;
-    protected int $unauthorized;
-
     public function __construct(
         protected readonly LeadService $leadService,
-    ) {
-
-
-    }
+    ) {}
 
     // =========================================================================
     // Datatable
@@ -329,7 +322,8 @@ class LeadsController extends Controller
 
             return $this->successResponse($message);
         } catch (\Exception $e) {
-            return $this->errorResponse($e->getMessage(), 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 

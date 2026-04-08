@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
+use App\Enums\AppointmentType;
 use App\Helpers\DoctorDashboardHelper;
 use App\Models\DoctorHasLocations;
 use App\Models\User;
@@ -143,7 +144,7 @@ class DoctorIdentifier
             ->join('packages as p', 'pa.package_id', '=', 'p.id')
             ->join('appointments as a', function ($join) use ($doctorId) {
                 $join->on('p.patient_id', '=', 'a.patient_id')
-                    ->where('a.appointment_type_id', '=', 1)
+                    ->where('a.appointment_type_id', '=', AppointmentType::Consultancy->value)
                     ->where('a.doctor_id', '=', $doctorId);
             })
             ->whereIn('a.location_id', $locationIds)

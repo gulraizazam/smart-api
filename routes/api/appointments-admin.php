@@ -5,6 +5,9 @@
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController;
+use App\Http\Controllers\Admin\Appointments\AppointmentLookupController;
+use App\Http\Controllers\Admin\Appointments\AppointmentScheduleController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\PackagesController;
@@ -17,14 +20,14 @@ use App\Http\Controllers\Api\RefundsController as ApiRefundsController;
 use Illuminate\Support\Facades\Route;
 
     /*Appointment routes*/
-    Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
-    Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
-    Route::post('appointments/load-consultant-doctors', [AppointmentsController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
-    Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
-    Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
-    Route::get('appointments/getpackageprice', [AppointmentsController::class, 'getpackageprice'])->name('appointments.getpackageprice');
+    Route::post('appointments/load-locations', [AppointmentLookupController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
+    Route::post('appointments/load-doctors', [AppointmentLookupController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+    Route::post('appointments/load-consultant-doctors', [AppointmentLookupController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
+    Route::post('appointments/update/schedule', [AppointmentScheduleController::class, 'updateSchedule'])->name('appointments.updateSchedule');
+    Route::get('appointments/schedule/get', [AppointmentScheduleController::class, 'getSchedule'])->name('appointments.get_schedule');
+    Route::get('appointments/getpackageprice', [AppointmentInvoiceController::class, 'getpackageprice'])->name('appointments.getpackageprice');
     Route::resource('appointments', AppointmentsController::class);
-    Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
+    Route::post('appointments/load/lead', [AppointmentLookupController::class, 'loadLeadData'])->name('appointments.load_lead');
 
     // Patients API Routes (Optimized)
     Route::prefix('patients')->name('patients.')->group(function () {

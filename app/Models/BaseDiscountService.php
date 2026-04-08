@@ -20,11 +20,15 @@ class BaseDiscountService extends Model
         'bundle_id',
     ];
 
-    protected $casts = [
-        'service_price' => 'decimal:2',
-        'sessions'      => 'integer',
-        'is_category'   => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'service_price' => 'decimal:2',
+            'sessions'      => 'integer',
+            'is_category'   => 'boolean',
+        ];
+    }
 
     // ── Relationships ────────────────────────────────────
 

@@ -33,7 +33,7 @@ class CancellationReasons extends BaseModel
      */
     public static function getActiveSorted()
     {
-        return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+        return self::where(['active' => 1])->OrderBy('sort_no', 'asc')->pluck('name', 'id');
     }
 
     /**
@@ -227,7 +227,7 @@ class CancellationReasons extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (CancellationReasons::isChildExists($id, Auth::User()->account_id)) {
+        if (CancellationReasons::isChildExists($id, Auth::user()->account_id)) {
             flash('Child records exist, unable to delete resource')->error()->important();
 
             return redirect()->route('admin.cancellation_reasons.index');

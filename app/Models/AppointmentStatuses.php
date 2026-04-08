@@ -35,9 +35,9 @@ class AppointmentStatuses extends BaseModel
     public static function getActiveSorted($appointment_status_id, $account_id)
     {
         if ($appointment_status_id) {
-            return self::where(['active' => 1, 'parent_id' => $appointment_status_id, 'account_id' => $account_id])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1, 'parent_id' => $appointment_status_id, 'account_id' => $account_id])->OrderBy('sort_no', 'asc')->pluck('name', 'id');
         } else {
-            return self::where(['active' => 1, 'account_id' => $account_id])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1, 'account_id' => $account_id])->OrderBy('sort_no', 'asc')->pluck('name', 'id');
         }
     }
 
@@ -47,7 +47,7 @@ class AppointmentStatuses extends BaseModel
     public static function getBaseActiveSorted($account_id, $exclude_appointment_status_id = false)
     {
         if ($exclude_appointment_status_id) {
-            return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->pluck('name', 'id');
         }
 
         return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])
@@ -169,17 +169,17 @@ class AppointmentStatuses extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'appointment_statuses', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'appointment_statuses', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'appointment_statuses', 'account_id');
+                Filters::forget(Auth::user()->id, 'appointment_statuses', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'appointment_statuses', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'appointment_statuses', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'appointment_statuses', 'account_id'),
+                        Filters::get(Auth::user()->id, 'appointment_statuses', 'account_id'),
                     ];
                 }
             }
@@ -190,16 +190,16 @@ class AppointmentStatuses extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'appointment_statuses', 'appointment_status_name', $filters['name']);
+            Filters::put(Auth::user()->id, 'appointment_statuses', 'appointment_status_name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'appointment_statuses', 'appointment_status_name');
+                Filters::forget(Auth::user()->id, 'appointment_statuses', 'appointment_status_name');
             } else {
-                if (Filters::get(Auth::User()->id, 'appointment_statuses', 'appointment_status_name')) {
+                if (Filters::get(Auth::user()->id, 'appointment_statuses', 'appointment_status_name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'appointment_statuses', 'appointment_status_name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'appointment_statuses', 'appointment_status_name').'%',
                     ];
                 }
             }
@@ -369,7 +369,7 @@ class AppointmentStatuses extends BaseModel
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (AppointmentStatuses::isChildExists($id, Auth::User()->account_id)) {
+        if (AppointmentStatuses::isChildExists($id, Auth::user()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $record = $appointment_statuse->delete();
@@ -484,9 +484,9 @@ class AppointmentStatuses extends BaseModel
         if (count($skip_ids)) {
             $records = self::where($where)
                 ->whereNotIn('id', $skip_ids)
-                ->get()->pluck('name', 'id');
+                ->pluck('name', 'id');
         } else {
-            $records = self::where($where)->get()->pluck('name', 'id');
+            $records = self::where($where)->pluck('name', 'id');
         }
 
         if ($prepend_dropdown_text) {

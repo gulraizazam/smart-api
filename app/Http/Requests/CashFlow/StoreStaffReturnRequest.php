@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class StoreStaffReturnRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_staff_return_create');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

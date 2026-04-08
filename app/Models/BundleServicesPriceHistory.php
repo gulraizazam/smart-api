@@ -25,6 +25,7 @@ class BundleServicesPriceHistory extends Model
         'account_id',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

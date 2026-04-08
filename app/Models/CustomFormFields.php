@@ -46,7 +46,7 @@ class CustomFormFields extends BaseModel
             $cityId = [$cityId];
         }
         if ($cityId) {
-            return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
+            return self::whereIn('id', $cityId)->pluck('name', 'id');
         } else {
             return self::get()->pluck('name', 'id');
         }
@@ -187,6 +187,7 @@ class CustomFormFields extends BaseModel
     /**
      * Model boot for database events
      */
+    #[\Override]
     public static function boot()
     {
 

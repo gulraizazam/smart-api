@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class Authenticate extends Middleware
 {
+    #[\Override]
     protected function redirectTo(Request $request): ?string
     {
         if (! $request->expectsJson()) {

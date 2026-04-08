@@ -142,7 +142,7 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
                 $sheet->getRowDimension(1)->setRowHeight(30);
 
                 foreach (range('A', 'L') as $col) {
-                    $width = in_array($col, ['I']) ? 40 : 20;
+                    $width = in_array($col, ['I'], true) ? 40 : 20;
                     $sheet->getColumnDimension($col)->setWidth($width);
                 }
             },

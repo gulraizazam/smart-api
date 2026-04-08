@@ -28,23 +28,24 @@ class AppointmentImageService
         foreach ($files as $fileupload) {
             if ($fileupload) {
                 $file = $fileupload;
-                $ext = $file->getClientOriginalExtension();
-                $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
-                $file->storeAs('public/appointment_image', $fileName);
+                $ext = strtolower($file->getClientOriginalExtension());
 
-                if ($ext == 'jpg' || $ext == 'jpeg' || $ext == 'png' || $ext == 'gif') {
-                    $data['image_name'] = $file->getClientOriginalName();
-                    $data['image_path'] = $fileName;
-                    $data['type'] = $typeLabel;
-                    $data['appointment_id'] = $appointmentId;
-                    $appointment = Appointmentimage::createRecord($data, $appointmentId);
-                } else {
+                if (!in_array($ext, ['jpg', 'jpeg', 'png', 'gif'], true)) {
                     return [
                         'success' => false,
-                        'error' => 'JPG , JPEG, PNG, GIF Only Allow.',
+                        'error' => 'JPG, JPEG, PNG, GIF Only Allowed.',
                         'id' => $appointmentId,
                     ];
                 }
+
+                $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
+                $file->storeAs('public/appointment_image', $fileName);
+
+                $data['image_name'] = $file->getClientOriginalName();
+                $data['image_path'] = $fileName;
+                $data['type'] = $typeLabel;
+                $data['appointment_id'] = $appointmentId;
+                $appointment = Appointmentimage::createRecord($data, $appointmentId);
             } else {
                 return [
                     'success' => false,

@@ -16,6 +16,7 @@ class ApplicationUserResource extends JsonResource
     public static array $locationLookup = [];
     public static array $locationIdsByUser = [];
 
+    #[\Override]
     public function toArray(Request $request): array
     {
         $canViewContact = Gate::allows('contact');

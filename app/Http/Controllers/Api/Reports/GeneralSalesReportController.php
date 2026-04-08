@@ -63,7 +63,7 @@ class GeneralSalesReportController extends Controller
         }
     }
 
-    private function transformRows(ReportType $reportType, array $result): mixed
+    private function transformRows(ReportType $reportType, array $result): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
         return match ($reportType) {
             ReportType::CollectionByService => CollectionByServiceResource::collection(

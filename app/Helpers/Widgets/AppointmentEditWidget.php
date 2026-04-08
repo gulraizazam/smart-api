@@ -99,7 +99,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($centreService->service_id, $searchServices);
-                        if (! in_array($rootService, $location_services_array)) {
+                        if (! in_array($rootService, $location_services_array, true)) {
                             $location_services_array[] = $rootService;
                         }
                     }
@@ -198,7 +198,7 @@ class AppointmentEditWidget
                             );
                         } else {
                             $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                            if (! in_array($rootService, $doctor_services_array)) {
+                            if (! in_array($rootService, $doctor_services_array, true)) {
                                 $doctor_services_array[] = $rootService;
                             }
                         }
@@ -273,7 +273,7 @@ class AppointmentEditWidget
                                 );
                             } else {
                                 $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                if (! in_array($rootService, $doctor_services_array)) {
+                                if (! in_array($rootService, $doctor_services_array, true)) {
                                     $doctor_services_array[] = $rootService;
                                 }
                             }
@@ -345,7 +345,7 @@ class AppointmentEditWidget
                                     );
                                 } else {
                                     $rootService = self::findRoot($doctorservice->service_id, $searchServices);
-                                    if (! in_array($rootService, $doctor_services_array)) {
+                                    if (! in_array($rootService, $doctor_services_array, true)) {
                                         $doctor_services_array[] = $rootService;
                                     }
                                 }
@@ -439,7 +439,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (! in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array, true)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }
@@ -534,7 +534,7 @@ class AppointmentEditWidget
         $machines_ids = [];
 
         foreach ($machines as $machine) {
-            if (! in_array($machine->machine_type_id, $machines_ids)) {
+            if (! in_array($machine->machine_type_id, $machines_ids, true)) {
                 $machines_ids[] = $machine->machine_type_id;
             }
         }
@@ -549,7 +549,7 @@ class AppointmentEditWidget
 
                 $machine_serivce = self::loadmachinetypeservice_machine_collection($machine_type->id, Auth::user()->account_id, 'true');
 
-                if (in_array($package_service->service_id, $machine_serivce)) {
+                if (in_array($package_service->service_id, $machine_serivce, true)) {
 
                     $machine_types_ids[] = $machine_type->id;
 
@@ -645,7 +645,7 @@ class AppointmentEditWidget
                         );
                     } else {
                         $rootService = self::findRoot($machinetypeService->service_id, $searchServices);
-                        if (! in_array($rootService, $machinetype_services_array)) {
+                        if (! in_array($rootService, $machinetype_services_array, true)) {
                             $machinetype_services_array[] = $rootService;
                         }
                     }

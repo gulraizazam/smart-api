@@ -11,19 +11,11 @@ use Illuminate\Support\Facades\Validator;
 
 class ChangePasswordController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Where to redirect users after password is changed.
-     *
-     * @var string
-     */
     protected $redirectTo = '/change_password';
 
     /**
@@ -31,7 +23,7 @@ class ChangePasswordController extends Controller
      *
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function showChangePasswordForm(): mixed
+    public function showChangePasswordForm(): \Illuminate\View\View
     {
         $user = Auth::user();
 
@@ -41,7 +33,7 @@ class ChangePasswordController extends Controller
     /**
      * Change password.
      */
-    public function changePassword(Request $request): mixed
+    public function changePassword(Request $request): \Illuminate\Http\JsonResponse
     {
         $user = Auth::user();
 
@@ -76,7 +68,7 @@ class ChangePasswordController extends Controller
      * @param  array  $data
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function validator(Request $request): mixed
+    protected function validator(Request $request): \Illuminate\Contracts\Validation\Validator
     {
         $rules = [
             'current_password' => 'required',

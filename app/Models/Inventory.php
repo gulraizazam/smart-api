@@ -11,7 +11,14 @@ use Illuminate\Database\Eloquent\Model;
 class Inventory extends Model
 {
     use HasFactory;
-    protected $guarded =[];
+    protected $fillable = [
+        'product_id',
+        'warehouse_id',
+        'location_id',
+        'is_saleable',
+        'quantity',
+        'sale_price',
+    ];
 
 
     public static function getTotalRecords($request, $account_id = false, $product_id = 0)

@@ -55,7 +55,7 @@ class Revenue
         $invoicepaid = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
         if (isset($data['region_id']) && $data['region_id']) {
-            $regions = Regions::where(['active' => 1, 'slug' => 'custom', 'id' => $data['region_id']])->where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
+            $regions = Regions::where(['active' => 1, 'slug' => 'custom', 'id' => $data['region_id']])->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
         } else {
             $regions = Regions::getActiveSorted(ACL::getUserRegions());
         }
@@ -84,7 +84,7 @@ class Revenue
                 ['slug', '=', 'custom'],
             ])->get();
 
-            if (count($centersinfo) > 0) {
+            if (!empty($centersinfo)) {
                 foreach ($centersinfo as $location) {
                     $revenuebreakup[$key]['centers'][$location->id] = [
                         'id' => $location->id,
@@ -97,7 +97,7 @@ class Revenue
                             'service' => [],
                         ];
 
-                        $servicesinfo = LocationsWidget::loadEndServiceByLocation($location->id, Auth::User()->account_id);
+                        $servicesinfo = LocationsWidget::loadEndServiceByLocation($location->id, Auth::user()->account_id);
                         $checkedsum = 0;
                         foreach ($servicesinfo as $service) {
 
@@ -109,7 +109,7 @@ class Revenue
                             }
                             /*End to finilize the user id*/
 
-                            if (count($userids) > 0) {
+                            if (!empty($userids)) {
                                 $revenueservicesum = \App\Models\Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                                     ->whereDate('invoices.created_at', '=', $start->format('Y-m-d'))
                                     ->where([

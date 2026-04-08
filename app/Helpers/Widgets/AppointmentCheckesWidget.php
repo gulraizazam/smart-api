@@ -66,7 +66,7 @@ class AppointmentCheckesWidget
             'continue_rota_count' => count($continue_rota),
         ]);
         
-        if (count($continue_rota) > 0) {
+        if (!empty($continue_rota)) {
             // Get ALL rota days for this date (supports multiple shifts per day)
             $all_rota_days = ResourceHasRotaDays::where([
                 'resource_has_rota_id' => $continue_rota[0]->id,
@@ -219,7 +219,7 @@ class AppointmentCheckesWidget
        
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
  
-        if (count($continue_rota_doctor) > 0) {
+        if (!empty($continue_rota_doctor)) {
           
             // Get ALL rota days for this date (supports multiple shifts per day)
             $all_rota_days = ResourceHasRotaDays::where([
@@ -367,7 +367,7 @@ class AppointmentCheckesWidget
         $started_time = \Carbon\Carbon::parse($request->start)->format('Y-m-d H:i:s');
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
 
-        if (count($continue_rota_doctor) > 0) {
+        if (!empty($continue_rota_doctor)) {
             // Get ALL rota days for this date (supports multiple shifts per day)
             $all_rota_days = ResourceHasRotaDays::where([
                 ['resource_has_rota_id', '=', $continue_rota_doctor[0]->id],

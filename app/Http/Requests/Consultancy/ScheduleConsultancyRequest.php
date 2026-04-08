@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ScheduleConsultancyRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -17,6 +18,7 @@ class ScheduleConsultancyRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -29,6 +31,7 @@ class ScheduleConsultancyRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

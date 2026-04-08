@@ -17,12 +17,12 @@ class PaymentModesController extends Controller
         private readonly PaymentModeService $paymentModeService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('payment_modes_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'payment_modes');
+        $filters = Filters::all(Auth::user()->id, 'payment_modes');
 
         return view('admin.payment_modes.index', compact('filters'));
     }
@@ -32,14 +32,14 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_manage')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $records = $this->paymentModeService->getDatatableData($request, Auth::User()->account_id);
+            $records = $this->paymentModeService->getDatatableData($request, Auth::user()->account_id);
 
             return response()->json($records);
         } catch (\Exception $e) {
@@ -52,7 +52,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
         if (! Gate::allows('payment_modes_create')) {
             return abort(401);
@@ -61,7 +61,7 @@ class PaymentModesController extends Controller
         return view('admin.payment_modes.create', compact('city'));
     }
 
-    public function sortorder_save(Request $request): mixed
+    public function sortorder_save(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
@@ -78,7 +78,7 @@ class PaymentModesController extends Controller
         }
     }
 
-    public function sortorder(): mixed
+    public function sortorder(): \Illuminate\View\View
     {
         if (! Gate::allows('payment_modes_sort')) {
             return abort(401);
@@ -92,13 +92,13 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sortOrderGet(): mixed
+    public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_sort')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
-            $payment_modes = $this->paymentModeService->getSortedPaymentModes(Auth::User()->account_id);
+            $payment_modes = $this->paymentModeService->getSortedPaymentModes(Auth::user()->account_id);
 
             return $this->successResponse('Success', $payment_modes);
         } catch (\Exception $e) {
@@ -111,14 +111,14 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request): mixed
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_create')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->paymentModeService->validateAndCreate($request->all(), Auth::User()->account_id);
+            $result = $this->paymentModeService->validateAndCreate($request->all(), Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -135,7 +135,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
@@ -159,14 +159,14 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-            $result = $this->paymentModeService->validateAndUpdate($request->all(), $id, Auth::User()->account_id);
+            $result = $this->paymentModeService->validateAndUpdate($request->all(), $id, Auth::user()->account_id);
 
             if ($result['success']) {
                 return $this->successResponse($result['message']);
@@ -183,7 +183,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (! Gate::allows('payment_modes_destroy')) {
@@ -203,7 +203,7 @@ class PaymentModesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {

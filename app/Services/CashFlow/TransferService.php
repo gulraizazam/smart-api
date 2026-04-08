@@ -21,7 +21,7 @@ class TransferService
     /**
      * Get paginated transfers with filters.
      */
-    public function getTransfers(int $accountId, array $filters = [], int $perPage = 25)
+    public function getTransfers(int $accountId, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = CashTransfer::forAccount($accountId)
             ->with([

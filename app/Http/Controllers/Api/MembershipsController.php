@@ -208,7 +208,7 @@ final class MembershipsController extends Controller
         } catch (\Throwable $e) {
             Log::error('Membership cancel error', ['message' => $e->getMessage()]);
 
-            return $this->success($e->getMessage(), status: false);
+            return $this->success('An error occurred. Please try again.', status: false);
         }
     }
 

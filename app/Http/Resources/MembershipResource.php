@@ -9,10 +9,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 final class MembershipResource extends JsonResource
 {
+    #[\Override]
     public function toArray(Request $request): array
     {
         $membershipTypeName = $this->whenLoaded('membershipType', fn () => $this->membershipType?->name, 'N/A');
-        $isStudentMembership = is_string($membershipTypeName) && stripos($membershipTypeName, 'student') !== false;
+        $isStudentMembership = is_string($membershipTypeName) && str_contains(strtolower($membershipTypeName), 'student');
 
         return [
             'id'                      => $this->id,

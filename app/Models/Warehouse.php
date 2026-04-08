@@ -3,7 +3,7 @@
 declare(strict_types=1);
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +39,7 @@ class Warehouse extends Model
         }
 
         return self::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->whereIn('id', $id)
             ->get();
     }
@@ -88,9 +88,7 @@ class Warehouse extends Model
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -98,16 +96,16 @@ class Warehouse extends Model
 
         if (hasFilter($filters, 'name')) {
             $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
-            Filters::put(Auth::User()->id, 'warehouse', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'warehouse', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'name');
+                Filters::forget(Auth::user()->id, 'warehouse', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'name')) {
+                if (Filters::get(Auth::user()->id, 'warehouse', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'warehouse', 'name') . '%',
+                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'name') . '%',
                     ];
                 }
             }
@@ -118,16 +116,16 @@ class Warehouse extends Model
                 'like',
                 '%' . $filters['manager_name'] . '%',
             ];
-            Filters::put(Auth::User()->id, 'warehouse', 'manager_name', $filters['manager_name']);
+            Filters::put(Auth::user()->id, 'warehouse', 'manager_name', $filters['manager_name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'manager_name');
+                Filters::forget(Auth::user()->id, 'warehouse', 'manager_name');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'manager_name')) {
+                if (Filters::get(Auth::user()->id, 'warehouse', 'manager_name')) {
                     $where[] = [
                         'manager_name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'warehouse', 'manager_name') . '%',
+                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'manager_name') . '%',
                     ];
                 }
             }
@@ -138,53 +136,53 @@ class Warehouse extends Model
                 'like',
                 '%' . $filters['manager_phone'] . '%',
             ];
-            Filters::put(Auth::User()->id, 'warehouse', 'manager_phone', $filters['manager_phone']);
+            Filters::put(Auth::user()->id, 'warehouse', 'manager_phone', $filters['manager_phone']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'manager_phone');
+                Filters::forget(Auth::user()->id, 'warehouse', 'manager_phone');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'manager_phone')) {
+                if (Filters::get(Auth::user()->id, 'warehouse', 'manager_phone')) {
                     $where[] = [
                         'manager_phone',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'warehouse', 'manager_phone') . '%',
+                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'manager_phone') . '%',
                     ];
                 }
             }
         }
         if (hasFilter($filters, 'city')) {
             $where[][] = ['city_id' => $filters['city']];
-            Filters::put(Auth::User()->id, 'warehouse', 'city_id', $filters['city']);
+            Filters::put(Auth::user()->id, 'warehouse', 'city_id', $filters['city']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'city');
+                Filters::forget(Auth::user()->id, 'warehouse', 'city');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'city')) {
-                    $where[][] = ['city_id' => Filters::get(Auth::User()->id, 'warehouse', 'city')];
+                if (Filters::get(Auth::user()->id, 'warehouse', 'city')) {
+                    $where[][] = ['city_id' => Filters::get(Auth::user()->id, 'warehouse', 'city')];
                 }
             }
         }
         if (hasFilter($filters, 'status')) {
             $where[][] = ['active' => $filters['status']];
-            Filters::put(Auth::User()->id, 'warehouse', 'active', $filters['status']);
+            Filters::put(Auth::user()->id, 'warehouse', 'active', $filters['status']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'status');
+                Filters::forget(Auth::user()->id, 'warehouse', 'status');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'status')) {
-                    $where[][] = ['active' => Filters::get(Auth::User()->id, 'warehouse', 'status')];
+                if (Filters::get(Auth::user()->id, 'warehouse', 'status')) {
+                    $where[][] = ['active' => Filters::get(Auth::user()->id, 'warehouse', 'status')];
                 }
             }
         }
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['created_at', '>=', $start_date_time];
             $where[] = ['created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'warehouse', 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, 'warehouse', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'warehouse', 'created_at');
+                Filters::forget(Auth::user()->id, 'warehouse', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'warehouse', 'created_at')) {
+                if (Filters::get(Auth::user()->id, 'warehouse', 'created_at')) {
                     $where[] = ['created_at', '>=', $start_date_time];
                     $where[] = ['created_at', '<=', $end_date_time];
                 }
@@ -212,10 +210,12 @@ class Warehouse extends Model
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time() . '-' . $file->getClientOriginalName();
-            $file->storeAs('public/warehouse_logo', $fileName);
-            $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $fileName;
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                $fileName = time() . '-' . $file->getClientOriginalName();
+                $file->storeAs('public/warehouse_logo', $fileName);
+                $data['image_src'] = $fileName;
+            }
         }
 
         $record = self::create($data);
@@ -248,10 +248,12 @@ class Warehouse extends Model
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time() . '-' . $file->getClientOriginalName();
-            $file->storeAs('public/warehouse_logo', $fileName);
-            $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $fileName;
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                $fileName = time() . '-' . $file->getClientOriginalName();
+                $file->storeAs('public/warehouse_logo', $fileName);
+                $data['image_src'] = $fileName;
+            }
         }
         $record = self::where([
             'id' => $id,
@@ -282,7 +284,7 @@ class Warehouse extends Model
                 'message' => 'Resource not found.',
             ];
         }
-        if (!Warehouse::isChildExists($warehouse->id, Auth::User()->account_id)) {
+        if (!Warehouse::isChildExists($warehouse->id, Auth::user()->account_id)) {
             $warehouse->delete();
 
             $role = Role::findByName('Super-Admin');

@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateConsultancyRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         // Convert scheduled_time to 24-hour format if needed
@@ -36,6 +38,7 @@ class UpdateConsultancyRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -64,6 +67,7 @@ class UpdateConsultancyRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

@@ -20,6 +20,7 @@ class UserVouchers extends Model
         'total_amount',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

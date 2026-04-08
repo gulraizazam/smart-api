@@ -14,6 +14,7 @@ final class BundleDetailResource extends JsonResource
      *
      * @return array<string, mixed>
      */
+    #[\Override]
     public function toArray(Request $request): array
     {
         $data = $this->resource;

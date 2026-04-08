@@ -167,7 +167,7 @@ class Appointmentimage extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Appointmentimage::isChildExists($id, Auth::User()->account_id)) {
+        if (Appointmentimage::isChildExists($id, Auth::user()->account_id)) {
 
             return [
                 'status' => false,

@@ -15,7 +15,7 @@ class WrongConversionsController extends Controller
         private readonly WrongConversionService $wrongConversionService,
     ) {}
 
-    public function index(Request $request): mixed
+    public function index(Request $request): \Illuminate\View\View
     {
         $date = $request->get('date', Carbon::yesterday()->format('Y-m-d'));
 
@@ -24,7 +24,7 @@ class WrongConversionsController extends Controller
         return view('admin.wrong_conversions', $data);
     }
 
-    public function reset(Request $request, int $id): mixed
+    public function reset(Request $request, int $id): \Illuminate\Http\RedirectResponse
     {
         $result = $this->wrongConversionService->resetAppointment($id);
 
@@ -35,7 +35,7 @@ class WrongConversionsController extends Controller
         return back()->with('success', $result['message']);
     }
 
-    public function resetAll(Request $request): mixed
+    public function resetAll(Request $request): \Illuminate\Http\RedirectResponse
     {
         $ids = $request->get('ids', []);
 

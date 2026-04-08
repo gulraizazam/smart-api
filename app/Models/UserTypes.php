@@ -23,6 +23,7 @@ class UserTypes extends BaseModel
         'updated_by',
     ];
 
+    #[\Override]
     protected function casts(): array
     {
         return [

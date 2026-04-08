@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 
 class UpdateMembershipTypeRequest extends AdminApiFormRequest
 {
+    #[\Override]
     public function rules(): array
     {
         $id = $this->route('id') ?? $this->input('id');

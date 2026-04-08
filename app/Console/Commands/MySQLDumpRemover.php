@@ -38,6 +38,7 @@ class MySQLDumpRemover extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         try {

@@ -46,6 +46,7 @@ class DeliverOnAppointmentBook extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
@@ -73,7 +74,7 @@ class DeliverOnAppointmentBook extends Command
                         Appointments::where(['id' => $appointment->appointment_id])->update(['send_message' => 0, 'msg_count' => 1]);
                     }
                 } catch (\Exception $e) {
-                    // Do nothing
+                    \Log::error('DeliverOnAppointmentBook SMS failed', ['error' => $e->getMessage()]);
                 }
 
             }

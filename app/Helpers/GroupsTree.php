@@ -31,10 +31,10 @@ class GroupsTree
     /**
      * Setup which group id to start from
      */
-    public function build($id, $account_id)
+    public function build(int $id, int $account_id): self
     {
         if ($this->current_id == $id) {
-            return;
+            return $this;
         }
 
         if ($id == 0) {
@@ -47,12 +47,14 @@ class GroupsTree
         }
 
         $this->add_sub_groups($account_id);
+
+        return $this;
     }
 
     /**
      * Find and add subgroups as objects
      */
-    public function add_sub_groups($account_id)
+    public function add_sub_groups(int $account_id): void
     {
         /* If primary group sort by id else sort by name */
         if ($this->id == 0) {
@@ -78,7 +80,7 @@ class GroupsTree
     public array $groupList = [];
 
     /* Convert group tree to a list */
-    public function toList($tree, $c = 0)
+    public function toList(self $tree, int $c = 0): void
     {
         $counter = $c;
 
@@ -87,7 +89,7 @@ class GroupsTree
         }
 
         /* Process child groups recursively */
-        if (count($tree->children_groups) > 0) {
+        if (!empty($tree->children_groups)) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toList($data, $counter);
@@ -99,7 +101,7 @@ class GroupsTree
     public array $groupListView = [];
 
     /* Convert group tree for List View */
-    public function toListView($tree, $c = 0)
+    public function toListView(self $tree, int $c = 0): void
     {
         $counter = $c;
 
@@ -111,7 +113,7 @@ class GroupsTree
         }
 
         /* Process child groups recursively */
-        if (count($tree->children_groups) > 0) {
+        if (!empty($tree->children_groups)) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toListView($data, $counter);
@@ -123,7 +125,7 @@ class GroupsTree
     public array $groupListIDs = [];
 
     /* Convert group tree to array */
-    public function toListArray($tree, $c = 0)
+    public function toListArray(self $tree, int $c = 0): void
     {
         $counter = $c;
 
@@ -132,7 +134,7 @@ class GroupsTree
         }
 
         /* Process child groups recursively */
-        if (count($tree->children_groups) > 0) {
+        if (!empty($tree->children_groups)) {
             foreach ($tree->children_groups as $id => $data) {
                 $counter++;
                 $this->toListArray($data, $counter);
@@ -141,7 +143,7 @@ class GroupsTree
         }
     }
 
-    public function space($count)
+    public function space(int $count): string
     {
         $str = '';
         for ($i = 1; $i <= $count; $i++) {
@@ -157,7 +159,7 @@ class GroupsTree
      * @param Array $data
      * @param $parent
      */
-    public static function buildTree(array $data, $parent = 0, $skip_id = 0)
+    public static function buildTree(array $data, int $parent = 0, int $skip_id = 0): array
     {
         $tree = [];
         foreach ($data as $d) {
@@ -185,7 +187,7 @@ class GroupsTree
      * @param $parent
      * @return $html
      */
-    public static function buildOptions(array $arr, $target, $parent = null)
+    public static function buildOptions(array $arr, mixed $target, ?string $parent = null): string
     {
         $html = '';
         foreach ($arr as $key => $v) {
@@ -213,7 +215,7 @@ class GroupsTree
      * @param $parent
      * @return $html
      */
-    public static function buildArray(array $arr, $target, $parent = null)
+    public static function buildArray(array $arr, mixed $target, ?string $parent = null): string
     {
         $html = '';
         foreach ($arr as $key => $v) {

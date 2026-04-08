@@ -11,11 +11,13 @@ use Illuminate\Validation\Rule;
 
 final class UpdateMembershipTypeRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         $id = $this->route('membershiptype');
@@ -30,6 +32,7 @@ final class UpdateMembershipTypeRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

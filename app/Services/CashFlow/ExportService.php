@@ -7,12 +7,9 @@ use Illuminate\Support\Facades\Response;
 
 class ExportService
 {
-    private ReportService $reportService;
-
-    public function __construct(ReportService $reportService)
-    {
-        $this->reportService = $reportService;
-    }
+    public function __construct(
+        private readonly ReportService $reportService,
+    ) {}
 
     /**
      * Export a report as CSV (Excel-compatible).

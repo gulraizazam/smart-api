@@ -3,12 +3,13 @@
 declare(strict_types=1);
 namespace App\Models;
 
-use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -125,9 +126,11 @@ class Locations extends BaseModel
     /**
      * Get the Location name with City Name.
      */
-    public function getFullAddressAttribute($value)
+    protected function fullAddress(): Attribute
     {
-        return ucfirst($this->city->name ?? '').' - '.ucfirst($this->name ?? '');
+        return Attribute::make(
+            get: fn (): string => ucfirst($this->city->name ?? '') . ' - ' . ucfirst($this->name ?? ''),
+        );
     }
 
     /**
@@ -149,16 +152,16 @@ class Locations extends BaseModel
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-            ])->get()->pluck($name, 'id');
+            ])->pluck($name, 'id');
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
-            ])->get()->pluck($name, 'id');
+            ])->pluck($name, 'id');
         }
     }
 
@@ -169,13 +172,13 @@ class Locations extends BaseModel
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->get();
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->get();
@@ -192,13 +195,13 @@ class Locations extends BaseModel
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->select('id')->get();
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->select('id')->get();
@@ -215,13 +218,13 @@ class Locations extends BaseModel
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->get();
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
             ])->get();
@@ -237,9 +240,9 @@ class Locations extends BaseModel
             $locationId = [$locationId];
         }
         if ($locationId) {
-            return self::whereIn('id', $locationId)->where('account_id', '=', Auth::User()->account_id)->get()->pluck('name', 'id');
+            return self::whereIn('id', $locationId)->where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
         } else {
-            return self::where('account_id', '=', Auth::User()->account_id)->pluck('name', 'id');
+            return self::where('account_id', '=', Auth::user()->account_id)->pluck('name', 'id');
         }
     }
 
@@ -253,18 +256,18 @@ class Locations extends BaseModel
         }
         if ($locationId) {
             return self::whereIn('id', $locationId)->where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
                 ['region_id', '=', $region_id],
-            ])->get()->pluck('name', 'id');
+            ])->pluck('name', 'id');
         } else {
             return self::where([
-                ['account_id', '=', Auth::User()->account_id],
+                ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
                 ['slug', '=', 'custom'],
                 ['region_id', '=', $region_id],
-            ])->get()->pluck('name', 'id');
+            ])->pluck('name', 'id');
         }
     }
 
@@ -336,15 +339,15 @@ class Locations extends BaseModel
                 $orderBy = 'locations.created_at';
             }
 
-            Filters::put(Auth::User()->id, 'locations', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'locations', 'order', $order);
+            Filters::put(Auth::user()->id, 'locations', 'order_by', $orderBy);
+            Filters::put(Auth::user()->id, 'locations', 'order', $order);
         } else {
             if (
-                Filters::get(Auth::User()->id, 'locations', 'order_by')
-                && Filters::get(Auth::User()->id, 'locations', 'order')
+                Filters::get(Auth::user()->id, 'locations', 'order_by')
+                && Filters::get(Auth::user()->id, 'locations', 'order')
             ) {
-                $orderBy = Filters::get(Auth::User()->id, 'locations', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'locations', 'order');
+                $orderBy = Filters::get(Auth::user()->id, 'locations', 'order_by');
+                $order = Filters::get(Auth::user()->id, 'locations', 'order');
 
                 if ($orderBy == 'created_at') {
                     $orderBy = 'locations.created_at';
@@ -356,8 +359,8 @@ class Locations extends BaseModel
                     $orderBy = 'locations.created_at';
                 }
 
-                Filters::put(Auth::User()->id, 'locations', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'locations', 'order', $order);
+                Filters::put(Auth::user()->id, 'locations', 'order_by', $orderBy);
+                Filters::put(Auth::user()->id, 'locations', 'order', $order);
             }
         }
         if (count($where)) {
@@ -421,9 +424,7 @@ class Locations extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -436,17 +437,17 @@ class Locations extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'locations', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'locations', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'account_id');
+                Filters::forget(Auth::user()->id, 'locations', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'account_id')) {
                     $where[] = [
                         'locations.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'account_id'),
+                        Filters::get(Auth::user()->id, 'locations', 'account_id'),
                     ];
                 }
             }
@@ -457,16 +458,16 @@ class Locations extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'locations', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'locations', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'name');
+                Filters::forget(Auth::user()->id, 'locations', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'name')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'name')) {
                     $where[] = [
                         'locations.name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'locations', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'locations', 'name').'%',
                     ];
                 }
             }
@@ -477,16 +478,16 @@ class Locations extends BaseModel
                 'like',
                 '%'.$filters['fdo_name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'locations', 'fdo_name', $filters['fdo_name']);
+            Filters::put(Auth::user()->id, 'locations', 'fdo_name', $filters['fdo_name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'fdo_name');
+                Filters::forget(Auth::user()->id, 'locations', 'fdo_name');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'fdo_name')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'fdo_name')) {
                     $where[] = [
                         'fdo_name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'locations', 'fdo_name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'locations', 'fdo_name').'%',
                     ];
                 }
             }
@@ -497,16 +498,16 @@ class Locations extends BaseModel
                 'like',
                 '%'.$filters['fdo_phone'].'%',
             ];
-            Filters::put(Auth::User()->id, 'locations', 'fdo_phone', $filters['fdo_phone']);
+            Filters::put(Auth::user()->id, 'locations', 'fdo_phone', $filters['fdo_phone']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'fdo_phone');
+                Filters::forget(Auth::user()->id, 'locations', 'fdo_phone');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'fdo_phone')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'fdo_phone')) {
                     $where[] = [
                         'fdo_phone',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'locations', 'fdo_phone').'%',
+                        '%'.Filters::get(Auth::user()->id, 'locations', 'fdo_phone').'%',
                     ];
                 }
             }
@@ -517,16 +518,16 @@ class Locations extends BaseModel
                 'like',
                 '%'.$filters['address'].'%',
             ];
-            Filters::put(Auth::User()->id, 'locations', 'address', $filters['address']);
+            Filters::put(Auth::user()->id, 'locations', 'address', $filters['address']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'address');
+                Filters::forget(Auth::user()->id, 'locations', 'address');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'address')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'address')) {
                     $where[] = [
                         'locations.address',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'locations', 'address').'%',
+                        '%'.Filters::get(Auth::user()->id, 'locations', 'address').'%',
                     ];
                 }
             }
@@ -537,16 +538,16 @@ class Locations extends BaseModel
                 '=',
                 $filters['city_id'],
             ];
-            Filters::put(Auth::User()->id, 'locations', 'city_id', $filters['city_id']);
+            Filters::put(Auth::user()->id, 'locations', 'city_id', $filters['city_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'city_id');
+                Filters::forget(Auth::user()->id, 'locations', 'city_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'city_id')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'city_id')) {
                     $where[] = [
                         'locations.city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'city_id'),
+                        Filters::get(Auth::user()->id, 'locations', 'city_id'),
                     ];
                 }
             }
@@ -557,16 +558,16 @@ class Locations extends BaseModel
                 '=',
                 $filters['region_id'],
             ];
-            Filters::put(Auth::User()->id, 'locations', 'region_id', $filters['region_id']);
+            Filters::put(Auth::user()->id, 'locations', 'region_id', $filters['region_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'region_id');
+                Filters::forget(Auth::user()->id, 'locations', 'region_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'region_id')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'region_id')) {
                     $where[] = [
                         'locations.region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'region_id'),
+                        Filters::get(Auth::user()->id, 'locations', 'region_id'),
                     ];
                 }
             }
@@ -577,16 +578,16 @@ class Locations extends BaseModel
                 '=',
                 $filters['service_id'],
             ];
-            Filters::put(Auth::User()->id, 'locations', 'service_id', $filters['service']);
+            Filters::put(Auth::user()->id, 'locations', 'service_id', $filters['service']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'service_id');
+                Filters::forget(Auth::user()->id, 'locations', 'service_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'service_id')) {
+                if (Filters::get(Auth::user()->id, 'locations', 'service_id')) {
                     $where[] = [
                         'service_has_locations.service_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'locations', 'service_id'),
+                        Filters::get(Auth::user()->id, 'locations', 'service_id'),
                     ];
                 }
             }
@@ -594,13 +595,13 @@ class Locations extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['locations.created_at', '>=', $start_date_time];
             $where[] = ['locations.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'locations', 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, 'locations', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'locations', 'created_at');
+                Filters::forget(Auth::user()->id, 'locations', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'locations', 'created_at')) {
-                    $where[] = ['locations.created_at','>=',Filters::get(Auth::User()->id, 'locations', 'created_at')];
+                if (Filters::get(Auth::user()->id, 'locations', 'created_at')) {
+                    $where[] = ['locations.created_at','>=',Filters::get(Auth::user()->id, 'locations', 'created_at')];
                 }
             }
         }
@@ -634,8 +635,6 @@ class Locations extends BaseModel
             'custom',
         ];
 
-        //        dd( $where );
-
         return $where;
     }
 
@@ -656,17 +655,17 @@ class Locations extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'staff_target_location', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'staff_target_location', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'staff_target_location', 'account_id');
+                Filters::forget(Auth::user()->id, 'staff_target_location', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'staff_target_location', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'staff_target_location', 'account_id')) {
                     $where[] = [
                         'locations.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'account_id'),
+                        Filters::get(Auth::user()->id, 'staff_target_location', 'account_id'),
                     ];
                 }
             }
@@ -677,16 +676,16 @@ class Locations extends BaseModel
                 'like',
                 '%'.$request->get('lead_status_name').'%',
             ];
-            Filters::put(Auth::User()->id, 'staff_target_location', 'lead_status_name', $request->get('lead_status_name'));
+            Filters::put(Auth::user()->id, 'staff_target_location', 'lead_status_name', $request->get('lead_status_name'));
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'staff_target_location', 'lead_status_name');
+                Filters::forget(Auth::user()->id, 'staff_target_location', 'lead_status_name');
             } else {
-                if (Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_name')) {
+                if (Filters::get(Auth::user()->id, 'staff_target_location', 'lead_status_name')) {
                     $where[] = [
                         'locations.name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'staff_target_location', 'lead_status_name').'%',
                     ];
                 }
             }
@@ -697,16 +696,16 @@ class Locations extends BaseModel
                 '=',
                 $request->get('lead_status_city'),
             ];
-            Filters::put(Auth::User()->id, 'staff_target_location', 'lead_status_city', $request->get('lead_status_city'));
+            Filters::put(Auth::user()->id, 'staff_target_location', 'lead_status_city', $request->get('lead_status_city'));
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'staff_target_location', 'lead_status_city');
+                Filters::forget(Auth::user()->id, 'staff_target_location', 'lead_status_city');
             } else {
-                if (Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_city')) {
+                if (Filters::get(Auth::user()->id, 'staff_target_location', 'lead_status_city')) {
                     $where[] = [
                         'locations.city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'lead_status_city'),
+                        Filters::get(Auth::user()->id, 'staff_target_location', 'lead_status_city'),
                     ];
                 }
             }
@@ -717,16 +716,16 @@ class Locations extends BaseModel
                 '=',
                 $request->get('region'),
             ];
-            Filters::put(Auth::User()->id, 'staff_target_location', 'region', $request->get('region'));
+            Filters::put(Auth::user()->id, 'staff_target_location', 'region', $request->get('region'));
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'staff_target_location', 'region');
+                Filters::forget(Auth::user()->id, 'staff_target_location', 'region');
             } else {
-                if (Filters::get(Auth::User()->id, 'staff_target_location', 'region')) {
+                if (Filters::get(Auth::user()->id, 'staff_target_location', 'region')) {
                     $where[] = [
                         'locations.region_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'staff_target_location', 'region'),
+                        Filters::get(Auth::user()->id, 'staff_target_location', 'region'),
                     ];
                 }
             }
@@ -763,7 +762,7 @@ class Locations extends BaseModel
                     return self::where('account_id', '=', $account_id)->orderBy($order_by, $order)->whereIn('id', $locationids)->get()->getDictionary();
                 }
 
-                return self::where('account_id', '=', $account_id)->get()->whereIn('id', $locationids)->getDictionary();
+                return self::where('account_id', '=', $account_id)->whereIn('id', $locationids)->get()->getDictionary();
             }
         } else {
             if ($get_slug) {
@@ -830,10 +829,12 @@ class Locations extends BaseModel
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time().'-'.$file->getClientOriginalName();
-            $file->storeAs('public/centre_logo', $fileName);
-            $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $fileName;
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                $fileName = time().'-'.$file->getClientOriginalName();
+                $file->storeAs('public/centre_logo', $fileName);
+                $data['image_src'] = $fileName;
+            }
         }
 
         $record = self::create($data);
@@ -862,7 +863,7 @@ class Locations extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Locations::isChildExists($id, Auth::User()->account_id)) {
+        if (Locations::isChildExists($id, Auth::user()->account_id)) {
             return [
                 'status' => false,
                 'message' => 'Child records exist, unable to delete resource.',
@@ -954,10 +955,12 @@ class Locations extends BaseModel
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time().'-'.$file->getClientOriginalName();
-            $file->storeAs('public/centre_logo', $fileName);
-            $ext = $file->getClientOriginalExtension();
-            $data['image_src'] = $fileName;
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+                $fileName = time().'-'.$file->getClientOriginalName();
+                $file->storeAs('public/centre_logo', $fileName);
+                $data['image_src'] = $fileName;
+            }
         }
         $record = self::where([
             'id' => $id,

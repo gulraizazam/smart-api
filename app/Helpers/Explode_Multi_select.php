@@ -12,11 +12,8 @@ namespace App\Helpers;
 
 class Explode_Multi_select
 {
-    public static function explode($locationids)
+    public static function explode(string $locationids): array
     {
-
-        $data = explode(',', $locationids);
-
-        return $data;
+        return explode(',', $locationids);
     }
 }

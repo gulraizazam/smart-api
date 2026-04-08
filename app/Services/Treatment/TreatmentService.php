@@ -11,6 +11,7 @@ use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Http\Resources\Treatment\TreatmentDatatableResource;
+use App\Services\PatientManagement\PatientSearchService;
 use App\Jobs\IndexSingleAppointmentJob;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
@@ -185,7 +186,7 @@ final class TreatmentService
 
             $this->handleUnscheduledStatus($appointment, $accountId);
 
-            GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
+            ActivityLogger::saveAppointmentLogs('booked', 'Treatment', $appointment);
 
             $patient = Patients::find($appointment->patient_id);
             if ($patient) {
@@ -268,7 +269,7 @@ final class TreatmentService
                 ]);
             }
 
-            GeneralFunctions::saveAppointmentLogs('rescheduled', 'Treatment', $record);
+            ActivityLogger::saveAppointmentLogs('rescheduled', 'Treatment', $record);
 
             dispatch(new IndexSingleAppointmentJob([
                 'account_id'     => $accountId,
@@ -480,13 +481,11 @@ final class TreatmentService
         $accountId = (int) Auth::user()->account_id;
         $cacheKey  = "treatment_services_location_{$accountId}_{$locationId}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId, $locationId) {
-            return Services::whereHas('locations', fn ($q) => $q->where('location_id', $locationId))
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn() => Services::whereHas('locations', fn ($q) => $q->where('location_id', $locationId))
                 ->where('account_id', $accountId)
                 ->where('active', 1)
                 ->orderBy('name')
-                ->get();
-        });
+                ->get());
     }
 
     // ──────────────────────────────────────────────────
@@ -544,7 +543,7 @@ final class TreatmentService
         foreach ($simpleFilterKeys as $key) {
             if (hasFilter($filters, $key)) {
                 $value = match ($key) {
-                    'patient_id' => GeneralFunctions::patientSearch($filters[$key]),
+                    'patient_id' => PatientSearchService::patientSearch($filters[$key]),
                     'date_from'  => $filters[$key] . ' 00:00:00',
                     'date_to'    => $filters[$key] . ' 23:59:59',
                     default      => $filters[$key],
@@ -554,7 +553,7 @@ final class TreatmentService
         }
 
         if (hasFilter($filters, 'patient_id')) {
-            Filters::put($userId, self::FILTER_KEY, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
+            Filters::put($userId, self::FILTER_KEY, 'patient_id', PatientSearchService::patientSearch($filters['patient_id']));
         }
 
         return array_merge($filters, [
@@ -575,7 +574,7 @@ final class TreatmentService
         if ($patientId) {
             $where[] = ['patient_id', '=', $patientId];
         } elseif (hasFilter($filters, 'patient_id')) {
-            $where[] = ['patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id'])];
+            $where[] = ['patient_id', '=', PatientSearchService::patientSearch($filters['patient_id'])];
         }
 
         // Auto-filter by doctor_id for doctor roles
@@ -1162,7 +1161,7 @@ final class TreatmentService
             ->pluck('external_id')
             ->toArray();
 
-        return $doctors->filter(fn ($doctor, $key) => in_array($key, $resourcesWithRota));
+        return $doctors->filter(fn ($doctor, $key) => in_array($key, $resourcesWithRota, true));
     }
 
     private function checkDoctorAllocation(int $doctorId, int $locationId, int $serviceId): bool

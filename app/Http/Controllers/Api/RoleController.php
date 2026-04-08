@@ -14,18 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 class RoleController extends Controller
 {
-    private int $success;
-    private int $error;
-    private int $unauthorized;
-
     public function __construct(
         private readonly RoleService $roleService,
-    ) {
+    ) {}
 
-
-    }
-
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('roles_manage')) {
             return abort(401);
@@ -70,7 +63,7 @@ class RoleController extends Controller
         }
     }
 
-    public function createView(): mixed
+    public function createView(): \Illuminate\View\View
     {
         try {
             if (!Gate::allows('roles_create')) {
@@ -91,7 +84,7 @@ class RoleController extends Controller
         }
     }
 
-    public function create(): mixed
+    public function create(): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('roles_create')) {
@@ -129,7 +122,7 @@ class RoleController extends Controller
         }
     }
 
-    public function editView(int $role): mixed
+    public function editView(int $role): \Illuminate\View\View
     {
         try {
             if (!Gate::allows('roles_edit')) {
@@ -152,7 +145,7 @@ class RoleController extends Controller
         }
     }
 
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         try {
             if (!Gate::allows('roles_edit')) {
@@ -192,7 +185,7 @@ class RoleController extends Controller
         }
     }
 
-    public function duplicate(int $id): mixed
+    public function duplicate(int $id): \Illuminate\View\View
     {
         try {
             if (!Gate::allows('roles_duplicate')) {

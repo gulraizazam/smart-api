@@ -11,12 +11,9 @@ class CashflowMonthlyReport extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public array $reportData;
-
-    public function __construct(array $reportData)
-    {
-        $this->reportData = $reportData;
-    }
+    public function __construct(
+        public readonly array $reportData,
+    ) {}
 
     public function build()
     {

@@ -3,9 +3,9 @@
 declare(strict_types=1);
 namespace App\Models;
 
-use DateTime;
 use Carbon\Carbon;
 use App\Helpers\Filters;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -31,9 +31,11 @@ class CustomForms extends BaseModel
 
     const sort_field = 'sort_number';
 
-    public function getCreatedAtAttribute($value)
+    protected function createdAt(): Attribute
     {
-        return Carbon::parse($value)->format('F j,Y h:i A');
+        return Attribute::make(
+            get: fn (string $value): string => Carbon::parse($value)->format('F j,Y h:i A'),
+        );
     }
 
     public static function activateRecord($id)
@@ -92,7 +94,7 @@ class CustomForms extends BaseModel
 
         return self::where([
             ['id', '=', $id],
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
         ])->with(['form_fields'])->first();
     }
 
@@ -105,7 +107,7 @@ class CustomForms extends BaseModel
             $cityId = [$cityId];
         }
         if ($cityId) {
-            return self::whereIn('id', $cityId)->get()->pluck('name', 'id');
+            return self::whereIn('id', $cityId)->pluck('name', 'id');
         } else {
             return self::get()->pluck('name', 'id');
         }
@@ -125,7 +127,7 @@ class CustomForms extends BaseModel
             $query->whereIn('id', $cityId);
         }
 
-        return $query->get()->pluck('name', 'id');
+        return $query->pluck('name', 'id');
     }
 
     /**
@@ -230,15 +232,15 @@ class CustomForms extends BaseModel
 
             [$orderBy, $order] = getSortBy($request);
 
-            Filters::put(Auth::User()->id, 'custom_forms', 'order_by', $orderBy);
-            Filters::put(Auth::User()->id, 'custom_forms', 'order', $order);
+            Filters::put(Auth::user()->id, 'custom_forms', 'order_by', $orderBy);
+            Filters::put(Auth::user()->id, 'custom_forms', 'order', $order);
         } else {
             if (
-                Filters::get(Auth::User()->id, 'custom_forms', 'order_by')
-                && Filters::get(Auth::User()->id, 'custom_forms', 'order')
+                Filters::get(Auth::user()->id, 'custom_forms', 'order_by')
+                && Filters::get(Auth::user()->id, 'custom_forms', 'order')
             ) {
-                $orderBy = Filters::get(Auth::User()->id, 'custom_forms', 'order_by');
-                $order = Filters::get(Auth::User()->id, 'custom_forms', 'order');
+                $orderBy = Filters::get(Auth::user()->id, 'custom_forms', 'order_by');
+                $order = Filters::get(Auth::user()->id, 'custom_forms', 'order');
 
                 if ($orderBy == 'created_at') {
                     $orderBy = 'custom_forms.created_at';
@@ -250,8 +252,8 @@ class CustomForms extends BaseModel
                     $orderBy = 'custom_forms.created_at';
                 }
 
-                Filters::put(Auth::User()->id, 'custom_forms', 'order_by', $orderBy);
-                Filters::put(Auth::User()->id, 'custom_forms', 'order', $order);
+                Filters::put(Auth::user()->id, 'custom_forms', 'order_by', $orderBy);
+                Filters::put(Auth::user()->id, 'custom_forms', 'order', $order);
             }
         }
         if (count($where)) {
@@ -286,9 +288,7 @@ class CustomForms extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -300,17 +300,17 @@ class CustomForms extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'custom_forms', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'custom_forms', 'account_id', $account_id);
         } else {
 
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'custom_forms', 'account_id');
+                Filters::forget(Auth::user()->id, 'custom_forms', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'custom_forms', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'custom_forms', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'custom_forms', 'account_id'),
+                        Filters::get(Auth::user()->id, 'custom_forms', 'account_id'),
                     ];
                 }
             }
@@ -321,16 +321,16 @@ class CustomForms extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'custom_forms', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'custom_forms', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'custom_forms', 'name');
+                Filters::forget(Auth::user()->id, 'custom_forms', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'custom_forms', 'name')) {
+                if (Filters::get(Auth::user()->id, 'custom_forms', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'custom_forms', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'custom_forms', 'name').'%',
                     ];
                 }
             }
@@ -341,16 +341,16 @@ class CustomForms extends BaseModel
                 '=',
                 $filters['form_type_id'],
             ];
-            Filters::put(Auth::User()->id, 'custom_forms', 'form_type_id', $filters['form_type_id']);
+            Filters::put(Auth::user()->id, 'custom_forms', 'form_type_id', $filters['form_type_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'custom_forms', 'form_type_id');
+                Filters::forget(Auth::user()->id, 'custom_forms', 'form_type_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'custom_forms', 'form_type_id')) {
+                if (Filters::get(Auth::user()->id, 'custom_forms', 'form_type_id')) {
                     $where[] = [
                         'custom_form_type',
                         '=',
-                        Filters::get(Auth::User()->id, 'custom_forms', 'form_type_id'),
+                        Filters::get(Auth::user()->id, 'custom_forms', 'form_type_id'),
                     ];
                 }
             }
@@ -358,13 +358,13 @@ class CustomForms extends BaseModel
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['created_at', '>=', $start_date_time];
             $where[] = ['created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'custom_forms', 'created_at', $filters['created_at']);
+            Filters::put(Auth::user()->id, 'custom_forms', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'custom_forms', 'created_at');
+                Filters::forget(Auth::user()->id, 'custom_forms', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'custom_forms', 'created_at')) {
-                    $where[] = ['created_at', '>=', Filters::get(Auth::User()->id, 'custom_forms', 'created_at')];
+                if (Filters::get(Auth::user()->id, 'custom_forms', 'created_at')) {
+                    $where[] = ['created_at', '>=', Filters::get(Auth::user()->id, 'custom_forms', 'created_at')];
                 }
             }
         }
@@ -498,6 +498,7 @@ class CustomForms extends BaseModel
     /**
      * Model boot for database events
      */
+    #[\Override]
     public static function boot()
     {
 

@@ -118,8 +118,6 @@ class Staff
      */
     public static function centerStaffPerformanceStatsByRevenue($data, $filters = [])
     {
-        //dd($filters);
-        //dd($data);
         $where = [];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
@@ -182,7 +180,7 @@ class Staff
 
         if ($records) {
             foreach ($records as $record) {
-                if (! in_array($record->location_id, $created_byArray)) {
+                if (! in_array($record->location_id, $created_byArray, true)) {
                     $created_byArray[] = $record->location_id;
                     $locationinfo = Locations::where('id', '=', $record->location_id)->first();
                     $data[$record->location_id] = [
@@ -217,7 +215,6 @@ class Staff
                 }
             }
         }
-        //        dd($data);
         return $data;
     }
 
@@ -292,10 +289,9 @@ class Staff
 
         if ($records) {
             foreach ($records as $record) {
-                //dd($record);
                 $created_byArray = [];
                 $locationinfo = Locations::where('id', '=', $record->location_id)->first();
-                if (! in_array($record->appointment_type_id, $created_byArray)) {
+                if (! in_array($record->appointment_type_id, $created_byArray, true)) {
                     $created_byArray[] = $record->appointment_type_id;
                     $appointmenttype = AppointmentTypes::find($record->appointment_type_id);
                     $data[$record->appointment_type_id] = [

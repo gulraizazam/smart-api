@@ -3,6 +3,8 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\ExpenseStatus;
+use App\Enums\VendorTransactionType;
 use App\Helpers\CashflowHelper;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\CashTransfer;
@@ -92,7 +94,7 @@ class DashboardService
 
             // Expenses from go-live to end of last month
             $preExpenses = (float) Expense::forAccount($accountId)
-                ->whereNull('voided_at')->where('status', '!=', 'rejected')
+                ->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)
                 ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
                 ->sum('amount');
 
@@ -136,7 +138,7 @@ class DashboardService
 
         // Current month outflows: expenses + staff advances net
         $expenses = (float) Expense::forAccount($accountId)
-            ->whereNull('voided_at')->where('status', '!=', 'rejected')
+            ->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)
             ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
             ->sum('amount');
 
@@ -247,15 +249,15 @@ class DashboardService
         // Staff advances outstanding = total advances - expenses by staff - returns
         $totalAdvances = (float) StaffAdvance::where('account_id', $accountId)->whereNull('deleted_at')->whereNull('voided_at')->sum('amount');
         $totalReturns = (float) StaffReturn::where('account_id', $accountId)->whereNull('deleted_at')->whereNull('voided_at')->sum('amount');
-        $staffExpenses = (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereNotNull('staff_id')->sum('amount');
+        $staffExpenses = (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)->whereNotNull('staff_id')->sum('amount');
         $advancesOutstanding = max(0, $totalAdvances - $staffExpenses - $totalReturns);
 
         return [
-            'pending_expenses' => Expense::forAccount($accountId)->where('status', 'pending')->whereNull('voided_at')->count(),
+            'pending_expenses' => Expense::forAccount($accountId)->where('status', ExpenseStatus::Pending)->whereNull('voided_at')->count(),
             'flagged_entries' => Expense::forAccount($accountId)->where('is_flagged', true)->whereNull('voided_at')->count(),
-            'no_receipt_count' => Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereNull('attachment_url')->count(),
-            'today_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereDate('expense_date', Carbon::today())->sum('amount'),
-            'mtd_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', 'rejected')->whereBetween('expense_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::today()->toDateString()])->sum('amount'),
+            'no_receipt_count' => Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)->whereNull('attachment_url')->count(),
+            'today_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)->whereDate('expense_date', Carbon::today())->sum('amount'),
+            'mtd_total' => (float) Expense::forAccount($accountId)->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)->whereBetween('expense_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::today()->toDateString()])->sum('amount'),
             'advances_outstanding' => $advancesOutstanding,
         ];
     }
@@ -268,7 +270,7 @@ class DashboardService
         // Outflows by day
         $outflowQuery = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereBetween('expense_date', [$dateFrom, $dateTo]);
 
         if ($branchId) {
@@ -387,7 +389,7 @@ class DashboardService
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
             ->select('expense_categories.name as category', DB::raw('SUM(expenses.amount) as total'), DB::raw('COUNT(*) as count'));
@@ -410,7 +412,7 @@ class DashboardService
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->with(['category:id,name', 'pool:id,name', 'vendor:id,name', 'creator:id,name']);
 
@@ -515,7 +517,7 @@ class DashboardService
 
             // Find the latest unpaid purchase transaction date
             $lastPurchase = \App\Models\CashFlow\VendorTransaction::where('vendor_id', $vendor->id)
-                ->where('type', 'purchase')
+                ->where('type', VendorTransactionType::Purchase)
                 ->orderByDesc('created_at')
                 ->value('created_at');
 
@@ -554,7 +556,7 @@ class DashboardService
         // Top 5 vendors by total spend
         $topVendors = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereNotNull('vendor_id')
             ->where('expense_date', '>=', $sixMonthsAgo)
             ->select('vendor_id', DB::raw('SUM(amount) as total'))
@@ -574,7 +576,7 @@ class DashboardService
         // Monthly breakdown per vendor
         $monthly = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereIn('vendor_id', $vendorIds)
             ->where('expense_date', '>=', $sixMonthsAgo)
             ->select('vendor_id', DB::raw("DATE_FORMAT(expense_date, '%Y-%m') as month"), DB::raw('SUM(amount) as total'))
@@ -624,7 +626,7 @@ class DashboardService
         // Expenses by staff
         $staffExpenses = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereNotNull('staff_id')
             ->select('staff_id', DB::raw('SUM(amount) as total_expenses'))
             ->groupBy('staff_id')
@@ -686,7 +688,7 @@ class DashboardService
             ],
             'rejected_needing_reentry' => Expense::forAccount($accountId)
                 ->where('created_by', $userId)
-                ->where('status', 'rejected')
+                ->where('status', ExpenseStatus::Rejected)
                 ->whereNull('voided_at')
                 ->count(),
             'missing_attachments' => Expense::forAccount($accountId)
@@ -809,7 +811,7 @@ class DashboardService
     public function getPendingExpensesList(int $accountId): array
     {
         return Expense::forAccount($accountId)
-            ->where('status', 'pending')
+            ->where('status', ExpenseStatus::Pending)
             ->whereNull('voided_at')
             ->with(['category:id,name', 'creator:id,name'])
             ->orderByDesc('expense_date')
@@ -857,7 +859,7 @@ class DashboardService
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected')
+            ->where('status', '!=', ExpenseStatus::Rejected)
             ->whereBetween('expense_date', [$dateFrom, $dateTo]);
 
         if ($branchId) {
@@ -943,7 +945,7 @@ class DashboardService
     {
         $query = Expense::forAccount($accountId)
             ->whereNull('voided_at')
-            ->where('status', '!=', 'rejected');
+            ->where('status', '!=', ExpenseStatus::Rejected);
 
         if ($goLiveDate) {
             $query->where('system_created_at', '>=', $goLiveDate);

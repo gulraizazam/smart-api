@@ -3,11 +3,13 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Auth;
 
 class BusinessClosure extends Model
 {
@@ -23,13 +25,14 @@ class BusinessClosure extends Model
         'created_by',
     ];
 
-    protected $dates = [
-        'start_date',
-        'end_date',
-        'created_at',
-        'updated_at',
-        'deleted_at',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'end_date' => 'date',
+        ];
+    }
 
     /**
      * Get the locations for this business closure
@@ -58,7 +61,7 @@ class BusinessClosure extends Model
     /**
      * Scope to filter by account
      */
-    public function scopeByAccount($query, $accountId = null)
+    public function scopeByAccount(Builder $query, ?int $accountId = null): Builder
     {
         $accountId = $accountId ?? Auth::user()->account_id;
         return $query->where('account_id', $accountId);
@@ -67,7 +70,7 @@ class BusinessClosure extends Model
     /**
      * Check if closure applies to a specific location
      */
-    public function appliesToLocation($locationId)
+    public function appliesToLocation(int $locationId): bool
     {
         if ($this->locations->isEmpty()) {
             return true;
@@ -78,7 +81,7 @@ class BusinessClosure extends Model
     /**
      * Check if a date falls within this closure period
      */
-    public function coversDate($date)
+    public function coversDate(string $date): bool
     {
         $checkDate = \Carbon\Carbon::parse($date)->startOfDay();
         $startDate = \Carbon\Carbon::parse($this->start_date)->startOfDay();
@@ -90,7 +93,7 @@ class BusinessClosure extends Model
     /**
      * Get closures that affect a specific date and location
      */
-    public static function getClosuresForDateAndLocation($date, $locationId, $accountId = null)
+    public static function getClosuresForDateAndLocation(string $date, int $locationId, ?int $accountId = null): Collection
     {
         $accountId = $accountId ?? Auth::user()->account_id;
 

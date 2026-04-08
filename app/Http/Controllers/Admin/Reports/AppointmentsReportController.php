@@ -28,7 +28,7 @@ class AppointmentsReportController extends Controller
 
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
-        return view('admin.reports.appointments_report', get_defined_vars());
+        return view('admin.reports.appointments_report', compact('Users', 'locations'));
     }
 
     public function reportLoad(AppointmentsReportRequest $request): View

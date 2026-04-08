@@ -21,7 +21,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -38,7 +38,7 @@ class CustomFormsController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
 
@@ -57,7 +57,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(): mixed
+    public function create(): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_forms_create_general') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
@@ -73,7 +73,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create_measurement(): mixed
+    public function create_measurement(): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_forms_create_measurement') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
@@ -89,7 +89,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create_medical(): mixed
+    public function create_medical(): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_forms_create_medical_history_form') && ! Gate::allows('custom_forms_edit')) {
             return abort(401);
@@ -100,14 +100,14 @@ class CustomFormsController extends Controller
         return redirect()->route('admin.custom_forms.edit', $form);
     }
 
-    public function sortorder_save(): mixed
+    public function sortorder_save(): \Illuminate\Http\JsonResponse
     {
         $result = $this->service->saveSortOrder();
 
         return response()->json($result);
     }
 
-    public function sort_fields(Request $request, int $id): mixed
+    public function sort_fields(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -121,7 +121,7 @@ class CustomFormsController extends Controller
         return response()->json(['message' => 'Records has been sorted successfully.', 'code' => 200], 200);
     }
 
-    public function sortorder(): mixed
+    public function sortorder(): \Illuminate\View\View
     {
         $custom_forms = $this->service->getSortOrderData();
 
@@ -133,7 +133,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreUpdateCustomFormsRequest $request): mixed
+    public function store(StoreUpdateCustomFormsRequest $request): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -155,7 +155,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('custom_forms_edit') && ! Gate::allows('custom_forms_create_measurement') && ! Gate::allows('custom_forms_create_general')) {
             return abort(401);
@@ -177,7 +177,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, int $id): mixed
+    public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -193,7 +193,7 @@ class CustomFormsController extends Controller
         return redirect()->route('admin.custom_forms.index');
     }
 
-    public function form_update(Request $request, int $id): mixed
+    public function form_update(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -210,7 +210,7 @@ class CustomFormsController extends Controller
         }
     }
 
-    public function create_field(Request $request, int $id): mixed
+    public function create_field(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
 
         if (! Gate::allows('custom_forms_manage')) {
@@ -231,7 +231,7 @@ class CustomFormsController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update_field(Request $request, int $form_id, int $field_id): mixed
+    public function update_field(Request $request, int $form_id, int $field_id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_forms_manage')) {
             return abort(401);
@@ -246,7 +246,7 @@ class CustomFormsController extends Controller
         }
     }
 
-    public function delete_field(Request $request, int $form_id, int $field_id): mixed
+    public function delete_field(Request $request, int $form_id, int $field_id): \Illuminate\Http\JsonResponse
     {
 
         if (! Gate::allows('custom_forms_manage')) {
@@ -265,7 +265,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_forms_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -286,7 +286,7 @@ class CustomFormsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_forms_inactive')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

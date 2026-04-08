@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
+use App\Enums\AppointmentType;
 use App\Helpers\DoctorDashboardHelper;
 use App\Models\DoctorGoogleReview;
 use Carbon\Carbon;
@@ -15,22 +16,12 @@ class PersonalBestCalculator
      */
     const LOOKBACK_MONTHS = 3;
 
-    private ConversionCalculator $conversionCalculator;
-    private RevenueCalculator $revenueCalculator;
-    private UpsellCalculator $upsellCalculator;
-    private FeedbackCalculator $feedbackCalculator;
-
     public function __construct(
-        ConversionCalculator $conversionCalculator,
-        RevenueCalculator $revenueCalculator,
-        UpsellCalculator $upsellCalculator,
-        FeedbackCalculator $feedbackCalculator
-    ) {
-        $this->conversionCalculator = $conversionCalculator;
-        $this->revenueCalculator = $revenueCalculator;
-        $this->upsellCalculator = $upsellCalculator;
-        $this->feedbackCalculator = $feedbackCalculator;
-    }
+        private readonly ConversionCalculator $conversionCalculator,
+        private readonly RevenueCalculator $revenueCalculator,
+        private readonly UpsellCalculator $upsellCalculator,
+        private readonly FeedbackCalculator $feedbackCalculator,
+    ) {}
 
     /**
      * Calculate all 6 personal bests for a doctor (rolling last 3 months).
@@ -144,7 +135,7 @@ class PersonalBestCalculator
             ->where('doctor_id', $doctorId)
             ->where(function ($q) use ($consultationStatusIds, $treatmentStatusIds) {
                 $q->where(function ($q2) use ($consultationStatusIds) {
-                    $q2->where('appointment_type_id', 1)
+                    $q2->where('appointment_type_id', AppointmentType::Consultancy->value)
                         ->whereIn('appointment_status_id', $consultationStatusIds);
                 })->orWhere(function ($q3) use ($treatmentStatusIds) {
                     $q3->where('appointment_type_id', 2)

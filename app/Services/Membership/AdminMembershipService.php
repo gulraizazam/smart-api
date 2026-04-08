@@ -562,7 +562,7 @@ class AdminMembershipService
         $totalDiscountAmount = 0;
 
         foreach ($usedServices as $service) {
-            $serviceName  = $service->bundle ? $service->bundle->name : 'Unknown Service';
+            $serviceName  = $service->bundle?->name ?? 'Unknown Service';
             $discountSaved = $service->service_price - $service->tax_including_price;
 
             $packageService = $service->packageservice->first();

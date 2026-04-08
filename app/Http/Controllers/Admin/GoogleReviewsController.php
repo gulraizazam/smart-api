@@ -21,7 +21,7 @@ class GoogleReviewsController extends Controller
     /**
      * Display Google Reviews management page.
      */
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (!Gate::allows('google_reviews_manage')) {
             return abort(401);
@@ -33,7 +33,7 @@ class GoogleReviewsController extends Controller
     /**
      * Get reviews grid data for a given month/year.
      */
-    public function getData(Request $request): mixed
+    public function getData(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $accountId = Auth::user()->account_id;
@@ -44,15 +44,15 @@ class GoogleReviewsController extends Controller
 
             return $this->successResponse('Reviews data loaded', $data, 200);
         } catch (\Exception $e) {
-            \Log::error('Google Reviews getData Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            \Log::error('Google Reviews getData Error: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
     /**
      * Save a single doctor's review count (immediate save).
      */
-    public function save(Request $request): mixed
+    public function save(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $request->validate([
@@ -75,8 +75,8 @@ class GoogleReviewsController extends Controller
 
             return $this->successResponse('Review count saved', null, 200);
         } catch (\Exception $e) {
-            \Log::error('Google Reviews save Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            \Log::error('Google Reviews save Error: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 }

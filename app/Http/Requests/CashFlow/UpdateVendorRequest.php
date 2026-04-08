@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateVendorRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_vendor_edit');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [

@@ -65,7 +65,7 @@
                                 @endif
                                 <option
                                         @if($tmp_id==$leadServices) selected="selected" @endif value="@if($id < 0){{ ($id * -1) }}@else{{ $id }}@endif">
-                                        @if($id < 0)<b>{!! $Service['name'] !!}</b>@else{!! $Service['name'] !!}@endif
+                                        @if($id < 0)<b>{{ $Service['name'] }}</b>@else{{ $Service['name'] }}@endif
                                 </option>
                             @endforeach
                         </select>

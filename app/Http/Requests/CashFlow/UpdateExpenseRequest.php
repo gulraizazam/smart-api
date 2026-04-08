@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateExpenseRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::user()->can('cashflow_expense_edit');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -48,6 +50,7 @@ class UpdateExpenseRequest extends FormRequest
         });
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

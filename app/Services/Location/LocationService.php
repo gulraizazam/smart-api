@@ -13,9 +13,11 @@ use App\Models\Services;
 use App\Models\Locations;
 use App\Helpers\NodesTree;
 use App\Models\UserHasLocations;
+use App\Models\User;
 use App\Helpers\GeneralFunctions;
 use App\Models\ServiceHasLocations;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Helpers\Widgets\LocationsWidget;
@@ -30,7 +32,7 @@ class LocationService
         $records = [];
         $records['data'] = [];
 
-        if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
+        if (!empty($filters) && hasFilter($filters, 'delete') != '') {
             $ids = explode(',', $filters['delete']);
             $Locations = Locations::getBulkData($ids);
             if ($Locations) {
@@ -77,7 +79,7 @@ class LocationService
                  */
                 $_services = '';
 
-                $locationServices = ServiceHasLocations::where(['location_id' => $location->id])->get()->pluck('service_id');
+                $locationServices = ServiceHasLocations::where(['location_id' => $location->id])->pluck('service_id');
                 if (! $locationServices->isEmpty() && count($locationServices)) {
                     foreach ($locationServices as $_location) {
                         if (array_key_exists($_location, $Services)) {
@@ -130,14 +132,14 @@ class LocationService
     private function getExtraData(array $records, int $accountId): array
     {
 
-        $filters = Filters::all(Auth::User()->id, 'locations');
+        $filters = Filters::all(Auth::user()->id, 'locations');
 
         $cities = Cities::where([
             ['account_id', '=', $accountId],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('name', 'id');
+        ])->pluck('name', 'id');
 
         $regions = Regions::getActiveSorted(ACL::getUserRegions());
 
@@ -206,7 +208,7 @@ class LocationService
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
         $ServiceLocations = [];
 
         return [
@@ -224,7 +226,7 @@ class LocationService
         $locatUser = [];
         $location_slug_all = Locations::where('slug', '=', 'all')->first();
         $user_has_location_data = UserHasLocations::where('location_id', '=', $location_slug_all->id ?? 0)->groupby('user_id')->get();
-        if (count($user_has_location_data) > 0) {
+        if (!empty($user_has_location_data)) {
             foreach ($user_has_location_data as $user) {
                 $user_has_locations = [
                     'user_id' => $user->user_id,
@@ -250,11 +252,11 @@ class LocationService
         ])->select('user_id')->groupby('user_id')->get();
 
         foreach ($user_has_location_data as $Need_to_lcoateuser) {
-            if (! in_array($Need_to_lcoateuser->user_id, $user_already_have_location)) {
+            if (! in_array($Need_to_lcoateuser->user_id, $user_already_have_location, true)) {
                 $locatUser[] = $Need_to_lcoateuser->user_id;
             }
         }
-        if (count($locatUser) > 0) {
+        if (!empty($locatUser)) {
             foreach ($locatUser as $user) {
                 $user_has_locations = [
                     'user_id' => $user,
@@ -300,7 +302,7 @@ class LocationService
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->get()->pluck('full_name', 'id');
+        ])->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
         $Services = GeneralFunctions::ServicesTreeList();
 
@@ -386,5 +388,54 @@ class LocationService
         $serive = ServiceWidget::generateServiceArrayArray((object) ['id' => $locationId], $accountId);
 
         return ['services' => $serive, 'locaiton_id_1' => $locationId];
+    }
+
+    public static function getFDM(?array $location_ids = null): array
+    {
+        $fdo_ids = [];
+        $fdm_ids = [];
+        if ($location_ids && !empty($location_ids)) {
+            $fdo_phones = Locations::whereIn('id', $location_ids)->pluck('fdo_phone');
+            if ($fdo_phones->count()) {
+                foreach ($fdo_phones as $fdo_phone) {
+                    $fdo_ids[] = User::where('phone', GeneralFunctions::cleanNumber($fdo_phone ?? 0))
+                        ->where('user_type_id', 2)->value('id');
+                }
+            }
+            $fdm_ids = !empty($fdo_ids) ? array_filter($fdo_ids) : [0];
+        }
+
+        if (!empty($fdm_ids)) {
+            return $fdm_ids;
+        }
+
+        return DB::table('role_has_users')
+            ->whereIn('role_id', ['4'])
+            ->pluck('user_id')->toArray();
+    }
+
+    public static function getCSR(): array
+    {
+        return DB::table('role_has_users')
+            ->whereIn('role_id', ['2', '3'])
+            ->pluck('user_id')->toArray();
+    }
+
+    public static function getLocationIds(mixed $location_id): ?array
+    {
+        if ($location_id) {
+            $location_ids = null;
+            if (is_string($location_id)) {
+                $location_id = explode(',', $location_id);
+            }
+            $locationIds = array_filter($location_id);
+            if (isset($locationIds) && count($locationIds)) {
+                $location_ids = $locationIds;
+            }
+
+            return $location_ids;
+        }
+
+        return null;
     }
 }

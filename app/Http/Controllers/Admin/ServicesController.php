@@ -25,7 +25,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request): mixed
+    public function index(Request $request): \Illuminate\View\View
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
@@ -34,7 +34,7 @@ class ServicesController extends Controller
         return view('admin.services.index');
     }
 
-    public function datatable(Request $request): mixed
+    public function datatable(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $filters = getFilters($request->all());
@@ -46,7 +46,7 @@ class ServicesController extends Controller
                 if ($Locations) {
                     foreach ($Locations as $Location) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (! Services::isChildExists($Location->id, Auth::User()->account_id)) {
+                        if (! Services::isChildExists($Location->id, Auth::user()->account_id)) {
                             $Location->delete();
                         }
                     }
@@ -56,7 +56,7 @@ class ServicesController extends Controller
             }
             [$orderBy, $order] = getSortBy($request);
             // Get Total Records
-            $iTotalRecords = Services::getTotalRecords($request, Auth::User()->account_id);
+            $iTotalRecords = Services::getTotalRecords($request, Auth::user()->account_id);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
             $Services = GeneralFunctions::servicesList($request, $iTotalRecords);
             $records = $this->getExtraData($records);
@@ -89,7 +89,7 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    public function getSortOrder(): mixed
+    public function getSortOrder(): \Illuminate\View\View
     {
         if (! Gate::allows('services_sort')) {
             return abort(401);
@@ -97,7 +97,7 @@ class ServicesController extends Controller
 
         return view('admin.services.Sort');
     }
-    public function sortOrderGet(): mixed
+    public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
 
         try {
@@ -127,7 +127,7 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    public function sortOrderSave(Request $request): mixed
+    public function sortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
 
 
@@ -150,15 +150,15 @@ class ServicesController extends Controller
             return $this->handleException($e, 'ServicesController');
         }
     }
-    private function getExtraData($records = []): mixed
+    private function getExtraData($records = []): array
     {
 
-        $filters = Filters::all(Auth::User()->id, 'services');
+        $filters = Filters::all(Auth::user()->id, 'services');
 
         /* Create Nodes with Parents */
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
@@ -178,7 +178,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function create(): mixed
+    public function create(): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -210,14 +210,14 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(StoreUpdateServiceRequest $request): mixed
+    public function store(StoreUpdateServiceRequest $request): \Illuminate\Http\JsonResponse
     {
 
         if (! Gate::allows('services_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        if (Services::createRecord($request, Auth::User()->account_id)) {
+        if (Services::createRecord($request, Auth::user()->account_id)) {
 
             return $this->successResponse('Record has been created successfully.');
         } else {
@@ -231,7 +231,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -274,7 +274,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, int $id): mixed
+    public function show(Request $request, int $id): \Illuminate\View\View
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
@@ -310,7 +310,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function duplicate(int $id): mixed
+    public function duplicate(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -344,13 +344,13 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function storeDuplicate(StoreUpdateServiceRequest $request): mixed
+    public function storeDuplicate(StoreUpdateServiceRequest $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_duplicate')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        if (Services::createRecord($request, Auth::User()->account_id)) {
+        if (Services::createRecord($request, Auth::user()->account_id)) {
             return $this->successResponse('Service has been duplicated successfully.');
         } else {
             return $this->successResponse('Something went wrong, please try again later.');
@@ -363,7 +363,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(StoreUpdateServiceRequest $request, int $id): mixed
+    public function update(StoreUpdateServiceRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -376,13 +376,13 @@ class ServicesController extends Controller
             }
         }
         if (
-            Services::isChildExists($id, Auth::User()->account_id) &&
+            Services::isChildExists($id, Auth::user()->account_id) &&
             ($service->parent_id != $request->get('parent_id') || $service->end_node != (int) $request->get('end_node'))
         ) {
             return $this->errorResponse('Parent Service can not be changed due to one or more services are associated with it.', 404);
         }
 
-        if (Services::updateRecord($id, $request, Auth::User()->account_id)) {
+        if (Services::updateRecord($id, $request, Auth::user()->account_id)) {
 
             return $this->successResponse('Record has been updated successfully.');
         } else {
@@ -396,7 +396,7 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(int $id): mixed
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('services_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -416,7 +416,7 @@ class ServicesController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
 
@@ -458,7 +458,7 @@ class ServicesController extends Controller
 
     }
 
-    public function GetColor(Request $request): mixed
+    public function GetColor(Request $request): \Illuminate\Http\JsonResponse
     {
         if ($request->service != 0) {
             $service = Services::where('id', $request->service)->first();
@@ -468,7 +468,7 @@ class ServicesController extends Controller
             return response()->json(['color' => '#000']);
         }
     }
-    public function exportPdf(): mixed
+    public function exportPdf(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $services = Services::getTreeStructure();
         
@@ -478,7 +478,7 @@ class ServicesController extends Controller
     }
 
     // Helper method to flatten tree for display
-    private function flattenTree($services, $level = 0): mixed
+    private function flattenTree($services, $level = 0): array
     {
         $flattened = [];
         
@@ -496,7 +496,7 @@ class ServicesController extends Controller
     }
 
     // Alternative method using flattened approach
-    public function exportPdfFlattened(): mixed
+    public function exportPdfFlattened(): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $services = Services::getTreeStructure();
         $flattenedServices = $this->flattenTree($services);

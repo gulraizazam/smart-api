@@ -22,17 +22,15 @@ class SecondSmsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected mixed $payload;
-
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($payload)
-    {
+    public function __construct(
+        protected readonly mixed $payload,
+    ) {
         $this->queue = 'medium';
-        $this->payload = $payload;
     }
 
     /**
@@ -59,11 +57,7 @@ class SecondSmsJob implements ShouldQueue
             }
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
-                return [
-                    'status' => true,
-                    'sms_data' => 'SMS Promotion is disabled',
-                    'error_msg' => '',
-                ];
+                return;
             }
             $preparedText = Appointments::prepareSMSContent($this->payload['appointment_id'], $SMSTemplate->content);
 
@@ -101,10 +95,13 @@ class SecondSmsJob implements ShouldQueue
             }
             SMSLogs::create($SMSLog);
 
-            return true;
-
         } catch (\Exception $exception) {
-            $exception->getLine().'---'.$exception->getMessage().'----'.$exception->getFile();
+            \Illuminate\Support\Facades\Log::error('SecondSmsJob failed', [
+                'appointment_id' => $this->payload['appointment_id'] ?? null,
+                'line' => $exception->getLine(),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+            ]);
         }
     }
 }

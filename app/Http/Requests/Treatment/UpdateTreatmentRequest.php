@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Auth;
 
 final class UpdateTreatmentRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         // Convert scheduled_time from 12-hour to 24-hour format
@@ -43,6 +45,7 @@ final class UpdateTreatmentRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -77,6 +80,7 @@ final class UpdateTreatmentRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

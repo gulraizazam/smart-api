@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 
 final class StoreServiceRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('services_create');
@@ -17,6 +18,7 @@ final class StoreServiceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -35,6 +37,7 @@ final class StoreServiceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -46,6 +49,7 @@ final class StoreServiceRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function prepareForValidation(): void
     {
         $this->merge([

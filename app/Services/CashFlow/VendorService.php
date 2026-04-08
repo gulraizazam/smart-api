@@ -3,6 +3,9 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\RequestStatus;
+use App\Enums\VendorTransactionStatus;
+use App\Enums\VendorTransactionType;
 use App\Exceptions\CashflowException;
 use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Vendor;
@@ -14,21 +17,17 @@ use Illuminate\Support\Facades\DB;
 
 class VendorService
 {
-    private CashflowAuditService $auditService;
-    private NotificationService $notificationService;
-
-    public function __construct(CashflowAuditService $auditService, NotificationService $notificationService)
-    {
-        $this->auditService = $auditService;
-        $this->notificationService = $notificationService;
-    }
+    public function __construct(
+        private readonly CashflowAuditService $auditService,
+        private readonly NotificationService $notificationService,
+    ) {}
 
     // ===================== VENDORS =====================
 
     /**
      * Get all vendors for account (paginated).
      */
-    public function getVendors(int $accountId, array $filters = [], int $perPage = 25)
+    public function getVendors(int $accountId, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = Vendor::forAccount($accountId)
             ->with('creator:id,name');
@@ -158,8 +157,8 @@ class VendorService
         // sum(opening_balance) + pre-month purchases - pre-month payments
         $prePeriod = VendorTransaction::forAccount($accountId)
             ->whereRaw("{$dateExpr} < ?", [$monthStart]);
-        $prePurchases = (float) (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
-        $prePayments = (float) (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $prePurchases = (float) (clone $prePeriod)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
+        $prePayments = (float) (clone $prePeriod)->where('type', VendorTransactionType::Payment)->sum('amount');
         $totalOpeningBalance = $totalStaticOpening + $prePurchases - $prePayments;
 
         // This month's purchases & payments
@@ -167,15 +166,15 @@ class VendorService
             ->whereRaw("{$dateExpr} >= ?", [$monthStart])
             ->whereRaw("{$dateExpr} <= ?", [$monthEnd]);
 
-        $monthPurchases = (clone $monthBase)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
-        $monthPayments = (clone $monthBase)->where('type', 'payment')->sum('amount');
+        $monthPurchases = (clone $monthBase)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
+        $monthPayments = (clone $monthBase)->where('type', VendorTransactionType::Payment)->sum('amount');
 
         $perPage = 20;
 
         // Paginated recent purchases (full data with relations for ledger-style display)
         $purchasePage = (int) ($params['purchase_page'] ?? 1);
         $purchaseQuery = VendorTransaction::forAccount($accountId)
-            ->where('type', 'purchase')
+            ->where('type', VendorTransactionType::Purchase)
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
@@ -188,7 +187,7 @@ class VendorService
         // Paginated recent payments (full data with relations for ledger-style display)
         $paymentPage = (int) ($params['payment_page'] ?? 1);
         $paymentQuery = VendorTransaction::forAccount($accountId)
-            ->where('type', 'payment')
+            ->where('type', VendorTransactionType::Payment)
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
@@ -199,9 +198,7 @@ class VendorService
         $recentPayments = $paymentQuery->paginate($perPage, ['*'], 'payment_page', $paymentPage);
 
         // Active vendors list for the payment vendor filter dropdown
-        $activeVendors = $vendors->map(function ($v) {
-            return ['id' => $v->id, 'name' => $v->name];
-        })->sortBy('name')->values();
+        $activeVendors = $vendors->map(fn($v) => ['id' => $v->id, 'name' => $v->name])->sortBy('name')->values();
 
         return [
             'total_opening_balance' => round((float) $totalOpeningBalance, 2),
@@ -221,7 +218,7 @@ class VendorService
     /**
      * Get vendor ledger (transactions) with date filtering, computed opening balance, period stats, and running balance.
      */
-    public function getVendorLedger(int $vendorId, int $accountId, array $filters = [], int $perPage = 25)
+    public function getVendorLedger(int $vendorId, int $accountId, array $filters = [], int $perPage = 25): array
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
 
@@ -238,8 +235,8 @@ class VendorService
 
         $prePeriod->whereRaw("{$dateExpr} < ?", [$dateFrom]);
 
-        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
-        $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $prePurchases = (clone $prePeriod)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
+        $prePayments = (clone $prePeriod)->where('type', VendorTransactionType::Payment)->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
 
         // Query for filtered period (DESC for latest-first display)
@@ -274,8 +271,8 @@ class VendorService
             $periodBase->whereRaw("{$dateExpr} <= ?", [$dateTo]);
         }
 
-        $periodPurchases = (clone $periodBase)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
-        $periodPayments = (clone $periodBase)->where('type', 'payment')->sum('amount');
+        $periodPurchases = (clone $periodBase)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
+        $periodPayments = (clone $periodBase)->where('type', VendorTransactionType::Payment)->sum('amount');
         $periodCount = (clone $periodBase)->count();
 
         // Get paginated transactions (latest first)
@@ -301,10 +298,10 @@ class VendorService
             $newerTxs = $newerTxs->orderByRaw("{$dateExpr} DESC, created_at DESC")
                 ->limit($skipCount)->get();
             foreach ($newerTxs as $ntx) {
-                if ($ntx->type === 'purchase' && $ntx->status !== VendorTransaction::STATUS_DELIVERED) {
+                if ($ntx->type === VendorTransactionType::Purchase && $ntx->status !== VendorTransactionStatus::Delivered) {
                     continue;
                 }
-                $closingBalance -= ($ntx->type === 'purchase') ? (float) $ntx->amount : -(float) $ntx->amount;
+                $closingBalance -= ($ntx->type === VendorTransactionType::Purchase) ? (float) $ntx->amount : -(float) $ntx->amount;
             }
         }
 
@@ -314,13 +311,13 @@ class VendorService
         $items = $transactions->getCollection()->map(function ($tx) use (&$runBal) {
             $arr = $tx->toArray();
             // Ordered purchases don't affect balance — show null running_balance for them
-            if ($tx->type === 'purchase' && $tx->status !== VendorTransaction::STATUS_DELIVERED) {
+            if ($tx->type === VendorTransactionType::Purchase && $tx->status !== VendorTransactionStatus::Delivered) {
                 $arr['running_balance'] = null;
                 return $arr;
             }
             $arr['running_balance'] = round($runBal, 2);
             // Move backwards: undo this transaction to get balance before it
-            $runBal -= ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+            $runBal -= ($tx->type === VendorTransactionType::Purchase) ? (float) $tx->amount : -(float) $tx->amount;
             return $arr;
         });
         $transactions->setCollection($items);
@@ -349,10 +346,10 @@ class VendorService
     {
         $tx = VendorTransaction::forAccount($accountId)->findOrFail($transactionId);
 
-        if ($tx->type !== VendorTransaction::TYPE_PURCHASE) {
+        if ($tx->type !== VendorTransactionType::Purchase) {
             throw new CashflowException('Only purchase records can be marked as delivered.');
         }
-        if ($tx->status === VendorTransaction::STATUS_DELIVERED) {
+        if ($tx->status === VendorTransactionStatus::Delivered) {
             throw new CashflowException('This purchase is already marked as delivered.');
         }
 
@@ -360,7 +357,7 @@ class VendorService
 
         DB::transaction(function () use ($tx, $attachmentUrl) {
             $tx->update([
-                'status'         => VendorTransaction::STATUS_DELIVERED,
+                'status'         => VendorTransactionStatus::Delivered,
                 'attachment_url' => $attachmentUrl ?: $tx->attachment_url,
             ]);
             // Ordered purchases were excluded from balance at create time — add now
@@ -418,9 +415,9 @@ class VendorService
             $newAmount = (float) $fresh->amount;
             $newStatus = $fresh->status;
 
-            if ($tx->type === 'purchase') {
-                $oldDelivered = ($oldStatus === VendorTransaction::STATUS_DELIVERED);
-                $newDelivered = ($newStatus === VendorTransaction::STATUS_DELIVERED);
+            if ($tx->type === VendorTransactionType::Purchase) {
+                $oldDelivered = ($oldStatus === VendorTransactionStatus::Delivered);
+                $newDelivered = ($newStatus === VendorTransactionStatus::Delivered);
 
                 if (!$oldDelivered && $newDelivered) {
                     // ordered → delivered: add full new amount to balance
@@ -480,9 +477,9 @@ class VendorService
 
         DB::transaction(function () use ($tx) {
             // Reverse vendor cached_balance
-            if ($tx->type === 'purchase') {
+            if ($tx->type === VendorTransactionType::Purchase) {
                 // Only reverse balance for delivered purchases (ordered ones never touched the balance)
-                if ($tx->status === VendorTransaction::STATUS_DELIVERED) {
+                if ($tx->status === VendorTransactionStatus::Delivered) {
                     DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $tx->amount);
                 }
             } else {
@@ -523,8 +520,8 @@ class VendorService
             $prePeriod->whereRaw('1 = 0');
         }
 
-        $prePurchases = (clone $prePeriod)->where('type', 'purchase')->where('status', VendorTransaction::STATUS_DELIVERED)->sum('amount');
-        $prePayments = (clone $prePeriod)->where('type', 'payment')->sum('amount');
+        $prePurchases = (clone $prePeriod)->where('type', VendorTransactionType::Purchase)->where('status', VendorTransactionStatus::Delivered)->sum('amount');
+        $prePayments = (clone $prePeriod)->where('type', VendorTransactionType::Payment)->sum('amount');
         $openingBalance = (float) $vendor->opening_balance + (float) $prePurchases - (float) $prePayments;
 
         $query = VendorTransaction::forAccount($accountId)
@@ -548,12 +545,12 @@ class VendorService
         $rows = [];
         $running = $openingBalance;
         foreach ($txs as $tx) {
-            $affectsBalance = $tx->type !== 'purchase' || $tx->status === VendorTransaction::STATUS_DELIVERED;
+            $affectsBalance = $tx->type !== VendorTransactionType::Purchase || $tx->status === VendorTransactionStatus::Delivered;
             if ($affectsBalance) {
-                $running += ($tx->type === 'purchase') ? (float) $tx->amount : -(float) $tx->amount;
+                $running += ($tx->type === VendorTransactionType::Purchase) ? (float) $tx->amount : -(float) $tx->amount;
             }
             $desc = ($tx->expense && $tx->expense->description) ? $tx->expense->description : ($tx->description ?? '');
-            $branchName = $tx->is_for_general ? 'General' : ($tx->forBranch ? $tx->forBranch->name : '');
+            $branchName = $tx->is_for_general ? 'General' : ($tx->forBranch?->name ?? '');
             $rows[] = [
                 'date' => $tx->transaction_date ?? $tx->created_at->toDateString(),
                 'type' => ucfirst($tx->type),
@@ -561,10 +558,10 @@ class VendorService
                 'description' => $desc,
                 'reference' => $tx->reference_no ?? '',
                 'branch' => $branchName,
-                'purchase' => $tx->type === 'purchase' ? (float) $tx->amount : '',
-                'payment' => $tx->type === 'payment' ? (float) $tx->amount : '',
+                'purchase' => $tx->type === VendorTransactionType::Purchase ? (float) $tx->amount : '',
+                'payment' => $tx->type === VendorTransactionType::Payment ? (float) $tx->amount : '',
                 'balance' => $affectsBalance ? round($running, 2) : null,
-                'by' => $tx->creator ? $tx->creator->name : '',
+                'by' => $tx->creator?->name ?? '',
             ];
         }
 
@@ -590,7 +587,7 @@ class VendorService
                 'account_id' => $accountId,
                 'vendor_id' => $data['vendor_id'],
                 'type' => $data['type'],
-                'status' => $data['status'] ?? VendorTransaction::STATUS_DELIVERED,
+                'status' => $data['status'] ?? VendorTransactionStatus::Delivered,
                 'amount' => $data['amount'],
                 'expense_id' => $data['expense_id'] ?? null,
                 'description' => $data['description'] ?? null,
@@ -620,7 +617,7 @@ class VendorService
     /**
      * Get vendor requests.
      */
-    public function getVendorRequests(int $accountId, ?string $status = null, int $perPage = 25)
+    public function getVendorRequests(int $accountId, ?string $status = null, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = VendorRequest::forAccount($accountId)
             ->with('requester:id,name')
@@ -650,7 +647,7 @@ class VendorService
             'address'        => $data['address'] ?? null,
             'note'           => $data['notes'] ?? ($data['note'] ?? null),
             'requested_by'   => Auth::id(),
-            'status'         => VendorRequest::STATUS_PENDING,
+            'status'         => RequestStatus::Pending,
         ]);
 
         $this->auditService->log(
@@ -677,7 +674,7 @@ class VendorService
     {
         $vendorRequest = VendorRequest::forAccount($accountId)->findOrFail($requestId);
 
-        if ($vendorRequest->status !== VendorRequest::STATUS_PENDING) {
+        if ($vendorRequest->status !== RequestStatus::Pending) {
             throw new CashflowException('Only pending requests can be approved.');
         }
 
@@ -695,7 +692,7 @@ class VendorService
             ], $accountId);
 
             $vendorRequest->update([
-                'status' => VendorRequest::STATUS_APPROVED,
+                'status' => RequestStatus::Approved,
                 'vendor_id' => $vendor->id,
             ]);
 
@@ -718,12 +715,12 @@ class VendorService
     {
         $vendorRequest = VendorRequest::forAccount($accountId)->findOrFail($requestId);
 
-        if ($vendorRequest->status !== VendorRequest::STATUS_PENDING) {
+        if ($vendorRequest->status !== RequestStatus::Pending) {
             throw new CashflowException('Only pending requests can be dismissed.');
         }
 
         $vendorRequest->update([
-            'status' => VendorRequest::STATUS_DISMISSED,
+            'status' => RequestStatus::Dismissed,
             'admin_notes' => $adminNotes,
         ]);
 

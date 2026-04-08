@@ -37,12 +37,12 @@ class CentreTargetService
         }
 
         // Get Total Records
-        $iTotalRecords = Centertarget::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+        $iTotalRecords = Centertarget::getTotalRecords($request, Auth::user()->account_id, $apply_filter);
 
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $centretargets = Centertarget::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, $filters);
+        $centretargets = Centertarget::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $apply_filter, $filters);
 
         $records = $this->getFilterData($records, $filename);
 
@@ -152,13 +152,13 @@ class CentreTargetService
         $record = Centertarget::where([
             'month' => $request->get('month'),
             'year' => $request->get('year'),
-            'account_id' => Auth::User()->account_id,
+            'account_id' => Auth::user()->account_id,
         ])->first();
 
         if ($record) {
-            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
+            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::user()->account_id);
         } else {
-            $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
+            $staff_target = Centertarget::createRecord($request, Auth::user()->account_id);
         }
 
         if ($staff_target) {
@@ -208,9 +208,9 @@ class CentreTargetService
         $record = Centertarget::find($id);
 
         if ($record) {
-            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::User()->account_id);
+            $staff_target = Centertarget::updateRecord($record->id, $request, Auth::user()->account_id);
         } else {
-            $staff_target = Centertarget::createRecord($request, Auth::User()->account_id);
+            $staff_target = Centertarget::createRecord($request, Auth::user()->account_id);
         }
 
         if ($staff_target) {
@@ -239,13 +239,11 @@ class CentreTargetService
         $accountId = Auth::user()->account_id;
         $targets = \App\Models\SystemTarget::where('account_id', $accountId)
             ->get()
-            ->map(function ($t) {
-                return [
+            ->map(fn($t) => [
                     'key' => $t->target_key,
                     'value' => (float) $t->target_value,
                     'label' => $t->label,
-                ];
-            });
+                ]);
 
         return $targets->toArray();
     }

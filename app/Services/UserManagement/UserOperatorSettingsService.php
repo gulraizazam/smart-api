@@ -43,7 +43,7 @@ class UserOperatorSettingsService
         $where = $this->buildWhereConditions($params, $userId, $accountId, $applyFilter);
 
         return UserOperatorSettings::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where));
+            ->when(!empty($where), fn ($q) => $q->where($where));
     }
 
     public function find(int $id): ?UserOperatorSettings

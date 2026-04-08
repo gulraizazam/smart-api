@@ -7,6 +7,7 @@ use App\Helpers\DoctorDashboardHelper;
 use App\Models\DoctorGoogleReview;
 use App\Models\SystemTarget;
 use App\Models\CentertargetMeta;
+use App\Enums\AppointmentType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -437,11 +438,11 @@ class DoctorDashboardService
             $sortPriority = 2;
             if ($apt->is_arrived) $sortPriority = 1;
             elseif ($apt->is_cancelled) $sortPriority = 4;
-            elseif (!$apt->is_arrived && !$apt->is_cancelled && $apt->status_name && !in_array(strtolower($apt->status_name), ['scheduled', 'confirmed'])) $sortPriority = 3;
+            elseif (!$apt->is_arrived && !$apt->is_cancelled && $apt->status_name && !in_array(strtolower($apt->status_name), ['scheduled', 'confirmed'], true)) $sortPriority = 3;
 
             return [
                 'id' => $apt->id,
-                'type' => $apt->appointment_type_id == 1 ? 'Consultation' : 'Treatment',
+                'type' => $apt->appointment_type_id === AppointmentType::Consultancy->value ? 'Consultation' : 'Treatment',
                 'time' => $apt->scheduled_time ? Carbon::parse($apt->scheduled_time)->format('h:i A') : 'Unscheduled',
                 'time_raw' => $apt->scheduled_time,
                 'patient' => $apt->patient_name ?? 'N/A',
@@ -454,12 +455,10 @@ class DoctorDashboardService
             ];
         };
 
-        $sortList = function ($list) {
-            return collect($list)->sortBy([
+        $sortList = fn($list) => collect($list)->sortBy([
                 ['sort_priority', 'asc'],
                 ['time_raw', 'asc'],
             ])->values()->toArray();
-        };
 
         $treatments = $appointments->where('appointment_type_id', 2);
         $consultations = $appointments->where('appointment_type_id', 1);

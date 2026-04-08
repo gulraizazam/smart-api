@@ -147,7 +147,7 @@ class ResourceHasRota extends BaseModel
                         }
                     }
                 }
-                $data['account_id'] = Auth::User()->account_id;
+                $data['account_id'] = Auth::user()->account_id;
                 if (isset($data['city_id']) && $data['city_id']) {
                     $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
                 }
@@ -211,7 +211,7 @@ class ResourceHasRota extends BaseModel
                         }
                     }
                 }
-                $data['account_id'] = Auth::User()->account_id;
+                $data['account_id'] = Auth::user()->account_id;
                 $data['copy_all'] = '0';
 
                 if (isset($data['city_id']) && $data['city_id']) {
@@ -350,7 +350,7 @@ class ResourceHasRota extends BaseModel
             ];
         } else {
 
-            if (ResourceHasRota::isChildExists($id, Auth::User()->account_id)) {
+            if (ResourceHasRota::isChildExists($id, Auth::user()->account_id)) {
 
                 return [
                     'status' => false,
@@ -441,7 +441,6 @@ class ResourceHasRota extends BaseModel
                 }
                 $data['copy_all'] = '1';
             } else {
-                //dd("Here Come IN Zero");
                 $week = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                 foreach ($week as $day) {
                     if ($request->get($day.'checked') != 'on') {
@@ -754,7 +753,7 @@ class ResourceHasRota extends BaseModel
                 $appointment = Appointments::where('resource_has_rota_day_id', '=', $resourcedays->id)->get();
             }
 
-            if (count($appointment) > 0) {
+            if (!empty($appointment)) {
                 $check++;
             }
         }

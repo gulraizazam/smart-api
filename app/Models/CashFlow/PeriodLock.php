@@ -16,12 +16,16 @@ class PeriodLock extends Model
         'balance_snapshot', 'unlock_reason', 'unlocked_by', 'unlocked_at',
     ];
 
-    protected $casts = [
-        'month' => 'integer',
-        'year' => 'integer',
-        'balance_snapshot' => 'array',
-        'unlocked_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'month' => 'integer',
+            'year' => 'integer',
+            'balance_snapshot' => 'array',
+            'unlocked_at' => 'datetime',
+        ];
+    }
 
     /**
      * User who locked the period.

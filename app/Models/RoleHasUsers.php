@@ -19,6 +19,7 @@ class RoleHasUsers extends Model
 
     public $timestamps = false;
 
+    #[\Override]
     protected function casts(): array
     {
         return [

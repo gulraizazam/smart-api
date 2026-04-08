@@ -16,19 +16,14 @@ class IndexSingleAppointmentJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Holds payload data
-     */
-    protected mixed $payload;
-
-    /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($payload)
-    {
+    public function __construct(
+        protected readonly mixed $payload,
+    ) {
         $this->queue = 'medium';
-        $this->payload = $payload;
     }
 
     /**

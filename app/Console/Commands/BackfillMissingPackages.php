@@ -15,6 +15,7 @@ class BackfillMissingPackages extends Command
 
     protected $description = 'Restore deleted packages rows from package_advances/package_bundles/package_services data, or delete the orphaned child records';
 
+    #[\Override]
     public function handle(): int
     {
         $isDryRun = $this->option('dry-run');
@@ -56,7 +57,7 @@ class BackfillMissingPackages extends Command
      * Return all package_ids referenced in child tables that have no row in packages
      * (including soft-deleted rows).
      */
-    private function findOrphanPackageIds()
+    private function findOrphanPackageIds(): \Illuminate\Support\Collection
     {
         $fromAdvances  = DB::table('package_advances')
             ->whereNotNull('package_id')
@@ -87,7 +88,7 @@ class BackfillMissingPackages extends Command
     /**
      * Reconstruct and insert a packages row for each orphaned ID.
      */
-    private function restorePackages($orphanIds): int
+    private function restorePackages(array $orphanIds): int
     {
         $restored = 0;
         $skipped  = 0;
@@ -166,7 +167,7 @@ class BackfillMissingPackages extends Command
     /**
      * Hard-delete child records that reference non-existent packages rows.
      */
-    private function deleteOrphanChildRecords($orphanIds): int
+    private function deleteOrphanChildRecords(array $orphanIds): int
     {
         if (! $this->confirm("This will PERMANENTLY delete all package_advances, package_bundles, and package_services rows for the {$orphanIds->count()} orphaned package IDs. Continue?")) {
             $this->info('Aborted.');

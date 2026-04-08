@@ -36,7 +36,7 @@ class OperationsReportController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function report(): mixed
+    public function report(): \Illuminate\View\View
     {
         if (! Gate::allows('operations_reports_manage')) {
             return abort(401);
@@ -44,7 +44,7 @@ class OperationsReportController extends Controller
         $allserviceslug = Services::where('slug', '=', 'all')->first();
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
         $services = $parentGroups->nodeList;
 
@@ -55,13 +55,13 @@ class OperationsReportController extends Controller
                 }
             }
         }
-        $cities = Cities::getActiveOnly(false, Auth::User()->account_id)->pluck('full_name', 'id');
+        $cities = Cities::getActiveOnly(false, Auth::user()->account_id)->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $locations->prepend('All', '');
 
-        $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
+        $operators = User::getAllActivePractionersRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
 
         $employees = ($select_All + $operators->toArray());
@@ -78,7 +78,7 @@ class OperationsReportController extends Controller
         foreach ($years_data as $year) {
             $years[$year] = $year;
         }
-        $appointment_types = AppointmentTypes::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $appointment_types = AppointmentTypes::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $appointment_types->prepend('All', '');
 
         $csrs = GeneralFunctions::getCSR();
@@ -91,7 +91,7 @@ class OperationsReportController extends Controller
     /*
      * Function for load days
      */
-    public function loaddayarray(Request $request): mixed
+    public function loaddayarray(Request $request): \Illuminate\Http\JsonResponse
     {
 
         $days = cal_days_in_month(CAL_GREGORIAN, $request->month, $request->year);
@@ -114,7 +114,7 @@ class OperationsReportController extends Controller
             return abort(401);
         }
 
-        $data = Operations::centertargetreport($request->all(), Auth::User()->account_id);
+        $data = Operations::centertargetreport($request->all(), Auth::user()->account_id);
 
         $reportData = $data['location_target_data'];
         $start_date = $data['start_date'];
@@ -225,10 +225,10 @@ class OperationsReportController extends Controller
             return abort(401);
         }
 
-        $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+        $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
 
-        $data = Operations::companyHealthReport($request->all(), Auth::User()->account_id);
+        $data = Operations::companyHealthReport($request->all(), Auth::user()->account_id);
 
         $reportData = $data['location_target_data'];
         $start_date = $data['start_date'];
@@ -378,10 +378,10 @@ class OperationsReportController extends Controller
         }
 
         $filters = [];
-        $filters['regions'] = Regions::getAll(Auth::User()->account_id, 'custom', 'name', 'asc')->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
+        $filters['regions'] = Regions::getAll(Auth::user()->account_id, 'custom', 'name', 'asc')->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
 
-        $reportData = Operations::highestpaidclient($request->all(), $filters, Auth::User()->account_id);
+        $reportData = Operations::highestpaidclient($request->all(), $filters, Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -498,7 +498,7 @@ class OperationsReportController extends Controller
             if ($request->type == 'plan') {
 
                 /*Becasue These both report are same so we same method*/
-                $reportData = Finanaces::ListofClientswhoclaimedrefundsdaywise($request->all(), Auth::User()->account_id);
+                $reportData = Finanaces::ListofClientswhoclaimedrefundsdaywise($request->all(), Auth::user()->account_id);
 
                 switch ($request->get('medium_type')) {
                     case 'web':
@@ -524,15 +524,15 @@ class OperationsReportController extends Controller
                 }
             } else {
 
-                $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-                $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-                $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-                $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-                $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-                $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-                $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+                $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+                $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+                $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+                $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+                $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+                $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+                $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
 
-                $reportData = Finanaces::ListofClientswhoclaimedrefundsdaysbasenonplans($request->all(), $filters, Auth::User()->account_id);
+                $reportData = Finanaces::ListofClientswhoclaimedrefundsdaysbasenonplans($request->all(), $filters, Auth::user()->account_id);
 
                 switch ($request->get('medium_type')) {
                     case 'web':
@@ -752,7 +752,7 @@ class OperationsReportController extends Controller
             $end_date = null;
         }
 
-        $reportData = Operations::listofservicecanoffercomplimentory($request->all(), Auth::User()->account_id);
+        $reportData = Operations::listofservicecanoffercomplimentory($request->all(), Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -852,7 +852,7 @@ class OperationsReportController extends Controller
             $end_date = null;
         }
 
-        $reportData = Operations::listofservicecannotoffercomplimentory($request->all(), Auth::User()->account_id);
+        $reportData = Operations::listofservicecannotoffercomplimentory($request->all(), Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -951,8 +951,7 @@ class OperationsReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        $reportData = Operations::conversionreportconsultancy($request->all(), Auth::User()->account_id);
-        //dd($reportData);
+        $reportData = Operations::conversionreportconsultancy($request->all(), Auth::user()->account_id);
         switch ($request->get('medium_type')) {
             case 'web':
                 return view('admin.reports.operations.conversionreportconsultancy.report', compact('reportData', 'start_date', 'end_date'));
@@ -1082,7 +1081,7 @@ class OperationsReportController extends Controller
             $end_date = null;
         }
 
-        $reportData = Operations::conversionreporttreatment($request->all(), Auth::User()->account_id);
+        $reportData = Operations::conversionreporttreatment($request->all(), Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
             case 'web':
@@ -1215,15 +1214,15 @@ class OperationsReportController extends Controller
             $end_date = null;
         }
         //        $filters['users'] = User::get()->getDictionary();
-        $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
-        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
+        $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['locations'] = Locations::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::user()->account_id)->getDictionary();
+        $filters['appointment_statuses'] = AppointmentStatuses::getAllRecordsDictionary(Auth::user()->account_id);
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
 
-        $reportData = Operations::complimentoryreport($request->all(), Auth::User()->account_id);
+        $reportData = Operations::complimentoryreport($request->all(), Auth::user()->account_id);
 
         foreach ($reportData as $key => $reportRow) {
 
@@ -1347,9 +1346,9 @@ class OperationsReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
-        $filters['services'] = Services::getAllRecordsDictionary(Auth::User()->account_id);
-        $reportData = Operations::dtrreport($request->all(), Auth::User()->account_id, $filters);
+        $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
+        $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
+        $reportData = Operations::dtrreport($request->all(), Auth::user()->account_id, $filters);
 
         switch ($request->get('medium_type')) {
             case 'web':

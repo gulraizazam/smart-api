@@ -23,13 +23,13 @@ class AppointmentMedicalService
         $appointment = Appointments::findorfail($id);
 
         $patients = User::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
             ['user_type_id', '=', '3'],
         ])->pluck('name', 'id');
 
         $users = User::where([
-            ['account_id', '=', Auth::User()->account_id],
+            ['account_id', '=', Auth::user()->account_id],
             ['active', '=', '1'],
             ['user_type_id', '!=', '3'],
         ])->pluck('name', 'id');
@@ -71,7 +71,7 @@ class AppointmentMedicalService
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;
@@ -91,11 +91,11 @@ class AppointmentMedicalService
     public function submitForm(object $request, int $id, int $appointmentId): array
     {
         $data['custom_form_type'] = 2;
-        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::User()->account_id, Auth::id(), $data);
+        $custom_form_feedback = CustomFormFeedbacks::createRecord($request, $id, Auth::user()->account_id, Auth::id(), $data);
         if (! $custom_form_feedback) {
             return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
         } else {
-            $medicals = Medical::CreateRecord($request, $custom_form_feedback->id, Auth::User()->id);
+            $medicals = Medical::CreateRecord($request, $custom_form_feedback->id, Auth::user()->id);
             if (! $medicals) {
                 return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
             }
@@ -120,7 +120,7 @@ class AppointmentMedicalService
             if ($appointmentmeasurements) {
                 foreach ($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::User()->account_id)) {
+                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::user()->account_id)) {
                         $appointmentmeasurement->delete();
                     }
                 }
@@ -130,12 +130,12 @@ class AppointmentMedicalService
         }
 
         // Get Total Records
-        $iTotalRecords = Medical::getTotalRecords($request, Auth::User()->account_id, $id);
+        $iTotalRecords = Medical::getTotalRecords($request, Auth::user()->account_id, $id);
 
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id);
+        $appointmentmedicals = Medical::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id);
 
         if ($appointmentmedicals) {
             foreach ($appointmentmedicals as $appointmentmedicals) {
@@ -194,7 +194,7 @@ class AppointmentMedicalService
 
     public function updateMedicalField(object $request): array
     {
-        if (Medical::updateRecord($request, Auth::User()->account_id, Auth::id())) {
+        if (Medical::updateRecord($request, Auth::user()->account_id, Auth::id())) {
             return ['success' => true, 'message' => 'your Feedback is updated successfully', 'code' => 200];
         } else {
             return ['success' => false, 'message' => 'Invalid request', 'code' => 402];
@@ -217,7 +217,7 @@ class AppointmentMedicalService
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
-        $parentGroups->build(0, Auth::User()->account_id);
+        $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
 
         $Services = $parentGroups->nodeList;

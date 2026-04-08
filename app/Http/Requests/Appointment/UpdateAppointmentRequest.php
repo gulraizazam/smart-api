@@ -8,11 +8,13 @@ use Illuminate\Support\Facades\Auth;
 
 class UpdateAppointmentRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
     }
 
+    #[\Override]
     protected function prepareForValidation()
     {
         $data = $this->all();
@@ -43,6 +45,7 @@ class UpdateAppointmentRequest extends FormRequest
         $this->replace($data);
     }
 
+    #[\Override]
     public function rules(): array
     {
         $rules = [
@@ -71,6 +74,7 @@ class UpdateAppointmentRequest extends FormRequest
         return $rules;
     }
 
+    #[\Override]
     public function messages()
     {
         return [

@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Helpers\Filters;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -97,16 +98,16 @@ class Towns extends BaseModel
                 '=',
                 $account_id,
             ];
-            Filters::put(Auth::User()->id, 'towns', 'account_id', $account_id);
+            Filters::put(Auth::user()->id, 'towns', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'towns', 'account_id');
+                Filters::forget(Auth::user()->id, 'towns', 'account_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'towns', 'account_id')) {
+                if (Filters::get(Auth::user()->id, 'towns', 'account_id')) {
                     $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'towns', 'account_id'),
+                        Filters::get(Auth::user()->id, 'towns', 'account_id'),
                     ];
                 }
             }
@@ -117,16 +118,16 @@ class Towns extends BaseModel
                 'like',
                 '%'.$filters['name'].'%',
             ];
-            Filters::put(Auth::User()->id, 'towns', 'name', $filters['name']);
+            Filters::put(Auth::user()->id, 'towns', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'towns', 'name');
+                Filters::forget(Auth::user()->id, 'towns', 'name');
             } else {
-                if (Filters::get(Auth::User()->id, 'towns', 'name')) {
+                if (Filters::get(Auth::user()->id, 'towns', 'name')) {
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'towns', 'name').'%',
+                        '%'.Filters::get(Auth::user()->id, 'towns', 'name').'%',
                     ];
                 }
             }
@@ -137,16 +138,16 @@ class Towns extends BaseModel
                 '=',
                 $filters['city_id'],
             ];
-            Filters::put(Auth::User()->id, 'towns', 'city_id', $filters['city_id']);
+            Filters::put(Auth::user()->id, 'towns', 'city_id', $filters['city_id']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'towns', 'city_id');
+                Filters::forget(Auth::user()->id, 'towns', 'city_id');
             } else {
-                if (Filters::get(Auth::User()->id, 'towns', 'city_id')) {
+                if (Filters::get(Auth::user()->id, 'towns', 'city_id')) {
                     $where[] = [
                         'city_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'towns', 'city_id'),
+                        Filters::get(Auth::user()->id, 'towns', 'city_id'),
                     ];
                 }
             }
@@ -266,7 +267,7 @@ class Towns extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Towns::isChildExists($id, Auth::User()->account_id)) {
+        if (Towns::isChildExists($id, Auth::user()->account_id)) {
 
             return [
                 'status' => false,
@@ -339,7 +340,7 @@ class Towns extends BaseModel
      */
     public static function getActiveTowns()
     {
-        $query = self::where(['active' => 1, 'account_id' => 1])->get()->pluck('name', 'id');
+        $query = self::where(['active' => 1, 'account_id' => 1])->pluck('name', 'id');
 
         return $query;
     }
@@ -361,10 +362,12 @@ class Towns extends BaseModel
     }
 
     /**
-     * Get the Get the Town Name with City.
+     * Get the Town Name with City.
      */
-    public function getFullNameAttribute($value)
+    protected function fullName(): Attribute
     {
-        return ucfirst($this->city->name).' - '.ucfirst($this->name);
+        return Attribute::make(
+            get: fn (): string => ucfirst($this->city->name) . ' - ' . ucfirst($this->name),
+        );
     }
 }

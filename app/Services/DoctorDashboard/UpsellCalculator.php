@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
+use App\Enums\AppointmentType;
 use App\Helpers\DoctorDashboardHelper;
 use Illuminate\Support\Facades\DB;
 
@@ -32,7 +33,7 @@ class UpsellCalculator
             ->where('ps.sold_by', $doctorId)
             // Exclude only self-consultation sales (type=1 where this doctor is both seller and consulting doctor)
             ->where(function ($q) use ($doctorId) {
-                $q->where('a.appointment_type_id', '!=', 1)
+                $q->where('a.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                   ->orWhere('a.doctor_id', '!=', $doctorId);
             })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
@@ -93,7 +94,7 @@ class UpsellCalculator
             ->whereIn('ps.sold_by', $doctorIds)
             // Exclude only self-consultation sales (type=1 where seller == consulting doctor)
             ->where(function ($q) {
-                $q->where('a.appointment_type_id', '!=', 1)
+                $q->where('a.appointment_type_id', '!=', AppointmentType::Consultancy->value)
                   ->orWhereColumn('a.doctor_id', '!=', 'ps.sold_by');
             })
             ->whereBetween('ps.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])

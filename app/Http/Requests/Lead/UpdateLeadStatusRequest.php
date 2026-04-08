@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Gate;
 
 class UpdateLeadStatusRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('leads_lead_status');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -25,6 +27,7 @@ class UpdateLeadStatusRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -31,34 +32,34 @@ class Discount extends BaseModel
         'customer_type_id',
     ];
 
-    protected $casts = [
-        'amount'     => 'decimal:2',
-        'pre_days'   => 'integer',
-        'post_days'  => 'integer',
-        'active'     => 'boolean',
-        'created_at' => 'datetime:F d,Y h:i A',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'amount'     => 'decimal:2',
+            'pre_days'   => 'integer',
+            'post_days'  => 'integer',
+            'active'     => 'boolean',
+            'created_at' => 'datetime:F d,Y h:i A',
+        ];
+    }
 
     // ── Accessors / Mutators ─────────────────────────────
 
-    public function setStartAttribute(string $start): void
+    protected function start(): Attribute
     {
-        $this->attributes['start'] = $this->dateFormat($start);
+        return Attribute::make(
+            get: fn (?string $value): ?string => $value ? $this->dateFormat($value, 'F d,Y') : null,
+            set: fn (string $value): string => $this->dateFormat($value),
+        );
     }
 
-    public function setEndAttribute(string $end): void
+    protected function end(): Attribute
     {
-        $this->attributes['end'] = $this->dateFormat($end);
-    }
-
-    public function getStartAttribute(?string $start): ?string
-    {
-        return $start ? $this->dateFormat($start, 'F d,Y') : null;
-    }
-
-    public function getEndAttribute(?string $end): ?string
-    {
-        return $end ? $this->dateFormat($end, 'F d,Y') : null;
+        return Attribute::make(
+            get: fn (?string $value): ?string => $value ? $this->dateFormat($value, 'F d,Y') : null,
+            set: fn (string $value): string => $this->dateFormat($value),
+        );
     }
 
     // ── Relationships ────────────────────────────────────

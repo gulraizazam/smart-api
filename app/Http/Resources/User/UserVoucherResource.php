@@ -11,6 +11,7 @@ class UserVoucherResource extends JsonResource
 {
     public static array $usedVouchersLookup = [];
 
+    #[\Override]
     public function toArray(Request $request): array
     {
         $key = $this->user_id . '_' . $this->voucher_id;

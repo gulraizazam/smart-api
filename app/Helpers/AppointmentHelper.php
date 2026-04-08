@@ -17,7 +17,7 @@ class AppointmentHelper
 {
     const CACHE_TTL = 3600;
 
-    public static function prepareSMSContent($appointment_id, $smsContent)
+    public static function prepareSMSContent(int|null $appointment_id, string $smsContent): string
     {
         if (!$appointment_id) {
             return $smsContent;
@@ -68,7 +68,7 @@ class AppointmentHelper
         return $smsContent;
     }
 
-    public static function getNodeServices($serviceId, $account_id, $drop_down = false, $remove_spaces = false)
+    public static function getNodeServices(int|null $serviceId, int $account_id, bool $drop_down = false, bool $remove_spaces = false): array
     {
         $cacheKey = "appointment_node_services_{$account_id}_{$serviceId}_{$drop_down}_{$remove_spaces}";
 
@@ -106,16 +106,14 @@ class AppointmentHelper
         });
     }
 
-    public static function getCancelledStatus($account_id)
+    public static function getCancelledStatus(int $account_id): mixed
     {
         $cacheKey = "appointment_cancelled_status_{$account_id}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($account_id) {
-            return AppointmentStatuses::getCancelledStatusOnly($account_id);
-        });
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn() => AppointmentStatuses::getCancelledStatusOnly($account_id));
     }
 
-    public static function formatScheduleData($start, $first_scheduled_count, $scheduled_at_count)
+    public static function formatScheduleData(?string $start, int $first_scheduled_count, int $scheduled_at_count): array
     {
         $data = [];
 
@@ -139,7 +137,7 @@ class AppointmentHelper
         return $data;
     }
 
-    public static function isChildExists($appointment_id, $account_id)
+    public static function isChildExists(int $appointment_id, int $account_id): bool
     {
         return \App\Models\PackageAdvances::where(['appointment_id' => $appointment_id, 'account_id' => $account_id])->exists()
             || \App\Models\Invoices::where(['appointment_id' => $appointment_id, 'account_id' => $account_id])
@@ -150,7 +148,7 @@ class AppointmentHelper
             || \App\Models\Appointmentimage::where(['appointment_id' => $appointment_id])->exists();
     }
 
-    public static function clearAppointmentCache($account_id)
+    public static function clearAppointmentCache(int $account_id): void
     {
         Cache::forget("appointment_cancelled_status_{$account_id}");
         Cache::forget("appointment_types_{$account_id}");
@@ -165,18 +163,16 @@ class AppointmentHelper
         Cache::forget("appointment_node_services_{$account_id}");
     }
 
-    public static function getAppointmentTypes($account_id)
+    public static function getAppointmentTypes(int $account_id): mixed
     {
         $cacheKey = "appointment_types_{$account_id}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($account_id) {
-            return \App\Models\AppointmentTypes::where('account_id', $account_id)
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn() => \App\Models\AppointmentTypes::where('account_id', $account_id)
                 ->orderBy('name')
-                ->get();
-        });
+                ->get());
     }
 
-    public static function getAppointmentStatuses($account_id, $appointment_type_id = null)
+    public static function getAppointmentStatuses(int $account_id, ?int $appointment_type_id = null): mixed
     {
         $cacheKey = "appointment_statuses_{$account_id}_{$appointment_type_id}";
 
@@ -191,7 +187,7 @@ class AppointmentHelper
         });
     }
 
-    public static function validateScheduleConflict($location_id, $doctor_id, $resource_id, $scheduled_date, $scheduled_time, $appointment_id = null)
+    public static function validateScheduleConflict(int $location_id, int $doctor_id, ?int $resource_id, string $scheduled_date, string $scheduled_time, ?int $appointment_id = null): bool
     {
         $query = Appointments::where('location_id', $location_id)
             ->where('scheduled_date', $scheduled_date)
@@ -208,7 +204,7 @@ class AppointmentHelper
         return $query->exists();
     }
 
-    public static function prepareAppointmentData(array $data, $account_id, $user_id, $isUpdate = false)
+    public static function prepareAppointmentData(array $data, int $account_id, int $user_id, bool $isUpdate = false): array
     {
         $appointmentData = [
             'account_id' => $account_id,

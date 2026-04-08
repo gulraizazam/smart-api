@@ -29,12 +29,16 @@ class MembershipType extends Model
         'parent_id',
     ];
 
-    protected $casts = [
-        'active'    => 'boolean',
-        'period'    => 'integer',
-        'amount'    => 'decimal:2',
-        'parent_id' => 'integer',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'active'    => 'boolean',
+            'period'    => 'integer',
+            'amount'    => 'decimal:2',
+            'parent_id' => 'integer',
+        ];
+    }
 
     // ── Relationships ────────────────────────────────────
 

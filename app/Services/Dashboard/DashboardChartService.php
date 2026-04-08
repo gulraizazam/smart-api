@@ -130,10 +130,10 @@ class DashboardChartService
                     $isWalkin = false;
 
                     foreach ($setRecords as $record) {
-                        if (in_array($record->appointment_status_id, $arrivedStatusIds)) {
+                        if (in_array($record->appointment_status_id, $arrivedStatusIds, true)) {
                             $hasArrived = true;
                             // Check if this is a walk-in (created by FDM user)
-                            if (!empty($fdmUsers) && in_array($record->user_id, $fdmUsers)) {
+                            if (!empty($fdmUsers) && in_array($record->user_id, $fdmUsers, true)) {
                                 $isWalkin = true;
                             }
                             break;
@@ -402,9 +402,7 @@ class DashboardChartService
         }
 
         // Sort by rating high to low
-        usort($doctorRatings, function($a, $b) {
-            return $b['rating'] <=> $a['rating'];
-        });
+        usort($doctorRatings, fn($a, $b) => $b['rating'] <=> $a['rating']);
 
         // Extract sorted data
         $labels = array_column($doctorRatings, 'name');
@@ -799,7 +797,7 @@ class DashboardChartService
                 }
             }
 
-            if ($parentRating !== null || count($childData) > 0) {
+            if ($parentRating !== null || !empty($childData)) {
                 $feedbackData[] = [
                     'id' => $service->id,
                     'name' => $service->name,

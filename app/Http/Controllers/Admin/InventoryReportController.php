@@ -15,12 +15,12 @@ class InventoryReportController extends Controller
         private readonly InventoryReportService $inventoryReportService,
     ) {}
 
-    public function report(): mixed
+    public function report(): \Illuminate\View\View
     {
         return view('admin.reports.inventory.index');
     }
 
-    public function reportResult(Request $request): mixed
+    public function reportResult(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             $data = $this->inventoryReportService->getReportResultData(Auth::user()->account_id);
@@ -31,7 +31,7 @@ class InventoryReportController extends Controller
         }
     }
 
-    public function stockReport(Request $request): mixed
+    public function stockReport(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->report_type == null) {

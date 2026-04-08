@@ -37,7 +37,7 @@ class CashflowAuditService
     /**
      * Get audit logs for a specific entity.
      */
-    public function getEntityLogs(string $entityType, int $entityId, int $accountId)
+    public function getEntityLogs(string $entityType, int $entityId, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         return CashflowAuditLog::forAccount($accountId)
             ->forEntity($entityType, $entityId)
@@ -49,7 +49,7 @@ class CashflowAuditService
     /**
      * Get paginated audit logs with optional filters.
      */
-    public function getPaginatedLogs(int $accountId, array $filters = [], int $perPage = 25)
+    public function getPaginatedLogs(int $accountId, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
         $query = CashflowAuditLog::forAccount($accountId)
             ->with('user:id,name')

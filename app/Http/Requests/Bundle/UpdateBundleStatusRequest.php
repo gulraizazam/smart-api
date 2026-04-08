@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 
 class UpdateBundleStatusRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return match ((int) $this->input('status')) {
@@ -22,6 +23,7 @@ class UpdateBundleStatusRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -33,6 +35,7 @@ class UpdateBundleStatusRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -43,6 +46,7 @@ class UpdateBundleStatusRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): never
     {
         throw new HttpResponseException(response()->json([

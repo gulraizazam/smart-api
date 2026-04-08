@@ -19,10 +19,14 @@ class StaffReturn extends Model
         'voided_at', 'void_reason', 'voided_by',
     ];
 
-    protected $casts = [
-        'amount' => 'decimal:2',
-        'voided_at' => 'datetime',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'amount' => 'decimal:2',
+            'voided_at' => 'datetime',
+        ];
+    }
 
     /**
      * Staff member who returned cash.

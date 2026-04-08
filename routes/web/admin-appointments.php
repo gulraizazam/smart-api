@@ -6,6 +6,10 @@ use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\Appointments\AppointmentExportController;
+use App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController;
+use App\Http\Controllers\Admin\Appointments\AppointmentLookupController;
+use App\Http\Controllers\Admin\Appointments\AppointmentScheduleController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\ConsultancyInvoiceController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -32,23 +36,23 @@ use Illuminate\Support\Facades\Route;
 
         Route::get('appointments/manage-services', [AppointmentsController::class, 'createService'])->name('appointments.manage_services');
 
-        Route::get('appointments/load-non-scheduled-service-appointments', [AppointmentsController::class, 'getNonScheduledServiceAppointments'])->name('appointments.load_nonscheduled_service_appointments');
+        Route::get('appointments/load-non-scheduled-service-appointments', [AppointmentScheduleController::class, 'getNonScheduledServiceAppointments'])->name('appointments.load_nonscheduled_service_appointments');
 
-        Route::get('appointments/get_room_resources', [AppointmentsController::class, 'getRoomResources'])->name('appointments.get_room_resources');
+        Route::get('appointments/get_room_resources', [AppointmentLookupController::class, 'getRoomResources'])->name('appointments.get_room_resources');
 
-        Route::get('appointments/get_room_resources_with_specific_date', [AppointmentsController::class, 'getRoomResourcesWithDate'])->name('appointments.get_room_resources_with_specific_date');
+        Route::get('appointments/get_room_resources_with_specific_date', [AppointmentLookupController::class, 'getRoomResourcesWithDate'])->name('appointments.get_room_resources_with_specific_date');
 
         //Appointment Route section for treatment invoice start
 
-        Route::get('appointments/getplansinformation', [AppointmentsController::class, 'getplansinformation'])->name('appointments.getplansinformation');
+        Route::get('appointments/getplansinformation', [AppointmentInvoiceController::class, 'getplansinformation'])->name('appointments.getplansinformation');
 
-        Route::get('appointments/getpackageprice', [AppointmentsController::class, 'getpackageprice'])->name('appointments.getpackageprice');
+        Route::get('appointments/getpackageprice', [AppointmentInvoiceController::class, 'getpackageprice'])->name('appointments.getpackageprice');
 
-        Route::get('appointments/getinvoicecalculation', [AppointmentsController::class, 'getinvoicecalculation'])->name('appointments.getinvoicecalculation');
+        Route::get('appointments/getinvoicecalculation', [AppointmentInvoiceController::class, 'getinvoicecalculation'])->name('appointments.getinvoicecalculation');
 
-        Route::get('appointments/getcalculatedPriceExclusicecheck', [AppointmentsController::class, 'getcalculatedPriceExclusicecheck'])->name('appointments.getcalculatedPriceExclusicecheck');
+        Route::get('appointments/getcalculatedPriceExclusicecheck', [AppointmentInvoiceController::class, 'getcalculatedPriceExclusicecheck'])->name('appointments.getcalculatedPriceExclusicecheck');
 
-        Route::get('appointments/saveinvoice', [AppointmentsController::class, 'saveinvoice'])->name('appointments.saveinvoice');
+        Route::get('appointments/saveinvoice', [AppointmentInvoiceController::class, 'saveinvoice'])->name('appointments.saveinvoice');
         //Appointment Route section for treatment invoice end
 
         /*Appointment route section for consultancy invoice start*/
@@ -111,22 +115,22 @@ use Illuminate\Support\Facades\Route;
         Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'getCentreDoctors'])->name('getdoctors');
 
         // Appointment Comments
-        Route::get('appointments/comment-save', [AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
+        Route::get('appointments/comment-save', [\App\Http\Controllers\Admin\Appointments\AppointmentCommunicationController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
         //Appointment Route end for images
 
         /*Consultancy Routes*/
-        Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
-        Route::post('appointments/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
-        Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
-        Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
+        Route::post('appointments/load-locations', [AppointmentLookupController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
+        Route::post('appointments/load_child_services', [AppointmentLookupController::class, 'LoadChildServices'])->name('appointments.load_child_services');
+        Route::get('appointments/load-non-scheduled-appointments', [AppointmentScheduleController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
+        Route::post('appointments/check-phone-exist', [AppointmentLookupController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
         // Migrated to API route - using API controller with Service layer
         // Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
-        Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
-        Route::get('download-today-consultancies', [AppointmentsController::class, 'todayexport']);
-        Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);
-        Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
-        Route::post('download-filter-data', [AppointmentsController::class, 'downloadExportdata']);
-        Route::get('appointments/get-whatsapp-data', [AppointmentsController::class, 'getWhatsAppData'])->name('appointments.get_whatsapp_data');
+        Route::get('appointments/export/{limit}/{offset}', [AppointmentExportController::class, 'export'])->name('appointments.export');
+        Route::get('download-today-consultancies', [AppointmentExportController::class, 'todayexport']);
+        Route::get('download-today-treatments', [AppointmentExportController::class, 'todaytreatments']);
+        Route::get('appointments/view/log/{id}/{type}', [AppointmentExportController::class, 'logPage'])->name('appointments.loadPage');
+        Route::post('download-filter-data', [AppointmentExportController::class, 'downloadExportdata']);
+        Route::get('appointments/get-whatsapp-data', [\App\Http\Controllers\Admin\Appointments\AppointmentCommunicationController::class, 'getWhatsAppData'])->name('appointments.get_whatsapp_data');
         /*Inventory Routes*/
         Route::get('warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
 

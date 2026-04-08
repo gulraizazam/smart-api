@@ -19,7 +19,7 @@ class TownController extends Controller
         private readonly TownService $townService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('towns_manage')) {
             return abort(401);
@@ -100,7 +100,7 @@ class TownController extends Controller
         return $this->errorResponse('Something went wrong, please try again later.', 404);
     }
 
-    public function show(int $id): mixed
+    public function show(int $id): void
     {
         //
     }
@@ -123,7 +123,7 @@ class TownController extends Controller
         ]);
     }
 
-    public function update(StoreUpdateTownRequest $request, int $id): mixed
+    public function update(StoreUpdateTownRequest $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('towns_edit')) {
             return abort(401);
@@ -157,7 +157,7 @@ class TownController extends Controller
             : $this->errorResponse($response['message'], 400);
     }
 
-    public function status(Request $request): mixed
+    public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('towns_active')) {
             return abort(401);
@@ -172,7 +172,7 @@ class TownController extends Controller
         return $this->errorResponse('Resource not found.', 404);
     }
 
-    public function importTowns(Request $request): mixed
+    public function importTowns(Request $request): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();
@@ -183,7 +183,7 @@ class TownController extends Controller
         return view('admin.towns.import');
     }
 
-    public function uploadLeads(FileUploadTownRequest $request): mixed
+    public function uploadLeads(FileUploadTownRequest $request): \Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('towns_import')) {
             flash('You are not authorized to access this resource.')->error()->important();

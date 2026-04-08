@@ -10,6 +10,7 @@ class RoleRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      */
+    #[\Override]
     public function authorize(): bool
     {
         return true;
@@ -18,6 +19,7 @@ class RoleRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -31,6 +33,7 @@ class RoleRequest extends FormRequest
     /**
      * Get custom messages for validator errors.
      */
+    #[\Override]
     public function messages(): array
     {
         return [

@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use DateTime;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +17,17 @@ use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasMany;
 class OrderRefund extends Model
 {
     use HasFactory;
-    protected $guarded =[];
+    protected $fillable = [
+        'account_id',
+        'order_id',
+        'patient_id',
+        'total_price',
+        'status',
+        'created_by',
+        'location_id',
+        'payment_mode',
+        'quantity',
+    ];
     protected $table = 'order_refunds';
     
     public static function refund($id, $request)
@@ -31,8 +41,8 @@ class OrderRefund extends Model
         // Iterate through the arrays
         for ($i = 0; $i < count($request['product_id']); $i++) {
             $productId = $request['product_id'][$i];
-            $productPrice = floatval($request['product_price'][$i]);
-            $quantity = intval($request['quantity'][$i]);
+            $productPrice = (float) $request['product_price'][$i];
+            $quantity = (int) $request['quantity'][$i];
             // Calculate the total for this product
             $total = $productPrice * $quantity;
             // Store the total in the result array, using the product ID as the key
@@ -42,7 +52,7 @@ class OrderRefund extends Model
         $new_order['total_price'] = array_sum($productTotals);
         unset($new_order['id']);
         $refund = new OrderRefund();
-        $refund->account_id =  Auth::User()->account_id;
+        $refund->account_id =  Auth::user()->account_id;
         $refund->order_id =  $order->id;
         $refund->patient_id =  $order->patient_id;
         $refund->total_price =  $new_order['total_price'];
@@ -107,9 +117,7 @@ class OrderRefund extends Model
                     return $q->with('orderrefunddetails.product')->whereHas('orderrefunddetails.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
                     });
-                }, function ($q) {
-                    return $q->with('orderrefunddetails.product');
-                })
+                }, fn ($q) => $q->with('orderrefunddetails.product'))
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres());
                 })
@@ -120,15 +128,13 @@ class OrderRefund extends Model
                 // })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-           
+
             return OrderRefund::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderrefunddetails.product')->whereHas('orderrefunddetails.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
                     });
-                }, function ($q) {
-                    return $q->with('orderrefunddetails.product');
-                })
+                }, fn ($q) => $q->with('orderrefunddetails.product'))
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres());
                 })
@@ -149,9 +155,7 @@ class OrderRefund extends Model
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
         } else {
             $start_date_time = null;
             $end_date_time = null;
@@ -170,7 +174,7 @@ class OrderRefund extends Model
                 } else if ($filters['location_type'] == 'warehouse') {
                     $where[][] = ['warehouse_id' => $filters['location']];
                 } else {
-                    Filters::forget(Auth::User()->id, 'location', 'name');
+                    Filters::forget(Auth::user()->id, 'location', 'name');
                 }
             }
             if (hasFilter($filters, 'created_by')) {

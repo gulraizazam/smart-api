@@ -123,7 +123,7 @@ class ConversionReport
 
         if ($appointments->count()) {
             foreach ($appointments as $appointment) {
-                if (! in_array($appointment->id, $appointmentIds)) {
+                if (! in_array($appointment->id, $appointmentIds, true)) {
                     $appointmentsInfo[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -293,7 +293,7 @@ class ConversionReport
                     $conversionSpend = '0';
                 }
 
-                if (! in_array($appointment->id, $appointmentIds2)) {
+                if (! in_array($appointment->id, $appointmentIds2, true)) {
                     $appointmentsInfo[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -313,7 +313,7 @@ class ConversionReport
 
                     $packageInfo = ($case2Packages[$appointment->id] ?? collect())->pluck('id')->toArray();
 
-                    if (count($packageInfo) == 0) {
+                    if (empty($packageInfo)) {
                         $appointmentIds2[] = $appointment->id;
                         $appointmentsInfo[$appointment->id]['converted'] = $converted;
                         $appointmentsInfo[$appointment->id]['conversion_spend'] = $conversionSpend;

@@ -10,11 +10,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class PlanDatatableRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return $this->user()?->can('plans_manage') ?? false;
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -97,6 +99,7 @@ final class PlanDatatableRequest extends FormRequest
         return compact('perpage', 'page', 'start');
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

@@ -11,12 +11,9 @@ class CashflowDailyDigest extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public array $digestData;
-
-    public function __construct(array $digestData)
-    {
-        $this->digestData = $digestData;
-    }
+    public function __construct(
+        public readonly array $digestData,
+    ) {}
 
     public function build()
     {

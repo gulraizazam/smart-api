@@ -254,7 +254,7 @@ class SettingsService
         $where = $this->buildWhereConditions($params, $userId, $accountId, $applyFilter);
 
         return Settings::query()
-            ->when(count($where) > 0, fn ($q) => $q->where($where));
+            ->when(!empty($where), fn ($q) => $q->where($where));
     }
 
     private function buildWhereConditions(array $params, int $userId, ?int $accountId, bool $applyFilter): array

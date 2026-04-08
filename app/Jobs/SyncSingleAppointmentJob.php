@@ -15,15 +15,9 @@ class SyncSingleAppointmentJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Holds payload data
-     */
-    protected mixed $payload;
-
-    public function __construct(mixed $payload)
-    {
-        $this->payload = $payload;
-    }
+    public function __construct(
+        protected readonly mixed $payload,
+    ) {}
 
     /**
      * Execute the job.
@@ -44,6 +38,5 @@ class SyncSingleAppointmentJob implements ShouldQueue
 
         }
 
-        return true;
     }
 }

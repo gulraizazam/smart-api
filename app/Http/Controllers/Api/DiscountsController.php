@@ -73,7 +73,7 @@ final class DiscountsController extends Controller
             $data               = $request->all();
             $data['account_id'] = Auth::user()->account_id;
 
-            if (in_array($data['slug'] ?? '', ['custom', 'default'])) {
+            if (in_array($data['slug'] ?? '', ['custom', 'default'], true)) {
                 $data['pre_days']  = 0;
                 $data['post_days'] = 0;
             }
@@ -122,7 +122,7 @@ final class DiscountsController extends Controller
         try {
             $data = $request->all();
 
-            if (in_array($data['slug'] ?? '', ['custom', 'default'])) {
+            if (in_array($data['slug'] ?? '', ['custom', 'default'], true)) {
                 $data['pre_days']  = 0;
                 $data['post_days'] = 0;
             }

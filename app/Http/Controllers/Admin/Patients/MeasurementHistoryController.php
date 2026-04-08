@@ -23,7 +23,7 @@ class MeasurementHistoryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -40,7 +40,7 @@ class MeasurementHistoryController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
 
         $filename = 'patient_custom_form_feedbacks';
@@ -57,7 +57,7 @@ class MeasurementHistoryController extends Controller
             if ($appointmentmeasurements) {
                 foreach ($appointmentmeasurements as $appointmentmeasurement) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::User()->account_id)) {
+                    if (! Measurement::isChildExists($appointmentmeasurement->id, Auth::user()->account_id)) {
                         $appointmentmeasurement->delete();
                     }
                 }
@@ -73,7 +73,7 @@ class MeasurementHistoryController extends Controller
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, 1);
+        $appointmentmeasurements = Measurement::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::user()->account_id, $id, 1);
 
         $records = $this->getFiltersData($records, $filename);
 
@@ -108,7 +108,7 @@ class MeasurementHistoryController extends Controller
         return response()->json($records);
     }
 
-    private function getFiltersData($records, $filename): mixed
+    private function getFiltersData($records, $filename): array
     {
 
         $records['filter_values'] = [
@@ -117,7 +117,7 @@ class MeasurementHistoryController extends Controller
             'created_to' => Filters::get(Auth::user()->id, $filename, 'created_to') ? Carbon::parse(Filters::get(Auth::user()->id, $filename, 'created_to'))->format('Y-m-d') : '',
         ];
 
-        $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
+        $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
 
         return $records;
     }
@@ -128,7 +128,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -150,13 +150,13 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update_measurement_field(Request $request, int $id): mixed
+    public function update_measurement_field(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
         }
 
-        if (Measurement::updateRecord($request, Auth::User()->account_id, Auth::id())) {
+        if (Measurement::updateRecord($request, Auth::user()->account_id, Auth::id())) {
 
             return response()->json(['message' => 'your Feedback is updated successfully', 'code' => '200'], 200);
         } else {
@@ -171,7 +171,7 @@ class MeasurementHistoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview(int $id): mixed
+    public function filled_preview(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);

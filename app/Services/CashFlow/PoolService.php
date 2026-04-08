@@ -23,7 +23,7 @@ class PoolService
      * Get all pools for account with location info.
      * For branch_cash pools, adds inventory cash sales since go-live to cached_balance for display.
      */
-    public function getAllPools(int $accountId)
+    public function getAllPools(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         $pools = CashPool::forAccount($accountId)
             ->with('location:id,name')
@@ -97,7 +97,7 @@ class PoolService
     /**
      * Get active pools for dropdown.
      */
-    public function getActivePools(int $accountId)
+    public function getActivePools(int $accountId): \Illuminate\Database\Eloquent\Collection
     {
         return CashPool::forAccount($accountId)
             ->active()
@@ -291,7 +291,7 @@ class PoolService
         // Build cash payment mode IDs
         $cashModeIds = \App\Models\PaymentModes::where('active', 1)
             ->get()
-            ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
             ->pluck('id')
             ->toArray();
 
@@ -414,7 +414,7 @@ class PoolService
      */
     private function resolvePoolId($advance, array $cashModeIds, array $branchPoolMap, ?int $hoPoolId, ?int $bankPoolId): ?int
     {
-        $isCash = in_array($advance->payment_mode_id, $cashModeIds);
+        $isCash = in_array($advance->payment_mode_id, $cashModeIds, true);
 
         if ($isCash && $advance->location_id) {
             return $branchPoolMap[$advance->location_id] ?? $hoPoolId;
@@ -454,7 +454,7 @@ class PoolService
 
         $cashModeIds = \App\Models\PaymentModes::where('active', 1)
             ->get()
-            ->filter(fn($pm) => stripos($pm->name, 'cash') !== false)
+            ->filter(fn($pm) => str_contains(strtolower($pm->name), 'cash'))
             ->pluck('id')
             ->toArray();
 

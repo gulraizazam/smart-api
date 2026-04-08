@@ -177,7 +177,7 @@ class MembershipRenewalService
      * @param int $days
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getPatientsWithExpiringMemberships(int $days = 30)
+    public function getPatientsWithExpiringMemberships(int $days = 30): \Illuminate\Support\Collection
     {
         $startDate = Carbon::today();
         $endDate = Carbon::today()->addDays($days);

@@ -64,7 +64,7 @@ class ActivityLogService
     /**
      * Format activities for display
      */
-    private static function formatActivities($activities): array
+    private static function formatActivities(mixed $activities): array
     {
         $data = [];
         
@@ -86,20 +86,20 @@ class ActivityLogService
     /**
      * Build activity description from activity record if description is not set
      */
-    private static function buildActivityDescription($activity): string
+    private static function buildActivityDescription(mixed $activity): string
     {
         $action = $activity->action ?? 'Activity';
-        $patient = $activity->patientR->name ?? $activity->patient ?? '';
-        $service = $activity->serviceR->name ?? $activity->service ?? '';
-        $location = $activity->centre->name ?? $activity->location ?? '';
+        $patient = e($activity->patientR->name ?? $activity->patient ?? '');
+        $service = e($activity->serviceR->name ?? $activity->service ?? '');
+        $location = e($activity->centre->name ?? $activity->location ?? '');
         $amount = $activity->amount ?? '';
         $planId = $activity->planId ?? $activity->plan_id ?? '';
-        $appointmentType = $activity->appointment_type ?? '';
+        $appointmentType = e($activity->appointment_type ?? '');
         $scheduleDate = $activity->schedule_date ?? '';
         $createdBy = $activity->created_by ?? '';
-        
-        // Get creator name
-        $creatorName = self::getCreatorName($activity);
+
+        // Get creator name (escaped to prevent XSS)
+        $creatorName = e(self::getCreatorName($activity));
         
         // Format date
         $dateStr = '';
@@ -199,7 +199,7 @@ class ActivityLogService
     /**
      * Build fallback description for old records based on action field
      */
-    private static function buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr): string
+    private static function buildFallbackDescription(mixed $activity, string $creatorName, string $patient, string $service, string $location, mixed $amount, mixed $planId, string $appointmentType, string $dateStr): string
     {
         $action = $activity->action ?? '';
         
@@ -241,7 +241,7 @@ class ActivityLogService
     /**
      * Get creator name from activity
      */
-    private static function getCreatorName($activity): string
+    private static function getCreatorName(mixed $activity): string
     {
         // If user relationship exists and has name, use it
         if ($activity->user && $activity->user->name) {

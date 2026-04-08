@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CalculateConsultancyPriceRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Auth::check();
@@ -17,6 +18,7 @@ class CalculateConsultancyPriceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -32,6 +34,7 @@ class CalculateConsultancyPriceRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [

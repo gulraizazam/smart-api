@@ -6,6 +6,7 @@ namespace App\Services\UserManagement;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
+use App\Services\Phone\PhoneFormattingService;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Models\AuditTrails;
@@ -71,12 +72,12 @@ class DoctorService
 
         // Phone filter (needs number cleaning)
         if (!empty($params['phone'])) {
-            $where[] = ['users.phone', 'like', '%' . GeneralFunctions::cleanNumber($params['phone']) . '%'];
+            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($params['phone']) . '%'];
             Filters::put($userId, self::FILTER_KEY, 'phone', $params['phone']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'phone');
         } elseif ($storedPhone = Filters::get($userId, self::FILTER_KEY, 'phone')) {
-            $where[] = ['users.phone', 'like', '%' . GeneralFunctions::cleanNumber($storedPhone) . '%'];
+            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($storedPhone) . '%'];
         }
 
         $where = $this->addFilter($where, $params, 'gender', 'users.gender', '=', $userId, $applyFilter);
@@ -127,7 +128,7 @@ class DoctorService
         return $where;
     }
 
-    private function formatDatatableData($users): array
+    private function formatDatatableData(mixed $users): array
     {
         return $users->map(fn (User $user): array => [
             'id' => $user->id,
@@ -251,7 +252,7 @@ class DoctorService
         $data['resource_type_id'] = $resourcetype->id;
         $data['user_type_id'] = Config::get('constants.practitioner_id');
         $data['account_id'] = Auth::user()->account_id;
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
         $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
 
         $user = User::create($data);
@@ -296,7 +297,7 @@ class DoctorService
         }
         unset($data['old_phone']);
 
-        $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+        $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
         $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
 
         $oldData = $user->makeVisible(['password'])->toArray();
@@ -416,7 +417,7 @@ class DoctorService
         ];
     }
 
-    public function getServicesForLocation($request): array
+    public function getServicesForLocation(mixed $request): array
     {
         return [
             'services' => ServiceWidget::generateServiceArrayArray($request, Auth::user()->account_id),
@@ -479,7 +480,7 @@ class DoctorService
             }
         }
 
-        if ($record === null || in_array($hasServices, ['all', 'parent'])) {
+        if ($record === null || in_array($hasServices, ['all', 'parent'], true)) {
             return ['status' => false, 'message' => 'Parent Service / All Service already exist!'];
         }
 

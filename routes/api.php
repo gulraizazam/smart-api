@@ -69,12 +69,12 @@ use App\Http\Controllers\Api\ScheduleController;
 |--------------------------------------------------------------------------
 |
 | Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| routes are loaded within a group which is assigned the "api" middleware
+| group. Enjoy building your API!
 |
 */
 
-Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:5,1');
 
 Route::middleware('auth.common')->name('admin.')->group(function () {
     require __DIR__ . '/api/dashboard.php';

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Gate;
 
 class StoreBundleRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return Gate::allows('packages_create');
@@ -19,6 +20,7 @@ class StoreBundleRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -38,6 +40,7 @@ class StoreBundleRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -53,6 +56,7 @@ class StoreBundleRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): never
     {
         throw new HttpResponseException(response()->json([

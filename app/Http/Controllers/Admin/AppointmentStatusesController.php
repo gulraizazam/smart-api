@@ -17,7 +17,7 @@ class AppointmentStatusesController extends Controller
         private readonly AppointmentStatusService $appointmentStatusService,
     ) {}
 
-    public function index(): mixed
+    public function index(): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_statuses_manage')) {
             return abort(401);
@@ -74,7 +74,7 @@ class AppointmentStatusesController extends Controller
         }
     }
 
-    public function create(): mixed
+    public function create(): \Illuminate\View\View
     {
         if (! Gate::allows('appointment_statuses_create')) {
             return abort(401);
@@ -168,11 +168,11 @@ class AppointmentStatusesController extends Controller
     {
         try {
             if ($request->status == 0) {
-                if (! Gate::allows('cities_inactive')) {
+                if (! Gate::allows('appointment_statuses_inactive')) {
                     return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
             } else {
-                if (! Gate::allows('cities_active')) {
+                if (! Gate::allows('appointment_statuses_active')) {
                     return $this->errorResponse('You are not authorized to access this resource.', 401);
                 }
             }

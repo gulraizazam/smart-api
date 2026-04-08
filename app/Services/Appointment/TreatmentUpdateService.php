@@ -527,7 +527,7 @@ final class TreatmentUpdateService
             );
         }
 
-        GeneralFunctions::saveAppointmentLogs('updated', 'Treatment', $appointment);
+        ActivityLogger::saveAppointmentLogs('updated', 'Treatment', $appointment);
     }
 
     /**

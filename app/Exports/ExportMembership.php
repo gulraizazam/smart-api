@@ -13,19 +13,16 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 
 class ExportMembership implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private mixed $request;
-
-    public function __construct($request)
-    {
-        $this->request = $request;
-    }
+    public function __construct(
+        private readonly mixed $request,
+    ) {}
 
     public function collection(): \Illuminate\Support\Collection
     {
         $query = Membership::query();
 
         // Bug fixed: was using ['<>', null] / ['=', null] in array WHERE — those don't generate IS NULL / IS NOT NULL
-        if (!is_null($this->request->assigned) && $this->request->assigned !== '') {
+        if ($this->request->assigned !== null && $this->request->assigned !== '') {
             if ($this->request->assigned == 1) {
                 $query->whereNotNull('memberships.patient_id');
             } elseif ($this->request->assigned == 0) {
@@ -64,7 +61,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
             $membership->id,
             $membership->code ?? 'N/A',
             $membership->membership_type_id == '3' ? 'Gold' : 'Student',
-            optional($membership->patient)->name ?? 'N/A',
+            $membership->patient?->name ?? 'N/A',
             $membership->start_date ?? 'N/A',
             $membership->end_date ?? 'N/A',
         ];

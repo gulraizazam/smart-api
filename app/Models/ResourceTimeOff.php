@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,12 +28,16 @@ class ResourceTimeOff extends Model
         'description',
     ];
 
-    protected $casts = [
-        'start_date' => 'date',
-        'repeat_until' => 'date',
-        'is_full_day' => 'boolean',
-        'is_repeat' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'start_date' => 'date',
+            'repeat_until' => 'date',
+            'is_full_day' => 'boolean',
+            'is_repeat' => 'boolean',
+        ];
+    }
 
     /**
      * Get the resource that owns the time off
@@ -53,17 +58,21 @@ class ResourceTimeOff extends Model
     /**
      * Get type label
      */
-    public function getTypeLabelAttribute(): string
+    protected function typeLabel(): Attribute
     {
-        $types = [
-            'time_off' => 'Time Off',
-            'annual_leave' => 'Annual Leave',
-            'sick_leave' => 'Sick Leave',
-            'personal_leave' => 'Personal Leave',
-            'unpaid_leave' => 'Unpaid Leave',
-            'other' => 'Other',
-        ];
+        return Attribute::make(
+            get: function (): string {
+                $types = [
+                    'time_off' => 'Time Off',
+                    'annual_leave' => 'Annual Leave',
+                    'sick_leave' => 'Sick Leave',
+                    'personal_leave' => 'Personal Leave',
+                    'unpaid_leave' => 'Unpaid Leave',
+                    'other' => 'Other',
+                ];
 
-        return $types[$this->type] ?? $this->type;
+                return $types[$this->type] ?? $this->type;
+            },
+        );
     }
 }

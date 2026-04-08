@@ -22,7 +22,8 @@ class PatientFollowupController extends Controller
     {
         $this->middleware('auth');
     }
-    public function patientFollowUp(Request $request)
+
+    public function patientFollowUp(Request $request): \Illuminate\Http\JsonResponse
     {
 
         $where = [];
@@ -203,27 +204,25 @@ class PatientFollowupController extends Controller
                     $has_treatment_with_status_2 = $treatments->contains('base_appointment_status_id', 2);
                     $check_treatments = $treatments->sortByDesc('id')->first();
                     $future_treatments = $treatments->where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                    if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                    if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] === null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
-                        array_push($is_treatment, $data);
+                        $is_treatment[] = $data;
                     }
                 } else {
-                    if (in_array($data['patient_id'], $plan_check_no_treatment) && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
+                    if (in_array($data['patient_id'], $plan_check_no_treatment, true) && $data['cash_setteled_amounts'] === null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 0;
-                        array_push($not_treatment, $data);
+                        $not_treatment[] = $data;
                     }
                 }
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
-        usort($patient_data, function ($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
+        usort($patient_data, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
         return $this->successResponse('patient data', [
             'patient_data' => $patient_data
         ]);
     }
-    public function patientFollowUpDownload(Request $request)
+    public function patientFollowUpDownload(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
@@ -383,28 +382,26 @@ class PatientFollowupController extends Controller
                 $check_treatments = $treatments->sortByDesc('id')->first();
                 $future_treatments = $treatments->where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
 
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts'] === null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 1;
-                    array_push($is_treatment, $data);
+                    $is_treatment[] = $data;
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment, true) && $data['cash_setteled_amounts'] === null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 0;
-                    array_push($not_treatment, $data);
+                    $not_treatment[] = $data;
                 }
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
-        usort($patient_data, function ($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
+        usort($patient_data, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['created_at']));
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.followup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
         return $pdf->download('followup.pdf');
     }
 
-    public function patientMonthlyFollowUpDownload(Request $request)
+    public function patientMonthlyFollowUpDownload(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $where = [];
         $where[] = [
@@ -553,24 +550,22 @@ class PatientFollowupController extends Controller
                 $check_treatments = $treatments->sortByDesc('id')->first();
                 $future_treatments = $treatments->where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts'] == null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
+                    if (in_array($data['patient_id'], $plan_check_amount, true) && $data['cash_setteled_amounts'] === null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date;
-                        array_push($patient_data, $data);
+                        $patient_data[] = $data;
                     }
                 }
             }
         }
-        usort($patient_data, function ($a, $b) {
-            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
-        });
+        usort($patient_data, fn($a, $b) => strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']));
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.monthlyfollowup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
         return $pdf->download('monthlyfollowup.pdf');
     }
 
-    public function patientFollowUpOneMonth(Request $request)
+    public function patientFollowUpOneMonth(Request $request): \Illuminate\Http\JsonResponse
     {
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $threeMonthsAgo = Carbon::now()->subMonths(3)->format('Y-m-d');
@@ -677,7 +672,7 @@ class PatientFollowupController extends Controller
                 && $check_treatments->scheduled_date <= $thirtyOneDaysAgo 
                 && $future_treatments->isEmpty()
             ) {
-                if (in_array($data->patient_id, $plan_check_amount) 
+                if (in_array($data->patient_id, $plan_check_amount, true) 
                     && $cash_setteled_amounts == 0 
                     && ($cash_receive - $settle_amount_with_tax) > 450
                 ) {

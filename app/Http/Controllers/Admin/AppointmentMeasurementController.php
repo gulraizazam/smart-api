@@ -21,7 +21,7 @@ class AppointmentMeasurementController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -37,7 +37,7 @@ class AppointmentMeasurementController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create(int $id): mixed
+    public function create(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_create')) {
             return abort(401);
@@ -53,7 +53,7 @@ class AppointmentMeasurementController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function fill_form(int $form_id, int $appointment_id): mixed
+    public function fill_form(int $form_id, int $appointment_id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_create')) {
             return abort(401);
@@ -70,7 +70,7 @@ class AppointmentMeasurementController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function submit_form(Request $request, int $id, int $appointment_id): mixed
+    public function submit_form(Request $request, int $id, int $appointment_id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('appointments_measurement_create')) {
             return abort(401);
@@ -87,7 +87,7 @@ class AppointmentMeasurementController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\Response
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         $records = $this->service->getDatatableData($request, $id);
 
@@ -100,7 +100,7 @@ class AppointmentMeasurementController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -122,7 +122,7 @@ class AppointmentMeasurementController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update_measurement_field(Request $request, int $id): mixed
+    public function update_measurement_field(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('appointments_measurement_edit')) {
             return abort(401);
@@ -139,7 +139,7 @@ class AppointmentMeasurementController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function filled_preview(int $id): mixed
+    public function filled_preview(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -157,7 +157,7 @@ class AppointmentMeasurementController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function filledPrint(int $id): mixed
+    public function filledPrint(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('appointments_measurement_manage')) {
             return abort(401);
@@ -175,7 +175,7 @@ class AppointmentMeasurementController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function exportPdf(int $id): mixed
+    public function exportPdf(int $id): \Illuminate\View\View
     {
         ini_set('max_execution_time', '0');
         if (! Gate::allows('appointments_measurement_manage')) {

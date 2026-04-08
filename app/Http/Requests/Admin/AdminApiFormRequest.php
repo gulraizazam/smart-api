@@ -14,11 +14,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
  */
 abstract class AdminApiFormRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): never
     {
         throw new HttpResponseException(

@@ -18,10 +18,14 @@ class WorkingDayException extends Model
         'created_by',
     ];
 
-    protected $casts = [
-        'exception_date' => 'date',
-        'is_working' => 'boolean',
-    ];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'exception_date' => 'date',
+            'is_working' => 'boolean',
+        ];
+    }
 
     /**
      * Check if a specific date has an exception

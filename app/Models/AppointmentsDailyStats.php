@@ -11,7 +11,13 @@ class AppointmentsDailyStats extends Model
 {
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'centre_id',
+        'user_id',
+        'appointment_id',
+        'appointment_status_id',
+        'cron_current_date',
+    ];
 
     public function user(): BelongsTo
     {

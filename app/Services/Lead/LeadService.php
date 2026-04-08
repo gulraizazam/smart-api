@@ -23,6 +23,8 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\ActivityLogger;
 use App\Helpers\GeneralFunctions;
+use App\Services\PatientManagement\PatientSearchService;
+use App\Services\Phone\PhoneFormattingService;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Exceptions\LeadException;
 use Illuminate\Support\Facades\Auth;
@@ -183,7 +185,7 @@ class LeadService
             $accountId = Auth::user()->account_id;
             $userId = Auth::id();
 
-            $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
+            $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
 
             $existingLead = Leads::where('phone', $data['phone'])
                 ->where('account_id', $accountId)
@@ -266,7 +268,7 @@ class LeadService
             $lead->update($data);
 
             if (!empty($data['phone']) && !empty($data['name'])) {
-                GeneralFunctions::patientNameUpdate($data['phone'], $data['name']);
+                PatientSearchService::patientNameUpdate($data['phone'], $data['name']);
             }
 
             return $lead->fresh();
@@ -493,8 +495,7 @@ class LeadService
     {
         $accountId = Auth::user()->account_id;
 
-        return Cache::remember("lead_form_lookup_{$accountId}", self::CACHE_TTL, function () use ($accountId): array {
-            return [
+        return Cache::remember("lead_form_lookup_{$accountId}", self::CACHE_TTL, fn(): array => [
                 'cities' => Cities::getActiveSortedFeatured(ACL::getUserCities()),
                 'lead_sources' => LeadSources::getActiveSorted(),
                 'lead_statuses' => LeadStatuses::getLeadStatuses(),
@@ -504,8 +505,7 @@ class LeadService
                     'active' => 1,
                 ])->pluck('name', 'id'),
                 'gender' => Config::get('constants.gender_array'),
-            ];
-        });
+            ]);
     }
 
     // =========================================================================
@@ -641,13 +641,13 @@ class LeadService
             }
         }
 
-        $searchTerm = GeneralFunctions::patientSearch($search);
-        $phoneNumeric = GeneralFunctions::clearnString($search);
+        $searchTerm = PatientSearchService::patientSearch($search);
+        $phoneNumeric = PhoneFormattingService::clearnString($search);
 
         $query = Leads::where(['active' => 1, 'account_id' => $accountId]);
 
         if (is_numeric($phoneNumeric)) {
-            $phone = GeneralFunctions::cleanNumber($search);
+            $phone = PhoneFormattingService::cleanNumber($search);
             $query->where('phone', 'LIKE', "%{$phone}%");
         } else {
             $query->where('name', 'LIKE', "%{$searchTerm}%");
@@ -701,7 +701,7 @@ class LeadService
         $phoneToRowMap = [];
 
         foreach ($rows as $row) {
-            $phone = GeneralFunctions::cleanNumber($row['phone'] ?? '');
+            $phone = PhoneFormattingService::cleanNumber($row['phone'] ?? '');
 
             if (strlen($phone) < 10 || strlen($phone) > 12) {
                 $stats['invalid_phones'][] = $row['phone'] ?? '';
@@ -712,7 +712,7 @@ class LeadService
             $serviceData = $lookupData['services'][$serviceKey] ?? null;
 
             if (!$serviceData && !empty($serviceKey)) {
-                if (!in_array($row['service'], $stats['invalid_services'])) {
+                if (!in_array($row['service'], $stats['invalid_services'], true)) {
                     $stats['invalid_services'][] = $row['service'];
                 }
                 continue;
@@ -1224,7 +1224,7 @@ class LeadService
             ? ($requestData['old_phone'] ?? '')
             : $requestData['phone'];
 
-        $phone = GeneralFunctions::cleanNumber($phone);
+        $phone = PhoneFormattingService::cleanNumber($phone);
         $patient = Patients::getByPhone($phone, Auth::user()->account_id, $requestData['patient_id'] ?? null);
 
         if (!$patient) {
@@ -1547,7 +1547,7 @@ class LeadService
             $query->where('users.email', 'like', '%' . $filters['email'] . '%');
         }
         if (!empty($filters['phone'])) {
-            $query->where('users.phone', 'like', '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%');
+            $query->where('users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($filters['phone']) . '%');
         }
     }
 
@@ -1667,7 +1667,7 @@ class LeadService
         $cleanNumber = $mapping[4] ?? false;
 
         if (hasFilter($filters, $key)) {
-            $value = $cleanNumber ? GeneralFunctions::cleanNumber($filters[$key]) : $filters[$key];
+            $value = $cleanNumber ? PhoneFormattingService::cleanNumber($filters[$key]) : $filters[$key];
             $where[] = [$column, $operator, $prefix . $value . $suffix];
             Filters::put($userId, $filename, $key, $value);
         } elseif ($applyFilter) {
@@ -1675,7 +1675,7 @@ class LeadService
         } else {
             $storedValue = Filters::get($userId, $filename, $key);
             if ($storedValue) {
-                $value = $cleanNumber ? GeneralFunctions::cleanNumber($storedValue) : $storedValue;
+                $value = $cleanNumber ? PhoneFormattingService::cleanNumber($storedValue) : $storedValue;
                 $where[] = [$column, $operator, $prefix . $value . $suffix];
             }
         }

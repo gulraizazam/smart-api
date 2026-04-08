@@ -11,6 +11,7 @@ use App\Models\Settings;
 use App\Jobs\SecondSmsJob;
 use App\Helpers\JazzSMSAPI;
 use App\Models\Appointments;
+use App\Enums\AppointmentType;
 use App\Models\SMSTemplates;
 use App\Helpers\TelenorSMSAPI;
 use Illuminate\Console\Command;
@@ -53,6 +54,7 @@ class SecondMessageOfAppointment extends Command
      *
      * @return mixed
      */
+    #[\Override]
     public function handle(): int
     {
         
@@ -113,7 +115,7 @@ class SecondMessageOfAppointment extends Command
                
 
 
-            if ($appointment->appointment_type_id ==1) {
+            if ($appointment->appointment_type_id === AppointmentType::Consultancy->value) {
               
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {

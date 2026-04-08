@@ -40,6 +40,7 @@ class HandleHeavyLifting extends Command
      *
      * @return void
      */
+    #[\Override]
     public function handle(): int
     {
         try {
@@ -98,12 +99,9 @@ class HandleHeavyLifting extends Command
             }
 
         } catch (\Exception $e) {
-            echo "\n";
-            echo 'Exception came';
-            echo "\n";
-            echo "\n";
+            \Log::error('HandleHeavyLifting exception', ['error' => $e->getMessage()]);
         }
 
-        return true;
+        return Command::SUCCESS;
     }
 }

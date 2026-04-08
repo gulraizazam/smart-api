@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,8 +28,10 @@ class SMSLogs extends Model
         return $this->belongsTo(Appointments::class, 'appointment_id');
     }
 
-    public function getToAttribute($value)
+    protected function to(): Attribute
     {
-        return GeneralFunctions::prepareNumber4Call(GeneralFunctions::cleanNumber($value));
+        return Attribute::make(
+            get: fn (string $value): string => GeneralFunctions::prepareNumber4Call(GeneralFunctions::cleanNumber($value)),
+        );
     }
 }

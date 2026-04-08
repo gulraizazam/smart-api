@@ -20,7 +20,7 @@ class MetaConversionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function testConnection(Request $request): mixed
+    public function testConnection(Request $request): \Illuminate\Http\JsonResponse
     {
         $result = $this->metaService->testConnection();
         return response()->json($result);
@@ -34,7 +34,7 @@ class MetaConversionController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function sendLeadStatus(SendLeadStatusRequest $request): mixed
+    public function sendLeadStatus(SendLeadStatusRequest $request): \Illuminate\Http\JsonResponse
     {
 
         $result = $this->metaService->sendLeadStatus(

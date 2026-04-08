@@ -9,12 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 class RevenueCalculator
 {
-    private ConversionService $conversionService;
-
-    public function __construct(ConversionService $conversionService)
-    {
-        $this->conversionService = $conversionService;
-    }
+    public function __construct(
+        private readonly ConversionService $conversionService,
+    ) {}
     /**
      * Calculate total revenue for a doctor in a date range.
      *

@@ -12,11 +12,13 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class GeneralSalesReportRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         return true;
     }
 
+    #[\Override]
     public function rules(): array
     {
         $reportTypes = implode(',', array_column(ReportType::cases(), 'value'));

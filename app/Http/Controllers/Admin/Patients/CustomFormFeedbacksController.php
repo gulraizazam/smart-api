@@ -26,12 +26,12 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(int $id): mixed
+    public function index(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('patients_customform_manage')) {
             return abort(401);
         }
-        $filters = Filters::all(Auth::User()->id, 'patient_custom_form_feedbacks');
+        $filters = Filters::all(Auth::user()->id, 'patient_custom_form_feedbacks');
         $patient = User::finduser($id);
 
         return view('admin.patients..card.custom_form_feedbacks.index', compact('patient', 'filters'));
@@ -45,7 +45,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @throws \Throwable
      */
-    public function datatable(Request $request, int $id): mixed
+    public function datatable(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
         $filename = 'patient_custom_form_feedbacks';
 
@@ -62,7 +62,7 @@ class CustomFormFeedbacksController extends Controller
             if ($CustomFormFeedbacks) {
                 foreach ($CustomFormFeedbacks as $custom_form_feedback) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::User()->account_id)) {
+                    if (! CustomFormFeedbacks::isChildExists($custom_form_feedback->id, Auth::user()->account_id)) {
                         $custom_form_feedback->delete();
                     }
                 }
@@ -105,7 +105,7 @@ class CustomFormFeedbacksController extends Controller
         return response()->json($records);
     }
 
-    private function getFilters($records, $filename): mixed
+    private function getFilters($records, $filename): array
     {
 
         $records['active_filters'] = Filters::all(Auth::user()->id, $filename);
@@ -119,7 +119,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): mixed
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('patients_customform_edit')) {
             return abort(401);
@@ -142,7 +142,7 @@ class CustomFormFeedbacksController extends Controller
      * @param  int  $id
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function filled_preview(int $id): mixed
+    public function filled_preview(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -162,7 +162,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function filledPrint(int $id): mixed
+    public function filledPrint(int $id): \Illuminate\View\View
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -180,7 +180,7 @@ class CustomFormFeedbacksController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View|void
      */
-    public function exportPdf(int $id): mixed
+    public function exportPdf(int $id): \Illuminate\View\View|\Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
     {
         if (! Gate::allows('custom_form_feedbacks_manage') && ! Gate::allows('patients_customform_manage')) {
             return abort(401);
@@ -251,7 +251,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return $id
      */
-    public function AddNewForm(int $id): mixed
+    public function AddNewForm(int $id): \Illuminate\Http\JsonResponse
     {
 
         if (! Gate::allows('patients_customform_create')) {
@@ -260,11 +260,11 @@ class CustomFormFeedbacksController extends Controller
 
         $where = [];
 
-        if (Auth::User()->account_id) {
+        if (Auth::user()->account_id) {
             $where[] = [
                 'account_id',
                 '=',
-                Auth::User()->account_id,
+                Auth::user()->account_id,
             ];
         }
         $where[] = [
@@ -289,7 +289,7 @@ class CustomFormFeedbacksController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
      */
-    public function fill_form($form_id, $patient_id): mixed
+    public function fill_form($form_id, $patient_id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('patients_customform_create')) {
             return abort(401);

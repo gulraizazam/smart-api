@@ -13,15 +13,10 @@ use Illuminate\View\View;
 
 class DoctorDashboardController extends Controller
 {
-    protected string $success;
-    protected string $error;
-
     public function __construct(
         protected readonly DoctorDashboardService $dashboardService,
         protected readonly DoctorIdentifier $doctorIdentifier,
-    ) {
-
-    }
+    ) {}
 
     public function index(): View
     {
@@ -35,7 +30,7 @@ class DoctorDashboardController extends Controller
         $doctorInfo = $this->doctorIdentifier->getDoctorInfo($doctorId);
 
         $userRoles = $user->user_roles()->pluck('name')->toArray();
-        $showUpsellCards = in_array('Aesthetic Doctor', $userRoles) || in_array('Lifestyle Consultant', $userRoles);
+        $showUpsellCards = in_array('Aesthetic Doctor', $userRoles, true) || in_array('Lifestyle Consultant', $userRoles, true);
 
         return view('admin.doctor_dashboard.index', compact('doctorInfo', 'showUpsellCards'));
     }
@@ -51,7 +46,7 @@ class DoctorDashboardController extends Controller
             return $this->successResponse('KPI data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard KPI Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
@@ -65,7 +60,7 @@ class DoctorDashboardController extends Controller
             return $this->successResponse('Hero data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Hero Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
@@ -78,7 +73,7 @@ class DoctorDashboardController extends Controller
             return $this->successResponse("Today's appointments loaded.", $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Appointments Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 
@@ -104,7 +99,7 @@ class DoctorDashboardController extends Controller
             return $this->successResponse('Benchmark data loaded.', $data);
         } catch (\Exception $e) {
             Log::error('Doctor Dashboard Benchmark Error: ' . $e->getMessage());
-            return $this->errorResponse($e->getMessage(), 500);
+            return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
 }

@@ -71,7 +71,7 @@ class InvoiceGenerationController extends Controller
     /**
      * Export exempt invoices to Excel
      */
-    public function exportExemptInvoices(InvoiceCalculationRequest $request): mixed
+    public function exportExemptInvoices(InvoiceCalculationRequest $request): \Illuminate\Http\JsonResponse
     {
         $validated = $request->validated();
 
@@ -148,7 +148,7 @@ class InvoiceGenerationController extends Controller
      * Uses ZipStream to avoid writing anything to disk.
      * Processes invoices in chunks to handle 1000+ invoices without memory issues.
      */
-    public function downloadInvoicesZip(InvoiceCalculationRequest $request): mixed
+    public function downloadInvoicesZip(InvoiceCalculationRequest $request): \Illuminate\Http\JsonResponse
     {
         $validated = $request->validated();
 
@@ -510,7 +510,7 @@ class InvoiceGenerationController extends Controller
         }
 
         // Apply borders to data
-        if (count($invoices) > 0) {
+        if (!empty($invoices)) {
             $sheet->getStyle('A2:E' . ($row - 1))->applyFromArray($dataStyle);
         }
 
@@ -584,7 +584,7 @@ class InvoiceGenerationController extends Controller
         }
 
         // Apply borders to data
-        if (count($distribution) > 0) {
+        if (!empty($distribution)) {
             $sheet->getStyle('A2:F' . ($row - 1))->applyFromArray($dataStyle);
         }
 

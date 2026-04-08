@@ -27,7 +27,8 @@ class CashflowNotificationController extends Controller
                 'unread_count' => CashflowNotification::forUser($userId)->unread()->count(),
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
         }
     }
 
@@ -49,7 +50,8 @@ class CashflowNotificationController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Notifications marked as read.']);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
         }
     }
 }

@@ -21,9 +21,9 @@ use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 
-        Route::get('error-logs', [LogViewerController::class, 'index']);
-        Route::get('updateleads', [LeadsController::class, 'leadupdate']);
-        Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
+        Route::get('error-logs', [LogViewerController::class, 'index'])->name('error_logs');
+        Route::post('updateleads', [LeadsController::class, 'leadupdate'])->name('leads.update');
+        Route::post('updatestatusleads', [LeadsController::class, 'leadstatusupdate'])->name('leads.status_update');
         Route::prefix('invoices')->name('invoices.')->group(function () {
             // Calculate amounts and get JSON response
             Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');

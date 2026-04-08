@@ -10,6 +10,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class StoreRefundRequest extends FormRequest
 {
+    #[\Override]
     public function authorize(): bool
     {
         $user = $this->user();
@@ -20,6 +21,7 @@ final class StoreRefundRequest extends FormRequest
         return $user->can('refunds_create') || $user->can('patients_refund_refund');
     }
 
+    #[\Override]
     public function rules(): array
     {
         return [
@@ -34,6 +36,7 @@ final class StoreRefundRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     public function messages(): array
     {
         return [
@@ -49,6 +52,7 @@ final class StoreRefundRequest extends FormRequest
         ];
     }
 
+    #[\Override]
     protected function failedValidation(Validator $validator): void
     {
         throw new HttpResponseException(

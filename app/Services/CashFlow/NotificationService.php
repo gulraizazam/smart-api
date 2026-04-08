@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Services\CashFlow;
 
+use App\Enums\CashflowNotificationType;
 use App\Models\CashFlow\CashflowNotification;
 use App\Models\CashFlow\Expense;
 use App\Models\User;
@@ -14,7 +15,7 @@ class NotificationService
     /**
      * Get notifications for current user.
      */
-    public function getForUser(int $userId, int $limit = 20)
+    public function getForUser(int $userId, int $limit = 20): \Illuminate\Database\Eloquent\Collection
     {
         return CashflowNotification::forUser($userId)
             ->recent($limit)
@@ -79,7 +80,7 @@ class NotificationService
 
             $this->notify(
                 $admin->id,
-                CashflowNotification::TYPE_EXPENSE_PENDING,
+                CashflowNotificationType::ExpensePending,
                 'Expense Pending Approval',
                 "Expense of PKR " . number_format($expense->amount, 2) . " by {$expense->creator->name} requires approval.",
                 ['expense_id' => $expense->id, 'amount' => $expense->amount],
@@ -95,7 +96,7 @@ class NotificationService
     {
         $this->notify(
             $expense->created_by,
-            CashflowNotification::TYPE_EXPENSE_APPROVED,
+            CashflowNotificationType::ExpenseApproved,
             'Expense Approved',
             "Your expense of PKR " . number_format($expense->amount, 2) . " has been approved.",
             ['expense_id' => $expense->id]
@@ -109,7 +110,7 @@ class NotificationService
     {
         $this->notify(
             $expense->created_by,
-            CashflowNotification::TYPE_EXPENSE_REJECTED,
+            CashflowNotificationType::ExpenseRejected,
             'Expense Rejected',
             "Your expense of PKR " . number_format($expense->amount, 2) . " was rejected. Reason: " . $expense->rejection_reason,
             ['expense_id' => $expense->id]
@@ -126,7 +127,7 @@ class NotificationService
         foreach ($admins as $admin) {
             $this->notify(
                 $admin->id,
-                CashflowNotification::TYPE_VENDOR_REQUEST,
+                CashflowNotificationType::VendorRequest,
                 'New Vendor Request',
                 "{$requestedByName} has requested a new vendor: {$vendorName}.",
                 ['vendor_name' => $vendorName],
@@ -145,7 +146,7 @@ class NotificationService
         foreach ($admins as $admin) {
             $this->notify(
                 $admin->id,
-                CashflowNotification::TYPE_CATEGORY_REQUEST,
+                CashflowNotificationType::CategoryRequest,
                 'New Category Request',
                 "{$requestedByName} has suggested a new category: {$categoryName}.",
                 ['category_name' => $categoryName],
@@ -164,7 +165,7 @@ class NotificationService
         foreach ($admins as $admin) {
             $this->notify(
                 $admin->id,
-                CashflowNotification::TYPE_STAFF_ADVANCE,
+                CashflowNotificationType::StaffAdvance,
                 'Staff Advance Given',
                 "PKR " . number_format($amount, 0) . " advance given to {$staffName}.",
                 ['staff_name' => $staffName, 'amount' => $amount],
@@ -184,7 +185,7 @@ class NotificationService
         foreach ($admins as $admin) {
             $this->notify(
                 $admin->id,
-                CashflowNotification::TYPE_NEGATIVE_POOL,
+                CashflowNotificationType::NegativePool,
                 'Negative Pool Balance',
                 "Pool \"{$poolName}\" has gone negative: PKR " . number_format($balance, 0) . ".",
                 ['pool_name' => $poolName, 'balance' => $balance],
@@ -197,10 +198,10 @@ class NotificationService
         if ($branchId) {
             $branchManagers = $this->getBranchManagers($branchId, $accountId);
             foreach ($branchManagers as $bm) {
-                if (in_array($bm->id, $notifiedIds)) continue;
+                if (in_array($bm->id, $notifiedIds, true)) continue;
                 $this->notify(
                     $bm->id,
-                    CashflowNotification::TYPE_NEGATIVE_POOL,
+                    CashflowNotificationType::NegativePool,
                     'Negative Pool Balance',
                     "Your branch pool \"{$poolName}\" has gone negative: PKR " . number_format($balance, 0) . ".",
                     ['pool_name' => $poolName, 'balance' => $balance],
@@ -223,7 +224,7 @@ class NotificationService
             if ($bm->id === $expense->created_by) continue;
             $this->notify(
                 $bm->id,
-                CashflowNotification::TYPE_EXPENSE_FOR_BRANCH,
+                CashflowNotificationType::ExpenseForBranch,
                 'Expense Recorded for Your Branch',
                 "PKR " . number_format($expense->amount, 0) . " expense recorded for your branch — {$expense->description}.",
                 ['expense_id' => $expense->id, 'amount' => $expense->amount],
@@ -248,10 +249,10 @@ class NotificationService
             $direction = ($pool->id === $fromPoolId) ? 'out of' : 'into';
 
             foreach ($branchManagers as $bm) {
-                if (in_array($bm->id, $notifiedIds)) continue;
+                if (in_array($bm->id, $notifiedIds, true)) continue;
                 $this->notify(
                     $bm->id,
-                    CashflowNotification::TYPE_TRANSFER_FOR_BRANCH,
+                    CashflowNotificationType::TransferForBranch,
                     'Transfer Involving Your Branch',
                     "PKR " . number_format($amount, 0) . " transferred {$direction} your branch pool ({$pool->name}).",
                     ['amount' => $amount, 'pool_name' => $pool->name],
