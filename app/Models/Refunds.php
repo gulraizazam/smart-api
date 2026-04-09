@@ -26,6 +26,17 @@ class Refunds extends Model
 
     protected static string $_table = 'package_advances';
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Model $model): void {
+            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
+                $model->account_id = Auth::user()->account_id;
+            }
+        });
+    }
+
     /**
      * Scope Refunds to only refund records (cash_flow=out, is_refund=1).
      * Prevents querying advance payment records through the Refunds model.

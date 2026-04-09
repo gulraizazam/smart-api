@@ -19,25 +19,30 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $serviceIds = collect($rr)->pluck('service_id')->filter()->unique();
+                $cityIds = collect($rr)->pluck('city_id')->filter()->unique();
+                $createdByIds = collect($rr)->pluck('lead_created_by')->filter()->unique();
+                $statusIds = collect($rr)->pluck('lead_status_id')->filter()->unique();
+
+                $servicesMap = \App\Models\Services::whereIn('id', $serviceIds)->pluck('name', 'id');
+                $citiesMap = \App\Models\Cities::whereIn('id', $cityIds)->pluck('name', 'id');
+                $usersMap = \App\Models\User::whereIn('id', $createdByIds)->pluck('name', 'id');
+                $statusesMap = \App\Models\LeadStatuses::whereIn('id', $statusIds)->pluck('name', 'id');
+            @endphp
             @foreach($rr as $rec)
-            <?php 
-                $service = \App\Models\Services::where('id',$rec->service_id)->first();
-                $location = \App\Models\Cities::where('id',$rec->city_id)->first();
-                $created_by = \App\Models\User::where('id',$rec->lead_created_by)->first();
-                $leadsstat = \App\Models\LeadStatuses::where('id',$rec->lead_status_id)->first();
-            ?>
             <tr>
                 <td>{{$rec->name ?? ''}}</td>
                 <td>{{$rec->phone ?? ''}}</td>
-                <td>{{$location->name ?? ''}}</td>
-              
-                <td>{{$service->name ?? ''}}</td>
-                <td>{{$leadsstat->name ?? ''}}</td>
+                <td>{{$citiesMap[$rec->city_id] ?? ''}}</td>
+
+                <td>{{$servicesMap[$rec->service_id] ?? ''}}</td>
+                <td>{{$statusesMap[$rec->lead_status_id] ?? ''}}</td>
                 <td>{{$rec->active ?? ''}}</td>
-               
-                <td>{{$created_by->name ?? ''}}</td>
+
+                <td>{{$usersMap[$rec->lead_created_by] ?? ''}}</td>
                 <td>{{$rec->created_at ?? ''}}</td>
-                
+
             </tr>
             @endforeach
         </tbody>

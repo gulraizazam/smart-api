@@ -24,6 +24,17 @@ class Invoices extends Model
 
     protected static array $_fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id'];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Model $model): void {
+            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
+                $model->account_id = Auth::user()->account_id;
+            }
+        });
+    }
+
     protected $table = 'invoices';
 
     protected static string $_table = 'invoices';

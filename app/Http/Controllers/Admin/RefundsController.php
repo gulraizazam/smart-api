@@ -366,7 +366,7 @@ class RefundsController extends Controller
         /*first need to tax percentage*/
         $bundle_information = PackageBundles::where('package_id', '=', $id)->first();
         
-        $tax_percentage = $bundle_information->tax_percenatage ?? '';
+        $tax_percentage = $bundle_information->tax_percentage ?? '';
         /*ans is :: 16.0*/
 
         $is_adjustment_amount = 0;

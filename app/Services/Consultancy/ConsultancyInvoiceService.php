@@ -385,7 +385,7 @@ class ConsultancyInvoiceService
 
         $detailData = [
             'tax_exclusive_serviceprice' => $data['amount_create'] ?? 0,
-            'tax_percenatage' => $appointment->location?->tax_percentage ?? 0,
+            'tax_percentage' => $appointment->location?->tax_percentage ?? 0,
             'tax_price' => $data['tax_create'] ?? 0,
             'tax_including_price' => $data['price'] ?? 0,
             'net_amount' => $data['price'] ?? 0,

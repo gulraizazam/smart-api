@@ -297,7 +297,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $data['updated_at'] = Filters::getCurrentTimeStamp();
         $invoice = Invoices::CreateRecord($data);
         $data_detail['tax_exclusive_serviceprice'] = $request->amount_create;
-        $data_detail['tax_percenatage'] = $appointmentinfo->location->tax_percentage;
+        $data_detail['tax_percentage'] = $appointmentinfo->location->tax_percentage;
         $data_detail['tax_price'] = $request->tax_create;
         if ($request->remaining != 0) {
             $data_detail['tax_including_price'] = $request->remaining;
@@ -319,7 +319,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $data_detail['updated_at'] = Filters::getCurrentTimeStamp();
         if ($request->package_service_id) {
             $tax_info_package_service = PackageService::with('packagebundle')->find($request->package_service_id);
-            $data_detail['tax_percenatage'] = $tax_info_package_service->tax_percenatage;
+            $data_detail['tax_percentage'] = $tax_info_package_service->tax_percentage;
             $data_detail['package_service_id'] = $request->package_service_id;
 
             // Get discount info from the package_bundle via package_service
@@ -559,7 +559,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 'invoice_details.package_id',
                 'invoice_details.invoice_id',
                 'invoice_details.tax_exclusive_serviceprice',
-                'invoice_details.tax_percenatage',
+                'invoice_details.tax_percentage',
                 'invoice_details.tax_price',
                 'invoice_details.tax_including_price',
                 'invoice_details.is_exclusive',

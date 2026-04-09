@@ -44,19 +44,20 @@ class ServiceWidget
             if ($location->slug == 'all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
-            foreach ($locations as $s_location) {
-                $service_has_location = ServiceHasLocations::where('location_id', '=', $s_location->id)->get();
-                foreach ($service_has_location as $servicehaslocation) {
-                    $service_data = Services::find($servicehaslocation->service_id);
-                    if ($service_data->slug == 'all') {
-                        $Services = GeneralFunctions::ServicesTreeList();
+            $locationIds = $locations->pluck('id');
+            $serviceHasLocations = ServiceHasLocations::whereIn('location_id', $locationIds)->get();
+            $serviceIds = $serviceHasLocations->pluck('service_id')->unique()->filter();
+            $servicesMap = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
-                        return $Services;
-                    } else {
-                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
-
-                        return $Services;
-                    }
+            foreach ($serviceHasLocations as $servicehaslocation) {
+                $service_data = $servicesMap[$servicehaslocation->service_id] ?? null;
+                if (!$service_data) {
+                    continue;
+                }
+                if ($service_data->slug == 'all') {
+                    return GeneralFunctions::ServicesTreeList();
+                } else {
+                    return GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
                 }
             }
         }
@@ -66,8 +67,8 @@ class ServiceWidget
         $Services = [];
         $result = [];
         $Services = GeneralFunctions::ServicesTreeList();
-        return $Services;              
-                   
+        return $Services;
+
     }
     /*
      * create Service Dropdown with Heiracrchy for consultancy
@@ -93,19 +94,20 @@ class ServiceWidget
             if ($location->slug == 'all') {
                 $locations = Locations::where('slug', '=', 'custom')->get();
             }
-            foreach ($locations as $s_location) {
-                $service_has_location = ServiceHasLocations::where('location_id', '=', $s_location->id)->get();
-                foreach ($service_has_location as $servicehaslocation) {
-                    $service_data = Services::find($servicehaslocation->service_id);
-                    if ($service_data->slug == 'all') {
-                        $Services = GeneralFunctions::ServicesTreeList();
+            $locationIds = $locations->pluck('id');
+            $serviceHasLocations = ServiceHasLocations::whereIn('location_id', $locationIds)->get();
+            $serviceIds = $serviceHasLocations->pluck('service_id')->unique()->filter();
+            $servicesMap = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
-                        return $Services;
-                    } else {
-                        $Services = GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
-
-                        return $Services;
-                    }
+            foreach ($serviceHasLocations as $servicehaslocation) {
+                $service_data = $servicesMap[$servicehaslocation->service_id] ?? null;
+                if (!$service_data) {
+                    continue;
+                }
+                if ($service_data->slug == 'all') {
+                    return GeneralFunctions::ServicesTreeList();
+                } else {
+                    return GeneralFunctions::ServicesTreeList(null, 0, $service_data->id);
                 }
             }
         }
@@ -221,9 +223,15 @@ class ServiceWidget
 
         $allService = Services::where(['slug' => 'all'])->select('id')->first();
 
+        $dhlServiceIds = collect($doctor_has_locations)->pluck('service_id')->unique()->filter();
+        $dhlServicesMap = Services::whereIn('id', $dhlServiceIds)->get()->keyBy('id');
+
         foreach ($doctor_has_locations as $doctorhaslocation) {
 
-            $service_data = Services::find($doctorhaslocation->service_id);
+            $service_data = $dhlServicesMap[$doctorhaslocation->service_id] ?? null;
+            if (!$service_data) {
+                continue;
+            }
 
             if ($service_data->slug == 'all') {
 

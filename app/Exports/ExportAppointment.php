@@ -8,20 +8,20 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class ExportAppointment implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ExportAppointment implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
     public function __construct(
         private readonly int $limit = 1000,
         private readonly int $offset = 0,
     ) {}
 
-    public function collection(): \Illuminate\Support\Collection
+    public function query()
     {
         return Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
@@ -29,8 +29,7 @@ class ExportAppointment implements FromCollection, WithHeadings, WithMapping, Wi
         })->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->limit($this->limit)->offset($this->offset)
-            ->orderBy('appointments.id', 'DESC')
-            ->get();
+            ->orderBy('appointments.id', 'DESC');
     }
 
     public function headings(): array

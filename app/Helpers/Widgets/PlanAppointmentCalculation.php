@@ -433,7 +433,7 @@ class PlanAppointmentCalculation
 
         $invoice = Invoices::CreateRecord($data);
         $data_detail['tax_exclusive_serviceprice'] = $req['amount_create'];
-        $data_detail['tax_percenatage'] = $appointmentinfo->location->tax_percentage;
+        $data_detail['tax_percentage'] = $appointmentinfo->location->tax_percentage;
         $data_detail['tax_price'] = $req['tax_create'];
         $data_detail['tax_including_price'] = $req['price'];
         $data_detail['net_amount'] = $req['price'];

@@ -1421,13 +1421,13 @@ final class PlanDiscountService
                 if ($svc->tax_treatment_type_id == Config::get('constants.tax_is_exclusive') ||
                     ($svc->tax_treatment_type_id == Config::get('constants.tax_both') && ($bundle_data['is_exclusive'] ?? 1) == 1)) {
                     $bundle_data['tax_exclusive_net_amount'] = $row_net_amount;
-                    $bundle_data['tax_percenatage']          = $tax_pct;
+                    $bundle_data['tax_percentage']          = $tax_pct;
                     $bundle_data['tax_price']                = ceil($row_net_amount * ($tax_pct / 100));
                     $bundle_data['tax_including_price']      = ceil($row_net_amount + $bundle_data['tax_price']);
                     $bundle_data['is_exclusive']             = 1;
                 } else {
                     $bundle_data['tax_including_price']      = $row_net_amount;
-                    $bundle_data['tax_percenatage']          = $tax_pct;
+                    $bundle_data['tax_percentage']          = $tax_pct;
                     $bundle_data['tax_exclusive_net_amount'] = $tax_pct > 0 ? ceil((100 * $row_net_amount) / ($tax_pct + 100)) : $row_net_amount;
                     $bundle_data['tax_price']                = ceil($row_net_amount - $bundle_data['tax_exclusive_net_amount']);
                     $bundle_data['is_exclusive']             = 0;
@@ -1449,7 +1449,7 @@ final class PlanDiscountService
                     'price'              => $row_net_amount,
                     'orignal_price'      => $svc->price,
                     'tax_including_price'=> $bundle_data['tax_including_price'],
-                    'tax_percenatage'    => $bundle_data['tax_percenatage'],
+                    'tax_percentage'    => $bundle_data['tax_percentage'],
                     'tax_exclusive_price'=> $bundle_data['tax_exclusive_net_amount'],
                     'tax_price'          => $bundle_data['tax_price'],
                     'is_exclusive'       => $bundle_data['is_exclusive'],
@@ -1525,13 +1525,13 @@ final class PlanDiscountService
         if ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive') ||
             ($service_data->tax_treatment_type_id == Config::get('constants.tax_both') && $is_exclusive == '1')) {
             $bundle_data['tax_exclusive_net_amount'] = $net_amount;
-            $bundle_data['tax_percenatage']          = $tax_pct;
+            $bundle_data['tax_percentage']          = $tax_pct;
             $bundle_data['tax_price']                = ceil($net_amount * ($tax_pct / 100));
             $bundle_data['tax_including_price']      = ceil($net_amount + $bundle_data['tax_price']);
             $bundle_data['is_exclusive']             = 1;
         } else {
             $bundle_data['tax_including_price']      = $net_amount;
-            $bundle_data['tax_percenatage']          = $tax_pct;
+            $bundle_data['tax_percentage']          = $tax_pct;
             $bundle_data['tax_exclusive_net_amount'] = $tax_pct > 0 ? ceil((100 * $net_amount) / ($tax_pct + 100)) : $net_amount;
             $bundle_data['tax_price']                = ceil($net_amount - $bundle_data['tax_exclusive_net_amount']);
             $bundle_data['is_exclusive']             = 0;
@@ -1560,7 +1560,7 @@ final class PlanDiscountService
             'price'              => $net_amount,
             'orignal_price'      => $service_data->price,
             'tax_including_price'=> $bundle_data['tax_including_price'],
-            'tax_percenatage'    => $bundle_data['tax_percenatage'],
+            'tax_percentage'    => $bundle_data['tax_percentage'],
             'tax_exclusive_price'=> $bundle_data['tax_exclusive_net_amount'],
             'tax_price'          => $bundle_data['tax_price'],
             'is_exclusive'       => $bundle_data['is_exclusive'],
@@ -1682,31 +1682,31 @@ final class PlanDiscountService
                     if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
                         if ($data['is_exclusive'] == '1') {
                             $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : $data['net_amount'];
-                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                            $data['tax_percentage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
                             $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                            $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                            $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percentage']) / 100));
                             $data['is_exclusive'] = 1;
                         } else {
                             $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $data['net_amount'];
-                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
-                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_percentage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                             $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                             $data['is_exclusive'] = 0;
                         }
                     } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                         $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : $data['net_amount'];
-                        $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                        $data['tax_percentage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
                         $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                        $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                        $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percentage']) / 100));
 
                         $data['is_exclusive'] = 1;
                     } else {
 
                         if ($ds->discount_type == "complimentory") {
                             $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $data['net_amount'];
-                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
-                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_percentage'] = $ds->discount_type == "complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                             $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                             $data['is_exclusive'] = 0;
@@ -1716,16 +1716,16 @@ final class PlanDiscountService
                             $data['tax_including_price'] = $service_data1->price - $amount_after_discount;
                             $data['discount_type'] = $ds->discount_type;
                             $data['discount_price'] = $ds->discount_amount;
-                            $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
-                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_percentage'] = $location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                             $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                             $data['is_exclusive'] = 0;
                         } else {
 
                             $data['tax_including_price'] = $data['net_amount'];
-                            $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
-                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_percentage'] = $location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                             $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                             $data['is_exclusive'] = 0;
@@ -1770,29 +1770,29 @@ final class PlanDiscountService
                         if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
                             if ($data['is_exclusive'] == '1') {
                                 $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
-                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
                                 $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                                $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                                $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
                                 $data_service['is_exclusive'] = 1;
                             } else {
                                 $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
-                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                                 $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
                                 $data_service['is_exclusive'] = 0;
                             }
                         } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                             $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                            $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                            $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
 
                             $data_service['is_exclusive'] = 1;
                         } else {
                             if ($ds->discount_type == "complimentory") {
                                 $data_service['tax_including_price'] = 0;
-                                $data_service['tax_percenatage'] = 0;
+                                $data_service['tax_percentage'] = 0;
                                 $data_service['tax_exclusive_price'] = 0;
                                 $data_service['tax_price'] = 0;
 
@@ -1800,14 +1800,14 @@ final class PlanDiscountService
                             } else if ($ds->discount_type == "custom") {
                                 $amount_after_discount = ($ds->discount_amount / 100) * $service_data1->price;
                                 $data_service['tax_including_price'] = $service_data1->price - $amount_after_discount;
-                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                                 $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
                                 $data_service['is_exclusive'] = 0;
                             } else {
                                 $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
-                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                                 $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
                                 $data_service['is_exclusive'] = 0;
                             }
@@ -1910,30 +1910,30 @@ final class PlanDiscountService
                 if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
                     if ($data['is_exclusive'] == '1') {
                         $data['tax_exclusive_net_amount'] = $data['net_amount'];
-                        $data['tax_percenatage'] = $location_information->tax_percentage;
+                        $data['tax_percentage'] = $location_information->tax_percentage;
                         $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                        $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                        $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percentage']) / 100));
 
                         $data['is_exclusive'] = 1;
                     } else {
                         $data['tax_including_price'] = $data['net_amount'];
-                        $data['tax_percenatage'] = $location_information->tax_percentage;
-                        $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                        $data['tax_percentage'] = $location_information->tax_percentage;
+                        $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                         $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                         $data['is_exclusive'] = 0;
                     }
                 } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                     $data['tax_exclusive_net_amount'] = $data['net_amount'];
-                    $data['tax_percenatage'] = $location_information->tax_percentage;
+                    $data['tax_percentage'] = $location_information->tax_percentage;
                     $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                    $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                    $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percentage']) / 100));
 
                     $data['is_exclusive'] = 1;
                 } else {
                     $data['tax_including_price'] = $data['net_amount'];
-                    $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
-                    $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                    $data['tax_percentage'] = $location_information?->tax_percentage ?? '00.00';
+                    $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percentage'] + 100));
                     $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                     $data['is_exclusive'] = 0;
@@ -1969,30 +1969,30 @@ final class PlanDiscountService
                     if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
                         if ($data['is_exclusive'] == '1') {
                             $data_service['tax_exclusive_price'] = $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
 
                             $data_service['is_exclusive'] = 1;
                         } else {
                             $data_service['tax_including_price'] = $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                            $data_service['tax_percentage'] = $location_information->tax_percentage;
+                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                             $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
                             $data_service['is_exclusive'] = 0;
                         }
                     } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                         $data_service['tax_exclusive_price'] = $detail['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                        $data_service['tax_percentage'] = $location_information->tax_percentage;
                         $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
 
                         $data_service['is_exclusive'] = 1;
                     } else {
                         $data_service['tax_including_price'] = $detail['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                        $data_service['tax_percentage'] = $location_information->tax_percentage;
+                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                         $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
                         $data_service['is_exclusive'] = 0;

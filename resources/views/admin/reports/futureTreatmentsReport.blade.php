@@ -13,22 +13,23 @@
             </tr>
         </thead>
         <tbody>
+            @php
+                $locationIds = collect($patients)->map(fn($row) => optional($row->appointmentsPatient->first())->location_id)->filter()->unique();
+                $locationsMap = \App\Models\Locations::whereIn('id', $locationIds)->pluck('name', 'id');
+            @endphp
             @foreach ($patients as $row)
             @php
-                $location = \App\Models\Locations::where('id', $row->appointmentsPatient->first()->location_id)->first();
+                $firstAppointment = $row->appointmentsPatient->first();
             @endphp
                 <tr>
                     <td>{{ $row->id ?? 'N/A' }}</td>
                     <td>{{ $row->name ?? 'N/A' }}</td>
                     <td>{{ $row->phone ?? 'N/A' }}</td>
-                    <td>{{$location->name ?? 'N/A' }}</td>
-                    {{-- Assuming 'name' column exists in membership --}}
+                    <td>{{ $locationsMap[$firstAppointment->location_id ?? 0] ?? 'N/A' }}</td>
                     <td>{{ $row->membership->membershipType->name ?? 'N/A' }}</td>
-
-                    {{-- Get scheduled_date from the first appointment in the loaded relation --}}
                     <td>
-                        {{ optional($row->appointmentsPatient->first())->scheduled_date
-                            ? \Carbon\Carbon::parse($row->appointmentsPatient->first()->scheduled_date)->format('d M Y')
+                        {{ optional($firstAppointment)->scheduled_date
+                            ? \Carbon\Carbon::parse($firstAppointment->scheduled_date)->format('d M Y')
                             : 'N/A' }}
                     </td>
                 </tr>

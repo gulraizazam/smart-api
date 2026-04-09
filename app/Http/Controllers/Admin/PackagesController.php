@@ -2014,30 +2014,30 @@ class PackagesController extends Controller
                     if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
                         if ($request->is_exclusive == '1') {
                             $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
-                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
 
                             $data_service['is_exclusive'] = 1;
                         } else {
                             $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                            $data_service['tax_percentage'] = $location_information->tax_percentage;
+                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                             $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
                             $data_service['is_exclusive'] = 0;
                         }
                     } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                         $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                        $data_service['tax_percentage'] = $location_information->tax_percentage;
                         $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
-                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
 
                         $data_service['is_exclusive'] = 1;
                     } else {
                         $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                        $data_service['tax_percentage'] = $location_information->tax_percentage;
+                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
                         $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
                         $data_service['is_exclusive'] = 0;

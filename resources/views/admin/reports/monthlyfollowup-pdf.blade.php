@@ -8,19 +8,18 @@
             <th style="padding: 10px 15px 10px 15px; color: #fff;">Balance</th>
         </tr>
 
+        @php
+            $locationIds = collect($patient_data)->pluck('location_id')->filter()->unique();
+            $locationsMap = \App\Models\Locations::whereIn('id', $locationIds)->pluck('name', 'id');
+        @endphp
         @foreach($patient_data as $patient)
-        
-            @php
-                $location_name = \App\Models\Locations::whereId($patient->location_id)->first();
-            @endphp
             <tr style="font-size: 14px; background-color: #f6f6f6;">
                 <td style="padding: 10px 5px 10px 5px;">C-{{$patient->patient_id}}</td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">{{$patient->name}}</td>
                 <td style="padding: 10px 5px 10px 5px;">{{$patient->phone}}</td>
-                <td style="padding: 10px 5px 10px 5px;">{{$location_name->name}} </td>
+                <td style="padding: 10px 5px 10px 5px;">{{$locationsMap[$patient->location_id] ?? ''}} </td>
                 <td style="padding: 10px 5px 10px 5px; width: 15%;">PKR: {{$patient->cash_receive-$patient->settle_amount_with_tax}}</td>
             </tr>
-            
         @endforeach
 
     </table>

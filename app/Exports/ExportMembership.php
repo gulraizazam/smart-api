@@ -9,15 +9,15 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 
-class ExportMembership implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ExportMembership implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
     public function __construct(
         private readonly mixed $request,
     ) {}
 
-    public function collection(): \Illuminate\Support\Collection
+    public function query()
     {
         $query = Membership::query();
 
@@ -40,7 +40,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
             $query->where('code', '=', $this->request->code);
         }
 
-        return $query->get();
+        return $query;
     }
 
     public function headings(): array

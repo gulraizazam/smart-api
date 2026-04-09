@@ -11,9 +11,9 @@ class InvoiceDetails extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive','is_settlement'];
+    protected $fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'created_at', 'updated_at', 'deleted_at', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percentage', 'tax_price', 'tax_including_price', 'is_exclusive','is_settlement'];
 
-    protected static array $_fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percenatage', 'tax_price', 'tax_including_price', 'is_exclusive'];
+    protected static array $_fillable = ['qty', 'discount_type', 'discount_price', 'discount_name', 'service_price', 'net_amount', 'discount_id', 'service_id', 'package_id', 'invoice_id', 'active', 'package_service_id', 'tax_exclusive_serviceprice', 'tax_percentage', 'tax_price', 'tax_including_price', 'is_exclusive'];
 
     protected $table = 'invoice_details';
 
