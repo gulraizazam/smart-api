@@ -240,7 +240,7 @@ class InvoicesController extends Controller
                 'invoice_details.package_id',
                 'invoice_details.invoice_id',
                 'invoice_details.tax_exclusive_serviceprice',
-                'invoice_details.tax_percenatage',
+                'invoice_details.tax_percentage',
                 'invoice_details.tax_price',
                 'invoice_details.tax_including_price',
                 'invoice_details.is_exclusive'
@@ -284,7 +284,7 @@ class InvoicesController extends Controller
                 'invoice_details.package_id',
                 'invoice_details.invoice_id',
                 'invoice_details.tax_exclusive_serviceprice',
-                'invoice_details.tax_percenatage',
+                'invoice_details.tax_percentage',
                 'invoice_details.tax_price',
                 'invoice_details.tax_including_price',
                 'invoice_details.is_exclusive'

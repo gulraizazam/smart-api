@@ -130,7 +130,8 @@
       "Bash(cmd:*)",
       "Bash(mysql:*)",
       "Bash(to)",
-      "Bash(text)"
+      "Bash(text)",
+      "Bash(xxd \"C:/laragon/www/cutera-upgradation1/app/Models/InvoiceStatuses.php\")"
     ]
   }
 }

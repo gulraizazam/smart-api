@@ -806,7 +806,7 @@ class FinanceRevenueReportController extends Controller
             $activeSheet->setCellValue('H' . $counter, $reportRow->discount_type == null ? '-' : $reportRow->discount_type);
             $activeSheet->setCellValue('I' . $counter, number_format($reportRow->discount_price == null ? '0' : $reportRow->discount_price, 2));
             $activeSheet->setCellValue('J' . $counter, number_format($reportRow->tax_exclusive_serviceprice == null ? 0 : $reportRow->tax_exclusive_serviceprice, 2));
-            $activeSheet->setCellValue('K' . $counter, $reportRow->tax_percenatage . '%');
+            $activeSheet->setCellValue('K' . $counter, $reportRow->tax_percentage . '%');
             $activeSheet->setCellValue('L' . $counter, number_format($reportRow->tax_price == null ? 0 : $reportRow->tax_price, 2));
             $activeSheet->setCellValue('M' . $counter, number_format($reportRow->tax_including_price == null ? 0 : $reportRow->tax_including_price, 2));
             $activeSheet->setCellValue('N' . $counter, ($reportRow->is_exclusive) ? 'Yes' : 'No');

@@ -47,7 +47,7 @@ final class PlanRefundService
 
         $dateBackend = date('Y-m-d', strtotime((string) $packageAdvanceLastIn->created_at));
         $bundleInformation = PackageBundles::where('package_id', '=', $packageId)->first();
-        $taxPercentage = $bundleInformation->tax_percenatage ?? '';
+        $taxPercentage = $bundleInformation->tax_percentage ?? '';
         $isAdjustmentAmount = 0;
 
         $packageIsRefundedAmount = PackageAdvances::where([

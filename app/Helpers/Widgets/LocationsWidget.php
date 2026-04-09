@@ -37,6 +37,14 @@ class LocationsWidget
             'active' => 1,
         ])->whereIn('slug', ['custom', 'all'])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
+        // Batch-load all locations for this account in one query instead of 3 per region
+        $allLocations = Locations::where('account_id', $account_id)
+            ->orderBy('name', 'asc')
+            ->get();
+        $locationsByRegionAndSlug = $allLocations->groupBy(function ($loc) {
+            return $loc->region_id . '|' . $loc->slug;
+        });
+
         $dropdown_array = [];
 
         foreach ($regions as $region) {
@@ -48,11 +56,7 @@ class LocationsWidget
             ];
 
             if ($region->slug == 'all') {
-                $first_child = Locations::where([
-                    'account_id' => $account_id,
-                    'region_id' => $region->id,
-                    'slug' => 'all',
-                ])->select('id', 'name', 'slug')->first();
+                $first_child = ($locationsByRegionAndSlug[$region->id . '|all'] ?? collect())->first();
 
                 if ($first_child) {
                     $dropdown_array[$region->id]['children'][$first_child->id] = [
@@ -62,12 +66,8 @@ class LocationsWidget
                     ];
                 }
             } else {
-                $first_child = Locations::where([
-                    'account_id' => $account_id,
-                    'region_id' => $region->id,
-                    'slug' => 'region',
-                    'active' => 1,
-                ])->select('id', 'name', 'slug')->first();
+                $regionLocations = $locationsByRegionAndSlug[$region->id . '|region'] ?? collect();
+                $first_child = $regionLocations->where('active', 1)->first();
 
                 if ($first_child) {
                     $dropdown_array[$region->id]['children'][$first_child->id] = [
@@ -78,20 +78,14 @@ class LocationsWidget
                 }
             }
 
-            $other_childrens = Locations::where([
-                'account_id' => $account_id,
-                'region_id' => $region->id,
-                'slug' => 'custom',
-            ])->orderBy('name', 'asc')->get();
+            $other_childrens = $locationsByRegionAndSlug[$region->id . '|custom'] ?? collect();
 
-            if ($other_childrens) {
-                foreach ($other_childrens as $other_children) {
-                    $dropdown_array[$region->id]['children'][$other_children->id] = [
-                        'id' => $other_children->id,
-                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
-                        'slug' => $other_children->slug,
-                    ];
-                }
+            foreach ($other_childrens as $other_children) {
+                $dropdown_array[$region->id]['children'][$other_children->id] = [
+                    'id' => $other_children->id,
+                    'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
+                    'slug' => $other_children->slug,
+                ];
             }
         }
 
@@ -308,6 +302,16 @@ class LocationsWidget
             'slug' => 'custom',
         ])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
+        // Batch-load all custom locations for this account
+        $regionIds = $regions->pluck('id');
+        $customLocations = Locations::where([
+            'account_id' => $account_id,
+            'slug' => 'custom',
+        ])->whereIn('region_id', $regionIds)
+          ->orderBy('name', 'asc')
+          ->get()
+          ->groupBy('region_id');
+
         $dropdown_array = [];
 
         foreach ($regions as $region) {
@@ -317,20 +321,14 @@ class LocationsWidget
                 'children' => [],
             ];
 
-            $other_childrens = Locations::where([
-                'account_id' => $account_id,
-                'region_id' => $region->id,
-                'slug' => 'custom',
-            ])->orderBy('name', 'asc')->get();
+            $other_childrens = $customLocations[$region->id] ?? collect();
 
-            if ($other_childrens) {
-                foreach ($other_childrens as $other_children) {
-                    $dropdown_array[$region->id]['children'][$other_children->id] = [
-                        'id' => $other_children->id,
-                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
-                        'slug' => $other_children->slug,
-                    ];
-                }
+            foreach ($other_childrens as $other_children) {
+                $dropdown_array[$region->id]['children'][$other_children->id] = [
+                    'id' => $other_children->id,
+                    'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
+                    'slug' => $other_children->slug,
+                ];
             }
         }
 
@@ -356,40 +354,39 @@ class LocationsWidget
          * 3) Get Centre based Doctors
          */
 
-        // 1)
-        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
+        // Pre-fetch reusable lookups once
+        $allLocationId = Locations::where([
             'slug' => 'all',
             'account_id' => $account_id,
-        ])->select('id')->first()->id])->select('user_id')->get();
+        ])->value('id');
+
+        $location = Locations::find($location_id);
+
+        $regionLocationId = $location ? Locations::where([
+            'slug' => 'region',
+            'region_id' => $location->region_id,
+        ])->value('id') : null;
 
         $doctor_array = [];
 
-        if ($doctors->count()) {
-            foreach ($doctors as $doctor) {
-                $doctor_array[] = $doctor->user_id;
-            }
+        // 1) All location doctors
+        if ($allLocationId) {
+            $doctors = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $allLocationId)
+                ->pluck('user_id')->all();
+            $doctor_array = array_merge($doctor_array, $doctors);
         }
 
-        // 2)
-        $location = Locations::find($location_id);
-        $regionLocation = Locations::where([
-            'slug' => 'region',
-            'region_id' => $location->region_id,
-        ])->select('id')->first();
-
-        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
-            'slug' => 'region',
-            'region_id' => $location->region_id,
-        ])->select('id')->first()?->id])->select('user_id')->get();
-
-        if ($doctors->count()) {
-            foreach ($doctors as $doctor) {
-                $doctor_array[] = $doctor->user_id;
-            }
+        // 2) Region based doctors
+        if ($regionLocationId) {
+            $doctors = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $regionLocationId)
+                ->pluck('user_id')->all();
+            $doctor_array = array_merge($doctor_array, $doctors);
         }
 
+        // 3) Centre based doctors
         $doctors = Doctors::getActiveOnly($location_id);
-
         if ($doctors) {
             foreach ($doctors as $doctor_id => $value) {
                 $doctor_array[] = $doctor_id;
@@ -445,40 +442,39 @@ class LocationsWidget
          * 3) Get Centre based Services
          */
 
-        // 1)
-        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
+        // Pre-fetch reusable lookups once
+        $allLocationId = Locations::where([
             'slug' => 'all',
             'account_id' => $account_id,
-        ])->select('id')->first()->id])->select('user_id')->get();
+        ])->value('id');
+
+        $location = Locations::find($location_id);
+
+        $regionLocationId = $location ? Locations::where([
+            'slug' => 'region',
+            'region_id' => $location->region_id,
+        ])->value('id') : null;
 
         $doctor_array = [];
 
-        if ($doctors->count()) {
-            foreach ($doctors as $doctor) {
-                $doctor_array[] = $doctor->user_id;
-            }
+        // 1) All location doctors
+        if ($allLocationId) {
+            $doctors = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $allLocationId)
+                ->pluck('user_id')->all();
+            $doctor_array = array_merge($doctor_array, $doctors);
         }
 
-        // 2)
-        $location = Locations::find($location_id);
-        $regionLocation = Locations::where([
-            'slug' => 'region',
-            'region_id' => $location->region_id,
-        ])->select('id')->first();
-
-        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
-            'slug' => 'region',
-            'region_id' => $location->region_id,
-        ])->select('id')->first()->id])->select('user_id')->get();
-
-        if ($doctors->count()) {
-            foreach ($doctors as $doctor) {
-                $doctor_array[] = $doctor->user_id;
-            }
+        // 2) Region based doctors
+        if ($regionLocationId) {
+            $doctors = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $regionLocationId)
+                ->pluck('user_id')->all();
+            $doctor_array = array_merge($doctor_array, $doctors);
         }
 
+        // 3) Centre based doctors
         $doctors = Doctors::getActiveOnly($location_id);
-
         if ($doctors) {
             foreach ($doctors as $doctor_id => $value) {
                 $doctor_array[] = $doctor_id;

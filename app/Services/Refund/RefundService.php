@@ -251,7 +251,7 @@ final class RefundService
 
         $dateBackend = Carbon::parse($lastPaymentIn->created_at)->format('Y-m-d');
         $bundleInfo = PackageBundles::where('package_id', $packageId)->first();
-        $taxPercentage = (float) ($bundleInfo->tax_percenatage ?? 0);
+        $taxPercentage = (float) ($bundleInfo->tax_percentage ?? 0);
 
         $alreadyRefunded = $this->sumPackageAdvances($packageId, CashFlow::Out, isRefund: true, isTax: false);
         $alreadySettled = $this->sumPackageAdvances($packageId, CashFlow::Out, isSettled: true, isTax: false);

@@ -25,6 +25,13 @@ class Patients extends BaseModel
 
     protected static int $USER_TYPE = 3;
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('patients_only', function (Builder $builder): void {
+            $builder->where('users.user_type_id', self::$USER_TYPE);
+        });
+    }
+
     protected static array $_fillable = [
         'name', 'email', 'phone', 'main_account', 'gender',
         'cnic', 'dob', 'address', 'referred_by', 'user_type_id',

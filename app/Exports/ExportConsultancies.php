@@ -9,13 +9,13 @@ use App\Models\Appointments;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
     public function __construct(
         private readonly int $limit = 10000,
@@ -23,7 +23,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         private readonly mixed $request = null,
     ) {}
 
-    public function collection(): \Illuminate\Support\Collection
+    public function query()
     {
         $where = [];
         if ($this->request->filter_date_from) {
@@ -156,10 +156,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             $query->where('users.phone', '=', $phone);
         }
 
-        // Always apply limit/offset to avoid returning unbounded result sets
-        $results = $query->limit($this->limit)->offset($this->offset)->get();
-
-        return $results;
+        return $query->limit($this->limit)->offset($this->offset);
     }
 
     public function headings(): array

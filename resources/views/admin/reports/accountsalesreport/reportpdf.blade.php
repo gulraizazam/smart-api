@@ -131,7 +131,7 @@
                         echo number_format($reportRow->tax_exclusive_serviceprice==null? 0:$reportRow->tax_exclusive_serviceprice,2)
                         ?>
                     </td>
-                    <td> {{ $reportRow->tax_percenatage.'%' }}</td>
+                    <td> {{ $reportRow->tax_percentage.'%' }}</td>
                     <td style="text-align: right"> {{ number_format( $reportRow->tax_price==null?0:$reportRow->tax_price, 2 ) }} </td>
                     <td style="text-align: right">
                         <?php

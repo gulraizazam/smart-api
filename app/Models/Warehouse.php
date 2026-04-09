@@ -18,6 +18,17 @@ class Warehouse extends Model
 
     protected $fillable = ['name', 'manager_name', 'manager_phone', 'account_id',  'address', 'google_map', 'city_id', 'active', 'created_at', 'updated_at', 'image_src'];
 
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Model $model): void {
+            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
+                $model->account_id = Auth::user()->account_id;
+            }
+        });
+    }
+
     /**
      * Get Total Records
      *

@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\Auth;
 
 class BaseModel extends Model
 {
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Model $model): void {
+            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
+                $model->account_id = Auth::user()->account_id;
+            }
+        });
+    }
+
     public static function getData(int $id): ?static
     {
         return static::where([

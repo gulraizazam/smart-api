@@ -632,7 +632,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.myarray.discount_type + "</td>" +
                             "<td>" + resposne.data.myarray.discount_price + "</td>" +
                             "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_percenatage + "</td>" +
+                            "<td>" + resposne.data.myarray.record.tax_percentage + "</td>" +
                             "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
                             
                             "<td>" +
@@ -647,7 +647,7 @@ jQuery(document).ready(function () {
                             } else {
                                 consume = 'YES';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percentage + "</td><td>Total Amount. : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
 
                         // toggle(resposne.data.myarray.record.id);

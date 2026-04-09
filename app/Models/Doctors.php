@@ -20,6 +20,13 @@ class Doctors extends BaseModel
 
     protected $table = 'users';
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope('doctors_only', function (Builder $builder): void {
+            $builder->where('users.user_type_id', config('constants.asthatic_operator_id'));
+        });
+    }
+
     protected function fullName(): Attribute
     {
         return Attribute::get(

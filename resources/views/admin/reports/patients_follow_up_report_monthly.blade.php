@@ -46,17 +46,17 @@
                     </thead>
                     
                 <tbody>
-                @foreach($patient_data as $patient)
-                
                 @php
-                   $location_name = \App\Models\Locations::whereId($patient['location_id'])->first();
+                    $locationIds = collect($patient_data)->pluck('location_id')->filter()->unique();
+                    $locationsMap = \App\Models\Locations::whereIn('id', $locationIds)->pluck('name', 'id');
                 @endphp
+                @foreach($patient_data as $patient)
                     <tr>
                         <td>C-{{$patient['patient_id']}}</td>
                         <td>{{$patient['name']}}</td>
                         <td>{{$patient['phone']}}</td>
-                        <td>{{$location_name->name}}</td>
-                       
+                        <td>{{$locationsMap[$patient['location_id']] ?? ''}}</td>
+
                         <td>{{ $patient['scheduled_date'] }}</td>
                         <td>PKR: {{$patient['cash_receive']-$patient['settle_amount_with_tax']}}</td>
                     </tr>

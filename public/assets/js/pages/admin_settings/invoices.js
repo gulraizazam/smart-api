@@ -378,7 +378,7 @@ function setInvoiceData(response) {
         $("#discount_type").html(discount_type);
         $("#discount_name").html(discount_name);
 
-        $("#invoice_tax").html(Invoiceinfo?.tax_percenatage ?? '-');
+        $("#invoice_tax").html(Invoiceinfo?.tax_percentage ?? '-');
         $("#invoice_tax_price").html(Invoiceinfo?.tax_price ?? '-');
         $("#total_price").html(Invoiceinfo?.tax_including_price ?? '-');
         $("#grand_total_price").html(Invoiceinfo?.tax_including_price ?? '-');

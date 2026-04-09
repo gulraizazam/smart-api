@@ -418,7 +418,7 @@ $(document).ready(function () {
                 //             } else {
                 //                 var discountprice = packagebundles.discount_price;
                 //             }
-                //             $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
+                //             $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percentage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
                 //             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
                 //                 if (packageservices.package_bundle_id == packagebundles.id) {
@@ -430,10 +430,10 @@ $(document).ready(function () {
                 //                             'childID': packageservices.id
                 //                         });
                 //                         var consume = 'NO';
-                //                         $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                //                         $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percentage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                 //                     } else {
                 //                         var consume = 'YES';
-                //                         $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                //                         $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percentage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                 //                     }
                 //                 }
                 //             });

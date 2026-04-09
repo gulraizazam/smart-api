@@ -167,7 +167,7 @@
                                     {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
                                 </td>
                                 <td>
-                                    {{$Invoiceinfo->tax_percenatage}}
+                                    {{$Invoiceinfo->tax_percentage}}
                                 </td>
                                 <td>{{$Invoiceinfo->tax_price}}</td>
                                 <td>

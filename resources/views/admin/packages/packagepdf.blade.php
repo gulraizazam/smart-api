@@ -369,7 +369,7 @@
                         } ?>
                     </td>
                     <td>{{$packagebundles->tax_exclusive_net_amount}}</td>
-                    <td>{{$packagebundles->tax_percenatage}}</td>
+                    <td>{{$packagebundles->tax_percentage}}</td>
                     <td>{{$packagebundles->tax_price}}</td>
                     <td>{{$packagebundles->tax_including_price}}</td>
                 </tr>

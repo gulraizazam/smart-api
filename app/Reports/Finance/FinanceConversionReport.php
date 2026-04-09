@@ -618,7 +618,7 @@ class FinanceConversionReport
                             'discount_type' => $invoice->discount_type,
                             'discount_amount' => $invoice->discount_price,
                             'amount' => $invoice->tax_exclusive_serviceprice,
-                            'tax' => $invoice->tax_percenatage,
+                            'tax' => $invoice->tax_percentage,
                             'tax_value' => $invoice->tax_price,
                             'tax_amount' => $invoice->tax_including_price,
                             'is_exclusive' => $invoice->is_exclusive,

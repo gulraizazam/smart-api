@@ -1215,7 +1215,7 @@ final class PlanService
         $taxBoth = Config::get('constants.tax_both');
         $taxExclusive = Config::get('constants.tax_is_exclusive');
 
-        $base = ['tax_percenatage' => $taxPercentage];
+        $base = ['tax_percentage' => $taxPercentage];
 
         if (($taxTreatmentType == $taxBoth && $isExclusive) || $taxTreatmentType == $taxExclusive) {
             return $base + [
@@ -1268,7 +1268,7 @@ final class PlanService
 
         $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
         $packageBundleData['is_exclusive'] = $isExclusive;
-        $packageBundleData['tax_percenatage'] = $location->tax_percentage;
+        $packageBundleData['tax_percentage'] = $location->tax_percentage;
 
         $taxData = $this->calculateTax($service->tax_treatment_type_id, (float) $data['net_amount'], (float) $location->tax_percentage, $isExclusive);
         $packageBundleData = array_merge($packageBundleData, $taxData);
@@ -1383,7 +1383,7 @@ final class PlanService
                 'source_type'            => 'service',
                 'package_id'             => $package->id,
                 'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
-                'tax_percenatage'        => $locationInfo->tax_percentage ?? 0,
+                'tax_percentage'        => $locationInfo->tax_percentage ?? 0,
                 'tax_price'              => str_replace(',', '', $packageBundle['Tax']),
                 'tax_including_price'    => str_replace(',', '', $packageBundle['Total']),
                 'location_id'            => $data['location_id'],
@@ -1463,7 +1463,7 @@ final class PlanService
                 'source_type'            => 'bundle',
                 'package_id'             => $package->id,
                 'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
-                'tax_percenatage'        => $locationInfo->tax_percentage ?? 0,
+                'tax_percentage'        => $locationInfo->tax_percentage ?? 0,
                 'tax_price'              => str_replace(',', '', $packageBundle['Tax']),
                 'tax_including_price'    => str_replace(',', '', $packageBundle['Total']),
                 'location_id'            => $data['location_id'],
@@ -1622,7 +1622,7 @@ final class PlanService
                 'membership_code_id'     => $membership['membershipCodeId'] ?? null,
                 'package_id'             => $package->id,
                 'tax_exclusive_net_amount' => str_replace(',', '', $membership['Amount']),
-                'tax_percenatage'        => $locationInfo->tax_percentage ?? 0,
+                'tax_percentage'        => $locationInfo->tax_percentage ?? 0,
                 'tax_price'              => $membership['Tax'] ?? 0,
                 'tax_including_price'    => str_replace(',', '', $membership['Total']),
                 'location_id'            => $data['location_id'],
@@ -1645,7 +1645,7 @@ final class PlanService
                 'actual_price'       => str_replace(',', '', $membership['RegularPrice']),
                 'is_exclusive'       => 0,
                 'tax_exclusive_price' => str_replace(',', '', $membership['Amount']),
-                'tax_percenatage'    => $locationInfo->tax_percentage ?? 0,
+                'tax_percentage'    => $locationInfo->tax_percentage ?? 0,
                 'tax_price'          => $membership['Tax'] ?? 0,
                 'tax_including_price' => str_replace(',', '', $membership['Total']),
                 'sold_by'            => $soldBy,
@@ -2636,7 +2636,7 @@ final class PlanService
             'discount_name' => '-',
             'discount_type' => '-',
             'discount_price' => '0',
-            'tax_percenatage' => $taxPct,
+            'tax_percentage' => $taxPct,
         ];
 
         // Calculate tax based on bundle's tax treatment type
@@ -2693,7 +2693,7 @@ final class PlanService
                 'net_amount'             => $netAmount,
                 'is_exclusive'           => 0,
                 'tax_exclusive_net_amount' => $bundleData['tax_exclusive_net_amount'],
-                'tax_percenatage'        => $taxPct,
+                'tax_percentage'        => $taxPct,
                 'tax_price'              => $bundleData['tax_price'],
                 'tax_including_price'    => $bundleData['tax_including_price'],
                 'location_id'            => $data['location_id'],
@@ -2741,7 +2741,7 @@ final class PlanService
                     'actual_price'       => $serviceInfo->price,
                     'is_exclusive'       => $isExclusive ? 1 : 0,
                     'tax_exclusive_price' => $taxExclusivePrice,
-                    'tax_percenatage'    => $taxPct,
+                    'tax_percentage'    => $taxPct,
                     'tax_price'          => $taxPrice,
                     'tax_including_price' => $taxIncludingPrice,
                     'sold_by'            => $soldBy,
@@ -2815,7 +2815,7 @@ final class PlanService
             'service_price' => $membershipType->amount,
             'service_name' => $membershipType->name,
             'net_amount' => $netAmount,
-            'tax_percenatage' => $taxPercentage,
+            'tax_percentage' => $taxPercentage,
             'tax_exclusive_net_amount' => $taxExclusivePrice,
             'tax_price' => $taxPrice,
             'tax_including_price' => $taxIncludingPrice,
