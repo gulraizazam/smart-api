@@ -344,7 +344,14 @@ class RefundsController extends Controller
 
         $return_tax_amount = '';
 
-        $package_information = Packages::find($id);
+        // Round 4 IDOR sweep — Packages extends BaseModel; getData() filters
+        // by Auth::user()->account_id so a guessed cross-tenant package id
+        // returns null and we abort instead of seeding a refund flow against
+        // another tenant's package.
+        $package_information = Packages::getData((int) $id);
+        if (! $package_information) {
+            return $this->errorResponse('Package not found.', 404);
+        }
         
 
         /*calculation for back date refund entry*/
@@ -525,10 +532,19 @@ class RefundsController extends Controller
         if (! Gate::allows('refunds_manage')) {
             return abort(401);
         }
-        $patient_name = User::find($id);
+        // Round 4 IDOR sweep — User extends Authenticatable (no getData() helper).
+        // Tenant-scope by account_id so the patient ledger view can't be opened
+        // for a guessed cross-tenant patient id.
+        $patient_name = User::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+        if (! $patient_name) {
+            return abort(404);
+        }
         $package_advances = PackageAdvances::where([
             ['patient_id', '=', $id],
             ['cash_amount', '!=', '0'],
+            ['account_id', '=', Auth::user()->account_id],
         ])->get();
 
         return view('admin.refunds.detail', compact('package_advances', 'patient_name'));

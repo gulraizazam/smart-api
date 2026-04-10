@@ -16,7 +16,7 @@ class CreateMembershipTypeHasDiscountsTable extends Migration
         Schema::create('membership_type_has_discounts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('membership_type_id');
-            $table->unsignedInteger('discount_id');
+            $table->unsignedBigInteger('discount_id');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
 

@@ -51,7 +51,13 @@ class MembershipAssignmentService
                 throw new MembershipException("Membership type is inactive.");
             }
 
-            $patient = User::find($patientId);
+            // ActivityLogger::logMembershipAssigned() is typed to
+            // App\Models\Patients (which extends BaseModel, NOT User),
+            // so fetching the patient via User::find() then passing it
+            // to the logger triggers a TypeError. Fetch through the
+            // Patients model directly so both the existence check and
+            // the logger call get a Patients instance.
+            $patient = Patients::find($patientId);
             if (!$patient) {
                 throw new MembershipException("Patient not found.");
             }

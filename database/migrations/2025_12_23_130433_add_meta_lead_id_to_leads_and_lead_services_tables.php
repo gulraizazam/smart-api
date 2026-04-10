@@ -16,17 +16,17 @@ class AddMetaLeadIdToLeadsAndLeadServicesTables extends Migration
         // Add meta_lead_id to leads table (if not exists)
         if (!Schema::hasColumn('leads', 'meta_lead_id')) {
             Schema::table('leads', function (Blueprint $table) {
-                $table->string('meta_lead_id')->nullable()->after('id');
+                $table->string('meta_lead_id')->nullable();
             });
         }
 
         // Add meta_lead_id and lead_status_id to leads_services table (if not exists)
         Schema::table('leads_services', function (Blueprint $table) {
             if (!Schema::hasColumn('leads_services', 'meta_lead_id')) {
-                $table->string('meta_lead_id')->nullable()->after('id');
+                $table->string('meta_lead_id')->nullable();
             }
             if (!Schema::hasColumn('leads_services', 'lead_status_id')) {
-                $table->unsignedBigInteger('lead_status_id')->nullable()->after('status');
+                $table->unsignedBigInteger('lead_status_id')->nullable();
             }
         });
     }

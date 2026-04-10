@@ -7,6 +7,7 @@ use App\Exceptions\MembershipException;
 use App\Helpers\ActivityLogger;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use App\Models\Patients;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -85,7 +86,12 @@ class MembershipRenewalService
             $this->membershipService->clearPatientMembershipCache($patientId);
             $this->membershipService->clearMembershipTypeCache($renewalType->id);
 
-            $patient = User::find($patientId);
+            // ActivityLogger::logMembershipRenewed() is typed to
+            // App\Models\Patients. Fetching via User::find() here
+            // would return a User instance and trigger a TypeError
+            // at the logger call, identical to the bug that used to
+            // exist in MembershipAssignmentService.
+            $patient = Patients::find($patientId);
             if ($patient) {
                 ActivityLogger::logMembershipRenewed($patient, $currentMembership, $newMembership, $renewalType);
             }
@@ -146,8 +152,16 @@ class MembershipRenewalService
             ->where('active', 1)
             ->first();
 
-        $isExpired = Carbon::parse($currentMembership->end_date)->isPast();
-        $isExpiringSoon = Carbon::parse($currentMembership->end_date)->diffInDays(Carbon::today()) <= 30;
+        // Carbon 3 returns a SIGNED diff by default (breaking change
+        // from Carbon 2 which returned absolute). Always compute
+        // today → end_date so a future end date yields a positive
+        // delta; otherwise a membership 10 months away would pass
+        // "expiring soon" because the old call produced -304 and
+        // -304 <= 30 was true.
+        $endDate = Carbon::parse($currentMembership->end_date);
+        $isExpired = $endDate->isPast();
+        $daysUntilExpiry = (int) Carbon::today()->diffInDays($endDate, false);
+        $isExpiringSoon = $daysUntilExpiry >= 0 && $daysUntilExpiry <= 30;
 
         return [
             'has_membership' => true,
@@ -159,7 +173,7 @@ class MembershipRenewalService
                 'start_date' => $currentMembership->start_date,
                 'end_date' => $currentMembership->end_date,
                 'is_expired' => $isExpired,
-                'days_until_expiry' => Carbon::parse($currentMembership->end_date)->diffInDays(Carbon::today(), false),
+                'days_until_expiry' => $daysUntilExpiry,
             ],
             'renewal_type' => $renewalType ? [
                 'id' => $renewalType->id,
@@ -255,7 +269,14 @@ class MembershipRenewalService
             return false;
         }
 
-        $daysUntilExpiry = Carbon::parse($membership->end_date)->diffInDays(Carbon::today(), false);
+        // Same Carbon 3 signed-diff trap as getRenewalOptions:
+        // compute today → end_date so future dates yield positive
+        // deltas. Eligible means the membership ends within the
+        // next 30 days (or already ended).
+        $daysUntilExpiry = (int) Carbon::today()->diffInDays(
+            Carbon::parse($membership->end_date),
+            false,
+        );
 
         return $daysUntilExpiry <= 30;
     }

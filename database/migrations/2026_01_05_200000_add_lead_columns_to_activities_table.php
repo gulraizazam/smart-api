@@ -14,32 +14,32 @@ return new class extends Migration
         Schema::table('activities', function (Blueprint $table) {
             // Add lead_id column if not exists
             if (!Schema::hasColumn('activities', 'lead_id')) {
-                $table->unsignedBigInteger('lead_id')->nullable()->after('patient_id');
+                $table->unsignedBigInteger('lead_id')->nullable();
             }
             
             // Add lead_status column to track status changes
             if (!Schema::hasColumn('activities', 'lead_status')) {
-                $table->string('lead_status', 100)->nullable()->after('activity_type');
+                $table->string('lead_status', 100)->nullable();
             }
             
             // Add lead_status_id for reference
             if (!Schema::hasColumn('activities', 'lead_status_id')) {
-                $table->unsignedBigInteger('lead_status_id')->nullable()->after('lead_status');
+                $table->unsignedBigInteger('lead_status_id')->nullable();
             }
             
             // Add description column for detailed activity description
             if (!Schema::hasColumn('activities', 'description')) {
-                $table->text('description')->nullable()->after('action');
+                $table->text('description')->nullable();
             }
             
             // Add account_id for multi-tenancy
             if (!Schema::hasColumn('activities', 'account_id')) {
-                $table->unsignedBigInteger('account_id')->nullable()->after('id');
+                $table->unsignedBigInteger('account_id')->nullable();
             }
             
             // Add package_id column if not exists
             if (!Schema::hasColumn('activities', 'package_id')) {
-                $table->unsignedBigInteger('package_id')->nullable()->after('plan_id');
+                $table->unsignedBigInteger('package_id')->nullable();
             }
         });
     }

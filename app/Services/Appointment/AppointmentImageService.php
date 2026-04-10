@@ -6,6 +6,7 @@ namespace App\Services\Appointment;
 
 use App\Models\Appointmentimage;
 use App\Models\Appointments;
+use App\Support\SafeFilename;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -38,10 +39,18 @@ class AppointmentImageService
                     ];
                 }
 
-                $fileName = time().'-'.str_replace(' ', '-', $file->getClientOriginalName());
+                // Defence against filename injection — never trust the
+                // browser-supplied name. SafeFilename strips path
+                // components, NUL bytes, and exotic characters before we
+                // join it to a storage path.
+                $safeName = SafeFilename::sanitize(
+                    $file->getClientOriginalName(),
+                    ['jpg', 'jpeg', 'png', 'gif'],
+                );
+                $fileName = time().'-'.$safeName;
                 $file->storeAs('public/appointment_image', $fileName);
 
-                $data['image_name'] = $file->getClientOriginalName();
+                $data['image_name'] = $safeName;
                 $data['image_path'] = $fileName;
                 $data['type'] = $typeLabel;
                 $data['appointment_id'] = $appointmentId;
@@ -70,12 +79,19 @@ class AppointmentImageService
         $filters = getFilters($request->all());
 
         if (hasFilter($filters, 'delete')) {
-            $ids = explode(',', $filters['delete']);
-            $appointmentimages = Appointmentimage::getBulkData_forimage($ids);
-            if ($appointmentimages) {
-                foreach ($appointmentimages as $appointmentimages) {
-                    if (! Appointmentimage::isChildExists($appointmentimages->id, $accountId)) {
-                        $appointmentimages->delete();
+            // Tenant-scoped: only delete images whose parent appointment
+            // belongs to the caller's account. This closes a cross-tenant
+            // IDOR where bulk-delete previously accepted arbitrary image
+            // ids from the request without checking ownership.
+            $ids = array_filter(array_map('intval', explode(',', (string) $filters['delete'])));
+            if (!empty($ids)) {
+                $appointmentimages = Appointmentimage::whereIn('appointmentimages.id', $ids)
+                    ->whereHas('appointment', fn ($q) => $q->where('account_id', $accountId))
+                    ->get();
+
+                foreach ($appointmentimages as $appointmentimage) {
+                    if (! Appointmentimage::isChildExists($appointmentimage->id, $accountId)) {
+                        $appointmentimage->delete();
                     }
                 }
             }

@@ -164,6 +164,21 @@ class FinanceLedgerReport
         } else {
             $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
+
+        // Pre-fetch ALL package advances for ALL packages in one query, grouped
+        // by package_id. Replaces the previous N+1 (one query per package).
+        $packageIds = $packageinfo->pluck('id')->all();
+        $advancesByPackage = collect();
+        if (!empty($packageIds)) {
+            $advancesByPackage = PackageAdvances::with(['user:id,name,phone'])
+                ->whereDate('package_advances.created_at', '>=', $start_date)
+                ->whereDate('package_advances.created_at', '<=', $end_date)
+                ->whereIn('package_id', $packageIds)
+                ->orderBy('created_at', 'asc')
+                ->get()
+                ->groupBy('package_id');
+        }
+
         $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
             $packagetrans[$packagerow->id] = [
@@ -176,12 +191,7 @@ class FinanceLedgerReport
                 'total_price' => $packagerow->total_price,
                 'children' => [],
             ];
-            $packagesadvances = PackageAdvances::with(['user:id,name,phone'])
-                ->whereDate('package_advances.created_at', '>=', $start_date)
-                ->whereDate('package_advances.created_at', '<=', $end_date)
-                ->where('package_id', '=', $packagerow->id)
-                ->orderBy('created_at', 'asc')
-                ->get();
+            $packagesadvances = $advancesByPackage->get($packagerow->id, collect());
 
             if ($packagesadvances) {
                 $balance = 0;
@@ -292,6 +302,20 @@ class FinanceLedgerReport
         } else {
             $packageinfo = Packages::with(['user:id,name,phone', 'location:id,name'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
+
+        // Pre-fetch ALL package advances for ALL packages in one query, grouped
+        // by package_id. Replaces the previous N+1 (one sum() + one get() per
+        // package). Per-package aggregations are now computed in PHP.
+        $packageIds = $packageinfo->pluck('id')->all();
+        $advancesByPackage = collect();
+        if (!empty($packageIds)) {
+            $advancesByPackage = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
+                ->whereDate('package_advances.created_at', '<=', $end_date)
+                ->whereIn('package_id', $packageIds)
+                ->get()
+                ->groupBy('package_id');
+        }
+
         $packagetrans = [];
         foreach ($packageinfo as $packagerow) {
             $packagetrans[$packagerow->id] = [
@@ -308,15 +332,20 @@ class FinanceLedgerReport
                 'usedbalance' => '',
                 'unusedbalance' => '',
             ];
-            $advancebalance = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
-                ->whereDate('package_advances.created_at', '<=', $end_date)
-                ->where([
-                    ['package_id', '=', $packagerow->id],
-                    ['cash_flow', '=', 'in'],
-                    ['is_refund', '=', 0],
-                    ['is_adjustment', '=', 0],
-                    ['is_cancel', '=', 0],
-                ])->whereNull('appointment_id')->sum('cash_amount');
+
+            $packageAdvances = $advancesByPackage->get($packagerow->id, collect());
+
+            // Compute the same filtered sum the SQL did:
+            //   cash_flow='in' AND is_refund=0 AND is_adjustment=0 AND is_cancel=0 AND appointment_id IS NULL
+            // (int) cast handles tinyint columns whether driver returns int or string;
+            // never matches NULL because NULL cast becomes 0 only after the !==null guard.
+            $advancebalance = $packageAdvances
+                ->filter(fn ($a) => $a->cash_flow === 'in'
+                    && $a->appointment_id === null
+                    && (int) $a->is_refund === 0
+                    && (int) $a->is_adjustment === 0
+                    && (int) $a->is_cancel === 0)
+                ->sum('cash_amount');
 
             if ($advancebalance !== 0) {
 
@@ -326,15 +355,10 @@ class FinanceLedgerReport
 
                 $packagetrans[$packagerow->id]['outstandingbalance'] = $outstandingbalance;
 
-                $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
-                    ->whereDate('created_at', '<=', $end_date)
-                    ->where('package_id', '=', $packagerow->id)
-                    ->get();
-
                 $balance = 0;
                 $refund_balance = 0;
 
-                foreach ($packagesadvances as $packagesadvances) {
+                foreach ($packageAdvances as $packagesadvances) {
                     if ($packagesadvances->cash_flow == 'out' & ($packagesadvances->is_refund == 1 || $packagesadvances->is_adjustment == 1)) {
                         $refund_balance += $packagesadvances->cash_amount;
                     }
@@ -402,17 +426,34 @@ class FinanceLedgerReport
         } else {
             $appointmentinfo = Appointments::with(['patient:id,phone,email'])->whereIn('location_id', ACL::getUserCentres())->get();
         }
+
+        // Pre-fetch ALL package advances for ALL appointments in one query,
+        // grouped by appointment_id. Replaces 2 queries per appointment
+        // (sum + get) — at 1000 appointments that was 2000+ queries.
+        $appointmentIds = $appointmentinfo->pluck('id')->all();
+        $advancesByAppointment = collect();
+        if (!empty($appointmentIds)) {
+            $advancesByAppointment = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
+                ->whereDate('package_advances.created_at', '<=', $end_date)
+                ->whereIn('appointment_id', $appointmentIds)
+                ->get()
+                ->groupBy('appointment_id');
+        }
+
         $appointmenttrans = [];
         foreach ($appointmentinfo as $appointment) {
-            $advancebalance = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
-                ->whereDate('package_advances.created_at', '<=', $end_date)
-                ->where([
-                    ['appointment_id', '=', $appointment->id],
-                    ['cash_flow', '=', 'in'],
-                    ['is_refund', '=', 0],
-                    ['is_adjustment', '=', 0],
-                    ['is_cancel', '=', 0],
-                ])->whereNull('package_id')->sum('cash_amount');
+            $apptAdvances = $advancesByAppointment->get($appointment->id, collect());
+
+            // Compute the same filtered sum the SQL did:
+            //   cash_flow='in' AND is_refund=0 AND is_adjustment=0 AND is_cancel=0 AND package_id IS NULL
+            $advancebalance = $apptAdvances
+                ->filter(fn ($a) => $a->cash_flow === 'in'
+                    && $a->package_id === null
+                    && (int) $a->is_refund === 0
+                    && (int) $a->is_adjustment === 0
+                    && (int) $a->is_cancel === 0)
+                ->sum('cash_amount');
+
             if ($advancebalance) {
                 $appointmenttrans[$appointment->id] = [
                     'id' => $appointment->id,
@@ -439,13 +480,9 @@ class FinanceLedgerReport
 
                 $appointmenttrans[$appointment->id]['outstandingbalance'] = $outstandingbalance;
 
-                $packagesadvances = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
-                    ->whereDate('package_advances.created_at', '<=', $end_date)
-                    ->where('appointment_id', '=', $appointment->id)
-                    ->get();
-
+                // Reuse the already-fetched batch (was a per-appointment query).
                 $balance = 0;
-                foreach ($packagesadvances as $packagesadvances) {
+                foreach ($apptAdvances as $packagesadvances) {
                     $balance += match ($packagesadvances->cash_flow) {
                         'in' => $packagesadvances->cash_amount,
                         'out' => -$packagesadvances->cash_amount,
@@ -573,10 +610,15 @@ class FinanceLedgerReport
             $account_id,
         ];
 
-        $package_advances = PackageAdvances::with(['appointment' => function ($query) use ($where) {
-            $query->where($where);
-            $query->whereIn('location_id', ACL::getUserCentres());
-        }])->whereDate('created_at', '>=', $start_date)
+        $package_advances = PackageAdvances::with([
+            'appointment' => function ($query) use ($where) {
+                $query->where($where);
+                $query->whereIn('location_id', ACL::getUserCentres());
+            },
+            // Eager load nested patient too — was lazy-loaded per row in the
+            // foreach below (->appointment->patient->phone / email).
+            'appointment.patient:id,phone,email',
+        ])->whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where('is_refund', '=', 1)
             ->whereNull('package_id')->get();
@@ -670,8 +712,10 @@ class FinanceLedgerReport
 
             $packagetrans[$packagerow->id]['total_price'] = $total_price;
 
-            $refunds_info = PackageAdvances::whereYear('created_at', '=', $data['year'])
-                ->whereMonth('created_at', '=', $data['month'])
+            $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+            $monthEnd = $monthStart->copy()->addMonth();
+            $refunds_info = PackageAdvances::where('created_at', '>=', $monthStart)
+                ->where('created_at', '<', $monthEnd)
                 ->where([
                     ['package_id', '=', $packagerow->id],
                     ['is_refund', '=', '1'],
@@ -734,11 +778,18 @@ class FinanceLedgerReport
             ];
         }
 
-        $package_advances = PackageAdvances::with(['appointment' => function ($query) use ($where) {
-            $query->where($where);
-        }])
-            ->whereYear('created_at', '=', $data['year'])
-            ->whereMonth('created_at', '=', $data['month'])
+        $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->addMonth();
+        $package_advances = PackageAdvances::with([
+            'appointment' => function ($query) use ($where) {
+                $query->where($where);
+            },
+            // Eager load nested patient too — was lazy-loaded per row in the
+            // foreach below (->appointment->patient->phone / email).
+            'appointment.patient:id,phone,email',
+        ])
+            ->where('created_at', '>=', $monthStart)
+            ->where('created_at', '<', $monthEnd)
             ->where('is_refund', '=', 1)
             ->whereNull('package_id')
             ->get();

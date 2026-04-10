@@ -14,7 +14,7 @@ class AddPackageAdvanceIdToPlanInvoicesTable extends Migration
     public function up()
     {
         Schema::table('plan_invoices', function (Blueprint $table) {
-            $table->unsignedBigInteger('package_advance_id')->nullable()->after('package_id');
+            $table->unsignedBigInteger('package_advance_id')->nullable();
             
             // Add index for better query performance
             $table->index('package_advance_id');

@@ -15,7 +15,7 @@ class AddSalePriceToInventoriesTable extends Migration
     {
         Schema::table('inventories', function (Blueprint $table) {
             if (!Schema::hasColumn('inventories', 'sale_price')) {
-                $table->decimal('sale_price', 10, 2)->nullable()->after('quantity');
+                $table->decimal('sale_price', 10, 2)->nullable();
             }
         });
     }

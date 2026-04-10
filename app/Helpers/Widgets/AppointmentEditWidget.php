@@ -55,9 +55,10 @@ class AppointmentEditWidget
             $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
-                'parent_id' => '0',
                 'active' => 1,
-            ])->select('id')->get();
+            ])->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -156,8 +157,9 @@ class AppointmentEditWidget
                 $ss = Services::where([
                     'slug' => 'custom',
                     'account_id' => $account_id,
-                    'parent_id' => '0',
-                ])->select('id')->get();
+                ])->where(function ($q) {
+                    $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                })->select('id')->get();
 
                 if ($ss->count()) {
                     foreach ($ss as $service) {
@@ -231,8 +233,9 @@ class AppointmentEditWidget
                     $ss = Services::where([
                         'slug' => 'custom',
                         'account_id' => $account_id,
-                        'parent_id' => '0',
-                    ])->select('id')->get();
+                    ])->where(function ($q) {
+                        $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                    })->select('id')->get();
 
                     if ($ss->count()) {
                         foreach ($ss as $service) {
@@ -302,8 +305,9 @@ class AppointmentEditWidget
                         $ss = Services::where([
                             'slug' => 'custom',
                             'account_id' => $account_id,
-                            'parent_id' => '0',
-                        ])->select('id')->get();
+                        ])->where(function ($q) {
+                            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                        })->select('id')->get();
 
                         if ($ss->count()) {
                             foreach ($ss as $service) {
@@ -396,9 +400,10 @@ class AppointmentEditWidget
             $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
-                'parent_id' => '0',
                 'active' => 1,
-            ])->select('id')->get();
+            ])->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {
@@ -506,11 +511,19 @@ class AppointmentEditWidget
 
     public static function findRoot($service_id, $data)
     {
-        if ($data[$service_id]['parent_id'] == '0') {
+        // Guard against missing rows and the new NULL parent_id convention
+        // (migration 2026_04_08_100034 stores root parent_id as NULL instead
+        // of 0). Treat NULL, 0, and '0' as "this is the root".
+        if (! isset($data[$service_id])) {
             return $service_id;
-        } else {
-            return self::findRoot($data[$service_id]['parent_id'], $data);
         }
+
+        $parentId = $data[$service_id]['parent_id'] ?? null;
+        if ($parentId === null || $parentId === 0 || $parentId === '0') {
+            return $service_id;
+        }
+
+        return self::findRoot($parentId, $data);
     }
 
     /*
@@ -602,9 +615,10 @@ class AppointmentEditWidget
             $ss = Services::where([
                 'slug' => 'custom',
                 'account_id' => $account_id,
-                'parent_id' => '0',
                 'active' => 1,
-            ])->select('id')->get();
+            ])->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })->select('id')->get();
 
             if ($ss->count()) {
                 foreach ($ss as $service) {

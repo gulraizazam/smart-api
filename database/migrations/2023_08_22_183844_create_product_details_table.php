@@ -15,8 +15,8 @@ class CreateProductDetailsTable extends Migration
     {
         Schema::create('product_details', function (Blueprint $table) {
             $table->id();
-            $table->integer('product_id');
-            $table->unsignedInteger('account_id');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('account_id');
             $table->float('purchase_price', 8, 2);
             $table->float('total_purchase_price', 8, 2);
             $table->integer('quantity');

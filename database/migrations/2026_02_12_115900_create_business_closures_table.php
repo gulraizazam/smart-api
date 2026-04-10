@@ -15,11 +15,11 @@ class CreateBusinessClosuresTable extends Migration
     {
         Schema::create('business_closures', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
+            $table->unsignedBigInteger('account_id');
             $table->date('start_date');
             $table->date('end_date');
             $table->text('description')->nullable();
-            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -30,7 +30,7 @@ class CreateBusinessClosuresTable extends Migration
         Schema::create('business_closure_locations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('business_closure_id');
-            $table->unsignedInteger('location_id');
+            $table->unsignedBigInteger('location_id');
             $table->timestamps();
 
             $table->foreign('business_closure_id')->references('id')->on('business_closures')->onDelete('cascade');

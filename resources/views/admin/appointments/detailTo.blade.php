@@ -185,7 +185,7 @@
 <script>
     $("#Add_comment").click(function () {
         $.ajax({
-            type: 'get',
+            type: 'post',
             url: route('admin.appointments.storecomment'),
             data: {
                 '_token': $('input[name=_token]').val(),

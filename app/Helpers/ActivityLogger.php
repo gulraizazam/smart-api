@@ -9,6 +9,7 @@ use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Enums\AppointmentType;
+use App\Models\Discounts;
 use App\Models\Feedback;
 use App\Models\Invoices;
 use App\Models\Leads;
@@ -28,6 +29,85 @@ use Illuminate\Support\Facades\Auth;
 
 class ActivityLogger
 {
+    /**
+     * Round 4 Inj-C1 — sanitize an activity description before persisting
+     * it to the database.
+     *
+     * Background: every method in this class concatenates user-supplied
+     * name fragments (`$creatorName`, `$patientName`, `$serviceName`,
+     * `$locationName`, `$package->name`, etc.) into an HTML template that
+     * the activity log view at admin/reports/activity_logs/activities.blade.php
+     * renders raw via `{!! $activity['message'] !!}`. An attacker who can
+     * edit a patient/service/location name to include `<script>` lands a
+     * stored XSS that fires for every viewer of the activity log.
+     *
+     * The fix is producer-side: tokenize the built description against a
+     * tiny whitelist of known-safe markers (the highlight spans the
+     * templates intentionally use) and HTML-escape everything else. The
+     * blade view continues to use {!!} so the highlight markup keeps
+     * rendering for legitimate activity rows. Old rows in the DB are
+     * untouched — their existing markup still renders, and any latent
+     * malicious payload there would only be cleaned up by a one-time
+     * rewrite job (out of scope for this fix).
+     */
+    private static function sanitizeDescription(string $html): string
+    {
+        // Whitelisted CSS classes used by activity templates. Anything
+        // else gets escaped — including bare <span> with no class.
+        static $allowedClasses = [
+            'highlight',
+            'highlight-orange',
+            'highlight-green',
+            'highlight-blue',
+            'highlight-red',
+        ];
+
+        $parts = preg_split(
+            '#(<span\s+class="[^"]*">|</span>|<br\s*/?>)#i',
+            $html,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE
+        );
+
+        if ($parts === false) {
+            return htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        $out = '';
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            if (preg_match('#^<span\s+class="([^"]*)">$#i', $part, $m)) {
+                $cls = $m[1];
+                if (in_array($cls, $allowedClasses, true)) {
+                    $out .= '<span class="' . $cls . '">';
+                } else {
+                    // Unknown class — treat the whole tag as text.
+                    $out .= htmlspecialchars($part, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                }
+                continue;
+            }
+
+            if (strcasecmp($part, '</span>') === 0) {
+                $out .= '</span>';
+                continue;
+            }
+
+            if (preg_match('#^<br\s*/?>$#i', $part)) {
+                $out .= '<br>';
+                continue;
+            }
+
+            // Everything else is text from a user-controlled fragment —
+            // escape it.
+            $out .= htmlspecialchars($part, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        return $out;
+    }
+
     /**
      * Log a lead created activity
      * Format: XYZ created a SERVICE_NAME lead for PATIENT_NAME in LOCATION_NAME
@@ -50,7 +130,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $lead->account_id,
             'action' => 'Lead Created',
             'activity_type' => 'lead_created',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $lead->patient_id ?? null,
             'lead_id' => $lead->id,
@@ -87,7 +167,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $lead->account_id,
             'action' => 'Lead Booked',
             'activity_type' => 'lead_booked',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $lead->patient_id ?? ($appointment->patient_id ?? null),
             'lead_id' => $lead->id,
@@ -128,7 +208,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $lead->account_id,
             'action' => 'Lead Arrived',
             'activity_type' => 'lead_arrived',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $lead->patient_id ?? ($appointment->patient_id ?? null),
             'lead_id' => $lead->id,
@@ -164,7 +244,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $appointment->account_id,
             'action' => 'Consultation Booked',
             'activity_type' => 'consultation_booked',
-            'description' => 'Consultation Booked for ' . ($patient->name ?? 'Unknown') . ($serviceName ? ' - ' . $serviceName : '') . ($locationName ? ' at ' . $locationName : ''),
+            'description' => self::sanitizeDescription('Consultation Booked for ' . ($patient->name ?? 'Unknown') . ($serviceName ? ' - ' . $serviceName : '') . ($locationName ? ' at ' . $locationName : '')),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? null,
             'lead_id' => $appointment->lead_id ?? null,
@@ -203,7 +283,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $appointment->account_id,
             'action' => 'Treatment Booked',
             'activity_type' => 'treatment_booked',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'lead_id' => $appointment->lead_id ?? null,
@@ -234,7 +314,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Package Created',
             'activity_type' => 'package_created',
-            'description' => 'Package Created - Plan Id: ' . $package->id . ' (' . ($package->name ?? 'Package') . ') for Rs. ' . number_format($package->total_price) . ($locationName ? ' at ' . $locationName : ''),
+            'description' => self::sanitizeDescription('Package Created - Plan Id: ' . $package->id . ' (' . ($package->name ?? 'Package') . ') for Rs. ' . number_format($package->total_price) . ($locationName ? ' at ' . $locationName : '')),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $package->patient_id,
             'plan_id' => $package->id,
@@ -270,7 +350,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Payment Received',
             'activity_type' => 'payment_received',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patientId,
             'plan_id' => $package->id,
@@ -323,7 +403,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Payment Updated',
             'activity_type' => 'payment_updated',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patientId,
             'plan_id' => $package->id,
@@ -359,7 +439,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Payment Deleted',
             'activity_type' => 'payment_deleted',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patientId,
             'plan_id' => $package->id,
@@ -387,7 +467,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Refund Made',
             'activity_type' => 'refund_made',
-            'description' => 'Refund Made Rs. ' . number_format($refund->cash_amount) . ' to ' . ($patient->name ?? 'Unknown') . ' for Plan Id: ' . $package->id . ($locationName ? ' at ' . $locationName : ''),
+            'description' => self::sanitizeDescription('Refund Made Rs. ' . number_format($refund->cash_amount) . ' to ' . ($patient->name ?? 'Unknown') . ' for Plan Id: ' . $package->id . ($locationName ? ' at ' . $locationName : '')),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $package->patient_id,
             'plan_id' => $package->id,
@@ -429,7 +509,7 @@ class ActivityLogger
             'account_id' => \Auth::user()->account_id ?? null,
             'action' => 'rescheduled',
             'activity_type' => 'appointment_rescheduled',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? $appointment->patient_id,
             'appointment_id' => $appointment->id,
@@ -471,7 +551,7 @@ class ActivityLogger
             'account_id' => \Auth::user()->account_id ?? null,
             'action' => 'Status Changed',
             'activity_type' => 'appointment_status_changed',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? $appointment->patient_id,
             'appointment_id' => $appointment->id,
@@ -522,7 +602,7 @@ class ActivityLogger
             'account_id' => \Auth::user()->account_id ?? null,
             'action' => 'Appointment Updated',
             'activity_type' => 'appointment_updated',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? $appointment->patient_id,
             'appointment_id' => $appointment->id,
@@ -553,7 +633,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $invoice->account_id,
             'action' => 'Invoice Created',
             'activity_type' => 'invoice_created',
-            'description' => 'Invoice Created Rs. ' . number_format($invoice->total_price) . ' for ' . ($serviceName ?: 'Consultation') . ($locationName ? ' at ' . $locationName : ''),
+            'description' => self::sanitizeDescription('Invoice Created Rs. ' . number_format($invoice->total_price) . ' for ' . ($serviceName ?: 'Consultation') . ($locationName ? ' at ' . $locationName : '')),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $invoice->patient_id,
             'appointment_id' => $appointment->id ?? $invoice->appointment_id,
@@ -585,7 +665,40 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Membership Assigned',
             'activity_type' => 'membership_assigned',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
+            'patient' => $patientName,
+            'patient_id' => $patient->id,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log membership renewed activity
+     *
+     * MembershipRenewalService was calling this method before it
+     * existed — any production renewal would have crashed at the
+     * activity-log step. The method signature mirrors the assigned /
+     * cancelled helpers: Patients $patient (NOT User, which is a
+     * different class hierarchy), the original and renewed membership
+     * rows, and an optional type for display.
+     */
+    public static function logMembershipRenewed(Patients $patient, Membership $oldMembership, Membership $newMembership, ?MembershipType $membershipType = null): Activity
+    {
+        $patientName = $patient->name ?? 'Unknown';
+        $creatorName = Auth::check() ? Auth::user()->name : 'System';
+        $oldCode = $oldMembership->code ?? '';
+        $newCode = $newMembership->code ?? '';
+        $membershipTypeName = $membershipType->name ?? ($newMembership->membershipType->name ?? 'Membership');
+
+        $description = '<span class="highlight">' . $creatorName . '</span> renewed <span class="highlight-green">' . $membershipTypeName . '</span> membership (<span class="highlight-orange">' . $oldCode . '</span> → <span class="highlight-orange">' . $newCode . '</span>) for <span class="highlight-orange">' . $patientName . '</span>';
+
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Membership Renewed',
+            'activity_type' => 'membership_renewed',
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id,
             'created_by' => Auth::user()->id ?? null,
@@ -610,7 +723,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Membership Cancelled',
             'activity_type' => 'membership_cancelled',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id,
             'created_by' => Auth::user()->id ?? null,
@@ -646,7 +759,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $appointment->account_id,
             'action' => 'Appointment Converted',
             'activity_type' => 'appointment_converted',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'appointment_id' => $appointment->id,
@@ -685,7 +798,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $lead->account_id,
             'action' => 'Lead Converted',
             'activity_type' => 'lead_converted',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $lead->patient_id ?? ($appointment->patient_id ?? null),
             'lead_id' => $lead->id,
@@ -734,7 +847,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $appointment->account_id,
             'action' => $appointmentType . ' Deleted',
             'activity_type' => $activityType,
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'appointment_id' => $appointment->id,
@@ -771,7 +884,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Patient Updated',
             'activity_type' => 'patient_updated',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id,
             'created_by' => Auth::user()->id ?? null,
@@ -792,22 +905,27 @@ class ActivityLogger
         if ($location) {
             $locationName = ($location->name ?? '');
         }
-        $amount = $invoice->total_price ?? 0;
+        // Cast: invoices.total_price is decimal(11,2) which Laravel hands
+        // back as a string. PHP 8.4's stricter number_format() signature
+        // refuses string arguments, so a bare `number_format($amount)`
+        // call here throws TypeError mid-cancel — leaving the cancel half-
+        // committed inside the surrounding DB::transaction.
+        $amount = (float) ($invoice->total_price ?? 0);
         $apptType = $appointmentType->name ?? 'Consultation';
-        
+
         // Get the treatment's scheduled date
         $scheduledDate = '';
         if ($appointment && $appointment->scheduled_date) {
             $scheduledDate = date('M j, Y', strtotime((string) $appointment->scheduled_date));
         }
-        
+
         $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? $invoice->account_id,
             'action' => 'Invoice Cancelled',
             'activity_type' => 'invoice_cancelled',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'appointment_id' => $invoice->appointment_id,
@@ -827,21 +945,31 @@ class ActivityLogger
     /**
      * Log voucher assigned activity
      * Format: USERNAME assigned VOUCHERNAME voucher of Rs. AMOUNT to PATIENTNAME
+     *
+     * The $voucher parameter is a `Discounts` row with
+     * `discount_type = 'voucher'`. Despite the name, vouchers are NOT
+     * stored in the legacy `vouchers` table (the `Voucher` model) —
+     * they live in `discounts`, which is what every production caller
+     * passes here. The original `Voucher` type hint was a typo that
+     * triggered a TypeError on every real invocation.
      */
-    public static function logVoucherAssigned(UserVouchers $userVoucher, Patients $patient, Voucher $voucher): Activity
+    public static function logVoucherAssigned(UserVouchers $userVoucher, Patients $patient, Discounts $voucher): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
         $voucherName = $voucher->name ?? 'Voucher';
-        $amount = $userVoucher->amount ?? 0;
-        
+        // `user_vouchers.amount` is a DECIMAL column that MariaDB returns
+        // as a string; number_format() in PHP 8.4 rejects strings under
+        // strict_types. Cast to float before formatting.
+        $amount = (float) ($userVoucher->amount ?? 0);
+
         $description = '<span class="highlight">' . $creatorName . '</span> assigned <span class="highlight-orange">' . $voucherName . '</span> voucher of <span class="highlight-green">Rs. ' . number_format($amount) . '</span> to <span class="highlight-orange">' . $patientName . '</span>';
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Voucher Assigned',
             'activity_type' => 'voucher_assigned',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'amount' => $amount,
@@ -854,8 +982,12 @@ class ActivityLogger
     /**
      * Log voucher refunded/reset activity
      * Format: Rs. AMOUNT refunded to VOUCHERNAME voucher for PATIENTNAME
+     *
+     * Same rationale as logVoucherAssigned — $voucher is a `Discounts`
+     * row, not a `Voucher`. See PlanDiscountService line ~363 for the
+     * call site that exposes this.
      */
-    public static function logVoucherRefunded(float|int $amount, Patients $patient, Voucher $voucher): Activity
+    public static function logVoucherRefunded(float|int $amount, Patients $patient, Discounts $voucher): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -867,7 +999,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Voucher Refunded',
             'activity_type' => 'voucher_refunded',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'amount' => $amount,
@@ -880,8 +1012,13 @@ class ActivityLogger
     /**
      * Log voucher consumed activity
      * Format: Rs. AMOUNT consumed from VOUCHERNAME voucher against PATIENTNAME - Balance Left: Rs. BALANCE
+     *
+     * Same rationale as logVoucherAssigned — $voucher is a `Discounts`
+     * row. PlanService line ~1992 passes a `Discounts::find()` result
+     * here, so the original `Voucher` type hint would have TypeError'd
+     * on every real call.
      */
-    public static function logVoucherConsumed(float|int $amount, Patients $patient, Voucher $voucher, float|int $balanceLeft = 0): Activity
+    public static function logVoucherConsumed(float|int $amount, Patients $patient, Discounts $voucher, float|int $balanceLeft = 0): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -893,7 +1030,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Voucher Consumed',
             'activity_type' => 'voucher_consumed',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'amount' => $amount,
@@ -906,8 +1043,11 @@ class ActivityLogger
     /**
      * Log voucher updated activity
      * Format: USERNAME updated VOUCHERNAME voucher amount from Rs. OLDAMOUNT to Rs. NEWAMOUNT for PATIENTNAME
+     *
+     * Same rationale as logVoucherAssigned — $voucher is a `Discounts`
+     * row, not a `Voucher`.
      */
-    public static function logVoucherUpdated(UserVouchers $userVoucher, Patients $patient, Voucher $voucher, float|int $oldAmount, float|int $newAmount): Activity
+    public static function logVoucherUpdated(UserVouchers $userVoucher, Patients $patient, Discounts $voucher, float|int $oldAmount, float|int $newAmount): Activity
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
@@ -919,7 +1059,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Voucher Updated',
             'activity_type' => 'voucher_updated',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'amount' => $newAmount,
@@ -942,7 +1082,9 @@ class ActivityLogger
                 'action_for' => $data->name ?? '',
                 'action' => $action,
                 'screen' => $screen,
-                'address' => Locations::find($data->location_id ?? 0)->name ?? '',
+                // Nullsafe — Locations::find() returns null when the id doesn't
+                // exist (or is 0), and `->name` on null was a latent fatal.
+                'address' => Locations::find($data->location_id ?? 0)?->name ?? '',
                 'date' => Carbon::now()->timezone('Asia/Karachi')->format('Y-m-d'),
                 'time' => Carbon::now()->timezone('Asia/Karachi')->format('H:i:s'),
                 'type' => $action,
@@ -1013,7 +1155,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? null,
             'action' => 'Feedback Added',
             'activity_type' => 'feedback_added',
-            'description' => $description,
+            'description' => self::sanitizeDescription($description),
             'patient' => $patientName,
             'patient_id' => $patient->id ?? null,
             'appointment_id' => $appointment->id ?? null,

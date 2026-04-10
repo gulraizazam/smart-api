@@ -179,8 +179,8 @@ class TransferService
         // Check period lock
         if (CashflowHelper::isDateInLockedPeriod($data['transfer_date'], $accountId)) {
             throw CashflowException::periodLocked(
-                date('n', strtotime($data['transfer_date'])),
-                date('Y', strtotime($data['transfer_date']))
+                (int) date('n', strtotime($data['transfer_date'])),
+                (int) date('Y', strtotime($data['transfer_date']))
             );
         }
 

@@ -241,9 +241,11 @@ final class DiscountsController extends Controller
 
             return response()->json($response);
         } catch (\Throwable $e) {
+            // Round 4 Crypto-H3 — drop trace, keep file/line.
             Log::error('Discount Datatable Error', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
             ]);
 
             return response()->json([

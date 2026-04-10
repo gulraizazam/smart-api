@@ -15,7 +15,11 @@ class CreateBrandsTable extends Migration
     {
         Schema::create('brands', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
+            // accounts.id is BIGINT UNSIGNED, so this column must match — the
+            // original migration used unsignedInteger() which works on legacy
+            // MySQL but is rejected by MariaDB 11.x with the
+            // "Foreign key constraint is incorrectly formed" error.
+            $table->unsignedBigInteger('account_id');
             $table->string('name');
             $table->tinyInteger('status')->default(1);
             $table->timestamps();

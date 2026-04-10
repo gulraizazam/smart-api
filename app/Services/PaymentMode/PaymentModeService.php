@@ -91,7 +91,7 @@ class PaymentModeService
             return ['success' => false, 'error' => $validator->errors()->first(), 'errors' => $validator->errors()];
         }
 
-        if (PaymentModes::createRecord((object) $data, $accountId)) {
+        if (PaymentModes::createRecord($data, $accountId)) {
             return ['success' => true, 'message' => 'Record has been created successfully.'];
         }
 
@@ -119,7 +119,7 @@ class PaymentModeService
             return ['success' => false, 'error' => $validator->errors()->first(), 'errors' => $validator->errors()];
         }
 
-        if (PaymentModes::updateRecord($id, (object) $data, $accountId)) {
+        if (PaymentModes::updateRecord($id, $data, $accountId)) {
             return ['success' => true, 'message' => 'Record has been updated successfully.'];
         }
 

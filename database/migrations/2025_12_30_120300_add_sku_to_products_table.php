@@ -15,7 +15,7 @@ class AddSkuToProductsTable extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             if (!Schema::hasColumn('products', 'sku')) {
-                $table->string('sku')->nullable()->after('name');
+                $table->string('sku')->nullable();
             }
         });
     }

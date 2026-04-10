@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedLegacy;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GlobalOperatorSettings extends BaseModel
@@ -18,6 +19,13 @@ class GlobalOperatorSettings extends BaseModel
     protected $table = 'global_operator_settings';
 
     protected $hidden = ['password'];
+
+    protected function casts(): array
+    {
+        return [
+            'password' => EncryptedLegacy::class,
+        ];
+    }
 
     /**
      * Get all records as an ID-keyed dictionary array.

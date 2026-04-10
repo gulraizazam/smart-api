@@ -250,7 +250,7 @@ class AppointmentCommunicationController extends AppointmentBaseController
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         if ($response['status']) {
-            SMSLogs::find($smsId)->update(['status' => 1]);
+            SMSLogs::find($smsId)?->update(['status' => 1]);
         }
 
         return $response;

@@ -9,7 +9,7 @@ class AddConfigGroupIdToPackageBundlesTable extends Migration
     public function up()
     {
         Schema::table('package_bundles', function (Blueprint $table) {
-            $table->string('`config_group_id`')->nullable()->after('discount_id');
+            $table->string('`config_group_id`')->nullable();
         });
     }
 

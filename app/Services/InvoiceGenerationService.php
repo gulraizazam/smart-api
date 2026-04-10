@@ -241,9 +241,13 @@ class InvoiceGenerationService
             }
         }
 
-        // Filter workingDays to only include days with revenue
-        $revenueDates = array_keys($this->dailyRevenue);
-        $this->workingDays = array_values(array_filter($this->workingDays, fn($day) => in_array($day->format('Y-m-d'), $revenueDates, true)));
+        // Filter workingDays to only include days with revenue.
+        // dailyRevenue is already keyed by date, so isset() is O(1) per check
+        // (was O(n²) via in_array on array_keys()).
+        $this->workingDays = array_values(array_filter(
+            $this->workingDays,
+            fn($day) => isset($this->dailyRevenue[$day->format('Y-m-d')])
+        ));
 
         // Calculate weight (proportion) for each revenue day
         if ($totalDailyPool > 0) {

@@ -73,6 +73,7 @@ class MachineType extends BaseModel
                     ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
                     ->where($where)
                     ->whereNull('deleted_at')
+                    ->select('machine_type_has_services.machine_type_id')
                     ->groupBy('machine_type_has_services.machine_type_id')
                     ->get());
             } else {
@@ -81,6 +82,7 @@ class MachineType extends BaseModel
                     ->where($where)
                     ->where('active', 1)
                     ->whereNull('deleted_at')
+                    ->select('machine_type_has_services.machine_type_id')
                     ->groupBy('machine_type_has_services.machine_type_id')
                     ->get());
             }
@@ -89,6 +91,7 @@ class MachineType extends BaseModel
                 return count(DB::table('machine_types')
                     ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
                     ->whereNull('deleted_at')
+                    ->select('machine_type_has_services.machine_type_id')
                     ->groupBy('machine_type_has_services.machine_type_id')
                     ->get());
             } else {
@@ -96,6 +99,7 @@ class MachineType extends BaseModel
                     ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
                     ->whereNull('deleted_at')
                     ->where('active', 1)
+                    ->select('machine_type_has_services.machine_type_id')
                     ->groupBy('machine_type_has_services.machine_type_id')
                     ->get());
             }

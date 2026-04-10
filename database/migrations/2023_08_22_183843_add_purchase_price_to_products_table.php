@@ -22,7 +22,7 @@ class AddPurchasePriceToProductsTable extends Migration
                 $table->enum('product_type', ['in_house_use', 'for_sale'])->before('created_at');
               }
               if (!Schema::hasColumn('products', 'created_by')) {
-                $table->unsignedInteger('created_by')->before('created_at');
+                $table->unsignedBigInteger('created_by')->before('created_at');
               }
               if (!Schema::hasColumn('products', 'updated_by')) {
                 $table->unsignedBigInteger('updated_by')->nullable()->before('created_at');

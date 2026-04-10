@@ -115,7 +115,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'getCentreDoctors'])->name('getdoctors');
 
         // Appointment Comments
-        Route::get('appointments/comment-save', [\App\Http\Controllers\Admin\Appointments\AppointmentCommunicationController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
+        Route::post('appointments/comment-save', [\App\Http\Controllers\Admin\Appointments\AppointmentCommunicationController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
         //Appointment Route end for images
 
         /*Consultancy Routes*/

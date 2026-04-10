@@ -23,7 +23,18 @@ class VerifyCsrfToken extends Middleware
 
     public function handle($request, Closure $next): Response
     {
-        if ($request->hasHeader('Authorization')) {
+        // Round 4 Auth-C3 — the previous version unconditionally bypassed
+        // CSRF whenever an `Authorization` header was present. That made
+        // every cookie-authed POST CSRF-able from any origin: a victim's
+        // browser running attacker JS could attach `Authorization: Bearer
+        // anything` and the request would go through with the victim's
+        // session cookie. We now only bypass CSRF for bearer-only API
+        // calls (no session cookie present), and only when Sanctum
+        // actually validates the token.
+        if ($request->hasHeader('Authorization')
+            && ! $request->hasCookie(config('session.cookie'))
+            && auth()->guard('sanctum')->check()
+        ) {
             return $next($request);
         }
 

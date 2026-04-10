@@ -21,6 +21,7 @@ use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageService;
 use App\Models\PackageVouchers;
+use App\Models\Patients;
 use App\Models\Services;
 use App\Models\UserVouchers;
 use App\Models\User;
@@ -357,7 +358,12 @@ final class PlanDiscountService
                 ->where('voucher_id', $item['voucher_id'])
                 ->increment('amount', $item['amount']);
 
-            $patient = User::find($item['user_id']);
+            // ActivityLogger::logVoucherRefunded() is typed to
+            // App\Models\Patients (extends BaseModel, NOT User). Fetching
+            // via User::find() returns a User instance and TypeErrors at
+            // the logger call — same bug pattern as UserVoucherService and
+            // PlanService, discovered via VoucherRedemptionTest.
+            $patient = Patients::find($item['user_id']);
             $voucherModel = Discounts::find($item['voucher_id']);
             if ($patient && $voucherModel) {
                 ActivityLogger::logVoucherRefunded($item['amount'], $patient, $voucherModel);

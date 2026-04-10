@@ -158,7 +158,7 @@ class UpsellingService
     public function getDoctorUpsellingDetailData(int $doctorId, int $locationId, string $startDate, string $endDate): array
     {
         // Get doctor name
-        $doctorName = User::find($doctorId)->name ?? 'Unknown Doctor';
+        $doctorName = User::find($doctorId)?->name ?? 'Unknown Doctor';
 
         // Get all package services for this doctor in the period
         $packageServices = PackageService::query()

@@ -480,9 +480,11 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
+    // Only the fields actually rendered inside `.advance-filters` (date_range
+    // and status) should trigger the panel to open. Gender lives in the main
+    // filter row, so it must NOT unfold the advance section.
     if ((typeof active_filters.created_at !== 'undefined' && active_filters.created_at != '')
         || (typeof active_filters.status !== 'undefined' && active_filters.status != '')
-        || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
     ) {
 
         $(".advance-filters").show();

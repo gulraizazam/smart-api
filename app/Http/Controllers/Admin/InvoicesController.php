@@ -133,7 +133,7 @@ class InvoicesController extends Controller
                         'service' => $service->name ?? '',
                         'invoice_status' => $invoicestatus->name ?? '',
                         'appointment_type_id' => ($inv->appointment_type_id === AppointmentType::Consultancy->value) ? Config::get('constants.Consultancy') : Config::get('constants.Service'),
-                        'price' => number_format($inv->total_price),
+                        'price' => number_format((float) $inv->total_price),
                         'created_at' => Carbon::parse($inv->created_at)->format('F j,Y h:i A'),
                         'cancel' => $cancel,
                         'invoice' => $inv,
@@ -236,8 +236,21 @@ class InvoicesController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
+        // Round 4 IDOR sweep — gate the entire flow on a tenant-scoped lookup
+        // up front. Without this, a guessed cross-tenant invoice id could be
+        // cancelled (the chained Invoices::find($id) further down would still
+        // load it). Invoices has no BaseModel::getData() helper since it
+        // extends Model, so we use an explicit account_id filter.
+        $tenantInvoice = Invoices::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+        if (! $tenantInvoice) {
+            return $this->errorResponse('Invoice not found.', 404);
+        }
+
         $invoiceinformation = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
             ->where('invoices.id', '=', $id)
+            ->where('invoices.account_id', '=', Auth::user()->account_id)
             ->select('invoice_details.package_id')->first();
 
         if ($invoiceinformation?->package_id) {
@@ -293,6 +306,25 @@ class InvoicesController extends Controller
                     $data_package['package_id'] = $invoice_detail->package_id;
                 }
 
+                // Persist the reversal cash advance — credits the till
+                // back for the cancelled invoice. Without this insert the
+                // till is short by the invoice total, and the cancel()
+                // operation is functionally a one-way data loss.
+                //
+                // Idempotency guard: if a reversal `in/is_cancel=1` row
+                // already exists for this invoice (e.g. duplicate cancel
+                // call from a browser-back resubmit), do not insert a
+                // second one — that would double-credit the till.
+                $existingReversal = PackageAdvances::query()
+                    ->where('invoice_id', $id)
+                    ->where('cash_flow', 'in')
+                    ->where('is_cancel', '1')
+                    ->exists();
+
+                if (! $existingReversal) {
+                    PackageAdvances::createRecord_onlyadvances($data_package);
+                }
+
                 // Log invoice cancelled activity
                 $patient = \App\Models\Patients::find($invocies->patient_id);
                 $location = \App\Models\Locations::with('city')->find($appintment->location_id);
@@ -313,9 +345,13 @@ class InvoicesController extends Controller
         if (! Gate::allows('invoices_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
+        // Round 4 IDOR sweep — tenant-scope by account_id so a guessed
+        // cross-tenant invoice id can't be displayed to a user from another
+        // organization (which would expose patient name, address, totals).
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
             ->where('invoices.id', '=', $id)
+            ->where('invoices.account_id', '=', Auth::user()->account_id)
             ->select('invoices.*',
                 'invoice_details.discount_type',
                 'invoice_details.discount_price',
@@ -332,6 +368,11 @@ class InvoicesController extends Controller
                 'invoice_details.is_exclusive'
             )
             ->first();
+
+        if (! $Invoiceinfo) {
+            return $this->errorResponse('Invoice not found.', 404);
+        }
+
         $location_info = Locations::find($Invoiceinfo->location_id);
 
         $invoicestatus = InvoiceStatuses::find($Invoiceinfo->invoice_status_id);
@@ -344,7 +385,7 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
-        
+
         // Get doctor name from appointment
         $doctor = null;
         if ($Invoiceinfo->appointment_id) {
@@ -382,9 +423,13 @@ class InvoicesController extends Controller
         if ($download === 'print') {
             $download = null;
         }
+        // Round 4 IDOR sweep — tenant-scope by account_id so a guessed
+        // cross-tenant invoice id can't be rendered as a PDF (which would
+        // expose patient name, address, totals).
         $Invoiceinfo = DB::table('invoices')
             ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
             ->where('invoices.id', '=', $id)
+            ->where('invoices.account_id', '=', Auth::user()->account_id)
             ->select('invoices.*',
                 'invoice_details.discount_type',
                 'invoice_details.discount_price',
@@ -400,6 +445,10 @@ class InvoicesController extends Controller
                 'invoice_details.tax_including_price',
                 'invoice_details.is_exclusive'
             )->first();
+
+        if (! $Invoiceinfo) {
+            return abort(404);
+        }
 
         $appointment_info = Appointments::where('id', '=', $Invoiceinfo->appointment_id)->first();
         $package_service = PackageService::where('package_id', '=', $Invoiceinfo->package_id)->where('service_id', '=', $Invoiceinfo->service_id)->first();
@@ -515,9 +564,12 @@ class InvoicesController extends Controller
             foreach ($audit_info as $audit) {
                 $finance_log[$audit->id] = [
                     'id' => $audit->id,
-                    'action' => $action_array[$audit->audit_trail_action_name],
-                    'table' => $table_array[$audit->audit_trail_table_name],
-                    'user_id' => $audit->user->name,
+                    // Defensive default: some legacy audit rows have action/table
+                    // values outside the known maps (e.g. 0), which would raise
+                    // `Undefined array key` under PHP 8.
+                    'action' => $action_array[$audit->audit_trail_action_name] ?? '',
+                    'table' => $table_array[$audit->audit_trail_table_name] ?? '',
+                    'user_id' => $audit->user->name ?? '',
                     'created_at' => $audit->created_at,
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
@@ -593,9 +645,10 @@ class InvoicesController extends Controller
             foreach ($audit_info as $audit) {
                 $finance_log[$audit->id] = [
                     'id' => $audit->id,
-                    'action' => $action_array[$audit->audit_trail_action_name],
-                    'table' => $table_array[$audit->audit_trail_table_name],
-                    'user_id' => $audit->user->name,
+                    // Defensive default: see `invoicelog()` above.
+                    'action' => $action_array[$audit->audit_trail_action_name] ?? '',
+                    'table' => $table_array[$audit->audit_trail_table_name] ?? '',
+                    'user_id' => $audit->user->name ?? '',
                     'created_at' => $audit->created_at,
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
@@ -762,7 +815,7 @@ class InvoicesController extends Controller
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         if ($response['status']) {
-            SMSLogs::find($smsId)->update(['status' => 1]);
+            SMSLogs::find($smsId)?->update(['status' => 1]);
         }
 
         return $response;

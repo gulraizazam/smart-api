@@ -208,8 +208,8 @@ class GeneralFunctions
                     if (!empty($services)) {
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            $serv = Services::where('id', $service->id)->first();
-                            if ($serv->parent_id == '0') {
+                            // $service is already loaded from the parent query — no need to re-fetch.
+                            if ($service->parent_id == '0') {
                                 if (Gate::allows('view_inactive_services')) {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                 } else {
@@ -242,8 +242,8 @@ class GeneralFunctions
                     if (!empty($services)) {
                         $mergedServices = [];
                         foreach ($services as $key => $service) {
-                            $serv = Services::where(['id' => $service->id])->first();
-                            if ($serv->parent_id == '0') {
+                            // $service is already loaded from the parent query — no need to re-fetch.
+                            if ($service->parent_id == '0') {
                                 if (Gate::allows('view_inactive_services')) {
                                     $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                 } else {
@@ -434,8 +434,8 @@ class GeneralFunctions
                         if (!empty($services)) {
                             $mergedServices = [];
                             foreach ($services as $key => $service) {
-                                $serv = Services::where('id', $service->id)->first();
-                                if ($serv->parent_id == '0') {
+                                // $service is already loaded from the parent query — no need to re-fetch.
+                                if ($service->parent_id == '0') {
                                     if (Gate::allows('view_inactive_services')) {
                                         $children = Services::where('parent_id', $service->id)->where('active', $filters['status'])->orderBy('name')->get();
                                     } else {
@@ -476,8 +476,8 @@ class GeneralFunctions
                         if (!empty($services)) {
                             $mergedServices = [];
                             foreach ($services as $key => $service) {
-                                $serv = Services::where(['id' => $service->id])->first();
-                                if ($serv->parent_id == '0') {
+                                // $service is already loaded from the parent query — no need to re-fetch.
+                                if ($service->parent_id == '0') {
                                     if (Gate::allows('view_inactive_services')) {
                                         $children = Services::where(['parent_id' => $service->id, 'active' => $filters['status']])->orderBy('name')->get();
                                     } else {
@@ -569,10 +569,13 @@ class GeneralFunctions
                         return $mergedServices;
                     }
                 }
+                // Root services are stored with parent_id = NULL (legacy data may use 0).
                 $query = Services::with(['children' => function ($q) {
                     $q->where('active', 1)->orderBy('name');
                 }])
-                    ->where(['parent_id' => 0])
+                    ->where(function ($q) {
+                        $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                    })
                     ->where('slug', '!=', 'all')
                     ->when(isset($where) && !empty($where), fn ($q) => $q->where($where));
                 $services = $query->get()->toArray();
@@ -590,10 +593,14 @@ class GeneralFunctions
         } else {
 
             try {
+                // Root services are stored with parent_id = NULL (legacy data may use 0).
                 $query = Services::with(['children' => function ($q) {
                     $q->where('active', 1)->orderBy('name');
                 }])
-                    ->where(['id' => $id, 'parent_id' => 0])
+                    ->where('id', $id)
+                    ->where(function ($q) {
+                        $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                    })
                     ->where('slug', '!=', 'all');
                 $services[] = $query->first()->toArray();
                 $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();

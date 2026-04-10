@@ -103,7 +103,7 @@ class FinanceConversionReport
             ->orderBy('appointments.created_at', 'desc')
             ->get();
 
-        $centerWise = Appointments::select('appointments.id', 'appointments.location_id', DB::raw('count(appointments.id) as count'))
+        $centerWise = Appointments::select('appointments.location_id', DB::raw('count(appointments.id) as count'))
             ->join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
             ->where($where)

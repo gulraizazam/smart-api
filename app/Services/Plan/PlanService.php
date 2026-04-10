@@ -64,6 +64,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 final class PlanService
 {
@@ -279,7 +280,13 @@ final class PlanService
 
         return [
             'locations'     => $locations,
-            'random_id'     => md5(time() . random_int(1, 9999) . random_int(78599, 99999)),
+            // Round 4 Crypto-H1 — Str::random uses random_bytes() (CSPRNG).
+            // The previous md5(time() + bounded random_int) was guessable
+            // because both inputs had ~26 bits of entropy total — an attacker
+            // who could pre-compute md5 values for the current second range
+            // could collide with another user's pending plan and inject
+            // services into it via the random_id-keyed PackageService rows.
+            'random_id'     => Str::random(32),
             'paymentmodes'  => $paymentmodes,
             'range'         => $range,
             'discount_type' => config('constants.amount_types'),
@@ -589,7 +596,15 @@ final class PlanService
             throw $e;
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Add Service To Package Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            // Round 4 Crypto-H3 — getTraceAsString() inlines argument values
+            // (patient ids, CNICs, phone numbers passed down the call chain)
+            // into the log line. Replace with file/line so debugging stays
+            // possible but PII does not land in storage/logs/laravel.log.
+            Log::error('Add Service To Package Error', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ]);
             throw PlanException::invalidOperation('Failed to add service to package: ' . $e->getMessage());
         }
     }
@@ -632,7 +647,12 @@ final class PlanService
             throw $e;
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Save Plan Package Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            // Round 4 Crypto-H3 — see comment on Add Service handler above.
+            Log::error('Save Plan Package Error', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ]);
             throw PlanException::invalidOperation('Failed to save package: ' . $e->getMessage());
         }
     }
@@ -701,7 +721,12 @@ final class PlanService
             throw $e;
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Update Plan Package Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            // Round 4 Crypto-H3 — see comment on Add Service handler above.
+            Log::error('Update Plan Package Error', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ]);
             throw PlanException::invalidOperation('Failed to update package: ' . $e->getMessage());
         }
     }
@@ -719,7 +744,10 @@ final class PlanService
             $package = Packages::with('user', 'location')->find($packageId)
                 ?? throw PlanException::notFound($packageId);
 
-            $totalPrice = PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
+            // Cast to float — Eloquent `sum()` on a decimal column returns a
+            // string, which would break the JS `total_price.toFixed(...)` call
+            // on the plan edit screen.
+            $totalPrice = (float) PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
 
             $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
@@ -846,9 +874,12 @@ final class PlanService
                 ->where('package_id', $packageId)
                 ->get();
 
-            $packageServicesPrice = $package->plan_type === PlanType::Membership
+            // Cast to float — Eloquent `sum()` on a decimal column returns a
+            // string, which would break the `round()` call below (PHP 8
+            // rejects strings in numeric functions).
+            $packageServicesPrice = (float) ($package->plan_type === PlanType::Membership
                 ? PackageBundles::where('package_id', $packageId)->sum('tax_including_price')
-                : PackageService::where('package_id', $packageId)->sum('price');
+                : PackageService::where('package_id', $packageId)->sum('price'));
 
             $packageAdvances = PackageAdvances::with('paymentmode')
                 ->where([
@@ -1963,8 +1994,14 @@ final class PlanService
         ]);
 
         if ($actualConsumed > 0) {
-            $patient = User::find($userId);
-            ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
+            // ActivityLogger::logVoucherConsumed() is typed to
+            // App\Models\Patients. Fetching via User::find() returns a
+            // User instance and TypeErrors at the logger call, matching
+            // the bug pattern fixed in MembershipAssignmentService.
+            $patient = Patients::find($userId);
+            if ($patient) {
+                ActivityLogger::logVoucherConsumed($actualConsumed, $patient, $discount, $amountLeft);
+            }
         }
     }
 
@@ -2432,7 +2469,7 @@ final class PlanService
         $total = number_format(round(($packageTotal - $packageService->tax_including_price)));
 
         PackageService::where('package_bundle_id', '=', $id)->delete();
-        PackageBundles::find($id)->forcedelete();
+        PackageBundles::find($id)?->forcedelete();
 
         $oldTotal = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
 
@@ -3350,7 +3387,7 @@ final class PlanService
         }
 
         if ($response['status']) {
-            SMSLogs::find($smsLogId)->update(['status' => 1]);
+            SMSLogs::find($smsLogId)?->update(['status' => 1]);
             return ['success' => true, 'message' => 'SMS sent successfully.'];
         }
 

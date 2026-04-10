@@ -15,13 +15,13 @@ class CreateDoctorGoogleReviewsTable extends Migration
     {
         Schema::create('doctor_google_reviews', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id')->index();
-            $table->unsignedInteger('doctor_id')->index();
+            $table->unsignedBigInteger('account_id')->index();
+            $table->unsignedBigInteger('doctor_id')->index();
             $table->unsignedTinyInteger('month')->index();
             $table->year('year')->index();
             $table->unsignedInteger('review_count')->default(0);
-            $table->unsignedInteger('created_by')->nullable();
-            $table->unsignedInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->unique(['account_id', 'doctor_id', 'month', 'year'], 'doctor_reviews_unique');

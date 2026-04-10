@@ -23,12 +23,12 @@ return new class extends Migration
             $table->tinyInteger('status')->unsigned()->nullable();
             $table->text('sms_data')->nullable();
             $table->text('error_msg')->nullable();
-            $table->unsignedInteger('lead_id')->nullable();
-            $table->unsignedInteger('appointment_id')->nullable();
-            $table->unsignedInteger('invoice_id')->nullable();
-            $table->unsignedInteger('package_id')->nullable();
+            $table->unsignedBigInteger('lead_id')->nullable();
+            $table->unsignedBigInteger('appointment_id')->nullable();
+            $table->unsignedBigInteger('invoice_id')->nullable();
+            $table->unsignedBigInteger('package_id')->nullable();
             $table->boolean('is_refund')->default(false);
-            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

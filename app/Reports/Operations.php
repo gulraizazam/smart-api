@@ -267,6 +267,52 @@ class Operations
         $locationclient = [];
         $invoicesstatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
 
+        // Build month range once (replaces per-row whereYear+whereMonth which can't use index)
+        $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->addMonth();
+
+        $locationIds = array_column($locationdf, 'id');
+
+        // Pre-aggregate per-patient revenue across ALL locations in one query.
+        // Replaces N+1 (one sum query per patient × per location).
+        $revenueRows = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+            ->where('invoices.created_at', '>=', $monthStart)
+            ->where('invoices.created_at', '<', $monthEnd)
+            ->where('invoices.invoice_status_id', '=', $invoicesstatus->id)
+            ->whereIn('invoices.location_id', $locationIds)
+            ->select(
+                'invoices.location_id',
+                'invoices.patient_id',
+                DB::raw('SUM(invoice_details.net_amount) as revenue')
+            )
+            ->groupBy('invoices.location_id', 'invoices.patient_id')
+            ->get();
+
+        // Index by [location_id][patient_id] => revenue for O(1) lookup in the loop.
+        $revenueByLocPatient = [];
+        foreach ($revenueRows as $row) {
+            $revenueByLocPatient[$row->location_id][$row->patient_id] = $row->revenue;
+        }
+
+        // Pre-fetch all distinct (location_id, patient_id) pairs from appointments in one query.
+        $appointmentClients = Appointments::whereIn('location_id', $locationIds)
+            ->select('location_id', 'patient_id')
+            ->distinct()
+            ->get();
+
+        // Group patient IDs by location.
+        $patientIdsByLocation = [];
+        foreach ($appointmentClients as $apt) {
+            $patientIdsByLocation[$apt->location_id][] = $apt->patient_id;
+        }
+
+        // Batch-load all unique patient records (replaces N+1 User::find).
+        $allPatientIds = array_unique($appointmentClients->pluck('patient_id')->all());
+        $patientMap = User::whereIn('id', $allPatientIds)
+            ->select('id', 'name', 'email', 'phone', 'gender', 'dob')
+            ->get()
+            ->keyBy('id');
+
         foreach ($locationdf as $location) {
             $locationclient[$location['id']] = [
                 'id' => $location['id'],
@@ -275,43 +321,34 @@ class Operations
                 'city' => $filters['cities'][$location['city_id']]->name,
                 'clients' => [],
             ];
-            $locationclients = Appointments::where('location_id', '=', $location['id'])->groupBy('patient_id')->select('patient_id')->get();
-            if (!empty($locationclients)) {
-                $c = 0;
-                foreach ($locationclients as $client) {
-                    $clientinformation = User::find($client->patient_id);
-                    $revenuesum = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                        ->whereYear('invoices.created_at', '=', $data['year'])
-                        ->whereMonth('invoices.created_at', '=', $data['month'])
-                        ->where([
-                            ['invoices.invoice_status_id', '=', $invoicesstatus->id],
-                            ['invoices.location_id', '=', $location['id']],
-                            ['invoices.patient_id', '=', $client->patient_id],
-                        ])->sum('invoice_details.net_amount');
-                    $locationclient[$location['id']]['clients'][$c++] = [
-                        'id' => $clientinformation->id,
-                        'name' => $clientinformation->name,
-                        'email' => $clientinformation->email,
-                        'phone' => GeneralFunctions::prepareNumber4Call($clientinformation->phone),
-                        'gender' => ($clientinformation->gender == '1') ? 'Male' : 'Female',
-                        'dob' => $clientinformation->dob,
-                        'Revenue' => $revenuesum,
-                    ];
-                }
-                for ($j = 0; $j < count($locationclient[$location['id']]['clients']); $j++) {
-                    for ($i = 0; $i < count($locationclient[$location['id']]['clients']) - 1; $i++) {
 
-                        if ($locationclient[$location['id']]['clients'][$i]['Revenue'] < $locationclient[$location['id']]['clients'][$i + 1]['Revenue']) {
-                            $temp = $locationclient[$location['id']]['clients'][$i + 1];
-                            $locationclient[$location['id']]['clients'][$i + 1] = $locationclient[$location['id']]['clients'][$i];
-                            $locationclient[$location['id']]['clients'][$i] = $temp;
-                        }
-                    }
-                }
-
-            } else {
+            $clientIds = $patientIdsByLocation[$location['id']] ?? [];
+            if (empty($clientIds)) {
                 unset($locationclient[$location['id']]);
+                continue;
             }
+
+            $clients = [];
+            foreach ($clientIds as $patientId) {
+                $patient = $patientMap->get($patientId);
+                if (!$patient) {
+                    continue;
+                }
+                $clients[] = [
+                    'id' => $patient->id,
+                    'name' => $patient->name,
+                    'email' => $patient->email,
+                    'phone' => GeneralFunctions::prepareNumber4Call($patient->phone),
+                    'gender' => ($patient->gender == '1') ? 'Male' : 'Female',
+                    'dob' => $patient->dob,
+                    'Revenue' => $revenueByLocPatient[$location['id']][$patientId] ?? 0,
+                ];
+            }
+
+            // Sort by Revenue descending (replaces O(n²) bubble sort).
+            usort($clients, fn($a, $b) => $b['Revenue'] <=> $a['Revenue']);
+
+            $locationclient[$location['id']]['clients'] = $clients;
         }
 
         return $locationclient;
@@ -340,8 +377,12 @@ class Operations
             '=',
             '1',
         ];
-        $serviceinformation = Services::where($where)->whereYear('created_at', '=', $data['year'])
-            ->whereMonth('created_at', '=', $data['month'])->get();
+        $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->addMonth();
+        $serviceinformation = Services::where($where)
+            ->where('created_at', '>=', $monthStart)
+            ->where('created_at', '<', $monthEnd)
+            ->get();
 
         return $serviceinformation;
     }
@@ -374,7 +415,12 @@ class Operations
             '=',
             '1',
         ];
-        $serviceinformation = Services::where($where)->whereYear('created_at', '=', $data['year'])->whereMonth('created_at', '=', $data['month'])->get();
+        $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+        $monthEnd = $monthStart->copy()->addMonth();
+        $serviceinformation = Services::where($where)
+            ->where('created_at', '>=', $monthStart)
+            ->where('created_at', '<', $monthEnd)
+            ->get();
 
         return $serviceinformation;
     }
@@ -518,11 +564,13 @@ class Operations
 
     /*
      * Function that return the count of conversion in Book,GC report
+     *
+     * Was: 1 appointment fetch + 2 sum queries PER appointment (could be 100s
+     * per location). Refactored to 1 appointment fetch + 2 grouped aggregate
+     * queries total — runs in O(1) DB roundtrips regardless of appointment count.
      */
     public static function conversion_count($date_range_by, $start_date, $end_date, $appointment_type, $location, $arrived, $practit_where)
     {
-        $count = 0;
-
         $appointments = Appointments::where([
             ['location_id', '=', $location],
             ['appointment_type_id', '=', $appointment_type],
@@ -531,28 +579,49 @@ class Operations
             ->where($practit_where)
             ->whereDate($date_range_by, '>=', $start_date)
             ->whereDate($date_range_by, '<=', $end_date)
+            ->select('id')
             ->get();
-        foreach ($appointments as $appointment) {
-            $Advance_amount_1 = Packages::join('package_advances', 'packages.id', '=', 'package_advances.package_id')
-                ->where('packages.appointment_id', '=', $appointment->id)
-                ->whereDate('package_advances.created_at', '>=', $start_date)
-                ->whereDate('package_advances.created_at', '<=', $end_date)
-                ->where('package_advances.cash_amount', '>', 0)
-                ->sum('package_advances.cash_amount');
-            if ($Advance_amount_1 > 0) {
-                $count++;
-            } else {
-                $Advance_amount_2 = Appointments::join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
-                    ->join('package_advances', 'appoint_2.id', '=', 'package_advances.appointment_id')
-                    ->where('appointments.id', '=', $appointment->id)
-                    ->whereYear('package_advances.created_at', '>=', $start_date)
-                    ->whereMonth('package_advances.created_at', '<=', $end_date)
-                    ->where('package_advances.cash_amount', '>', 0)
-                    ->sum('package_advances.cash_amount');
 
-                if ($Advance_amount_2 > 0) {
-                    $count++;
-                }
+        if ($appointments->isEmpty()) {
+            return 0;
+        }
+
+        $appointmentIds = $appointments->pluck('id')->all();
+
+        // Direct: appointments that have payments via Packages.appointment_id
+        // (was per-row sum query in the loop)
+        $directSums = Packages::join('package_advances', 'packages.id', '=', 'package_advances.package_id')
+            ->whereIn('packages.appointment_id', $appointmentIds)
+            ->whereDate('package_advances.created_at', '>=', $start_date)
+            ->whereDate('package_advances.created_at', '<=', $end_date)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('packages.appointment_id', DB::raw('SUM(package_advances.cash_amount) as total'))
+            ->groupBy('packages.appointment_id')
+            ->pluck('total', 'packages.appointment_id');
+
+        // Indirect: appointments whose child appointments have payments
+        // (was per-row sum query in the loop)
+        $childSums = Appointments::from('appointments as parent_appt')
+            ->join('appointments as appoint_2', 'parent_appt.id', '=', 'appoint_2.appointment_id')
+            ->join('package_advances', 'appoint_2.id', '=', 'package_advances.appointment_id')
+            ->whereIn('parent_appt.id', $appointmentIds)
+            ->whereDate('package_advances.created_at', '>=', $start_date)
+            ->whereDate('package_advances.created_at', '<=', $end_date)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('parent_appt.id as parent_id', DB::raw('SUM(package_advances.cash_amount) as total'))
+            ->groupBy('parent_appt.id')
+            ->pluck('total', 'parent_id');
+
+        $count = 0;
+        foreach ($appointments as $appointment) {
+            $direct = (float) ($directSums[$appointment->id] ?? 0);
+            if ($direct > 0) {
+                $count++;
+                continue;
+            }
+            $child = (float) ($childSums[$appointment->id] ?? 0);
+            if ($child > 0) {
+                $count++;
             }
         }
 
@@ -704,7 +773,20 @@ class Operations
 
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
 
-        $appointment_info = Appointments::with('location:id,name')->where($where)
+        // Eager load every relationship the foreach below touches.
+        // Without this, each row triggers 7 lazy-load queries (patient,
+        // appointment_type, doctor, service, appointment_status_base,
+        // appointment_status, location). At 1000 rows that's ~7000 queries.
+        $appointment_info = Appointments::with([
+                'patient:id,name',
+                'appointment_type:id,name,slug',
+                'doctor:id,name',
+                'service:id,name',
+                'appointment_status_base:id,name',
+                'appointment_status:id,name,is_arrived,is_converted',
+                'location:id,name',
+            ])
+            ->where($where)
             ->whereNotNull('scheduled_date')
             ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
@@ -713,7 +795,7 @@ class Operations
             ->orderBy('appointment_type_id', 'asc')
             ->get();
 
-        $walkinAppointment = Appointments::select('id', 'location_id', DB::raw('count(id) as count'))
+        $walkinAppointment = Appointments::select('location_id', DB::raw('count(id) as count'))
             ->where($where)
             ->whereNotNull('scheduled_date')
             ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
@@ -782,7 +864,19 @@ class Operations
 
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
 
-        $appointment_info = Appointments::where($where)
+        // Eager load every relationship the foreach below touches to avoid
+        // 7 lazy-load queries per row (patient/type/doctor/service/status_base/
+        // status/location).
+        $appointment_info = Appointments::with([
+                'patient:id,name',
+                'appointment_type:id,name,slug',
+                'doctor:id,name',
+                'service:id,name',
+                'appointment_status_base:id,name',
+                'appointment_status:id,name,is_arrived,is_converted',
+                'location:id,name',
+            ])
+            ->where($where)
             ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
             ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
             ->whereIn('location_id', ACL::getUserCentres())
@@ -793,7 +887,7 @@ class Operations
             ->orderBy('appointment_type_id', 'asc')
             ->get();
 
-        $walkinAppointment = Appointments::select('id', 'location_id', DB::raw('count(id) as walkin'))
+        $walkinAppointment = Appointments::select('location_id', DB::raw('count(id) as walkin'))
             ->where($where)
             ->whereNotNull('scheduled_date')
             ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
@@ -1022,6 +1116,8 @@ class Operations
                     'city' => $location->city->name,
                     'doctors' => [],
                 ];
+                $monthStart = Carbon::createFromDate((int) $data['year'], (int) $data['month'], 1)->startOfMonth();
+                $monthEnd = $monthStart->copy()->addMonth();
                 foreach ($staff_target as $staff) {
                     $staff_target_service = StaffTargetServices::where('staff_target_id', '=', $staff->id)->get();
                     if (!empty($staff_target_service)) {
@@ -1032,8 +1128,8 @@ class Operations
                                     ['appointments.location_id', '=', $location->id],
                                     ['appointments.service_id', '=', $staffservice->service_id],
                                     ['appointments.doctor_id', '=', $staffservice->staff_id],
-                                ])->whereYear('appointments.created_at', '=', $data['year'])
-                                ->whereMonth('appointments.created_at', '=', $data['month'])
+                                ])->where('appointments.created_at', '>=', $monthStart)
+                                ->where('appointments.created_at', '<', $monthEnd)
                                 ->get());
                             $d = cal_days_in_month(CAL_GREGORIAN, $data['month'], $data['year']);
 

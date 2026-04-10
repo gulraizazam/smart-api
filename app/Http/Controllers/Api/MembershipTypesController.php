@@ -180,11 +180,17 @@ final class MembershipTypesController extends Controller
 
     public function getActiveTypes(Request $request): JsonResponse
     {
-        $patientId = $request->integer('patient_id') ?: null;
+        try {
+            $patientId = $request->integer('patient_id') ?: null;
 
-        $data = $this->membershipTypeService->getActiveTypesForPatient($patientId);
+            $data = $this->membershipTypeService->getActiveTypesForPatient($patientId);
 
-        return $this->success('Membership types retrieved successfully.', $data);
+            return $this->success('Membership types retrieved successfully.', $data);
+        } catch (\Throwable $e) {
+            Log::error('MembershipType getActiveTypes error', ['message' => $e->getMessage()]);
+
+            return $this->error('Something went wrong, please try again later.');
+        }
     }
 
 }

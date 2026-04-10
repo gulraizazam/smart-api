@@ -16,7 +16,7 @@ class AddAppointmentIdToActivitiesTable extends Migration
         if (Schema::hasTable('activities')) {
             Schema::table('activities', function (Blueprint $table) {
               if (!Schema::hasColumn('activities', 'appointment_id')) {
-                $table->unsignedBigInteger('appointment_id')->nullable()->after('plan_id');
+                $table->unsignedBigInteger('appointment_id')->nullable();
               }
             });
           }

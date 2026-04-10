@@ -145,7 +145,10 @@ function setPatientData(response) {
             $("#inactive-icon").removeClass("d-none");
         }
         if (patient.image_src) {
-            let image = asset_url + 'storage/patient_image/' + patient.image_src;
+            // Round 4 C3 — patient images now stream through the authenticated,
+            // account-scoped admin.files.patient_image route (not the public
+            // storage symlink). Filename is the only param.
+            let image = asset_url + 'admin/files/patient-image/' + patient.image_src;
             $("#profile_patient_avatar").css('background-image', "url(" + image + ")");
             $(".patient_profile_image").css('background-image', "url(" + image + ")");
         }

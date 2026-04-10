@@ -710,7 +710,7 @@ $(document).on('click', '#Add_appointment_comment', function () {
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
-            type: 'get',
+            type: 'post',
             url: route('admin.appointments.storecomment'),
             data: {
                 'comment': $('#appointment_comment').val(),

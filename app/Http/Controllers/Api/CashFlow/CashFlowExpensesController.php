@@ -528,7 +528,11 @@ class CashFlowExpensesController extends Controller
 
                 foreach ($expenses as $exp) {
 
-                    fputcsv($handle, [
+                    // Round 4 Inj-H1: defang formula-trigger characters
+                    // in user-supplied fields (vendor name, description,
+                    // flag reason) so opening the CSV in Excel cannot
+                    // execute embedded `=cmd|...` payloads.
+                    fputcsv_safe($handle, [
 
                         $exp->expense_date ? $exp->expense_date->format('d/m/Y') : '',
 

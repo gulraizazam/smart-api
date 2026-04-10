@@ -13,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('account_id');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->unsignedInteger('requested_by');
+            $table->unsignedBigInteger('requested_by');
             $table->enum('status', ['pending', 'approved', 'dismissed'])->default('pending');
             $table->text('admin_notes')->nullable();
             $table->unsignedBigInteger('category_id')->nullable()->comment('Linked category if approved');

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Resources\Lead;
 
 use App\Enums\Gender;
-use App\Helpers\GeneralFunctions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
@@ -28,9 +27,14 @@ class LeadResource extends JsonResource
             'lead_id' => $this->id,
             'name' => $this->name,
             'email' => $this->when($canViewContact, $this->email),
-            'phone' => $canViewContact
-                ? GeneralFunctions::prepareNumber4Call($this->phone)
-                : '***********',
+            // Return raw phone (digits-only, as stored). The phone field is
+            // consumed by inputs that validate digits-only (e.g. the lead
+            // search field on the create consultation form), so applying
+            // `prepareNumber4Call` here (which prepends `+92`) would break
+            // client-side validation. Display-time formatting for click-to-
+            // call should be done at the presentation layer, not in the API
+            // resource.
+            'phone' => $canViewContact ? $this->phone : '***********',
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => $this->resolveGenderLabel(),
             'active' => $this->active,

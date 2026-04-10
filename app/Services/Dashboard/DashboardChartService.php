@@ -603,12 +603,16 @@ class DashboardChartService
         $arrivedStatusId = DashboardHelper::getArrivedStatusId();
         $convertedStatusId = DashboardHelper::getConvertedStatusId();
 
-        // Fetch appointment statuses keyed by ID
-        $appointmentStatuses = AppointmentStatuses::where([
-            ['account_id', '=', Auth::user()->account_id],
-            ['active', '=', '1'],
-            ['parent_id', '=', '0'],
-        ])->where('id', '!=', $convertedStatusId)->get()->keyBy('id');
+        // Fetch appointment statuses keyed by ID.
+        // parent_id may be stored as NULL (root) or 0 depending on seed data.
+        $appointmentStatuses = AppointmentStatuses::where('account_id', Auth::user()->account_id)
+            ->where('active', '1')
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->where('id', '!=', $convertedStatusId)
+            ->get()
+            ->keyBy('id');
 
         [$startDate, $endDate] = DashboardHelper::getDateRange($period);
         $locationIds = DashboardHelper::getUserCentres();
@@ -834,7 +838,7 @@ class DashboardChartService
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('user_id', $userIds)
             ->groupBy($groupBy)
-            ->orderBy('user_id', 'ASC')
+            ->orderBy($groupBy, 'ASC')
             ->get();
 
         if ($stats->isEmpty()) {

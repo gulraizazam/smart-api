@@ -15,7 +15,7 @@ class AddLocationIdToStocksTable extends Migration
     {
         Schema::table('stocks', function (Blueprint $table) {
             if (!Schema::hasColumn('stocks', 'location_id')) {
-                $table->unsignedBigInteger('location_id')->nullable()->after('quantity');
+                $table->unsignedBigInteger('location_id')->nullable();
             }
         });
     }

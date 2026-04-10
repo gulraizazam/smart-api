@@ -3,25 +3,17 @@
 declare(strict_types=1);
 namespace App\Models\CashFlow;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class CashflowSetting extends Model
 {
+    use GuardsTenantBoundary;
+
     protected $table = 'cashflow_settings';
 
     protected $fillable = ['account_id', 'key', 'value', 'description'];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Model $model): void {
-            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
-                $model->account_id = Auth::user()->account_id;
-            }
-        });
-    }
 
     /**
      * Get a setting value by key for the given account.

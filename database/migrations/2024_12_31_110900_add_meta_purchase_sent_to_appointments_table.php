@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('appointments', function (Blueprint $table) {
-            $table->boolean('meta_purchase_sent')->default(0)->after('converted_at');
+            $table->boolean('meta_purchase_sent')->default(0);
         });
     }
 

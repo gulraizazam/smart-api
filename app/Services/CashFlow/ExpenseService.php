@@ -126,8 +126,8 @@ class ExpenseService
         // Check period lock
         if (CashflowHelper::isDateInLockedPeriod($data['expense_date'], $accountId)) {
             throw CashflowException::periodLocked(
-                date('n', strtotime($data['expense_date'])),
-                date('Y', strtotime($data['expense_date']))
+                (int) date('n', strtotime($data['expense_date'])),
+                (int) date('Y', strtotime($data['expense_date']))
             );
         }
 

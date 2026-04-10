@@ -15,7 +15,7 @@ class CreateGetDiscountServicesTable extends Migration
     {
         Schema::create('get_discount_services', function (Blueprint $table) {
             $table->id();
-            $table->integer('discount_id');
+            $table->unsignedBigInteger('discount_id');
             $table->string('service_price');
             $table->integer('sessions');
             $table->unsignedBigInteger('service_id');

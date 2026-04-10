@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('cashflow_notifications', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('account_id');
-            $table->unsignedInteger('user_id');
+            $table->unsignedBigInteger('user_id');
             $table->string('type', 50);
             $table->string('title');
             $table->text('message')->nullable();

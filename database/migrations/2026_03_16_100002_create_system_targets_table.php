@@ -15,11 +15,11 @@ class CreateSystemTargetsTable extends Migration
     {
         Schema::create('system_targets', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id')->index();
+            $table->unsignedBigInteger('account_id')->index();
             $table->string('target_key', 50)->index();
             $table->decimal('target_value', 12, 2)->default(0);
             $table->string('label')->nullable();
-            $table->unsignedInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->unique(['account_id', 'target_key'], 'system_targets_unique');

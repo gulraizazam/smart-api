@@ -3,12 +3,15 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Medical extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'created_at', 'updated_at'];
 
     protected static array $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date'];

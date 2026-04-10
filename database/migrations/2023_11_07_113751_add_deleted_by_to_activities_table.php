@@ -15,14 +15,17 @@ class AddDeletedByToActivitiesTable extends Migration
     {
         if (Schema::hasTable('activities')) {
             Schema::table('activities', function (Blueprint $table) {
+              // `after()` clauses removed — they referenced legacy columns
+              // (`created_by`) that the create migration on a fresh DB
+              // doesn't add. Column ordering is cosmetic only.
               if (!Schema::hasColumn('activities', 'deleted_by')) {
-                $table->unsignedBigInteger('deleted_by')->nullable()->after('created_by');
+                $table->unsignedBigInteger('deleted_by')->nullable();
               }
               if (!Schema::hasColumn('activities', 'rescheduled_by')) {
-                $table->unsignedBigInteger('rescheduled_by')->nullable()->after('deleted_by');
+                $table->unsignedBigInteger('rescheduled_by')->nullable();
               }
               if (!Schema::hasColumn('activities', 'deleted_date')) {
-                $table->date('deleted_date')->nullable()->after('deleted_by');
+                $table->date('deleted_date')->nullable();
               }
             });
           }

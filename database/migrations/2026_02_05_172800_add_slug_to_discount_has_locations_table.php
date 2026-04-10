@@ -14,7 +14,7 @@ class AddSlugToDiscountHasLocationsTable extends Migration
     public function up()
     {
         Schema::table('discount_has_locations', function (Blueprint $table) {
-            $table->string('slug', 40)->default('default')->after('amount');
+            $table->string('slug', 40)->default('default');
         });
     }
 

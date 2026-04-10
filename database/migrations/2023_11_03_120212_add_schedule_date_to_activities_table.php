@@ -14,7 +14,7 @@ class AddScheduleDateToActivitiesTable extends Migration
     public function up()
     {
         Schema::table('activities', function (Blueprint $table) {
-            $table->date('schedule_date')->nullable()->after('activity_type');
+            $table->date('schedule_date')->nullable();
         });
     }
 

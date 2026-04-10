@@ -262,14 +262,11 @@ class PaymentModes extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  array  $data
      * @return (mixed)
      */
-    public static function createRecord($request, $account_id)
+    public static function createRecord($data, $account_id)
     {
-
-        $data = $request->all();
-
         // Set Account ID
         $data['account_id'] = $account_id;
 
@@ -343,14 +340,12 @@ class PaymentModes extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  array  $data
      * @return (mixed)
      */
-    public static function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $data, $account_id)
     {
         $old_data = (PaymentModes::find($id))->toArray();
-
-        $data = $request->all();
 
         // Set Account ID
         $data['account_id'] = $account_id;

@@ -16,18 +16,18 @@ class TransferProducts extends Migration
         Schema::create('transfer_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id');
-            $table->integer('child_product_id');
-            $table->integer('product_detail_id')->nullable();
+            $table->unsignedBigInteger('child_product_id');
+            $table->unsignedBigInteger('product_detail_id')->nullable();
 
-            $table->unsignedInteger('from_location_id')->nullable();
+            $table->unsignedBigInteger('from_location_id')->nullable();
             $table->foreignId('from_warehouse_id')->nullable();
-            $table->unsignedInteger('to_location_id')->nullable();
+            $table->unsignedBigInteger('to_location_id')->nullable();
             $table->foreignId('to_warehouse_id')->nullable();
             $table->integer('quantity');
             $table->date('transfer_date')->nullable();
-            $table->unsignedInteger('account_id');
-            $table->unsignedInteger('created_by');
-            $table->unsignedInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('account_id');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
 
             $table->foreign('account_id')->references('id')->on('accounts');

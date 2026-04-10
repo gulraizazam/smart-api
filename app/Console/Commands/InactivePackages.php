@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 use App\Models\Bundles;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class InactivePackages extends Command
 {
@@ -47,10 +48,15 @@ class InactivePackages extends Command
                 Bundles::whereDate('end', '<=', $today)->update(['active' => 0]);
             }
 
-            return true;
+            return Command::SUCCESS;
 
         } catch (\Exception $exception) {
-            return $exception->getMessage().'------'.$exception->getFile();
+            Log::error('bundles:inactive failed: '.$exception->getMessage(), [
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
+
+            return Command::FAILURE;
         }
 
     }

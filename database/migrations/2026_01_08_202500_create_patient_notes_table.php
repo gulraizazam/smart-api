@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create('patient_notes', function (Blueprint $table) {
             $table->id();
-            $table->integer('patient_id');
-            $table->integer('created_by');
+            $table->unsignedBigInteger('patient_id');
+            $table->unsignedBigInteger('created_by');
             $table->text('note');
             $table->boolean('is_pinned')->default(false);
             $table->timestamps();

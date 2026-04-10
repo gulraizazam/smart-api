@@ -7,6 +7,7 @@ namespace App\Services\Town;
 use App\Helpers\Filters;
 use App\Models\Cities;
 use App\Models\Towns;
+use App\Support\SafeFilename;
 use Carbon\Carbon;
 use File;
 use Illuminate\Http\Request;
@@ -159,10 +160,17 @@ class TownService
             File::put($dir . '/index.html', 'Direct access is forbidden');
         }
 
-        $file    = $request->file('towns_file');
-        $name    = str_replace('.' . $file->getClientOriginalExtension(), '', $file->getClientOriginalName());
-        $ext     = $file->getClientOriginalExtension();
-        $newName = $name . '-' . rand(11111111, 99999999) . '.' . $ext;
+        $file = $request->file('towns_file');
+        // Sanitise the client-supplied name before joining it to a path
+        // under public/. The spreadsheet importer only needs a unique
+        // disk name; the original name is not surfaced to the UI.
+        $safe    = SafeFilename::sanitize(
+            $file->getClientOriginalName(),
+            ['xls', 'xlsx', 'csv'],
+        );
+        $newName = pathinfo($safe, PATHINFO_FILENAME)
+            . '-' . rand(11111111, 99999999)
+            . '.' . pathinfo($safe, PATHINFO_EXTENSION);
 
         $file->move($dir, $newName);
 

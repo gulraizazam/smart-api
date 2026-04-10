@@ -18,8 +18,8 @@ class AddTypeAndAmountToDiscountHasLocationsTable extends Migration
     public function up()
     {
         Schema::table('discount_has_locations', function (Blueprint $table) {
-            $table->enum('type', ['Fixed', 'Percentage'])->nullable()->after('service_id');
-            $table->double('amount', 11, 2)->nullable()->after('type');
+            $table->enum('type', ['Fixed', 'Percentage'])->nullable();
+            $table->double('amount', 11, 2)->nullable();
         });
     }
 

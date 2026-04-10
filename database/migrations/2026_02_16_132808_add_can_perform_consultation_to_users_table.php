@@ -14,7 +14,7 @@ class AddCanPerformConsultationToUsersTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('can_perform_consultation')->default(false)->after('commission');
+            $table->boolean('can_perform_consultation')->default(false);
         });
     }
 

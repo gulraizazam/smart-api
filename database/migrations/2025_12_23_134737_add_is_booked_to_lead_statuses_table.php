@@ -14,7 +14,7 @@ class AddIsBookedToLeadStatusesTable extends Migration
     public function up()
     {
         Schema::table('lead_statuses', function (Blueprint $table) {
-            $table->unsignedTinyInteger('is_booked')->default(0)->after('is_default');
+            $table->unsignedTinyInteger('is_booked')->default(0);
         });
     }
 

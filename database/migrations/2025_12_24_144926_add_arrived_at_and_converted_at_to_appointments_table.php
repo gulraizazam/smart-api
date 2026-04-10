@@ -14,8 +14,8 @@ class AddArrivedAtAndConvertedAtToAppointmentsTable extends Migration
     public function up()
     {
         Schema::table('appointments', function (Blueprint $table) {
-            $table->timestamp('arrived_at')->nullable()->after('scheduled_time');
-            $table->timestamp('converted_at')->nullable()->after('arrived_at');
+            $table->timestamp('arrived_at')->nullable();
+            $table->timestamp('converted_at')->nullable();
         });
     }
 

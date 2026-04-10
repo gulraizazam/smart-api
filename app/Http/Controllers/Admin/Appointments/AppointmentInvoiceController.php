@@ -95,7 +95,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
 
                     $status = 'true';
-                if (count($packages) <= 0) {
+                if ($packages->isEmpty()) {
                     $location_information = Locations::find($appointment->location_id);
                     $location_id = $appointment->location_id;
                     $serviceinfo = Services::where('id', '=', $appointment->service_id)->first();

@@ -500,9 +500,14 @@ class AppointmentService
                             'lead_id' => $lead->id,
                         ]);
                     } catch (\Exception $e) {
+                        // Round 4 Crypto-H3 — getTraceAsString() inlines
+                        // argument values (lead phone numbers, emails) into
+                        // the log line. Use file/line instead so PII does
+                        // not land in storage/logs/laravel.log.
                         \Log::error('Meta CAPI booked event failed: ' . $e->getMessage(), [
                             'lead_id' => $lead->id,
-                            'exception' => $e->getTraceAsString(),
+                            'file'    => $e->getFile(),
+                            'line'    => $e->getLine(),
                         ]);
                     }
                     
@@ -1064,8 +1069,10 @@ class AppointmentService
                     Carbon::now()->startOfWeek(),
                     Carbon::now()->endOfWeek()
                 ])->count(),
-                'this_month' => (clone $query)->whereMonth('scheduled_date', Carbon::now()->month)
-                    ->whereYear('scheduled_date', Carbon::now()->year)->count(),
+                'this_month' => (clone $query)->whereBetween('scheduled_date', [
+                    Carbon::now()->startOfMonth(),
+                    Carbon::now()->endOfMonth(),
+                ])->count(),
             ];
         });
     }

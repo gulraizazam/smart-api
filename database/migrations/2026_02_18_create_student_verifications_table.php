@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('student_verifications', function (Blueprint $table) {
             $table->id();
-            $table->integer('patient_id')->unsigned();
-            $table->integer('membership_id')->unsigned()->nullable();
-            $table->integer('membership_type_id')->unsigned();
-            $table->integer('package_id')->unsigned()->nullable();
+            $table->unsignedBigInteger('patient_id');
+            $table->unsignedBigInteger('membership_id')->nullable();
+            $table->unsignedBigInteger('membership_type_id');
+            $table->unsignedBigInteger('package_id')->nullable();
             
             // Document paths (JSON array)
             $table->json('document_paths');
@@ -26,8 +26,8 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
             
             // Approval workflow
-            $table->integer('submitted_by')->unsigned();
-            $table->integer('reviewed_by')->unsigned()->nullable();
+            $table->unsignedBigInteger('submitted_by');
+            $table->unsignedBigInteger('reviewed_by')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('reviewed_at')->nullable();
             

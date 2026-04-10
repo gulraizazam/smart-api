@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cashflow_vendors', function (Blueprint $table) {
-            $table->unsignedBigInteger('category_id')->nullable()->after('category');
+            $table->unsignedBigInteger('category_id')->nullable();
             $table->foreign('category_id')->references('id')->on('expense_categories')->onDelete('set null');
         });
     }

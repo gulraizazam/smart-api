@@ -24,13 +24,20 @@ class Documents extends BaseModel
     protected $appends = ['full_url'];
 
     /**
-     * Get the full URL for the document
+     * Get the full URL for the document.
+     *
+     * Round 4 C3 — documents previously lived under storage/app/public/ and were
+     * served via the public/storage symlink. They have been moved to
+     * storage/app/patient_image/ (outside the symlink) and are now streamed
+     * through the authenticated, account-scoped admin.files.patient_image route.
+     * Documents.url is always stored as 'patient_image/<filename>' (see
+     * PatientService::storeUploadedFile and PatientsController::documentstore).
      */
     protected function fullUrl(): Attribute
     {
         return Attribute::make(
             get: fn (): ?string => $this->url
-                ? url('storage/app/public/' . $this->url)
+                ? route('admin.files.patient_image', ['filename' => basename($this->url)])
                 : null,
         );
     }

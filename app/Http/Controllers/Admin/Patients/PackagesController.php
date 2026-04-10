@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -78,7 +79,11 @@ class PackagesController extends Controller
 
         $patients = User::find($id);
 
-        $random_id = md5(time().rand(0001, 9999).rand(78599, 99999));
+        // Round 4 Crypto-H1 — Str::random uses random_bytes() (CSPRNG).
+        // The previous md5(time + bounded rand) seed had only ~26 bits of
+        // entropy and was guessable, letting an attacker collide on the
+        // random_id used to key this user's pending plan rows.
+        $random_id = Str::random(32);
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select Payment Mode', '');
 
@@ -263,7 +268,7 @@ class PackagesController extends Controller
 
         $total = $package_total - $packageService->net_amount;
 
-        PackageBundles::find($request->id)->forcedelete();
+        PackageBundles::find($request->id)?->forcedelete();
 
         return response()->json([
             'status' => true,

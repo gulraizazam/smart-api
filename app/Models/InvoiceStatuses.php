@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,19 +12,9 @@ use Illuminate\Support\Facades\Auth;
 class InvoiceStatuses extends Model
 {
     use SoftDeletes;
+    use GuardsTenantBoundary;
 
     protected $fillable = ['name', 'account_id', 'created_at', 'updated_at', 'account_id'];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Model $model): void {
-            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
-                $model->account_id = Auth::user()->account_id;
-            }
-        });
-    }
 
     protected $table = 'invoice_statuses';
 

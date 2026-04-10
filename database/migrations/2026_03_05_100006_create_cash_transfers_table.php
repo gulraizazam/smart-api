@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('reference_no');
             $table->string('attachment_url', 500);
             $table->text('description')->nullable();
-            $table->unsignedInteger('created_by');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 

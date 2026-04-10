@@ -13,12 +13,12 @@ return new class extends Migration
         // Add extra fields to vendor_requests so the full vendor form data is stored
         if (!Schema::hasColumn('vendor_requests', 'contact_person')) {
             Schema::table('vendor_requests', function (Blueprint $table) {
-                $table->string('contact_person')->nullable()->after('name');
-                $table->string('email')->nullable()->after('phone');
-                $table->string('payment_terms')->nullable()->after('email');
-                $table->unsignedBigInteger('category_id')->nullable()->after('payment_terms');
-                $table->decimal('opening_balance', 14, 2)->default(0)->after('category_id');
-                $table->text('address')->nullable()->after('opening_balance');
+                $table->string('contact_person')->nullable();
+                $table->string('email')->nullable();
+                $table->string('payment_terms')->nullable();
+                $table->unsignedBigInteger('category_id')->nullable();
+                $table->decimal('opening_balance', 14, 2)->default(0);
+                $table->text('address')->nullable();
             });
         }
 

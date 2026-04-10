@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('cashflow_audit_logs', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('account_id');
-            $table->unsignedInteger('user_id')->nullable()->comment('NULL for system/auto actions');
+            $table->unsignedBigInteger('user_id')->nullable()->comment('NULL for system/auto actions');
             $table->enum('action', [
                 'created', 'updated', 'voided', 'approved', 'rejected',
                 'resubmitted', 'locked', 'unlocked', 'deactivated',

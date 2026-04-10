@@ -11,9 +11,11 @@ class AddFromLocationIdToTransferProductsTable extends Migration
      */
     public function up()
     {
-        Schema::table('transfer_products', function (Blueprint $table) {
-            $table->foreignId('from_location_id')->nullable()->references('id')->on('locations');
-        });
+        if (! Schema::hasColumn('transfer_products', 'from_location_id')) {
+            Schema::table('transfer_products', function (Blueprint $table) {
+                $table->foreignId('from_location_id')->nullable()->references('id')->on('locations');
+            });
+        }
     }
     /**
      * Reverse the migrations.

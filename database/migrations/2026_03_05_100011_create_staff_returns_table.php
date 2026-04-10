@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('staff_returns', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('account_id');
-            $table->unsignedInteger('user_id')->comment('Staff returning cash');
+            $table->unsignedBigInteger('user_id')->comment('Staff returning cash');
             $table->unsignedBigInteger('pool_id')->comment('Cash pool return deposited to');
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
-            $table->unsignedInteger('created_by');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 

@@ -6,6 +6,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Support\SafeFilename;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\R
 class Locations extends BaseModel
 {
     use SoftDeletes;
+
+    /**
+     * Resolve the factory class explicitly. The model is named `Locations`
+     * (plural) but the factory is `LocationFactory` (singular) — Laravel's
+     * auto-resolver only matches the exact `{ModelName}Factory` convention,
+     * so without this hint the framework looks for `LocationsFactory` and
+     * fails. Used by tests via Locations::factory().
+     */
+    protected static function newFactory(): \Database\Factories\LocationFactory
+    {
+        return \Database\Factories\LocationFactory::new();
+    }
 
     protected static function booted(): void
     {
@@ -300,6 +313,7 @@ class Locations extends BaseModel
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
                     ->whereIn('id', ACL::getUserCentres())
+                    ->select('service_has_locations.location_id')
                     ->groupBy('service_has_locations.location_id')
                     ->get());
             } else {
@@ -308,6 +322,7 @@ class Locations extends BaseModel
                     ->where($where)
                     ->where('locations.active', 1)
                     ->whereIn('id', ACL::getUserCentres())
+                    ->select('service_has_locations.location_id')
                     ->groupBy('service_has_locations.location_id')
                     ->get());
             }
@@ -328,6 +343,7 @@ class Locations extends BaseModel
                 ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                 ->where($where)
                 ->whereIn('id', ACL::getUserCentres())
+                ->select('service_has_locations.location_id')
                 ->groupBy('service_has_locations.location_id')
                 ->get());
         }
@@ -383,8 +399,9 @@ class Locations extends BaseModel
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
                     ->whereNull('deleted_at')
-                    ->groupBy('service_has_locations.location_id', 'locations.id')
-                    ->orderby('sort_no', 'asc')
+                    ->select('locations.*')
+                    ->distinct()
+                    ->orderby('locations.sort_no', 'asc')
                     ->limit($iDisplayLength)->offset($iDisplayStart)->get();
             } else {
                 return DB::table('locations')
@@ -393,8 +410,9 @@ class Locations extends BaseModel
                     ->where('active', 1)
                     ->whereIn('id', ACL::getUserCentres())
                     ->whereNull('deleted_at')
-                    ->groupBy('service_has_locations.location_id', 'locations.id')
-                    ->orderby('sort_no', 'asc')
+                    ->select('locations.*')
+                    ->distinct()
+                    ->orderby('locations.sort_no', 'asc')
                     ->limit($iDisplayLength)->offset($iDisplayStart)->get();
             }
         }
@@ -418,7 +436,8 @@ class Locations extends BaseModel
                 ->where($where)
                 ->whereIn('id', ACL::getUserCentres())
                 ->whereNull('deleted_at')
-                ->groupBy('service_has_locations.location_id', 'locations.id')
+                ->select('locations.*')
+                ->distinct()
                 ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         }
     }
@@ -832,7 +851,12 @@ class Locations extends BaseModel
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                $fileName = time().'-'.$file->getClientOriginalName();
+                // Filename hardening — sanitise the browser-supplied
+                // basename before joining it to a public storage path.
+                $fileName = time().'-'.SafeFilename::sanitize(
+                    $file->getClientOriginalName(),
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                );
                 $file->storeAs('public/centre_logo', $fileName);
                 $data['image_src'] = $fileName;
             }
@@ -958,7 +982,12 @@ class Locations extends BaseModel
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                $fileName = time().'-'.$file->getClientOriginalName();
+                // Filename hardening — sanitise the browser-supplied
+                // basename before joining it to a public storage path.
+                $fileName = time().'-'.SafeFilename::sanitize(
+                    $file->getClientOriginalName(),
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                );
                 $file->storeAs('public/centre_logo', $fileName);
                 $data['image_src'] = $fileName;
             }

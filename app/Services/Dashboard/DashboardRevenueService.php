@@ -54,7 +54,7 @@ class DashboardRevenueService
         ?string $endDate = null,
     ): array {
         if (!Gate::allows('dashboard_states')) {
-            return ['revenue' => null];
+            return ['revenue' => 0.0];
         }
 
         $userCentres ??= DashboardHelper::getUserCentres();
@@ -70,7 +70,7 @@ class DashboardRevenueService
             ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
             ->sum('total_price');
 
-        return ['revenue' => $revenue ?? 0];
+        return ['revenue' => (float) ($revenue ?? 0)];
     }
 
     public function getCollectionByCentre(string $type = '', ?Request $request = null): array

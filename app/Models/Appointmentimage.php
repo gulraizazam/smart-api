@@ -156,7 +156,16 @@ class Appointmentimage extends BaseModel
      */
     public static function DeleteRecord($id)
     {
-        $appointmentimage = Appointmentimage::find($id);
+        // Tenant-scoped: the parent appointment must belong to the caller's
+        // account. This closes a cross-tenant IDOR where any authenticated
+        // user could pass an arbitrary image id and delete another tenant's
+        // image. The bulk-delete path in AppointmentImageService is also
+        // tenant-scoped.
+        $accountId = Auth::user()->account_id;
+        $appointmentimage = Appointmentimage::whereHas(
+            'appointment',
+            fn ($q) => $q->where('account_id', $accountId)
+        )->find($id);
 
         if (! $appointmentimage) {
 
@@ -167,7 +176,7 @@ class Appointmentimage extends BaseModel
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.
-        if (Appointmentimage::isChildExists($id, Auth::user()->account_id)) {
+        if (Appointmentimage::isChildExists($id, $accountId)) {
 
             return [
                 'status' => false,

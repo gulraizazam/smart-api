@@ -44,17 +44,17 @@ class ApplicationUserService
             ])
             ->where('users.email', '!=', config('constants.super_admin_email', 'superadmin@redsignal.net'))
             ->where('users.account_id', $user->account_id)
-            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1))
-            ->groupBy('users.id');
+            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1));
 
         foreach ($where as $condition) {
             $baseQuery->where($condition[0], $condition[1], $condition[2]);
         }
 
-        $total = (clone $baseQuery)->pluck('users.id')->count();
+        $total = (clone $baseQuery)->distinct()->count('users.id');
 
         $users = (clone $baseQuery)
             ->select('users.*')
+            ->distinct()
             ->with(['user_has_locations', 'role_has_users'])
             ->orderBy($params['orderBy'] ?? 'users.name', $params['order'] ?? 'asc')
             ->offset($params['offset'] ?? 0)

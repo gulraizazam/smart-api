@@ -4,11 +4,14 @@ declare(strict_types=1);
 namespace App\Models\CashFlow;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PeriodLock extends Model
 {
+    use HasFactory;
+
     protected $table = 'period_locks';
 
     protected $fillable = [

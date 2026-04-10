@@ -251,7 +251,7 @@ class CancellationReasons extends BaseModel
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        $old_data = (CancellationReasons::find($id))->toArray();
+        $old_data = CancellationReasons::find($id)?->toArray() ?? [];
 
         $data = $request->all();
 

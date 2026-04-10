@@ -21,12 +21,41 @@ function sanitize_money(mixed $value): float
     return (float) $cleaned;
 }
 
+/**
+ * Build a safe (column, direction) tuple for an Eloquent orderBy() from a
+ * datatables-style request payload.
+ *
+ * Security: the field and direction are pulled from `request('sort')`, which
+ * is user-controlled. Without sanitisation Laravel passes the column name
+ * straight into a raw SQL `ORDER BY <col>` clause — confirmed exploitable
+ * via UNION-style injection. We restrict the field to `[A-Za-z0-9_]` plus a
+ * single optional `prefix.` segment, and the direction to `asc`/`desc`. If
+ * the input fails validation we silently fall back to the caller-provided
+ * defaults rather than throwing, since the helper is invoked from 70+ list
+ * controllers that have no error path.
+ */
 function getSortBy(\Illuminate\Http\Request $request, string $orderBy = 'name', string $order = 'asc', ?string $prefix = null): array
 {
-
     if ($request->has('sort')) {
-        $orderBy = $request->get('sort')['field'];
-        $order = $request->get('sort')['sort'];
+        $candidateField = $request->get('sort')['field'] ?? null;
+        $candidateOrder = $request->get('sort')['sort'] ?? null;
+
+        // Allow `column` or `prefix.column`. Anything else (spaces, parens,
+        // commas, semicolons, hyphens, etc.) is rejected — those are the
+        // characters an attacker would need for SQL injection.
+        if (is_string($candidateField)
+            && $candidateField !== ''
+            && preg_match('/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/', $candidateField) === 1
+        ) {
+            $orderBy = $candidateField;
+        }
+
+        if (is_string($candidateOrder)) {
+            $candidateOrder = strtolower($candidateOrder);
+            if ($candidateOrder === 'asc' || $candidateOrder === 'desc') {
+                $order = $candidateOrder;
+            }
+        }
     }
 
     if ($prefix && $orderBy === 'created_at') { /*to append prefix */
@@ -34,6 +63,51 @@ function getSortBy(\Illuminate\Http\Request $request, string $orderBy = 'name', 
     }
 
     return [$orderBy, $order];
+}
+
+/**
+ * Defang a single cell value before it lands in a CSV / XLSX export.
+ *
+ * Round 4 Inj-H1..4 — Excel and LibreOffice both interpret a cell whose
+ * first character is `=`, `+`, `-`, `@`, tab, or carriage return as a
+ * formula expression. An attacker who controls any user-editable field
+ * (vendor name, expense description, patient name…) can store a payload
+ * like `=cmd|'/c calc'!A0` and then trigger an export. When a different
+ * user opens the resulting file, the formula executes in their Excel
+ * context (DDE / WEBSERVICE / hyperlink-based exfil are all possible).
+ *
+ * The fix is to prepend a single quote to any string starting with one
+ * of those trigger characters. Excel treats `'=foo` as the literal text
+ * `=foo` (the quote is not displayed). Numbers and other strings pass
+ * through unchanged so legitimate exports look identical.
+ *
+ * Apply at the cell-value boundary, not the row level — for `fputcsv()`
+ * pair this with `fputcsv_safe()` below; for PhpSpreadsheet's
+ * `setCellValue()` wrap each user-controlled value individually.
+ */
+function csv_safe(mixed $value): mixed
+{
+    if (! is_string($value) || $value === '') {
+        return $value;
+    }
+
+    $first = $value[0];
+    if ($first === '=' || $first === '+' || $first === '-' || $first === '@'
+        || $first === "\t" || $first === "\r"
+    ) {
+        return "'" . $value;
+    }
+
+    return $value;
+}
+
+/**
+ * Drop-in replacement for `fputcsv()` that runs every cell through
+ * `csv_safe()` first. Use this anywhere user data is written to CSV.
+ */
+function fputcsv_safe($handle, array $fields, string $separator = ',', string $enclosure = '"', string $escape = '\\'): int|false
+{
+    return fputcsv($handle, array_map('csv_safe', $fields), $separator, $enclosure, $escape);
 }
 
 function getPaginationElement(\Illuminate\Http\Request $request, int $iTotalRecords, int $defaultPerPage = 30): array

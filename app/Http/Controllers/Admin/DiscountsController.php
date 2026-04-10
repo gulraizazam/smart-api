@@ -976,7 +976,7 @@ class DiscountsController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        DiscountHasLocations::find($request->id)->delete();
+        DiscountHasLocations::find($request->id)?->delete();
 
         return $this->successResponse('Row deleted', [
             'id' => $request->id,

@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('documents', function (Blueprint $table) {
-            $table->string('document_type')->nullable()->after('name');
+            $table->string('document_type')->nullable();
         });
     }
 

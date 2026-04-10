@@ -54,13 +54,18 @@ class NotificationService
 
     /**
      * Create a notification for a specific user.
+     *
+     * `$type` accepts either the raw string value persisted in the column
+     * or a CashflowNotificationType enum case — every internal call site
+     * passes the enum, so widening the contract here keeps both legacy
+     * string callers and enum callers working.
      */
-    public function notify(int $userId, string $type, string $title, ?string $message = null, ?array $data = null, ?int $accountId = null): CashflowNotification
+    public function notify(int $userId, string|CashflowNotificationType $type, string $title, ?string $message = null, ?array $data = null, ?int $accountId = null): CashflowNotification
     {
         return CashflowNotification::create([
             'account_id' => $accountId ?? Auth::user()->account_id,
             'user_id' => $userId,
-            'type' => $type,
+            'type' => $type instanceof CashflowNotificationType ? $type->value : $type,
             'title' => $title,
             'message' => $message,
             'data' => $data,
@@ -82,7 +87,7 @@ class NotificationService
                 $admin->id,
                 CashflowNotificationType::ExpensePending,
                 'Expense Pending Approval',
-                "Expense of PKR " . number_format($expense->amount, 2) . " by {$expense->creator->name} requires approval.",
+                "Expense of PKR " . number_format((float) $expense->amount, 2) . " by {$expense->creator->name} requires approval.",
                 ['expense_id' => $expense->id, 'amount' => $expense->amount],
                 $accountId
             );
@@ -98,7 +103,7 @@ class NotificationService
             $expense->created_by,
             CashflowNotificationType::ExpenseApproved,
             'Expense Approved',
-            "Your expense of PKR " . number_format($expense->amount, 2) . " has been approved.",
+            "Your expense of PKR " . number_format((float) $expense->amount, 2) . " has been approved.",
             ['expense_id' => $expense->id]
         );
     }
@@ -112,7 +117,7 @@ class NotificationService
             $expense->created_by,
             CashflowNotificationType::ExpenseRejected,
             'Expense Rejected',
-            "Your expense of PKR " . number_format($expense->amount, 2) . " was rejected. Reason: " . $expense->rejection_reason,
+            "Your expense of PKR " . number_format((float) $expense->amount, 2) . " was rejected. Reason: " . $expense->rejection_reason,
             ['expense_id' => $expense->id]
         );
     }
@@ -226,7 +231,7 @@ class NotificationService
                 $bm->id,
                 CashflowNotificationType::ExpenseForBranch,
                 'Expense Recorded for Your Branch',
-                "PKR " . number_format($expense->amount, 0) . " expense recorded for your branch — {$expense->description}.",
+                "PKR " . number_format((float) $expense->amount, 0) . " expense recorded for your branch — {$expense->description}.",
                 ['expense_id' => $expense->id, 'amount' => $expense->amount],
                 $accountId
             );

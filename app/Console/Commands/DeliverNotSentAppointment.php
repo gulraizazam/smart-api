@@ -115,7 +115,7 @@ class DeliverNotSentAppointment extends Command
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
             if ($response['status']) {
-                SMSLogs::find($smsId)->update(['status' => 1]);
+                SMSLogs::find($smsId)?->update(['status' => 1]);
             }
 
             \Log::Info('AppointmentId: '.json_encode($appointmentId));

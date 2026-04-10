@@ -20,7 +20,7 @@ class AddConsumptionOrderToPackageServicesTable extends Migration
     public function up()
     {
         Schema::table('package_services', function (Blueprint $table) {
-            $table->tinyInteger('consumption_order')->default(0)->after('is_consumed')
+            $table->tinyInteger('consumption_order')->default(0)
                   ->comment('0=normal, 1=BUY, 2=discounted GET, 3=free GET');
         });
     }
