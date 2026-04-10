@@ -1303,18 +1303,21 @@ class OperationsReportController extends Controller
             $grefund = 0;
             foreach ($reportData as $reportRow) {
 
+                // Round 4 Inj-H4: defang formula triggers in user-
+                // controlled fields (patient name, email, city/location/
+                // doctor/service names) before they land in the XLSX.
                 $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id)->getStyle('A'.$counter)->getFont();
-                $activeSheet->setCellValue('B'.$counter, $reportRow->name)->getStyle('B'.$counter)->getFont();
-                $activeSheet->setCellValue('C'.$counter, $reportRow->email)->getStyle('C'.$counter)->getFont();
-                $activeSheet->setCellValue('D'.$counter, $filters['cities'][$reportRow->city_id]->name)->getStyle('D'.$counter)->getFont();
-                $activeSheet->setCellValue('E'.$counter, $filters['locations'][$reportRow->location_id]->name)->getStyle('E'.$counter)->getFont();
-                $activeSheet->setCellValue('F'.$counter, $filters['appointment_types'][$reportRow->appointment_type_id]->name)->getStyle('F'.$counter)->getFont();
-                $activeSheet->setCellValue('G'.$counter, $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name)->getStyle('G'.$counter)->getFont();
-                $activeSheet->setCellValue('H'.$counter, $filters['doctors'][$reportRow->doctor_id]->name)->getStyle('H'.$counter)->getFont();
-                $activeSheet->setCellValue('I'.$counter, $filters['services'][$reportRow->service_id]->name)->getStyle('I'.$counter)->getFont();
+                $activeSheet->setCellValue('B'.$counter, csv_safe($reportRow->name))->getStyle('B'.$counter)->getFont();
+                $activeSheet->setCellValue('C'.$counter, csv_safe($reportRow->email))->getStyle('C'.$counter)->getFont();
+                $activeSheet->setCellValue('D'.$counter, csv_safe($filters['cities'][$reportRow->city_id]->name))->getStyle('D'.$counter)->getFont();
+                $activeSheet->setCellValue('E'.$counter, csv_safe($filters['locations'][$reportRow->location_id]->name))->getStyle('E'.$counter)->getFont();
+                $activeSheet->setCellValue('F'.$counter, csv_safe($filters['appointment_types'][$reportRow->appointment_type_id]->name))->getStyle('F'.$counter)->getFont();
+                $activeSheet->setCellValue('G'.$counter, csv_safe($filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name))->getStyle('G'.$counter)->getFont();
+                $activeSheet->setCellValue('H'.$counter, csv_safe($filters['doctors'][$reportRow->doctor_id]->name))->getStyle('H'.$counter)->getFont();
+                $activeSheet->setCellValue('I'.$counter, csv_safe($filters['services'][$reportRow->service_id]->name))->getStyle('I'.$counter)->getFont();
                 $activeSheet->setCellValue('J'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('J'.$counter)->getFont();
                 $activeSheet->setCellValue('K'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-')->getStyle('K'.$counter)->getFont();
-                $activeSheet->setCellValue('L'.$counter, $reportRow->invoices)->getStyle('L'.$counter)->getFont();
+                $activeSheet->setCellValue('L'.$counter, csv_safe($reportRow->invoices))->getStyle('L'.$counter)->getFont();
                 $counter++;
             }
         }

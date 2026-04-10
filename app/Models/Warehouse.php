@@ -5,6 +5,8 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use App\Helpers\Filters;
+use App\Models\Concerns\GuardsTenantBoundary;
+use App\Support\SafeFilename;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
@@ -15,19 +17,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Warehouse extends Model
 {
     use HasFactory;
+    use GuardsTenantBoundary;
 
     protected $fillable = ['name', 'manager_name', 'manager_phone', 'account_id',  'address', 'google_map', 'city_id', 'active', 'created_at', 'updated_at', 'image_src'];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Model $model): void {
-            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
-                $model->account_id = Auth::user()->account_id;
-            }
-        });
-    }
 
     /**
      * Get Total Records
@@ -223,7 +215,12 @@ class Warehouse extends Model
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                $fileName = time() . '-' . $file->getClientOriginalName();
+                // Filename hardening — sanitise the browser-supplied
+                // basename before joining it to a public storage path.
+                $fileName = time() . '-' . SafeFilename::sanitize(
+                    $file->getClientOriginalName(),
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                );
                 $file->storeAs('public/warehouse_logo', $fileName);
                 $data['image_src'] = $fileName;
             }
@@ -261,7 +258,12 @@ class Warehouse extends Model
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
-                $fileName = time() . '-' . $file->getClientOriginalName();
+                // Filename hardening — sanitise the browser-supplied
+                // basename before joining it to a public storage path.
+                $fileName = time() . '-' . SafeFilename::sanitize(
+                    $file->getClientOriginalName(),
+                    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
+                );
                 $file->storeAs('public/warehouse_logo', $fileName);
                 $data['image_src'] = $fileName;
             }

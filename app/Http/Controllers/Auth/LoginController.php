@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
@@ -34,53 +35,73 @@ class LoginController extends Controller
      */
     protected function authenticated(): void
     {
-        $account_id = Auth::user()->account_id;
+        $authedUser = Auth::user();
+        $account_id = $authedUser->account_id;
         session(['account_id' => $account_id]);
         $account = DB::table('accounts')->find($account_id);
         session(['account' => $account]);
 
+        // H2 — clear any failed-login counter / active lockout once a
+        // user has fully authenticated.
+        if ($authedUser instanceof User) {
+            $authedUser->recordSuccessfulLogin();
+        }
     }
 
     public function login(Request $request): \Illuminate\Http\RedirectResponse
     {
-
         $this->validateLogin($request);
 
-        // If the class is using the ThrottlesLogins trait, we can automatically throttle
-        // the login attempts for this application. We'll key this by the username and
-        // the IP address of the client making these requests into this application.
+        // ThrottlesLogins (cache-keyed, per IP+username). Existing behavior.
         if ($this->hasTooManyLoginAttempts($request)) {
             $this->fireLockoutEvent($request);
 
             return $this->sendLockoutResponse($request);
         }
 
-        // This section is the only change
+        // H2 — DB-backed account lockout. Survives cache flushes and is keyed
+        // to the user account, not the source IP. Looked up by the configured
+        // username column (typically 'email').
+        $username = $request->input($this->username());
+        $candidate = $username
+            ? User::where($this->username(), $username)->first()
+            : null;
+
+        if ($candidate && $candidate->isLocked()) {
+            $minutes = max(1, (int) ceil(now()->diffInMinutes($candidate->locked_until, false)));
+            return redirect()
+                ->back()
+                ->withInput($request->only($this->username(), 'remember'))
+                ->with(['error' => "Account is temporarily locked due to repeated failed login attempts. Try again in {$minutes} minute(s)."]);
+        }
+
         if ($this->guard()->validate($this->credentials($request))) {
+            /** @var User $user */
             $user = $this->guard()->getLastAttempted();
 
-            // Make sure the user is active
-            if ($user->active && $this->attemptLogin($request)) {
-                // Send the normal successful login response
-                return $this->sendLoginResponse($request);
-            } else {
-                // Increment the failed login attempts and redirect back to the
-                // login form with an error message.
+            // Inactive account: count this as a failed attempt for both
+            // the IP throttle and the per-account lockout, then bail.
+            if (! $user->active) {
                 $this->incrementLoginAttempts($request);
+                $user->recordFailedLogin();
 
                 return redirect()
                     ->back()
                     ->withInput($request->only($this->username(), 'remember'))
                     ->with(['error' => 'Your account has been deactivated, please contact administrator.']);
             }
+
+            if ($this->attemptLogin($request)) {
+                return $this->sendLoginResponse($request);
+            }
         }
 
-        // If the login attempt was unsuccessful we will increment the number of attempts
-        // to login and redirect the user back to the login form. Of course, when this
-        // user surpasses their maximum number of attempts they will get locked out.
+        // Failed credentials. Increment both the IP throttle and the per-
+        // account lockout (if we know which account was targeted).
         $this->incrementLoginAttempts($request);
-
-        //return $this->sendFailedLoginResponse($request);
+        if ($candidate) {
+            $candidate->recordFailedLogin();
+        }
 
         return redirect()
             ->back()

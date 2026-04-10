@@ -20,6 +20,9 @@ use App\Models\Patients;
 use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
+use App\Events\AppointmentEvent;
+use App\Events\CustomFormEvent;
+use App\Events\CustomFormFieldEvent;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
@@ -38,6 +41,7 @@ use App\Policies\ServicePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -61,6 +65,34 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
         $this->configureAuthorization();
         $this->registerObservers();
+        $this->registerAuditEventListeners();
+    }
+
+    /**
+     * Wire the legacy string-event audit trail listeners. The Appointments,
+     * CustomForms and CustomFormFields models dispatch string events
+     * ('appointment.created', 'custom_form.updating', etc.) from their boot()
+     * hooks, and the matching App\Events\*Event classes carry the audit-write
+     * logic in public methods — but until now no provider actually bound the
+     * two together, so the audit trail for these three tables has been a
+     * silent no-op. Pin the bindings here so every mutation on an
+     * appointment, custom form or custom form field leaves a paper trail.
+     */
+    private function registerAuditEventListeners(): void
+    {
+        foreach ([
+            'appointment.created' => [AppointmentEvent::class, 'created'],
+            'appointment.updating' => [AppointmentEvent::class, 'updating'],
+            'appointment.deleting' => [AppointmentEvent::class, 'deleting'],
+            'custom_form.created' => [CustomFormEvent::class, 'created'],
+            'custom_form.updating' => [CustomFormEvent::class, 'updating'],
+            'custom_form.deleting' => [CustomFormEvent::class, 'deleting'],
+            'custom_form_field.created' => [CustomFormFieldEvent::class, 'created'],
+            'custom_form_field.updating' => [CustomFormFieldEvent::class, 'updating'],
+            'custom_form_field.deleting' => [CustomFormFieldEvent::class, 'deleting'],
+        ] as $eventName => $handler) {
+            Event::listen($eventName, $handler);
+        }
     }
 
     private function configureRateLimiting(): void

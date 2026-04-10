@@ -66,7 +66,7 @@
                     <div class="patient-card-sidebar mb-4">
                         {{-- Patient Info --}}
                         <div class="text-center p-4 border-bottom">
-                            <div class="patient-avatar mx-auto mb-3" style="background-image: url('{{ $patient->image_src ? asset('storage/patient_image/' . $patient->image_src) : asset('assets/media/logos/avatar.jpg') }}')"></div>
+                            <div class="patient-avatar mx-auto mb-3" style="background-image: url('{{ $patient->image_src ? route('admin.files.patient_image', ['filename' => $patient->image_src]) : asset('assets/media/logos/avatar.jpg') }}')"></div>
                             <h5 class="mb-1">{{ $patient->name }}</h5>
                             <span class="text-muted">C-{{ $patient->id }}</span>
                             <div class="mt-2">

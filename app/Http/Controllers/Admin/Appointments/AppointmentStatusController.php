@@ -95,10 +95,14 @@ class AppointmentStatusController extends AppointmentBaseController
             $base_appointment_statuses = AppointmentStatuses::getBaseActiveSorted(Auth::user()->account_id);
         }
 
-        if (isset($appointment->appointment_status) && $appointment->appointment_status->parent_id != 0) {
-            $appointment_statuses = AppointmentStatuses::getActiveSorted($appointment->appointment_status->parent_id, Auth::user()->account_id);
-        } else {
-            $appointment_statuses[''] = '';
+        // Root statuses store parent_id as NULL. If the current status has a
+        // parent, return that parent's children so the child-status dropdown
+        // can show siblings. Otherwise return an empty array (the front-end
+        // uses an empty response to hide the child-status section).
+        $appointment_statuses = [];
+        $currentStatusParentId = $appointment->appointment_status->parent_id ?? null;
+        if (isset($appointment->appointment_status) && !empty($currentStatusParentId)) {
+            $appointment_statuses = AppointmentStatuses::getActiveSorted($currentStatusParentId, Auth::user()->account_id);
         }
 
         return $this->successResponse('Record found', [

@@ -80,8 +80,20 @@ class LeadSources extends BaseModel
         return self::where('account_id', $accountId)->get()->getDictionary();
     }
 
+    /**
+     * Guard for `LeadSourceService::delete()` — answers "would deleting
+     * this source orphan any existing leads?".
+     *
+     * The historical stub here returned `false`, so delete() would
+     * always soft-delete the source even when leads still referenced
+     * it. That left orphaned `leads.lead_source_id` values that broke
+     * the Marketing Report's source grouping. Pinned by
+     * `LeadSourceTrackingTest::test_delete_refuses_when_a_lead_references_the_source`.
+     */
     public static function isChildExists(int $id, int $accountId): bool
     {
-        return false;
+        return Leads::where('lead_source_id', $id)
+            ->where('account_id', $accountId)
+            ->exists();
     }
 }

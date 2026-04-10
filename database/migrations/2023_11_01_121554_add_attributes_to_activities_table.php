@@ -13,13 +13,31 @@ class AddAttributesToActivitiesTable extends Migration
      */
     public function up()
     {
+        // Production note: this migration assumed an older `activities` table
+        // shape with camelCase columns (`planId`, `patient`, `location`, ...)
+        // that pre-dated the snake_case rename. On a fresh DB the create
+        // migration already creates `plan_id` (and the camelCase columns
+        // never existed), so we (a) skip columns that already exist and
+        // (b) drop the `after()` clauses that reference non-existent siblings.
         Schema::table('activities', function (Blueprint $table) {
-            $table->unsignedBigInteger('plan_id')->nullable()->after('planId');
-            $table->unsignedBigInteger('service_id')->nullable()->after('service');
-            $table->string('activity_type')->nullable()->after('appointment_type');
-            $table->unsignedBigInteger('patient_id')->nullable()->after('patient');
-            $table->unsignedBigInteger('centre_id')->nullable()->after('location');
-            $table->unsignedBigInteger('user_id')->nullable()->after('created_by');
+            if (! Schema::hasColumn('activities', 'plan_id')) {
+                $table->unsignedBigInteger('plan_id')->nullable();
+            }
+            if (! Schema::hasColumn('activities', 'service_id')) {
+                $table->unsignedBigInteger('service_id')->nullable();
+            }
+            if (! Schema::hasColumn('activities', 'activity_type')) {
+                $table->string('activity_type')->nullable();
+            }
+            if (! Schema::hasColumn('activities', 'patient_id')) {
+                $table->unsignedBigInteger('patient_id')->nullable();
+            }
+            if (! Schema::hasColumn('activities', 'centre_id')) {
+                $table->unsignedBigInteger('centre_id')->nullable();
+            }
+            if (! Schema::hasColumn('activities', 'user_id')) {
+                $table->unsignedBigInteger('user_id')->nullable();
+            }
         });
     }
 

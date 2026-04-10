@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vendor_transactions', function (Blueprint $table) {
-            $table->date('transaction_date')->nullable()->after('reference_no');
-            $table->unsignedBigInteger('for_branch_id')->nullable()->after('transaction_date');
-            $table->boolean('is_for_general')->default(0)->after('for_branch_id');
+            $table->date('transaction_date')->nullable();
+            $table->unsignedBigInteger('for_branch_id')->nullable();
+            $table->boolean('is_for_general')->default(0);
         });
     }
 

@@ -37,7 +37,11 @@ class PatientService
     private const FILTER_KEY = 'patients';
     private const CACHE_TTL = 300;
     private const MEMBERSHIP_TYPES_CACHE_KEY = 'active_membership_types';
-    private const STORAGE_PATH = 'public/patient_image';
+    // Round 4 C3 — files now live under storage/app/patient_image/ (the 'local'
+    // disk), NOT storage/app/public/patient_image/. The public/storage symlink
+    // therefore no longer exposes them; reads must go through the authenticated
+    // PatientFileController route.
+    private const STORAGE_PATH = 'patient_image';
     private const STORAGE_DIR = 'patient_image';
     private const MAX_REFERRALS_PER_CODE = 2;
     private const GOLD_MEMBERSHIP_NAME = 'gold membership';
@@ -248,9 +252,13 @@ class PatientService
         $user = Auth::user();
         $data['phone'] = PhoneFormattingService::cleanNumber($data['phone']);
         $data['created_by'] = $user->id;
-        $data['updated_by'] = $user->id;
         $data['user_type_id'] = Config::get('constants.patient_id');
         $data['account_id'] = $user->account_id;
+        // Patients never authenticate via password (the field is a NOT NULL
+        // legacy column on users). Stamp a random hash so the row can be
+        // inserted; if a patient ever needs login access, the password
+        // reset flow rotates this value.
+        $data['password'] = \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(40));
 
         $existingPatient = Patients::where([
             'phone' => $data['phone'],
@@ -585,7 +593,9 @@ class PatientService
         return [
             'status' => true,
             'message' => 'Picture saved successfully.',
-            'image' => asset('storage/' . self::STORAGE_DIR . '/' . $fileName),
+            // Round 4 C3 — point at the authenticated streaming route, not the
+            // bare storage symlink which no longer serves these files.
+            'image' => route('admin.files.patient_image', ['filename' => $fileName]),
         ];
     }
 
@@ -1086,9 +1096,17 @@ class PatientService
 
     private function deleteOldFile(string $relativePath): void
     {
-        $oldFilePath = storage_path('app/public/' . $relativePath);
-        if (file_exists($oldFilePath)) {
-            @unlink($oldFilePath);
+        // Round 4 C3 — files now live under storage/app/<dir>/, not under
+        // storage/app/public/<dir>/. We try the new location first and fall
+        // back to the legacy location for any rows that still reference the
+        // old path (the migration moved physical files but pre-existing
+        // documents.url values are unchanged in shape).
+        foreach (['app/' . $relativePath, 'app/public/' . $relativePath] as $candidate) {
+            $oldFilePath = storage_path($candidate);
+            if (file_exists($oldFilePath)) {
+                @unlink($oldFilePath);
+                return;
+            }
         }
     }
 }

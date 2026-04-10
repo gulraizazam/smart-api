@@ -33,7 +33,7 @@ class PatientDetailResource extends JsonResource
             'referred_by' => $this->referred_by,
             'active' => $this->active,
             'image_url' => $this->image_src
-                ? asset('storage/patient_image/' . $this->image_src)
+                ? route('admin.files.patient_image', ['filename' => $this->image_src])
                 : asset('images/default-avatar.png'),
             'created_at' => $this->created_at
                 ? Carbon::parse($this->created_at)->format('F j, Y h:i A')

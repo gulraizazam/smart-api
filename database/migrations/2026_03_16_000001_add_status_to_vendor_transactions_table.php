@@ -10,7 +10,7 @@ class AddStatusToVendorTransactionsTable extends Migration
     public function up(): void
     {
         Schema::table('vendor_transactions', function (Blueprint $table) {
-            $table->enum('status', ['ordered', 'delivered'])->default('delivered')->after('type');
+            $table->enum('status', ['ordered', 'delivered'])->default('delivered');
         });
 
         // Back-fill existing purchase records as 'delivered'

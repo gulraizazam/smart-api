@@ -135,13 +135,11 @@ class PatientFollowupController extends Controller
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
-        $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
+        $plans_check = PackageAdvances::select('patient_id', DB::raw('MIN(id) as id'), DB::raw('MIN(created_at) as created_at'), DB::raw('MIN(location_id) as location_id'))
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
             ->where($where)
             ->where('cash_flow', 'in')
-            ->groupBy('patient_id')
-
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
@@ -327,7 +325,7 @@ class PatientFollowupController extends Controller
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
-        $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
+        $plans_check = PackageAdvances::select('package_advances.patient_id', DB::raw('MIN(package_advances.id) as id'), DB::raw('MIN(package_advances.created_at) as created_at'), DB::raw('MIN(package_advances.location_id) as location_id'))
             ->whereIn('package_advances.patient_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
@@ -498,7 +496,7 @@ class PatientFollowupController extends Controller
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
-        $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
+        $plans_check = PackageAdvances::select('patient_id', DB::raw('MIN(id) as id'), DB::raw('MIN(created_at) as created_at'), DB::raw('MIN(location_id) as location_id'))
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')

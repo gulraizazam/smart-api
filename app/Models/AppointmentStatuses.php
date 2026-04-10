@@ -60,13 +60,24 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getBaseActiveSorted($account_id, $exclude_appointment_status_id = false)
     {
+        // Root statuses store parent_id as NULL (see migration 2026_04_08_100034),
+        // but legacy rows may still use 0 — match both.
         if ($exclude_appointment_status_id) {
-            return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->pluck('name', 'id');
+            return self::where(['active' => 1, 'account_id' => $account_id])
+                ->where(function ($q) {
+                    $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                })
+                ->where('id', '!=', $exclude_appointment_status_id)
+                ->OrderBy('sort_no', 'asc')
+                ->pluck('name', 'id');
         }
 
-        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])
+        return self::where(['active' => 1, 'account_id' => $account_id])
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
             ->where('name', '!=', 'Arrived')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('is_converted', '!=', 1)
                       ->orWhereNull('is_converted');
             })
@@ -264,7 +275,13 @@ class AppointmentStatuses extends BaseModel
      */
     public static function getAllParentRecords($account_id)
     {
-        return self::where(['account_id' => $account_id, 'parent_id' => 0, 'active' => 1])->get();
+        // Root statuses store parent_id as NULL (see migration 2026_04_08_100034),
+        // but legacy rows may still use 0 — match both.
+        return self::where(['account_id' => $account_id, 'active' => 1])
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->get();
     }
 
     /**

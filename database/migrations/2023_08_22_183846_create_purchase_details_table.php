@@ -15,9 +15,9 @@ class CreatePurchaseDetailsTable extends Migration
     {
         Schema::create('purchase_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
-            $table->unsignedInteger('product_id');
-            $table->unsignedInteger('purchase_id');
+            $table->unsignedBigInteger('account_id');
+            $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('purchase_id');
             $table->decimal('purchase_price', 10, 2);
             $table->decimal('total_purchase_price', 8, 2);
             $table->integer('quantity');

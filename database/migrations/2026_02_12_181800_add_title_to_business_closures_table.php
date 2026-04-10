@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('business_closures', function (Blueprint $table) {
-            $table->string('title')->nullable()->after('account_id');
+            $table->string('title')->nullable();
         });
     }
 

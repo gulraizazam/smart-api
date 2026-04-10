@@ -51,4 +51,14 @@ class CashflowException extends Exception
     {
         return new self('Opening balances are frozen after the first period lock.', 422);
     }
+
+    public static function validationFailed(string $message): self
+    {
+        return new self($message, 422);
+    }
+
+    public static function notFound(string $entity): self
+    {
+        return new self("{$entity} not found.", 404);
+    }
 }

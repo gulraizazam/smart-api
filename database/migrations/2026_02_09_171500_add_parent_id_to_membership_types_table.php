@@ -14,7 +14,7 @@ class AddParentIdToMembershipTypesTable extends Migration
     public function up()
     {
         Schema::table('membership_types', function (Blueprint $table) {
-            $table->unsignedBigInteger('parent_id')->nullable()->after('id');
+            $table->unsignedBigInteger('parent_id')->nullable();
             
             // Add foreign key constraint (self-referencing)
             $table->foreign('parent_id')

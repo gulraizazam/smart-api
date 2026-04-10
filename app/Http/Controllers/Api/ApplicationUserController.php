@@ -298,15 +298,20 @@ class ApplicationUserController extends Controller
     public function getUserCities(): JsonResponse
     {
         try {
-            $cities = ACL::getUserCities();
+            $cities = array_values(ACL::getUserCities());
 
-            if (count($cities) === 1) {
-                return $this->successResponse('City found', [
-                    'city' => $cities[0],
-                ]);
+            if (empty($cities)) {
+                return $this->errorResponse('City not found', 404);
             }
 
-            return $this->errorResponse('City not found', 404);
+            // `city` is the single-city auto-select hint kept for backward
+            // compatibility with existing JS (locations, appointments, leads,
+            // memberships views) — populated only when the user has exactly
+            // one city. `cities` is the full list.
+            return $this->successResponse('City found', [
+                'city' => count($cities) === 1 ? $cities[0] : null,
+                'cities' => $cities,
+            ]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'ApplicationUserController');
         }

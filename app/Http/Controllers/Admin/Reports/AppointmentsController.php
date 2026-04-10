@@ -659,22 +659,24 @@ class AppointmentsController extends Controller
                 } else {
                     $consultancy_type = '';
                 }
+                // Round 4 Inj-H4: defang formula triggers in user-
+                // controlled fields before they land in the XLSX.
                 $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
-                $activeSheet->setCellValue('B'.$counter, $reportRow->patient->name);
-                $activeSheet->setCellValue('C'.$counter, $reportRow->patient->email);
+                $activeSheet->setCellValue('B'.$counter, csv_safe($reportRow->patient->name));
+                $activeSheet->setCellValue('C'.$counter, csv_safe($reportRow->patient->email));
                 $activeSheet->setCellValue('D'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                $activeSheet->setCellValue('I'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                $activeSheet->setCellValue('J'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
+                $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
+                $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
+                $activeSheet->setCellValue('H'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
+                $activeSheet->setCellValue('I'.$counter, csv_safe((array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : ''));
+                $activeSheet->setCellValue('J'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                 $activeSheet->setCellValue('K'.$counter, $consultancy_type);
                 $activeSheet->setCellValue('L'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
-                $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
+                $activeSheet->setCellValue('M'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
+                $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
+                $activeSheet->setCellValue('O'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
+                $activeSheet->setCellValue('P'.$counter, csv_safe((array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : ''));
                 $counter++;
             }
         }
@@ -957,20 +959,22 @@ class AppointmentsController extends Controller
                     $servicetotal += $serviceprice;
                     $salestotal += $reportRow->Salestotal;
 
+                    // Round 4 Inj-H4: defang formula triggers in user-
+                    // controlled fields before they land in the XLSX.
                     $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
-                    $activeSheet->setCellValue('B'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
+                    $activeSheet->setCellValue('B'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
                     $activeSheet->setCellValue('C'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('B'.$counter);
-                    $activeSheet->setCellValue('D'.$counter, $reportRow->patient->name)->getStyle('C'.$counter)->getFont();
-                    $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                    $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                    $activeSheet->setCellValue('G'.$counter, $reportRow->patient->email);
+                    $activeSheet->setCellValue('D'.$counter, csv_safe($reportRow->patient->name))->getStyle('C'.$counter)->getFont();
+                    $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
+                    $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
+                    $activeSheet->setCellValue('G'.$counter, csv_safe($reportRow->patient->email));
                     $activeSheet->setCellValue('H'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                     $activeSheet->setCellValue('I'.$counter, number_format($serviceprice, 2));
                     $activeSheet->setCellValue('J'.$counter, number_format($reportRow->Salestotal, 2));
-                    $activeSheet->setCellValue('K'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                    $activeSheet->setCellValue('L'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                    $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                    $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                    $activeSheet->setCellValue('K'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
+                    $activeSheet->setCellValue('L'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
+                    $activeSheet->setCellValue('M'.$counter, csv_safe((array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : ''));
+                    $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                     $counter++;
                     $grandcount++;
                     $count++;
@@ -1273,22 +1277,24 @@ class AppointmentsController extends Controller
                     $servicetotal += $serviceprice;
                     $salestotal += $reportRow->Salestotal;
 
+                    // Round 4 Inj-H4: defang formula triggers in user-
+                    // controlled fields before they land in the XLSX.
                     $activeSheet->setCellValue('A'.$counter, $reportRow->id);
-                    $activeSheet->setCellValue('B'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                    $activeSheet->setCellValue('C'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                    $activeSheet->setCellValue('D'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
+                    $activeSheet->setCellValue('B'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
+                    $activeSheet->setCellValue('C'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
+                    $activeSheet->setCellValue('D'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
                     $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                    $activeSheet->setCellValue('F'.$counter, $reportRow->patient->name);
-                    $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                    $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                    $activeSheet->setCellValue('I'.$counter, $reportRow->patient->email);
+                    $activeSheet->setCellValue('F'.$counter, csv_safe($reportRow->patient->name));
+                    $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
+                    $activeSheet->setCellValue('H'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
+                    $activeSheet->setCellValue('I'.$counter, csv_safe($reportRow->patient->email));
                     $activeSheet->setCellValue('J'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                     $activeSheet->setCellValue('K'.$counter, number_format($serviceprice, 2));
                     $activeSheet->setCellValue('L'.$counter, number_format($reportRow->Salestotal, 2));
-                    $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                    $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                    $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                    $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                    $activeSheet->setCellValue('M'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
+                    $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
+                    $activeSheet->setCellValue('O'.$counter, csv_safe((array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : ''));
+                    $activeSheet->setCellValue('P'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                     $activeSheet->setCellValue('Q'.$counter, $consultancy_type);
                     $counter++;
                     $grandcount++;
@@ -1580,23 +1586,25 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
 
+                // Round 4 Inj-H4: defang formula triggers in user-
+                // controlled fields before they land in the XLSX.
                 $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
-                $activeSheet->setCellValue('B'.$counter, $reportRow->patient->name);
+                $activeSheet->setCellValue('B'.$counter, csv_safe($reportRow->patient->name));
                 $activeSheet->setCellValue('C'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                 $activeSheet->setCellValue('D'.$counter, ($reportRow->first_scheduled_date) ? \Carbon\Carbon::parse($reportRow->first_scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->first_scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                $activeSheet->setCellValue('I'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                $activeSheet->setCellValue('J'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
+                $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
+                $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
+                $activeSheet->setCellValue('H'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
+                $activeSheet->setCellValue('I'.$counter, csv_safe((array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : ''));
+                $activeSheet->setCellValue('J'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                 $activeSheet->setCellValue('K'.$counter, $consultancy_type);
                 $activeSheet->setCellValue('L'.$counter, $reportRow->scheduled_at_count);
                 $activeSheet->setCellValue('M'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
-                $activeSheet->setCellValue('Q'.$counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
+                $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
+                $activeSheet->setCellValue('O'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
+                $activeSheet->setCellValue('P'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
+                $activeSheet->setCellValue('Q'.$counter, csv_safe((array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : ''));
                 $counter++;
             }
         }

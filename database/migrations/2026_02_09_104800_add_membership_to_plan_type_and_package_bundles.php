@@ -19,8 +19,8 @@ class AddMembershipToPlanTypeAndPackageBundles extends Migration
 
         // 2. Add membership_type_id and membership_code_id to package_bundles
         Schema::table('package_bundles', function (Blueprint $table) {
-            $table->unsignedBigInteger('membership_type_id')->nullable()->after('bundle_id');
-            $table->unsignedBigInteger('membership_code_id')->nullable()->after('membership_type_id');
+            $table->unsignedBigInteger('membership_type_id')->nullable();
+            $table->unsignedBigInteger('membership_code_id')->nullable();
         });
     }
 

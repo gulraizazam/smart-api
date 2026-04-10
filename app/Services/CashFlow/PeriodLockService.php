@@ -86,12 +86,13 @@ class PeriodLockService
             // After FIRST lock: freeze opening balances + go-live date
             $this->freezeIfFirstLock($accountId);
 
-            // Audit log
+            // Audit log — CashflowAuditService::log signature is
+            // (action, entityType, entityId, ?array $oldValues, ?array $newValues, ?string $reason).
+            // $accountId is read from Auth inside log(); it's not a positional arg.
             $this->auditService->log(
                 'locked',
                 'period_lock',
                 $lock->id,
-                $accountId,
                 null,
                 ['month' => $month, 'year' => $year, 'snapshot_pools' => count($snapshot)]
             );
@@ -128,12 +129,11 @@ class PeriodLockService
                 'unlocked_at' => now(),
             ]);
 
-            // Audit log
+            // Audit log — see lockPeriod above; $accountId is sourced from Auth.
             $this->auditService->log(
                 'unlocked',
                 'period_lock',
                 $lock->id,
-                $accountId,
                 $oldValues,
                 ['unlock_reason' => $reason, 'month' => $lock->month, 'year' => $lock->year]
             );
@@ -171,12 +171,11 @@ class PeriodLockService
         $this->settingService->set('opening_balances_frozen', '1', $accountId, 'Frozen after first period lock');
         $this->settingService->set('go_live_date_frozen', '1', $accountId, 'Frozen after first period lock');
 
-        // Audit
+        // Audit — see lockPeriod above; $accountId is sourced from Auth.
         $this->auditService->log(
             'updated',
             'settings',
             0,
-            $accountId,
             null,
             ['action' => 'Opening balances and go-live date frozen after first period lock']
         );

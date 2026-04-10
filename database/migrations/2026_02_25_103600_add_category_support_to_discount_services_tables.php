@@ -14,11 +14,11 @@ class AddCategorySupportToDiscountServicesTables extends Migration
     public function up()
     {
         Schema::table('base_discount_services', function (Blueprint $table) {
-            $table->boolean('is_category')->default(0)->after('service_id');
+            $table->boolean('is_category')->default(0);
         });
 
         Schema::table('get_discount_services', function (Blueprint $table) {
-            $table->boolean('same_service')->default(0)->after('service_id');
+            $table->boolean('same_service')->default(0);
         });
     }
 

@@ -17,11 +17,36 @@ use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\PatientFileController;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
 
-        Route::get('error-logs', [LogViewerController::class, 'index'])->name('error_logs');
+        // Round 4 Crypto-H2 — gate the laravel-log-viewer page behind the
+        // logs_manage permission instead of "any logged-in admin". The
+        // viewer renders raw storage/logs/laravel.log content which leaks
+        // stack traces, query strings (with patient PII in WHERE clauses),
+        // .env-derived config dumps, and file paths — material that should
+        // never be visible to general staff. No view links to this route,
+        // so narrowing is non-breaking.
+        Route::get('error-logs', [LogViewerController::class, 'index'])
+            ->middleware('permission:logs_manage')
+            ->name('error_logs');
+
+        // Round 4 C3 — authenticated, tenant-scoped streaming of sensitive uploads.
+        // Patient profile pictures, patient documents, and student-membership
+        // verification documents previously sat under storage/app/public/ which
+        // is published verbatim by the public/storage symlink. These routes are
+        // the only path to read those files now; PatientFileController checks
+        // that the file's owner shares the caller's account_id and returns 404
+        // otherwise. The legacy /storage/patient_image/* URLs return 404 because
+        // the underlying directories have been moved out of the symlink target.
+        Route::get('files/patient-image/{filename}', [PatientFileController::class, 'patientImage'])
+            ->where('filename', '[A-Za-z0-9._-]+')
+            ->name('files.patient_image');
+        Route::get('files/student-verification/{filename}', [PatientFileController::class, 'studentVerification'])
+            ->where('filename', '[A-Za-z0-9._-]+')
+            ->name('files.student_verification');
         Route::post('updateleads', [LeadsController::class, 'leadupdate'])->name('leads.update');
         Route::post('updatestatusleads', [LeadsController::class, 'leadstatusupdate'])->name('leads.status_update');
         Route::prefix('invoices')->name('invoices.')->group(function () {

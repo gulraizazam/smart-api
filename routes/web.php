@@ -139,9 +139,18 @@ Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, '
 
 // Password Reset Routes...
 Route::get('password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])->name('auth.password.reset');
-Route::post('password/email', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])->name('auth.password.resetemail');
+// Round 4 Auth-C2 — throttle password reset link requests. Without
+// this, an attacker can enumerate accounts by timing/response and
+// flood any address with reset emails. 5 attempts per IP per hour
+// is enough for legitimate users (typo, second device) and far below
+// any abuse threshold.
+Route::post('password/email', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->middleware('throttle:5,60')
+    ->name('auth.password.resetemail');
 Route::get('password/reset/{token}', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('auth.password.resettoken');
+Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])
+    ->middleware('throttle:10,60')
+    ->name('auth.password.resettoken');
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth.common', 'checkAccount'])

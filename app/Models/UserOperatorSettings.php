@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedLegacy;
 use App\Helpers\Filters;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,7 @@ class UserOperatorSettings extends BaseModel
     {
         return [
             'test_mode' => 'integer',
+            'password' => EncryptedLegacy::class,
         ];
     }
 

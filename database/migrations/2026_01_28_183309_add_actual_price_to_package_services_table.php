@@ -14,7 +14,7 @@ class AddActualPriceToPackageServicesTable extends Migration
     public function up()
     {
         Schema::table('package_services', function (Blueprint $table) {
-            $table->decimal('actual_price', 10, 2)->nullable()->after('tax_including_price');
+            $table->decimal('actual_price', 10, 2)->nullable();
         });
     }
 

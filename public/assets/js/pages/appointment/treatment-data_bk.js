@@ -38,7 +38,7 @@ jQuery(document).ready(function() {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                type: 'get',
+                type: 'post',
                 url: route('admin.appointments.storecomment'),
                 data: {
                     'comment': $('#consultancy_comment').val(),
@@ -211,7 +211,7 @@ jQuery(document).ready(function () {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                type: 'get',
+                type: 'post',
                 url: route('admin.appointments.storecomment'),
                 data: {
                     'comment': $('#treatment_comment').val(),

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class PackageAdvances extends BaseModel
@@ -602,7 +603,14 @@ class PackageAdvances extends BaseModel
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
-        $query = self::when(!empty($where), fn ($q) => $q->where($where))
+        // Eager-load relations the caller (RefundService::buildGlobalRefundRows)
+        // accesses on every row: $package->user->{name,phone,id}, $package->location,
+        // $package->package. Without these, each row triggers a separate SELECT
+        // (N+1) — for a 50-row datatable that's 150+ extra queries per request.
+        // The aliased patient_id/location_id/package_id columns from the SELECT
+        // expose foreign keys that Eloquent's eager loader can resolve.
+        $query = self::with(['user', 'location.city', 'package'])
+            ->when(!empty($where), fn ($q) => $q->where($where))
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
@@ -610,10 +618,15 @@ class PackageAdvances extends BaseModel
             $query->where('active', 1);
         }
 
-        return $query->limit($iDisplayLength)
-            ->offset($iDisplayStart)
+        return $query->select('package_id',
+                DB::raw('MIN(id) as id'),
+                DB::raw('MIN(patient_id) as patient_id'),
+                DB::raw('MIN(location_id) as location_id'),
+                DB::raw('MAX(created_at) as created_at'))
             ->groupBy('package_id')
-            ->orderByDesc('created_at')
+            ->orderByDesc(DB::raw('MAX(created_at)'))
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
             ->get();
     }
 
@@ -637,10 +650,15 @@ class PackageAdvances extends BaseModel
             $query->where('active', 1);
         }
 
-        return $query->limit($iDisplayLength)
-            ->offset($iDisplayStart)
+        return $query->select('package_id',
+                DB::raw('MIN(id) as id'),
+                DB::raw('MIN(patient_id) as patient_id'),
+                DB::raw('MIN(location_id) as location_id'),
+                DB::raw('MAX(created_at) as created_at'))
             ->groupBy('package_id')
-            ->orderByDesc('created_at')
+            ->orderByDesc(DB::raw('MAX(created_at)'))
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart)
             ->get();
     }
 

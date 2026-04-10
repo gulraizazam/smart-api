@@ -112,8 +112,11 @@ class PackagesController extends Controller
             
             return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
+            // Round 4 Crypto-H3 — drop trace string (inlines arg PII), keep
+            // file/line for debuggability without leaking patient identifiers.
             \Illuminate\Support\Facades\Log::error('Plans Create Form Data Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             return $this->errorResponse('Failed to load form data.', 500);
         }
@@ -502,8 +505,10 @@ class PackagesController extends Controller
             return $this->successResponse('No changes made');
 
         } catch (\Exception $e) {
+            // Round 4 Crypto-H3 — drop trace, keep file/line.
             \Log::error('Update Membership Plan Error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
             return $this->errorResponse('Failed to update membership.', 500);
         }
@@ -772,8 +777,11 @@ class PackagesController extends Controller
             return $storedPaths;
         }
         
-        // Ensure the directory exists
-        $storagePath = storage_path('app/public/student_verifications');
+        // Round 4 C3 — store under storage/app/student_verifications (private),
+        // NOT storage/app/public/student_verifications which is exposed via the
+        // public/storage symlink. Files are streamed only through the
+        // authenticated admin.files.student_verification route.
+        $storagePath = storage_path('app/student_verifications');
         if (!file_exists($storagePath)) {
             mkdir($storagePath, 0755, true);
         }
@@ -1404,7 +1412,7 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function package_pdf(int $id): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function package_pdf(int $id): \Illuminate\Http\Response
     {
         $this->authorize('managePlans', Packages::class);
         $package = Packages::find($id);
@@ -1436,13 +1444,16 @@ class PackagesController extends Controller
             ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
         
-        // For membership plans, use PackageBundles sum; for others use PackageService sum
+        // For membership plans, use PackageBundles sum; for others use PackageService sum.
+        // Cast to float — Eloquent `sum()` on a decimal column returns a
+        // string, which would break the `number_format()` call below (PHP 8
+        // rejects strings in numeric functions).
         if ($package->plan_type === 'membership') {
-            $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
+            $packageservices_price = (float) PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
         } else {
-            $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+            $packageservices_price = (float) PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         }
-        $cash_amount = $cash_amount_in - $cash_amount_out;
+        $cash_amount = (float) $cash_amount_in - (float) $cash_amount_out;
         /*We discuss it in future what happen next*/
         //$grand_total = number_format($package->total_price - $cash_amount_in);
         $grand_total = number_format($packageservices_price);
@@ -1613,7 +1624,14 @@ class PackagesController extends Controller
 
         $find_ids[] = $id;
 
-        $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)->where('audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log'))->orderBy('created_at', 'asc')->get();
+        // Eager-load auditTrailChanges (was 2 queries per audit trail row in
+        // the loop below — line 1632 + duplicate at line 1647 fetched the
+        // same data via the same audit_trail_id).
+        $audittrails = AuditTrails::with('auditTrailChanges')
+            ->whereIn('table_record_id', $find_ids)
+            ->where('audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log'))
+            ->orderBy('created_at', 'asc')
+            ->get();
 
         $count = 1;
         foreach ($audittrails as $audittrail) {
@@ -1629,7 +1647,7 @@ class PackagesController extends Controller
 
             ];
 
-            $audittrail_changes = AuditTrailChanges::where('audit_trail_id', '=', $audittrail->id)->get();
+            $audittrail_changes = $audittrail->auditTrailChanges;
 
             foreach ($audittrail_changes as $changes) {
                 if ($action_array[$audittrail->audit_trail_action_name] == 'Delete') {
@@ -1644,7 +1662,8 @@ class PackagesController extends Controller
             }
             if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
-                $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
+                // Was a second copy of the same query — reuse the eager-loaded relation.
+                $type_2_detail = $audittrail->auditTrailChanges;
 
                 foreach ($type_2_detail as $detail) {
                     $result = Financelog::Calculate_Val($detail);
@@ -1702,7 +1721,10 @@ class PackagesController extends Controller
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)
+        // Eager-load auditTrailChanges (was 2 queries per audit trail row in
+        // the loop below — same N+1 pattern as in packagelog() above).
+        $audittrails = AuditTrails::with('auditTrailChanges')
+            ->whereIn('table_record_id', $find_ids)
             ->where(
                 'audit_trail_table_name',
                 Config::get('constants.package_advance_table_name_log')
@@ -1722,7 +1744,7 @@ class PackagesController extends Controller
 
             ];
 
-            $audittrail_changes = AuditTrailChanges::where('audit_trail_id', '=', $audittrail->id)->get();
+            $audittrail_changes = $audittrail->auditTrailChanges;
 
             foreach ($audittrail_changes as $changes) {
                 if ($action_array[$audittrail->audit_trail_action_name] == 'Delete') {
@@ -1737,7 +1759,8 @@ class PackagesController extends Controller
             }
             if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
-                $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
+                // Was a second copy of the same query — reuse the eager-loaded relation.
+                $type_2_detail = $audittrail->auditTrailChanges;
 
                 foreach ($type_2_detail as $detail) {
                     $result = Financelog::Calculate_Val($detail);

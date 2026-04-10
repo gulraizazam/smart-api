@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('expense_id')->nullable()->comment('Linked expense for payments');
             $table->text('description')->nullable();
             $table->string('reference_no')->nullable();
-            $table->unsignedInteger('created_by');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
             $table->softDeletes();
 

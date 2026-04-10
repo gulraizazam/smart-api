@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedLegacy;
 use App\Helpers\GeneralFunctions;
 use App\Services\PatientManagement\PatientSearchService;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class Patients extends BaseModel
@@ -41,7 +44,7 @@ class Patients extends BaseModel
         'name', 'email', 'password', 'remember_token', 'phone',
         'main_account', 'gender', 'cnic', 'dob', 'address',
         'referred_by', 'active', 'user_type_id', 'resource_type_id',
-        'account_id', 'created_by', 'updated_by', 'image_src',
+        'account_id', 'created_by', 'image_src',
     ];
 
     protected function casts(): array
@@ -51,6 +54,8 @@ class Patients extends BaseModel
             'dob' => 'date',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
+            // Encrypted at rest. See User::casts() for the equality-search caveat.
+            'cnic' => EncryptedLegacy::class,
         ];
     }
 
@@ -71,7 +76,7 @@ class Patients extends BaseModel
     {
         return Attribute::make(
             get: fn (): string => $this->image_src
-                ? asset('storage/patient_image/' . $this->image_src)
+                ? route('admin.files.patient_image', ['filename' => $this->image_src])
                 : asset('images/default-avatar.png'),
         );
     }
@@ -212,6 +217,17 @@ class Patients extends BaseModel
 
     public static function getPatientSearchOptimized(string $name, int $accountId): array
     {
+        // Reject empty / single-character queries before they hit the LIKE
+        // branch. Without this, `?search=` produces `name LIKE '%'` and
+        // `?search=%` / `?search=_` collapse to wildcard scans, both of
+        // which dump the 10 most-recent patients with PII (phone, cnic,
+        // email, dob, address). Cache is also bypassed for short input
+        // so attackers cannot bloat it with random short strings.
+        $name = trim($name);
+        if (strlen($name) < 2) {
+            return [];
+        }
+
         $cacheKey = "patient_search_{$accountId}_" . md5($name);
 
         return Cache::remember($cacheKey, 300, function () use ($name, $accountId): array {
@@ -223,7 +239,7 @@ class Patients extends BaseModel
                     $phone = substr($phone, 2);
                 }
 
-                return DB::select(
+                $rows = DB::select(
                     "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
                      FROM users
                      WHERE user_type_id = 3 AND active = 1 AND account_id = ?
@@ -234,16 +250,56 @@ class Patients extends BaseModel
                      LIMIT 10",
                     [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned, $phone, $cleaned, $cleaned]
                 );
+
+                return self::decryptCnicColumn($rows);
             }
 
-            return DB::select(
+            // Escape SQL LIKE metacharacters in user-supplied input. PDO
+            // parameter binding prevents SQL injection but does NOT escape
+            // `%` / `_` inside the bound LIKE pattern, so an authenticated
+            // user could pass `%_%_` to bypass the prefix-search intent.
+            // Backslash is escaped first to avoid double-escaping the
+            // escape sequences we add for `%` and `_`.
+            $escaped = addcslashes($name, '\\%_');
+
+            $rows = DB::select(
                 "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
                  FROM users
                  WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
                  ORDER BY id DESC LIMIT 10",
-                [$accountId, $name . '%']
+                [$accountId, $escaped . '%']
             );
+
+            return self::decryptCnicColumn($rows);
         });
+    }
+
+    /**
+     * Decrypt the `cnic` field on raw DB::select rows.
+     *
+     * Raw queries bypass the Eloquent EncryptedLegacy cast on this model, so
+     * any path that selects `cnic` via DB::select must run results through
+     * this helper to avoid leaking the base64 envelope to API consumers.
+     * Mirrors the cast's tolerance for legacy plaintext rows: if Crypt
+     * fails, the raw value is returned unchanged.
+     *
+     * @param  array<int, \stdClass>  $rows
+     * @return array<int, \stdClass>
+     */
+    private static function decryptCnicColumn(array $rows): array
+    {
+        foreach ($rows as $row) {
+            if (! property_exists($row, 'cnic') || $row->cnic === null || $row->cnic === '') {
+                continue;
+            }
+            try {
+                $row->cnic = Crypt::decryptString((string) $row->cnic);
+            } catch (DecryptException) {
+                // Legacy plaintext row — leave as-is.
+            }
+        }
+
+        return $rows;
     }
 
     public static function getPatientidAjaxOrder(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection

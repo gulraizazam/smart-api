@@ -74,30 +74,51 @@ function setStatusData(response, id) {
         $("#appointment_status_not_show").val(appointment_status_not_show);
         $("#cancellation_reason_other_reason").val(cancellation_reason_other_reason);
 
+        // Root statuses store parent_id as NULL (not 0). Normalize both cases so
+        // the selected status is pre-filled correctly and the child-status field
+        // is only shown when the API actually returns child statuses.
+        let currentStatus = appointments?.appointment_status;
+        let parentId = currentStatus?.parent_id;
+        let isRoot = parentId === null || parentId === 0 || parentId === '0' || typeof parentId === 'undefined';
+
+        // Real children only — the backend returns `['' => '']` as a placeholder
+        // for roots, which would otherwise look like a populated list here.
+        let hasChildStatuses = appointment_statuses
+            && Object.keys(appointment_statuses).some(function (k) {
+                return k !== '' && appointment_statuses[k] !== '';
+            });
+
         skipLoadChildStatuses = true;
-        if (appointments?.appointment_status?.parent_id != 0) {
-            $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id).trigger('change');
+
+        // Pre-select the currently-applied status in the base dropdown.
+        if (isRoot) {
+            $("#base_appointment_status_id").val(currentStatus?.id ?? appointments?.appointment_status_id).trigger('change');
         } else {
-            $("#base_appointment_status_id").val(appointments?.appointment_status_id).trigger('change');
+            $("#base_appointment_status_id").val(parentId).trigger('change');
         }
 
-        if (appointments?.appointment_status?.parent_id == 0) {
-            $("#appointment_status_id_section").hide();
-        } else {
+        // Only show the child-status section if the GET response actually
+        // contains child statuses — not based on the stored parent_id.
+        if (hasChildStatuses) {
             $("#appointment_status_id_section").show();
-            $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
+            if (!isRoot) {
+                $("#appointment_status_id").val(currentStatus?.id).trigger('change');
+            }
+        } else {
+            $("#appointment_status_id_section").hide();
         }
 
-        if (appointments?.appointment_status?.parent_id == 0) {
-            if (appointments.appointment_status?.is_comment == 0) {
+        // Reason field visibility
+        if (isRoot) {
+            if (currentStatus?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
                 $("#appointment_reason").show();
                 $("#reason").val(appointments?.reason);
             }
         } else {
-            var baseIsComment = base_appointments[appointments.appointment_status?.parent_id]?.is_comment;
-            var childIsComment = appointments?.appointment_status?.is_comment;
+            var baseIsComment = base_appointments[parentId]?.is_comment;
+            var childIsComment = currentStatus?.is_comment;
 
             if (baseIsComment == 1 || childIsComment == 1) {
                 $("#appointment_reason").show();
@@ -105,8 +126,6 @@ function setStatusData(response, id) {
             } else {
                 $("#appointment_reason").hide();
             }
-
-            $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
         }
         skipLoadChildStatuses = false;
     } catch (error) {

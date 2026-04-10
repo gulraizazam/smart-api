@@ -164,6 +164,9 @@ class StudentVerificationService
     {
         if (! empty($verification->document_paths)) {
             foreach ($verification->document_paths as $path) {
+                // Round 4 C3 — files now live on the local (private) disk;
+                // also clean up any legacy copies still on the public disk.
+                Storage::disk('local')->delete($path);
                 Storage::disk('public')->delete($path);
             }
         }
@@ -201,7 +204,10 @@ class StudentVerificationService
                 }
 
                 $filename = 'student_doc_' . now()->timestamp . "_{$index}_" . Str::random(16) . '.' . $extension;
-                $path = $document->storeAs('student_verifications', $filename, 'public');
+                // Round 4 C3 — local (private) disk, not 'public'. Served only
+                // through the authenticated admin.files.student_verification
+                // route after a tenant-scope check.
+                $path = $document->storeAs('student_verifications', $filename, 'local');
 
                 if ($path) {
                     $storedPaths[] = $path;

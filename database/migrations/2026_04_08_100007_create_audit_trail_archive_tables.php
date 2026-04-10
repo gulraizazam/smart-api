@@ -20,9 +20,9 @@ return new class extends Migration
             $table->unsignedInteger('id')->primary();
             $table->unsignedInteger('audit_trail_action_name');
             $table->unsignedInteger('audit_trail_table_name');
-            $table->unsignedInteger('table_record_id');
-            $table->unsignedInteger('user_id');
-            $table->unsignedInteger('parent_id')->nullable();
+            $table->unsignedBigInteger('table_record_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->timestamps();
 
             $table->index('user_id', 'idx_archive_trails_user');
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('audit_trail_changes_archive', function (Blueprint $table) {
             $table->unsignedInteger('id')->primary();
-            $table->unsignedInteger('audit_trail_id');
+            $table->unsignedBigInteger('audit_trail_id');
             $table->string('field_name', 500);
             $table->text('field_before')->nullable();
             $table->text('field_after')->nullable();

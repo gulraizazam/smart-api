@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('discounts', function (Blueprint $table) {
-            $table->unsignedBigInteger('customer_type_id')->nullable()->after('slug');
+            $table->unsignedBigInteger('customer_type_id')->nullable();
         });
     }
 

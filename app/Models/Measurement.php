@@ -3,6 +3,7 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -10,6 +11,8 @@ use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Measurement extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'service_id', 'priority', 'type', 'created_at', 'updated_at'];
 
     protected static array $_fillable = ['user_id', 'patient_id', 'appointment_id', 'custom_form_feedback_id', 'date', 'service_id', 'priority', 'type'];

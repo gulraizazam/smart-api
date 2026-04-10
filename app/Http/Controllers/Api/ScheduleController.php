@@ -236,12 +236,15 @@ class ScheduleController extends Controller
             $rotaToResource[$rota->id] = $rota->resource_id;
         }
 
-        // Get rota days for the date range
-        // First get ALL rota days for these rotas to debug
-        $allRotaDays = ResourceHasRotaDays::whereIn('resource_has_rota_id', $rotaIds)->get();
-        
-        // Filter by date range
-        $rotaDays = $allRotaDays->filter(fn($day) => date('Y-m-d', strtotime((string) $day->date)) >= $startDate && date('Y-m-d', strtotime((string) $day->date)) <= $endDate);
+        // Get rota days for the date range — filter pushed into SQL using
+        // idx_rota_days_date instead of loading every rota day for the
+        // resource and filtering in PHP. (The "debug" comment that was here
+        // suggests the filter was temporarily removed during debugging and
+        // never re-added.)
+        $rotaDays = ResourceHasRotaDays::whereIn('resource_has_rota_id', $rotaIds)
+            ->whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->get();
 
         // Build shifts array
         foreach ($rotaDays as $rotaDay) {

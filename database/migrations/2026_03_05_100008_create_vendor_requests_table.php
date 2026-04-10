@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('phone')->nullable();
             $table->text('note')->nullable();
-            $table->unsignedInteger('requested_by');
+            $table->unsignedBigInteger('requested_by');
             $table->enum('status', ['pending', 'approved', 'dismissed'])->default('pending');
             $table->text('admin_notes')->nullable();
             $table->unsignedBigInteger('vendor_id')->nullable()->comment('Linked vendor if approved');

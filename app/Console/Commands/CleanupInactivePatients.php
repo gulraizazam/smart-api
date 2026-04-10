@@ -47,9 +47,12 @@ class CleanupInactivePatients extends Command
         // Build the query for inactive patients
         $query = $this->buildInactivePatientsQuery();
 
-        // Filter by year if specified
+        // Filter by year if specified (range query — uses index)
         if ($year) {
-            $query->whereYear('created_at', $year);
+            $yearStart = sprintf('%04d-01-01 00:00:00', (int) $year);
+            $yearEnd = sprintf('%04d-01-01 00:00:00', (int) $year + 1);
+            $query->where('created_at', '>=', $yearStart)
+                  ->where('created_at', '<', $yearEnd);
             $this->info("Filtering patients created in year: {$year}");
         }
 
@@ -83,7 +86,10 @@ class CleanupInactivePatients extends Command
         // Get patient IDs in batches
         $query = $this->buildInactivePatientsQuery();
         if ($year) {
-            $query->whereYear('created_at', $year);
+            $yearStart = sprintf('%04d-01-01 00:00:00', (int) $year);
+            $yearEnd = sprintf('%04d-01-01 00:00:00', (int) $year + 1);
+            $query->where('created_at', '>=', $yearStart)
+                  ->where('created_at', '<', $yearEnd);
         }
 
         $query->select('id')->orderBy('id')->chunk($batchSize, function ($patients) use ($isDryRun, &$deletedCount, &$errorCount, $progressBar) {
@@ -179,9 +185,14 @@ class CleanupInactivePatients extends Command
         $query = $this->buildInactivePatientsQuery();
 
         if ($filterYear) {
-            $query->whereYear('created_at', $filterYear);
+            $yearStart = sprintf('%04d-01-01 00:00:00', (int) $filterYear);
+            $yearEnd = sprintf('%04d-01-01 00:00:00', (int) $filterYear + 1);
+            $query->where('created_at', '>=', $yearStart)
+                  ->where('created_at', '<', $yearEnd);
         }
 
+        // Note: GROUP BY YEAR(created_at) below cannot use index, but this is an
+        // admin command run interactively, not a hot path query.
         $byYear = $query->selectRaw('YEAR(created_at) as year, COUNT(*) as count')
             ->groupBy('year')
             ->orderBy('year')

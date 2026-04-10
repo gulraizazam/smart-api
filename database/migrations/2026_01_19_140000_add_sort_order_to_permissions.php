@@ -16,7 +16,7 @@ class AddSortOrderToPermissions extends Migration
     {
         // Add sort_order column to permissions table
         Schema::table('permissions', function (Blueprint $table) {
-            $table->integer('sort_order')->default(0)->after('parent_id');
+            $table->integer('sort_order')->default(0);
         });
 
         // Set sort_order based on current ID, but place Treatments right after Consultancy

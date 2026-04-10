@@ -15,7 +15,7 @@ class CreateActivitiesTable extends Migration
     {
         Schema::create('activities', function (Blueprint $table) {
             $table->id();
-            $table->integer('plan_id');
+            $table->unsignedBigInteger('plan_id');
             $table->string('action');
             $table->string('service');
             $table->string('appointment_type');

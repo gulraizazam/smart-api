@@ -14,7 +14,7 @@ class AddInventoryIdToOrderDetailsTable extends Migration
     public function up()
     {
         Schema::table('order_details', function (Blueprint $table) {
-            $table->unsignedBigInteger('inventory_id')->nullable()->after('product_id');
+            $table->unsignedBigInteger('inventory_id')->nullable();
         });
     }
 

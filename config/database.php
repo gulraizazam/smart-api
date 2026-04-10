@@ -58,6 +58,7 @@ return [
             'prefix_indexes' => true,
             'strict' => false,
             'modes' => [
+                'ONLY_FULL_GROUP_BY',
                 'STRICT_TRANS_TABLES',
                 'NO_ZERO_IN_DATE',
                 'NO_ZERO_DATE',
@@ -70,6 +71,58 @@ return [
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 5,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]) : [],
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | mysql_testing — dedicated PHPUnit / CI connection
+        |--------------------------------------------------------------------------
+        |
+        | Used by phpunit.xml (DB_CONNECTION=mysql_testing). MUST point at a
+        | separate, throwaway database — never the production schema. The
+        | RefreshDatabase trait wraps each test in a transaction, but a
+        | misconfigured connection here would still leak schema-level
+        | mutations into prod. See tests/README.md for setup.
+        |
+        | The mode list mirrors the production `mysql` connection so that
+        | MariaDB-specific behaviour (ONLY_FULL_GROUP_BY, no PK functional
+        | dependency) is faithfully reproduced under test.
+        */
+        'mysql_testing' => [
+            'driver' => 'mysql',
+            'host' => env('DB_TEST_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_TEST_PORT', env('DB_PORT', '3306')),
+            'database' => env('DB_TEST_DATABASE', 'cutera_test'),
+            'username' => env('DB_TEST_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_TEST_PASSWORD', env('DB_PASSWORD', '')),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'modes' => [
+                'ONLY_FULL_GROUP_BY',
+                'STRICT_TRANS_TABLES',
+                'NO_ZERO_IN_DATE',
+                'NO_ZERO_DATE',
+                'ERROR_FOR_DIVISION_BY_ZERO',
+                'NO_ENGINE_SUBSTITUTION',
+            ],
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_PERSISTENT => false,
+                PDO::ATTR_TIMEOUT => 5,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                // Several legacy migrations declare FK columns as
+                // `unsignedInteger` while the parent PK is `bigIncrements` —
+                // production tolerates this because the original DB was
+                // created before the constraint was enforced. On a fresh
+                // MariaDB 11.x test database the type mismatch is rejected,
+                // so we relax FK enforcement at the connection level. The
+                // test schema is throwaway; production schema is unaffected.
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET FOREIGN_KEY_CHECKS=0',
             ]) : [],
         ],
 

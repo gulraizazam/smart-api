@@ -12,6 +12,7 @@ use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageService;
 use App\Models\PackageVouchers;
+use App\Models\Patients;
 use App\Models\User;
 use App\Models\UserVouchers;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,9 +35,17 @@ final class UserVoucherService
             'total_amount' => $data['amount'],
         ]);
 
-        $patient = User::find($data['patient_id']);
+        // ActivityLogger::logVoucherAssigned() is typed to
+        // App\Models\Patients (which extends BaseModel, NOT User), so
+        // fetching the patient via User::find() triggers a TypeError
+        // at the logger call — identical to the bug fixed in
+        // MembershipAssignmentService. Fetch through the Patients model
+        // directly so the assigned patient passes the type check.
+        $patient = Patients::find($data['patient_id']);
         $discount = Discounts::find($data['voucher_id']);
-        ActivityLogger::logVoucherAssigned($voucher, $patient, $discount);
+        if ($patient && $discount) {
+            ActivityLogger::logVoucherAssigned($voucher, $patient, $discount);
+        }
 
         return $voucher;
     }
@@ -57,16 +66,24 @@ final class UserVoucherService
             ];
         }
 
-        $oldAmount = $voucher->total_amount;
+        // `total_amount` is a DECIMAL column returned as a string by
+        // MariaDB; cast both values to float so strict_types doesn't
+        // TypeError at the logger call (which takes float|int).
+        $oldAmount = (float) $voucher->total_amount;
+        $newAmount = (float) $data['total_amount'];
 
         $voucher->update([
-            'total_amount' => $data['total_amount'],
-            'amount' => $data['total_amount'],
+            'total_amount' => $newAmount,
+            'amount' => $newAmount,
         ]);
 
-        $patient = User::find($voucher->user_id);
+        // Same Patients vs User typing trap as ::store() — the logger
+        // is typed to Patients, so fetch via the Patients model.
+        $patient = Patients::find($voucher->user_id);
         $discount = Discounts::find($voucher->voucher_id);
-        ActivityLogger::logVoucherUpdated($voucher, $patient, $discount, $oldAmount, $data['total_amount']);
+        if ($patient && $discount) {
+            ActivityLogger::logVoucherUpdated($voucher, $patient, $discount, $oldAmount, $newAmount);
+        }
 
         return [
             'success' => true,

@@ -644,14 +644,24 @@ class LocationsWidget
             $searchServices = $searchServices->toArray();
         }
 
+        // Resolve the "all" sentinel ids ONCE per call. Previously this method
+        // re-queried Services and Locations 6 times for these same ids inside
+        // nested branches — now hoisted to two single queries up front.
+        $allServiceId = Services::where([
+            'slug' => 'all',
+            'account_id' => $account_id,
+        ])->value('id');
+
+        $allLocationId = Locations::where([
+            'slug' => 'all',
+            'account_id' => $account_id,
+        ])->value('id');
+
         // Locaton Based Services Array
         $location_services_array = [];
         $services = ServiceHasLocations::join('services', 'services.id', '=', 'service_has_locations.service_id')
             ->where([
-                'service_has_locations.service_id' => Services::where([
-                    'slug' => 'all',
-                    'account_id' => $account_id,
-                ])->select('id')->first()->id,
+                'service_has_locations.service_id' => $allServiceId,
                 'service_has_locations.location_id' => $location_id,
             ])->get();
 
@@ -719,20 +729,14 @@ class LocationsWidget
 
         // 1. Find All Centres
         $rootlocation = DoctorHasLocations::where('is_allocated',1)->where([
-            'location_id' => Locations::where([
-                'slug' => 'all',
-                'account_id' => $account_id,
-            ])->select('id')->first()->id,
+            'location_id' => $allLocationId,
             'user_id' => $doctor_id,
         ])->get();
 
         if ($rootlocation->count()) {
             //      Find All Services
             $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
-                'service_id' => Services::where([
-                    'slug' => 'all',
-                    'account_id' => $account_id,
-                ])->select('id')->first()->id,
+                'service_id' => $allServiceId,
                 'user_id' => $doctor_id,
             ])->get();
 
@@ -816,10 +820,7 @@ class LocationsWidget
             if ($regionlocation->count()) {
                 //      Find All Services
                 $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
-                    'service_id' => Services::where([
-                        'slug' => 'all',
-                        'account_id' => $account_id,
-                    ])->select('id')->first()->id,
+                    'service_id' => $allServiceId,
                     'user_id' => $doctor_id,
                 ])->get();
 
@@ -886,10 +887,7 @@ class LocationsWidget
                 if ($singlelocation->count()) {
                     //      Find All Services
                     $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
-                        'service_id' => Services::where([
-                            'slug' => 'all',
-                            'account_id' => $account_id,
-                        ])->select('id')->first()->id,
+                        'service_id' => $allServiceId,
                         'user_id' => $doctor_id,
                         'location_id' => $location_id,
                     ])->get();

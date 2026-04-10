@@ -72,8 +72,10 @@ class ExportService
 
         fputcsv($handle, ['B. Inflows']);
         fputcsv($handle, ['Payment Method', 'Amount', 'Count']);
+        // Round 4 Inj-H3: each data row carries user-editable category /
+        // pool / branch names — defang formula triggers via fputcsv_safe.
         foreach (($data['inflows'] ?? []) as $row) {
-            fputcsv($handle, [$row['method'] ?? '', number_format($row['total'] ?? 0), $row['count'] ?? 0]);
+            fputcsv_safe($handle, [$row['method'] ?? '', number_format($row['total'] ?? 0), $row['count'] ?? 0]);
         }
         fputcsv($handle, ['Total Inflows', number_format($data['total_inflows'] ?? 0)]);
         fputcsv($handle, []);
@@ -81,7 +83,7 @@ class ExportService
         fputcsv($handle, ['C. Outflows (by Category)']);
         fputcsv($handle, ['Category', 'Amount', 'Count']);
         foreach (($data['outflows'] ?? []) as $row) {
-            fputcsv($handle, [$row['category'] ?? '', number_format($row['total'] ?? 0), $row['count'] ?? 0]);
+            fputcsv_safe($handle, [$row['category'] ?? '', number_format($row['total'] ?? 0), $row['count'] ?? 0]);
         }
         fputcsv($handle, ['Total Outflows', number_format($data['total_outflows'] ?? 0)]);
         fputcsv($handle, []);
@@ -94,7 +96,7 @@ class ExportService
         fputcsv($handle, ['Pool', 'Branch', 'Type', 'Opening Balance', 'Current Balance']);
         foreach (($data['pool_breakdown'] ?? []) as $pool) {
             $branchName = $pool['location']['name'] ?? '—';
-            fputcsv($handle, [$pool['name'] ?? '', $branchName, $pool['type'] ?? '', number_format($pool['opening_balance'] ?? 0), number_format($pool['cached_balance'] ?? 0)]);
+            fputcsv_safe($handle, [$pool['name'] ?? '', $branchName, $pool['type'] ?? '', number_format($pool['opening_balance'] ?? 0), number_format($pool['cached_balance'] ?? 0)]);
         }
     }
 
@@ -102,7 +104,7 @@ class ExportService
     {
         fputcsv($handle, ['Branch', 'Inflows', 'Outflows', 'Expense Count', 'Net']);
         foreach ($data as $row) {
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['branch_name'] ?? '',
                 number_format($row['inflows'] ?? 0),
                 number_format($row['outflows'] ?? 0),
@@ -116,7 +118,7 @@ class ExportService
     {
         fputcsv($handle, ['Category', 'Month', 'Amount']);
         foreach ($data as $row) {
-            fputcsv($handle, [$row['category'] ?? '', $row['month'] ?? '', number_format($row['total'] ?? 0)]);
+            fputcsv_safe($handle, [$row['category'] ?? '', $row['month'] ?? '', number_format($row['total'] ?? 0)]);
         }
     }
 
@@ -124,7 +126,7 @@ class ExportService
     {
         fputcsv($handle, ['Vendor', 'Opening Balance', 'Current Balance', 'Payment Terms', 'Active']);
         foreach ($data as $row) {
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['name'] ?? '',
                 number_format($row['opening_balance'] ?? 0),
                 number_format($row['cached_balance'] ?? 0),
@@ -138,7 +140,7 @@ class ExportService
     {
         fputcsv($handle, ['Staff', 'Total Advances', 'Total Expenses', 'Total Returns', 'Outstanding', 'Last Advance', 'Days Since', 'Aging']);
         foreach ($data as $row) {
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['name'] ?? '',
                 number_format($row['total_advances'] ?? 0),
                 number_format($row['total_expenses'] ?? 0),
@@ -155,7 +157,7 @@ class ExportService
     {
         fputcsv($handle, ['Date', 'Amount', 'From Pool', 'To Pool', 'Method', 'Reference', 'Created By', 'Status']);
         foreach ($data as $row) {
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['transfer_date'] ?? '',
                 number_format($row['amount'] ?? 0),
                 $row['from_pool']['name'] ?? '',
@@ -173,7 +175,7 @@ class ExportService
         fputcsv($handle, ['Date', 'Description', 'Amount', 'Category', 'Branch', 'Pool', 'Vendor', 'Flag Reason', 'Status', 'Created By']);
         foreach ($data as $row) {
             $branchName = $row['for_branch']['name'] ?? (($row['is_for_general'] ?? false) ? 'General / Company-wide' : '');
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['expense_date'] ?? '',
                 $row['description'] ?? '',
                 number_format($row['amount'] ?? 0),
@@ -192,7 +194,7 @@ class ExportService
     {
         fputcsv($handle, ['Vendor', 'Balance', 'Last Activity', 'Days Inactive']);
         foreach ($data as $row) {
-            fputcsv($handle, [
+            fputcsv_safe($handle, [
                 $row['name'] ?? '',
                 number_format($row['cached_balance'] ?? 0),
                 $row['last_activity'] ?? 'Never',
@@ -205,16 +207,16 @@ class ExportService
     {
         fputcsv($handle, ['Date', 'Pool', 'Type', 'Amount']);
         foreach (($data['expenses'] ?? []) as $row) {
-            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Expense', number_format($row['total'] ?? 0)]);
+            fputcsv_safe($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Expense', number_format($row['total'] ?? 0)]);
         }
         foreach (($data['transfers_out'] ?? []) as $row) {
-            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer Out', number_format($row['total'] ?? 0)]);
+            fputcsv_safe($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer Out', number_format($row['total'] ?? 0)]);
         }
         foreach (($data['transfers_in'] ?? []) as $row) {
-            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer In', number_format($row['total'] ?? 0)]);
+            fputcsv_safe($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Transfer In', number_format($row['total'] ?? 0)]);
         }
         foreach (($data['staff_advances'] ?? []) as $row) {
-            fputcsv($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Staff Advance', number_format($row['total'] ?? 0)]);
+            fputcsv_safe($handle, [$row['date'] ?? '', $row['pool_name'] ?? '', 'Staff Advance', number_format($row['total'] ?? 0)]);
         }
     }
 
@@ -226,7 +228,7 @@ class ExportService
         if (is_array($first)) {
             fputcsv($handle, array_keys($first));
             foreach ($data as $row) {
-                fputcsv($handle, array_values($row));
+                fputcsv_safe($handle, array_values($row));
             }
         }
     }

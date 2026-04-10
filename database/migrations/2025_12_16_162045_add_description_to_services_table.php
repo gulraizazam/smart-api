@@ -14,7 +14,7 @@ class AddDescriptionToServicesTable extends Migration
     public function up()
     {
         Schema::table('services', function (Blueprint $table) {
-            $table->text('description')->nullable()->after('price');
+            $table->text('description')->nullable();
         });
     }
 

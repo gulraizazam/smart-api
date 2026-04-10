@@ -693,15 +693,21 @@ class Appointments
                     $remaning_statuses = array_diff($appointment_statuses, $ids);
 
                     foreach ($remaning_statuses as $status) {
-
-                        $app_status = AppointmentStatuses::find($status);
+                        // Reuse the pre-loaded $filters['appointment_statuses']
+                        // map (used 20 lines above) instead of N+1 find() per
+                        // missing status. Skip silently if the status isn't in
+                        // the filter map — matches prior behavior of returning
+                        // null and crashing the page on ->id access.
+                        $app_status = $filters['appointment_statuses'][$status] ?? null;
+                        if (!$app_status) {
+                            continue;
+                        }
 
                         $report[$region_id]['centres'][$location_id]['appointment_statuses'][$app_status->id] = [
                             'id' => $app_status->id,
                             'name' => $app_status->name,
                             'total_appointments' => 0,
                         ];
-
                     }
                 }
             }

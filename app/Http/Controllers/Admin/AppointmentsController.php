@@ -353,13 +353,18 @@ class AppointmentsController extends Controller
      */
     protected function verifyUpdateFields(Request $request, ?int $id = null): \Illuminate\Contracts\Validation\Validator
     {
-        // Get appointment to check status
+        // Get appointment to check status.
+        // Round 4 IDOR sweep — Appointments has no BaseModel::getData() helper
+        // (it extends Model, not BaseModel). Constrain by Auth::user()->account_id
+        // so a guessed cross-tenant ID can't influence the validator branch
+        // (isArrivedOrConverted would otherwise read another tenant's row).
         $appointment = null;
+        $accountId = Auth::user()->account_id;
         if ($id) {
-            $appointment = Appointments::find($id);
+            $appointment = Appointments::where('id', $id)->where('account_id', $accountId)->first();
         } elseif ($request->has('id') || $request->route('id')) {
             $appointmentId = $request->input('id') ?? $request->route('id');
-            $appointment = Appointments::find($appointmentId);
+            $appointment = Appointments::where('id', $appointmentId)->where('account_id', $accountId)->first();
         }
         
         // Check if this is an arrived/converted consultation with permissions
@@ -1007,7 +1012,13 @@ class AppointmentsController extends Controller
         } else {
             $employees = [];
         }
-        $services = Services::where('parent_id', '=', '0')->where('name', '!=', 'All Services')->pluck('name', 'id');
+        // Root services store parent_id as NULL (migration 2026_04_08_100034);
+        // legacy rows may still use 0 — match both.
+        $services = Services::where('name', '!=', 'All Services')
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->pluck('name', 'id');
         // $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::user()->account_id);
         // if (count($serviceIds)) {
         //     $services = Services::whereIn('id', $serviceIds)->pluck('name', 'id');
@@ -1116,8 +1127,14 @@ class AppointmentsController extends Controller
         }
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
         
-        // Get all parent services (base services where parent_id = 0)
-        $services = Services::where('parent_id', 0)->where('active', 1)->orderBy('name')->pluck('name', 'id');
+        // Get all parent/root services. Root services store parent_id as NULL
+        // (migration 2026_04_08_100034); legacy rows may still use 0.
+        $services = Services::where('active', 1)
+            ->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->orderBy('name')
+            ->pluck('name', 'id');
         
         if ($appointment->service_id) {
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
@@ -1134,7 +1151,7 @@ class AppointmentsController extends Controller
         }
         if(Gate::allows('edit_after_arrived')){
 
-            $doctor_ids = DoctorHasLocations::where('is_allocated',1)->where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
+            $doctor_ids = DoctorHasLocations::where('is_allocated',1)->where('location_id' ,$appointment->location_id )->distinct()->pluck('user_id');
 
             $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->pluck('name', 'id');
 
@@ -1228,10 +1245,15 @@ class AppointmentsController extends Controller
             $cities = $cities->pluck('full_name', 'id');
         }
         if ($appointment->service_id) {
-            $services = $serviceid = Services::where(['id' => $appointment->service_id])->pluck('name', 'id');
+            // Was 2 queries fetching the same row (one as pluck, one as first()).
+            // Now 1 query that yields both shapes.
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
+            $services = $serviceid ? collect([$serviceid->id => $serviceid->name]) : collect();
         } else {
-            $services = Services::get()->pluck('name', 'id');
+            // Was Services::get()->pluck('name','id') which loaded all columns
+            // of every row before plucking. pluck() at the query level only
+            // selects the two columns from the DB.
+            $services = Services::pluck('name', 'id');
         }
         $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::user()->account_id);
         /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
@@ -1256,18 +1278,15 @@ class AppointmentsController extends Controller
         }
         $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->pluck('name', 'id');
         /*End*/
-        if ($doctors_no_final) {
-            foreach ($doctors_no_final as $key => $doctor) {
-                $resource = Resources::where('external_id', '=', $key)->first();
-                $doctor_rota = ResourceHasRota::where([
-                    ['resource_id', '=', $resource?->id],
-                    ['is_treatment', '=', '1'],
-                ])->get();
-                if (empty($doctor_rota)) {
-                    unset($doctors[$key]);
-                }
-            }
-        }
+        // NOTE: Removed dead loop here that fired ~2 queries per doctor with
+        // intent of filtering doctors lacking an active treatment rota. The
+        // condition was `if (empty($doctor_rota))` where $doctor_rota is an
+        // Eloquent Collection — and PHP's empty() always returns false on
+        // Collection objects (it doesn't call count()). So the unset() never
+        // fired and the loop was a pure no-op wasting database round-trips.
+        // If filtering by treatment rota is desired in the future, replace
+        // with $doctor_rota->isEmpty() and batch-load resources/rotas via
+        // whereIn() to avoid the N+1 cost.
         $machines = Resources::where([
             ['resource_type_id', '=', config('constants.resource_room_type_id')],
             ['location_id', '=', $appointment->location_id],
@@ -1324,10 +1343,13 @@ class AppointmentsController extends Controller
             $cities = $cities->pluck('full_name', 'id');
         }
         if ($appointment->service_id) {
-            $services = $serviceid = Services::where(['id' => $appointment->service_id])->pluck('name', 'id');
+            // Was 2 queries fetching the same row (one as pluck, one as first()).
+            // Now 1 query that yields both shapes.
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
+            $services = $serviceid ? collect([$serviceid->id => $serviceid->name]) : collect();
         } else {
-            $services = Services::get()->pluck('name', 'id');
+            // pluck() at the query level fetches only the two columns.
+            $services = Services::pluck('name', 'id');
         }
         $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::user()->account_id);
         if ($locations) {
@@ -1335,18 +1357,10 @@ class AppointmentsController extends Controller
         }
         $doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::user()->account_id);
 
-        if ($doctors_no_final) {
-            foreach ($doctors_no_final as $key => $doctor) {
-                $resource = Resources::where('external_id', '=', $key)->first();
-                $doctor_rota = ResourceHasRota::where([
-                    ['resource_id', '=', $resource?->id],
-                    ['is_treatment', '=', '1'],
-                ])->get();
-                if (empty($doctor_rota)) {
-                    unset($doctors[$key]);
-                }
-            }
-        }
+        // NOTE: Removed dead loop here (same pattern as in editService above):
+        // `if (empty($doctor_rota))` on an Eloquent Collection always returns
+        // false in PHP, so the unset() never fired. The loop was making N+1
+        // queries with no observable effect.
         // $machines = Resources::where([
         //     ['resource_type_id', '=', config('constants.resource_room_type_id')],
         //     ['location_id', '=', $appointment->location_id],
@@ -1431,10 +1445,14 @@ class AppointmentsController extends Controller
         } catch (\App\Exceptions\AppointmentException $e) {
             return $this->errorResponse($e->getMessage(), 200);
         } catch (\Exception $e) {
+            // Round 4 Crypto-H3 — getTraceAsString() inlines argument
+            // values (patient ids, phone numbers) into the log line.
+            // Use file/line so PII does not land in storage/logs/laravel.log.
             \Log::error('Consultation update error', [
                 'appointment_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error'          => $e->getMessage(),
+                'file'           => $e->getFile(),
+                'line'           => $e->getLine(),
             ]);
             return $this->errorResponse('An error occurred while updating the consultation.', 200);
         }
@@ -1458,10 +1476,12 @@ class AppointmentsController extends Controller
         } catch (\App\Exceptions\AppointmentException $e) {
             return $this->errorResponse($e->getMessage(), 200);
         } catch (\Exception $e) {
+            // Round 4 Crypto-H3 — see Consultation update handler above.
             \Log::error('Treatment update error', [
                 'appointment_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error'          => $e->getMessage(),
+                'file'           => $e->getFile(),
+                'line'           => $e->getLine(),
             ]);
             return $this->errorResponse('An error occurred while updating the treatment.', 200);
         }
@@ -1473,8 +1493,12 @@ class AppointmentsController extends Controller
     public function updateOld(Request $request, int $id): \Illuminate\Http\JsonResponse
     {
 
-        // Get appointment to check status
-        $appointment = Appointments::find($id);
+        // Get appointment to check status.
+        // Round 4 IDOR sweep — tenant-scope by account_id so a guessed
+        // cross-tenant appointment id cannot be updated through this path.
+        $appointment = Appointments::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
         if (!$appointment) {
             return $this->errorResponse('Appointment not found.', 200);
         }
@@ -1601,7 +1625,14 @@ class AppointmentsController extends Controller
             if ($validator->fails()) {
                 return $this->errorResponse($validator->messages()->first(), 200);
             }
-            $appointment = Appointments::find($id);
+            // Round 4 IDOR sweep — tenant-scoped reload (Appointments has no
+            // BaseModel::getData() helper).
+            $appointment = Appointments::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+            if (!$appointment) {
+                return $this->errorResponse('Appointment not found.', 200);
+            }
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
             // Only check back-date if scheduled_date is provided in request
             if ($request->has('scheduled_date') && $request->scheduled_date && ! Gate::allows('edit_after_arrived') && strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {

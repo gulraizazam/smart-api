@@ -11,7 +11,9 @@ use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\Settings;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 
 class AppointmentsPlansController extends Controller
 {
@@ -26,13 +28,27 @@ class AppointmentsPlansController extends Controller
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
-        $appointmentinformation = Appointments::find($id);
+        // Round 4 IDOR sweep — tenant-scope the appointment lookup so a guessed
+        // cross-tenant id can't be used to seed a plan-create flow against
+        // another tenant's appointment + patient.
+        $appointmentinformation = Appointments::where('id', $id)
+            ->where('account_id', Auth::user()->account_id)
+            ->first();
+        if (! $appointmentinformation) {
+            return $this->errorResponse('Appointment not found.', 404);
+        }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
+        // Patient is derived from a tenant-checked appointment, so the
+        // patient_id is implicitly trusted (it could not have been guessed).
         $patient = User::find($appointmentinformation->patient_id);
 
-        $random_id = md5(time().rand(0001, 9999).rand(78599, 99999));
+        // Round 4 Crypto-H1 — Str::random uses random_bytes() (CSPRNG).
+        // The previous md5(time + bounded rand) seed had only ~26 bits of
+        // entropy and was guessable, letting an attacker collide on the
+        // random_id used to key this user's pending plan rows.
+        $random_id = Str::random(32);
         $paymentmodes = PaymentModes::active()->where('type', '=', 'application')->pluck('name', 'id');
 
         $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();

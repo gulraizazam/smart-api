@@ -4,22 +4,21 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\GuardsTenantBoundary;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class BaseModel extends Model
 {
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Model $model): void {
-            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
-                $model->account_id = Auth::user()->account_id;
-            }
-        });
-    }
+    use GuardsTenantBoundary;
+    /**
+     * Enables `Model::factory()` for every domain model that extends
+     * BaseModel. The factories live in `database/factories/<Model>Factory.php`.
+     * Used by the test suite — production code never calls ->factory().
+     */
+    use HasFactory;
 
     public static function getData(int $id): ?static
     {
@@ -44,17 +43,25 @@ class BaseModel extends Model
     }
 
     /**
-     * Get bulk data for appointment images (cross-account by design).
+     * @deprecated REMOVED — this helper executed `whereIn('id', $id)` with
+     * no tenant scoping and was a confirmed cross-tenant IDOR vector. The
+     * single legitimate caller (AppointmentImageService::getDatatableData)
+     * has been migrated to a tenant-scoped query that joins via
+     * appointments.account_id. New code MUST use getBulkData() (which
+     * filters by Auth::user()->account_id) or write an explicit
+     * tenant-scoped query.
+     *
+     * Calling this method now throws to prevent accidental reintroduction.
      *
      * @param  int|array<int>  $id
+     * @throws \LogicException
      */
-    public static function getBulkData_forimage(int|array $id): Collection
+    public static function getBulkData_forimage(int|array $id): never
     {
-        if (! is_array($id)) {
-            $id = [$id];
-        }
-
-        return static::whereIn('id', $id)->get();
+        throw new \LogicException(
+            'BaseModel::getBulkData_forimage was removed for tenant-isolation reasons. '
+            . 'Use getBulkData() or an explicit tenant-scoped query.'
+        );
     }
 
     public function dateFormat(string $date, string $format = 'Y-m-d'): string

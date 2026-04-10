@@ -14,7 +14,7 @@ class AddPlanTypeToPackagesTable extends Migration
     public function up()
     {
         Schema::table('packages', function (Blueprint $table) {
-            $table->enum('plan_type', ['plan', 'bundle'])->default('plan')->after('is_exclusive');
+            $table->enum('plan_type', ['plan', 'bundle'])->default('plan');
         });
     }
 

@@ -1461,14 +1461,22 @@ class LeadService
         $arrived = AppointmentStatuses::where('is_arrived', 1)->first();
         $pending = AppointmentStatuses::where('is_default', 1)->first();
 
-        $appointments = DB::table('leads')
-            ->join('appointments', 'leads.id', '=', 'appointments.lead_id')
+        // Subquery: latest appointment id per (patient_id, service_id) pair.
+        // The previous query selected appointments.* alongside an aggregate, which relied
+        // on MySQL non-strict GROUP BY to pick arbitrary row values. MariaDB rejects that
+        // under ONLY_FULL_GROUP_BY. MAX(id) gives a deterministic latest row.
+        $latestPerPair = DB::table('appointments')
+            ->join('leads', 'leads.id', '=', 'appointments.lead_id')
             ->where('leads.lead_status_id', '!=', $junkStatus?->id ?? 0)
             ->where('appointments.base_appointment_status_id', Config::get('constants.appointment_status_not_show'))
             ->whereDate('appointments.created_at', '>=', $startDate)
             ->whereDate('appointments.created_at', '<=', $endDate)
-            ->select('appointments.*', DB::raw('MAX(appointments.created_at) as max_created_at'))
-            ->groupBy('appointments.patient_id', 'appointments.service_id')
+            ->select('appointments.patient_id', 'appointments.service_id', DB::raw('MAX(appointments.id) as latest_id'))
+            ->groupBy('appointments.patient_id', 'appointments.service_id');
+
+        $appointments = DB::table('appointments')
+            ->joinSub($latestPerPair, 'latest_per_pair', 'latest_per_pair.latest_id', '=', 'appointments.id')
+            ->select('appointments.*')
             ->orderByDesc('appointments.created_at')
             ->get();
 
@@ -1523,8 +1531,12 @@ class LeadService
 
     protected function applyReportFilters(Builder $query, array $filters): void
     {
+        // NOTE: cnic filter intentionally removed. The users.cnic column is now
+        // encrypted at rest via App\Casts\EncryptedLegacy. SQL equality against
+        // ciphertext returns 0 matches for any row that has been re-saved through
+        // the cast. To restore exact-match search, add a blind-index column
+        // (cnic_hash = HMAC-SHA256) and reintroduce the filter against that.
         $filterMap = [
-            'cnic' => 'users.cnic',
             'dob' => 'users.dob',
             'patient_id' => 'users.id',
             'gender_id' => 'users.gender',

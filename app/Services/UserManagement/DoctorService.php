@@ -40,17 +40,17 @@ class DoctorService
             ->where('users.user_type_id', Config::get('constants.practitioner_id'))
             ->where('users.account_id', $user->account_id)
             ->where('users.resource_type_id', 2)
-            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1))
-            ->groupBy('users.id');
+            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1));
 
         foreach ($where as $condition) {
             $baseQuery->where($condition[0], $condition[1], $condition[2]);
         }
 
-        $total = (clone $baseQuery)->pluck('users.id')->count();
+        $total = (clone $baseQuery)->distinct()->count('users.id');
 
         $users = (clone $baseQuery)
             ->select('users.*')
+            ->distinct()
             ->orderBy($params['orderBy'] ?? 'users.created_at', $params['order'] ?? 'desc')
             ->offset($params['offset'] ?? 0)
             ->limit($params['limit'] ?? 30)
@@ -256,7 +256,7 @@ class DoctorService
         $data['can_perform_consultation'] = isset($data['can_perform_consultation']) ? 1 : 0;
 
         $user = User::create($data);
-        AuditTrails::addEventLogger('users', 'create', $data, ['name', 'email', 'password', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
+        AuditTrails::addEventLogger('users', 'create', $data, ['name', 'email', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
 
         if (!$user) {
             return null;
@@ -303,7 +303,7 @@ class DoctorService
         $oldData = $user->makeVisible(['password'])->toArray();
 
         $user->update($data);
-        AuditTrails::addEventLogger('users', 'update', $oldData, ['name', 'email', 'password', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
+        AuditTrails::addEventLogger('users', 'update', $oldData, ['name', 'email', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
 
         // Sync roles
         $roles = $data['roles'] ?? [];

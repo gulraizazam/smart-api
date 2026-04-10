@@ -89,12 +89,18 @@ class Filters
     public static function put($userId, $file, $key, $value = null)
     {
         self::_init($userId, $file);
-        if (is_array($key)) {
-            self::$valuestore->put($key);
-        } else {
-            self::$valuestore->put($key, $value);
-        }
-        Filters::RemoveEmptySubFolders(storage_path(self::$base_path));
+
+        // Valuestore uses file_put_contents which on Windows opens files with
+        // exclusive access. Parallel AJAX requests from the same page (datatable,
+        // filters, counts, …) all hit the same per-user JSON file and race,
+        // yielding "Permission denied". Retry briefly on transient write failures.
+        self::retryOnFailure(function () use ($key, $value): void {
+            if (is_array($key)) {
+                self::$valuestore->put($key);
+            } else {
+                self::$valuestore->put($key, $value);
+            }
+        });
 
         return true;
     }
@@ -112,7 +118,9 @@ class Filters
     {
         self::_init($userId, $file);
 
-        self::$valuestore->flush();
+        self::retryOnFailure(function (): void {
+            self::$valuestore->flush();
+        });
     }
 
     /**
@@ -130,7 +138,41 @@ class Filters
     {
         self::_init($userId, $file);
 
-        self::$valuestore->forget($key);
+        self::retryOnFailure(function () use ($key): void {
+            self::$valuestore->forget($key);
+        });
+    }
+
+    /**
+     * Retry a Valuestore write briefly on transient failures.
+     *
+     * On Windows, file_put_contents opens files with exclusive access. When
+     * multiple AJAX calls on the same page write to the same per-user JSON
+     * at once, one can fail with "Permission denied". A few short retries
+     * resolve the race without touching vendor code. Any unrecoverable error
+     * (last attempt) is swallowed silently — filter persistence is best-effort
+     * and should not break the request.
+     */
+    private static function retryOnFailure(callable $op): void
+    {
+        $attempts = 5;
+        $delayUs = 20_000; // 20ms
+
+        for ($i = 0; $i < $attempts; $i++) {
+            try {
+                $op();
+
+                return;
+            } catch (\Throwable $e) {
+                if ($i === $attempts - 1) {
+                    // Last attempt failed; don't propagate — filter state is
+                    // best-effort and shouldn't surface a 500 to the user.
+                    return;
+                }
+                usleep($delayUs);
+                $delayUs *= 2;
+            }
+        }
     }
 
     /**

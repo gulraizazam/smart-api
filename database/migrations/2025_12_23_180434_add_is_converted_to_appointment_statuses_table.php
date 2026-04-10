@@ -14,7 +14,7 @@ class AddIsConvertedToAppointmentStatusesTable extends Migration
     public function up()
     {
         Schema::table('appointment_statuses', function (Blueprint $table) {
-            $table->tinyInteger('is_converted')->default(0)->after('is_arrived');
+            $table->tinyInteger('is_converted')->default(0);
         });
     }
 

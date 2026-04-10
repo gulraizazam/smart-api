@@ -11,6 +11,8 @@ class LeadStatusesFactory extends Factory
         return [
             'name' => $this->faker->name,
             'sort_no' => $this->faker->numberBetween(1, 100),
+            'account_id' => 1,
+            'active' => 1,
             'created_at' => \Carbon\Carbon::now(),
             'updated_at' => \Carbon\Carbon::now(),
         ];

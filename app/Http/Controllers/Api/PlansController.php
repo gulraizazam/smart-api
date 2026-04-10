@@ -50,10 +50,12 @@ final class PlansController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
         } catch (\Throwable $e) {
+            // Round 4 Crypto-H3 — drop trace, keep file/line.
             Log::error('Plans Datatable Error', [
                 'message'    => $e->getMessage(),
                 'patient_id' => $patientId,
-                'trace'      => $e->getTraceAsString(),
+                'file'       => $e->getFile(),
+                'line'       => $e->getLine(),
             ]);
 
             return $this->errorResponse('An error occurred while fetching plans data.', 500);
@@ -123,9 +125,11 @@ final class PlansController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
         } catch (\Throwable $e) {
+            // Round 4 Crypto-H3 — drop trace, keep file/line.
             Log::error('Global Plans Datatable Error', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
             ]);
 
             return $this->errorResponse('An error occurred while fetching plans data.', 500);

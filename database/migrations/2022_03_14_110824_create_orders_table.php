@@ -15,18 +15,18 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('patient_id');
+            $table->unsignedBigInteger('patient_id');
             $table->foreignId('product_id');
-            $table->unsignedInteger('location_id')->nullable();
+            $table->unsignedBigInteger('location_id')->nullable();
             $table->foreignId('warehouse_id')->nullable();
             $table->float('total_price', 8, 2)->nullable();
-            $table->integer('refund_order_id')->nullable();
+            $table->unsignedBigInteger('refund_order_id')->nullable();
             $table->enum('order_type', ['sale', 'refund', 'in_house_use']);
             $table->enum('payment_mode', ['cash', 'card', 'bank_wire']);
             $table->tinyInteger('status')->default(1);
-            $table->unsignedInteger('created_by');
-            $table->unsignedInteger('updated_by')->nullable();
-            $table->unsignedInteger('account_id');
+            $table->unsignedBigInteger('created_by');
+            $table->unsignedBigInteger('updated_by')->nullable();
+            $table->unsignedBigInteger('account_id');
             $table->timestamps();
 
             $table->foreign('account_id')->references('id')->on('accounts');

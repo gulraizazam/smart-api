@@ -60,9 +60,11 @@ final class RefundsController extends Controller
                 'active_filters' => Filters::all(Auth::id(), 'plansrefunds'),
             ]);
         } catch (\Throwable $e) {
+            // Round 4 Crypto-H3 — drop trace, keep file/line.
             Log::error('Refunds Datatable Error', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
             ]);
 
             return response()->json([

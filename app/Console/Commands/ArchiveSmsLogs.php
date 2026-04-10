@@ -16,7 +16,8 @@ class ArchiveSmsLogs extends Command
 
     protected $description = 'Archive old SMS log records to archive table (safe, batched, reversible)';
 
-    #[\Override]
+    // Note: Illuminate\Console\Command::handle() is a convention method (not
+    // declared in the parent), so #[\Override] is invalid under PHP 8.4.
     public function handle(): int
     {
         $months = (int) $this->option('months');

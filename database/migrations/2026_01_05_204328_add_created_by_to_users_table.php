@@ -15,7 +15,7 @@ class AddCreatedByToUsersTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'created_by')) {
-                $table->unsignedBigInteger('created_by')->nullable()->after('account_id');
+                $table->unsignedBigInteger('created_by')->nullable();
             }
         });
     }

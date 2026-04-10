@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Providers\AppServiceProvider;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Foundation\Auth\ResetsPasswords;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class ResetPasswordController extends Controller
 {
@@ -88,5 +89,21 @@ class ResetPasswordController extends Controller
         return $response == Password::PASSWORD_RESET
             ? $this->sendResetResponse($request, $response)
             : $this->sendResetFailedResponse($request, $response);
+    }
+
+    /**
+     * Reset the given user's password.
+     */
+    protected function resetPassword($user, $password): void
+    {
+        $this->setUserPassword($user, $password);
+
+        $user->setRememberToken(Str::random(60));
+
+        $user->save();
+
+        event(new PasswordReset($user));
+
+        $this->guard()->login($user);
     }
 }

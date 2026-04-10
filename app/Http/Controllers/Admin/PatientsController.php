@@ -74,7 +74,10 @@ class PatientsController extends Controller
             return abort(401, 'Unauthorized to access this section');
         }
 
-        $patient = Patients::find($id);
+        // Round 4 IDOR sweep — getData() filters by Auth::user()->account_id,
+        // so a guessed cross-tenant ID returns null and aborts 404 instead of
+        // exposing another tenant's patient row in the view.
+        $patient = Patients::getData((int) $id);
         if (!$patient) {
             return abort(404, 'Patient not found');
         }
@@ -346,7 +349,11 @@ class PatientsController extends Controller
         $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
 
         try {
-            $file->storeAs('public/patient_image', $fileName);
+            // Round 4 C3 — write to storage/app/patient_image (the local disk),
+            // NOT storage/app/public/patient_image which is exposed via the
+            // public/storage symlink. Files are now served only through the
+            // authenticated admin.files.patient_image route.
+            $file->storeAs('patient_image', $fileName);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Failed to save file: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             return $this->errorResponse('Failed to save file. Please try again.', 200);
@@ -404,7 +411,16 @@ class PatientsController extends Controller
             return abort(401);
         }
 
-        $documents = Documents::find($id);
+        // Round 4 IDOR sweep — Documents has no account_id column; tenant
+        // ownership runs through the documents.user_id → users.account_id
+        // chain. Restrict the lookup to documents whose owning patient lives
+        // in the caller's account, otherwise abort 404.
+        $documents = Documents::whereHas('patient', static fn ($q) => $q->where('account_id', Auth::user()->account_id))
+            ->find($id);
+
+        if (!$documents) {
+            return abort(404);
+        }
 
         return view('admin.patients.card.documents.edit', compact('documents'));
     }

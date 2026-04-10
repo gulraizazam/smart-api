@@ -452,11 +452,15 @@ class CashFlowVendorsController extends Controller
 
                 $out = fopen('php://output', 'w');
 
-                fputcsv($out, ['Vendor: ' . $data['vendor']->name]);
+                // Round 4 Inj-H2: vendor name and ledger row fields are
+                // user-controlled — defang formula-trigger characters
+                // before writing so the CSV cannot execute payloads when
+                // opened in Excel.
+                fputcsv_safe($out, ['Vendor: ' . $data['vendor']->name]);
 
-                fputcsv($out, ['Period: ' . $data['date_from'] . ' to ' . $data['date_to']]);
+                fputcsv_safe($out, ['Period: ' . $data['date_from'] . ' to ' . $data['date_to']]);
 
-                fputcsv($out, ['Opening Balance: ' . $data['opening_balance']]);
+                fputcsv_safe($out, ['Opening Balance: ' . $data['opening_balance']]);
 
                 fputcsv($out, []);
 
@@ -464,7 +468,7 @@ class CashFlowVendorsController extends Controller
 
                 foreach ($data['rows'] as $row) {
 
-                    fputcsv($out, array_values($row));
+                    fputcsv_safe($out, array_values($row));
 
                 }
 

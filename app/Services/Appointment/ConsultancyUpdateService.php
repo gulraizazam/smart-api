@@ -18,9 +18,10 @@ use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceTimeOff;
 use App\Models\BusinessClosure;
+use App\Models\Patients;
 use App\Models\Services;
+use App\Models\User;
 use App\Models\WorkingDayException;
-use App\Models\User as Patients;
 use App\Models\Settings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -568,8 +569,9 @@ class ConsultancyUpdateService
         }
 
         if ($oldValues['doctor_id'] != $appointment->doctor_id) {
-            $oldDoctor = Patients::find($oldValues['doctor_id']);
-            $newDoctor = Patients::find($appointment->doctor_id);
+            // Doctor lookups bypass the Patients global scope (user_type_id = 3).
+            $oldDoctor = User::find($oldValues['doctor_id']);
+            $newDoctor = User::find($appointment->doctor_id);
             $changes['Doctor'] = [
                 'old' => $oldDoctor?->name ?? 'Unknown',
                 'new' => $newDoctor?->name ?? 'Unknown',

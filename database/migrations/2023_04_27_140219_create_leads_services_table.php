@@ -15,10 +15,10 @@ class CreateLeadsServicesTable extends Migration
     {
         Schema::create('leads_services', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('lead_id');
-            $table->unsignedInteger('service_id');
-            $table->unsignedInteger('child_service_id')->nullable();
-            $table->unsignedInteger('consultancy_id')->nullable();
+            $table->unsignedBigInteger('lead_id');
+            $table->unsignedBigInteger('service_id');
+            $table->unsignedBigInteger('child_service_id')->nullable();
+            $table->unsignedBigInteger('consultancy_id')->nullable();
             $table->integer('status')->default(0);
             $table->timestamps();
 

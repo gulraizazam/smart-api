@@ -13,10 +13,10 @@ return new class extends Migration
             $table->unsignedBigInteger('account_id');
             $table->tinyInteger('month');
             $table->smallInteger('year');
-            $table->unsignedInteger('locked_by');
+            $table->unsignedBigInteger('locked_by');
             $table->json('balance_snapshot')->nullable();
             $table->text('unlock_reason')->nullable();
-            $table->unsignedInteger('unlocked_by')->nullable();
+            $table->unsignedBigInteger('unlocked_by')->nullable();
             $table->timestamp('unlocked_at')->nullable();
             $table->timestamps();
 

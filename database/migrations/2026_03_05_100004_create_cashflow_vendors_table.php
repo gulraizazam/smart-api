@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('cached_balance', 15, 2)->default(0);
             $table->boolean('is_active')->default(1);
             $table->text('notes')->nullable();
-            $table->unsignedInteger('created_by')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

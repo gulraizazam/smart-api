@@ -89,6 +89,28 @@ return Application::configure(basePath: dirname(__DIR__))
         // Cash Flow: Monthly Report Email (1st of every month at 09:00 AM)
         $schedule->job(new \App\Jobs\SendCashflowMonthlyReport())
             ->monthlyOn(1, '09:00')->timezone($timeZone);
+
+        // Security: prune expired password-reset tokens (H3 finding).
+        // Closes the H3 audit gap where rows from 2019 still existed in
+        // password_resets because no cleanup ever ran.
+        $schedule->command('auth:clear-resets')
+            ->daily()->timezone($timeZone);
+
+        // Security: prune leftover bulk-import spreadsheets older than 24h
+        // (L1 finding). The importer should also delete-after-import; this
+        // is the safety net for crashed/aborted runs.
+        $schedule->call(function (): void {
+            $dir = storage_path('app');
+            if (!is_dir($dir)) {
+                return;
+            }
+            $cutoff = time() - 86400;
+            foreach (glob($dir . DIRECTORY_SEPARATOR . 'temp_import_*.xlsx') ?: [] as $file) {
+                if (is_file($file) && filemtime($file) < $cutoff) {
+                    @unlink($file);
+                }
+            }
+        })->name('prune-temp-imports')->dailyAt('02:00')->timezone($timeZone);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash([

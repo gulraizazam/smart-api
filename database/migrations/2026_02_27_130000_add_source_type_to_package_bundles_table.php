@@ -22,7 +22,7 @@ class AddSourceTypeToPackageBundlesTable extends Migration
         // Step 1: Add the column (skip if already exists from partial run)
         if (!Schema::hasColumn('package_bundles', 'source_type')) {
             Schema::table('package_bundles', function (Blueprint $table) {
-                $table->string('source_type', 20)->nullable()->after('bundle_id')
+                $table->string('source_type', 20)->nullable()
                       ->comment('service|bundle|membership - what bundle_id column references');
             });
         }

@@ -171,6 +171,9 @@ class RoleService
         $permissions = $data['permission'] ?? [];
         unset($data['permission'], $data['DataTables_Table_0_length']);
 
+        // roles.commission is NOT NULL with no DB default; coerce null/missing to 0.
+        $data['commission'] = $data['commission'] ?? 0;
+
         $role = Role::create($data);
         $role->givePermissionTo($permissions);
 
@@ -185,6 +188,11 @@ class RoleService
 
         $permissions = $data['permission'] ?? [];
         unset($data['permission'], $data['DataTables_Table_0_length']);
+
+        // roles.commission is NOT NULL with no DB default; coerce null to 0.
+        if (array_key_exists('commission', $data) && $data['commission'] === null) {
+            $data['commission'] = 0;
+        }
 
         $role->update($data);
         $role->syncPermissions($permissions);

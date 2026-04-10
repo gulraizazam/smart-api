@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedLegacy;
+use App\Models\Concerns\GuardsTenantBoundary;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,7 +25,38 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use GuardsTenantBoundary, HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+
+    /**
+     * H2 — failed-login lockout policy. Five wrong attempts → 15 minute
+     * account-level lock (independent of the existing throttle:5,1 IP
+     * rate limiter, which is cache-keyed and per-IP). The DB-backed
+     * lockout survives cache flushes and follows the account, not the
+     * source address.
+     */
+    public const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+    public const LOGIN_LOCKOUT_MINUTES = 15;
+
+    /**
+     * Tenant-boundary guard column list. Includes the standard `account_id`
+     * (multi-tenant escape) plus User-specific privilege-bearing columns.
+     * `user_type_id` controls role group; `is_admin` (if present) flips
+     * super-admin. Both must be set explicitly by service code, never via
+     * mass-assignment.
+     *
+     * Implemented as a method override (not a property) because PHP 8.3+
+     * forbids redeclaring a trait property with a different default value.
+     *
+     * @return array<int, string>
+     */
+    protected static function tenantGuardedColumns(): array
+    {
+        return [
+            'account_id',
+            'user_type_id',
+            'is_admin',
+        ];
+    }
 
     protected static int $PATIENT_GROUP = 3;
 
@@ -36,8 +69,14 @@ class User extends Authenticatable
         'active', 'select_all', 'is_advance_eligible',
     ];
 
+    /**
+     * Audit-trail fillable list. NEVER include 'password' or other secrets here —
+     * AuditTrails::addEventLogger captures values verbatim from the pre-mutation
+     * request array. The AuditTrails denylist mask (see AuditTrails.php) is the
+     * primary defense; this list is the belt-and-suspenders second line.
+     */
     protected static array $_fillable = [
-        'name', 'email', 'password', 'phone', 'main_account', 'gender',
+        'name', 'email', 'phone', 'main_account', 'gender',
         'dob', 'address', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all',
     ];
@@ -55,7 +94,67 @@ class User extends Authenticatable
             'active' => 'integer',
             'commission' => 'decimal:2',
             'can_perform_consultation' => 'boolean',
+            // CNIC is encrypted at rest. Equality search on this column is
+            // currently used in LeadService::applyReportFilters and will
+            // return false negatives once any matching row has been
+            // re-saved through the cast. Add a blind-index column
+            // (cnic_hash) when exact-match search is needed.
+            'cnic' => EncryptedLegacy::class,
+            // H2 — lockout
+            'failed_login_attempts' => 'integer',
+            'locked_until' => 'datetime',
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | H2 — Lockout helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * True if the account is currently locked out from logging in.
+     */
+    public function isLocked(): bool
+    {
+        return $this->locked_until !== null && $this->locked_until->isFuture();
+    }
+
+    /**
+     * Increment the failed-login counter and lock the account if the
+     * threshold is reached. Idempotent: safe to call from any failed
+     * branch (bad password, inactive, etc.).
+     */
+    public function recordFailedLogin(): void
+    {
+        // Use raw query update to avoid mass-assignment guards firing on
+        // these counter columns and to skip the model's `password` mutator.
+        $next = (int) $this->failed_login_attempts + 1;
+        $attrs = ['failed_login_attempts' => $next];
+
+        if ($next >= self::MAX_FAILED_LOGIN_ATTEMPTS) {
+            $attrs['locked_until'] = now()->addMinutes(self::LOGIN_LOCKOUT_MINUTES);
+            $attrs['failed_login_attempts'] = 0;
+        }
+
+        static::withoutEvents(fn () => static::whereKey($this->getKey())->update($attrs));
+        $this->forceFill($attrs);
+    }
+
+    /**
+     * Reset the failed-login counter and clear any active lock. Called
+     * after a verified successful login.
+     */
+    public function recordSuccessfulLogin(): void
+    {
+        if ($this->failed_login_attempts === 0 && $this->locked_until === null) {
+            return;
+        }
+        static::withoutEvents(fn () => static::whereKey($this->getKey())->update([
+            'failed_login_attempts' => 0,
+            'locked_until' => null,
+        ]));
+        $this->forceFill(['failed_login_attempts' => 0, 'locked_until' => null]);
     }
 
     protected function fullName(): Attribute

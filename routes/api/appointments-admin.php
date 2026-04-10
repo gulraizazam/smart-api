@@ -132,7 +132,7 @@ use Illuminate\Support\Facades\Route;
 
     Route::post('plans/status', [PackagesController::class, 'status'])->name('plans.status');
 
-    Route::any('plans/destroy/{id}', [PackagesController::class, 'destroy'])->name('plans.destroy');
+    Route::delete('plans/destroy/{id}', [PackagesController::class, 'destroy'])->name('plans.destroy');
 
     Route::get('plans/display/{id}', [PackagesController::class, 'display'])->name('plans.display');
 

@@ -7,9 +7,11 @@ use DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Helpers\ACL;
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Helpers\Filters;
 use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasOne;use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,22 +20,13 @@ use Illuminate\Database\Eloquent\Relations\HasOne;use Illuminate\Database\Eloqu
 
 class Invoices extends Model
 {
+    use HasFactory;
     use SoftDeletes;
+    use GuardsTenantBoundary;
 
     protected $fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id','is_settlement', 'package_id'];
 
     protected static array $_fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id'];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        static::creating(function (Model $model): void {
-            if (Auth::check() && in_array('account_id', $model->getFillable(), true)) {
-                $model->account_id = Auth::user()->account_id;
-            }
-        });
-    }
 
     protected $table = 'invoices';
 

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('account_id');
             $table->enum('type', ['branch_cash', 'head_office_cash', 'bank_account']);
-            $table->unsignedInteger('location_id')->nullable();
+            $table->unsignedBigInteger('location_id')->nullable();
             $table->string('name');
             $table->decimal('opening_balance', 15, 2)->default(0);
             $table->decimal('cached_balance', 15, 2)->default(0);

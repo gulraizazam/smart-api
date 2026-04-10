@@ -291,22 +291,26 @@ class AppointmentExportController extends AppointmentBaseController
                 } else {
                     $consultancy_type = '';
                 }
+                // Round 4 Inj-H4: every user-controlled cell (patient
+                // name, doctor name, region/city/location/service names,
+                // creator names) is defanged via csv_safe so a name like
+                // `=cmd|...` cannot execute when the XLSX is opened.
                 $activeSheet->setCellValue('A'.$counter, $appointment->patient_id);
-                $activeSheet->setCellValue('B'.$counter, ($appointment->patient_name) ? $appointment->patient_name : $appointment->name);
-                $activeSheet->setCellValue('C'.$counter, \App\Helpers\PhoneFormattingService::prepareNumber4Call($appointment->patient->phone, 1));
+                $activeSheet->setCellValue('B'.$counter, csv_safe(($appointment->patient_name) ? $appointment->patient_name : $appointment->name));
+                $activeSheet->setCellValue('C'.$counter, csv_safe(\App\Helpers\PhoneFormattingService::prepareNumber4Call($appointment->patient->phone, 1)));
                 $activeSheet->setCellValue('D'.$counter, ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E'.$counter, $appointment->doctor->name);
-                $activeSheet->setCellValue('F'.$counter, (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A');
-                $activeSheet->setCellValue('G'.$counter, $appointment->city?->name ?? 'N/A');
-                $activeSheet->setCellValue('H'.$counter, $appointment->location?->name ?? 'N/A');
-                $activeSheet->setCellValue('I'.$counter, $appointment->service->name);
-                $activeSheet->setCellValue('J'.$counter, ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''));
-                $activeSheet->setCellValue('K'.$counter, $appointment->appointment_type->name);
+                $activeSheet->setCellValue('E'.$counter, csv_safe($appointment->doctor->name));
+                $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A'));
+                $activeSheet->setCellValue('G'.$counter, csv_safe($appointment->city?->name ?? 'N/A'));
+                $activeSheet->setCellValue('H'.$counter, csv_safe($appointment->location?->name ?? 'N/A'));
+                $activeSheet->setCellValue('I'.$counter, csv_safe($appointment->service->name));
+                $activeSheet->setCellValue('J'.$counter, csv_safe(($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : '')));
+                $activeSheet->setCellValue('K'.$counter, csv_safe($appointment->appointment_type->name));
                 $activeSheet->setCellValue('L'.$counter, $consultancy_type);
                 $activeSheet->setCellValue('M'.$counter, Carbon::parse($appointment->app_created_at)->format('F j,Y h:i A'));
-                $activeSheet->setCellValue('N'.$counter, array_key_exists($appointment->app_created_by, $Users) ? $Users[$appointment->app_created_by]->name : 'N/A');
-                $activeSheet->setCellValue('O'.$counter, array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A');
-                $activeSheet->setCellValue('p'.$counter, array_key_exists($appointment->app_updated_by, $Users) ? $Users[$appointment->app_updated_by]->name : 'N/A');
+                $activeSheet->setCellValue('N'.$counter, csv_safe(array_key_exists($appointment->app_created_by, $Users) ? $Users[$appointment->app_created_by]->name : 'N/A'));
+                $activeSheet->setCellValue('O'.$counter, csv_safe(array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A'));
+                $activeSheet->setCellValue('p'.$counter, csv_safe(array_key_exists($appointment->app_updated_by, $Users) ? $Users[$appointment->app_updated_by]->name : 'N/A'));
                 $counter++;
             }
         }

@@ -15,8 +15,8 @@ class CreateUserHasWarehousesTable extends Migration
     {
         Schema::create('user_has_warehouses', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id');
-            $table->integer('warehouse_id');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('warehouse_id');
             $table->timestamps();
         });
     }

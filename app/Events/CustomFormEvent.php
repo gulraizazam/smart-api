@@ -34,7 +34,7 @@ class CustomFormEvent
      */
     public function updating(CustomForms $customForm)
     {
-        $old_data = (CustomForms::find($customForm->id))->toArray();
+        $old_data = CustomForms::find($customForm->id)?->toArray() ?? [];
         AuditTrails::editEventLogger($customForm->__table, 'Edit', $customForm->toArray(), $customForm->__fillable, $old_data, $customForm->id);
     }
 

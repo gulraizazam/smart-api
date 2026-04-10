@@ -116,7 +116,7 @@ final class MembershipTypeService
                 ->orderByDesc('created_at')
                 ->first();
 
-            if ($latestMembership?->end_date < now()->format('Y-m-d')) {
+            if ($latestMembership && $latestMembership->end_date < now()->format('Y-m-d')) {
                 $expiredType = MembershipType::find($latestMembership->membership_type_id);
                 if ($expiredType) {
                     $expiredMembershipTypeId = $expiredType->parent_id ?? $expiredType->id;

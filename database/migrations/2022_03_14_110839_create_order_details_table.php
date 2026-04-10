@@ -24,7 +24,7 @@ class CreateOrderDetailsTable extends Migration
             $table->float('sale_price_after_discount', 8, 2);
             $table->enum('order_type', ['sale', 'refund', 'in_house_use']);
             $table->text('reason')->nullable();
-            $table->unsignedInteger('account_id');
+            $table->unsignedBigInteger('account_id');
             $table->timestamps();
 
             $table->foreign('order_id')->references('id')->on('orders');

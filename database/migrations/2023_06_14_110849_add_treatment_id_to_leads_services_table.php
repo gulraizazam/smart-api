@@ -14,7 +14,7 @@ class AddTreatmentIdToLeadsServicesTable extends Migration
     public function up()
     {
         Schema::table('leads_services', function (Blueprint $table) {
-            $table->unsignedInteger('treatment_id')->nullable();
+            $table->unsignedBigInteger('treatment_id')->nullable();
             $table->foreign('treatment_id')->references('id')->on('appointments');
         });
     }
