@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,19 +17,36 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Align database default to match all existing tables
-        DB::statement("ALTER DATABASE crm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        $db = DB::getDatabaseName();
 
-        // Convert the one mismatched table (91 rows, safe to convert in-place)
-        DB::statement("ALTER TABLE product_details CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        try {
+            DB::statement("ALTER DATABASE `{$db}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            // Shared hosting often denies ALTER DATABASE — tables alignment below is what actually matters.
+            if (! str_contains($e->getMessage(), 'Access denied')) {
+                throw $e;
+            }
+        }
+
+        if (Schema::hasTable('product_details')) {
+            DB::statement("ALTER TABLE product_details CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+        }
     }
 
     public function down(): void
     {
-        // Restore MariaDB 11.x default database collation
-        DB::statement("ALTER DATABASE crm CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci");
+        $db = DB::getDatabaseName();
 
-        // Restore product_details to latin1
-        DB::statement("ALTER TABLE product_details CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci");
+        try {
+            DB::statement("ALTER DATABASE `{$db}` CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci");
+        } catch (\Throwable $e) {
+            if (! str_contains($e->getMessage(), 'Access denied')) {
+                throw $e;
+            }
+        }
+
+        if (Schema::hasTable('product_details')) {
+            DB::statement("ALTER TABLE product_details CONVERT TO CHARACTER SET latin1 COLLATE latin1_swedish_ci");
+        }
     }
 };
