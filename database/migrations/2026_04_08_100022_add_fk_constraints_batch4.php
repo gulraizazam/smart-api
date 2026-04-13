@@ -7,92 +7,97 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add FK constraints to package_advances, invoices, invoice_details.
-     *
-     * Orphan cleanup:
-     *   package_advances.payment_mode_id: 5,545 rows with value 0 → SET NULL
-     *   package_advances.appointment_id: 21 orphans → SET NULL
-     *   package_advances.invoice_id: 10 orphans → SET NULL
-     *   invoice_details.package_service_id: 108 orphans → SET NULL
-     */
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        $rows = DB::select(
+            "SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY' LIMIT 1",
+            [$table, $name]
+        );
+        return ! empty($rows);
+    }
+
+    private function addFk(string $table, string $column, string $refTable, string $name, string $onDelete): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        if ($this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, function (Blueprint $t) use ($column, $refTable, $name, $onDelete) {
+                $t->foreign($column, $name)->references('id')->on($refTable)->onDelete($onDelete);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping FK {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropFk(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, fn (Blueprint $t) => $t->dropForeign($name));
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropForeign {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function safeStatement(string $sql): void
+    {
+        try {
+            DB::statement($sql);
+        } catch (\Throwable $e) {
+            \Log::warning('Statement failed: ' . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // ─── Step 1: Clean orphans ───
-        DB::statement('UPDATE package_advances SET payment_mode_id = NULL WHERE payment_mode_id = 0');
-        DB::statement('UPDATE package_advances SET appointment_id = NULL WHERE appointment_id IS NOT NULL AND appointment_id NOT IN (SELECT id FROM appointments)');
-        DB::statement('UPDATE package_advances SET invoice_id = NULL WHERE invoice_id IS NOT NULL AND invoice_id NOT IN (SELECT id FROM invoices)');
-        DB::statement('UPDATE invoice_details SET package_service_id = NULL WHERE package_service_id IS NOT NULL AND package_service_id NOT IN (SELECT id FROM package_services)');
+        $this->safeStatement('UPDATE package_advances SET payment_mode_id = NULL WHERE payment_mode_id = 0');
+        $this->safeStatement('UPDATE package_advances SET appointment_id = NULL WHERE appointment_id IS NOT NULL AND appointment_id NOT IN (SELECT id FROM appointments)');
+        $this->safeStatement('UPDATE package_advances SET invoice_id = NULL WHERE invoice_id IS NOT NULL AND invoice_id NOT IN (SELECT id FROM invoices)');
+        $this->safeStatement('UPDATE invoice_details SET package_service_id = NULL WHERE package_service_id IS NOT NULL AND package_service_id NOT IN (SELECT id FROM package_services)');
 
-        // ─── Step 2: Add FK constraints ───
+        $this->addFk('package_advances', 'patient_id', 'users', 'fk_pa_patient', 'set null');
+        $this->addFk('package_advances', 'account_id', 'accounts', 'fk_pa_account', 'set null');
+        $this->addFk('package_advances', 'appointment_id', 'appointments', 'fk_pa_appointment', 'set null');
+        $this->addFk('package_advances', 'location_id', 'locations', 'fk_pa_location', 'set null');
+        $this->addFk('package_advances', 'invoice_id', 'invoices', 'fk_pa_invoice', 'set null');
+        $this->addFk('package_advances', 'payment_mode_id', 'payment_modes', 'fk_pa_payment_mode', 'set null');
+        $this->addFk('package_advances', 'appointment_type_id', 'appointment_types', 'fk_pa_appt_type', 'set null');
+        $this->addFk('package_advances', 'created_by', 'users', 'fk_pa_creator', 'set null');
 
-        // package_advances (currently has 1 FK: package_id → adding 8 more)
-        Schema::table('package_advances', function (Blueprint $table) {
-            $table->foreign('patient_id', 'fk_pa_patient')
-                ->references('id')->on('users')->onDelete('set null');
-            $table->foreign('account_id', 'fk_pa_account')
-                ->references('id')->on('accounts')->onDelete('set null');
-            $table->foreign('appointment_id', 'fk_pa_appointment')
-                ->references('id')->on('appointments')->onDelete('set null');
-            $table->foreign('location_id', 'fk_pa_location')
-                ->references('id')->on('locations')->onDelete('set null');
-            $table->foreign('invoice_id', 'fk_pa_invoice')
-                ->references('id')->on('invoices')->onDelete('set null');
-            $table->foreign('payment_mode_id', 'fk_pa_payment_mode')
-                ->references('id')->on('payment_modes')->onDelete('set null');
-            $table->foreign('appointment_type_id', 'fk_pa_appt_type')
-                ->references('id')->on('appointment_types')->onDelete('set null');
-            $table->foreign('created_by', 'fk_pa_creator')
-                ->references('id')->on('users')->onDelete('set null');
-        });
+        $this->addFk('invoices', 'account_id', 'accounts', 'fk_invoices_account', 'restrict');
+        $this->addFk('invoices', 'invoice_status_id', 'invoice_statuses', 'fk_invoices_status', 'set null');
+        $this->addFk('invoices', 'created_by', 'users', 'fk_invoices_creator', 'set null');
+        $this->addFk('invoices', 'location_id', 'locations', 'fk_invoices_location', 'restrict');
+        $this->addFk('invoices', 'doctor_id', 'users', 'fk_invoices_doctor', 'restrict');
 
-        // invoices (currently has 3 FKs → adding 5 more)
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->foreign('account_id', 'fk_invoices_account')
-                ->references('id')->on('accounts')->onDelete('restrict');
-            $table->foreign('invoice_status_id', 'fk_invoices_status')
-                ->references('id')->on('invoice_statuses')->onDelete('set null');
-            $table->foreign('created_by', 'fk_invoices_creator')
-                ->references('id')->on('users')->onDelete('set null');
-            $table->foreign('location_id', 'fk_invoices_location')
-                ->references('id')->on('locations')->onDelete('restrict');
-            $table->foreign('doctor_id', 'fk_invoices_doctor')
-                ->references('id')->on('users')->onDelete('restrict');
-        });
-
-        // invoice_details (currently has 2 FKs → adding 2 more)
-        Schema::table('invoice_details', function (Blueprint $table) {
-            $table->foreign('package_id', 'fk_inv_details_package')
-                ->references('id')->on('packages')->onDelete('set null');
-            $table->foreign('package_service_id', 'fk_inv_details_pkg_svc')
-                ->references('id')->on('package_services')->onDelete('set null');
-        });
+        $this->addFk('invoice_details', 'package_id', 'packages', 'fk_inv_details_package', 'set null');
+        $this->addFk('invoice_details', 'package_service_id', 'package_services', 'fk_inv_details_pkg_svc', 'set null');
     }
 
     public function down(): void
     {
-        Schema::table('package_advances', function (Blueprint $table) {
-            $table->dropForeign('fk_pa_patient');
-            $table->dropForeign('fk_pa_account');
-            $table->dropForeign('fk_pa_appointment');
-            $table->dropForeign('fk_pa_location');
-            $table->dropForeign('fk_pa_invoice');
-            $table->dropForeign('fk_pa_payment_mode');
-            $table->dropForeign('fk_pa_appt_type');
-            $table->dropForeign('fk_pa_creator');
-        });
+        $this->dropFk('package_advances', 'fk_pa_patient');
+        $this->dropFk('package_advances', 'fk_pa_account');
+        $this->dropFk('package_advances', 'fk_pa_appointment');
+        $this->dropFk('package_advances', 'fk_pa_location');
+        $this->dropFk('package_advances', 'fk_pa_invoice');
+        $this->dropFk('package_advances', 'fk_pa_payment_mode');
+        $this->dropFk('package_advances', 'fk_pa_appt_type');
+        $this->dropFk('package_advances', 'fk_pa_creator');
 
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropForeign('fk_invoices_account');
-            $table->dropForeign('fk_invoices_status');
-            $table->dropForeign('fk_invoices_creator');
-            $table->dropForeign('fk_invoices_location');
-            $table->dropForeign('fk_invoices_doctor');
-        });
+        $this->dropFk('invoices', 'fk_invoices_account');
+        $this->dropFk('invoices', 'fk_invoices_status');
+        $this->dropFk('invoices', 'fk_invoices_creator');
+        $this->dropFk('invoices', 'fk_invoices_location');
+        $this->dropFk('invoices', 'fk_invoices_doctor');
 
-        Schema::table('invoice_details', function (Blueprint $table) {
-            $table->dropForeign('fk_inv_details_package');
-            $table->dropForeign('fk_inv_details_pkg_svc');
-        });
+        $this->dropFk('invoice_details', 'fk_inv_details_package');
+        $this->dropFk('invoice_details', 'fk_inv_details_pkg_svc');
     }
 };

@@ -1,68 +1,64 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add composite indexes for the most common multi-column query patterns.
-     *
-     * Based on EXPLAIN ANALYZE and codebase query pattern analysis.
-     * Each index targets a verified high-frequency WHERE clause combination.
-     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function addIndex(string $table, array $columns, string $name): void
+    {
+        if (! Schema::hasTable($table) || $this->indexExists($table, $name)) {
+            return;
+        }
+        Schema::table($table, fn (Blueprint $t) => $t->index($columns, $name));
+    }
+
+    private function dropIndex(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->indexExists($table, $name)) {
+            return;
+        }
+        Schema::table($table, fn (Blueprint $t) => $t->dropIndex($name));
+    }
+
     public function up(): void
     {
-        // ─── package_advances (826K rows) ───
-        // patient_id+account_id: used in filters_packageAdvances(), getAppointmentPackage()
-        DB::statement('CREATE INDEX idx_pa_patient_account ON package_advances(patient_id, account_id)');
-
-        // appointment_id+patient_id+cash_flow: used in getAppointmentPackage()
-        DB::statement('CREATE INDEX idx_pa_appt_patient_cashflow ON package_advances(appointment_id, patient_id, cash_flow)');
-
-        // ─── appointments (394K rows) ───
-        // account_id+appointment_type_id: used in getAppointmentsList(), buildBaseQuery()
-        DB::statement('CREATE INDEX idx_appt_account_type ON appointments(account_id, appointment_type_id)');
-
-        // account_id+base_appointment_status_id: used in ExcludeCancelled scope, status filtering
-        DB::statement('CREATE INDEX idx_appt_account_basestatus ON appointments(account_id, base_appointment_status_id)');
-
-        // scheduled_date+appointment_type_id+account_id: used in date range + type queries
-        DB::statement('CREATE INDEX idx_appt_date_type_account ON appointments(scheduled_date, appointment_type_id, account_id)');
-
-        // patient_id+appointment_type_id+base_appointment_status_id: used in latest arrived lookup
-        DB::statement('CREATE INDEX idx_appt_patient_type_status ON appointments(patient_id, appointment_type_id, base_appointment_status_id)');
-
-        // ─── leads (515K rows) ───
-        // account_id+city_id: used in buildCountQuery(), buildOptimizedResultQuery()
-        DB::statement('CREATE INDEX idx_leads_account_city ON leads(account_id, city_id)');
-
-        // account_id+lead_status_id: used in junk status filtering
-        DB::statement('CREATE INDEX idx_leads_account_status ON leads(account_id, lead_status_id)');
-
-        // phone+account_id: used in createLead() duplicate checking
-        DB::statement('CREATE INDEX idx_leads_phone_account ON leads(phone, account_id)');
-
-        // ─── activities (374K rows) ───
-        // account_id+created_at: used in getActivityLogs() with date range
-        DB::statement('CREATE INDEX idx_activities_account_created ON activities(account_id, created_at)');
-
-        // account_id+activity_type: used in getActivityLogs() with type filter
-        DB::statement('CREATE INDEX idx_activities_account_type ON activities(account_id, activity_type)');
+        $this->addIndex('package_advances', ['patient_id', 'account_id'], 'idx_pa_patient_account');
+        $this->addIndex('package_advances', ['appointment_id', 'patient_id', 'cash_flow'], 'idx_pa_appt_patient_cashflow');
+        $this->addIndex('appointments', ['account_id', 'appointment_type_id'], 'idx_appt_account_type');
+        $this->addIndex('appointments', ['account_id', 'base_appointment_status_id'], 'idx_appt_account_basestatus');
+        $this->addIndex('appointments', ['scheduled_date', 'appointment_type_id', 'account_id'], 'idx_appt_date_type_account');
+        $this->addIndex('appointments', ['patient_id', 'appointment_type_id', 'base_appointment_status_id'], 'idx_appt_patient_type_status');
+        $this->addIndex('leads', ['account_id', 'city_id'], 'idx_leads_account_city');
+        $this->addIndex('leads', ['account_id', 'lead_status_id'], 'idx_leads_account_status');
+        $this->addIndex('leads', ['phone', 'account_id'], 'idx_leads_phone_account');
+        $this->addIndex('activities', ['account_id', 'created_at'], 'idx_activities_account_created');
+        $this->addIndex('activities', ['account_id', 'activity_type'], 'idx_activities_account_type');
     }
 
     public function down(): void
     {
-        DB::statement('DROP INDEX idx_pa_patient_account ON package_advances');
-        DB::statement('DROP INDEX idx_pa_appt_patient_cashflow ON package_advances');
-        DB::statement('DROP INDEX idx_appt_account_type ON appointments');
-        DB::statement('DROP INDEX idx_appt_account_basestatus ON appointments');
-        DB::statement('DROP INDEX idx_appt_date_type_account ON appointments');
-        DB::statement('DROP INDEX idx_appt_patient_type_status ON appointments');
-        DB::statement('DROP INDEX idx_leads_account_city ON leads');
-        DB::statement('DROP INDEX idx_leads_account_status ON leads');
-        DB::statement('DROP INDEX idx_leads_phone_account ON leads');
-        DB::statement('DROP INDEX idx_activities_account_created ON activities');
-        DB::statement('DROP INDEX idx_activities_account_type ON activities');
+        $this->dropIndex('package_advances', 'idx_pa_patient_account');
+        $this->dropIndex('package_advances', 'idx_pa_appt_patient_cashflow');
+        $this->dropIndex('appointments', 'idx_appt_account_type');
+        $this->dropIndex('appointments', 'idx_appt_account_basestatus');
+        $this->dropIndex('appointments', 'idx_appt_date_type_account');
+        $this->dropIndex('appointments', 'idx_appt_patient_type_status');
+        $this->dropIndex('leads', 'idx_leads_account_city');
+        $this->dropIndex('leads', 'idx_leads_account_status');
+        $this->dropIndex('leads', 'idx_leads_phone_account');
+        $this->dropIndex('activities', 'idx_activities_account_created');
+        $this->dropIndex('activities', 'idx_activities_account_type');
     }
 };

@@ -7,194 +7,152 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Fix remaining type mismatches and add FK constraints to uncovered tables.
-     *
-     * Type fixes (bigint(20) → int(10) unsigned, to match parent PK):
-     *   orders.location_id, orders.payment_mode, orders.updated_by
-     *   memberships.patient_id, memberships.created_by, memberships.updated_by, memberships.deleted_by
-     *   inventories.location_id
-     *
-     * Orphan cleanup:
-     *   leads_services.lead_id: 628 orphans (NOT NULL) → DELETE
-     *
-     * FK constraints added: users(2), leads_services(4), sms_logs(3), orders(4),
-     *   order_details(3), memberships(3), inventories(3), stocks(3), appointment_comments(2)
-     */
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        $rows = DB::select(
+            "SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY' LIMIT 1",
+            [$table, $name]
+        );
+        return ! empty($rows);
+    }
+
+    private function addFk(string $table, string $column, string $refTable, string $name, string $onDelete): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        if ($this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, function (Blueprint $t) use ($column, $refTable, $name, $onDelete) {
+                $t->foreign($column, $name)->references('id')->on($refTable)->onDelete($onDelete);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping FK {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropFk(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, fn (Blueprint $t) => $t->dropForeign($name));
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropForeign {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function safeModify(string $table, string $column, string $sql): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        try {
+            DB::statement("ALTER TABLE `{$table}` MODIFY `{$column}` {$sql}");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping MODIFY {$table}.{$column}: " . $e->getMessage());
+        }
+    }
+
+    private function safeStatement(string $sql): void
+    {
+        try {
+            DB::statement($sql);
+        } catch (\Throwable $e) {
+            \Log::warning('Statement failed: ' . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // ─── Step 1: Fix type mismatches ───
-        DB::statement('ALTER TABLE orders MODIFY location_id INT(10) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE orders MODIFY payment_mode INT(10) UNSIGNED NULL');
-        DB::statement('ALTER TABLE orders MODIFY updated_by INT(10) UNSIGNED NULL');
+        $this->safeModify('orders', 'location_id', 'INT(10) UNSIGNED NOT NULL');
+        $this->safeModify('orders', 'payment_mode', 'INT(10) UNSIGNED NULL');
+        $this->safeModify('orders', 'updated_by', 'INT(10) UNSIGNED NULL');
+        $this->safeModify('memberships', 'patient_id', 'INT(10) UNSIGNED NULL');
+        $this->safeModify('memberships', 'created_by', 'INT(10) UNSIGNED NOT NULL');
+        $this->safeModify('memberships', 'updated_by', 'INT(10) UNSIGNED NULL');
+        $this->safeModify('memberships', 'deleted_by', 'INT(10) UNSIGNED NULL');
+        $this->safeModify('inventories', 'location_id', 'INT(10) UNSIGNED NULL');
 
-        DB::statement('ALTER TABLE memberships MODIFY patient_id INT(10) UNSIGNED NULL');
-        DB::statement('ALTER TABLE memberships MODIFY created_by INT(10) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE memberships MODIFY updated_by INT(10) UNSIGNED NULL');
-        DB::statement('ALTER TABLE memberships MODIFY deleted_by INT(10) UNSIGNED NULL');
+        $this->safeStatement('DELETE FROM leads_services WHERE lead_id NOT IN (SELECT id FROM leads)');
 
-        DB::statement('ALTER TABLE inventories MODIFY location_id INT(10) UNSIGNED NULL');
+        $this->addFk('users', 'account_id', 'accounts', 'fk_users_account', 'set null');
+        $this->addFk('users', 'created_by', 'users', 'fk_users_creator', 'set null');
 
-        // ─── Step 2: Clean orphans ───
-        DB::statement('DELETE FROM leads_services WHERE lead_id NOT IN (SELECT id FROM leads)');
+        $this->addFk('leads_services', 'lead_id', 'leads', 'fk_ls_lead', 'cascade');
+        $this->addFk('leads_services', 'service_id', 'services', 'fk_ls_service', 'cascade');
+        $this->addFk('leads_services', 'lead_status_id', 'lead_statuses', 'fk_ls_status', 'set null');
+        $this->addFk('leads_services', 'child_service_id', 'services', 'fk_ls_child_service', 'set null');
 
-        // ─── Step 3: Add FK constraints ───
+        $this->addFk('sms_logs', 'lead_id', 'leads', 'fk_sms_lead', 'set null');
+        $this->addFk('sms_logs', 'invoice_id', 'invoices', 'fk_sms_invoice', 'set null');
+        $this->addFk('sms_logs', 'package_id', 'packages', 'fk_sms_package', 'set null');
 
-        // users
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreign('account_id', 'fk_users_account')
-                ->references('id')->on('accounts')->onDelete('set null');
-            $table->foreign('created_by', 'fk_users_creator')
-                ->references('id')->on('users')->onDelete('set null');
-        });
+        $this->addFk('orders', 'account_id', 'accounts', 'fk_orders_account', 'restrict');
+        $this->addFk('orders', 'patient_id', 'users', 'fk_orders_patient', 'set null');
+        $this->addFk('orders', 'created_by', 'users', 'fk_orders_creator', 'restrict');
+        $this->addFk('orders', 'location_id', 'locations', 'fk_orders_location', 'restrict');
 
-        // leads_services (600K rows — most critical)
-        Schema::table('leads_services', function (Blueprint $table) {
-            $table->foreign('lead_id', 'fk_ls_lead')
-                ->references('id')->on('leads')->onDelete('cascade');
-            $table->foreign('service_id', 'fk_ls_service')
-                ->references('id')->on('services')->onDelete('cascade');
-            $table->foreign('lead_status_id', 'fk_ls_status')
-                ->references('id')->on('lead_statuses')->onDelete('set null');
-            $table->foreign('child_service_id', 'fk_ls_child_service')
-                ->references('id')->on('services')->onDelete('set null');
-        });
+        $this->addFk('order_details', 'order_id', 'orders', 'fk_od_order', 'cascade');
+        $this->addFk('order_details', 'product_id', 'products', 'fk_od_product', 'cascade');
+        $this->addFk('order_details', 'account_id', 'accounts', 'fk_od_account', 'restrict');
 
-        // sms_logs (remaining 3)
-        Schema::table('sms_logs', function (Blueprint $table) {
-            $table->foreign('lead_id', 'fk_sms_lead')
-                ->references('id')->on('leads')->onDelete('set null');
-            $table->foreign('invoice_id', 'fk_sms_invoice')
-                ->references('id')->on('invoices')->onDelete('set null');
-            $table->foreign('package_id', 'fk_sms_package')
-                ->references('id')->on('packages')->onDelete('set null');
-        });
+        $this->addFk('memberships', 'membership_type_id', 'membership_types', 'fk_mem_type', 'restrict');
+        $this->addFk('memberships', 'patient_id', 'users', 'fk_mem_patient', 'set null');
+        $this->addFk('memberships', 'created_by', 'users', 'fk_mem_creator', 'restrict');
 
-        // orders
-        Schema::table('orders', function (Blueprint $table) {
-            $table->foreign('account_id', 'fk_orders_account')
-                ->references('id')->on('accounts')->onDelete('restrict');
-            $table->foreign('patient_id', 'fk_orders_patient')
-                ->references('id')->on('users')->onDelete('set null');
-            $table->foreign('created_by', 'fk_orders_creator')
-                ->references('id')->on('users')->onDelete('restrict');
-            $table->foreign('location_id', 'fk_orders_location')
-                ->references('id')->on('locations')->onDelete('restrict');
-        });
+        $this->addFk('inventories', 'product_id', 'products', 'fk_inv_product', 'cascade');
+        $this->addFk('inventories', 'warehouse_id', 'warehouses', 'fk_inv_warehouse', 'cascade');
+        $this->addFk('inventories', 'location_id', 'locations', 'fk_inv_location', 'set null');
 
-        // order_details
-        Schema::table('order_details', function (Blueprint $table) {
-            $table->foreign('order_id', 'fk_od_order')
-                ->references('id')->on('orders')->onDelete('cascade');
-            $table->foreign('product_id', 'fk_od_product')
-                ->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('account_id', 'fk_od_account')
-                ->references('id')->on('accounts')->onDelete('restrict');
-        });
+        $this->addFk('stocks', 'account_id', 'accounts', 'fk_stocks_account', 'restrict');
+        $this->addFk('stocks', 'product_id', 'products', 'fk_stocks_product', 'cascade');
+        $this->addFk('stocks', 'order_id', 'orders', 'fk_stocks_order', 'set null');
 
-        // memberships
-        Schema::table('memberships', function (Blueprint $table) {
-            $table->foreign('membership_type_id', 'fk_mem_type')
-                ->references('id')->on('membership_types')->onDelete('restrict');
-            $table->foreign('patient_id', 'fk_mem_patient')
-                ->references('id')->on('users')->onDelete('set null');
-            $table->foreign('created_by', 'fk_mem_creator')
-                ->references('id')->on('users')->onDelete('restrict');
-        });
-
-        // inventories
-        Schema::table('inventories', function (Blueprint $table) {
-            $table->foreign('product_id', 'fk_inv_product')
-                ->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('warehouse_id', 'fk_inv_warehouse')
-                ->references('id')->on('warehouses')->onDelete('cascade');
-            $table->foreign('location_id', 'fk_inv_location')
-                ->references('id')->on('locations')->onDelete('set null');
-        });
-
-        // stocks
-        Schema::table('stocks', function (Blueprint $table) {
-            $table->foreign('account_id', 'fk_stocks_account')
-                ->references('id')->on('accounts')->onDelete('restrict');
-            $table->foreign('product_id', 'fk_stocks_product')
-                ->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('order_id', 'fk_stocks_order')
-                ->references('id')->on('orders')->onDelete('set null');
-        });
-
-        // appointment_comments
-        Schema::table('appointment_comments', function (Blueprint $table) {
-            $table->foreign('appointment_id', 'fk_ac_appointment')
-                ->references('id')->on('appointments')->onDelete('cascade');
-            $table->foreign('created_by', 'fk_ac_creator')
-                ->references('id')->on('users')->onDelete('set null');
-        });
+        $this->addFk('appointment_comments', 'appointment_id', 'appointments', 'fk_ac_appointment', 'cascade');
+        $this->addFk('appointment_comments', 'created_by', 'users', 'fk_ac_creator', 'set null');
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign('fk_users_account');
-            $table->dropForeign('fk_users_creator');
-        });
+        $this->dropFk('users', 'fk_users_account');
+        $this->dropFk('users', 'fk_users_creator');
+        $this->dropFk('leads_services', 'fk_ls_lead');
+        $this->dropFk('leads_services', 'fk_ls_service');
+        $this->dropFk('leads_services', 'fk_ls_status');
+        $this->dropFk('leads_services', 'fk_ls_child_service');
+        $this->dropFk('sms_logs', 'fk_sms_lead');
+        $this->dropFk('sms_logs', 'fk_sms_invoice');
+        $this->dropFk('sms_logs', 'fk_sms_package');
+        $this->dropFk('orders', 'fk_orders_account');
+        $this->dropFk('orders', 'fk_orders_patient');
+        $this->dropFk('orders', 'fk_orders_creator');
+        $this->dropFk('orders', 'fk_orders_location');
+        $this->dropFk('order_details', 'fk_od_order');
+        $this->dropFk('order_details', 'fk_od_product');
+        $this->dropFk('order_details', 'fk_od_account');
+        $this->dropFk('memberships', 'fk_mem_type');
+        $this->dropFk('memberships', 'fk_mem_patient');
+        $this->dropFk('memberships', 'fk_mem_creator');
+        $this->dropFk('inventories', 'fk_inv_product');
+        $this->dropFk('inventories', 'fk_inv_warehouse');
+        $this->dropFk('inventories', 'fk_inv_location');
+        $this->dropFk('stocks', 'fk_stocks_account');
+        $this->dropFk('stocks', 'fk_stocks_product');
+        $this->dropFk('stocks', 'fk_stocks_order');
+        $this->dropFk('appointment_comments', 'fk_ac_appointment');
+        $this->dropFk('appointment_comments', 'fk_ac_creator');
 
-        Schema::table('leads_services', function (Blueprint $table) {
-            $table->dropForeign('fk_ls_lead');
-            $table->dropForeign('fk_ls_service');
-            $table->dropForeign('fk_ls_status');
-            $table->dropForeign('fk_ls_child_service');
-        });
-
-        Schema::table('sms_logs', function (Blueprint $table) {
-            $table->dropForeign('fk_sms_lead');
-            $table->dropForeign('fk_sms_invoice');
-            $table->dropForeign('fk_sms_package');
-        });
-
-        Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign('fk_orders_account');
-            $table->dropForeign('fk_orders_patient');
-            $table->dropForeign('fk_orders_creator');
-            $table->dropForeign('fk_orders_location');
-        });
-
-        Schema::table('order_details', function (Blueprint $table) {
-            $table->dropForeign('fk_od_order');
-            $table->dropForeign('fk_od_product');
-            $table->dropForeign('fk_od_account');
-        });
-
-        Schema::table('memberships', function (Blueprint $table) {
-            $table->dropForeign('fk_mem_type');
-            $table->dropForeign('fk_mem_patient');
-            $table->dropForeign('fk_mem_creator');
-        });
-
-        Schema::table('inventories', function (Blueprint $table) {
-            $table->dropForeign('fk_inv_product');
-            $table->dropForeign('fk_inv_warehouse');
-            $table->dropForeign('fk_inv_location');
-        });
-
-        Schema::table('stocks', function (Blueprint $table) {
-            $table->dropForeign('fk_stocks_account');
-            $table->dropForeign('fk_stocks_product');
-            $table->dropForeign('fk_stocks_order');
-        });
-
-        Schema::table('appointment_comments', function (Blueprint $table) {
-            $table->dropForeign('fk_ac_appointment');
-            $table->dropForeign('fk_ac_creator');
-        });
-
-        // Revert type fixes
-        DB::statement('ALTER TABLE orders MODIFY location_id BIGINT(20) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE orders MODIFY payment_mode BIGINT(20) UNSIGNED NULL');
-        DB::statement('ALTER TABLE orders MODIFY updated_by BIGINT(20) UNSIGNED NULL');
-        DB::statement('ALTER TABLE memberships MODIFY patient_id BIGINT(20) UNSIGNED NULL');
-        DB::statement('ALTER TABLE memberships MODIFY created_by BIGINT(20) UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE memberships MODIFY updated_by BIGINT(20) UNSIGNED NULL');
-        DB::statement('ALTER TABLE memberships MODIFY deleted_by BIGINT(20) UNSIGNED NULL');
-        DB::statement('ALTER TABLE inventories MODIFY location_id BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('orders', 'location_id', 'BIGINT(20) UNSIGNED NOT NULL');
+        $this->safeModify('orders', 'payment_mode', 'BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('orders', 'updated_by', 'BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('memberships', 'patient_id', 'BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('memberships', 'created_by', 'BIGINT(20) UNSIGNED NOT NULL');
+        $this->safeModify('memberships', 'updated_by', 'BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('memberships', 'deleted_by', 'BIGINT(20) UNSIGNED NULL');
+        $this->safeModify('inventories', 'location_id', 'BIGINT(20) UNSIGNED NULL');
     }
 };

@@ -1,47 +1,82 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add FK constraints for account_id + lookup/config table references.
-     * Orphan cleanup: nullify orphaned nullable FKs, then add constraints.
-     *
-     * EXCLUDED from all FK batches:
-     * - Polymorphic columns (entity_id, table_record_id, reference_id, model_id)
-     * - String references (random_id, meta_lead_id, config_group_id, package_random_id)
-     * - Archive tables (audit_trails_archive, sms_logs_archive, audit_trail_changes_archive)
-     * - Audit trail change tables (7.5M + 4.2M rows — FK on audit_trail_id too expensive)
-     * - Spatie tables (model_has_permissions, model_has_roles — managed by package)
-     * - audit_trails (825K rows, polymorphic table_record_id + user refs may be deleted)
-     */
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        $rows = DB::select(
+            "SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY' LIMIT 1",
+            [$table, $name]
+        );
+        return ! empty($rows);
+    }
+
+    private function addFk(string $table, string $column, string $refTable, string $name, string $onDelete): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        if ($this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            DB::statement("ALTER TABLE `{$table}` ADD CONSTRAINT `{$name}` FOREIGN KEY (`{$column}`) REFERENCES `{$refTable}`(id) ON DELETE {$onDelete}");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping FK {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropFk(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            DB::statement("ALTER TABLE `{$table}` DROP FOREIGN KEY `{$name}`");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropForeign {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function safeNullifyOrphans(string $table, string $column, string $refTable): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        try {
+            DB::table($table)->whereNotNull($column)->where($column, '!=', 0)
+                ->whereNotIn($column, DB::table($refTable)->select('id'))
+                ->update([$column => null]);
+        } catch (\Throwable $e) {
+            \Log::warning("Orphan nullify {$table}.{$column}: " . $e->getMessage());
+        }
+    }
+
+    private function safeZeroToNull(string $table, string $col): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $col)) {
+            return;
+        }
+        try {
+            DB::table($table)->where($col, 0)->update([$col => null]);
+        } catch (\Throwable $e) {
+            \Log::warning("Zero->null {$table}.{$col}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // --- Orphan cleanup ---
-        DB::table('activities')->whereNotNull('appointment_id')->where('appointment_id', '!=', 0)
-            ->whereNotIn('appointment_id', DB::table('appointments')->select('id'))
-            ->update(['appointment_id' => null]);
+        $this->safeNullifyOrphans('activities', 'appointment_id', 'appointments');
+        $this->safeNullifyOrphans('activities', 'invoice_id', 'invoices');
+        $this->safeNullifyOrphans('plan_invoices', 'package_advance_id', 'package_advances');
+        $this->safeNullifyOrphans('plan_invoices', 'package_id', 'packages');
+        $this->safeNullifyOrphans('appointments_daily_stats', 'appointment_id', 'appointments');
 
-        DB::table('activities')->whereNotNull('invoice_id')->where('invoice_id', '!=', 0)
-            ->whereNotIn('invoice_id', DB::table('invoices')->select('id'))
-            ->update(['invoice_id' => null]);
-
-        DB::table('plan_invoices')->whereNotNull('package_advance_id')
-            ->whereNotIn('package_advance_id', DB::table('package_advances')->select('id'))
-            ->update(['package_advance_id' => null]);
-
-        DB::table('plan_invoices')->whereNotNull('package_id')
-            ->whereNotIn('package_id', DB::table('packages')->select('id'))
-            ->update(['package_id' => null]);
-
-        DB::table('appointments_daily_stats')->whereNotNull('appointment_id')
-            ->whereNotIn('appointment_id', DB::table('appointments')->select('id'))
-            ->update(['appointment_id' => null]);
-
-        // Zero → NULL for nullable FK columns that use 0 as "none"
         $zeroToNull = [
             ['activities', ['appointment_id', 'centre_id', 'patient_id', 'plan_id', 'service_id', 'user_id', 'invoice_id', 'lead_status_id', 'package_id']],
             ['feedback', ['patient_id', 'doctor_id', 'service_id', 'location_id', 'treatment_id']],
@@ -75,11 +110,10 @@ return new class extends Migration
 
         foreach ($zeroToNull as [$table, $cols]) {
             foreach ($cols as $col) {
-                DB::table($table)->where($col, 0)->update([$col => null]);
+                $this->safeZeroToNull($table, $col);
             }
         }
 
-        // --- account_id FK constraints (all NOT NULL, all RESTRICT) ---
         $accountFks = [
             'activities', 'appointments', 'appointment_statuses', 'appointment_types',
             'brands', 'bundles', 'bundle_services_price_history', 'cancellation_reasons',
@@ -99,11 +133,10 @@ return new class extends Migration
 
         foreach ($accountFks as $table) {
             $fkName = "fk_{$table}_account_id";
-            // Truncate FK name if too long
             if (strlen($fkName) > 64) {
                 $fkName = substr($fkName, 0, 64);
             }
-            DB::statement("ALTER TABLE `$table` ADD CONSTRAINT `$fkName` FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT");
+            $this->addFk($table, 'account_id', 'accounts', $fkName, 'RESTRICT');
         }
     }
 
@@ -128,8 +161,10 @@ return new class extends Migration
 
         foreach ($accountFks as $table) {
             $fkName = "fk_{$table}_account_id";
-            if (strlen($fkName) > 64) $fkName = substr($fkName, 0, 64);
-            Schema::table($table, fn($t) => $t->dropForeign($fkName));
+            if (strlen($fkName) > 64) {
+                $fkName = substr($fkName, 0, 64);
+            }
+            $this->dropFk($table, $fkName);
         }
     }
 };
