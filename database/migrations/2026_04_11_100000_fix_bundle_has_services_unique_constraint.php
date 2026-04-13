@@ -20,12 +20,33 @@ use Illuminate\Support\Facades\DB;
  */
 return new class extends Migration
 {
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
     public function up(): void
     {
         // ── 1. Drop unique constraint if it exists ──
-        $indexes = DB::select('SHOW INDEX FROM bundle_has_services WHERE Key_name = ?', ['uq_bundle_service']);
-        if (! empty($indexes)) {
-            DB::statement('DROP INDEX uq_bundle_service ON bundle_has_services');
+        if ($this->indexExists('bundle_has_services', 'uq_bundle_service')) {
+            // FK on bundle_id / service_id may depend on the unique index — give them
+            // plain single-column indexes to fall back on before we drop the unique.
+            if (! $this->indexExists('bundle_has_services', 'idx_bhs_bundle_id')) {
+                DB::statement('ALTER TABLE bundle_has_services ADD INDEX idx_bhs_bundle_id (bundle_id)');
+            }
+            if (! $this->indexExists('bundle_has_services', 'idx_bhs_service_id')) {
+                DB::statement('ALTER TABLE bundle_has_services ADD INDEX idx_bhs_service_id (service_id)');
+            }
+
+            try {
+                DB::statement('DROP INDEX uq_bundle_service ON bundle_has_services');
+            } catch (\Throwable $e) {
+                \Log::warning('Could not drop uq_bundle_service: ' . $e->getMessage());
+            }
         }
 
         // ── 1b. Fix id column: ensure it is AUTO_INCREMENT PRIMARY KEY ──
