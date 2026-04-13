@@ -131,6 +131,7 @@ use Illuminate\Support\Facades\Route;
     Route::post('cities/status', [CitiesController::class, 'status'])->name('cities.status');
     Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
     Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save');
+    Route::post('services_category_sort_save', [ServicesController::class, 'categorySortOrderSave'])->name('services.category_sort_save');
     Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
     Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort');
     // Cities Routes End

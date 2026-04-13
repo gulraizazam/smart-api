@@ -85,6 +85,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     require __DIR__ . '/api/inventory.php';
     require __DIR__ . '/api/api-resources.php';
     require __DIR__ . '/cashflow.php';
+    require __DIR__ . '/api/hr.php';
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

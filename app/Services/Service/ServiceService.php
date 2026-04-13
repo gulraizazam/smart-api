@@ -17,6 +17,7 @@ use App\Models\InvoiceStatuses;
 use App\Models\Invoices;
 use App\Models\PackageService;
 use App\Models\ServiceHasLocations;
+use App\Models\ServiceBundle;
 use App\Models\Services;
 use App\Models\StaffTargetServices;
 use Carbon\Carbon;
@@ -48,7 +49,7 @@ final class ServiceService
         $parents = Services::parentsOnly()
             ->forAccount($accountId)
             ->when(! $canViewInactive, fn ($q) => $q->isActive())
-            ->orderBy('id', 'asc')
+            ->orderBy('sort_no', 'asc')
             ->get();
 
         $mergedServices = [];
@@ -138,7 +139,7 @@ final class ServiceService
     }
 
     /**
-     * Get services for drag-and-drop sorting.
+     * Get services for drag-and-drop sorting, grouped by parent.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -146,20 +147,26 @@ final class ServiceService
     {
         $parents = Services::parentsOnly()
             ->forAccount($accountId)
-            ->orderBy('id', 'asc')
-            ->with(['children' => fn ($q) => $q->orderBy('sort_number', 'asc')])
+            ->isActive()
+            ->orderBy('sort_no', 'asc')
+            ->with(['children' => fn ($q) => $q->isActive()->orderBy('sort_number', 'asc')])
             ->get();
 
-        $mergedServices = [];
-
+        $grouped = [];
         foreach ($parents as $parent) {
-            $mergedServices[] = $parent->toArray();
-            foreach ($parent->children as $child) {
-                $mergedServices[] = $child->toArray();
-            }
+            $grouped[] = [
+                'id' => $parent->id,
+                'name' => $parent->name,
+                'children' => $parent->children->map(fn ($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'parent_id' => $c->parent_id,
+                    'sort_number' => $c->sort_number,
+                ])->values()->toArray(),
+            ];
         }
 
-        return $mergedServices;
+        return $grouped;
     }
 
     /**
@@ -168,10 +175,10 @@ final class ServiceService
     public function getServiceColor(int $serviceId): string
     {
         if ($serviceId === 0) {
-            return '#000';
+            return '#000000';
         }
 
-        return Services::where('id', $serviceId)->value('color') ?? '#000';
+        return Services::where('id', $serviceId)->value('color') ?? '#000000';
     }
 
     /**
@@ -293,6 +300,7 @@ final class ServiceService
             AuditTrails::activeEventLogger(self::TABLE, 'active', self::AUDIT_FIELDS, $id);
 
             $this->updateBundleStatus($id, 1);
+            $this->updateServiceBundleStatus($id, 1, $accountId);
 
             ServiceHelper::clearCache($accountId);
 
@@ -313,7 +321,14 @@ final class ServiceService
 
         return DB::transaction(function () use ($service, $id, $accountId): bool {
             if ($service->parent_id === 0) {
+                // Parent service: cascade to all children
+                $childIds = Services::where('parent_id', $id)->pluck('id')->toArray();
                 Services::where('parent_id', $id)->update(['active' => 0]);
+
+                // Deactivate service bundles for all children
+                foreach ($childIds as $childId) {
+                    $this->updateServiceBundleStatus($childId, 0, $accountId);
+                }
             }
 
             $service->update(['active' => 0]);
@@ -321,6 +336,7 @@ final class ServiceService
             AuditTrails::inactiveEventLogger(self::TABLE, 'inactive', self::AUDIT_FIELDS, $id);
 
             $this->updateBundleStatus($id, 0);
+            $this->updateServiceBundleStatus($id, 0, $accountId);
 
             ServiceHelper::clearCache($accountId);
 
@@ -329,20 +345,35 @@ final class ServiceService
     }
 
     /**
-     * Save drag-and-drop sort order.
+     * Save drag-and-drop sort order for children of a given parent.
      *
      * @param  array<int, int>  $itemIds
      */
-    public function saveSortOrder(array $itemIds, int $accountId): bool
+    public function saveSortOrder(array $itemIds, int $accountId, ?int $parentId = null): bool
     {
         if (empty($itemIds)) {
             return false;
         }
 
-        DB::transaction(function () use ($itemIds, $accountId): void {
-            foreach ($itemIds as $position => $itemId) {
-                Services::where('id', (int) $itemId)->update(['sort_number' => $position]);
+        DB::transaction(function () use ($itemIds, $accountId, $parentId): void {
+            $ids = array_map('intval', $itemIds);
+            $cases = [];
+            $bindings = [];
+            foreach ($ids as $sortNo => $id) {
+                $cases[] = 'WHEN id = ? THEN ?';
+                $bindings[] = $id;
+                $bindings[] = $sortNo;
             }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $sql = 'UPDATE services SET sort_number = CASE ' . implode(' ', $cases) . ' END WHERE id IN (' . $placeholders . ')';
+            $bindings = array_merge($bindings, $ids);
+            if ($parentId) {
+                $sql .= ' AND parent_id = ?';
+                $bindings[] = $parentId;
+            }
+
+            DB::update($sql, $bindings);
 
             ServiceHelper::clearCache($accountId);
         });
@@ -533,6 +564,16 @@ final class ServiceService
         if ($bundleId) {
             Bundles::where('id', $bundleId)->update(['active' => $status]);
         }
+    }
+
+    /**
+     * Auto-enable/disable service bundles when a service is activated/deactivated.
+     */
+    private function updateServiceBundleStatus(int $serviceId, int $status, int $accountId): void
+    {
+        ServiceBundle::where('service_id', $serviceId)
+            ->where('account_id', $accountId)
+            ->update(['active' => $status]);
     }
 
     /**

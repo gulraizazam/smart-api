@@ -135,32 +135,13 @@
                 <!--Patient menu-->
 
                 @if (Gate::allows('patients_manage'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.patients.index', 'admin.patients.preview']) }}" aria-haspopup="true" data-menu-toggle="hover">
-
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <li class="menu-item {{ activeMenu('admin.patients.index') }} {{ activeMenu('admin.patients.preview') }}" aria-haspopup="true">
+                    <a href="{{ route('admin.patients.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon">
                             <i class="font-icon la la-users"></i>
                         </span>
-                        <span class="menu-text">Patients Management</span>
-                        <i class="menu-arrow"></i>
+                        <span class="menu-text">Patients</span>
                     </a>
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            @can('patients_manage')
-                            <li class="menu-item {{ activeMenu('admin.patients.index') }} {{ activeMenu('admin.patients.preview') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.patients.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Patients</span>
-                                </a>
-                            </li>
-                            @endcan
-
-                        </ul>
-                    </div>
-
                 </li>
                 @endif
 
@@ -224,7 +205,7 @@
 
                 <!-- Appointment menu -->
 
-                @if (Gate::allows('appointments_manage'))
+                @if (Gate::allows('appointments_manage') || Gate::allows('consultations_manage') || Gate::allows('treatments_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.consultancy.index']) }} {{ openMenu(['admin.treatment.index']) }} {{ openMenu(['admin.appointments.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -239,7 +220,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('appointments_consultancy')
+                            @if(Gate::allows('appointments_manage') || Gate::allows('consultations_manage'))
                             <li class="menu-item manage-consultancy {{ activeMenu('admin.consultancy.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.consultancy.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -248,7 +229,7 @@
                                     <span class="menu-text">Consultancies</span>
                                 </a>
                             </li>
-                            @endcan
+                            @endif
 
                             @can('treatments_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.treatment.index') }}" aria-haspopup="true">
@@ -286,7 +267,7 @@
                 </li>
                 @endif
                 @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.services.index']) }} {{ openMenu(['admin.bundles.index']) }} {{ openMenu(['admin.discounts.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.services.index']) }} {{ openMenu(['admin.service-bundles.index']) }} {{ openMenu(['admin.bundles.index']) }} {{ openMenu(['admin.discounts.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon fa_icon">
@@ -312,12 +293,23 @@
                             @endcan
 
                             @can('packages_manage')
+                            <li class="menu-item {{ activeMenu('admin.service-bundles.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.service-bundles.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Bundles</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('packages_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.bundles.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.bundles.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
                                     </i>
-                                    <span class="menu-text">Bundles</span>
+                                    <span class="menu-text">Packages</span>
                                 </a>
                             </li>
                             @endcan
@@ -332,7 +324,7 @@
                                 </a>
                             </li>
                             @endcan
-                            
+
                         </ul>
                     </div>
 
@@ -989,6 +981,26 @@
                 @endif
 
                 <!-- End Inventory menu -->
+                @php
+                    $reportsMenuPermissions = [
+                        'finance_general_revenue_reports_manage',
+                        'operations_reports_operations_tax_calculation_report',
+                        'operations_reports_manage',
+                        'appointment_reports_manage',
+                        'csr_dashboard_report',
+                        'non_converted_customers_manage',
+                        'conversion_report_manage',
+                        'staff_wise_arrival_manage',
+                        'follow_up_manage',
+                        'inventory_report_manage',
+                        'feedbacks_manage',
+                        'followuppatient_manage',
+                        'upselling_report',
+                        'consultant_revenue_report',
+                    ];
+                    $canSeeReportsMenu = collect($reportsMenuPermissions)->contains(fn ($p) => \Illuminate\Support\Facades\Gate::allows($p));
+                @endphp
+                @if ($canSeeReportsMenu)
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.reports.finance_reports', 'admin.reports.operations_report', 'admin.reports.inventory_report']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -1298,6 +1310,7 @@
                     </div>
                     @endcan
                 </li>
+                @endif
 
                 {{-- Cash Flow Module --}}
                 @can('cashflow_manage')
@@ -1381,6 +1394,94 @@
                     </div>
                 </li>
                 @endcan
+
+                {{-- ── HRM Module ── --}}
+                @if (Gate::allows('hr_dashboard_view') || Gate::allows('hr_employees_view') || Gate::allows('hr_departments_manage') || Gate::allows('hr_designations_manage') || Gate::allows('hr_leave_view') || Gate::allows('hr_leave_manage') || Gate::allows('hr_recruitment_view'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.hr.dashboard', 'admin.hr.employees.index', 'admin.hr.employees.show', 'admin.hr.departments.index', 'admin.hr.designations.index', 'admin.hr.leave-types.index', 'admin.hr.leave-balances.index', 'admin.hr.leave-applications.index', 'admin.hr.leave-applications.calendar', 'admin.hr.recruitment.index', 'admin.hr.recruitment.show']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-users"></i>
+                        </span>
+                        <span class="menu-text">HRM</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            @can('hr_dashboard_view')
+                            <li class="menu-item {{ activeMenu('admin.hr.dashboard') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.dashboard') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Dashboard</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_employees_view')
+                            <li class="menu-item {{ activeMenu('admin.hr.employees.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.employees.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Employees</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_departments_manage')
+                            <li class="menu-item {{ activeMenu('admin.hr.departments.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.departments.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Departments</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_designations_manage')
+                            <li class="menu-item {{ activeMenu('admin.hr.designations.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.designations.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Designations</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_leave_manage')
+                            <li class="menu-item {{ activeMenu('admin.hr.leave-types.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.leave-types.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Leave Types</span>
+                                </a>
+                            </li>
+                            <li class="menu-item {{ activeMenu('admin.hr.leave-balances.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.leave-balances.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Leave Balances</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @canany(['hr_leave_view', 'hr_leave_apply'])
+                            <li class="menu-item {{ activeMenu('admin.hr.leave-applications.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.leave-applications.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Leave Applications</span>
+                                </a>
+                            </li>
+                            @endcanany
+                            @can('hr_leave_view')
+                            <li class="menu-item {{ activeMenu('admin.hr.leave-applications.calendar') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.leave-applications.calendar') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Leave Calendar</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_recruitment_view')
+                            <li class="menu-item {{ activeMenu('admin.hr.recruitment.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.recruitment.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Recruitment</span>
+                                </a>
+                            </li>
+                            @endcan
+                        </ul>
+                    </div>
+                </li>
+                @endif
 
             </ul>
             <!--end::Menu Nav-->

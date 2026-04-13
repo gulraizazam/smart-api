@@ -141,7 +141,12 @@
     @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/patients/patient.js')}}"></script>
+        <script>
+            window.listingPerms = {
+                contact: @json(Gate::allows('contact')),
+            };
+        </script>
+        <script src="{{asset('assets/js/pages/patients/patient.js?v=2026041202')}}"></script>
     @endpush
 
 @endsection

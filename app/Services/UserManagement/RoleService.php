@@ -14,7 +14,23 @@ use Spatie\Permission\Models\Role;
 class RoleService
 {
     private const CACHE_TTL = 3600;
-    private const CACHE_KEY_PERMISSIONS_MAPPING = 'roles.permissions_mapping';
+    private const CACHE_KEY_PERMISSIONS_MAPPING = 'roles.permissions_mapping.v2';
+
+    /**
+     * Fixed render order for permission categories on the role edit/create UI.
+     * A category whose value is `null` in the DB is rendered in `OTHER_CATEGORY`
+     * at the end so nothing silently disappears if a new permission is added
+     * without a category backfill.
+     */
+    private const CATEGORY_ORDER = [
+        'Dashboard', 'System', 'Users & Access', 'Resources', 'Locations',
+        'Leads', 'Appointments', 'Catalog', 'Patients', 'Financial',
+        'Forms & SMS', 'Targets', 'Business Ops', 'HRM', 'Reports',
+    ];
+
+    private const OTHER_CATEGORY = 'Other';
+    private const DASHBOARD_CATEGORY = 'Dashboard';
+    private const REPORTS_CATEGORY = 'Reports';
 
     public function getDatatableData(array $params): array
     {
@@ -61,20 +77,6 @@ class RoleService
 
     private function buildPermissionsMapping(): array
     {
-        $dashboardNames = ['dashboard_manage'];
-
-        $reportsNames = [
-            'leads_reports_manage', 'feedbacks_report_manage', 'appointment_reports_manage',
-            'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage',
-            'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage',
-            'finance_ledger_reports_manage', 'staff_listing_reports_manage',
-            'staff_revenue_reports_manage', 'marketing_reports_manage', 'conversion_report_manage',
-            'staff_wise_arrival_manage', 'non_converted_customers_manage', 'follow_up_manage',
-            'followuppatient_manage',
-        ];
-
-        $excludeFromGeneral = [...$dashboardNames, ...$reportsNames];
-
         $notInNamesForNonSuper = [
             'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres',
             'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors',
@@ -88,38 +90,55 @@ class RoleService
 
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
 
+        $allGroups = $this->buildPermissionGroup(
+            excludeParentNames: $isSuperAdmin ? [] : $notInNamesForNonSuper,
+        );
+
+        $groupsByCategory = [];
+        foreach ($allGroups as $groupId => $group) {
+            $category = $group['category'] ?? null;
+            $bucket = $category !== null && $category !== '' ? $category : self::OTHER_CATEGORY;
+            $groupsByCategory[$bucket][$groupId] = $group;
+        }
+
+        $categories = [];
+        foreach (self::CATEGORY_ORDER as $categoryName) {
+            if (!empty($groupsByCategory[$categoryName])) {
+                $categories[$categoryName] = $groupsByCategory[$categoryName];
+                unset($groupsByCategory[$categoryName]);
+            }
+        }
+        foreach ($groupsByCategory as $categoryName => $groups) {
+            $categories[$categoryName] = $groups;
+        }
+
+        $dashboardPermissions = $categories[self::DASHBOARD_CATEGORY] ?? [];
+        $reportsPermissions = $categories[self::REPORTS_CATEGORY] ?? [];
+
+        $generalPermissions = [];
+        foreach ($categories as $categoryName => $groups) {
+            if ($categoryName === self::DASHBOARD_CATEGORY || $categoryName === self::REPORTS_CATEGORY) {
+                continue;
+            }
+            foreach ($groups as $groupId => $group) {
+                $generalPermissions[$groupId] = $group;
+            }
+        }
+
         return [
-            'permissions' => $this->buildPermissionGroup(
-                excludeNames: $excludeFromGeneral,
-                additionalExcludes: $isSuperAdmin ? [] : $notInNamesForNonSuper,
-                useWhereIn: false,
-            ),
-            'dashboard_permissions' => $this->buildPermissionGroup(
-                filterNames: $dashboardNames,
-                useWhereIn: true,
-            ),
-            'reports_permissions' => $this->buildPermissionGroup(
-                filterNames: $reportsNames,
-                useWhereIn: true,
-            ),
+            'categories' => $categories,
+            'permissions' => $generalPermissions,
+            'dashboard_permissions' => $dashboardPermissions,
+            'reports_permissions' => $reportsPermissions,
         ];
     }
 
-    private function buildPermissionGroup(
-        array $filterNames = [],
-        array $excludeNames = [],
-        array $additionalExcludes = [],
-        bool $useWhereIn = false,
-    ): array {
+    private function buildPermissionGroup(array $excludeParentNames = []): array
+    {
         $query = Permission::where(['main_group' => 1, 'status' => 1]);
 
-        if ($useWhereIn) {
-            $query->whereIn('name', $filterNames);
-        } else {
-            $query->whereNotIn('name', $excludeNames);
-            if (!empty($additionalExcludes)) {
-                $query->whereNotIn('name', $additionalExcludes);
-            }
+        if (!empty($excludeParentNames)) {
+            $query->whereNotIn('name', $excludeParentNames);
         }
 
         $groupPermissions = $query->orderBy('sort_order')->get();
@@ -147,6 +166,7 @@ class RoleService
                 'title' => $group->title,
                 'name' => $group->name,
                 'parent_id' => $group->parent_id,
+                'category' => $group->category ?? null,
                 'children' => $children,
                 'key' => Str::replaceLast('manage', '', $group->name),
             ];
@@ -235,5 +255,8 @@ class RoleService
     {
         Cache::forget(self::CACHE_KEY_PERMISSIONS_MAPPING . '.super');
         Cache::forget(self::CACHE_KEY_PERMISSIONS_MAPPING . '.normal');
+        // Transitional: evict v1 keys that may linger from pre-deploy sessions.
+        Cache::forget('roles.permissions_mapping.super');
+        Cache::forget('roles.permissions_mapping.normal');
     }
 }

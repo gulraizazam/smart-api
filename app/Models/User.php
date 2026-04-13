@@ -63,10 +63,10 @@ class User extends Authenticatable
     protected static int $DOCTOR_GROUP = 5;
 
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'main_account', 'gender',
+        'name', 'email', 'password', 'phone', 'cnic', 'main_account', 'gender',
         'dob', 'address', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'account_id',
-        'active', 'select_all', 'is_advance_eligible',
+        'active', 'select_all', 'is_advance_eligible', 'hr_managed',
     ];
 
     /**
@@ -167,6 +167,16 @@ class User extends Authenticatable
     public function membership(): HasOne
     {
         return $this->hasOne(Membership::class, 'patient_id')->orderByDesc('id');
+    }
+
+    public function employeeDetail(): HasOne
+    {
+        return $this->hasOne(EmployeeDetail::class);
+    }
+
+    public function employeeDocuments(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
     }
 
     public function scopeIsActive(Builder $query, int $status = 1): Builder

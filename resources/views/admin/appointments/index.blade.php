@@ -3,6 +3,8 @@
 @section('content')
     @push('css')
         <link href="{{ asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/appointment-mobile.css?v=2026041219') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/consultation-mobile.css?v=2026041206') }}" rel="stylesheet" type="text/css" />
         <style>
             /* Custom Resource Calendar Styles */
             .resource-calendar-container {
@@ -308,21 +310,22 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if (Gate::allows('appointments_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);"
-                                        class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                            @endif
                             @if (Gate::allows('appointments_export_today'))
                                 <div class="export-appointments">
                                     <a id="today_consultancies"
                                         onclick="loadTodayAppointments('{{ date('Y-m-d') }}', 'consultancy');"
                                         href="javascript:void(0);" class="btn btn-info font-weight-bolder">
                                         Today Consultancies
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
+                            @can('appointments_consultancy')
+                            @if (Gate::allows('appointments_destroy'))
+                                <div class="delete-records d-none">
+                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
+                                    <a id="delete-table-rows" href="javascript:void(0);"
+                                        class="btn btn-danger font-weight-bolder">
+                                        <i class="fa fa-trash-alt"></i>Delete
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
@@ -353,16 +356,9 @@
                                             <i class="la la-file-export"></i> Export
                                         </a>
                                     </form>
-                                    <!-- <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{ route('admin.appointments.export', [1000, 0]) }}" class="btn btn-primary font-weight-bolder">
-                                            <i class="la la-file-export"></i> Export
-                                        </a> -->
                                 </div>
-                                <!-- <div class="delete-records export-appointments">
-                                        <a  title="Download Today's Records."  href="download-today-consultancies" class="btn btn-primary font-weight-bolder">
-                                            <i class="la la-file-export"></i> Export
-                                        </a>
-                                    </div> -->
                             @endif
+                            @endcan
                             <!--end::Button-->
                         </div>
 
@@ -437,23 +433,10 @@
             let appointment_limit = '{{ config('constants.export-appointment-limit') }}';
             var limit = '{{ config('constants.export-appointment-limit') }}';
             var offset = 0;
-            $(document).ready(function() {
-                $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
-
-            });
             $(document).on('click', '#appointment_exports_submit', function(e) {
                 e.preventDefault();
                 $("#filtersform").submit();
-
             });
-
-            function changeLimitOffset($this) {
-                limit = parseInt(limit) + parseInt(appointment_limit);
-                offset = parseInt(offset) + parseInt(appointment_limit);
-                setTimeout(function() {
-                    $this.attr('href', route('admin.appointments.export', [limit, offset]));
-                }, 1000);
-            }
 
             function SetFromdate() {
                 $("#filter_date_from").val($("#appoint_search_start").val());
@@ -733,17 +716,22 @@
 
         <script src="{{ asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/consultancy-data.js') }}"></script>
-        {{-- <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script> --}}
-
         <script src="{{ asset('assets/js/pages/crud/forms/validation/appointment/validation.js') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/plan/create.js') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/common.js?v=8') }}"></script>
     @endpush
 
     @push('datatable-js')
-        <script src="{{ asset('assets/js/pages/appointment/consultation-columns.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/appointment/consultation-common.js') }}"></script>
-        <script src="{{ asset('assets/js/pages/appointment/datatable.js') }}"></script>
+        <script>
+            window.listingPerms = {
+                contact: @json(Gate::allows('contact')),
+                canManage: @json(Gate::allows('appointments_consultancy')),
+            };
+        </script>
+        <script src="{{ asset('assets/js/pages/appointment/consultation-columns.js?v=2026041209') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointment/consultation-common.js?v=2026041214') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointment/datatable.js?v=2026041202') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointment/appointment-mobile.js?v=2026041210') }}"></script>
     @endpush
 
 @endsection

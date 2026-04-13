@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\VouchersController;
 use App\Http\Controllers\Api\BundlesController;
 use App\Http\Controllers\Api\BusinessClosureController;
+use App\Http\Controllers\Api\ServiceBundlesController;
 use App\Http\Controllers\Api\DiscountsController as ApiDiscountsController;
 use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Api\RefundsController as ApiRefundsController;
@@ -121,6 +122,8 @@ use Illuminate\Support\Facades\Route;
     Route::prefix('bundles')->name('bundles.')->group(function () {
         Route::post('datatable', [BundlesController::class, 'datatable'])->name('datatable');
         Route::post('status', [BundlesController::class, 'status'])->name('status');
+        Route::get('sort/get', [BundlesController::class, 'sortOrderGet'])->name('get_sort');
+        Route::post('sort/save', [BundlesController::class, 'sortOrderSave'])->name('sort_save');
         Route::get('detail/{id}', [BundlesController::class, 'detail'])->name('detail')->whereNumber('id');
         Route::get('{id}/edit', [BundlesController::class, 'edit'])->name('edit')->whereNumber('id');
         Route::post('/', [BundlesController::class, 'store'])->name('store');
@@ -128,6 +131,21 @@ use Illuminate\Support\Facades\Route;
         Route::delete('{id}', [BundlesController::class, 'destroy'])->name('destroy')->whereNumber('id');
     });
     //Bundles Route End
+
+    // Service Bundles (same service × N sessions)
+    Route::prefix('service-bundles')->name('service-bundles.')->group(function () {
+        Route::post('datatable', [ServiceBundlesController::class, 'datatable'])->name('datatable');
+        Route::post('status', [ServiceBundlesController::class, 'status'])->name('status');
+        Route::get('sort/get', [ServiceBundlesController::class, 'sortOrderGet'])->name('get_sort');
+        Route::post('sort/save', [ServiceBundlesController::class, 'sortOrderSave'])->name('sort_save');
+        Route::post('bulk', [ServiceBundlesController::class, 'bulkStore'])->name('bulk_store');
+        Route::get('detail/{id}', [ServiceBundlesController::class, 'detail'])->name('detail')->whereNumber('id');
+        Route::post('/', [ServiceBundlesController::class, 'store'])->name('store');
+        Route::get('{id}/edit', [ServiceBundlesController::class, 'edit'])->name('edit')->whereNumber('id');
+        Route::put('{id}', [ServiceBundlesController::class, 'update'])->name('update')->whereNumber('id');
+        Route::delete('{id}', [ServiceBundlesController::class, 'destroy'])->name('destroy')->whereNumber('id');
+    });
+    // Service Bundles Route End
 
     //Centre Target
     Route::post('centre_targets/load-centres', [CentreTargetsController::class, 'leadtargetcentre'])->name('centre_targets.load_target_centre');

@@ -53,7 +53,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Color <span class="text text-danger">*</span></label>
-                            <input id="edit_color" class="form-control" type="color" name="color" value="#000" >
+                            <input id="edit_color" class="form-control" type="color" name="color" value="#000000">
                         </div>
 
                         <div class="fv-row col-md-12 mt-5 "  >

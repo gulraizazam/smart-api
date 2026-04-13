@@ -3,6 +3,11 @@ var total_amountArray = [];
 var edit_amountArray = [];
 var ExistingTotal = 0;
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function editBundle(url, id) {
     total_amountArray = [];
     edit_amountArray = [];
@@ -109,9 +114,9 @@ function setEditBundleData(response) {
                 }).length;
 
                 // Only add toggle link if bundle has more than 1 child service
-                let bundleName = packagebundle.bundle.name;
+                let bundleName = escapeHtml(packagebundle.bundle.name);
                 if (childServiceCount > 1) {
-                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                    bundleName = '<a href="javascript:void(0);" onclick="toggle(' + parseInt(packagebundle.id) + ')">' + bundleName + '</a>';
                 }
                 service_options += '<td>' + bundleName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
@@ -152,7 +157,7 @@ function setEditBundleData(response) {
                     service_options += '<td>' + isConsumed + '</td>';
                     service_options += '<td>' + consumedAt + '</td>';
                 }
-                service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
+                service_options += '<td>' + (soldByNames.length > 0 ? escapeHtml(soldByNames.join(', ')) : 'N/A') + '</td>';
                 service_options += del_icon;
                 service_options += '</tr>';
 
@@ -173,14 +178,14 @@ function setEditBundleData(response) {
                             }
                             let actualPrice = packageservice.actual_price ? parseFloat(packageservice.actual_price).toFixed(2) : '-';
                             service_options += '<tr class="' + packagebundle.id + '" style="display: none; background-color: #f9f9f9;">';
-                            service_options += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + packageservice.service.name + '</td>';
+                            service_options += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + escapeHtml(packageservice.service.name) + '</td>';
                             service_options += '<td>' + actualPrice + '</td>';
                             service_options += '<td>' + packageservice.tax_exclusive_price + '</td>';
                             service_options += '<td>' + packageservice.tax_price + '</td>';
                             service_options += '<td>' + packageservice.tax_including_price + '</td>';
                             service_options += '<td>' + consume + '</td>';
                             service_options += '<td>' + psConsumedAt + '</td>';
-                            service_options += '<td>' + (packageservice.sold_by ? packageservice.sold_by.name : 'N/A') + '</td>';
+                            service_options += '<td>' + (packageservice.sold_by ? escapeHtml(packageservice.sold_by.name) : 'N/A') + '</td>';
                             service_options += '<td></td>';
                             service_options += '</tr>';
                         }
@@ -207,7 +212,7 @@ function setEditBundleData(response) {
         }
 
         // Load bundles instead of services for bundle modal
-        let serviceOptions = '<option value="">Select Service</option>';
+        let serviceOptions = '<option value="">Select Bundle</option>';
         if (location?.id) {
             loadBundlesForLocation(location.id);
         }
@@ -283,7 +288,7 @@ $(document).on('click', '#EditBundlePackage', function() {
     $('.error-msg').html('');
     
     if (!$('#edit_bundle_service_id').val()) {
-        $('#edit_bundle_service_id_error').html('Please select service');
+        $('#edit_bundle_service_id_error').html('Please select bundle');
         return false;
     }
 
@@ -301,6 +306,7 @@ $(document).on('click', '#EditBundlePackage', function() {
     var sold_by = $('#edit_bundle_sold_by').val();
     var location_id = $('#edit_bundle_location_id').val();
     var user_id = $('#edit_bundle_parent_id').val();
+    var source_type = $('#edit_bundle_service_id').find(':selected').data('source-type') || 'bundle';
 
     if (service_id && net_amount && location_id) {
         var formData = {
@@ -315,7 +321,8 @@ $(document).on('click', '#EditBundlePackage', function() {
             'location_id': location_id,
             'user_id': user_id,
             'package_bundles[]': [],
-            'sold_by': sold_by
+            'sold_by': sold_by,
+            'source_type': source_type
         };
 
         $(".package_bundles_bundle").each(function () {
@@ -357,7 +364,7 @@ $(document).on('click', '#EditBundlePackage', function() {
                     $('#edit_bundle_plan_services .service_not_found').remove();
 
                     let service_row = '<tr class="HR_' + bundlesData.id + '">';
-                    service_row += '<td><a href="javascript:void(0);" onclick="toggle(' + bundlesData.id + ')">' + servicesData.service_name + '</a></td>';
+                    service_row += '<td><a href="javascript:void(0);" onclick="toggle(' + parseInt(bundlesData.id) + ')">' + escapeHtml(servicesData.service_name) + '</a></td>';
                     service_row += '<td>' + servicesData.service_price.toFixed(2) + '</td>';
                     service_row += '<td>' + bundlesData.tax_exclusive_net_amount + '</td>';
                     service_row += '<td>' + bundlesData.tax_price + '</td>';
@@ -384,7 +391,7 @@ $(document).on('click', '#EditBundlePackage', function() {
                             psConsumedAt = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
                         }
                         let child_row = '<tr class="' + bundlesData.id + '" style="display: none; background-color: #f9f9f9;">';
-                        child_row += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + packageService.name + '</td>';
+                        child_row += '<td style="padding-left: 30px; font-style: italic;">&nbsp;&nbsp;↳ ' + escapeHtml(packageService.name) + '</td>';
                         child_row += '<td>-</td>';
                         child_row += '<td>' + packageService.tax_exclusive_price + '</td>';
                         child_row += '<td>' + packageService.tax_price + '</td>';
@@ -400,6 +407,7 @@ $(document).on('click', '#EditBundlePackage', function() {
                     // Clear form fields
                     $('#edit_bundle_service_id').val('').trigger('change');
                     $('#edit_bundle_net_amount_1').val('');
+                    $('#edit_bundle_you_save').val('');
                     $('#edit_bundle_sold_by').val('').trigger('change');
 
                     // Disable fields after adding bundle
@@ -578,9 +586,9 @@ function loadBundlesForLocation(locationId) {
         },
         success: function(response) {
             if (response.status && response.data.bundles) {
-                let bundleOptions = '<option value="">Select Service</option>';
+                let bundleOptions = '<option value="">Select Bundle</option>';
                 response.data.bundles.forEach(function(bundle) {
-                    bundleOptions += '<option value="' + bundle.id + '">' + bundle.name + '</option>';
+                    bundleOptions += '<option value="' + bundle.id + '" data-source-type="' + (bundle.source_type || 'bundle') + '" data-regular-price="' + (bundle.regular_price || bundle.price) + '">' + bundle.name + '</option>';
                 });
                 $('#edit_bundle_service_id').html(bundleOptions);
             } else {
@@ -599,39 +607,44 @@ $(document).on('change', '#edit_bundle_service_id', function() {
     let bundleId = $(this).val();
     let locationId = $('#edit_bundle_location_id').val();
     let patientId = $('#edit_bundle_parent_id').val();
-    
+    let sourceType = $(this).find(':selected').data('source-type') || 'bundle';
+
     if (bundleId && locationId && patientId) {
-        getBundleServiceInfo(bundleId, locationId, patientId);
+        getBundleServiceInfo(bundleId, locationId, patientId, sourceType);
     } else {
-        // Clear price field if no bundle selected
+        // Clear price and you save fields if no bundle selected
         $('#edit_bundle_net_amount_1').val('');
+        $('#edit_bundle_you_save').val('');
     }
 });
 
 // Get bundle service info from API
-function getBundleServiceInfo(bundleId, locationId, patientId) {
+function getBundleServiceInfo(bundleId, locationId, patientId, sourceType) {
     $.ajax({
         type: 'GET',
         url: route('admin.packages.getserviceinfo'),
         data: {
             bundle_id: bundleId,
             location_id: locationId,
-            patient_id: patientId
+            patient_id: patientId,
+            source_type: sourceType || 'bundle'
         },
         success: function(response) {
-            if (response.status) {
-                // Set the price from net_amount
-                $('#edit_bundle_net_amount_1').val((response.data.net_amount).toFixed(2));
-                $('#edit_bundle_net_amount_1').prop('disabled', true);
-            } else {
-                // Set the price even if no discounts
-                $('#edit_bundle_net_amount_1').val((response.data.net_amount).toFixed(2));
-                $('#edit_bundle_net_amount_1').prop('disabled', true);
-            }
+            var netAmount = parseFloat(response.data.net_amount || 0).toFixed(2);
+            $('#edit_bundle_net_amount_1').val(netAmount);
+            $('#edit_bundle_net_amount_1').prop('disabled', true);
+
+            // Compute You Save — prefer API response, fallback to dropdown data attribute
+            var regularPrice = (response.data && response.data.regular_price !== undefined)
+                ? parseFloat(response.data.regular_price)
+                : (parseFloat($('#edit_bundle_service_id').find(':selected').data('regular-price')) || 0);
+            var savings = regularPrice - parseFloat(netAmount);
+            $('#edit_bundle_you_save').val(savings > 0 ? savings.toFixed(2) : '');
         },
         error: function(xhr) {
             console.error('Error loading bundle info:', xhr);
             $('#edit_bundle_net_amount_1').val('');
+            $('#edit_bundle_you_save').val('');
         }
     });
 }

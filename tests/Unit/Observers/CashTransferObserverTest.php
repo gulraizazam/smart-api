@@ -64,4 +64,45 @@ class CashTransferObserverTest extends TestCase
             'Cash transfers must conserve total money in the system.'
         );
     }
+
+    public function test_chained_transfers_accumulate_correctly(): void
+    {
+        // A → B → C chain: every intermediate balance must reflect both
+        // the debit from the outgoing leg and the credit from the incoming.
+        $a = CashPool::factory()->create(['opening_balance' => 10000, 'cached_balance' => 10000]);
+        $b = CashPool::factory()->create(['opening_balance' => 0, 'cached_balance' => 0]);
+        $c = CashPool::factory()->create(['opening_balance' => 0, 'cached_balance' => 0]);
+
+        CashTransfer::factory()->create([
+            'from_pool_id' => $a->id,
+            'to_pool_id' => $b->id,
+            'amount' => 3000,
+        ]);
+
+        CashTransfer::factory()->create([
+            'from_pool_id' => $b->id,
+            'to_pool_id' => $c->id,
+            'amount' => 1500,
+        ]);
+
+        $this->assertSame(7000.00, (float) $a->fresh()->cached_balance);
+        $this->assertSame(1500.00, (float) $b->fresh()->cached_balance);
+        $this->assertSame(1500.00, (float) $c->fresh()->cached_balance);
+    }
+
+    public function test_uninvolved_pool_is_not_affected_by_transfer(): void
+    {
+        $from = CashPool::factory()->create(['opening_balance' => 5000, 'cached_balance' => 5000]);
+        $to = CashPool::factory()->create(['opening_balance' => 5000, 'cached_balance' => 5000]);
+        $bystander = CashPool::factory()->create(['opening_balance' => 9999, 'cached_balance' => 9999]);
+
+        CashTransfer::factory()->create([
+            'from_pool_id' => $from->id,
+            'to_pool_id' => $to->id,
+            'amount' => 2000,
+        ]);
+
+        $this->assertSame(9999.00, (float) $bystander->fresh()->cached_balance,
+            'A pool not involved in the transfer must not be affected.');
+    }
 }

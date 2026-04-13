@@ -6,6 +6,7 @@ namespace App\Services\PatientManagement;
 
 use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
+use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Services\Phone\PhoneFormattingService;
@@ -126,8 +127,18 @@ class PatientService
             $query->where('active', 1);
         }
 
+        $user = Auth::user();
         $userCentres = ACL::getUserCentres();
-        if (!empty($userCentres)) {
+
+        // Doctor roles: only show patients from their own appointments
+        if ($user && $user->hasAnyRole(DoctorDashboardHelper::DOCTOR_ROLE_NAMES)) {
+            $query->whereExists(function ($sub) use ($user): void {
+                $sub->select(DB::raw(1))
+                    ->from('appointments')
+                    ->whereColumn('appointments.patient_id', 'users.id')
+                    ->where('appointments.doctor_id', $user->id);
+            });
+        } elseif (!empty($userCentres)) {
             $query->whereExists(function ($sub) use ($userCentres): void {
                 $sub->select(DB::raw(1))
                     ->from('appointments')

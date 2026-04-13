@@ -93,20 +93,21 @@ class NodesTree
      */
     public function add_sub_groups($account_id, $only_active = false)
     {
-        /* If primary group sort by id else sort by name */
+        $query = Services::where(['end_node' => 0, 'account_id' => $account_id]);
+
         if ($this->id == 0) {
-            if ($only_active) {
-                $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'active' => 1, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
-            } else {
-                $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
-            }
+            $query->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            });
         } else {
-            if ($only_active) {
-                $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'active' => 1, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
-            } else {
-                $child_group_q = Services::where(['parent_id' => $this->id, 'end_node' => 0, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
-            }
+            $query->where('parent_id', $this->id);
         }
+
+        if ($only_active) {
+            $query->where('active', 1);
+        }
+
+        $child_group_q = $query->orderBy('name', 'asc')->get()->toArray();
         $counter = 0;
         foreach ($child_group_q as $row) {
             /* Create new AccountList object */
@@ -124,11 +125,21 @@ class NodesTree
      */
     public function add_sub_nodes($account_id, $only_active = false)
     {
-        if ($only_active) {
-            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'active' => 1, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
+        $query = Services::where(['end_node' => 1, 'account_id' => $account_id]);
+
+        if ($this->id == 0) {
+            $query->where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            });
         } else {
-            $child_node_q = Services::where(['parent_id' => $this->id, 'end_node' => 1, 'account_id' => $account_id])->OrderBy('name', 'asc')->get()->toArray();
+            $query->where('parent_id', $this->id);
         }
+
+        if ($only_active) {
+            $query->where('active', 1);
+        }
+
+        $child_node_q = $query->orderBy('name', 'asc')->get()->toArray();
         $counter = 0;
         if (count($child_node_q)) {
             foreach ($child_node_q as $row) {

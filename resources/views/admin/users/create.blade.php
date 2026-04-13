@@ -90,6 +90,18 @@
                             </select>
                         </div>
                     </div>
+
+                    <div class="row mt-10">
+                        <div class="fv-row col-md-12">
+                            <label class="checkbox checkbox-lg">
+                                <input type="hidden" name="hr_managed" value="0">
+                                <input type="checkbox" id="add_user_hr_managed" name="hr_managed" value="1" checked>
+                                <span></span>&nbsp;&nbsp;
+                                <strong>HR Managed</strong>
+                                <small class="text-muted ml-2">— Include this user in the HRM module (employee list, leave management, etc.)</small>
+                            </label>
+                        </div>
+                    </div>
                 </div>
 
             </div>

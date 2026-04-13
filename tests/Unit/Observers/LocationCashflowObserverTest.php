@@ -86,4 +86,23 @@ class LocationCashflowObserverTest extends TestCase
 
         $this->assertSame(0, (int) $pool->fresh()->is_active);
     }
+
+    public function test_reactivating_a_location_restores_its_pool(): void
+    {
+        // Docblock contract: "location reactivated → soft-deleted pool
+        // restored". Create active → deactivate → reactivate and verify
+        // the pool comes back to is_active = 1.
+        $location = Locations::factory()->create(['active' => 1]);
+        $pool = CashPool::query()->where('location_id', $location->id)->firstOrFail();
+
+        $location->update(['active' => 0]);
+        $this->assertSame(0, (int) $pool->fresh()->is_active);
+
+        $location->update(['active' => 1]);
+        $this->assertSame(
+            1,
+            (int) $pool->fresh()->is_active,
+            'Reactivating a location must restore its pool to is_active = 1.',
+        );
+    }
 }

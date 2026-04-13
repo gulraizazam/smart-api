@@ -17,11 +17,17 @@ final class BundleDatatableResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $servicesPrice = (float) ($this->services_price ?? 0);
+        $bundlePrice = (float) $this->price;
+        $savings = $servicesPrice - $bundlePrice;
+
         return [
             'id'             => $this->id,
             'name'           => $this->name,
-            'price'          => number_format((float) $this->price, 2),
             'total_services' => (int) $this->total_services,
+            'regular_price'  => number_format($servicesPrice, 2),
+            'price'          => number_format($bundlePrice, 2),
+            'you_save'       => $savings > 0 ? number_format($savings, 2) : '',
             'apply_discount' => $this->apply_discount ? 'Yes' : 'No',
             'start'          => $this->start ? Carbon::parse($this->start)->format('D M, j Y') : null,
             'end'            => $this->end ? Carbon::parse($this->end)->format('D M, j Y') : null,

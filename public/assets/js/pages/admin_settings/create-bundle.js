@@ -1,3 +1,8 @@
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function createBundle(url, id) {
     total_amountArray = [];
     edit_amountArray = [];
@@ -26,6 +31,7 @@ function createBundle(url, id) {
         
         $(".search_patient").val('');
         $("#net_amount_bundle").val('');
+        $("#you_save_bundle").val('');
         $("#package_total_bundle").val('');
         $("#grand_total_bundle").val('');
         $('#bundles_add').find('#patient_membership_bundle').val('');
@@ -180,7 +186,7 @@ function getServicesBundle(action) {
 
     // Don't call API if no location is selected
     if (!location || location == '') {
-        $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+        $("#add_service_id_bundle").html('<option value="">Select Bundle</option>');
         return;
     }
 
@@ -208,7 +214,7 @@ function getServicesBundle(action) {
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
             $('#datanotexistBundle').show();
-            $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+            $("#add_service_id_bundle").html('<option value="">Select Bundle</option>');
         }
     });
 }
@@ -218,15 +224,15 @@ function setBundles(response) {
         // Check if response has data and bundles array
         if (!response.data || !response.data.bundles) {
             $('#datanotexistBundle').show();
-            $("#add_service_id_bundle").html('<option value="">Select Service</option>');
+            $("#add_service_id_bundle").html('<option value="">Select Bundle</option>');
             return;
         }
 
         let bundles = response.data.bundles;
-        let bundle_options = '<option value="">Select Service</option>';
+        let bundle_options = '<option value="">Select Bundle</option>';
 
         Object.values(bundles).forEach(function (bundle) {
-            bundle_options += '<option value="' + bundle.id + '">' + bundle.name + ' - Rs. ' + bundle.price + '</option>';
+            bundle_options += '<option value="' + bundle.id + '" data-source-type="' + (bundle.source_type || 'bundle') + '" data-regular-price="' + (bundle.regular_price || bundle.price) + '">' + bundle.name + ' - Rs. ' + bundle.price + '</option>';
         });
 
         $("#add_service_id_bundle").html(bundle_options);
@@ -249,12 +255,15 @@ function getServiceDiscountBundle(element) {
         $("#add_service_id_bundle_error").html('').hide();
     }
 
-    // Clear price and sold by if no bundle selected
+    // Clear price, you save and sold by if no bundle selected
     if (!bundle_id) {
         $("#net_amount_bundle").val('');
+        $("#you_save_bundle").val('');
         $("#add_sold_by_bundle").html('<option value="">Select</option>');
         return;
     }
+
+    var source_type = element.find(':selected').data('source-type') || 'bundle';
 
     if (bundle_id && patient_id && location_id) {
         $.ajax({
@@ -263,11 +272,13 @@ function getServiceDiscountBundle(element) {
             data: {
                 'bundle_id': bundle_id,
                 'location_id': location_id,
-                'patient_id': patient_id
+                'patient_id': patient_id,
+                'source_type': source_type
             },
             success: function (response) {
+                var netAmount = 0;
                 if (response.data && response.data.net_amount !== undefined) {
-                    var netAmount = parseFloat(response.data.net_amount).toFixed(2);
+                    netAmount = parseFloat(response.data.net_amount).toFixed(2);
                     $("#net_amount_bundle").val(netAmount);
                     $("#net_amount_bundle").prop("disabled", true);
                     // Update Total and Cash Received Remain fields
@@ -279,12 +290,20 @@ function getServiceDiscountBundle(element) {
                     var priceMatch = selectedText.match(/Rs\.\s*([\d,]+(?:\.\d+)?)/);
                     if (priceMatch) {
                         var price = priceMatch[1].replace(/,/g, '');
-                        $("#net_amount_bundle").val(parseFloat(price).toFixed(2));
+                        netAmount = parseFloat(price).toFixed(2);
+                        $("#net_amount_bundle").val(netAmount);
                         $("#net_amount_bundle").prop("disabled", true);
-                        $("#package_total_bundle").val(parseFloat(price).toFixed(2));
-                        $("#grand_total_bundle").val(parseFloat(price).toFixed(2));
+                        $("#package_total_bundle").val(netAmount);
+                        $("#grand_total_bundle").val(netAmount);
                     }
                 }
+
+                // Compute You Save — prefer API response, fallback to dropdown data attribute
+                var regularPrice = (response.data && response.data.regular_price !== undefined)
+                    ? parseFloat(response.data.regular_price)
+                    : (parseFloat(element.find(':selected').data('regular-price')) || 0);
+                var savings = regularPrice - parseFloat(netAmount);
+                $("#you_save_bundle").val(savings > 0 ? savings.toFixed(2) : '');
 
                 // Fetch sold by users
                 getSoldByBundle(location_id);
@@ -292,6 +311,7 @@ function getServiceDiscountBundle(element) {
             error: function(xhr, status, error) {
                 console.error('Error fetching bundle info:', error);
                 $("#net_amount_bundle").val('');
+                $("#you_save_bundle").val('');
             }
         });
     } else if (bundle_id && location_id) {
@@ -309,9 +329,13 @@ function getServiceDiscountBundle(element) {
                         var netAmount = parseFloat(selectedBundle.price).toFixed(2);
                         $("#net_amount_bundle").val(netAmount);
                         $("#net_amount_bundle").prop("disabled", true);
-                        // Update Total and Cash Received Remain fields
                         $("#package_total_bundle").val(netAmount);
                         $("#grand_total_bundle").val(netAmount);
+
+                        // Compute You Save
+                        var regularPrice = parseFloat(selectedBundle.regular_price || selectedBundle.price);
+                        var savings = regularPrice - parseFloat(netAmount);
+                        $("#you_save_bundle").val(savings > 0 ? savings.toFixed(2) : '');
                     }
                 }
                 // Fetch sold by users
@@ -622,7 +646,8 @@ $(document).ready(function() {
                 Tax: $row.find('td:nth-child(4)').text().trim(),
                 Total: $row.find('td:nth-child(5)').text().trim(), // Keep commas
                 bundleId: $row.find('td:nth-child(6) input.original_bundle_id').val(), // Original bundle ID from bundles table
-                sold_by: $row.find('td:nth-child(6) input.package_bundles_sold_by_bundle').val()
+                sold_by: $row.find('td:nth-child(6) input.package_bundles_sold_by_bundle').val(),
+                source_type: $row.find('td:nth-child(6) input.bundle_source_type').val() || 'bundle'
             };
             
             console.log('Bundle data collected:', bundleData);
@@ -735,7 +760,7 @@ $(document).ready(function() {
         }
 
         if (!$('#add_service_id_bundle').val()) {
-            $('#add_service_id_bundle_error').html('Please select service');
+            $('#add_service_id_bundle_error').html('Please select bundle');
             return false;
         }
 
@@ -753,6 +778,7 @@ $(document).ready(function() {
         var sold_by = $('#add_sold_by_bundle').val();
         var location_id = $('#add_bundle_location_id').val();
         var user_id = $('#add_patient_id_bundle').val();
+        var source_type = $('#add_service_id_bundle').find(':selected').data('source-type') || 'bundle';
 
         if (service_id && net_amount && location_id) {
             showSpinner("-add");
@@ -769,7 +795,8 @@ $(document).ready(function() {
                 'location_id': location_id,
                 'user_id': user_id,
                 'package_bundles[]': [],
-                'sold_by': sold_by
+                'sold_by': sold_by,
+                'source_type': source_type
             };
 
             $(".package_bundles_bundle").each(function () {
@@ -801,9 +828,10 @@ $(document).ready(function() {
                         // bundlesData.id now contains the original bundle_id from bundles table (not package_bundles.id)
                         // Count child services to determine if toggle should be shown
                         let childServiceCount = packageServicesData.length;
-                        let serviceNameCell = childServiceCount > 1 
-                            ? "<a href='javascript:void(0)' onClick='toggle(" + bundlesData.id + ")'>" + servicesData.service_name + "</a>"
-                            : servicesData.service_name;
+                        let safeName = escapeHtml(servicesData.service_name);
+                        let serviceNameCell = childServiceCount > 1
+                            ? "<a href='javascript:void(0)' onClick='toggle(" + parseInt(bundlesData.id) + ")'>" + safeName + "</a>"
+                            : safeName;
                         
                         $('#bundle_services').append(
                             "<tr id='table_bundle' class='HR_" + random_id + " HR_" + bundlesData.id + "'>" +
@@ -814,6 +842,7 @@ $(document).ready(function() {
                             "<td>" + grandTotal + "</td>" +
                             "<td>" +
                             "<input type='hidden' class='original_bundle_id' value='" + bundlesData.id + "' />" +
+                            "<input type='hidden' class='bundle_source_type' value='" + (bundlesData.source_type || source_type || 'bundle') + "' />" +
                             "<input type='hidden' class='package_bundles_sold_by_bundle' name='sold_by[]' value='" + servicesData.sold_by + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteBundleRowTem(" + bundlesData.id + ")'>" + trashBtn() + "</button>" +
                             "</td>" +
@@ -826,7 +855,7 @@ $(document).ready(function() {
                                 let actualPrice = packageService.actual_price ? parseFloat(packageService.actual_price).toFixed(2) : '-';
                                 $('#bundle_services').append(
                                     "<tr class='inner_records_hr HR_" + bundlesData.id + " " + bundlesData.id + "' style='display: none; background-color: #f9f9f9;'>" +
-                                    "<td>" + packageService.name + "</td>" +
+                                    "<td>" + escapeHtml(packageService.name) + "</td>" +
                                     "<td>" + actualPrice + "</td>" +
                                     "<td>" + packageService.tax_exclusive_price.toLocaleString() + "</td>" +
                                     "<td>" + packageService.tax_price + "</td>" +
@@ -843,6 +872,7 @@ $(document).ready(function() {
                         // Clear form fields
                         $('#add_service_id_bundle').val(null).trigger('change');
                         $('#net_amount_bundle').val('');
+                        $('#you_save_bundle').val('');
                         $('#add_sold_by_bundle').val(null).trigger('change');
                         
                         // Hide service required validation alert
@@ -894,6 +924,7 @@ function deleteBundleRowTem(id) {
         // Clear the fields
         $('#add_service_id_bundle').val(null).trigger('change');
         $('#net_amount_bundle').val('');
+        $('#you_save_bundle').val('');
         $('#add_sold_by_bundle').val(null).trigger('change');
         
         toastr.success('Service deleted successfully');
@@ -911,6 +942,7 @@ function resetVoucherAddBundle(event) {
         $("#add_discount_id_bundle").html('<option value="">Select Discount</option>');
         $("#add_patient_id_bundle").val(null).trigger('change');
         $("#net_amount_bundle").val('');
+        $("#you_save_bundle").val('');
         $("#package_total_bundle").val('');
         $("#grand_total_bundle").val('');
         $('#bundles_add').find('#patient_membership_bundle').val('');

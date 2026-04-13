@@ -115,4 +115,22 @@ class StoreVendorTransactionRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('amount', $validator->errors()->toArray());
     }
+
+    public function test_amount_at_minimum_threshold_passes(): void
+    {
+        // DECIMAL column — min:0.01 rule. Exactly 0.01 must pass.
+        $validator = $this->validatorFor($this->validPayload(['amount' => 0.01]));
+        $this->assertTrue(
+            $validator->passes(),
+            'Amount of 0.01 should pass — errors: ' . $validator->errors()->first(),
+        );
+    }
+
+    public function test_vendor_id_is_required(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['vendor_id' => null]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('vendor_id', $validator->errors()->toArray());
+    }
 }

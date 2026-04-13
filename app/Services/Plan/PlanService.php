@@ -31,6 +31,7 @@ use App\Models\PackageService;
 use App\Models\PackageVouchers;
 use App\Models\Patients;
 use App\Models\PaymentModes;
+use App\Models\ServiceBundle;
 use App\Models\Services;
 use App\Models\Settings;
 use App\Models\AuditTrails;
@@ -618,6 +619,8 @@ final class PlanService
      */
     public function savePlanPackage(array $data, mixed $request = null): array
     {
+        $this->validateCustomDiscountLimits($data);
+
         DB::beginTransaction();
 
         try {
@@ -666,6 +669,8 @@ final class PlanService
      */
     public function updatePlanPackage(array $data): array
     {
+        $this->validateCustomDiscountLimits($data);
+
         DB::beginTransaction();
 
         try {
@@ -749,7 +754,7 @@ final class PlanService
             // on the plan edit screen.
             $totalPrice = (float) PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
 
-            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'packageservice.soldBy'])
+            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
@@ -854,7 +859,7 @@ final class PlanService
             $package = Packages::with('user', 'location')->find($packageId)
                 ?? throw PlanException::notFound($packageId);
 
-            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'packageservice.soldBy'])
+            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
@@ -1365,19 +1370,111 @@ final class PlanService
         }
 
         $locationInfo = Locations::find($data['location_id']);
-        $bundleIds = array_column($data['package_bundles'], 'bundleId');
         $planType = PlanType::tryFrom($data['plan_type'] ?? 'plan') ?? PlanType::Plan;
+
+        // Separate service_bundle items from regular bundles/services
+        $regularBundles = [];
+        $serviceBundleItems = [];
+
+        foreach ($data['package_bundles'] as $packageBundle) {
+            if (is_array($packageBundle) && ($packageBundle['source_type'] ?? '') === 'service_bundle') {
+                $serviceBundleItems[] = $packageBundle;
+            } else {
+                $regularBundles[] = $packageBundle;
+            }
+        }
 
         $allPackageServices = [];
 
-        if ($planType === PlanType::Plan) {
-            $allPackageServices = $this->storePlanTypeServices($package, $data, $bundleIds, $locationInfo);
-        } else {
-            $allPackageServices = $this->storeBundleTypeServices($package, $data, $bundleIds, $locationInfo);
+        // Process regular bundles/services
+        if (!empty($regularBundles)) {
+            $regularData = array_merge($data, ['package_bundles' => $regularBundles]);
+            $bundleIds = array_column($regularBundles, 'bundleId');
+
+            if ($planType === PlanType::Plan) {
+                $allPackageServices = $this->storePlanTypeServices($package, $regularData, $bundleIds, $locationInfo);
+            } else {
+                $allPackageServices = $this->storeBundleTypeServices($package, $regularData, $bundleIds, $locationInfo);
+            }
+        }
+
+        // Process service bundle items
+        if (!empty($serviceBundleItems)) {
+            $sbServices = $this->storeServiceBundleTypeServices($package, $data, $serviceBundleItems, $locationInfo);
+            $allPackageServices = array_merge($allPackageServices, $sbServices);
         }
 
         if (!empty($allPackageServices)) {
             PackageService::insert($allPackageServices);
+        }
+    }
+
+    /**
+     * Defense-in-depth: enforce custom-slug discount allocation limits
+     * (max_percentage / max_fixed_amount) on plan create & update.
+     *
+     * @throws PlanException
+     */
+    private function validateCustomDiscountLimits(array $data): void
+    {
+        $bundles = $data['package_bundles'] ?? [];
+        if (empty($bundles) || empty($data['location_id'])) {
+            return;
+        }
+
+        $locationId = (int) $data['location_id'];
+        $accountId  = Auth::user()->account_id;
+
+        foreach ($bundles as $idx => $pb) {
+            $discountId = $pb['DiscountId'] ?? null;
+            $serviceId  = $pb['bundleId'] ?? null;
+            if (empty($discountId) || $discountId === '0' || empty($serviceId)) {
+                continue;
+            }
+
+            $allocations = DiscountWidget::loadPlanDiscountAllocationsByLocationService(
+                $locationId,
+                (int) $serviceId,
+                $accountId
+            );
+            $allocation = $allocations[$discountId] ?? null;
+            if (!$allocation || ($allocation->slug ?? 'default') !== 'custom') {
+                continue;
+            }
+
+            $service = Services::find($serviceId);
+            if (!$service) {
+                continue;
+            }
+
+            $allocationAmount = (float) ($allocation->amount ?? 0);
+            $maxPercentage   = $allocation->type === 'Percentage' ? $allocationAmount : 100.0;
+            $maxFixedAmount  = round(((float) $service->price) * ($allocationAmount / 100), 2);
+
+            $discountValue = (float) str_replace(',', '', (string) ($pb['DiscountValue'] ?? '0'));
+            $type          = $pb['Type'] ?? null;
+            $rowLabel      = $service->name ?? 'service #' . $serviceId;
+
+            if ($type === 'Percentage') {
+                if ($discountValue > $maxPercentage) {
+                    throw PlanException::validationFailed(
+                        "Discount on {$rowLabel} exceeds allowed limit (max {$maxPercentage}%)."
+                    );
+                }
+            } elseif ($type === 'Fixed') {
+                if ($discountValue > $maxFixedAmount) {
+                    throw PlanException::validationFailed(
+                        "Discount on {$rowLabel} exceeds allowed limit (max " . number_format($maxFixedAmount, 2) . ")."
+                    );
+                }
+            } else {
+                // Type not provided — fall back to strictest check against both caps.
+                if ($discountValue > $maxPercentage && $discountValue > $maxFixedAmount) {
+                    throw PlanException::validationFailed(
+                        "Discount on {$rowLabel} exceeds allowed allocation limit."
+                    );
+                }
+            }
         }
     }
 
@@ -1557,6 +1654,98 @@ final class PlanService
                 }
                 $lastIdx = count($allPackageServices) - 1;
                 $allPackageServices[$lastIdx]['tax_including_price'] = round($bundleTotal - $sumWithoutLast, 2);
+                $allPackageServices[$lastIdx]['price'] = $allPackageServices[$lastIdx]['tax_including_price'];
+            }
+        }
+
+        return $allPackageServices;
+    }
+
+    private function storeServiceBundleTypeServices(Packages $package, array $data, array $serviceBundleItems, Locations $locationInfo): array
+    {
+        $bundleIds = array_column($serviceBundleItems, 'bundleId');
+        $serviceBundles = ServiceBundle::with('service')->whereIn('id', $bundleIds)->get()->keyBy('id');
+
+        $allPackageServices = [];
+
+        foreach ($serviceBundleItems as $item) {
+            $bundleId = $item['bundleId'];
+            $serviceBundle = $serviceBundles->get($bundleId);
+
+            if (!$serviceBundle || !$serviceBundle->service) {
+                continue;
+            }
+
+            $service = $serviceBundle->service;
+            $sessions = $serviceBundle->sessions;
+            $totalPrice = (float) str_replace(',', '', $item['Total'] ?? (string) $serviceBundle->price);
+
+            $packageBundleRecord = PackageBundles::create([
+                'random_id'              => $package->random_id,
+                'is_allocate'            => 1,
+                'qty'                    => $sessions,
+                'discount_name'          => '-',
+                'discount_type'          => '-',
+                'discount_price'         => 0,
+                'service_price'          => $serviceBundle->price,
+                'net_amount'             => $totalPrice,
+                'bundle_id'              => $bundleId,
+                'source_type'            => 'service_bundle',
+                'package_id'             => $package->id,
+                'tax_exclusive_net_amount' => str_replace(',', '', $item['Amount'] ?? (string) $totalPrice),
+                'tax_percentage'        => $locationInfo->tax_percentage ?? 0,
+                'tax_price'              => str_replace(',', '', $item['Tax'] ?? '0'),
+                'tax_including_price'    => $totalPrice,
+                'location_id'            => $data['location_id'],
+            ]);
+
+            $serviceTaxType = $service->tax_treatment_type_id;
+            $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
+            $perSessionPrice = round($totalPrice / $sessions, 2);
+
+            $startIndex = count($allPackageServices);
+
+            for ($i = 0; $i < $sessions; $i++) {
+                $isLastSession = ($i === $sessions - 1);
+
+                if ($isLastSession && $sessions > 1) {
+                    $sumPrevious = round($perSessionPrice * ($sessions - 1), 2);
+                    $sessionPrice = round($totalPrice - $sumPrevious, 2);
+                } else {
+                    $sessionPrice = $perSessionPrice;
+                }
+
+                $taxData = $this->calculateServiceTax(
+                    $serviceTaxType,
+                    $sessionPrice,
+                    (float) ($locationInfo->tax_percentage ?? 0),
+                    $isExclusive,
+                );
+
+                $allPackageServices[] = array_merge([
+                    'random_id'         => $data['random_id'],
+                    'package_id'        => $package->id,
+                    'package_bundle_id' => $packageBundleRecord->id,
+                    'service_id'        => $service->id,
+                    'price'             => $sessionPrice,
+                    'orignal_price'     => $service->price,
+                    'actual_price'      => $service->price,
+                    'consumption_order' => 0,
+                    'created_at'        => Filters::getCurrentTimeStamp(),
+                    'updated_at'        => Filters::getCurrentTimeStamp(),
+                    'sold_by'           => $item['sold_by'] ?? null,
+                ], $taxData);
+            }
+
+            // Last-session absorption to ensure exact total
+            $serviceCount = count($allPackageServices) - $startIndex;
+            if ($serviceCount > 1) {
+                $sumWithoutLast = 0;
+                for ($j = $startIndex; $j < count($allPackageServices) - 1; $j++) {
+                    $sumWithoutLast += $allPackageServices[$j]['tax_including_price'];
+                }
+                $lastIdx = count($allPackageServices) - 1;
+                $allPackageServices[$lastIdx]['tax_including_price'] = round($totalPrice - $sumWithoutLast, 2);
                 $allPackageServices[$lastIdx]['price'] = $allPackageServices[$lastIdx]['tax_including_price'];
             }
         }
@@ -1945,9 +2134,14 @@ final class PlanService
                 $join->on('package_bundles.bundle_id', '=', 'bundles.id')
                     ->where('package_bundles.source_type', '=', 'bundle');
             })
+            ->leftJoin('service_bundles', function ($join) {
+                $join->on('package_bundles.bundle_id', '=', 'service_bundles.id')
+                    ->where('package_bundles.source_type', '=', 'service_bundle');
+            })
+            ->leftJoin('services as sb_services', 'service_bundles.service_id', '=', 'sb_services.id')
             ->orderBy('package_bundles.id')
             ->limit(2)
-            ->selectRaw('COALESCE(services.name, bundles.name) as name')
+            ->selectRaw("COALESCE(services.name, bundles.name, CONCAT(package_bundles.qty, 'x ', sb_services.name)) as name")
             ->pluck('name')
             ->filter()
             ->values()
@@ -2648,6 +2842,11 @@ final class PlanService
      */
     public function addBundleService(array $data): array
     {
+        // Route to service bundle handler if source_type is 'service_bundle'
+        if (($data['source_type'] ?? 'bundle') === 'service_bundle') {
+            return $this->addServiceBundleToPlan($data);
+        }
+
         $bundle = Bundles::find($data['bundle_id']);
 
         if (!$bundle) {
@@ -2815,6 +3014,171 @@ final class PlanService
                 'sold_by' => $soldBy,
                 'bundlesData' => array_merge($bundleData, [
                     'id' => $packageBundleRecordId,
+                    'source_type' => 'bundle',
+                ]),
+                'packageServicesData' => $packageServicesData,
+            ],
+        ];
+    }
+
+    /**
+     * Add a service bundle (N sessions of same service) to a plan.
+     * Creates one PackageBundles row + N PackageService rows with last-session absorption pricing.
+     *
+     * @param array $data Keys: bundle_id (service_bundles.id), location_id, net_amount, random_id, sold_by
+     * @return array Structured response data with servicesData
+     */
+    private function addServiceBundleToPlan(array $data): array
+    {
+        $serviceBundle = ServiceBundle::with('service')->find($data['bundle_id']);
+
+        if (!$serviceBundle) {
+            throw new PlanException('Service bundle not found');
+        }
+
+        $service = $serviceBundle->service;
+
+        if (!$service) {
+            throw new PlanException('Service not found for this bundle');
+        }
+
+        $locationInfo = Locations::find($data['location_id']);
+
+        if (!$locationInfo) {
+            throw new PlanException('Location not found');
+        }
+
+        $taxPct = (float) ($locationInfo->tax_percentage ?? 0);
+        $netAmount = (float) $data['net_amount'];
+        $sessions = $serviceBundle->sessions;
+        $bundleName = $sessions . 'x ' . $service->name;
+
+        // Bundle-level tax calculation (inclusive — service bundles use inclusive pricing)
+        $taxIncludingPrice = $netAmount;
+        $taxExclusiveNetAmount = $taxPct > 0
+            ? ceil((100 * $netAmount) / ($taxPct + 100))
+            : $netAmount;
+        $taxPrice = ceil($netAmount - $taxExclusiveNetAmount);
+
+        $bundleData = [
+            'qty'                    => $sessions,
+            'bundle_id'              => $serviceBundle->id,
+            'service_price'          => $serviceBundle->price,
+            'service_name'           => $bundleName,
+            'net_amount'             => $netAmount,
+            'discount_name'          => '-',
+            'discount_type'          => '-',
+            'discount_price'         => '0',
+            'tax_percentage'         => $taxPct,
+            'tax_exclusive_net_amount' => $taxExclusiveNetAmount,
+            'tax_price'              => $taxPrice,
+            'tax_including_price'    => $taxIncludingPrice,
+        ];
+
+        // Resolve parent package (edit mode vs create mode)
+        $findPackage = Packages::where('random_id', $data['random_id'])->first();
+        $isEditMode = $findPackage !== null;
+        $packageBundleRecordId = $serviceBundle->id;
+
+        if ($isEditMode) {
+            $packageBundleRecord = PackageBundles::create([
+                'random_id'              => $data['random_id'],
+                'qty'                    => $sessions,
+                'bundle_id'              => $serviceBundle->id,
+                'source_type'            => 'service_bundle',
+                'discount_name'          => '-',
+                'discount_type'          => '-',
+                'discount_price'         => 0,
+                'service_price'          => $serviceBundle->price,
+                'net_amount'             => $netAmount,
+                'is_exclusive'           => 0,
+                'tax_exclusive_net_amount' => $taxExclusiveNetAmount,
+                'tax_percentage'        => $taxPct,
+                'tax_price'              => $taxPrice,
+                'tax_including_price'    => $taxIncludingPrice,
+                'location_id'            => $data['location_id'],
+                'package_id'             => $findPackage->id,
+                'is_allocate'            => 1,
+            ]);
+            $packageBundleRecordId = $packageBundleRecord->id;
+        }
+
+        // Calculate per-session prices with last-session absorption
+        $serviceTaxType = $service->tax_treatment_type_id;
+        $isExclusive = ($serviceTaxType == Config::get('constants.tax_is_exclusive'));
+        $perSessionPrice = round($taxIncludingPrice / $sessions, 2);
+
+        $soldBy = $data['sold_by'] ?? null;
+        $packageServicesData = [];
+
+        for ($i = 0; $i < $sessions; $i++) {
+            $isLastSession = ($i === $sessions - 1);
+
+            if ($isLastSession && $sessions > 1) {
+                // Last session absorbs rounding difference
+                $sumPrevious = round($perSessionPrice * ($sessions - 1), 2);
+                $sessionTaxIncluding = round($taxIncludingPrice - $sumPrevious, 2);
+            } else {
+                $sessionTaxIncluding = $perSessionPrice;
+            }
+
+            $taxData = $this->calculateServiceTax(
+                $serviceTaxType,
+                $sessionTaxIncluding,
+                $taxPct,
+                $isExclusive,
+            );
+
+            if ($isEditMode) {
+                PackageService::create([
+                    'random_id'          => $data['random_id'],
+                    'package_id'         => $findPackage->id,
+                    'package_bundle_id'  => $packageBundleRecordId,
+                    'service_id'         => $service->id,
+                    'price'              => $sessionTaxIncluding,
+                    'orignal_price'      => $service->price,
+                    'actual_price'       => $service->price,
+                    'is_exclusive'       => $taxData['is_exclusive'] ?? 0,
+                    'tax_exclusive_price' => $taxData['tax_exclusive_price'],
+                    'tax_percentage'    => $taxPct,
+                    'tax_price'          => $taxData['tax_price'],
+                    'tax_including_price' => $taxData['tax_including_price'],
+                    'consumption_order'  => 0,
+                    'sold_by'            => $soldBy,
+                    'created_at'         => Filters::getCurrentTimeStamp(),
+                    'updated_at'         => Filters::getCurrentTimeStamp(),
+                ]);
+            }
+
+            $packageServicesData[] = [
+                'name'                => $service->name,
+                'service_id'          => $service->id,
+                'tax_exclusive_price' => $taxData['tax_exclusive_price'],
+                'tax_price'           => $taxData['tax_price'],
+                'tax_including_price' => $taxData['tax_including_price'],
+                'is_consumed'         => 0,
+                'actual_price'        => $service->price,
+            ];
+        }
+
+        // Update plan total in edit mode
+        if ($isEditMode) {
+            $newTotal = PackageBundles::where('package_id', $findPackage->id)->sum('tax_including_price');
+            $findPackage->update(['total_price' => $newTotal]);
+            $this->updatePlanNameForPackage($findPackage);
+        }
+
+        return [
+            'servicesData' => [
+                'service_name'  => $bundleName,
+                'service_price' => $serviceBundle->price,
+                'discount_name' => '-',
+                'discount_type' => '-',
+                'discount_price' => '0',
+                'sold_by'       => $soldBy,
+                'bundlesData'   => array_merge($bundleData, [
+                    'id' => $packageBundleRecordId,
+                    'source_type' => 'service_bundle',
                 ]),
                 'packageServicesData' => $packageServicesData,
             ],

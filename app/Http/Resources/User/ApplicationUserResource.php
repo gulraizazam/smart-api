@@ -32,6 +32,7 @@ class ApplicationUserResource extends JsonResource
             'roles' => $this->whenLoaded('role_has_users', fn (): array => $this->user_roles()->pluck('name')->all(), []),
             'created_at' => Carbon::parse($this->created_at)->format('F j,Y h:i A'),
             'active' => $this->active,
+            'hr_managed' => $this->hr_managed,
         ];
     }
 

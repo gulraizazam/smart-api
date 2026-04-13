@@ -21,7 +21,7 @@ final class ServiceDatatableResource extends JsonResource
             'name'                  => $this->resource['name'],
             'slug'                  => $this->resource['slug'] ?? null,
             'parent_id'             => $this->resource['parent_id'],
-            'is_parent'             => ($this->resource['parent_id'] ?? 0) === 0,
+            'is_parent'             => $this->resource['parent_id'] === null || $this->resource['parent_id'] === 0,
             'end_node'              => (int) ($this->resource['end_node'] ?? 0),
             'complimentory'         => (int) ($this->resource['complimentory'] ?? 0),
             'active'                => (int) ($this->resource['active'] ?? 0),

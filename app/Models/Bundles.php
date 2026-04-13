@@ -26,6 +26,7 @@ class Bundles extends BaseModel
         'apply_discount',
         'total_services',
         'active',
+        'sort_number',
         'tax_treatment_type_id',
         'account_id',
         'created_at',

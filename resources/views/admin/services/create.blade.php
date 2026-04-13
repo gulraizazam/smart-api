@@ -45,7 +45,7 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Color <span class="text text-danger">*</span></label>
-                            <input class="form-control" type="color" name="color" value="#000" id="service_color">
+                            <input class="form-control" type="color" name="color" value="#000000" id="service_color">
                         </div>
                         <div class="fv-row col-md-12 mt-5 servicefield " style="display: none;">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price <span class="text text-danger">*</span></label>

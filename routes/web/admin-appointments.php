@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Route;
         Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
         /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
-        Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:appointments_manage');
+        Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:consultations_manage');
         Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:treatments_manage');
 
         /*service routes*/

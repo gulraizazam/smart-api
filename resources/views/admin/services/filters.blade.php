@@ -1,32 +1,12 @@
-
-<div class="mt-2 mb-7">
-    <div class="row align-items-center">
-
-        <div class="col-lg-12 col-xl-12">
-            <div class="row align-items-center">
-                <div class="col-12 col-md-5">
-                    <label>Name:</label>
-                    <input type="text" class="form-control filter-field" placeholder="Name" id="search_name" />
-                </div>
-                @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services"))
-                    <div class="col-12 col-md-4">
-                        <label>Status:</label>
-                        <select class="form-controll filter-field select2" id="search_status">
-                            <option value="">All</option>
-                            <option value="1">Active</option>
-                            <option value="0">Inactive</option>
-
-                        </select>
-                    </div>
-                @endif
-                <div class="col-12 col-md-3 mt-3 mt-md-10">
-
-                    @include('admin.partials.filter-buttons')
-
-                </div>
-
-            </div>
-        </div>
-
-    </div>
+<div class="d-flex align-items-center flex-wrap" style="gap: 5px;">
+    <input type="text" class="form-control form-control-sm" placeholder="Search by name..." id="search_name" style="max-width: 200px; flex: 1 1 140px;">
+    @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_services"))
+        <select class="form-control form-control-sm" id="search_status" style="max-width: 120px; flex: 0 1 120px;">
+            <option value="">All Status</option>
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+        </select>
+    @endif
+    <button class="btn btn-sm btn-primary py-1 px-3" id="apply-filters"><i class="la la-search p-0"></i></button>
+    <button class="btn btn-sm btn-light py-1 px-3" id="reset-filters" type="button" title="Reset"><i class="la la-undo p-0"></i></button>
 </div>

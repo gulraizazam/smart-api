@@ -122,4 +122,24 @@ class ApiAuthTest extends TestCase
         $response->assertStatus(403);
         $response->assertJson(['success' => false]);
     }
+
+    public function test_locked_account_is_rejected_via_api_even_with_correct_password(): void
+    {
+        // The audit pinned that the API login path must respect the
+        // DB-backed lockout — it is NOT a bypass.
+        User::factory()->admin()->create([
+            'email' => 'locked@example.test',
+            'password' => Hash::make('Secret123!'),
+            'active' => 1,
+            'locked_until' => now()->addMinutes(10),
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'email' => 'locked@example.test',
+            'password' => 'Secret123!',
+        ]);
+
+        $this->assertContains($response->status(), [401, 403, 423]);
+        $response->assertJson(['success' => false]);
+    }
 }

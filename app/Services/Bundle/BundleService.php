@@ -44,7 +44,7 @@ final class BundleService
     public function getBundlesList(array $filters, int $accountId, bool $canViewInactive, int $offset = 0, int $limit = 100): Collection
     {
         return $this->buildBaseQuery($filters, $accountId, $canViewInactive)
-            ->orderBy('created_at', 'desc')
+            ->orderBy('sort_number', 'asc')
             ->offset($offset)
             ->limit($limit)
             ->get();
@@ -276,6 +276,47 @@ final class BundleService
             'bundle_services' => $bundleServices,
             'relationships'   => $relationships,
         ];
+    }
+
+    // ── Sort ───────────────────────────────────────────
+
+    /**
+     * Get active bundles for sorting.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getBundlesForSort(int $accountId): array
+    {
+        return Bundles::where('account_id', $accountId)
+            ->where('active', 1)
+            ->where('type', '!=', 'single')
+            ->orderBy('sort_number', 'asc')
+            ->get(['id', 'name', 'sort_number'])
+            ->toArray();
+    }
+
+    /**
+     * Save bundle sort order.
+     *
+     * @param  array<int, int>  $itemIds
+     */
+    public function saveSortOrder(array $itemIds, int $accountId): bool
+    {
+        if (empty($itemIds)) {
+            return false;
+        }
+
+        DB::transaction(function () use ($itemIds, $accountId): void {
+            foreach ($itemIds as $position => $itemId) {
+                Bundles::where('id', (int) $itemId)
+                    ->where('account_id', $accountId)
+                    ->update(['sort_number' => $position]);
+            }
+
+            BundleHelper::clearCache();
+        });
+
+        return true;
     }
 
     // ── Private helpers ─────────────────────────────────

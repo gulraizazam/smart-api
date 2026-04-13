@@ -14,6 +14,7 @@ use App\Http\Requests\Service\UpdateServiceRequest;
 use App\Http\Requests\Service\UpdateServiceStatusRequest;
 use App\Http\Resources\Service\ServiceDatatableResource;
 use App\Http\Resources\Service\ServiceFormDataResource;
+use App\Models\Services;
 use App\Services\Service\ServiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -278,7 +279,7 @@ final class ServicesController extends Controller
      */
     public function sortOrderGet(): JsonResponse
     {
-        if (! Gate::allows('services_sort')) {
+        if (! Gate::allows('services_edit')) {
             return $this->unauthorizedResponse();
         }
 
@@ -300,11 +301,51 @@ final class ServicesController extends Controller
             $saved = $this->serviceService->saveSortOrder(
                 $request->validated('item_ids'),
                 Auth::user()->account_id,
+                (int) $request->validated('parent_id'),
             );
 
             return $saved
                 ? $this->successResponse('Records are sorted successfully!')
                 : $this->failResponse('Something went wrong! Records are not sorted.');
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * Save category (parent) sort order.
+     */
+    public function categorySortOrderSave(Request $request): JsonResponse
+    {
+        if (! Gate::allows('services_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $categoryIds = $request->input('category_ids', []);
+
+            if (empty($categoryIds) || ! is_array($categoryIds)) {
+                return $this->failResponse('No categories to sort.');
+            }
+
+            $ids = array_map('intval', $categoryIds);
+            $cases = [];
+            $bindings = [];
+            foreach ($ids as $sortNo => $id) {
+                $cases[] = 'WHEN id = ? THEN ?';
+                $bindings[] = $id;
+                $bindings[] = $sortNo;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $bindings = array_merge($bindings, $ids);
+
+            \DB::update(
+                'UPDATE services SET sort_no = CASE ' . implode(' ', $cases) . ' END WHERE id IN (' . $placeholders . ') AND (parent_id IS NULL OR parent_id = 0)',
+                $bindings
+            );
+
+            return $this->successResponse('Category order saved!');
         } catch (\Exception $e) {
             return $this->exceptionToResponse($e);
         }

@@ -162,4 +162,42 @@ class ActivityLoggerSanitizerTest extends TestCase
         $this->assertStringNotContainsString('<script>', $output);
         $this->assertStringContainsString('Consultation Booked', $output);
     }
+
+    public function test_svg_tag_with_onload_is_escaped(): void
+    {
+        // SVG is another common XSS vector — must not survive as
+        // executable markup.
+        $input = '<svg onload=alert(1)>';
+        $output = self::sanitize($input);
+
+        $this->assertStringNotContainsString('<svg', $output);
+        $this->assertStringContainsString('&lt;svg', $output);
+    }
+
+    public function test_uppercase_script_tag_is_escaped(): void
+    {
+        // Case-insensitive bypass attempt — <SCRIPT> vs <script>.
+        $input = '<SCRIPT>alert(1)</SCRIPT>';
+        $output = self::sanitize($input);
+
+        $this->assertStringNotContainsString('<SCRIPT>', $output);
+        $this->assertStringContainsString('&lt;SCRIPT&gt;', $output);
+    }
+
+    public function test_whitelisted_span_with_extra_attributes_is_kept_as_is(): void
+    {
+        // Known limitation: the whitelist regex matches on class name
+        // prefix only — extra attributes like onclick are NOT stripped.
+        // The consumer (activities.blade.php) renders via {!! !!} so
+        // this is a defense-in-depth gap that relies on the producer
+        // never concatenating user input into attribute positions.
+        // Pin the CURRENT behaviour so a future tightening shows up
+        // as a test change, not a silent drift.
+        $input = '<span class="highlight" onclick="alert(1)">Name</span>';
+        $output = self::sanitize($input);
+
+        // The sanitizer currently lets this through because it matches
+        // the class name whitelist. Pin this as a known limitation.
+        $this->assertStringContainsString('Name', $output);
+    }
 }

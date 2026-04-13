@@ -162,5 +162,6 @@ Route::middleware(['auth.common', 'checkAccount'])
             require __DIR__ . '/web/admin-catalogue.php';
             require __DIR__ . '/web/admin-appointments.php';
             require __DIR__ . '/web/admin-reports.php';
+            require __DIR__ . '/web/admin-hr.php';
         });
     });

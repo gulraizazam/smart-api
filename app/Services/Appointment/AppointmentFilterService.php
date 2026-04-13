@@ -216,7 +216,7 @@ class AppointmentFilterService
         $consultancyTypeId = config('constants.appointment_type_consultancy');
 
         // Cache permissions
-        $canViewConsultancy = Gate::allows('appointments_consultancy');
+        $canViewConsultancy = Gate::allows('consultations_manage');
         $canViewTreatments = Gate::allows('treatments_services');
 
         // Build base query with LEFT JOIN to include consultations without patient records

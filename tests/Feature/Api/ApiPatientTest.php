@@ -96,4 +96,25 @@ class ApiPatientTest extends TestCase
         $ids = array_column($patients, 'id');
         $this->assertContains($patientId, $ids);
     }
+
+    public function test_authenticated_search_by_name_returns_matching_patient(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->seedPatient('Aisha Fatima Khan', '03001234567');
+
+        $response = $this->getJson('/api/patients/search?search=Aisha');
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $patients = $response->json('data.patients');
+        $this->assertNotEmpty($patients, 'Search by name must return the seeded patient.');
+
+        $names = array_column($patients, 'name');
+        $this->assertTrue(
+            collect($names)->contains(fn ($n) => str_contains($n, 'Aisha')),
+            'The returned patient must contain the search term in the name.',
+        );
+    }
 }

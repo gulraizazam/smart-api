@@ -671,7 +671,7 @@ final class TreatmentService
 
     private function getRecordsCount(array $where, array $filters, int $treatmentTypeId): int
     {
-        if (!Gate::allows('appointments_services')) {
+        if (!Gate::allows('treatments_manage')) {
             return 0;
         }
 
@@ -708,7 +708,8 @@ final class TreatmentService
                 'doctor:id,name',
                 'city:id,name',
                 'location:id,name',
-                'service:id,name',
+                'service:id,name,parent_id',
+                'service.parent:id,name',
                 'appointment_type:id,name',
                 'appointment_status:id,name,parent_id',
                 'invoice' => fn ($q) => $q->where('invoice_status_id', $invoiceStatus?->id ?? 0),
@@ -850,8 +851,8 @@ final class TreatmentService
 
     private function getAppointmentTypes(): mixed
     {
-        $canConsultancy = Gate::allows('appointments_consultancy');
-        $canServices    = Gate::allows('appointments_services');
+        $canConsultancy = Gate::allows('consultations_manage');
+        $canServices    = Gate::allows('treatments_manage');
 
         return match (true) {
             $canConsultancy && $canServices => AppointmentTypes::pluck('name', 'id'),
@@ -866,27 +867,29 @@ final class TreatmentService
      */
     private function getPermissions(): array
     {
+        $canManage = Gate::allows('treatments_services');
+
         return [
-            'edit'               => Gate::allows('appointments_edit'),
-            'consultancy'        => Gate::allows('appointments_consultancy'),
-            'treatment'          => Gate::allows('appointments_services'),
-            'delete'             => Gate::allows('appointments_destroy'),
-            'active'             => Gate::allows('appointments_active'),
-            'inactive'           => Gate::allows('appointments_inactive'),
-            'create'             => Gate::allows('appointments_create'),
+            'edit'               => $canManage && Gate::allows('appointments_edit'),
+            'consultancy'        => Gate::allows('consultations_manage'),
+            'treatment'          => Gate::allows('treatments_manage'),
+            'delete'             => $canManage && Gate::allows('appointments_destroy'),
+            'active'             => $canManage && Gate::allows('appointments_active'),
+            'inactive'           => $canManage && Gate::allows('appointments_inactive'),
+            'create'             => $canManage && Gate::allows('appointments_create'),
             'log'                => Gate::allows('appointments_log'),
-            'status'             => Gate::allows('treatments_appointment_status'),
-            'schedule_edit'      => Gate::allows('update_treatment_schedule'),
+            'status'             => $canManage && Gate::allows('treatments_appointment_status'),
+            'schedule_edit'      => $canManage && Gate::allows('update_treatment_schedule'),
             'invoice'            => Gate::allows('appointments_invoice'),
             'invoice_display'    => Gate::allows('appointments_invoice_display'),
             'image_manage'       => Gate::allows('appointments_image_manage'),
             'measurement_manage' => Gate::allows('appointments_measurement_manage'),
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
-            'plans_create'       => Gate::allows('appointments_plans_create'),
+            'plans_create'       => $canManage && Gate::allows('appointments_plans_create'),
             'patient_card'       => Gate::allows('appointments_patient_card'),
             'contact'            => Gate::allows('contact'),
-            'add_feedback'       => Gate::allows('feedbacks_create'),
-            'can_edit_doctor'    => Gate::allows('can_edit_doctor'),
+            'add_feedback'       => $canManage && Gate::allows('feedbacks_create'),
+            'can_edit_doctor'    => $canManage && Gate::allows('can_edit_doctor'),
         ];
     }
 

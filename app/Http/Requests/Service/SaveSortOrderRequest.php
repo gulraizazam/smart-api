@@ -11,7 +11,7 @@ final class SaveSortOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('services_sort');
+        return Gate::allows('services_edit');
     }
 
     /**
@@ -20,6 +20,7 @@ final class SaveSortOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'parent_id'  => 'required|integer|exists:services,id',
             'item_ids'   => 'required|array|min:1',
             'item_ids.*' => 'integer|exists:services,id',
         ];

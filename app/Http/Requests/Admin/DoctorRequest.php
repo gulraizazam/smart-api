@@ -37,7 +37,7 @@ class DoctorRequest extends FormRequest
         // For update (PUT/PATCH), email unique except current user
         if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
             $doctorId = $this->route('doctor') ?? $this->route('id');
-            $rules['email'] = 'required|email|unique:users,email,' . $doctorId;
+            $rules['email'] = 'required|email|unique:users,email,' . $doctorId . ',id,deleted_at,NULL';
             $rules['password'] = 'nullable';
         }
 

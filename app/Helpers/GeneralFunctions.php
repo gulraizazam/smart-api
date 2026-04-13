@@ -99,12 +99,12 @@ class GeneralFunctions
             }
             if (Gate::allows('view_inactive_services')) {
                 $services = Services::where('slug', '!=', 'all')
-                    ->where(['parent_id' => 0])
+                    ->whereNull('parent_id')
                     ->orderBy('id', 'asc')
                     ->get();
             } else {
                 $services = Services::where('slug', '!=', 'all')
-                    ->where(['parent_id' => 0])
+                    ->whereNull('parent_id')
                     ->where(['active' => 1])
                     ->orderBy('id', 'asc')
                     ->get();
@@ -640,7 +640,9 @@ class GeneralFunctions
 
     public static function parentServices(): \Illuminate\Database\Eloquent\Collection
     {
-        return Services::where('parent_id', 0)->where('slug', '!=', 'all')->get(['id', 'name']);
+        return Services::where(function ($q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        })->where('slug', '!=', 'all')->get(['id', 'name']);
     }
 
     public static function smsTemplateVariables(string $slug): array

@@ -142,4 +142,28 @@ class StoreLeadRequestTest extends TestCase
             $this->validatorFor($this->validPayload(['email' => null]))->passes(),
         );
     }
+
+    public function test_lead_source_id_must_exist_when_provided(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['lead_source_id' => 99_999]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('lead_source_id', $validator->errors()->toArray());
+    }
+
+    public function test_service_id_must_exist_when_provided(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['service_id' => 99_999]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('service_id', $validator->errors()->toArray());
+    }
+
+    public function test_location_id_must_exist_when_provided(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['location_id' => 99_999]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('location_id', $validator->errors()->toArray());
+    }
 }

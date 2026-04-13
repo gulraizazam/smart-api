@@ -100,4 +100,25 @@ class AuditTrailsRedactionTest extends TestCase
         $value = '2026-04-09 12:00:00';
         $this->assertSame($value, self::mask('password_changed_at', $value));
     }
+
+    public function test_null_value_passes_through_without_error(): void
+    {
+        // maskSensitive receives mixed $value — null is a valid column
+        // value and must not cause a type error or false redaction.
+        $this->assertNull(self::mask('name', null));
+    }
+
+    public function test_numeric_value_for_safe_field_passes_through(): void
+    {
+        $this->assertSame(0, self::mask('active', 0));
+        $this->assertSame(99.5, self::mask('amount', 99.5));
+    }
+
+    public function test_sensitive_field_redacts_regardless_of_value_type(): void
+    {
+        // Even if a sensitive field somehow holds a non-string value,
+        // the redaction must still replace it with the placeholder.
+        $this->assertSame('[REDACTED]', self::mask('password', 12345));
+        $this->assertSame('[REDACTED]', self::mask('cnic', null));
+    }
 }

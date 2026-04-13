@@ -4,6 +4,8 @@
 
     @push('css')
         <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/appointment-mobile.css?v=2026041219') }}" rel="stylesheet" type="text/css" />
+        <link href="{{ asset('assets/css/consultation-mobile.css?v=2026041206') }}" rel="stylesheet" type="text/css" />
         <style>
             /* Custom Resource Calendar Styles */
             .resource-calendar-container {
@@ -272,7 +274,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label change-label">Manage Treatment</h3>
+                            <h3 class="card-label change-label">Treatments</h3>
 
                             @php
                                 $userCentres = $userCentres ?? [];
@@ -295,18 +297,19 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
+                            @if(Gate::allows('treatments_today') || Gate::allows('treatments_export_today'))
+                                <div class="export-appointments">
+                                    <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
+                                        Today Treatments
+                                    </a>
+                                </div>&nbsp;&nbsp;&nbsp;
+                            @endif
+                            @can('treatments_services')
                             @if(Gate::allows('treatments_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
                                         <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                            @endif
-                            @if(Gate::allows('treatments_today'))
-                                <div class="export-appointments">
-                                    <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
-                                        Today Treatments
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
@@ -334,17 +337,8 @@
                                             <i class="la la-file-export"></i> Export
                                         </a>
                                     </form>
-                                <!-- <div class="delete-records export-appointments">
-                                    <a onclick="changeLimitOffset($(this));" title="On each click Max 1000 records will be export." id="appointment_exports" href="{{route('admin.appointments.export', [1000, 0])}}" class="btn btn-primary font-weight-bolder">
-                                        <i class="la la-file-export"></i> Export
-                                    </a>
-                                </div> -->
-                                <!-- <div class="delete-records export-appointments">
-                                    <a  title="click to download today's records" href="download-today-treatments" class="btn btn-primary font-weight-bolder">
-                                        <i class="la la-file-export"></i> Export
-                                    </a>
-                                </div> -->
                             @endif
+                            @endcan
 
                         <!--end::Button-->
                         </div>
@@ -478,19 +472,6 @@
                 e.preventDefault();
                 $("#filtersform").submit();
             });
-            let appointment_limit = '{{config('constants.export-appointment-limit')}}';
-            var limit = '{{config('constants.export-appointment-limit')}}';
-            var offset = 0;
-            $(document).ready(function () {
-                $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
-            })
-            function changeLimitOffset($this) {
-                limit = parseInt(limit) + parseInt(appointment_limit);
-                offset = parseInt(offset) + parseInt(appointment_limit);
-                setTimeout( function () {
-                    $this.attr('href', route('admin.appointments.export', [limit, offset]));
-                },1000);
-            }
         </script>
         <script>
             function SetFromdate(){
@@ -697,8 +678,15 @@
     @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/appointment/treatment-columns.js')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/treatmentDatatable.js')}}"></script>
+        <script>
+            window.listingPerms = {
+                contact: @json(Gate::allows('contact')),
+                canManage: @json(Gate::allows('treatments_services')),
+            };
+        </script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-columns.js?v=2026041206')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatmentDatatable.js?v=2026041214')}}"></script>
+        <script src="{{ asset('assets/js/pages/appointment/appointment-mobile.js?v=2026041210') }}"></script>
     @endpush
 
 @endsection
