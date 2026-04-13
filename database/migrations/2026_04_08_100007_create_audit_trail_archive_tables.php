@@ -6,39 +6,35 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Create archive tables for audit trail data older than 12 months.
-     *
-     * Archive tables are identical to the originals. Data is moved (not copied)
-     * by the artisan command: php artisan audit:archive
-     *
-     * Current eligible: 574K trails + 4.2M changes (~270 MB)
-     */
     public function up(): void
     {
-        Schema::create('audit_trails_archive', function (Blueprint $table) {
-            $table->unsignedInteger('id')->primary();
-            $table->unsignedInteger('audit_trail_action_name');
-            $table->unsignedInteger('audit_trail_table_name');
-            $table->unsignedBigInteger('table_record_id');
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('parent_id')->nullable();
-            $table->timestamps();
+        if (! Schema::hasTable('audit_trails_archive')) {
+            Schema::create('audit_trails_archive', function (Blueprint $table) {
+                $table->unsignedInteger('id')->primary();
+                $table->unsignedInteger('audit_trail_action_name');
+                $table->unsignedInteger('audit_trail_table_name');
+                $table->unsignedBigInteger('table_record_id');
+                $table->unsignedBigInteger('user_id');
+                $table->unsignedBigInteger('parent_id')->nullable();
+                $table->timestamps();
 
-            $table->index('user_id', 'idx_archive_trails_user');
-            $table->index('created_at', 'idx_archive_trails_created');
-        });
+                $table->index('user_id', 'idx_archive_trails_user');
+                $table->index('created_at', 'idx_archive_trails_created');
+            });
+        }
 
-        Schema::create('audit_trail_changes_archive', function (Blueprint $table) {
-            $table->unsignedInteger('id')->primary();
-            $table->unsignedBigInteger('audit_trail_id');
-            $table->string('field_name', 500);
-            $table->text('field_before')->nullable();
-            $table->text('field_after')->nullable();
-            $table->timestamps();
+        if (! Schema::hasTable('audit_trail_changes_archive')) {
+            Schema::create('audit_trail_changes_archive', function (Blueprint $table) {
+                $table->unsignedInteger('id')->primary();
+                $table->unsignedBigInteger('audit_trail_id');
+                $table->string('field_name', 500);
+                $table->text('field_before')->nullable();
+                $table->text('field_after')->nullable();
+                $table->timestamps();
 
-            $table->index('audit_trail_id', 'idx_archive_changes_trail');
-        });
+                $table->index('audit_trail_id', 'idx_archive_changes_trail');
+            });
+        }
     }
 
     public function down(): void

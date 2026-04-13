@@ -6,124 +6,70 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Right-size 35 oversized VARCHAR(500+) columns based on actual data max lengths.
-     *
-     * All columns verified: no data exceeds the new limit.
-     * Sizes chosen with 2-4x headroom above current max.
-     */
+    private function safeColumn(string $table, string $column, callable $cb): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        try {
+            Schema::table($table, $cb);
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping {$table}.{$column}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        Schema::table('activities', function (Blueprint $table) {
-            $table->string('created_by', 100)->nullable()->change();    // max 20
-            $table->string('lead_status', 100)->nullable()->change();   // max 9
-            $table->string('patient', 191)->nullable()->change();       // max 91
-            $table->string('service', 191)->nullable()->change();       // max 51
-        });
+        $changes = [
+            ['activities', 'created_by', 100, true],
+            ['activities', 'lead_status', 100, true],
+            ['activities', 'patient', 191, true],
+            ['activities', 'service', 191, true],
+            ['appointments', 'name', 100, true],
+            ['appointment_statuses', 'name', 100, true],
+            ['appointment_statuses', 'is_comment', 100, true],
+            ['appointment_statuses', 'parent_id', 100, true],
+            ['audit_trail_actions', 'name', 100, false],
+            ['audit_trail_tables', 'name', 100, false],
+            ['audit_trail_tables', 'screen', 100, true],
+            ['bundles', 'name', 191, true],
+            ['bundles', 'bundle_type', 100, true],
+            ['bundle_has_services', 'discount_type', 100, true],
+            ['cancellation_reasons', 'name', 100, true],
+            ['cash_transfers', 'attachment_url', 191, true],
+            ['documents', 'document_type', 100, true],
+            ['expenses', 'attachment_url', 191, true],
+            ['invoice_statuses', 'name', 100, true],
+            ['lead_sources', 'name', 100, true],
+            ['lead_statuses', 'name', 100, true],
+            ['lead_statuses', 'is_comment', 100, true],
+            ['lead_statuses', 'parent_id', 100, true],
+            ['locations', 'name', 100, true],
+            ['locations', 'fdo_name', 100, true],
+            ['memberships', 'parent_membership_code', 100, true],
+            ['package_bundles', 'config_group_id', 100, true],
+            ['services', 'name', 191, true],
+            ['settings', 'name', 100, true],
+            ['sms_templates', 'name', 191, true],
+            ['telecomprovidernumbers', 'pre_fix', 100, true],
+            ['telecomproviders', 'name', 100, true],
+            ['vendor_transactions', 'attachment_url', 191, true],
+            ['warehouses', 'manager_name', 100, true],
+        ];
 
-        Schema::table('appointments', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 50
-        });
-
-        Schema::table('appointment_statuses', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 15
-            $table->string('is_comment', 100)->nullable()->change();    // max 1
-            $table->string('parent_id', 100)->nullable()->change();     // max 1
-        });
-
-        Schema::table('audit_trail_actions', function (Blueprint $table) {
-            $table->string('name', 100)->change();                      // max 8
-        });
-
-        Schema::table('audit_trail_tables', function (Blueprint $table) {
-            $table->string('name', 100)->change();                      // max 28
-            $table->string('screen', 100)->nullable()->change();        // max 28
-        });
-
-        Schema::table('bundles', function (Blueprint $table) {
-            $table->string('name', 191)->nullable()->change();          // max 77
-            $table->string('bundle_type', 100)->nullable()->change();   // max 12
-        });
-
-        Schema::table('bundle_has_services', function (Blueprint $table) {
-            $table->string('discount_type', 100)->nullable()->change(); // max 0
-        });
-
-        Schema::table('cancellation_reasons', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 19
-        });
-
-        Schema::table('cash_transfers', function (Blueprint $table) {
-            $table->string('attachment_url', 191)->nullable()->change(); // max 85
-        });
-
-        Schema::table('documents', function (Blueprint $table) {
-            $table->string('document_type', 100)->nullable()->change(); // max 17
-        });
-
-        Schema::table('expenses', function (Blueprint $table) {
-            $table->string('attachment_url', 191)->nullable()->change(); // max 85
-        });
-
-        Schema::table('invoice_statuses', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 9
-        });
-
-        Schema::table('lead_sources', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 15
-        });
-
-        Schema::table('lead_statuses', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 14
-            $table->string('is_comment', 100)->nullable()->change();    // max 1
-            $table->string('parent_id', 100)->nullable()->change();     // max 1
-        });
-
-        Schema::table('locations', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 26
-            $table->string('fdo_name', 100)->nullable()->change();      // max 35
-        });
-
-        Schema::table('memberships', function (Blueprint $table) {
-            $table->string('parent_membership_code', 100)->nullable()->change(); // max 6
-        });
-
-        Schema::table('package_bundles', function (Blueprint $table) {
-            $table->string('config_group_id', 100)->nullable()->change(); // max 0
-        });
-
-        Schema::table('services', function (Blueprint $table) {
-            $table->string('name', 191)->nullable()->change();          // max 61
-        });
-
-        Schema::table('settings', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 45
-        });
-
-        Schema::table('sms_templates', function (Blueprint $table) {
-            $table->string('name', 191)->nullable()->change();          // max 65
-        });
-
-        Schema::table('telecomprovidernumbers', function (Blueprint $table) {
-            $table->string('pre_fix', 100)->nullable()->change();       // max 4
-        });
-
-        Schema::table('telecomproviders', function (Blueprint $table) {
-            $table->string('name', 100)->nullable()->change();          // max 8
-        });
-
-        Schema::table('vendor_transactions', function (Blueprint $table) {
-            $table->string('attachment_url', 191)->nullable()->change(); // max 85
-        });
-
-        Schema::table('warehouses', function (Blueprint $table) {
-            $table->string('manager_name', 100)->nullable()->change();  // max 0
-        });
+        foreach ($changes as [$table, $col, $len, $nullable]) {
+            $this->safeColumn($table, $col, function (Blueprint $t) use ($col, $len, $nullable) {
+                $c = $t->string($col, $len);
+                if ($nullable) {
+                    $c->nullable();
+                }
+                $c->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        // Revert all to original varchar(500+)
         $revertTo500 = [
             'activities' => ['created_by', 'lead_status', 'service'],
             'appointments' => ['name'],
@@ -151,19 +97,18 @@ return new class extends Migration
         ];
 
         foreach ($revertTo500 as $table => $columns) {
-            Schema::table($table, function (Blueprint $blueprint) use ($columns) {
-                foreach ($columns as $col) {
-                    $blueprint->string($col, 500)->nullable()->change();
-                }
-            });
+            foreach ($columns as $col) {
+                $this->safeColumn($table, $col, function (Blueprint $t) use ($col) {
+                    $t->string($col, 500)->nullable()->change();
+                });
+            }
         }
 
-        Schema::table('activities', function (Blueprint $table) {
-            $table->string('patient', 599)->nullable()->change();
+        $this->safeColumn('activities', 'patient', function (Blueprint $t) {
+            $t->string('patient', 599)->nullable()->change();
         });
-
-        Schema::table('memberships', function (Blueprint $table) {
-            $table->string('parent_membership_code', 555)->nullable()->change();
+        $this->safeColumn('memberships', 'parent_membership_code', function (Blueprint $t) {
+            $t->string('parent_membership_code', 555)->nullable()->change();
         });
     }
 };

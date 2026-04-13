@@ -1,64 +1,71 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Fix missing indexes found during deep index audit.
-     *
-     * 1. appointments_daily_stats.scheduled_date — 178K rows, full table scan on dashboard
-     * 2. resource_has_rota_days.date — 237K rows, full scan on standalone date queries
-     * 3. permissions (name, guard_name) — Spatie standard unique constraint missing
-     * 4. roles (name, guard_name) — Spatie standard unique constraint missing
-     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function addIndex(string $table, array|string $columns, string $name, bool $unique = false): void
+    {
+        if (! Schema::hasTable($table)) {
+            return;
+        }
+        $cols = (array) $columns;
+        foreach ($cols as $c) {
+            if (! Schema::hasColumn($table, $c)) {
+                return;
+            }
+        }
+        if ($this->indexExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, function (Blueprint $t) use ($cols, $name, $unique) {
+                $unique ? $t->unique($cols, $name) : $t->index($cols, $name);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping index {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropIndex(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->indexExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, fn (Blueprint $t) => $t->dropIndex($name));
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropIndex {$name}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // 1. appointments_daily_stats: dashboard queries use
-        //    whereBetween('scheduled_date', ...) + whereIn('centre_id', ...)
-        //    Composite (centre_id, scheduled_date) serves both the arrival report
-        //    and the chart queries. A standalone scheduled_date index also added
-        //    for queries that don't filter by centre.
-        Schema::table('appointments_daily_stats', function ($table) {
-            $table->index('scheduled_date', 'idx_ads_scheduled_date');
-            $table->index(['centre_id', 'scheduled_date'], 'idx_ads_centre_date');
-        });
-
-        // 2. resource_has_rota_days: whereIn('date', $dates) does full scan of 237K rows
-        Schema::table('resource_has_rota_days', function ($table) {
-            $table->index('date', 'idx_rota_days_date');
-        });
-
-        // 3. permissions: Spatie standard unique constraint — prevents duplicate names
-        Schema::table('permissions', function ($table) {
-            $table->unique(['name', 'guard_name'], 'permissions_name_guard_name_unique');
-        });
-
-        // 4. roles: Spatie standard unique constraint — prevents duplicate names
-        Schema::table('roles', function ($table) {
-            $table->unique(['name', 'guard_name'], 'roles_name_guard_name_unique');
-        });
+        $this->addIndex('appointments_daily_stats', 'scheduled_date', 'idx_ads_scheduled_date');
+        $this->addIndex('appointments_daily_stats', ['centre_id', 'scheduled_date'], 'idx_ads_centre_date');
+        $this->addIndex('resource_has_rota_days', 'date', 'idx_rota_days_date');
+        $this->addIndex('permissions', ['name', 'guard_name'], 'permissions_name_guard_name_unique', true);
+        $this->addIndex('roles', ['name', 'guard_name'], 'roles_name_guard_name_unique', true);
     }
 
     public function down(): void
     {
-        Schema::table('appointments_daily_stats', function ($table) {
-            $table->dropIndex('idx_ads_scheduled_date');
-            $table->dropIndex('idx_ads_centre_date');
-        });
-
-        Schema::table('resource_has_rota_days', function ($table) {
-            $table->dropIndex('idx_rota_days_date');
-        });
-
-        Schema::table('permissions', function ($table) {
-            $table->dropIndex('permissions_name_guard_name_unique');
-        });
-
-        Schema::table('roles', function ($table) {
-            $table->dropIndex('roles_name_guard_name_unique');
-        });
+        $this->dropIndex('appointments_daily_stats', 'idx_ads_scheduled_date');
+        $this->dropIndex('appointments_daily_stats', 'idx_ads_centre_date');
+        $this->dropIndex('resource_has_rota_days', 'idx_rota_days_date');
+        $this->dropIndex('permissions', 'permissions_name_guard_name_unique');
+        $this->dropIndex('roles', 'roles_name_guard_name_unique');
     }
 };

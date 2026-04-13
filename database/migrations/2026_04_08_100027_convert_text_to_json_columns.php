@@ -2,34 +2,39 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Convert TEXT/LONGTEXT columns storing JSON data to proper JSON column type.
-     *
-     * Benefits: DB-level JSON validation, ability to create virtual columns
-     * and indexes on JSON paths, better query support with JSON_EXTRACT.
-     *
-     * All data verified: 0 invalid JSON values across all columns.
-     */
+    private function safeModify(string $table, string $column, string $sql): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        try {
+            DB::statement("ALTER TABLE `{$table}` MODIFY `{$column}` {$sql}");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping MODIFY {$table}.{$column}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        DB::statement('ALTER TABLE cashflow_audit_logs MODIFY old_values JSON NULL');
-        DB::statement('ALTER TABLE cashflow_audit_logs MODIFY new_values JSON NULL');
-        DB::statement('ALTER TABLE cashflow_notifications MODIFY data JSON NULL');
-        DB::statement('ALTER TABLE custom_form_feedback_details MODIFY content JSON NULL');
-        DB::statement('ALTER TABLE custom_form_fields MODIFY content JSON NULL');
-        DB::statement('ALTER TABLE period_locks MODIFY balance_snapshot JSON NULL');
+        $this->safeModify('cashflow_audit_logs', 'old_values', 'JSON NULL');
+        $this->safeModify('cashflow_audit_logs', 'new_values', 'JSON NULL');
+        $this->safeModify('cashflow_notifications', 'data', 'JSON NULL');
+        $this->safeModify('custom_form_feedback_details', 'content', 'JSON NULL');
+        $this->safeModify('custom_form_fields', 'content', 'JSON NULL');
+        $this->safeModify('period_locks', 'balance_snapshot', 'JSON NULL');
     }
 
     public function down(): void
     {
-        DB::statement('ALTER TABLE cashflow_audit_logs MODIFY old_values LONGTEXT NULL');
-        DB::statement('ALTER TABLE cashflow_audit_logs MODIFY new_values LONGTEXT NULL');
-        DB::statement('ALTER TABLE cashflow_notifications MODIFY data LONGTEXT NULL');
-        DB::statement('ALTER TABLE custom_form_feedback_details MODIFY content TEXT NULL');
-        DB::statement('ALTER TABLE custom_form_fields MODIFY content TEXT NULL');
-        DB::statement('ALTER TABLE period_locks MODIFY balance_snapshot LONGTEXT NULL');
+        $this->safeModify('cashflow_audit_logs', 'old_values', 'LONGTEXT NULL');
+        $this->safeModify('cashflow_audit_logs', 'new_values', 'LONGTEXT NULL');
+        $this->safeModify('cashflow_notifications', 'data', 'LONGTEXT NULL');
+        $this->safeModify('custom_form_feedback_details', 'content', 'TEXT NULL');
+        $this->safeModify('custom_form_fields', 'content', 'TEXT NULL');
+        $this->safeModify('period_locks', 'balance_snapshot', 'LONGTEXT NULL');
     }
 };

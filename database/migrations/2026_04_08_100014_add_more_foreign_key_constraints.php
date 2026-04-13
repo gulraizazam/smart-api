@@ -7,94 +7,86 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add FK constraints to packages, leads, invoice_details, package_bundles.
-     *
-     * Orphan cleanup:
-     *   packages.appointment_id: 1 orphan → SET NULL
-     *   leads.location_id: 69 orphans → SET NULL
-     *   All other columns: 0 orphans
-     *
-     * Type fix: leads.location_id INT(11) → INT UNSIGNED (match locations.id)
-     */
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        $rows = DB::select(
+            "SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY' LIMIT 1",
+            [$table, $name]
+        );
+        return ! empty($rows);
+    }
+
+    private function addFk(string $table, string $column, string $refTable, string $name, string $onDelete): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        if ($this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, function (Blueprint $t) use ($column, $refTable, $name, $onDelete) {
+                $t->foreign($column, $name)->references('id')->on($refTable)->onDelete($onDelete);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping FK {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropFk(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, fn (Blueprint $t) => $t->dropForeign($name));
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropForeign {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function safeStatement(string $sql): void
+    {
+        try {
+            DB::statement($sql);
+        } catch (\Throwable $e) {
+            \Log::warning('Statement failed: ' . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // ─── Step 1: Clean orphans ───
-        DB::statement('UPDATE packages SET appointment_id = NULL WHERE appointment_id IS NOT NULL AND appointment_id NOT IN (SELECT id FROM appointments)');
-        DB::statement('UPDATE leads SET location_id = NULL WHERE location_id IS NOT NULL AND location_id NOT IN (SELECT id FROM locations)');
+        $this->safeStatement('UPDATE packages SET appointment_id = NULL WHERE appointment_id IS NOT NULL AND appointment_id NOT IN (SELECT id FROM appointments)');
+        $this->safeStatement('UPDATE leads SET location_id = NULL WHERE location_id IS NOT NULL AND location_id NOT IN (SELECT id FROM locations)');
+        $this->safeStatement('ALTER TABLE leads MODIFY location_id INT(10) UNSIGNED NULL');
 
-        // ─── Step 2: Fix type mismatch ───
-        DB::statement('ALTER TABLE leads MODIFY location_id INT(10) UNSIGNED NULL');
+        $this->addFk('packages', 'patient_id', 'users', 'fk_packages_patient', 'set null');
+        $this->addFk('packages', 'location_id', 'locations', 'fk_packages_location', 'set null');
+        $this->addFk('packages', 'appointment_id', 'appointments', 'fk_packages_appointment', 'set null');
 
-        // ─── Step 3: Add FK constraints ───
+        $this->addFk('leads', 'service_id', 'services', 'fk_leads_service', 'set null');
+        $this->addFk('leads', 'location_id', 'locations', 'fk_leads_location', 'set null');
+        $this->addFk('leads', 'lead_source_id', 'lead_sources', 'fk_leads_source', 'set null');
+        $this->addFk('leads', 'lead_status_id', 'lead_statuses', 'fk_leads_status', 'set null');
+        $this->addFk('leads', 'created_by', 'users', 'fk_leads_creator', 'set null');
 
-        // packages (0 FKs currently → adding 3)
-        Schema::table('packages', function (Blueprint $table) {
-            $table->foreign('patient_id', 'fk_packages_patient')
-                ->references('id')->on('users')
-                ->onDelete('set null');
-            $table->foreign('location_id', 'fk_packages_location')
-                ->references('id')->on('locations')
-                ->onDelete('set null');
-            $table->foreign('appointment_id', 'fk_packages_appointment')
-                ->references('id')->on('appointments')
-                ->onDelete('set null');
-        });
-
-        // leads (has patient_id FK → adding 5 more)
-        Schema::table('leads', function (Blueprint $table) {
-            $table->foreign('service_id', 'fk_leads_service')
-                ->references('id')->on('services')
-                ->onDelete('set null');
-            $table->foreign('location_id', 'fk_leads_location')
-                ->references('id')->on('locations')
-                ->onDelete('set null');
-            $table->foreign('lead_source_id', 'fk_leads_source')
-                ->references('id')->on('lead_sources')
-                ->onDelete('set null');
-            $table->foreign('lead_status_id', 'fk_leads_status')
-                ->references('id')->on('lead_statuses')
-                ->onDelete('set null');
-            $table->foreign('created_by', 'fk_leads_creator')
-                ->references('id')->on('users')
-                ->onDelete('set null');
-        });
-
-        // invoice_details.service_id (non-nullable → CASCADE)
-        Schema::table('invoice_details', function (Blueprint $table) {
-            $table->foreign('service_id', 'fk_invoice_details_service')
-                ->references('id')->on('services')
-                ->onDelete('cascade');
-        });
-
-        // package_bundles.bundle_id (nullable → SET NULL)
-        Schema::table('package_bundles', function (Blueprint $table) {
-            $table->foreign('bundle_id', 'fk_pkg_bundles_bundle')
-                ->references('id')->on('bundles')
-                ->onDelete('set null');
-        });
+        $this->addFk('invoice_details', 'service_id', 'services', 'fk_invoice_details_service', 'cascade');
+        $this->addFk('package_bundles', 'bundle_id', 'bundles', 'fk_pkg_bundles_bundle', 'set null');
     }
 
     public function down(): void
     {
-        Schema::table('packages', function (Blueprint $table) {
-            $table->dropForeign('fk_packages_patient');
-            $table->dropForeign('fk_packages_location');
-            $table->dropForeign('fk_packages_appointment');
-        });
+        $this->dropFk('packages', 'fk_packages_patient');
+        $this->dropFk('packages', 'fk_packages_location');
+        $this->dropFk('packages', 'fk_packages_appointment');
+        $this->dropFk('leads', 'fk_leads_service');
+        $this->dropFk('leads', 'fk_leads_location');
+        $this->dropFk('leads', 'fk_leads_source');
+        $this->dropFk('leads', 'fk_leads_status');
+        $this->dropFk('leads', 'fk_leads_creator');
+        $this->dropFk('invoice_details', 'fk_invoice_details_service');
+        $this->dropFk('package_bundles', 'fk_pkg_bundles_bundle');
 
-        Schema::table('leads', function (Blueprint $table) {
-            $table->dropForeign('fk_leads_service');
-            $table->dropForeign('fk_leads_location');
-            $table->dropForeign('fk_leads_source');
-            $table->dropForeign('fk_leads_status');
-            $table->dropForeign('fk_leads_creator');
-        });
-
-        Schema::table('invoice_details', fn (Blueprint $table) => $table->dropForeign('fk_invoice_details_service'));
-        Schema::table('package_bundles', fn (Blueprint $table) => $table->dropForeign('fk_pkg_bundles_bundle'));
-
-        // Revert type
-        DB::statement('ALTER TABLE leads MODIFY location_id INT(11) NULL');
+        $this->safeStatement('ALTER TABLE leads MODIFY location_id INT(11) NULL');
     }
 };

@@ -2,64 +2,86 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add indexes to tables that were completely unindexed or missing critical FK indexes.
-     *
-     * orders (9.6K rows): 0 secondary indexes
-     * memberships (5.2K rows): 0 secondary indexes
-     * inventories (3.9K rows): 0 secondary indexes
-     * activities (374K rows): 10 FK columns without indexes
-     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function createRaw(string $name, string $table, string $cols): void
+    {
+        if (! Schema::hasTable($table) || $this->indexExists($table, $name)) {
+            return;
+        }
+        try {
+            DB::statement("CREATE INDEX `{$name}` ON `{$table}`({$cols})");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping CREATE INDEX {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropRaw(string $name, string $table): void
+    {
+        if (! Schema::hasTable($table) || ! $this->indexExists($table, $name)) {
+            return;
+        }
+        try {
+            DB::statement("DROP INDEX `{$name}` ON `{$table}`");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping DROP INDEX {$name}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // ─── orders ───
-        DB::statement('CREATE INDEX idx_orders_account ON orders(account_id)');
-        DB::statement('CREATE INDEX idx_orders_patient ON orders(patient_id)');
-        DB::statement('CREATE INDEX idx_orders_location ON orders(location_id)');
-        DB::statement('CREATE INDEX idx_orders_created_at ON orders(created_at)');
+        $this->createRaw('idx_orders_account', 'orders', 'account_id');
+        $this->createRaw('idx_orders_patient', 'orders', 'patient_id');
+        $this->createRaw('idx_orders_location', 'orders', 'location_id');
+        $this->createRaw('idx_orders_created_at', 'orders', 'created_at');
 
-        // ─── memberships ───
-        DB::statement('CREATE INDEX idx_memberships_patient_deleted ON memberships(patient_id, deleted_at)');
-        DB::statement('CREATE INDEX idx_memberships_type ON memberships(membership_type_id)');
-        DB::statement('CREATE INDEX idx_memberships_active ON memberships(active)');
+        $this->createRaw('idx_memberships_patient_deleted', 'memberships', 'patient_id, deleted_at');
+        $this->createRaw('idx_memberships_type', 'memberships', 'membership_type_id');
+        $this->createRaw('idx_memberships_active', 'memberships', 'active');
 
-        // ─── inventories ───
-        DB::statement('CREATE INDEX idx_inventories_product ON inventories(product_id)');
-        DB::statement('CREATE INDEX idx_inventories_warehouse ON inventories(warehouse_id)');
-        DB::statement('CREATE INDEX idx_inventories_location ON inventories(location_id)');
+        $this->createRaw('idx_inventories_product', 'inventories', 'product_id');
+        $this->createRaw('idx_inventories_warehouse', 'inventories', 'warehouse_id');
+        $this->createRaw('idx_inventories_location', 'inventories', 'location_id');
 
-        // ─── activities (374K rows — high-volume, many FK columns unindexed) ───
-        DB::statement('CREATE INDEX idx_activities_patient ON activities(patient_id)');
-        DB::statement('CREATE INDEX idx_activities_service ON activities(service_id)');
-        DB::statement('CREATE INDEX idx_activities_appointment ON activities(appointment_id)');
-        DB::statement('CREATE INDEX idx_activities_centre ON activities(centre_id)');
-        DB::statement('CREATE INDEX idx_activities_invoice ON activities(invoice_id)');
-        DB::statement('CREATE INDEX idx_activities_package ON activities(package_id)');
+        $this->createRaw('idx_activities_patient', 'activities', 'patient_id');
+        $this->createRaw('idx_activities_service', 'activities', 'service_id');
+        $this->createRaw('idx_activities_appointment', 'activities', 'appointment_id');
+        $this->createRaw('idx_activities_centre', 'activities', 'centre_id');
+        $this->createRaw('idx_activities_invoice', 'activities', 'invoice_id');
+        $this->createRaw('idx_activities_package', 'activities', 'package_id');
     }
 
     public function down(): void
     {
-        DB::statement('DROP INDEX idx_orders_account ON orders');
-        DB::statement('DROP INDEX idx_orders_patient ON orders');
-        DB::statement('DROP INDEX idx_orders_location ON orders');
-        DB::statement('DROP INDEX idx_orders_created_at ON orders');
+        $this->dropRaw('idx_orders_account', 'orders');
+        $this->dropRaw('idx_orders_patient', 'orders');
+        $this->dropRaw('idx_orders_location', 'orders');
+        $this->dropRaw('idx_orders_created_at', 'orders');
 
-        DB::statement('DROP INDEX idx_memberships_patient_deleted ON memberships');
-        DB::statement('DROP INDEX idx_memberships_type ON memberships');
-        DB::statement('DROP INDEX idx_memberships_active ON memberships');
+        $this->dropRaw('idx_memberships_patient_deleted', 'memberships');
+        $this->dropRaw('idx_memberships_type', 'memberships');
+        $this->dropRaw('idx_memberships_active', 'memberships');
 
-        DB::statement('DROP INDEX idx_inventories_product ON inventories');
-        DB::statement('DROP INDEX idx_inventories_warehouse ON inventories');
-        DB::statement('DROP INDEX idx_inventories_location ON inventories');
+        $this->dropRaw('idx_inventories_product', 'inventories');
+        $this->dropRaw('idx_inventories_warehouse', 'inventories');
+        $this->dropRaw('idx_inventories_location', 'inventories');
 
-        DB::statement('DROP INDEX idx_activities_patient ON activities');
-        DB::statement('DROP INDEX idx_activities_service ON activities');
-        DB::statement('DROP INDEX idx_activities_appointment ON activities');
-        DB::statement('DROP INDEX idx_activities_centre ON activities');
-        DB::statement('DROP INDEX idx_activities_invoice ON activities');
-        DB::statement('DROP INDEX idx_activities_package ON activities');
+        $this->dropRaw('idx_activities_patient', 'activities');
+        $this->dropRaw('idx_activities_service', 'activities');
+        $this->dropRaw('idx_activities_appointment', 'activities');
+        $this->dropRaw('idx_activities_centre', 'activities');
+        $this->dropRaw('idx_activities_invoice', 'activities');
+        $this->dropRaw('idx_activities_package', 'activities');
     }
 };

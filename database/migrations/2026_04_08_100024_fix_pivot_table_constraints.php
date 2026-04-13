@@ -7,125 +7,140 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Fix pivot table integrity:
-     *   1. bundle_has_services: deduplicate 582 duplicate rows, add auto PK + unique constraint
-     *   2. password_resets: add email+token unique (standard Laravel)
-     *   3. Add FK constraints to 5 pivot tables lacking them
-     */
+    private function foreignKeyExists(string $table, string $name): bool
+    {
+        $rows = DB::select(
+            "SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = ? AND constraint_name = ? AND constraint_type = 'FOREIGN KEY' LIMIT 1",
+            [$table, $name]
+        );
+        return ! empty($rows);
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function addFk(string $table, string $column, string $refTable, string $name, string $onDelete): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasTable($refTable) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        if ($this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, function (Blueprint $t) use ($column, $refTable, $name, $onDelete) {
+                $t->foreign($column, $name)->references('id')->on($refTable)->onDelete($onDelete);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping FK {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function dropFk(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->foreignKeyExists($table, $name)) {
+            return;
+        }
+        try {
+            Schema::table($table, fn (Blueprint $t) => $t->dropForeign($name));
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping dropForeign {$name}: " . $e->getMessage());
+        }
+    }
+
+    private function safeStatement(string $sql): void
+    {
+        try {
+            DB::statement($sql);
+        } catch (\Throwable $e) {
+            \Log::warning('Statement failed: ' . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // ─── 0. Clean orphans in pivot tables ───
-        DB::statement('DELETE FROM bundle_has_services WHERE bundle_id NOT IN (SELECT id FROM bundles)');
-        DB::statement('DELETE FROM bundle_has_services WHERE service_id NOT IN (SELECT id FROM services)');
-        DB::statement('DELETE FROM role_has_permissions WHERE permission_id NOT IN (SELECT id FROM permissions)');
-        DB::statement('DELETE FROM user_has_locations WHERE location_id NOT IN (SELECT id FROM locations)');
-        DB::statement('DELETE FROM discount_has_locations WHERE location_id NOT IN (SELECT id FROM locations)');
+        $this->safeStatement('DELETE FROM bundle_has_services WHERE bundle_id NOT IN (SELECT id FROM bundles)');
+        $this->safeStatement('DELETE FROM bundle_has_services WHERE service_id NOT IN (SELECT id FROM services)');
+        $this->safeStatement('DELETE FROM role_has_permissions WHERE permission_id NOT IN (SELECT id FROM permissions)');
+        $this->safeStatement('DELETE FROM user_has_locations WHERE location_id NOT IN (SELECT id FROM locations)');
+        $this->safeStatement('DELETE FROM discount_has_locations WHERE location_id NOT IN (SELECT id FROM locations)');
 
-        // ─── 1. bundle_has_services: deduplicate + add PK + unique ───
+        // Rebuild bundle_has_services only if `id` column not yet present
+        if (Schema::hasTable('bundle_has_services') && ! Schema::hasColumn('bundle_has_services', 'id')) {
+            try {
+                Schema::dropIfExists('bundle_has_services_tmp');
+                DB::statement('CREATE TABLE bundle_has_services_tmp LIKE bundle_has_services');
+                DB::statement('INSERT INTO bundle_has_services_tmp SELECT DISTINCT * FROM bundle_has_services');
+                DB::statement('DROP TABLE bundle_has_services');
+                DB::statement('RENAME TABLE bundle_has_services_tmp TO bundle_has_services');
+                DB::statement('ALTER TABLE bundle_has_services ADD COLUMN id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST');
+            } catch (\Throwable $e) {
+                \Log::warning('bundle_has_services rebuild skipped: ' . $e->getMessage());
+            }
+        }
 
-        // Create temp table with deduplicated data
-        DB::statement('CREATE TABLE bundle_has_services_tmp LIKE bundle_has_services');
-        DB::statement('INSERT INTO bundle_has_services_tmp SELECT DISTINCT * FROM bundle_has_services');
+        if (Schema::hasTable('bundle_has_services') && ! $this->indexExists('bundle_has_services', 'uq_bundle_service')) {
+            try {
+                DB::statement('CREATE UNIQUE INDEX uq_bundle_service ON bundle_has_services(bundle_id, service_id)');
+            } catch (\Throwable $e) {
+                \Log::warning('uq_bundle_service skipped: ' . $e->getMessage());
+            }
+        }
 
-        // Swap
-        DB::statement('DROP TABLE bundle_has_services');
-        DB::statement('RENAME TABLE bundle_has_services_tmp TO bundle_has_services');
+        $this->addFk('bundle_has_services', 'bundle_id', 'bundles', 'fk_bhs_bundle', 'cascade');
+        $this->addFk('bundle_has_services', 'service_id', 'services', 'fk_bhs_service', 'cascade');
 
-        // Add auto-increment PK
-        DB::statement('ALTER TABLE bundle_has_services ADD COLUMN id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST');
+        $this->addFk('role_has_permissions', 'permission_id', 'permissions', 'fk_rhp_permission', 'cascade');
+        $this->addFk('role_has_permissions', 'role_id', 'roles', 'fk_rhp_role', 'cascade');
 
-        // Add unique constraint to prevent future duplicates
-        DB::statement('CREATE UNIQUE INDEX uq_bundle_service ON bundle_has_services(bundle_id, service_id)');
+        $this->addFk('user_has_locations', 'user_id', 'users', 'fk_uhl_user', 'cascade');
+        $this->addFk('user_has_locations', 'location_id', 'locations', 'fk_uhl_location', 'cascade');
 
-        // ─── 2. Add FK constraints to pivot tables ───
+        $this->addFk('doctor_has_locations', 'user_id', 'users', 'fk_dhl_user', 'cascade');
+        $this->addFk('doctor_has_locations', 'location_id', 'locations', 'fk_dhl_location', 'cascade');
+        $this->addFk('doctor_has_locations', 'service_id', 'services', 'fk_dhl_service', 'cascade');
 
-        // bundle_has_services
-        Schema::table('bundle_has_services', function (Blueprint $table) {
-            $table->foreign('bundle_id', 'fk_bhs_bundle')
-                ->references('id')->on('bundles')
-                ->onDelete('cascade');
-            $table->foreign('service_id', 'fk_bhs_service')
-                ->references('id')->on('services')
-                ->onDelete('cascade');
-        });
-
-        // role_has_permissions (already has composite PK)
-        Schema::table('role_has_permissions', function (Blueprint $table) {
-            $table->foreign('permission_id', 'fk_rhp_permission')
-                ->references('id')->on('permissions')
-                ->onDelete('cascade');
-            $table->foreign('role_id', 'fk_rhp_role')
-                ->references('id')->on('roles')
-                ->onDelete('cascade');
-        });
-
-        // user_has_locations (already has composite PK)
-        Schema::table('user_has_locations', function (Blueprint $table) {
-            $table->foreign('user_id', 'fk_uhl_user')
-                ->references('id')->on('users')
-                ->onDelete('cascade');
-            $table->foreign('location_id', 'fk_uhl_location')
-                ->references('id')->on('locations')
-                ->onDelete('cascade');
-        });
-
-        // doctor_has_locations
-        Schema::table('doctor_has_locations', function (Blueprint $table) {
-            $table->foreign('user_id', 'fk_dhl_user')
-                ->references('id')->on('users')
-                ->onDelete('cascade');
-            $table->foreign('location_id', 'fk_dhl_location')
-                ->references('id')->on('locations')
-                ->onDelete('cascade');
-            $table->foreign('service_id', 'fk_dhl_service')
-                ->references('id')->on('services')
-                ->onDelete('cascade');
-        });
-
-        // discount_has_locations
-        Schema::table('discount_has_locations', function (Blueprint $table) {
-            $table->foreign('discount_id', 'fk_discloc_discount')
-                ->references('id')->on('discounts')
-                ->onDelete('cascade');
-            $table->foreign('location_id', 'fk_discloc_location')
-                ->references('id')->on('locations')
-                ->onDelete('cascade');
-            $table->foreign('service_id', 'fk_discloc_service')
-                ->references('id')->on('services')
-                ->onDelete('cascade');
-        });
+        $this->addFk('discount_has_locations', 'discount_id', 'discounts', 'fk_discloc_discount', 'cascade');
+        $this->addFk('discount_has_locations', 'location_id', 'locations', 'fk_discloc_location', 'cascade');
+        $this->addFk('discount_has_locations', 'service_id', 'services', 'fk_discloc_service', 'cascade');
     }
 
     public function down(): void
     {
-        Schema::table('bundle_has_services', function (Blueprint $table) {
-            $table->dropForeign('fk_bhs_bundle');
-            $table->dropForeign('fk_bhs_service');
-            $table->dropIndex('uq_bundle_service');
-        });
-        DB::statement('ALTER TABLE bundle_has_services DROP COLUMN id');
+        $this->dropFk('bundle_has_services', 'fk_bhs_bundle');
+        $this->dropFk('bundle_has_services', 'fk_bhs_service');
 
-        Schema::table('role_has_permissions', function (Blueprint $table) {
-            $table->dropForeign('fk_rhp_permission');
-            $table->dropForeign('fk_rhp_role');
-        });
+        if (Schema::hasTable('bundle_has_services') && $this->indexExists('bundle_has_services', 'uq_bundle_service')) {
+            try {
+                Schema::table('bundle_has_services', fn (Blueprint $t) => $t->dropIndex('uq_bundle_service'));
+            } catch (\Throwable $e) {
+                \Log::warning('drop uq_bundle_service skipped: ' . $e->getMessage());
+            }
+        }
 
-        Schema::table('user_has_locations', function (Blueprint $table) {
-            $table->dropForeign('fk_uhl_user');
-            $table->dropForeign('fk_uhl_location');
-        });
+        if (Schema::hasTable('bundle_has_services') && Schema::hasColumn('bundle_has_services', 'id')) {
+            try {
+                DB::statement('ALTER TABLE bundle_has_services DROP COLUMN id');
+            } catch (\Throwable $e) {
+                \Log::warning('drop id column skipped: ' . $e->getMessage());
+            }
+        }
 
-        Schema::table('doctor_has_locations', function (Blueprint $table) {
-            $table->dropForeign('fk_dhl_user');
-            $table->dropForeign('fk_dhl_location');
-            $table->dropForeign('fk_dhl_service');
-        });
-
-        Schema::table('discount_has_locations', function (Blueprint $table) {
-            $table->dropForeign('fk_discloc_discount');
-            $table->dropForeign('fk_discloc_location');
-            $table->dropForeign('fk_discloc_service');
-        });
+        $this->dropFk('role_has_permissions', 'fk_rhp_permission');
+        $this->dropFk('role_has_permissions', 'fk_rhp_role');
+        $this->dropFk('user_has_locations', 'fk_uhl_user');
+        $this->dropFk('user_has_locations', 'fk_uhl_location');
+        $this->dropFk('doctor_has_locations', 'fk_dhl_user');
+        $this->dropFk('doctor_has_locations', 'fk_dhl_location');
+        $this->dropFk('doctor_has_locations', 'fk_dhl_service');
+        $this->dropFk('discount_has_locations', 'fk_discloc_discount');
+        $this->dropFk('discount_has_locations', 'fk_discloc_location');
+        $this->dropFk('discount_has_locations', 'fk_discloc_service');
     }
 };

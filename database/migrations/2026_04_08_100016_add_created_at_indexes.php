@@ -2,49 +2,51 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Add created_at indexes to high-volume tables for date-range query performance.
-     *
-     * EXPLAIN findings:
-     *   activities (399K rows): No created_at index → full scan on date filtering
-     *   leads (515K rows): No created_at index → full scan on reports
-     *   invoice_details (243K rows): No created_at index → full scan on date queries
-     *   users (215K rows): No created_at index → full scan on user listing
-     *   appointments (391K rows): No created_at index → full scan on history queries
-     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function addIndex(string $table, array|string $columns, string $name): void
+    {
+        if (! Schema::hasTable($table) || $this->indexExists($table, $name)) {
+            return;
+        }
+        Schema::table($table, fn (Blueprint $t) => $t->index($columns, $name));
+    }
+
+    private function dropIndex(string $table, string $name): void
+    {
+        if (! Schema::hasTable($table) || ! $this->indexExists($table, $name)) {
+            return;
+        }
+        Schema::table($table, fn (Blueprint $t) => $t->dropIndex($name));
+    }
+
     public function up(): void
     {
-        Schema::table('activities', function (Blueprint $table) {
-            $table->index('created_at', 'idx_activities_created_at');
-        });
-
-        Schema::table('leads', function (Blueprint $table) {
-            $table->index('created_at', 'idx_leads_created_at');
-        });
-
-        Schema::table('invoice_details', function (Blueprint $table) {
-            $table->index('created_at', 'idx_invoice_details_created_at');
-        });
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->index('created_at', 'idx_users_created_at');
-        });
-
-        Schema::table('appointments', function (Blueprint $table) {
-            $table->index('created_at', 'idx_appointments_created_at');
-        });
+        $this->addIndex('activities', 'created_at', 'idx_activities_created_at');
+        $this->addIndex('leads', 'created_at', 'idx_leads_created_at');
+        $this->addIndex('invoice_details', 'created_at', 'idx_invoice_details_created_at');
+        $this->addIndex('users', 'created_at', 'idx_users_created_at');
+        $this->addIndex('appointments', 'created_at', 'idx_appointments_created_at');
     }
 
     public function down(): void
     {
-        Schema::table('activities', fn (Blueprint $table) => $table->dropIndex('idx_activities_created_at'));
-        Schema::table('leads', fn (Blueprint $table) => $table->dropIndex('idx_leads_created_at'));
-        Schema::table('invoice_details', fn (Blueprint $table) => $table->dropIndex('idx_invoice_details_created_at'));
-        Schema::table('users', fn (Blueprint $table) => $table->dropIndex('idx_users_created_at'));
-        Schema::table('appointments', fn (Blueprint $table) => $table->dropIndex('idx_appointments_created_at'));
+        $this->dropIndex('activities', 'idx_activities_created_at');
+        $this->dropIndex('leads', 'idx_leads_created_at');
+        $this->dropIndex('invoice_details', 'idx_invoice_details_created_at');
+        $this->dropIndex('users', 'idx_users_created_at');
+        $this->dropIndex('appointments', 'idx_appointments_created_at');
     }
 };

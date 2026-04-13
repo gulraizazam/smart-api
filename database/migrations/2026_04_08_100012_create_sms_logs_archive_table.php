@@ -6,14 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Create archive table for SMS logs older than 12 months.
-     *
-     * Current eligible: 643K rows (~190 MB)
-     * Archive command: php artisan sms:archive
-     */
     public function up(): void
     {
+        if (Schema::hasTable('sms_logs_archive')) {
+            return;
+        }
         Schema::create('sms_logs_archive', function (Blueprint $table) {
             $table->unsignedInteger('id')->primary();
             $table->string('log_type', 100)->default('sms');

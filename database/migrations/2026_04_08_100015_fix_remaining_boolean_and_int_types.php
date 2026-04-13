@@ -7,69 +7,55 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Fix remaining integer type issues across high-volume tables.
-     *
-     * Boolean columns (INT → TINYINT(1)):
-     *   appointments.meta_purchase_sent: 0/1 only (390K×0, 3.9K×1)
-     *   appointments.is_unscheduled: ''/1 (394K×'', 4×1) → clean empties first
-     *   appointments.first_scheduled_count: 0/1 counter (394K×1, 362×0)
-     *   package_advances.is_setteled: 0/1 only (831K×0, 240×1)
-     *   users.can_perform_consultation: 0/1 only (217K×0, 2×1)
-     *
-     * Counter columns (INT → TINYINT UNSIGNED):
-     *   appointments.scheduled_at_count: values 0-4+ (counter, not boolean)
-     *
-     * TINYINT standardization (3/4 → 1):
-     *   package_advances.is_tax: TINYINT(3) → TINYINT(1)
-     *   appointments.send_message: TINYINT(4) → TINYINT(1)
-     *   appointments.active: TINYINT(3) → TINYINT(1)
-     *   users.active: TINYINT(3) → TINYINT(1)
-     */
+    private function safeChange(string $table, string $column, callable $cb): void
+    {
+        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
+            return;
+        }
+        try {
+            Schema::table($table, $cb);
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping {$table}.{$column}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // Clean empty strings in is_unscheduled before type change
-        DB::statement("UPDATE appointments SET is_unscheduled = 0 WHERE is_unscheduled = '' OR is_unscheduled IS NULL");
+        if (Schema::hasTable('appointments') && Schema::hasColumn('appointments', 'is_unscheduled')) {
+            try {
+                DB::statement("UPDATE appointments SET is_unscheduled = 0 WHERE is_unscheduled = '' OR is_unscheduled IS NULL");
+            } catch (\Throwable $e) {
+                \Log::warning('is_unscheduled cleanup skipped: ' . $e->getMessage());
+            }
+        }
 
-        Schema::table('appointments', function (Blueprint $table) {
-            $table->boolean('meta_purchase_sent')->default(false)->change();
-            $table->boolean('is_unscheduled')->default(false)->change();
-            $table->boolean('first_scheduled_count')->default(false)->change();
-            $table->boolean('send_message')->default(false)->change();
-            $table->boolean('active')->unsigned()->default(true)->change();
-            $table->unsignedTinyInteger('scheduled_at_count')->default(0)->change();
-        });
+        $this->safeChange('appointments', 'meta_purchase_sent', fn (Blueprint $t) => $t->boolean('meta_purchase_sent')->default(false)->change());
+        $this->safeChange('appointments', 'is_unscheduled', fn (Blueprint $t) => $t->boolean('is_unscheduled')->default(false)->change());
+        $this->safeChange('appointments', 'first_scheduled_count', fn (Blueprint $t) => $t->boolean('first_scheduled_count')->default(false)->change());
+        $this->safeChange('appointments', 'send_message', fn (Blueprint $t) => $t->boolean('send_message')->default(false)->change());
+        $this->safeChange('appointments', 'active', fn (Blueprint $t) => $t->boolean('active')->unsigned()->default(true)->change());
+        $this->safeChange('appointments', 'scheduled_at_count', fn (Blueprint $t) => $t->unsignedTinyInteger('scheduled_at_count')->default(0)->change());
 
-        Schema::table('package_advances', function (Blueprint $table) {
-            $table->boolean('is_setteled')->default(false)->change();
-            $table->boolean('is_tax')->default(false)->change();
-        });
+        $this->safeChange('package_advances', 'is_setteled', fn (Blueprint $t) => $t->boolean('is_setteled')->default(false)->change());
+        $this->safeChange('package_advances', 'is_tax', fn (Blueprint $t) => $t->boolean('is_tax')->default(false)->change());
 
-        Schema::table('users', function (Blueprint $table) {
-            $table->boolean('can_perform_consultation')->default(false)->change();
-            $table->boolean('active')->unsigned()->default(true)->change();
-        });
+        $this->safeChange('users', 'can_perform_consultation', fn (Blueprint $t) => $t->boolean('can_perform_consultation')->default(false)->change());
+        $this->safeChange('users', 'active', fn (Blueprint $t) => $t->boolean('active')->unsigned()->default(true)->change());
     }
 
     public function down(): void
     {
-        Schema::table('appointments', function (Blueprint $table) {
-            $table->integer('meta_purchase_sent')->default(0)->change();
-            $table->integer('is_unscheduled')->default(0)->change();
-            $table->integer('first_scheduled_count')->default(0)->change();
-            $table->tinyInteger('send_message')->default(0)->change();
-            $table->unsignedTinyInteger('active')->default(1)->change();
-            $table->integer('scheduled_at_count')->default(0)->change();
-        });
+        $this->safeChange('appointments', 'meta_purchase_sent', fn (Blueprint $t) => $t->integer('meta_purchase_sent')->default(0)->change());
+        $this->safeChange('appointments', 'is_unscheduled', fn (Blueprint $t) => $t->integer('is_unscheduled')->default(0)->change());
+        $this->safeChange('appointments', 'first_scheduled_count', fn (Blueprint $t) => $t->integer('first_scheduled_count')->default(0)->change());
+        $this->safeChange('appointments', 'send_message', fn (Blueprint $t) => $t->tinyInteger('send_message')->default(0)->change());
+        $this->safeChange('appointments', 'active', fn (Blueprint $t) => $t->unsignedTinyInteger('active')->default(1)->change());
+        $this->safeChange('appointments', 'scheduled_at_count', fn (Blueprint $t) => $t->integer('scheduled_at_count')->default(0)->change());
 
-        Schema::table('package_advances', function (Blueprint $table) {
-            $table->integer('is_setteled')->default(0)->change();
-            $table->unsignedTinyInteger('is_tax')->default(0)->change();
-        });
+        $this->safeChange('package_advances', 'is_setteled', fn (Blueprint $t) => $t->integer('is_setteled')->default(0)->change());
+        $this->safeChange('package_advances', 'is_tax', fn (Blueprint $t) => $t->unsignedTinyInteger('is_tax')->default(0)->change());
 
-        Schema::table('users', function (Blueprint $table) {
-            $table->integer('can_perform_consultation')->default(0)->change();
-            $table->unsignedTinyInteger('active')->default(1)->change();
-        });
+        $this->safeChange('users', 'can_perform_consultation', fn (Blueprint $t) => $t->integer('can_perform_consultation')->default(0)->change());
+        $this->safeChange('users', 'active', fn (Blueprint $t) => $t->unsignedTinyInteger('active')->default(1)->change());
     }
 };

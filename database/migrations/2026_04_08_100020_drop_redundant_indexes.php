@@ -2,58 +2,70 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Drop redundant single-column indexes that are leftmost prefixes of composite indexes.
-     *
-     * InnoDB can use a composite index for single-column lookups and FK checks
-     * when the FK column is the leftmost column of the composite index.
-     *
-     * Redundant → Covered by:
-     *   package_advances.patient_id_foreign → idx_pa_patient_account (patient_id, account_id)
-     *   package_advances.account_id_foreign → idx_pa_account_created (account_id, created_at)
-     *   package_advances.appointment → idx_pa_appt_patient_cashflow (appointment_id, patient_id, cash_flow)
-     *   leads_services.lead_id_foreign → idx_leads_services_lead_service (lead_id, service_id)
-     *   appointments.patient_id_foreign → idx_appointments_patient_deleted (patient_id, deleted_at)
-     *   appointments.location_id_foreign → idx_appointments_location_deleted (location_id, deleted_at)
-     *   appointments.appointment_status_id → idx_appointment_status_type_location (...)
-     *   appointments.account → idx_appointments_account_deleted (account_id, deleted_at)
-     *   package_services.package_id_foreign → idx_package_services_pkg_svc (package_id, service_id)
-     *   users.account → idx_users_account_active_deleted (account_id, active, deleted_at)
-     *   packages.account_id_foreign → idx_packages_account_location_active (account_id, ...)
-     */
+    private function indexExists(string $table, string $index): bool
+    {
+        $rows = DB::select(
+            'SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ? LIMIT 1',
+            [$table, $index]
+        );
+        return ! empty($rows);
+    }
+
+    private function dropRaw(string $table, string $index): void
+    {
+        if (! Schema::hasTable($table) || ! $this->indexExists($table, $index)) {
+            return;
+        }
+        try {
+            DB::statement("DROP INDEX `{$index}` ON `{$table}`");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping DROP INDEX {$index} on {$table}: " . $e->getMessage());
+        }
+    }
+
+    private function addRaw(string $table, string $index, string $cols): void
+    {
+        if (! Schema::hasTable($table) || $this->indexExists($table, $index)) {
+            return;
+        }
+        try {
+            DB::statement("CREATE INDEX `{$index}` ON `{$table}`({$cols})");
+        } catch (\Throwable $e) {
+            \Log::warning("Skipping CREATE INDEX {$index} on {$table}: " . $e->getMessage());
+        }
+    }
+
     public function up(): void
     {
-        // Non-FK indexes (safe to drop directly)
-        DB::statement('DROP INDEX package_advances_patient_id_foreign ON package_advances');
-        DB::statement('DROP INDEX package_advances_account_id_foreign ON package_advances');
-        DB::statement('DROP INDEX patient_balances_appointment ON package_advances');
-        DB::statement('DROP INDEX leads_services_lead_id_foreign ON leads_services');
-        DB::statement('DROP INDEX package_services_package_id_foreign ON package_services');
-        DB::statement('DROP INDEX users_account ON users');
-        DB::statement('DROP INDEX packages_account_id_foreign ON packages');
-
-        // FK indexes — composite index covers the FK column as leftmost prefix
-        DB::statement('DROP INDEX appointments_patient_id_foreign ON appointments');
-        DB::statement('DROP INDEX appointments_location_id_foreign ON appointments');
-        DB::statement('DROP INDEX appointments_appointment_status_id_foreign ON appointments');
-        DB::statement('DROP INDEX appointments_account ON appointments');
+        $this->dropRaw('package_advances', 'package_advances_patient_id_foreign');
+        $this->dropRaw('package_advances', 'package_advances_account_id_foreign');
+        $this->dropRaw('package_advances', 'patient_balances_appointment');
+        $this->dropRaw('leads_services', 'leads_services_lead_id_foreign');
+        $this->dropRaw('package_services', 'package_services_package_id_foreign');
+        $this->dropRaw('users', 'users_account');
+        $this->dropRaw('packages', 'packages_account_id_foreign');
+        $this->dropRaw('appointments', 'appointments_patient_id_foreign');
+        $this->dropRaw('appointments', 'appointments_location_id_foreign');
+        $this->dropRaw('appointments', 'appointments_appointment_status_id_foreign');
+        $this->dropRaw('appointments', 'appointments_account');
     }
 
     public function down(): void
     {
-        DB::statement('CREATE INDEX package_advances_patient_id_foreign ON package_advances(patient_id)');
-        DB::statement('CREATE INDEX package_advances_account_id_foreign ON package_advances(account_id)');
-        DB::statement('CREATE INDEX patient_balances_appointment ON package_advances(appointment_id)');
-        DB::statement('CREATE INDEX leads_services_lead_id_foreign ON leads_services(lead_id)');
-        DB::statement('CREATE INDEX package_services_package_id_foreign ON package_services(package_id)');
-        DB::statement('CREATE INDEX users_account ON users(account_id)');
-        DB::statement('CREATE INDEX packages_account_id_foreign ON packages(account_id)');
-        DB::statement('CREATE INDEX appointments_patient_id_foreign ON appointments(patient_id)');
-        DB::statement('CREATE INDEX appointments_location_id_foreign ON appointments(location_id)');
-        DB::statement('CREATE INDEX appointments_appointment_status_id_foreign ON appointments(appointment_status_id)');
-        DB::statement('CREATE INDEX appointments_account ON appointments(account_id)');
+        $this->addRaw('package_advances', 'package_advances_patient_id_foreign', 'patient_id');
+        $this->addRaw('package_advances', 'package_advances_account_id_foreign', 'account_id');
+        $this->addRaw('package_advances', 'patient_balances_appointment', 'appointment_id');
+        $this->addRaw('leads_services', 'leads_services_lead_id_foreign', 'lead_id');
+        $this->addRaw('package_services', 'package_services_package_id_foreign', 'package_id');
+        $this->addRaw('users', 'users_account', 'account_id');
+        $this->addRaw('packages', 'packages_account_id_foreign', 'account_id');
+        $this->addRaw('appointments', 'appointments_patient_id_foreign', 'patient_id');
+        $this->addRaw('appointments', 'appointments_location_id_foreign', 'location_id');
+        $this->addRaw('appointments', 'appointments_appointment_status_id_foreign', 'appointment_status_id');
+        $this->addRaw('appointments', 'appointments_account', 'account_id');
     }
 };
