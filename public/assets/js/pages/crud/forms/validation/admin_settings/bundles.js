@@ -17,7 +17,7 @@ var AddUserValidation = function () {
                     price: {
                         validators: {
                             notEmpty: {
-                                message: 'The price field is required'
+                                message: 'The package price field is required'
                             }
                         }
                     },
@@ -39,20 +39,20 @@ var AddUserValidation = function () {
 
                 plugins: {
                     trigger: new FormValidation.plugins.Trigger(),
-                    // Bootstrap Framework Integration
                     bootstrap: new FormValidation.plugins.Bootstrap(),
-                    // Validate fields when clicking the Submit button
                     submitButton: new FormValidation.plugins.SubmitButton(),
                 }
             }
         );
         validate.on('core.form.invalid', function (e) {
-            // select2Validation();
         });
         validate.on('core.form.valid', function (event) {
-            let ok = checkOfferPrice();
-            if (!ok) {
-                toastr.error('Offered price cant be greater than service price.');
+            if (!checkServicesExist()) {
+                toastr.error('Please add at least one service to the package.');
+                return false;
+            }
+            if (!checkOfferPrice()) {
+                toastr.error('Package price cannot be greater than regular price.');
                 return false;
             }
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
@@ -68,7 +68,6 @@ var AddUserValidation = function () {
     }
 
     return {
-        // public functions
         init: function () {
             AddValidation();
         }
@@ -78,11 +77,12 @@ jQuery(document).ready(function () {
     AddUserValidation.init();
 });
 
+function checkServicesExist() {
+    return $("#service_body tr").length > 0;
+}
+
 function checkOfferPrice() {
-
-    if (parseFloat($("#bundles_price").val()) <=  parseFloat($("#service_price").val())) {
-        return true;
-    }
-
-    return false;
+    var packagePrice = parseFloat($("#bundles_price").val()) || 0;
+    var regularPrice = parseFloat($("#service_price").val()) || 0;
+    return packagePrice <= regularPrice;
 }

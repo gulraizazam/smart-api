@@ -74,6 +74,7 @@ class RoleController extends Controller
             $allowed_permissions = $this->roleService->getAllowedPermissions();
 
             return view('admin.roles.create', [
+                'categories' => $mapping['categories'],
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
@@ -95,6 +96,7 @@ class RoleController extends Controller
             $allowedPermissions = $this->roleService->getAllowedPermissions();
 
             return $this->successResponse('Record found.', [
+                'categories' => $mapping['categories'],
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
@@ -136,6 +138,7 @@ class RoleController extends Controller
             return view('admin.roles.edit', [
                 'role' => $role,
                 'allowed_permissions' => $allowed_permissions,
+                'categories' => $mapping['categories'],
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
@@ -159,6 +162,7 @@ class RoleController extends Controller
             return $this->successResponse('Record found.', [
                 'role' => $role,
                 'allowed_permissions' => $allowedPermissions,
+                'categories' => $mapping['categories'],
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
@@ -199,6 +203,7 @@ class RoleController extends Controller
             return view('admin.roles.duplicate', [
                 'role' => $role,
                 'allowed_permissions' => $allowedPermissions,
+                'categories' => $mapping['categories'],
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],

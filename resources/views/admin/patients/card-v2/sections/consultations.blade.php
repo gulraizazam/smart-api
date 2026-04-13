@@ -2,7 +2,7 @@
 <div class="section-card">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="mb-0">Consultations</h4>
-        @can('appointments_consultancy')
+        @can('consultations_manage')
             <a href="javascript:void(0);" onclick="openNewConsultationWithLocation()" class="btn btn-primary btn-sm">
                 <i class="la la-plus"></i> New Consultation
             </a>

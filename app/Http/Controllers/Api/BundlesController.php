@@ -87,7 +87,7 @@ final class BundlesController extends Controller
         try {
             $this->bundleService->createBundle($request->validated());
 
-            return $this->successResponse('Bundle has been created successfully.');
+            return $this->successResponse('Package has been created successfully.');
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
@@ -123,7 +123,7 @@ final class BundlesController extends Controller
         try {
             $this->bundleService->updateBundle($id, $request->validated());
 
-            return $this->successResponse('Bundle has been updated successfully.');
+            return $this->successResponse('Package has been updated successfully.');
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
@@ -143,7 +143,7 @@ final class BundlesController extends Controller
         try {
             $this->bundleService->deleteBundle($id);
 
-            return $this->successResponse('Bundle has been deleted successfully.');
+            return $this->successResponse('Package has been deleted successfully.');
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
@@ -163,8 +163,8 @@ final class BundlesController extends Controller
             $this->bundleService->updateStatus($id, $status);
 
             $message = match ($status) {
-                1       => 'Bundle has been activated successfully.',
-                default => 'Bundle has been inactivated successfully.',
+                1       => 'Package has been activated successfully.',
+                default => 'Package has been inactivated successfully.',
             };
 
             return $this->successResponse($message);
@@ -190,6 +190,52 @@ final class BundlesController extends Controller
             return $this->successResponse('Record found', new BundleDetailResource($data));
         } catch (BundleException $e) {
             return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    // ── Sort ───────────────────────────────────────────
+
+    /**
+     * Get active bundles for sorting.
+     */
+    public function sortOrderGet(): JsonResponse
+    {
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $bundles = $this->bundleService->getBundlesForSort(Auth::user()->account_id);
+
+            return $this->successResponse('Success', $bundles);
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * Save bundle sort order.
+     */
+    public function sortOrderSave(Request $request): JsonResponse
+    {
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $itemIds = $request->input('item_ids', []);
+
+            if (empty($itemIds) || ! is_array($itemIds)) {
+                return $this->failResponse('No items to sort.');
+            }
+
+            $saved = $this->bundleService->saveSortOrder($itemIds, Auth::user()->account_id);
+
+            return $saved
+                ? $this->successResponse('Sort order saved!')
+                : $this->failResponse('Something went wrong.');
         } catch (\Exception $e) {
             return $this->exceptionToResponse($e);
         }

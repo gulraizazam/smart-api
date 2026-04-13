@@ -1,95 +1,102 @@
 
 var table_url = route('admin.services.datatable');
 let changePages = 1000;
-var table_columns = [
-    {
-        field: 'name',
-        title: 'Name',
-        sortable: false,
-        width:200,
-        template: function (data) {
-            if (data.parent_id == 0) {
-                return '<b class="text text-dark" style="font-size: 12px; white-space: nowrap;">'+data.name+'</b>';
-            }
-            // Child service with clickable name and instruction icon
-            return '<span class="ml-3" style="white-space: nowrap;">' +
-                '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; text-decoration: none; color: #3F4254;">'+data.name+'</a>' +
-                '<a href="javascript:void(0);" onclick="showInstructions(' + data.id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" title="View Instructions" style="cursor: pointer; margin-left: 8px;">' +
-                    '<i class="la la-file-text text-primary" style="font-size: 16px;"></i>' +
-                '</a>' +
+let changePaginate = false;
+var isMobile = window.innerWidth < 768;
+var collapsedCategories = {};
+
+// Inject clickable styles
+(function () {
+    if (!document.getElementById('datatable-clickable-styles')) {
+        var s = document.createElement('style');
+        s.id = 'datatable-clickable-styles';
+        s.textContent =
+            '.clickable-name { color: #3F4254; text-decoration: none; cursor: pointer; transition: color 0.2s ease; }' +
+            '.clickable-name:hover { color: #3699FF; }' +
+            '.clickable-name .tap-icon { color: #B5B5C3; font-size: 13px; margin-left: 5px; transition: color 0.2s ease; }' +
+            '.clickable-name:hover .tap-icon { color: #3699FF; }' +
+            '.category-toggle { cursor: pointer; padding: 2px 8px 2px 4px; border-radius: 4px; transition: background-color 0.2s ease; display: inline-block; }' +
+            '.category-toggle:hover { background-color: #F3F6F9; }';
+        document.head.appendChild(s);
+    }
+})();
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Column templates
+function nameTemplate(data) {
+    if (data.parent_id == null || data.parent_id == 0) {
+        return '<span class="category-toggle">' +
+            '<i class="la la-angle-down toggle-icon" style="font-size:14px;margin-right:4px;display:inline-block;transition:transform 0.15s ease;"></i>' +
+            '<b class="text text-dark" style="font-size: 12px;">' + escapeHtml(data.name) + '</b>' +
             '</span>';
-        }
-    },{
-        field: 'duration',
-        title: 'Duration',
-        sortable: false,
-        width: 90,
-        template: function (data) {
-            if (typeof data.price !== 'undefined') {
-                return '<span>'+data.duration+' mins</span>';
+    }
+    var escapedName = escapeHtml(data.name);
+    var jsName = escapeHtml(JSON.stringify(data.name));
+    return '<span class="ml-3">' +
+        '<a href="javascript:void(0);" class="clickable-name" onclick="showInstructions(' + parseInt(data.id) + ', ' + jsName + ');" title="View Instructions">' + escapedName + '</a>' +
+        '<a href="javascript:void(0);" onclick="showInstructions(' + parseInt(data.id) + ', ' + jsName + ');" title="View Instructions" style="margin-left: 8px;">' +
+            '<i class="la la-file-text text-primary" style="font-size: 16px;"></i>' +
+        '</a>' +
+    '</span>';
+}
+
+function priceTemplate(data) {
+    if (data.parent_id == null || data.parent_id == 0) return '';
+    if (typeof data.price !== 'undefined' && data.price > 0) {
+        return '<span>'+data.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")+'</span>';
+    }
+    return '';
+}
+
+function durationTemplate(data) {
+    if (data.parent_id == null || data.parent_id == 0) return '';
+    if (data.duration) {
+        return '<span>'+data.duration+' mins</span>';
+    }
+    return '';
+}
+
+// Build columns based on edit rights + screen size
+if (typeof hasEditRights !== 'undefined' && hasEditRights) {
+    var table_columns = [
+        { field: 'name', title: 'Name', sortable: false, width: 200, template: nameTemplate },
+        { field: 'duration', title: 'Duration', sortable: false, width: 90, template: durationTemplate },
+        {
+            field: 'color', title: 'Color', sortable: false, width: 80,
+            template: function (data) {
+                return '<span class="badge" style="background-color: '+data.color+' !important; color: #fff; font-size: 12px;">'+data.color+'</span>';
             }
-            return '00.00';
-        }
-    },{
-        field: 'color',
-        title: 'Color',
-        sortable: false,
-        width: 80,
-        template: function (data) {
-            return '<span class="badge" style="background-color: '+data.color+' !important; color: #fff; font-size: 12px;">'+data.color+'</span>';
-        }
-    },{
-        field: 'price',
-        title: 'Price',
-        sortable: false,
-        width: 80,
-        template: function (data) {
-            if (data.slug == 'all') {
-                return '-';
+        },
+        { field: 'price', title: 'Price', sortable: false, width: 80, template: priceTemplate },
+        {
+            field: 'status', title: 'Status', width: 60, sortable: false,
+            template: function (data) {
+                return serviceStatuses(data, route('admin.services.status'));
             }
-            if (typeof data.price !== 'undefined') {
-                return '<span>'+data.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")+'</span>';
-            } else {
-                return '00.00';
-            }
+        },
+        {
+            field: 'actions', title: 'Actions', sortable: false, width: 70,
+            overflow: 'visible', autoHide: false, template: function (data) { return actions(data); }
         }
-    },
-    // {
-    //     field: 'complimentory',
-    //     title: 'Complimentory',
-    //     sortable: false,
-    //     width: 120,
-    //     template: function (data) {
-    //         if (data.parent_id == 0) {
-    //             return '-';
-    //         }
-    //         if (typeof data.complimentory !== 'undefined') {
-    //             let status = data.complimentory == 1 ? 'Yes' : 'No';
-    //             return '<span>'+status+'</span>';
-    //         }
-    //         return 'No';
-    //     }
-    // }, 
-    {
-        field: 'status',
-        title: 'status',
-        width: 60,
-        sortable: false,
-        template: function (data) {
-            let status_url = route('admin.services.status');
-            return serviceStatuses(data, status_url);
-        }
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 70,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }];
+    ];
+} else if (isMobile) {
+    // View-only mobile: Name + Price (no duration)
+    var table_columns = [
+        { field: 'name', title: 'Name', sortable: false, width: 260, autoHide: false, template: nameTemplate },
+        { field: 'price', title: 'Price', sortable: false, width: 80, autoHide: false, template: priceTemplate }
+    ];
+} else {
+    // View-only desktop: Name + Price + Duration
+    var table_columns = [
+        { field: 'name', title: 'Name', sortable: false, template: nameTemplate },
+        { field: 'price', title: 'Price', sortable: false, width: 100, autoHide: false, template: priceTemplate },
+        { field: 'duration', title: 'Duration', sortable: false, width: 100, template: durationTemplate }
+    ];
+}
 
 
 function actions(data) {
@@ -119,16 +126,16 @@ function actions(data) {
                 </li>';
             }
             // Add instructions option only for child services
-            if (permissions.detail && data.parent_id != 0) {
+            if (permissions.detail && data.parent_id != null && data.parent_id != 0) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="showInstructions(' + id + ', \'' + data.name.replace(/'/g, "\\'") + '\');" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="showInstructions(' + parseInt(id) + ', ' + escapeHtml(JSON.stringify(data.name)) + ');" class="navi-link">\
                         <span class="navi-icon"><i class="la la-file-text"></i></span>\
                         <span class="navi-text">Instructions</span>\
                     </a>\
                 </li>';
             }
             // Add duplicate option only for child services
-            if (permissions.duplicate && data.parent_id != 0) {
+            if (permissions.duplicate && data.parent_id != null && data.parent_id != 0) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="duplicateRow(`' + duplicate_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-copy"></i></span>\
@@ -399,28 +406,15 @@ function resetAllFilters(datatable) {
 }
 
 function setFilters(filter_values, active_filters) {
-
-    let status = filter_values.status;
-
-    let status_options = '<option value="">All</option>';
-
-    Object.entries(status).forEach(function(value, index) {
-        status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
-    });
-
-
-    $("#search_status").html(status_options);
-
-    $("#search_name").val(active_filters.name);
-    $("#search_fdo_name").val(active_filters.fdo_name);
-    $("#search_fdo_phone").val(active_filters.fdo_phone);
-    $("#search_address").val(active_filters.address);
-    $("#search_created_from").val(active_filters.created_from);
-    $("#search_created_to").val(active_filters.created_to);
-
-    $("#search_status").val(active_filters.status);
-    $("#search_city").val(active_filters.city_id);
-    $("#service_region").val(active_filters.service_id);
+    if (filter_values.status) {
+        var status_options = '<option value="">All Status</option>';
+        Object.entries(filter_values.status).forEach(function(value) {
+            status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        });
+        $("#search_status").html(status_options);
+    }
+    $("#search_name").val(active_filters.name || '');
+    $("#search_status").val(active_filters.status || '');
 }
 
 function createService($route) {
@@ -514,7 +508,7 @@ function setCreateData(response) {
 function serviceStatuses(data, status_url) {
     let id = data.id;
     let active = data.active;
-    let isParent = data.parent_id == 0;
+    let isParent = data.parent_id == null || data.parent_id == 0;
     let status = '';
 
     if (active) {
@@ -650,3 +644,46 @@ function showInstructions(serviceId, serviceName) {
         }
     });
 }
+
+// ── Collapsible categories ─────────────────────────
+
+function setupCategoryCollapse() {
+    var $rows = $('#kt_datatable table tbody tr');
+    if ($rows.length === 0) return;
+
+    $rows.each(function () {
+        var $row = $(this);
+        var $toggle = $row.find('.category-toggle');
+        if ($toggle.length > 0) {
+            var catKey = $toggle.text().trim();
+            if (collapsedCategories[catKey]) {
+                $row.nextUntil('tr:has(.category-toggle)').hide();
+                $toggle.find('.toggle-icon').css('transform', 'rotate(-90deg)');
+            }
+        }
+    });
+}
+
+$(document).on('click', '.category-toggle', function (e) {
+    e.stopPropagation();
+    var $categoryRow = $(this).closest('tr');
+    var $children = $categoryRow.nextUntil('tr:has(.category-toggle)');
+    var $icon = $(this).find('.toggle-icon');
+    var catKey = $(this).text().trim();
+
+    if ($children.first().is(':visible')) {
+        $children.slideUp(150);
+        $icon.css('transform', 'rotate(-90deg)');
+        collapsedCategories[catKey] = true;
+    } else {
+        $children.slideDown(150);
+        $icon.css('transform', 'rotate(0deg)');
+        delete collapsedCategories[catKey];
+    }
+});
+
+$(document).ready(function () {
+    $('#kt_datatable').on('datatable-on-layout-updated', function () {
+        setupCategoryCollapse();
+    });
+});

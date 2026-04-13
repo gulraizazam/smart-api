@@ -2365,6 +2365,29 @@ CREATE TABLE `services` (
   CONSTRAINT `fk_services_tax_treatment_type_id` FOREIGN KEY (`tax_treatment_type_id`) REFERENCES `tax_treatment_type` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `service_bundles`;
+CREATE TABLE `service_bundles` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `service_id` int(10) unsigned NOT NULL,
+  `sessions` int(10) unsigned NOT NULL,
+  `price` double NOT NULL,
+  `discount_percentage` double DEFAULT NULL,
+  `sort_number` int(10) unsigned NOT NULL DEFAULT 0,
+  `active` tinyint(4) NOT NULL DEFAULT 1,
+  `account_id` int(10) unsigned NOT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `updated_by` int(10) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `service_bundles_account_id_active_index` (`account_id`,`active`),
+  KEY `service_bundles_service_id_active_index` (`service_id`,`active`),
+  KEY `service_bundles_sort_number_index` (`sort_number`),
+  CONSTRAINT `service_bundles_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `service_bundles_service_id_foreign` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `settings`;
 CREATE TABLE `settings` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,

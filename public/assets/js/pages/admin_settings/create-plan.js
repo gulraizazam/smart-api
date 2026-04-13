@@ -30,6 +30,29 @@ function calculatePlanTax(netAmount, taxPct, taxTreatmentTypeId, isExclusive) {
     return result;
 }
 
+function updatePlanYouSave(prefix) {
+    prefix = prefix || '';
+    var priceField = '#' + prefix + 'net_amount_1';
+    var saveField = '#' + prefix + 'you_save_1';
+    var infoStore = prefix === 'edit_' ? window.editPlanServiceInfo : window.createPlanServiceInfo;
+    var netRaw = $(priceField).val();
+    if (netRaw === '' || netRaw === null || netRaw === undefined) {
+        $(saveField).val('');
+        return;
+    }
+    var net = parseFloat(netRaw) || 0;
+    var regular = (infoStore && infoStore.service_price) ? parseFloat(infoStore.service_price) : 0;
+    var savings = regular - net;
+    $(saveField).val(savings > 0 ? savings.toFixed(2) : '0.00');
+}
+
+$(function () {
+    setInterval(function () {
+        if ($('#you_save_1').length) { updatePlanYouSave(''); }
+        if ($('#edit_you_save_1').length) { updatePlanYouSave('edit_'); }
+    }, 300);
+});
+
 // Build a preview table row for plan services (no DB call)
 function buildPlanServiceRow(data, deleteHtml) {
     var soldByDisplay = data.soldByName || 'N/A';
@@ -54,9 +77,11 @@ function buildPlanServiceRow(data, deleteHtml) {
         "<td class='d-none'>" +
         "<input type='hidden' class='bundle_id' name='bundle_id' value='" + data.serviceId + "' />" +
         "<input type='hidden' class='discount_id' name='discount_id' value='" + (data.discountId || '') + "' />" +
+        "<input type='hidden' class='discount_type' name='discount_type' value='" + (data.discountType || '') + "' />" +
         "<input type='hidden' class='service_tax_type' name='service_tax_type' value='" + (data.taxTreatmentTypeId || '') + "' />" +
         "<input type='hidden' class='config_group_id' name='config_group_id' value='" + (data.configGroupId || '') + "' />" +
         "<input type='hidden' class='row_type' name='row_type' value='" + (data.rowType || '') + "' />" +
+        "<input type='hidden' class='source_type' name='source_type' value='" + (data.sourceType || '') + "' />" +
         "</td>" +
         "<td>" +
         "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + (data.soldBy || '') + "' />" +
@@ -914,6 +939,8 @@ function setEditData(response) {
                     bundleNameText = packagebundle.service.name;
                 } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
                     bundleNameText = packagebundle.bundle.name;
+                } else if (sourceType === 'service_bundle' && packagebundle.service_bundle && packagebundle.service_bundle.service) {
+                    bundleNameText = packagebundle.qty + 'x ' + packagebundle.service_bundle.service.name;
                 } else if (sourceType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
                     bundleNameText = packagebundle.membership_type.name;
                 } else if (packagebundle.service && packagebundle.service.name) {
@@ -923,9 +950,9 @@ function setEditData(response) {
                 } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
                     bundleNameText = packagebundle.membership_type.name;
                 }
-                
+
                 // Use <a> tag so Save button can find service name via td:first-child a
-                if (sourceType === 'bundle' && childServiceCount > 1) {
+                if ((sourceType === 'bundle' || sourceType === 'service_bundle') && childServiceCount > 1) {
                     service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + bundleNameText + '</a></td>';
                 } else {
                     service_options += '<td><a href="javascript:void(0)" style="color: #009ef7;">' + bundleNameText + '</a></td>';
@@ -3315,6 +3342,26 @@ jQuery(document).ready(function () {
                         return false;
                     }
                 }
+
+                if (window.customDiscountLimits) {
+                    var limits = window.customDiscountLimits;
+                    var dVal = parseFloat(discount_price) || 0;
+                    if (discount_type == 'Percentage' && limits.max_percentage !== undefined && dVal > parseFloat(limits.max_percentage)) {
+                        $('#percentageMessage').text('Maximum allowed percentage is ' + limits.max_percentage + '%').show();
+                        toastr.error('Maximum allowed percentage is ' + limits.max_percentage + '%');
+                        hideSpinner("-add");
+                        $("#AddPackage").attr("disabled", false);
+                        return false;
+                    }
+                    if (discount_type == 'Fixed' && limits.max_fixed_amount !== undefined && dVal > parseFloat(limits.max_fixed_amount)) {
+                        var maxFixed = parseFloat(limits.max_fixed_amount).toFixed(2);
+                        $('#percentageMessage').text('Maximum allowed amount is ' + maxFixed).show();
+                        toastr.error('Maximum allowed amount is ' + maxFixed);
+                        hideSpinner("-add");
+                        $("#AddPackage").attr("disabled", false);
+                        return false;
+                    }
+                }
             }
 
             // --- CLIENT-SIDE PREVIEW (no DB call) ---
@@ -3395,6 +3442,7 @@ jQuery(document).ready(function () {
                     total: taxCalc.tax_including_price,
                     serviceId: service_id,
                     discountId: discount_id,
+                    discountType: discount_type || '',
                     taxTreatmentTypeId: taxType,
                     soldBy: sold_by,
                     soldByName: sold_by_name,
@@ -3486,8 +3534,10 @@ jQuery(document).ready(function () {
                 Total: $(this).find('td:nth-child(7)').text(),
                 bundleId: $(this).find('td:nth-child(11)').find("input[name='bundle_id']").val(),
                 DiscountId: $(this).find('td:nth-child(11)').find("input[name='discount_id']").val(),
+                Type: $(this).find('td:nth-child(11)').find("input[name='discount_type']").val() || '',
                 config_group_id: $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '',
                 row_type: $(this).find('td:nth-child(11)').find("input[name='row_type']").val() || '',
+                source_type: $(this).find('td:nth-child(11)').find("input[name='source_type']").val() || '',
                 sold_by: $(this).find('td:nth-child(12)').find("input[name='sold_by[]']").val()
             });
         });
@@ -3524,6 +3574,9 @@ jQuery(document).ready(function () {
                     } else {
 
                         $('#wrongMessage').show();
+                        if (resposne.message) {
+                            toastr.error(resposne.message);
+                        }
                     }
 
                     hideSpinner("-save");
@@ -3656,6 +3709,26 @@ jQuery(document).ready(function () {
                         return false;
                     }
                 }
+
+                if (window.editCustomDiscountLimits) {
+                    var editLimits = window.editCustomDiscountLimits;
+                    var eVal = parseFloat(discount_price) || 0;
+                    if (discount_type == 'Percentage' && editLimits.max_percentage !== undefined && eVal > parseFloat(editLimits.max_percentage)) {
+                        $('#edit_percentageMessage').text('Maximum allowed percentage is ' + editLimits.max_percentage + '%').show();
+                        toastr.error('Maximum allowed percentage is ' + editLimits.max_percentage + '%');
+                        hideSpinner("-edit-add");
+                        $("#EditPackage").attr("disabled", false);
+                        return false;
+                    }
+                    if (discount_type == 'Fixed' && editLimits.max_fixed_amount !== undefined && eVal > parseFloat(editLimits.max_fixed_amount)) {
+                        var editMaxFixed = parseFloat(editLimits.max_fixed_amount).toFixed(2);
+                        $('#edit_percentageMessage').text('Maximum allowed amount is ' + editMaxFixed).show();
+                        toastr.error('Maximum allowed amount is ' + editMaxFixed);
+                        hideSpinner("-edit-add");
+                        $("#EditPackage").attr("disabled", false);
+                        return false;
+                    }
+                }
             }
             // --- CLIENT-SIDE PREVIEW (no DB call) ---
             showSpinner("-edit-add");
@@ -3729,6 +3802,7 @@ jQuery(document).ready(function () {
                     total: taxCalc.tax_including_price,
                     serviceId: service_id,
                     discountId: discount_id,
+                    discountType: discount_type || '',
                     taxTreatmentTypeId: taxType,
                     soldBy: sold_by,
                     soldByName: sold_by_name,
@@ -3804,8 +3878,10 @@ jQuery(document).ready(function () {
                 Total: $(this).find('td:nth-child(7)').text(),
                 bundleId: $(this).find('td:nth-child(11)').find("input[name='bundle_id']").val(),
                 DiscountId: $(this).find('td:nth-child(11)').find("input[name='discount_id']").val(),
+                Type: $(this).find('td:nth-child(11)').find("input[name='discount_type']").val() || '',
                 config_group_id: $(this).find('td:nth-child(11)').find("input[name='config_group_id']").val() || '',
                 row_type: $(this).find('td:nth-child(11)').find("input[name='row_type']").val() || '',
+                source_type: $(this).find('td:nth-child(11)').find("input[name='source_type']").val() || '',
                 sold_by: $(this).find('td:nth-child(12)').find("input[name='sold_by[]']").val()
             });
         });

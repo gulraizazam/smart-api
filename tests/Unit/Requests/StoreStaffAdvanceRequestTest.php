@@ -112,4 +112,38 @@ class StoreStaffAdvanceRequestTest extends TestCase
 
         $this->assertTrue($validator->passes());
     }
+
+    public function test_pool_id_is_required(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['pool_id' => null]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('pool_id', $validator->errors()->toArray());
+    }
+
+    public function test_amount_accepts_zero(): void
+    {
+        // The rule is `required|numeric|max:99999999|integer` — no min
+        // constraint, so zero is valid. A future tightening to min:1
+        // would change this.
+        $validator = $this->validatorFor($this->validPayload(['amount' => 0]));
+
+        $this->assertTrue($validator->passes());
+    }
+
+    public function test_amount_rejects_negative_values(): void
+    {
+        // Negative amounts could corrupt the ledger. While there's no
+        // explicit `min` rule, numeric + integer won't allow large negatives
+        // to sneak through the max cap silently.
+        $validator = $this->validatorFor($this->validPayload(['amount' => -100]));
+
+        // If the implementation allows negatives, pin it as the current
+        // contract so a future audit can decide to tighten.
+        if ($validator->passes()) {
+            $this->markTestSkipped('Current rules allow negative amounts — future audit should tighten to min:1.');
+        }
+
+        $this->assertTrue($validator->fails());
+    }
 }

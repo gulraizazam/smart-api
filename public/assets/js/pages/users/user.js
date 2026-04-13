@@ -64,6 +64,16 @@ var table_columns = [
             return statuses(data, status_url);
         }
     }, {
+        field: 'hr_managed',
+        title: 'HR Managed',
+        width: 80,
+        template: function (data) {
+            if (data.hr_managed == 1) {
+                return '<span class="label label-lg font-weight-bold label-light-success label-inline">ON</span>';
+            }
+            return '<span class="label label-lg font-weight-bold label-light-danger label-inline">OFF</span>';
+        }
+    }, {
         field: 'created_at',
         title: 'created at',
         width: 'auto',
@@ -294,6 +304,8 @@ function setEditData(response) {
     } else {
         $("#edit_user_phone").val("***********").attr("readonly", true);
     }
+
+    $('#edit_user_hr_managed').prop('checked', user.hr_managed == 1);
 
     $('#edit_user_roles').val(user_roles).change();
 

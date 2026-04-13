@@ -27,6 +27,7 @@ class ApplicationUserRequest extends FormRequest
             'gender' => 'nullable|in:1,2',
             'centers' => 'nullable|array',
             'warehouse' => 'nullable|array',
+            'hr_managed' => 'nullable|in:0,1',
         ];
 
         if ($this->isMethod('post') && !$userId) {
@@ -35,6 +36,7 @@ class ApplicationUserRequest extends FormRequest
         }
 
         if ($this->isMethod('put') || $this->isMethod('patch')) {
+            $rules['email'] = 'required|email|unique:users,email,' . $userId . ',id,deleted_at,NULL';
             $rules['phone'] = 'required|string|max:20';
             $rules['gender'] = 'required|in:1,2';
         }

@@ -22,6 +22,7 @@ use App\Models\Packages;
 use App\Models\PackageService;
 use App\Models\PackageVouchers;
 use App\Models\Patients;
+use App\Models\ServiceBundle;
 use App\Models\Services;
 use App\Models\UserVouchers;
 use App\Models\User;
@@ -317,19 +318,48 @@ final class PlanDiscountService
     {
         $accountId = Auth::user()->account_id;
 
-        $bundles = Bundles::where('account_id', $accountId)
+        // Existing packages (bundles table) — active and within date range
+        $packages = Bundles::where('account_id', $accountId)
             ->where('active', 1)
-            ->whereDate('start', '<=', now())
-            ->whereDate('end', '>=', now())
-            ->select('id', 'name', 'price')
+            ->where('type', '!=', 'single')
+            ->where(fn ($q) => $q->whereNull('end')->orWhereDate('end', '>=', now()))
+            ->select('id', 'name', 'price', 'services_price')
             ->orderBy('name', 'asc')
-            ->get();
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+                'price' => $b->price,
+                'regular_price' => (float) ($b->services_price ?: $b->price),
+                'source_type' => 'bundle',
+            ]);
 
-        if ($bundles->isEmpty()) {
+        // New service bundles — active, no date restriction
+        $serviceBundles = ServiceBundle::where('account_id', $accountId)
+            ->where('active', 1)
+            ->with('service:id,name,price')
+            ->get()
+            ->map(function ($sb) {
+                $unitPrice = (float) ($sb->service->price ?? 0);
+                $regularPrice = $unitPrice * $sb->sessions;
+                $savings = $regularPrice - (float) $sb->price;
+
+                return [
+                    'id' => $sb->id,
+                    'name' => $sb->sessions . 'x ' . ($sb->service->name ?? 'Unknown'),
+                    'price' => $sb->price,
+                    'regular_price' => $regularPrice,
+                    'source_type' => 'service_bundle',
+                ];
+            });
+
+        $allBundles = $packages->merge($serviceBundles)->values();
+
+        if ($allBundles->isEmpty()) {
             return ['bundles' => []];
         }
 
-        return ['bundles' => $bundles];
+        return ['bundles' => $allBundles];
     }
 
     /**
@@ -384,6 +414,34 @@ final class PlanDiscountService
      */
     public function getServiceInfoForPackage(array $data): array
     {
+        // Service bundles have fixed pricing — no discount lookup needed
+        if (($data['source_type'] ?? '') === 'service_bundle') {
+            $serviceBundle = ServiceBundle::with('service:id,name,price')->find($data['bundle_id'] ?? null);
+
+            if (!$serviceBundle) {
+                return [
+                    'success' => false,
+                    'message' => 'Service bundle not found.',
+                    'status_code' => 404,
+                    'data' => ['net_amount' => 0],
+                ];
+            }
+
+            $unitPrice = (float) ($serviceBundle->service->price ?? 0);
+            $regularPrice = $unitPrice * $serviceBundle->sessions;
+
+            return [
+                'success' => true,
+                'message' => 'Records found.',
+                'data' => [
+                    'net_amount' => $serviceBundle->price,
+                    'regular_price' => $regularPrice,
+                    'discounts' => [],
+                    'checked_custom' => '0',
+                ],
+            ];
+        }
+
         $discounts = SupportCollection::make();
         $today = Carbon::now()->toDateString();
 
@@ -613,6 +671,7 @@ final class PlanDiscountService
                             'checked_custom' => '0',
                             'dis_price_info' => $select_discount,
                             'net_amount' => $net_amount,
+                            'regular_price' => (float) ($service_data->services_price ?: $service_data->price),
                         ],
                     ];
                 } else {
@@ -637,6 +696,7 @@ final class PlanDiscountService
                             'discounts' => $discounts,
                             'checked_custom' => '1',
                             'net_amount' => $net_amount,
+                            'regular_price' => (float) ($service_data->services_price ?: $service_data->price),
                         ],
                     ];
                 }
@@ -645,12 +705,14 @@ final class PlanDiscountService
         }
 
         $net_amount = isset($bundle) ? $bundle->price : 0;
+        $regularPrice = isset($bundle) ? (float) ($bundle->services_price ?: $bundle->price) : 0;
         if ($bundle && $bundle->type == 'single') {
             $bundleService = BundleHasServices::where('bundle_id', $bundle->id)->first();
             if ($bundleService) {
                 $actualService = Services::find($bundleService->service_id);
                 if ($actualService) {
                     $net_amount = $actualService->price;
+                    $regularPrice = $actualService->price;
                 }
             }
         }
@@ -661,6 +723,7 @@ final class PlanDiscountService
             'status_code' => 404,
             'data' => [
                 'net_amount' => $net_amount,
+                'regular_price' => $regularPrice,
             ],
         ];
     }

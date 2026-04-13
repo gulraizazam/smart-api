@@ -58,7 +58,7 @@ class FinanceArrivalReportController extends Controller
         }
         $records = [];
         $records['data'] = [];
-        if (Gate::allows('appointments_consultancy')) {
+        if (Gate::allows('consultations_manage')) {
             $resultQuery = Appointments::join('users', function ($query) {
                 $query->on('users.id', 'appointments.patient_id')
                     ->where(['users.user_type_id' => config('constants.patient_id')]);
@@ -66,7 +66,7 @@ class FinanceArrivalReportController extends Controller
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')) {
+        if (Gate::allows('consultations_manage') && Gate::allows('treatments_services')) {
             $resultQuery = Appointments::join('users', function ($query) {
                 $query->on('users.id', 'appointments.patient_id')
                     ->where(['users.user_type_id' => config('constants.patient_id')]);
@@ -212,7 +212,7 @@ class FinanceArrivalReportController extends Controller
         $walkin_customers = $request->created_by == null ? $walkinSets : 0;
         $totalScheduled = $totalSets;
 
-        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services') || Gate::allows('appointments_consultancy')) {
+        if (Gate::allows('consultations_manage') && Gate::allows('treatments_services') || Gate::allows('consultations_manage')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
         if (count($where)) {

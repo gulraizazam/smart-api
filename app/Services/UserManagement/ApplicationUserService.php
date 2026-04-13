@@ -201,6 +201,7 @@ class ApplicationUserService
             'password' => $data['password'],
             'phone' => PhoneFormattingService::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
+            'hr_managed' => (int) ($data['hr_managed'] ?? 1),
             'account_id' => $accountId,
             'main_account' => '0',
             'user_type_id' => Config::get('constants.application_user_id'),
@@ -263,8 +264,10 @@ class ApplicationUserService
 
         $userData = [
             'name' => $data['name'],
+            'email' => $data['email'],
             'phone' => PhoneFormattingService::cleanNumber($data['phone'] ?? ''),
             'gender' => $data['gender'] ?? null,
+            'hr_managed' => (int) ($data['hr_managed'] ?? 1),
         ];
 
         $user->update($userData);

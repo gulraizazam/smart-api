@@ -60,7 +60,7 @@ final class TreatmentController extends Controller
     public function store(StoreTreatmentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
+            if (!Gate::allows('treatments_services')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -81,7 +81,7 @@ final class TreatmentController extends Controller
     public function update(UpdateTreatmentRequest $request, int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
+            if (!Gate::allows('treatments_services')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -106,7 +106,7 @@ final class TreatmentController extends Controller
     public function dragDropReschedule(RescheduleTreatmentRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
+            if (!Gate::allows('treatments_services')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -145,7 +145,7 @@ final class TreatmentController extends Controller
     public function edit(int $id): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_manage')) {
+            if (!Gate::allows('treatments_services')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 403);
             }
 
@@ -181,7 +181,7 @@ final class TreatmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -213,7 +213,7 @@ final class TreatmentController extends Controller
     public function scheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -232,7 +232,7 @@ final class TreatmentController extends Controller
     public function nonScheduled(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -251,7 +251,7 @@ final class TreatmentController extends Controller
     public function statistics(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -274,7 +274,7 @@ final class TreatmentController extends Controller
     public function availableResources(AvailableResourcesRequest $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 
@@ -293,7 +293,7 @@ final class TreatmentController extends Controller
     public function servicesByLocation(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
+            if (!Gate::allows('treatments_manage')) {
                 return $this->errorResponse('Unauthorized.', 403);
             }
 

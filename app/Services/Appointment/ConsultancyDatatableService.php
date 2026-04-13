@@ -119,7 +119,8 @@ class ConsultancyDatatableService
                 'doctor:id,name',
                 'city:id,name',
                 'location:id,name',
-                'service:id,name',
+                'service:id,name,parent_id',
+                'service.parent:id,name',
                 'appointment_type:id,name',
                 'appointment_status:id,name,parent_id',
                 'patient:id,phone',
@@ -236,7 +237,9 @@ class ConsultancyDatatableService
             'cityId' => $appointment->city_id ?? 0,
             'location_id' => $appointment->location?->name ?? 'N/A',
             'locationId' => $appointment->location_id ?? 'N/A',
-            'service_id' => $appointment->service?->name ?? 'N/A',
+            'service_id' => $appointment->service?->parent?->name
+                ?? $appointment->service?->name
+                ?? 'N/A',
             'resource_id' => $appointment->resource_id ?? 0,
             'appointment_type_id' => $appointment->appointment_type?->name ?? 'N/A',
             'appointment_type' => $appointment->appointment_type?->id ?? 0,
@@ -285,9 +288,9 @@ class ConsultancyDatatableService
         $appointmentStatuses = $appointmentStatuses?->pluck('name', 'id');
 
         $appointmentTypes = match (true) {
-            Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')
+            Gate::allows('consultations_manage') && Gate::allows('treatments_services')
                 => AppointmentTypes::pluck('name', 'id'),
-            Gate::allows('appointments_consultancy')
+            Gate::allows('consultations_manage')
                 => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
             Gate::allows('treatments_services')
                 => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
@@ -333,27 +336,29 @@ class ConsultancyDatatableService
      */
     private function getPermissions(): array
     {
+        $canManage = Gate::allows('appointments_consultancy');
+
         return [
-            'edit' => Gate::allows('appointments_edit'),
-            'consultancy' => Gate::allows('appointments_consultancy'),
-            'treatment' => Gate::allows('treatments_services'),
-            'delete' => Gate::allows('appointments_destroy'),
-            'active' => Gate::allows('appointments_active'),
-            'inactive' => Gate::allows('appointments_inactive'),
-            'create' => Gate::allows('appointments_create'),
+            'edit' => $canManage && Gate::allows('appointments_edit'),
+            'consultancy' => Gate::allows('consultations_manage'),
+            'treatment' => Gate::allows('treatments_manage'),
+            'delete' => $canManage && Gate::allows('appointments_destroy'),
+            'active' => $canManage && Gate::allows('appointments_active'),
+            'inactive' => $canManage && Gate::allows('appointments_inactive'),
+            'create' => $canManage && Gate::allows('appointments_create'),
             'log' => Gate::allows('appointments_log'),
-            'status' => Gate::allows('appointments_appointment_status'),
+            'status' => $canManage && Gate::allows('appointments_appointment_status'),
             'invoice' => Gate::allows('appointments_invoice'),
             'invoice_display' => Gate::allows('appointments_invoice_display'),
             'image_manage' => Gate::allows('appointments_image_manage'),
             'measurement_manage' => Gate::allows('appointments_measurement_manage'),
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
-            'plans_create' => Gate::allows('appointments_plans_create'),
+            'plans_create' => $canManage && Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
-            'update_consultation_service' => Gate::allows('update_consultation_service'),
-            'update_consultation_doctor' => Gate::allows('update_consultation_doctor'),
-            'update_consultation_schedule' => Gate::allows('update_consultation_schedule'),
+            'update_consultation_service' => $canManage && Gate::allows('update_consultation_service'),
+            'update_consultation_doctor' => $canManage && Gate::allows('update_consultation_doctor'),
+            'update_consultation_schedule' => $canManage && Gate::allows('update_consultation_schedule'),
         ];
     }
 }

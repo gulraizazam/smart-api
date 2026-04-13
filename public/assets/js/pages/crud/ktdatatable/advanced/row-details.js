@@ -88,6 +88,10 @@ var KTDatatable = function() {
 
 			pagination: paginate,
 
+            toolbar: {
+                placement: ['bottom'],
+            },
+
 			// columns definition
 			columns: typeof table_columns !== 'undefined' ? table_columns : [],
 
@@ -201,6 +205,10 @@ var KTPatientDatatable = function() {
             sortable: true,
 
             pagination: paginate,
+
+            toolbar: {
+                placement: ['bottom'],
+            },
 
             // columns definition
             columns: typeof table_columns !== 'undefined' ? table_columns : [],

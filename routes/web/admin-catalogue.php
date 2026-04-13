@@ -5,6 +5,7 @@
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\BundlesController as AdminBundlesController;
+use App\Http\Controllers\Admin\ServiceBundlesController as AdminServiceBundlesController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
@@ -83,7 +84,13 @@ use Illuminate\Support\Facades\Route;
 
         //Packages route Start
         Route::get('bundles', [AdminBundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages_manage');
+        Route::get('bundles/sort', [AdminBundlesController::class, 'sort'])->name('bundles.sort')->middleware('permission:packages_edit');
         //Packages route end
+
+        // Service Bundles (same service × N sessions)
+        Route::get('service-bundles', [AdminServiceBundlesController::class, 'index'])->name('service-bundles.index')->middleware('permission:packages_manage');
+        Route::get('service-bundles/sort', [AdminServiceBundlesController::class, 'sort'])->name('service-bundles.sort')->middleware('permission:packages_edit');
+        // Service Bundles route end
 
         //Centre Target
         Route::resource('centre_targets', CentreTargetsController::class)->only('index');

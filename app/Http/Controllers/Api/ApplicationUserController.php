@@ -322,9 +322,17 @@ class ApplicationUserController extends Controller
         try {
             $result = $this->planService->getUserDefaultCenter();
 
-            return $result['status']
-                ? $this->successResponse('Center found', ['center' => $result['center']])
-                : $this->errorResponse('Center not found', 404);
+            if ($result['status']) {
+                return $this->successResponse('Center found', ['center' => $result['center']]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'status'  => false,
+                'message' => 'No default center',
+                'data'    => ['center' => null],
+                'errors'  => [],
+            ], 200);
         } catch (\Exception $e) {
             Log::error('Get User Centers Error: ' . $e->getMessage());
             return $this->errorResponse('Failed to get user centers.', 500);

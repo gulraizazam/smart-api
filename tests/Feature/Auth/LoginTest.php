@@ -197,4 +197,51 @@ class LoginTest extends TestCase
         $this->assertTrue(Auth::check());
         $this->assertSame(0, (int) $user->fresh()->failed_login_attempts);
     }
+
+    public function test_four_failed_attempts_do_not_trigger_lockout(): void
+    {
+        // Boundary: threshold is 5. Four wrong attempts should increment
+        // the counter but NOT set locked_until.
+        $user = User::factory()->create([
+            'email' => 'boundary@example.com',
+            'password' => Hash::make('correct-horse'),
+            'failed_login_attempts' => 0,
+        ]);
+
+        for ($i = 0; $i < User::MAX_FAILED_LOGIN_ATTEMPTS - 1; $i++) {
+            $this->post('/login', [
+                'email' => 'boundary@example.com',
+                'password' => 'wrong',
+            ]);
+        }
+
+        $reloaded = $user->fresh();
+        $this->assertNull(
+            $reloaded->locked_until,
+            'Four attempts must NOT trigger the lockout.'
+        );
+        $this->assertSame(
+            User::MAX_FAILED_LOGIN_ATTEMPTS - 1,
+            (int) $reloaded->failed_login_attempts,
+        );
+    }
+
+    public function test_lockout_expires_and_allows_login_again(): void
+    {
+        // Plant a lockout that expired one minute ago — the user must be
+        // able to log in again.
+        $user = User::factory()->create([
+            'email' => 'expired@example.com',
+            'password' => Hash::make('correct-horse'),
+            'locked_until' => now()->subMinute(),
+            'failed_login_attempts' => 0,
+        ]);
+
+        $this->post('/login', [
+            'email' => 'expired@example.com',
+            'password' => 'correct-horse',
+        ]);
+
+        $this->assertTrue(Auth::check());
+    }
 }

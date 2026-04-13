@@ -30,10 +30,10 @@ class DoctorDashboardHelper
      */
     public static function getDoctorRoleIds(): array
     {
-        return Cache::remember('doctor_dashboard_role_ids', self::CACHE_TTL, fn() => DB::table('roles')
-                ->whereIn('name', self::DOCTOR_ROLE_NAMES)
-                ->pluck('id')
-                ->toArray());
+        return DB::table('roles')
+            ->whereIn('name', self::DOCTOR_ROLE_NAMES)
+            ->pluck('id')
+            ->toArray();
     }
 
     /**

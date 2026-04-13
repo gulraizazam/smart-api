@@ -27,8 +27,8 @@
 
         </div>
 
-        <!--begin::Topbar-->
-        <div style="float: right" class="topbar">
+        <!--begin::Topbar (hidden on mobile — bells & user menu are in mobile header)-->
+        <div style="float: right" class="topbar d-none d-lg-flex">
 
             <!--begin::Cashflow Notifications-->
             @can('cashflow_manage')
@@ -49,6 +49,24 @@
             </div>
             @endcan
             <!--end::Cashflow Notifications-->
+
+            <!--begin::HR Notifications-->
+            <div class="topbar-item mr-3 position-relative" id="hr-notification-bell">
+                <div class="btn btn-icon btn-clean btn-lg position-relative" id="hr_notification_toggle">
+                    <i class="la la-bell-o icon-lg"></i>
+                    <span class="badge badge-warning badge-pill position-absolute" style="top:5px;right:2px;font-size:10px;display:none;" id="hr-notif-count">0</span>
+                </div>
+                <div id="hr-notif-dropdown" style="display:none;position:absolute;top:100%;right:0;width:350px;max-height:400px;overflow-y:auto;z-index:1050;background:#fff;border:1px solid rgba(0,0,0,.15);border-radius:4px;box-shadow:0 5px 15px rgba(0,0,0,.15);" class="p-0">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+                        <h6 class="mb-0">HR Notifications</h6>
+                        <a href="javascript:;" id="hr-mark-all-read" class="text-primary font-size-sm">Mark all read</a>
+                    </div>
+                    <div id="hr-notif-list" class="p-0">
+                        <div class="text-center text-muted py-4 font-size-sm">No notifications</div>
+                    </div>
+                </div>
+            </div>
+            <!--end::HR Notifications-->
 
             <!--begin::User-->
             <div class="topbar-item user-setting">
@@ -83,12 +101,11 @@
                         <!--end::Menu separator-->
                         <!--begin::Menu item-->
                         <div class="menu-item px-5">
-                            <a href="{{route('admin.change_password')}}" class="menu-link px-5">My Profile</a>
+                            <a href="{{ route('admin.hr.my.profile') }}" class="menu-link px-5">My Profile</a>
                         </div>
-
-                    {{--<div class="menu-item px-5 my-1">
-                        <a href="javascript:void(0);" class="menu-link px-5">Account Settings</a>
-                    </div>--}}
+                        <div class="menu-item px-5">
+                            <a href="{{ route('admin.hr.my.leaves') }}" class="menu-link px-5">My Leaves</a>
+                        </div>
                     <!--end::Menu item-->
                         <!--begin::Menu item-->
                         <div class="menu-item px-5">

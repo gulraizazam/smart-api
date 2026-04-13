@@ -123,6 +123,39 @@
     </style>
 @endpush
 
+@cannot('appointments_consultancy')
+    <style>
+        .inline-patient-search {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 14px;
+        }
+        .inline-patient-search .select2-container,
+        .inline-patient-search .form-control {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .inline-patient-search .btn-icon-only {
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        .inline-patient-search .btn-icon-only i { font-size: 16px; line-height: 1; }
+    </style>
+    <div class="mt-2 mb-2">
+        <div class="inline-patient-search">
+            <select class="form-control filter-field select2-patient-search" id="appointment_patient_id" onchange="SetPatient()"></select>
+            <button type="button" class="btn btn-primary btn-icon-only" id="apply-filters" title="Search"><i class="fa fa-search"></i></button>
+            <button type="button" class="btn btn-secondary btn-icon-only" onclick="{{ isset($custom_reset) && $custom_reset != '' ? 'resetCustomFilters()' : 'resetFilters()' }}" id="reset-filters" title="Reset"><i class="fa fa-undo"></i></button>
+        </div>
+    </div>
+@else
 <div class="mt-2 mb-7">
 
     <!-- Mobile Filter Toggle Button (visible only on mobile) -->
@@ -139,6 +172,7 @@
     <!-- All Filters Wrapper -->
     <div class="all-filters-wrapper">
 
+        @can('appointments_consultancy')
         <div class="row align-items-center">
             <div class="advance-search col-md-12 col-lg-12 col-xl-12">
                 <div class="row align-items-center mr-2" style="float: right;">
@@ -151,6 +185,7 @@
                 </div>
             </div>
         </div>
+        @endcan
 
 
     <div class="row mb-0 flex-column flex-sm-row">
@@ -161,6 +196,7 @@
             </select>
         </div>
 
+        @can('appointments_consultancy')
         <div class="filterouterdiv  mb-0" >
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker datefromto" >
@@ -188,6 +224,7 @@
             <label >Status:</label>
             <select class="form-control filter-field select2" id="appoint_search_status" onchange="SetStatus()"></select>
         </div>
+        @endcan
 
 
 
@@ -199,6 +236,7 @@
 
     </div>
 
+    @can('appointments_consultancy')
     <hr class="advance-filters" style="display: none;">
     <div class="row mb-0 flex-column flex-sm-row advance-filters" style="display: none;">
 
@@ -239,8 +277,10 @@
         </div>
 
     </div>
+    @endcan
 
     </div>
     <!-- End All Filters Wrapper -->
 
 </div>
+@endcannot

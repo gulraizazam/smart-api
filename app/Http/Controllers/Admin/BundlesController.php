@@ -30,4 +30,13 @@ class BundlesController extends Controller
 
         return view('admin.bundles.index');
     }
+
+    public function sort(): \Illuminate\View\View
+    {
+        if (!Gate::allows('packages_edit')) {
+            return abort(401);
+        }
+
+        return view('admin.bundles.sort');
+    }
 }

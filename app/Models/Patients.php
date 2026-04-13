@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Casts\EncryptedLegacy;
 use App\Helpers\GeneralFunctions;
+use App\Helpers\PatientAccessScope;
 use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
@@ -228,9 +229,10 @@ class Patients extends BaseModel
             return [];
         }
 
-        $cacheKey = "patient_search_{$accountId}_" . md5($name);
+        [$scopeSql, $scopeBindings] = PatientAccessScope::rawClause('users.id');
+        $cacheKey = "patient_search_{$accountId}_" . PatientAccessScope::cacheSuffix() . '_' . md5($name);
 
-        return Cache::remember($cacheKey, 300, function () use ($name, $accountId): array {
+        return Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
             $cleaned = strtr($name, [' ' => '', '-' => '', '+' => '', 'C-' => '', 'c-' => '']);
 
             if (ctype_digit($cleaned)) {
@@ -244,11 +246,16 @@ class Patients extends BaseModel
                      FROM users
                      WHERE user_type_id = 3 AND active = 1 AND account_id = ?
                        AND (phone = ? OR phone LIKE ? OR phone = ? OR phone LIKE ? OR id = ?)
+                       {$scopeSql}
                      ORDER BY CASE
                          WHEN phone = ? THEN 1 WHEN phone = ? THEN 2 WHEN id = ? THEN 3 ELSE 4
                      END, id DESC
                      LIMIT 10",
-                    [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned, $phone, $cleaned, $cleaned]
+                    array_merge(
+                        [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned],
+                        $scopeBindings,
+                        [$phone, $cleaned, $cleaned]
+                    )
                 );
 
                 return self::decryptCnicColumn($rows);
@@ -266,8 +273,9 @@ class Patients extends BaseModel
                 "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
                  FROM users
                  WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
+                   {$scopeSql}
                  ORDER BY id DESC LIMIT 10",
-                [$accountId, $escaped . '%']
+                array_merge([$accountId, $escaped . '%'], $scopeBindings)
             );
 
             return self::decryptCnicColumn($rows);
@@ -308,15 +316,15 @@ class Patients extends BaseModel
 
         if (str_contains(strtolower($name), 'c-')) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
-            $users = self::patientsOnly()->active()->forAccount($accountId)
-                ->where('id', $cleanId)
-                ->select('name', 'id', 'phone')
-                ->get();
+            $query = self::patientsOnly()->active()->forAccount($accountId)
+                ->where('id', $cleanId);
+            PatientAccessScope::applyTo($query);
+            $users = $query->select('name', 'id', 'phone')->get();
         } elseif (is_numeric($name)) {
-            $users = self::patientsOnly()->active()->forAccount($accountId)
-                ->where('id', $name)
-                ->select('name', 'id', 'phone')
-                ->get();
+            $query = self::patientsOnly()->active()->forAccount($accountId)
+                ->where('id', $name);
+            PatientAccessScope::applyTo($query);
+            $users = $query->select('name', 'id', 'phone')->get();
         }
 
         if ($users->isEmpty()) {
@@ -324,6 +332,7 @@ class Patients extends BaseModel
             $phoneNumeric = GeneralFunctions::clearnString($search);
 
             $query = self::patientsOnly()->active()->forAccount($accountId);
+            PatientAccessScope::applyTo($query);
 
             $users = is_numeric($phoneNumeric)
                 ? $query->where('phone', 'LIKE', '%' . GeneralFunctions::cleanNumber($search) . '%')
@@ -355,17 +364,17 @@ class Patients extends BaseModel
     {
         if (str_contains(strtolower($name), 'c-')) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
-            return self::patientsOnly()->active()->forAccount($accountId)
-                ->where('id', $cleanId)
-                ->select('name', 'id', 'phone')
-                ->get();
+            $query = self::patientsOnly()->active()->forAccount($accountId)
+                ->where('id', $cleanId);
+            PatientAccessScope::applyTo($query);
+            return $query->select('name', 'id', 'phone')->get();
         }
 
         if (is_numeric($name)) {
-            $users = self::patientsOnly()->active()->forAccount($accountId)
-                ->where('id', $name)
-                ->select('name', 'id', 'phone')
-                ->get();
+            $query = self::patientsOnly()->active()->forAccount($accountId)
+                ->where('id', $name);
+            PatientAccessScope::applyTo($query);
+            $users = $query->select('name', 'id', 'phone')->get();
             if ($users->isNotEmpty()) {
                 return $users;
             }
@@ -375,6 +384,7 @@ class Patients extends BaseModel
         $phoneNumeric = GeneralFunctions::clearnString($search);
 
         $query = self::patientsOnly()->active()->forAccount($accountId);
+        PatientAccessScope::applyTo($query);
 
         if (is_numeric($phoneNumeric)) {
             $phone = GeneralFunctions::cleanNumber($search);
@@ -388,10 +398,10 @@ class Patients extends BaseModel
 
     public static function getPatientPhoneAjax(string $phone, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
-        return self::patientsOnly()->active()->forAccount($accountId)
-            ->where('phone', 'LIKE', "%{$phone}%")
-            ->select('name', 'id', 'phone')
-            ->get();
+        $query = self::patientsOnly()->active()->forAccount($accountId)
+            ->where('phone', 'LIKE', "%{$phone}%");
+        PatientAccessScope::applyTo($query);
+        return $query->select('name', 'id', 'phone')->get();
     }
 
     public static function getByPhone(string $phone, int|false $accountId = false, int|false $patientId = false): ?self

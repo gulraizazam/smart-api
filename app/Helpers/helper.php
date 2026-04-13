@@ -132,10 +132,16 @@ function getPaginationElement(\Illuminate\Http\Request $request, int $iTotalReco
     ];
 }
 
-function getFilters(array $filters): array|string
+function getFilters(array $filters): array
 {
-    if (isset($filters['query']) && isset($filters['query']['search'])) {
-        return $filters['query']['search'];
+    if (isset($filters['query']['search'])) {
+        $search = $filters['query']['search'];
+
+        if (is_string($search)) {
+            $search = json_decode($search, true) ?? [];
+        }
+
+        return is_array($search) ? $search : [];
     }
 
     return [];

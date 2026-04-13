@@ -120,4 +120,31 @@ class StoreAppointmentRequestTest extends TestCase
             $this->validatorFor($this->validPayload(['email' => null]))->passes(),
         );
     }
+
+    public function test_appointment_type_id_must_exist_when_provided(): void
+    {
+        // appointment_type_id has an `exists:appointment_types,id` rule
+        // (distinct from the free-text appointment_type field).
+        $validator = $this->validatorFor($this->validPayload(['appointment_type_id' => 99_999]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('appointment_type_id', $validator->errors()->toArray());
+    }
+
+    public function test_scheduled_date_is_nullable(): void
+    {
+        // Most fields on this form are nullable — pin that scheduled_date
+        // can be omitted without failing validation.
+        $this->assertTrue(
+            $this->validatorFor($this->validPayload(['scheduled_date' => null]))->passes(),
+        );
+    }
+
+    public function test_gender_accepts_zero_for_unspecified(): void
+    {
+        // Gender codes: 0=unspecified, 1=male, 2=female. Zero is valid.
+        $this->assertTrue(
+            $this->validatorFor($this->validPayload(['gender' => 0]))->passes(),
+        );
+    }
 }

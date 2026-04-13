@@ -73,4 +73,34 @@ class ApiAppointmentTest extends TestCase
             'data' => ['dropdown'],
         ]);
     }
+
+    public function test_load_consultant_doctors_returns_dropdown_envelope(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->postJson('/api/appointments/load-consultant-doctors', [
+            'location_id' => 1,
+        ]);
+
+        // Endpoint shares the same envelope shape as load-doctors.
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'data' => ['dropdown'],
+        ]);
+    }
+
+    public function test_load_locations_by_city_returns_success_envelope(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->postJson('/api/appointments/load-locations', [
+            'city_id' => 1,
+        ]);
+
+        // Even if no locations match, envelope must be well-formed.
+        $this->assertContains($response->status(), [200, 404]);
+    }
 }

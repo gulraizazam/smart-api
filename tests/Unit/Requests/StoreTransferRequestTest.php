@@ -132,4 +132,46 @@ class StoreTransferRequestTest extends TestCase
         $this->assertTrue($validator->fails());
         $this->assertArrayHasKey('from_pool_id', $validator->errors()->toArray());
     }
+
+    public function test_destination_pool_must_exist(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['to_pool_id' => 99_999]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('to_pool_id', $validator->errors()->toArray());
+    }
+
+    public function test_transfer_date_cannot_be_older_than_seven_days(): void
+    {
+        // The rule is `after_or_equal:<7 days ago>` — an 8-day-old date
+        // must be rejected to prevent back-dating beyond the window.
+        $validator = $this->validatorFor($this->validPayload([
+            'transfer_date' => now()->subDays(8)->toDateString(),
+        ]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('transfer_date', $validator->errors()->toArray());
+    }
+
+    public function test_transfer_date_at_exactly_seven_days_ago_passes(): void
+    {
+        $validator = $this->validatorFor($this->validPayload([
+            'transfer_date' => now()->subDays(7)->toDateString(),
+        ]));
+
+        $this->assertTrue(
+            $validator->passes(),
+            'A transfer dated exactly 7 days ago must pass — errors: ' . $validator->errors()->first(),
+        );
+    }
+
+    public function test_bank_deposit_method_passes_validation(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['method' => 'bank_deposit']));
+
+        $this->assertTrue(
+            $validator->passes(),
+            'bank_deposit must be accepted — errors: ' . $validator->errors()->first(),
+        );
+    }
 }

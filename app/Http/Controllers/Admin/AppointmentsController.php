@@ -98,7 +98,7 @@ class AppointmentsController extends Controller
      */
     public function index(): \Illuminate\View\View
     {
-        if (! Gate::allows('appointments_consultancy')) {
+        if (! Gate::allows('appointments_manage') && ! Gate::allows('consultations_manage')) {
             return abort(404);
         }
 
@@ -178,16 +178,16 @@ class AppointmentsController extends Controller
         if ($appointment_statuses) {
             $appointment_statuses = $appointment_statuses->pluck('name', 'id');
         }
-        if (Gate::allows('appointments_consultancy')) {
+        if (Gate::allows('consultations_manage')) {
             $appointment_types = AppointmentTypes::where('slug', '=', 'consultancy')->pluck('name', 'id');
         }
         if (Gate::allows('treatments_services')) {
             $appointment_types = AppointmentTypes::where('slug', '=', 'treatment')->pluck('name', 'id');
         }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')) {
+        if (Gate::allows('consultations_manage') && Gate::allows('treatments_services')) {
             $appointment_types = AppointmentTypes::get()->pluck('name', 'id');
         }
-        if (! Gate::allows('appointments_consultancy') && ! Gate::allows('treatments_services')) {
+        if (! Gate::allows('consultations_manage') && ! Gate::allows('treatments_services')) {
             $appointment_types = [];
         }
         $users = User::getAllRecords(Auth::user()->account_id)->pluck('name', 'id');
@@ -251,7 +251,7 @@ class AppointmentsController extends Controller
                 }
             }
         }
-        if (! Gate::allows('appointments_consultancy')) {
+        if (! Gate::allows('consultations_manage')) {
             return abort(401);
         }
         if ($request->lead_id) {
@@ -1061,7 +1061,11 @@ class AppointmentsController extends Controller
      */
     public function detail(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
+        if (! Gate::allows('appointments_manage')
+            && ! Gate::allows('appointments_view')
+            && ! Gate::allows('appointments_consultancy')
+            && ! Gate::allows('consultations_manage')
+        ) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -1080,7 +1084,8 @@ class AppointmentsController extends Controller
             'doctor', 'city',
             'location',
             'appointment_status',
-            'service',
+            'service:id,name,parent_id',
+            'service.parent:id,name',
             'appointment_comments.user'
         )->find($id);
         if (! $appointment) {
@@ -1135,9 +1140,12 @@ class AppointmentsController extends Controller
             })
             ->orderBy('name')
             ->pluck('name', 'id');
-        
+
         if ($appointment->service_id) {
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
+            if ($serviceid && !$services->has($appointment->service_id)) {
+                $services->put($appointment->service_id, $serviceid->name);
+            }
         }
         
         // Get doctors for the appointment's location

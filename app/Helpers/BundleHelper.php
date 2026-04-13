@@ -7,6 +7,7 @@ namespace App\Helpers;
 use App\Models\Appointments;
 use App\Models\Bundles;
 use App\Models\PackageBundles;
+use App\Models\ServiceBundle;
 use App\Models\Services;
 use App\Models\TaxTreatmentType;
 use Illuminate\Support\Carbon;
@@ -94,6 +95,7 @@ class BundleHelper
         Cache::forget("bundle_services_dropdown_{$accountId}");
         Cache::forget('bundle_tax_treatment_types');
         Cache::forget("active_bundles_{$accountId}");
+        Cache::forget("bundle_form_service_bundles_{$accountId}");
     }
 
     /**
@@ -195,6 +197,34 @@ class BundleHelper
     }
 
     /**
+     * Get active service bundles for the package form dropdown.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function getServiceBundles(): array
+    {
+        $accountId = Auth::user()->account_id;
+        $cacheKey = "bundle_form_service_bundles_{$accountId}";
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => ServiceBundle::where('account_id', $accountId)
+            ->where('active', 1)
+            ->with('service:id,name,price,parent_id', 'service.parent:id,name')
+            ->orderBy('sort_number', 'asc')
+            ->get()
+            ->map(fn ($sb) => [
+                'id'            => $sb->id,
+                'name'          => $sb->sessions . 'x ' . ($sb->service?->name ?? 'Unknown'),
+                'service_id'    => $sb->service_id,
+                'service_name'  => $sb->service?->name ?? '',
+                'service_price' => (float) ($sb->service?->price ?? 0),
+                'sessions'      => $sb->sessions,
+                'category'      => $sb->service?->parent?->name ?? 'Uncategorized',
+            ])
+            ->toArray()
+        );
+    }
+
+    /**
      * Get filter values for datatable.
      *
      * @return array<string, mixed>
@@ -205,6 +235,7 @@ class BundleHelper
             'status'              => self::getStatusOptions(),
             'tax_treatment_types' => self::getTaxTreatmentTypes(),
             'services'            => self::getServices(),
+            'service_bundles'     => self::getServiceBundles(),
         ];
     }
 

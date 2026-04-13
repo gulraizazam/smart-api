@@ -104,6 +104,12 @@ class AppointmentCommunicationTest extends TestCase
             'Booking an appointment must append a create row to audit_trails.',
         );
 
+        // Verify the create row references the correct record.
+        $this->assertDatabaseHas('audit_trails', [
+            'table_record_id' => $appointment->id,
+            'user_id' => auth()->id(),
+        ]);
+
         $appointment->update(['appointment_status_id' => 2]); // arrived
         $countAfterArrived = AuditTrails::query()->count();
         $this->assertGreaterThan(
@@ -127,6 +133,21 @@ class AppointmentCommunicationTest extends TestCase
             $countAfterDelete,
             'Soft-deleting the appointment must append a delete row to audit_trails.',
         );
+    }
+
+    public function test_audit_trail_row_for_create_references_the_correct_appointment(): void
+    {
+        // Targeted assertion: verify the specific audit trail row content,
+        // not just that the count increased.
+        $appointment = Appointments::factory()->create();
+
+        $trail = AuditTrails::query()
+            ->where('table_record_id', $appointment->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($trail, 'An audit trail row must exist for the created appointment.');
+        $this->assertSame((int) auth()->id(), (int) $trail->user_id);
     }
 
     public function test_status_row_allow_message_flag_is_independent_of_appointment_send_message(): void

@@ -19,7 +19,11 @@
 function getTreatmentColumns(includePatientColumn = true, perms = null) {
     // Permissions are read dynamically in templates, not at initialization
     // This allows the datatable to work even before permissions are loaded from API
-    
+
+    var listingPerms = (typeof window !== 'undefined' && window.listingPerms) ? window.listingPerms : {};
+    var canShowContact = listingPerms.contact !== false;
+    var canManage = listingPerms.canManage === true;
+
     var columns = [
         {
             field: 'Patient_ID',
@@ -45,14 +49,16 @@ function getTreatmentColumns(includePatientColumn = true, perms = null) {
             }
         });
         
-        columns.push({
-            field: 'phone',
-            title: 'Phone',
-            width: 90,
-            template: function (data) {
-                return phoneClip(data);
-            }
-        });
+        if (canShowContact) {
+            columns.push({
+                field: 'phone',
+                title: 'Phone',
+                width: 90,
+                template: function (data) {
+                    return phoneClip(data);
+                }
+            });
+        }
     }
     
     columns.push({
@@ -100,7 +106,7 @@ function getTreatmentColumns(includePatientColumn = true, perms = null) {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 }
             } else {
-                return '<span class="badge badge-dark">' + data.appointment_status_id + '</span>';
+                return '<span class="badge badge-secondary">' + data.appointment_status_id + '</span>';
             }
         }
     });
@@ -114,50 +120,53 @@ function getTreatmentColumns(includePatientColumn = true, perms = null) {
     // Include city column only for main module
     
     
-    columns.push({
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-        template: function (data) {
-            return formatDate(data.created_at);
+    if (canManage) {
+        columns.push({
+            field: 'created_at',
+            title: 'Created At',
+            width: 'auto',
+            template: function (data) {
+                return formatDate(data.created_at);
+            }
+        });
+
+        // Include created_by, updated_by, converted_by only for main module
+        if (includePatientColumn) {
+            columns.push({
+                field: 'created_by',
+                title: 'Created By',
+                width: 'auto',
+            });
+            columns.push({
+                field: 'updated_by',
+                title: 'Updated By',
+                width: 'auto',
+            });
+            columns.push({
+                field: 'converted_by',
+                title: 'Rescheduled By',
+                width: 'auto',
+            });
         }
-    });
-    
-    // Include created_by, updated_by, converted_by only for main module
-    if (includePatientColumn) {
+    }
+
+    // Actions column — only when user has manage-level rights
+    if (canManage) {
         columns.push({
-            field: 'created_by',
-            title: 'Created By',
-            width: 'auto',
-        });
-        columns.push({
-            field: 'updated_by',
-            title: 'Updated By',
-            width: 'auto',
-        });
-        columns.push({
-            field: 'converted_by',
-            title: 'Rescheduled By',
-            width: 'auto',
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 190,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                if (typeof actions === 'function') {
+                    return actions(data);
+                }
+                return '';
+            }
         });
     }
-    
-    // Actions column
-    columns.push({
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 190,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            // Use the main module's actions function if available
-            if (typeof actions === 'function') {
-                return actions(data);
-            }
-            return '';
-        }
-    });
     
     return columns;
 }

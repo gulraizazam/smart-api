@@ -20,6 +20,7 @@ class Permission extends \Spatie\Permission\Models\Permission
         'status',
         'guard_name',
         'sort_order',
+        'category',
     ];
 
     protected function casts(): array

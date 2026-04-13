@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\AppointmentType;
+use App\Models\ServiceBundle;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -114,6 +115,15 @@ class PackageBundles extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Packages::class, 'package_id');
+    }
+
+    /**
+     * Service bundle relationship (for source_type='service_bundle').
+     * bundle_id references service_bundles.id when source_type is 'service_bundle'.
+     */
+    public function serviceBundle(): BelongsTo
+    {
+        return $this->belongsTo(ServiceBundle::class, 'bundle_id');
     }
 
     // ── Creation ────────────────────────────────────────

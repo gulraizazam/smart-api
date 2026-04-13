@@ -104,14 +104,14 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Bundles <span class="text text-danger">*</span></label>
                             <select id="edit_bundle_service_id" onchange="editServiceDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
-                                <option value="">Select Service</option>
+                                <option value="">Select Bundle</option>
                             </select>
                             <small class="text-danger error-class"><b id='edit_bundle_service_id_error' class="error-msg"></b></small>
                         </div>
 
-                        <div class="fv-row col-md-3 mt-5">
+                        <div class="fv-row col-md-2 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                             <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                                 <span>Please wait...</span>
@@ -120,15 +120,18 @@
                                 </span>
                             </div>
                             <input type="text" readonly name="net_amount_1" class="form-control" id="edit_bundle_net_amount_1">
-
                         </div>
-                        <div class="fv-row col-md-3 mt-5" id="edit_bundle_sold_by_div">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
-                        <select  id="edit_bundle_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
-                            <option value="">Select </option>
-                        </select>
-                        <small class="text-danger ml-1 mt-1"><b id="edit_bundle_sold_by_errorr" class="create-plan-error"></b></small>
-                    </div>
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">You Save</label>
+                            <input type="text" readonly class="form-control text-success" id="edit_bundle_you_save" style="font-weight:600;">
+                        </div>
+                        <div class="fv-row col-md-2 mt-5" id="edit_bundle_sold_by_div">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
+                            <select  id="edit_bundle_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
+                                <option value="">Select </option>
+                            </select>
+                            <small class="text-danger ml-1 mt-1"><b id="edit_bundle_sold_by_errorr" class="create-plan-error"></b></small>
+                        </div>
                         <div class="fv-row col-md-2 mt-5">
                             <div class="text-center mt-10">
                                 <button type="button" id="EditBundlePackage" class="btn btn-primary float-right spinner-button-edit-add">

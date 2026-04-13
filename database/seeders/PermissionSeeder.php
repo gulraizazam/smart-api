@@ -4,9 +4,65 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PermissionSeeder extends Seeder
 {
+    /**
+     * Role-edit UI category → parent permission names. Kept in sync with the
+     * 2026_04_12_130000 migration; this copy is what a fresh seed uses before
+     * the migration's backfill runs (or for brand-new parent rows added here).
+     */
+    private const CATEGORY_MAP = [
+        'Dashboard' => ['dashboard_manage', 'doctor_dashboard'],
+        'System' => [
+            'permissions_manage', 'roles_manage', 'user_types_manage',
+            'settings_manage', 'user_operator_settings_manage', 'show_inactive_records',
+            'logs_manage',
+        ],
+        'Users & Access' => ['users_manage', 'doctors_manage'],
+        'Resources' => [
+            'resource_types_manage', 'resources_manage', 'resourcerotas_manage',
+            'machineType_manage',
+        ],
+        'Locations' => ['regions_manage', 'cities_manage', 'towns_manage', 'locations_manage'],
+        'Leads' => ['lead_sources_manage', 'lead_statuses_manage', 'leads_manage'],
+        'Appointments' => ['appointment_statuses_manage', 'appointments_manage', 'consultations_manage', 'treatments_manage'],
+        'Catalog' => [
+            'services_manage', 'discounts_manage', 'plans_manage', 'packages_manage',
+            'voucher_types_manage', 'vouchers_manage', 'memberships_manage',
+            'membershiptypes_manage',
+        ],
+        'Patients' => ['patients_manage'],
+        'Financial' => [
+            'finances_manage', 'invoices_manage', 'refunds_manage',
+            'payment_modes_manage', 'cashflow_manage',
+        ],
+        'Forms & SMS' => [
+            'custom_forms_manage', 'custom_form_feedbacks_manage',
+            'sms_templates_manage', 'feedbacks_manage',
+        ],
+        'Targets' => ['staff_targets_manage', 'centre_targets_manage'],
+        'Business Ops' => [
+            'inventory_manage', 'brand_manage', 'product_manage', 'order_manage',
+            'google_reviews_manage', 'contact', 'business_closures_manage',
+            'pabao_records_manage',
+        ],
+        'HRM' => ['hr_manage'],
+        'Reports' => [
+            'leads_reports_manage', 'feedbacks_report_manage', 'appointment_reports_manage',
+            'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage',
+            'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage',
+            'finance_ledger_reports_manage', 'staff_listing_reports_manage',
+            'staff_revenue_reports_manage', 'marketing_reports_manage',
+            'conversion_report_manage', 'staff_wise_arrival_manage',
+            'non_converted_customers_manage', 'follow_up_manage', 'followuppatient_manage',
+            'inventory_report_manage', 'upselling_report', 'consultant_revenue_report',
+            'csr_dashboard_report',
+        ],
+    ];
+
     /**
      * Run the database seeds.
      *
@@ -22,6 +78,67 @@ class PermissionSeeder extends Seeder
             } else {
                 $check_permission->update($permission);
             }
+        }
+
+        $this->applyCategoriesToParents();
+        $this->applyAppointmentRestructure();
+    }
+
+    /**
+     * Reparent consultation-specific children to `consultations_manage` and
+     * treatment-specific children misfiled under `appointments_manage` to
+     * `treatments_manage`. Matches the migration
+     * 2026_04_12_130400_restructure_appointment_permissions.php so fresh
+     * installs end up with the same clean grouping without needing that
+     * migration to run. Idempotent.
+     */
+    private function applyAppointmentRestructure(): void
+    {
+        $consultationsId = DB::table('permissions')->where('name', 'consultations_manage')->value('id');
+        $treatmentsId = DB::table('permissions')->where('name', 'treatments_manage')->value('id');
+
+        if ($consultationsId === null || $treatmentsId === null) {
+            return;
+        }
+
+        $consultationChildren = [
+            'appointments_consultancy', 'appointments_services', 'appointments_edit',
+            'appointments_destroy', 'appointments_invoice', 'appointments_invoice_display',
+            'appointments_patient_card', 'appointments_appointment_status',
+            'appointments_plans_create', 'appointments_export', 'appointments_export_today',
+            'appointments_export_this_month', 'appointments_export_all',
+            'appointments_log', 'appointments_log_excel', 'edit_after_arrived',
+            'update_consultation_doctor', 'update_consultation_schedule',
+            'update_consultation_service',
+        ];
+
+        $treatmentChildrenMisplaced = [
+            'treatments_services', 'edit_doctor_after_arrived_treatment',
+            'edit_service_after_arrived_treatment', 'edit_schedule_after_arrived_treatment',
+        ];
+
+        DB::table('permissions')->whereIn('name', $consultationChildren)->update(['parent_id' => $consultationsId]);
+        DB::table('permissions')->whereIn('name', $treatmentChildrenMisplaced)->update(['parent_id' => $treatmentsId]);
+    }
+
+    /**
+     * Backfill the `category` column on parent (main_group=1) rows so fresh
+     * installs display the grouped role-edit UI without needing the dedicated
+     * migration to run afterwards. Safe to call repeatedly and no-ops if the
+     * column does not yet exist (column is added by migration
+     * 2026_04_12_130000_add_category_to_permissions_table.php).
+     */
+    private function applyCategoriesToParents(): void
+    {
+        if (!Schema::hasColumn('permissions', 'category')) {
+            return;
+        }
+
+        foreach (self::CATEGORY_MAP as $category => $names) {
+            DB::table('permissions')
+                ->whereIn('name', $names)
+                ->where('main_group', 1)
+                ->update(['category' => $category]);
         }
     }
 
@@ -64,7 +181,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'regions_active', 'title' => 'Activate', 'main_group' => 0, 'parent_id' => 32],
             ['name' => 'regions_inactive', 'title' => 'Inactivate', 'main_group' => 0, 'parent_id' => 32],
             ['name' => 'regions_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 32],
-            ['name' => 'regions_sort', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 32],
+            ['name' => 'regions_sort', 'title' => 'Sort', 'main_group' => 0, 'parent_id' => 32],
             ['name' => 'cities_manage', 'title' => 'Cities', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'cities_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 39],
             ['name' => 'cities_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 39],
@@ -92,7 +209,8 @@ class PermissionSeeder extends Seeder
             ['name' => 'appointment_statuses_active', 'title' => 'Activate', 'main_group' => 0, 'parent_id' => 59],
             ['name' => 'appointment_statuses_inactive', 'title' => 'Inactivate', 'main_group' => 0, 'parent_id' => 59],
             ['name' => 'appointment_statuses_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 59],
-            ['name' => 'appointments_manage', 'title' => 'Appointments', 'main_group' => 1, 'parent_id' => 0],
+            ['name' => 'appointments_manage', 'title' => 'Appointment Attachments', 'main_group' => 1, 'parent_id' => 0],
+            ['name' => 'consultations_manage', 'title' => 'Consultations', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'appointments_consultancy', 'title' => 'Manage Consultancy', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'treatments_services', 'title' => 'Manage Services', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'appointments_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 65],
@@ -160,9 +278,9 @@ class PermissionSeeder extends Seeder
             ['name' => 'resourcerotas_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 128],
             ['name' => 'resourcerotas_calender', 'title' => 'Calender', 'main_group' => 0, 'parent_id' => 128],
             ['name' => 'business_closures_manage', 'title' => 'Business Closures', 'main_group' => 1, 'parent_id' => 0],
-            ['name' => 'business_closures_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 0],
-            ['name' => 'business_closures_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 0],
-            ['name' => 'business_closures_delete', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 0],
+            ['name' => 'business_closures_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 162],
+            ['name' => 'business_closures_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 162],
+            ['name' => 'business_closures_delete', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 162],
             ['name' => 'payment_modes_manage', 'title' => 'Payment Modes', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'payment_modes_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 135],
             ['name' => 'payment_modes_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 135],
@@ -247,11 +365,11 @@ class PermissionSeeder extends Seeder
             ['name' => 'appointment_reports_empolyee_summary', 'title' => 'Appointment Summary Report', 'main_group' => 0, 'parent_id' => 209],
             ['name' => 'appointment_reports_summary_by_service', 'title' => 'Appointments Summary by Service', 'main_group' => 0, 'parent_id' => 209],
             ['name' => 'appointment_reports_summary_by_appointment_status', 'title' => 'Appointments Summary by Status', 'main_group' => 0, 'parent_id' => 209],
-            ['name' => 'appointment_reports_clients_by_appointment_status', 'title' => 'Patient by Appointment Status ( W)', 'main_group' => 0, 'parent_id' => 209],
+            ['name' => 'appointment_reports_clients_by_appointment_status', 'title' => 'Patient by Appointment Status (Weekly)', 'main_group' => 0, 'parent_id' => 209],
             ['name' => 'operations_reports_manage', 'title' => 'Operation Reports', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'operations_reports_operations_company_health', 'title' => 'Company Health Report', 'main_group' => 0, 'parent_id' => 217],
             ['name' => 'operations_reports_Highest_paying_clients', 'title' => 'Highest Paying Clients', 'main_group' => 0, 'parent_id' => 217],
-            ['name' => 'operations_reports_List_of_refunds_for_a_certain_period_date_based', 'title' => 'List of refunds for a certain period ( ba)', 'main_group' => 0, 'parent_id' => 217],
+            ['name' => 'operations_reports_List_of_refunds_for_a_certain_period_date_based', 'title' => 'List of refunds for a certain period (date based)', 'main_group' => 0, 'parent_id' => 217],
             ['name' => 'operations_reports_List_of_services_that_CAN_be_offered_Complimentary', 'title' => 'List of services that CAN be offered Complimentary', 'main_group' => 0, 'parent_id' => 217],
             ['name' => 'operations_reports_List_of_services_that_CAN_not_be_offered_Complimentary', 'title' => 'List of services that CAN NOT be offered Complimentary', 'main_group' => 0, 'parent_id' => 217],
             ['name' => 'operations_reports_conversion_report_consultancy', 'title' => 'Conversion Report For Consultancy', 'main_group' => 0, 'parent_id' => 217],
@@ -268,8 +386,8 @@ class PermissionSeeder extends Seeder
             ['name' => 'Hr_reports_manage', 'title' => 'HR Reports', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'Hr_reports_reports_for_calculating_incentives', 'title' => 'Reports For Calculating Incentives', 'main_group' => 0, 'parent_id' => 234],
             ['name' => 'Hr_reports_reports_for_calculating_incentives_detail', 'title' => 'Reports For Calculating Incentives Detail', 'main_group' => 0, 'parent_id' => 234],
-            ['name' => 'Hr_reports_revenue_generated_by_operators_application_user', 'title' => 'Revenue Generated By Operators (ication U)', 'main_group' => 0, 'parent_id' => 234],
-            ['name' => 'Hr_reports_revenue_generated_by_consultants_practitioner', 'title' => 'Revenue Generated By Consultants (titio)', 'main_group' => 0, 'parent_id' => 234],
+            ['name' => 'Hr_reports_revenue_generated_by_operators_application_user', 'title' => 'Revenue Generated By Operators (Application User)', 'main_group' => 0, 'parent_id' => 234],
+            ['name' => 'Hr_reports_revenue_generated_by_consultants_practitioner', 'title' => 'Revenue Generated By Consultants (Practitioner)', 'main_group' => 0, 'parent_id' => 234],
             ['name' => 'finance_general_revenue_reports_manage', 'title' => 'Finance General Revenue Reports', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'finance_general_revenue_reports_center_performance_stats_by_revenue_finance', 'title' => 'Center performance stats by Revenue', 'main_group' => 0, 'parent_id' => 239],
             ['name' => 'finance_general_revenue_reports_center_performance_stats_by_service_type_finance', 'title' => 'Center performance stats by Service Type', 'main_group' => 0, 'parent_id' => 239],
@@ -369,14 +487,11 @@ class PermissionSeeder extends Seeder
             ['name' => 'towns_inactive', 'title' => 'Inactivate', 'main_group' => 0, 'parent_id' => 336],
             ['name' => 'towns_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 336],
             ['name' => 'towns_import', 'title' => 'Import', 'main_group' => 0, 'parent_id' => 336],
-            ['name' => 'new test patient', 'title' => 'Test', 'main_group' => 0, 'parent_id' => 295],
             ['name' => 'leads_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 92],
             ['name' => 'contact', 'title' => 'Contact', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'edit_doctor_after_arrived_treatment', 'title' => 'Edit Doctor After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'edit_service_after_arrived_treatment', 'title' => 'Edit Service After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'edit_schedule_after_arrived_treatment', 'title' => 'Edit Schedule After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
-            ['name' => 'gfhfg', 'title' => 'gfhfh', 'main_group' => 0, 'parent_id' => 209],
-            ['name' => 'fsdf', 'title' => 'df', 'main_group' => 0, 'parent_id' => 39],
         ];
     }
 }

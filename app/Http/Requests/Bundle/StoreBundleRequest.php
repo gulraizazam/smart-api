@@ -41,10 +41,10 @@ class StoreBundleRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required'        => 'The bundle name is required.',
-            'price.required'       => 'The bundle price is required.',
-            'price.numeric'        => 'The bundle price must be a number.',
-            'price.min'            => 'The bundle price must be at least 0.',
+            'name.required'        => 'The package name is required.',
+            'price.required'       => 'The package price is required.',
+            'price.numeric'        => 'The package price must be a number.',
+            'price.min'            => 'The package price must be at least 0.',
             'end.after_or_equal'   => 'The end date must be after or equal to the start date.',
             'service_id.required'  => 'At least one service is required.',
             'service_id.min'       => 'At least one service is required.',
@@ -69,7 +69,7 @@ class StoreBundleRequest extends FormRequest
         throw new HttpResponseException(response()->json([
             'success' => false,
             'status'  => false,
-            'message' => 'You are not authorized to create bundles.',
+            'message' => 'You are not authorized to create packages.',
             'data'    => null,
             'errors'  => [],
         ], 403));

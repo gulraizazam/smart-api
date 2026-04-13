@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -64,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
         $this->configureAuthorization();
+        $this->ensurePermissionCacheHealth();
         $this->registerObservers();
         $this->registerAuditEventListeners();
     }
@@ -92,6 +94,36 @@ class AppServiceProvider extends ServiceProvider
             'custom_form_field.deleting' => [CustomFormFieldEvent::class, 'deleting'],
         ] as $eventName => $handler) {
             Event::listen($eventName, $handler);
+        }
+    }
+
+    /**
+     * Detect and auto-repair a corrupted Spatie permission cache.
+     *
+     * The file-backed permission cache occasionally loses entries (e.g. after
+     * running tests that call Cache::flush). When the cached set is far smaller
+     * than what the DB holds, every non-Super-Admin user loses access. This
+     * check runs once per boot, compares cached vs DB count, and resets the
+     * cache if the delta is too large.
+     */
+    private function ensurePermissionCacheHealth(): void
+    {
+        if (app()->runningInConsole() || app()->runningUnitTests()) {
+            return;
+        }
+
+        try {
+            $registrar = app(PermissionRegistrar::class);
+            $cached = $registrar->getPermissions();
+
+            if ($cached->count() < 50) {
+                $dbCount = \Spatie\Permission\Models\Permission::count();
+                if ($dbCount > 50 && $cached->count() < $dbCount * 0.5) {
+                    $registrar->forgetCachedPermissions();
+                }
+            }
+        } catch (\Throwable) {
+            // DB not available yet — skip silently
         }
     }
 

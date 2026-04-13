@@ -111,4 +111,28 @@ class InvoiceCalculationRequestTest extends TestCase
             $this->validatorFor($this->validPayload(['tax_percent' => null]))->passes(),
         );
     }
+
+    public function test_location_ids_rejects_empty_array(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['location_ids' => []]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('location_ids', $validator->errors()->toArray());
+    }
+
+    public function test_date_range_is_required(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['date_range' => null]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('date_range', $validator->errors()->toArray());
+    }
+
+    public function test_max_invoices_per_day_must_be_at_least_one(): void
+    {
+        $validator = $this->validatorFor($this->validPayload(['max_invoices_per_day' => 0]));
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('max_invoices_per_day', $validator->errors()->toArray());
+    }
 }

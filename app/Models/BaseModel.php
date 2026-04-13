@@ -20,6 +20,21 @@ class BaseModel extends Model
      */
     use HasFactory;
 
+    /**
+     * Scope route-model binding to the authenticated user's account,
+     * preventing cross-tenant IDOR via URL parameter manipulation.
+     */
+    public function resolveRouteBinding($value, $field = null): ?static
+    {
+        $query = $this->resolveRouteBindingQuery($this, $value, $field);
+
+        if (Auth::check() && in_array('account_id', $this->getFillable(), true)) {
+            $query->where($this->getTable() . '.account_id', Auth::user()->account_id);
+        }
+
+        return $query->first();
+    }
+
     public static function getData(int $id): ?static
     {
         return static::where([

@@ -1,5 +1,8 @@
 var table_url = route('admin.patients.datatable');
 
+var _listingPerms = (typeof window !== 'undefined' && window.listingPerms) ? window.listingPerms : {};
+var _canShowContact = _listingPerms.contact !== false;
+
 var table_columns = [
     {
         field: 'patient_id',
@@ -83,6 +86,10 @@ var table_columns = [
             return actions(data);
         }
     }];
+
+if (!_canShowContact) {
+    table_columns = table_columns.filter(function (col) { return col.field !== 'phone'; });
+}
 
 
 function actions(data) {

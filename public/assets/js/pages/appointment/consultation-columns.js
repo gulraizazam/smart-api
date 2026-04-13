@@ -19,7 +19,11 @@
 function getConsultationColumns(includePatientColumn = true, perms = null) {
     // Permissions are read dynamically in templates, not at initialization
     // This allows the datatable to work even before permissions are loaded from API
-    
+
+    var listingPerms = (typeof window !== 'undefined' && window.listingPerms) ? window.listingPerms : {};
+    var canShowContact = listingPerms.contact !== false; // default visible if flag absent
+    var canManage = listingPerms.canManage === true;
+
     var columns = [
         {
             field: 'Patient_ID',
@@ -44,14 +48,16 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
                 return '<a href="' + view_url + '" style="color: #626574; font-weight: bold;">' + data.name + '</a>';
             }
         });
-        columns.push({
-            field: 'phone',
-            title: 'Phone',
-            width: 90,
-            template: function (data) {
-                return phoneClip(data);
-            }
-        });
+        if (canShowContact) {
+            columns.push({
+                field: 'phone',
+                title: 'Phone',
+                width: 90,
+                template: function (data) {
+                    return phoneClip(data);
+                }
+            });
+        }
     }
     
     // Common columns
@@ -60,11 +66,14 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
         title: 'Scheduled',
         width: 80,
         template: function (data) {
-            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled" || data.appointment_status_id == "Converted") {
+            var p = perms || (typeof permissions !== 'undefined' ? permissions : {});
+            var isLocked = data.appointment_status_id == "Arrived"
+                || data.appointment_status_id == "Cancelled"
+                || data.appointment_status_id == "Converted";
+            if (isLocked || !p.update_consultation_schedule) {
                 return '<span>' + data.scheduled_date + '</span>';
-            } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ',' + data.doctorId + ',' + data.locationId + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
+            return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ',' + data.doctorId + ',' + data.locationId + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
         }
     });
     
@@ -97,7 +106,7 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 }
             } else {
-                return '<span class="badge badge-dark">' + data.appointment_status_id + '</span>';
+                return '<span class="badge badge-secondary">' + data.appointment_status_id + '</span>';
             }
         }
     });
@@ -111,52 +120,55 @@ function getConsultationColumns(includePatientColumn = true, perms = null) {
     // Include city column only for main module
    
     
-    columns.push({
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-        template: function (data) {
-            return formatDate(data.created_at);
+    if (canManage) {
+        columns.push({
+            field: 'created_at',
+            title: 'Created At',
+            width: 'auto',
+            template: function (data) {
+                return formatDate(data.created_at);
+            }
+        });
+
+        // Include created_by, updated_by, converted_by only for main module
+        if (includePatientColumn) {
+            columns.push({
+                field: 'created_by',
+                title: 'Created By',
+                width: 'auto',
+            });
+            columns.push({
+                field: 'updated_by',
+                title: 'Updated By',
+                width: 'auto',
+            });
+            columns.push({
+                field: 'converted_by',
+                title: 'Rescheduled By',
+                width: 'auto',
+            });
         }
-    });
-    
-    // Include created_by, updated_by, converted_by only for main module
-    if (includePatientColumn) {
-        columns.push({
-            field: 'created_by',
-            title: 'Created By',
-            width: 'auto',
-        });
-        columns.push({
-            field: 'updated_by',
-            title: 'Updated By',
-            width: 'auto',
-        });
-        columns.push({
-            field: 'converted_by',
-            title: 'Rescheduled By',
-            width: 'auto',
-        });
     }
     
-    // Actions column
-    columns.push({
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 190,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            // Use appropriate actions function based on context
-            if (typeof consultationActionsShared === 'function') {
-                return consultationActionsShared(data, perms);
-            } else if (typeof actions === 'function') {
-                return actions(data);
+    // Actions column — only when user has manage-level rights
+    if (canManage) {
+        columns.push({
+            field: 'actions',
+            title: 'Actions',
+            sortable: false,
+            width: 190,
+            overflow: 'visible',
+            autoHide: false,
+            template: function (data) {
+                if (typeof consultationActionsShared === 'function') {
+                    return consultationActionsShared(data, perms);
+                } else if (typeof actions === 'function') {
+                    return actions(data);
+                }
+                return '';
             }
-            return '';
-        }
-    });
+        });
+    }
     
     return columns;
 }

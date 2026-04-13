@@ -167,6 +167,7 @@ class PackagesController extends Controller
                 'net_amount'  => $request->net_amount,
                 'random_id'   => $request->random_id,
                 'sold_by'     => $request->sold_by ?? null,
+                'source_type' => $request->source_type ?? 'bundle',
             ]);
 
             return $this->successResponse('Bundle service added successfully', $result);

@@ -6801,7 +6801,6 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 						});
 
 						pg.paste();
-                        pg.paste();
 					},
 					paste: function() {
 						// insert pagination based on placement position, top|bottom

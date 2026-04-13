@@ -87,4 +87,21 @@ class ApiCashflowTest extends TestCase
             . 'if this array is empty the helper lookup is broken.',
         );
     }
+
+    public function test_lookups_contain_branches_scoped_to_account(): void
+    {
+        $this->actingAsAdmin();
+
+        $response = $this->getJson('/api/cashflow/lookups');
+
+        $response->assertStatus(200);
+
+        $branches = $response->json('data.branches');
+        $this->assertIsArray($branches);
+        $this->assertNotEmpty(
+            $branches,
+            'seedFinancialFixtures() seeds at least one location; '
+            . 'branches list must include it.',
+        );
+    }
 }

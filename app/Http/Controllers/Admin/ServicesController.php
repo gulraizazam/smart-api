@@ -69,7 +69,7 @@ class ServicesController extends Controller
                     'active' => Gate::allows('services_active'),
                     'inactive' => Gate::allows('services_inactive'),
                     'create' => Gate::allows('services_create'),
-                    'sort' => Gate::allows('services_sort'),
+                    'sort' => Gate::allows('services_edit'),
                     'duplicate' => Gate::allows('services_duplicate'),
                     'detail'=> Gate::allows('services_detail'),
                 ];
@@ -91,7 +91,7 @@ class ServicesController extends Controller
     }
     public function getSortOrder(): \Illuminate\View\View
     {
-        if (! Gate::allows('services_sort')) {
+        if (! Gate::allows('services_edit')) {
             return abort(401);
         }
 
@@ -99,62 +99,110 @@ class ServicesController extends Controller
     }
     public function sortOrderGet(): \Illuminate\Http\JsonResponse
     {
-
         try {
-            if (! Gate::allows('services_sort')) {
+            if (! Gate::allows('services_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
 
-                $services = Services::where('slug', '!=', 'all')
-                    ->where(['parent_id' => 0])
-                    ->orderBy('id', 'asc')
-                    ->get();
+            $parents = Services::where('slug', '!=', 'all')
+                ->where(function ($q) {
+                    $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                })
+                ->orderBy('sort_no', 'asc')
+                ->get(['id', 'name', 'parent_id', 'sort_no']);
 
-            // Batch-load all children grouped by parent_id (N+1 fix)
-            $parentIds = $services->pluck('id')->all();
+            $parentIds = $parents->pluck('id')->all();
             $childrenByParent = Services::whereIn('parent_id', $parentIds)
                 ->orderBy('sort_number', 'ASC')
-                ->get()
+                ->get(['id', 'name', 'parent_id', 'sort_number'])
                 ->groupBy('parent_id');
 
-            $mergedServices = [];
-            foreach ($services as $service) {
-                $mergedServices[] = $service->toArray();
-                $children = $childrenByParent->get($service->id, collect());
-                foreach ($children as $child) {
-                    $mergedServices[] = $child->toArray();
-                }
+            $grouped = [];
+            foreach ($parents as $parent) {
+                $grouped[] = [
+                    'id' => $parent->id,
+                    'name' => $parent->name,
+                    'children' => $childrenByParent->get($parent->id, collect())->values()->toArray(),
+                ];
             }
 
-
-            return $this->successResponse('Success', $mergedServices);
+            return $this->successResponse('Success', $grouped);
         } catch (\Exception $e) {
             return $this->handleException($e, 'ServicesController');
         }
     }
     public function sortOrderSave(Request $request): \Illuminate\Http\JsonResponse
     {
-
-
         try {
-            if (! Gate::allows('services_sort')) {
+            if (! Gate::allows('services_edit')) {
                 return $this->errorResponse('You are not authorized to access this resource.', 401);
             }
+
+            $parentId = (int) $request->parent_id;
             $itemIDs = $request->item_ids;
-            if (count($itemIDs)) {
-                foreach ($itemIDs as $key => $itemID) {
 
-                    Services::where('id', '=', $itemID)->update(['sort_number' => $key]);
-                }
-
-                return $this->successResponse('Records are sorted Successfully!');
+            if (empty($itemIDs) || !is_array($itemIDs)) {
+                return $this->errorResponse('No items to sort.', 404);
             }
 
-            return $this->errorResponse('Something went Wrong! Records are not sorted', 404);
+            $ids = array_map('intval', $itemIDs);
+            $cases = [];
+            $bindings = [];
+            foreach ($ids as $sortNo => $id) {
+                $cases[] = 'WHEN id = ? THEN ?';
+                $bindings[] = $id;
+                $bindings[] = $sortNo;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $bindings = array_merge($bindings, $ids, [$parentId]);
+
+            \DB::update(
+                'UPDATE services SET sort_number = CASE ' . implode(' ', $cases) . ' END WHERE id IN (' . $placeholders . ') AND parent_id = ?',
+                $bindings
+            );
+
+            return $this->successResponse('Sort order saved!');
         } catch (\Exception $e) {
             return $this->handleException($e, 'ServicesController');
         }
     }
+    public function categorySortOrderSave(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            if (! Gate::allows('services_edit')) {
+                return $this->errorResponse('You are not authorized to access this resource.', 401);
+            }
+
+            $categoryIds = $request->input('category_ids', []);
+
+            if (empty($categoryIds) || !is_array($categoryIds)) {
+                return $this->errorResponse('No categories to sort.', 404);
+            }
+
+            $ids = array_map('intval', $categoryIds);
+            $cases = [];
+            $bindings = [];
+            foreach ($ids as $sortNo => $id) {
+                $cases[] = 'WHEN id = ? THEN ?';
+                $bindings[] = $id;
+                $bindings[] = $sortNo;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $bindings = array_merge($bindings, $ids);
+
+            \DB::update(
+                'UPDATE services SET sort_no = CASE ' . implode(' ', $cases) . ' END WHERE id IN (' . $placeholders . ') AND (parent_id IS NULL OR parent_id = 0)',
+                $bindings
+            );
+
+            return $this->successResponse('Category order saved!');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'ServicesController');
+        }
+    }
+
     private function getExtraData($records = []): array
     {
 
@@ -470,7 +518,7 @@ class ServicesController extends Controller
 
             return response()->json(['color' => $service->color]);
         } else {
-            return response()->json(['color' => '#000']);
+            return response()->json(['color' => '#000000']);
         }
     }
     public function exportPdf(): \Symfony\Component\HttpFoundation\BinaryFileResponse

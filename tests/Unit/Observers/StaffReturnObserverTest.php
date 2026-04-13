@@ -51,4 +51,15 @@ class StaffReturnObserverTest extends TestCase
         $this->assertSame(750.00, (float) $poolA->fresh()->cached_balance);
         $this->assertSame(0.00, (float) $poolB->fresh()->cached_balance);
     }
+
+    public function test_multiple_returns_to_same_pool_accumulate(): void
+    {
+        $pool = CashPool::factory()->create(['opening_balance' => 0, 'cached_balance' => 0]);
+
+        StaffReturn::factory()->create(['pool_id' => $pool->id, 'amount' => 500]);
+        StaffReturn::factory()->create(['pool_id' => $pool->id, 'amount' => 300]);
+        StaffReturn::factory()->create(['pool_id' => $pool->id, 'amount' => 200]);
+
+        $this->assertSame(1000.00, (float) $pool->fresh()->cached_balance);
+    }
 }

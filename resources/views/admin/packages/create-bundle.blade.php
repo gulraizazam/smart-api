@@ -110,13 +110,13 @@
             <div class="form-group">
                 <div class="row">
                     <div class="fv-row col-md-4 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Bundles <span class="text text-danger">*</span></label>
                         <select id="add_service_id_bundle" onchange="getServiceDiscountBundle($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id_bundle">
-                            <option value="">Select Service</option>
+                            <option value="">Select Bundle</option>
                         </select>
                         <small class="text-danger ml-1 mt-1"><b id="add_service_id_bundle_error" class="create-bundle-error"></b></small>
                     </div>
-                    <div class="fv-row col-md-3 mt-5">
+                    <div class="fv-row col-md-2 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                         <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                             <span>Please wait...</span>
@@ -126,7 +126,11 @@
                         </div>
                         <input type="text" readonly name="net_amount_bundle" class="form-control" id="net_amount_bundle">
                     </div>
-                    <div class="fv-row col-md-3 mt-5" id="sold_by_div_bundle">
+                    <div class="fv-row col-md-2 mt-5">
+                        <label class="fw-bold fs-6 mb-2 pl-0">You Save</label>
+                        <input type="text" readonly class="form-control text-success" id="you_save_bundle" style="font-weight:600;">
+                    </div>
+                    <div class="fv-row col-md-2 mt-5" id="sold_by_div_bundle">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
                         <select  id="add_sold_by_bundle" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by_bundle">
 

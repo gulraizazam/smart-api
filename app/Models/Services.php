@@ -81,7 +81,9 @@ class Services extends BaseModel
 
     public function scopeParentsOnly(Builder $query): Builder
     {
-        return $query->where('parent_id', 0)->where('slug', '!=', 'all');
+        return $query->where(function ($q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        })->where('slug', '!=', 'all');
     }
 
     public function scopeForAccount(Builder $query, int $accountId): Builder
@@ -188,7 +190,7 @@ class Services extends BaseModel
     protected function isParent(): Attribute
     {
         return Attribute::make(
-            get: fn (): bool => $this->parent_id === 0,
+            get: fn (): bool => $this->parent_id === null || $this->parent_id === 0,
         );
     }
 
@@ -203,7 +205,9 @@ class Services extends BaseModel
 
     public static function getTreeStructure(): Collection
     {
-        return self::where('parent_id', 0)
+        return self::where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
             ->with('children')
             ->orderBy('name')
             ->get();
@@ -300,13 +304,15 @@ class Services extends BaseModel
             $skip_ids = [$skip_ids];
         }
 
-        $where = ['account_id' => $account_id, 'parent_id' => 0];
+        $where = ['account_id' => $account_id];
 
         if ($active_records_only) {
             $where['active'] = 1;
         }
 
-        $query = self::where($where);
+        $query = self::where($where)->where(function ($q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        });
         if (count($skip_ids)) {
             $query->whereNotIn('id', $skip_ids);
         }
