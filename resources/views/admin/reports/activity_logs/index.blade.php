@@ -397,7 +397,9 @@
 
                 function renderActiveChips() {
                     var p = collectParams();
-                    var chips = [{ label: p.startDate + ' → ' + p.endDate, key: 'date' }];
+                    // Date range is already shown by the preset-pill row above —
+                    // don't duplicate it as a chip here.
+                    var chips = [];
                     if (p.search) chips.push({ label: '🔍 ' + p.search, key: 'search' });
                     (p.tags || []).forEach(function (t) { chips.push({ label: t, key: 'tag:' + t }); });
                     if (p.location_id) {
@@ -413,7 +415,7 @@
                         $box.append(
                             '<span class="al-active-chip" data-key="' + c.key + '">' +
                                 c.label +
-                                (c.key !== 'date' ? '<span class="al-active-chip-remove">&times;</span>' : '') +
+                                '<span class="al-active-chip-remove">&times;</span>' +
                             '</span>'
                         );
                     });
