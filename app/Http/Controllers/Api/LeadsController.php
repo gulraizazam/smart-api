@@ -387,7 +387,7 @@ class LeadsController extends Controller
             ]);
         }
 
-        return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
+        return Excel::download(new ExportLead($request, $this->leadService), 'leads.'.$request->ext);
     }
 
     // =========================================================================

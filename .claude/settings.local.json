@@ -216,17 +216,7 @@
       "Bash(node --check \"public/assets/js/pages/appointment/appointment-mobile.js\")",
       "Bash(node --check public/assets/js/pages/appointment/consultation-columns.js)",
       "Bash(node --check public/assets/js/pages/appointment/appointment-mobile.js)",
-      "Bash(git:*)",
-      "Bash(vendor/bin/pint --test app/Models/Patients.php app/Exports/*.php app/Http/Resources/Consultancy/ConsultancyResource.php app/Http/Resources/Feedback/FeedbackDatatableResource.php app/Http/Resources/Lead/LeadDetailResource.php app/Http/Resources/Lead/LeadResource.php app/Http/Resources/Patient/PatientAppointmentResource.php app/Http/Resources/Patient/PatientDetailResource.php app/Http/Resources/Patient/PatientResource.php app/Http/Resources/Reports/ArrivedNotConvertedResource.php app/Http/Resources/Treatment/TreatmentDatatableResource.php app/Http/Resources/User/ApplicationUserResource.php app/Services/PatientManagement/PatientService.php tests/Feature/Patients/PatientContactPermissionTest.php)",
-      "Bash(vendor/bin/pint tests/Feature/Patients/PatientContactPermissionTest.php)",
-      "Bash(mysqldump -h 127.0.0.1 -u root cutera)",
-      "Read(//Users/shah4moon/**)",
-      "Bash(awk '{print $NF, $1, $2}')",
-      "Bash(herd --help)",
-      "Bash(herd list:*)",
-      "Bash(herd use:*)",
-      "Bash(tail -5 echo '---' grep -l 'DB::unprepared\\\\|CREATE TRIGGER' database/migrations/*.php)",
-      "Bash(head -5 echo '---' grep -l 'activitylogs\\\\|activity-logs' routes/*.php routes/*/*.php)"
+      "Bash(/c/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root crm -e \"SELECT location_id, COUNT\\(*\\) as cnt FROM packages WHERE deleted_at IS NULL GROUP BY location_id ORDER BY cnt DESC LIMIT 20;\")"
     ]
   }
 }

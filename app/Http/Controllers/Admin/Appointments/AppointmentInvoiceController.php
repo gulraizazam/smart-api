@@ -96,7 +96,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                         'package_services.service_id' => $appointment->service_id,
                         'package_services.is_consumed' => '0',
                         'packages.location_id' => $appointment->location_id,
-                    ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
+                    ])->select('packages.id', 'packages.name')->groupby('packages.id', 'packages.name')->orderBy('packages.id', 'desc')->get();
 
                 $status = 'true';
                 if ($packages->isEmpty()) {
@@ -451,7 +451,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $packagesservice = PackageService::find($request->package_service_id);
 
             // Update plan_name in packages table
-            $this->updatePlanNameForPackage($package_advances->package_id);
+            $this->updatePlanNameForPackage((int) $package_advances->package_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {
                 $patient = User::whereId($appointmentinfo->patient_id)->first();
@@ -511,7 +511,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $patientName = $patient->name ?? 'Unknown';
         $serviceName = $servicename->name ?? 'Service';
         $locationName = $location->name ?? '';
-        $amount = number_format($invoice_detail->net_amount);
+        $amount = number_format((float) $invoice_detail->net_amount);
         $scheduleDate = $appointmentinfo->scheduled_date ? date('M j, Y', strtotime((string) $appointmentinfo->scheduled_date)) : '';
 
         // Format description with highlights

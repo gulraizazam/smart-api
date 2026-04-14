@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
-use App\Helpers\ACL;
-use App\Models\Leads;
+use App\Services\Lead\LeadService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -21,113 +19,68 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
 
     public function __construct(
         private readonly mixed $request,
+        private readonly LeadService $leadService,
     ) {
         $this->canViewContact = Gate::allows('contact');
     }
 
     public function collection(): Collection
     {
-        $userCities = ACL::getUserCities();
-        $accountId = Auth::user()->account_id;
+        $datatableData = $this->leadService->getDatatableData($this->request->all(), null);
 
-        $query = Leads::query()
+        $query = $datatableData['query'];
+
+        if (! Gate::allows('view_inactive_leads')) {
+            $query->where('leads.active', 1);
+        }
+
+        $leads = $query
             ->with([
-                'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
-                'city:id,name',
-                'towns:id,name',
                 'region:id,name',
                 'lead_status:id,name',
                 'user:id,name',
             ])
-            ->where('account_id', $accountId)
-            ->where(function ($q) use ($userCities): void {
-                $q->whereIn('city_id', $userCities)
-                  ->orWhereNull('city_id');
-            });
-
-        $this->applyFilters($query);
-
-        if ($this->request->service_id) {
-            $serviceId = $this->request->service_id;
-            $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
-        }
-
-        $leads = $query->orderByDesc('id')->get();
+            ->orderBy($datatableData['orderBy'], $datatableData['order'])
+            ->get();
 
         $rows = [];
         foreach ($leads as $lead) {
-            $baseRow = [
+            $row = [
                 $lead->id,
                 $lead->name ?? 'N/A',
             ];
 
             if ($this->canViewContact) {
-                $baseRow[] = $lead->phone ?? 'N/A';
+                $row[] = $lead->phone ?? 'N/A';
             }
 
-            $baseRow = [
-                ...$baseRow,
+            $services = $lead->lead_service ?? collect();
+            $serviceNames = $services
+                ->map(fn($s): string => $s->service?->name ?? 'N/A')
+                ->filter()
+                ->unique()
+                ->implode(', ');
+            $treatmentNames = $services
+                ->map(fn($s): ?string => $s->childservice?->name)
+                ->filter()
+                ->unique()
+                ->implode(', ');
+
+            $rows[] = [
+                ...$row,
                 $lead->gender == 1 ? 'Male' : 'Female',
                 $lead->city?->name ?? 'N/A',
                 $lead->towns?->name ?? 'N/A',
                 $lead->region?->name ?? 'N/A',
                 $lead->lead_status?->name ?? 'N/A',
+                $serviceNames !== '' ? $serviceNames : 'N/A',
+                $treatmentNames !== '' ? $treatmentNames : 'N/A',
+                Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                $lead->user?->name ?? 'N/A',
             ];
-
-            if ($lead->lead_service && $lead->lead_service->count() > 0) {
-                foreach ($lead->lead_service as $service) {
-                    $rows[] = [
-                        ...$baseRow,
-                        $service->service?->name ?? 'N/A',
-                        $service->childservice?->name ?? 'Empty',
-                        Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                        $lead->user?->name ?? 'N/A',
-                    ];
-                }
-            } else {
-                $rows[] = [
-                    ...$baseRow,
-                    'N/A',
-                    'N/A',
-                    Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                    $lead->user?->name ?? 'N/A',
-                ];
-            }
         }
 
         return collect($rows);
-    }
-
-    private function applyFilters(mixed $query): void
-    {
-        if ($this->request->created_at) {
-            $dateRange = explode(' - ', $this->request->created_at);
-            $startDate = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
-            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 59)->format('Y-m-d H:i:s');
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
-
-        $exactFilters = [
-            'id' => 'id',
-            'lead_status_id' => 'lead_status_id',
-            'city_id' => 'city_id',
-            'location_id' => 'location_id',
-            'region_id' => 'region_id',
-            'created_by' => 'created_by',
-            'phone' => 'phone',
-            'gender_id' => 'gender',
-        ];
-
-        foreach ($exactFilters as $requestKey => $column) {
-            $value = $this->request->$requestKey;
-            if ($value && $value !== 'undefined' && $value !== 'null') {
-                $query->where($column, $value);
-            }
-        }
-
-        if ($this->request->name) {
-            $query->where('name', 'like', '%' . $this->request->name . '%');
-        }
     }
 
     public function headings(): array

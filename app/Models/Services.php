@@ -57,6 +57,13 @@ class Services extends BaseModel
         ];
     }
 
+    public function scopeRootServices(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        });
+    }
+
     /**
      * @deprecated Use ServiceService fillable list. Kept for legacy Admin controller.
      */

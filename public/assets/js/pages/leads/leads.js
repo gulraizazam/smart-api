@@ -144,13 +144,32 @@ var table_columns = [{
     width: 'auto',
 }];
 
-if (!_canShowContact) {
-    table_columns = table_columns.filter(function (col) { return col.field !== 'phone'; });
+window.leadStatusIsCommentMap = window.leadStatusIsCommentMap || {};
+
+function toggleLeadStatusComment(selectId, wrapperId, textareaId, fieldName) {
+    let statusId = $(selectId).val();
+    let isComment = parseInt(window.leadStatusIsCommentMap[statusId] || 0, 10) === 1;
+    if (isComment) {
+        $(textareaId).attr('name', fieldName);
+        $(wrapperId).removeClass('d-none');
+    } else {
+        $(textareaId).val('').attr('name', '');
+        $(wrapperId).addClass('d-none');
+    }
 }
 
 function editLeadStatus(lead_id) {
     $("#modal_change_status").modal("show");
     $("#lead_id").val(lead_id);
+
+    // Reset comment fields every time the modal opens so stale state from the
+    // previous lead doesn't carry over. They'll be shown again only if the
+    // corresponding status row has is_comment == 1.
+    $("#lead_status_comment1_wrapper").addClass('d-none');
+    $("#lead_status_comment1_id").val('').attr('name', '');
+    $("#lead_status_comment2_wrapper").addClass('d-none');
+    $("#lead_status_comment2_id").val('');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -165,6 +184,7 @@ function editLeadStatus(lead_id) {
                 let lead_status_chalid = response.data.lead_status_chalid;
                 let lead_statuses_Cdata = response.data.lead_statuses_Cdata;
                 let lead_status_parent = response.data.lead_status_parent;
+                window.leadStatusIsCommentMap = response.data.lead_status_is_comment_map || {};
                 let status_option = '<option value="">Select a Lead Status</option>';
                 if (statuses) {
                     Object.entries(statuses).forEach(function (status) {
@@ -189,10 +209,9 @@ function editLeadStatus(lead_id) {
                     $("#lead_status_chalid_id").removeClass('d-none');
                     $("#update_status_id").addClass('d-none');
                 }
-                if(lead_status_parent.is_comment == '1') {
-                    $("#lead_status_comment1_id").attr('name', 'comment1');
-                    $("#lead_status_comment1_id").removeClass('d-none');
-                }
+
+                toggleLeadStatusComment('#update_status_id', '#lead_status_comment1_wrapper', '#lead_status_comment1_id', 'comment1');
+                toggleLeadStatusComment('#lead_status_chalid_id', '#lead_status_comment2_wrapper', '#lead_status_comment2_id', 'comment2');
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -200,6 +219,14 @@ function editLeadStatus(lead_id) {
         }
     });
 }
+
+$(document).on('change', '#update_status_id', function() {
+    toggleLeadStatusComment('#update_status_id', '#lead_status_comment1_wrapper', '#lead_status_comment1_id', 'comment1');
+});
+
+$(document).on('change', '#lead_status_chalid_id', function() {
+    toggleLeadStatusComment('#lead_status_chalid_id', '#lead_status_comment2_wrapper', '#lead_status_comment2_id', 'comment2');
+});
 
 function updateLeadStatus() {
     showSpinner();
