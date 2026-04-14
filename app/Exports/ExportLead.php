@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
-use App\Helpers\ACL;
-use App\Models\Leads;
-use App\Models\LeadStatuses;
+use App\Services\Lead\LeadService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -22,43 +19,29 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
 
     public function __construct(
         private readonly mixed $request,
+        private readonly LeadService $leadService,
     ) {
         $this->canViewContact = Gate::allows('contact');
     }
 
     public function collection(): Collection
     {
-        $userCities = ACL::getUserCities();
-        $accountId = Auth::user()->account_id;
+        $datatableData = $this->leadService->getDatatableData($this->request->all(), null);
 
-        $query = Leads::query()
+        $query = $datatableData['query'];
+
+        if (! Gate::allows('view_inactive_leads')) {
+            $query->where('leads.active', 1);
+        }
+
+        $leads = $query
             ->with([
-                'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
-                'city:id,name',
-                'towns:id,name',
                 'region:id,name',
                 'lead_status:id,name',
                 'user:id,name',
             ])
-            ->where('account_id', $accountId)
-            ->where(function ($q) use ($userCities): void {
-                $q->whereIn('city_id', $userCities)
-                  ->orWhereNull('city_id');
-            });
-
-        $this->applyFilters($query);
-
-        if ($this->request->service_id) {
-            $serviceId = $this->request->service_id;
-            $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
-        }
-
-        $junkStatusId = LeadStatuses::where(['account_id' => $accountId, 'is_junk' => 1])->value('id');
-        if ($junkStatusId && (int) ($this->request->lead_status_id ?? 0) !== (int) $junkStatusId) {
-            $query->where('lead_status_id', '!=', $junkStatusId);
-        }
-
-        $leads = $query->orderByDesc('id')->get();
+            ->orderBy($datatableData['orderBy'], $datatableData['order'])
+            ->get();
 
         $rows = [];
         foreach ($leads as $lead) {
@@ -98,38 +81,6 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
         }
 
         return collect($rows);
-    }
-
-    private function applyFilters(mixed $query): void
-    {
-        if ($this->request->created_at) {
-            $dateRange = explode(' - ', $this->request->created_at);
-            $startDate = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
-            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 59)->format('Y-m-d H:i:s');
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
-
-        $exactFilters = [
-            'id' => 'id',
-            'lead_status_id' => 'lead_status_id',
-            'city_id' => 'city_id',
-            'location_id' => 'location_id',
-            'region_id' => 'region_id',
-            'created_by' => 'created_by',
-            'phone' => 'phone',
-            'gender_id' => 'gender',
-        ];
-
-        foreach ($exactFilters as $requestKey => $column) {
-            $value = $this->request->$requestKey;
-            if ($value && $value !== 'undefined' && $value !== 'null') {
-                $query->where($column, $value);
-            }
-        }
-
-        if ($this->request->name) {
-            $query->where('name', 'like', '%' . $this->request->name . '%');
-        }
     }
 
     public function headings(): array
