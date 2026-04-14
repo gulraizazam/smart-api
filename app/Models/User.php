@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -19,13 +20,17 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use GuardsTenantBoundary, HasApiTokens, HasFactory, Notifiable, HasRoles, SoftDeletes;
+    use GuardsTenantBoundary, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
+
+    // Audit-log policy for this model lives in config/activity_log.php
+    // (tiers → User::class = 'security', whitelists → User::class = [...]).
+    // No model-level trait is required for auto-observed models — the
+    // observer is attached centrally by AppServiceProvider.
 
     /**
      * H2 — failed-login lockout policy. Five wrong attempts → 15 minute
@@ -35,6 +40,7 @@ class User extends Authenticatable
      * source address.
      */
     public const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+
     public const LOGIN_LOCKOUT_MINUTES = 15;
 
     /**
@@ -160,7 +166,7 @@ class User extends Authenticatable
     protected function fullName(): Attribute
     {
         return Attribute::get(
-            fn (): string => ucfirst($this->name) . ' - ' . strtolower($this->email)
+            fn (): string => ucfirst($this->name).' - '.strtolower($this->email)
         );
     }
 
@@ -374,7 +380,7 @@ class User extends Authenticatable
         $query = static::where('account_id', $accountId)
             ->whereIn('user_type_id', [static::$PATIENT_GROUP]);
 
-        if (!empty($ids)) {
+        if (! empty($ids)) {
             $query->whereIn('id', $ids);
         }
 
@@ -501,6 +507,7 @@ class User extends Authenticatable
 
         if ($pluckColumns) {
             $pluckKey = $locationIds ? 'user_id' : 'id';
+
             return $results->pluck('name', $pluckKey);
         }
 

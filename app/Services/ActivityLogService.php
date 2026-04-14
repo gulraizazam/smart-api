@@ -1,60 +1,26 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Helpers\ActivityLogRenderer;
 use App\Models\Activity;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class ActivityLogService
 {
     /**
      * Get activity logs with optional filters
-     * 
-     * @param array $filters - Optional filters: patient_id, start_date, end_date, service_id, location_id, activity_type, user_id
-     * @return array
+     *
+     * @param  array  $filters  - Optional filters: patient_id, start_date, end_date, service_id, location_id, activity_type, user_id
      */
     public static function getActivityLogs(array $filters = []): array
     {
-        $query = Activity::with(['user', 'serviceR', 'patientR', 'centre'])
-            ->where('account_id', Auth::user()->account_id);
-
-        // Filter by patient_id if provided
-        if (!empty($filters['patient_id'])) {
-            $query->where('patient_id', $filters['patient_id']);
-        }
-
-        // Filter by date range
-        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            $startDate = $filters['start_date'] . ' 00:00:00';
-            $endDate = $filters['end_date'] . ' 23:59:59';
-            
-            $query->where(function($q) use ($startDate, $endDate) {
-                $q->whereBetween('created_at', [$startDate, $endDate])
-                  ->orWhereBetween('updated_at', [$startDate, $endDate]);
-            });
-        }
-
-        // Filter by service_id
-        if (!empty($filters['service_id'])) {
-            $query->where('service_id', $filters['service_id']);
-        }
-
-        // Filter by location_id (centre_id)
-        if (!empty($filters['location_id'])) {
-            $query->where('centre_id', $filters['location_id']);
-        }
-
-        // Filter by activity_type
-        if (!empty($filters['activity_type']) && $filters['activity_type'] !== 'all') {
-            $query->where('activity_type', $filters['activity_type']);
-        }
-
-        // Filter by user_id
-        if (!empty($filters['user_id'])) {
-            $query->where('created_by', $filters['user_id']);
-        }
+        $query = self::buildQuery($filters);
 
         $activities = $query->orderBy('created_at', 'desc')->get();
 
@@ -62,18 +28,227 @@ class ActivityLogService
     }
 
     /**
-     * Format activities for display
+     * Stream ALL rows matching the filters for CSV export. Uses lazy() so
+     * memory stays bounded even on 100k+ results. Returns a generator of
+     * rendered rows with plain-text description (HTML stripped) plus
+     * actor/tag columns suitable for a CSV file.
+     *
+     * @return \Generator<int, array<string, string>>
+     */
+    public static function streamActivityLogs(array $filters = []): \Generator
+    {
+        $query = self::buildQuery($filters)->orderByDesc('id');
+
+        foreach ($query->lazy(1000) as $activity) {
+            $rendered = ActivityLogRenderer::renderCompact($activity);
+            $plain = $rendered !== null
+                ? trim(strip_tags($rendered))
+                : trim(strip_tags((string) $activity->description));
+
+            // Extract tag from the rendered HTML (first act-tag span content).
+            $tag = '';
+            if ($rendered !== null && preg_match('/<span class="act-tag[^"]*">([^<]+)<\/span>/', $rendered, $m)) {
+                $tag = trim($m[1]);
+            }
+
+            yield [
+                'created_at' => (string) ($activity->created_at ?? ''),
+                'tag' => $tag,
+                'activity_type' => (string) ($activity->activity_type ?? ''),
+                'actor' => (string) ($activity->user->name ?? ''),
+                'description_plain' => $plain,
+            ];
+        }
+    }
+
+    /**
+     * Cursor-paginated variant for the activity logs report.
+     * Separate from getActivityLogs() to avoid changing the patient-card
+     * contract (PatientService expects an array of all rows for a single
+     * patient — bounded and small). Reports filter the full tenant set
+     * which easily exceeds memory without pagination.
+     *
+     * @return array{data: array, next_cursor: ?string, total: ?int}
+     */
+    public static function paginateActivityLogs(array $filters = [], ?string $cursor = null, int $perPage = 100): array
+    {
+        $query = self::buildQuery($filters)->orderByDesc('id');
+
+        /** @var CursorPaginator $paginator */
+        $paginator = $query->cursorPaginate(
+            perPage: $perPage,
+            cursor: $cursor ? Cursor::fromEncoded($cursor) : null,
+        );
+
+        $total = $cursor === null ? (clone $query)->toBase()->getCountForPagination() : null;
+
+        return [
+            'data' => self::formatActivities($paginator->items()),
+            'next_cursor' => $paginator->nextCursor()?->encode(),
+            'total' => $total,
+        ];
+    }
+
+    private static function buildQuery(array $filters)
+    {
+        $query = Activity::with(['user', 'serviceR', 'patientR', 'centre'])
+            ->where('account_id', Auth::user()->account_id);
+
+        // Row-level access control per HIPAA §164.312(a)(1). Users without
+        // `activity_logs_view_all` see only their own actions (rows where
+        // created_by matches their id). Super-Admin passes through via the
+        // global Gate::before. Compliance/audit roles should be granted the
+        // view-all permission explicitly.
+        if (! Gate::allows('activity_logs_view_all')) {
+            $query->where('created_by', Auth::id());
+        }
+
+        // Suppress activity types configured as display-hidden (e.g. lead_converted
+        // which fires as a pair with appointment_converted and adds no new info).
+        $suppressed = (array) config('activity_log.suppress_from_display', []);
+        if ($suppressed !== []) {
+            $query->whereNotIn('activity_type', $suppressed);
+        }
+
+        if (! empty($filters['patient_id'])) {
+            $query->where('patient_id', $filters['patient_id']);
+        }
+
+        if (! empty($filters['start_date']) && ! empty($filters['end_date'])) {
+            $startDate = $filters['start_date'].' 00:00:00';
+            $endDate = $filters['end_date'].' 23:59:59';
+
+            $query->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('created_at', [$startDate, $endDate])
+                    ->orWhereBetween('updated_at', [$startDate, $endDate]);
+            });
+        }
+
+        if (! empty($filters['service_id'])) {
+            $query->where('service_id', $filters['service_id']);
+        }
+
+        if (! empty($filters['location_id'])) {
+            $query->where('centre_id', $filters['location_id']);
+        }
+
+        if (! empty($filters['activity_type']) && $filters['activity_type'] !== 'all') {
+            $query->where('activity_type', $filters['activity_type']);
+        }
+
+        if (! empty($filters['user_id'])) {
+            $query->where('created_by', $filters['user_id']);
+        }
+
+        // Freetext search across the stored description. LIKE with a leading
+        // wildcard is unindexed, but description is short (varchar 2000) and
+        // the other filters (account_id, created_at range) pre-narrow the
+        // scan to a manageable window. Escape % and _ to avoid operator
+        // injection from the search term itself.
+        if (! empty($filters['search'])) {
+            $escaped = addcslashes((string) $filters['search'], '%_\\');
+            $query->where('description', 'like', '%'.$escaped.'%');
+        }
+
+        // Amount range — financial events carry `amount` as decimal/string
+        // depending on writer. Compare as numeric.
+        if (isset($filters['amount_min']) && $filters['amount_min'] !== '' && is_numeric($filters['amount_min'])) {
+            $query->where('amount', '>=', (float) $filters['amount_min']);
+        }
+        if (isset($filters['amount_max']) && $filters['amount_max'] !== '' && is_numeric($filters['amount_max'])) {
+            $query->where('amount', '<=', (float) $filters['amount_max']);
+        }
+
+        // Multi-select tag families. For each tag, include its known
+        // activity_type values AND prefix-match patterns. All tags OR'd
+        // together, then AND'd into the outer query.
+        if (! empty($filters['tags']) && is_array($filters['tags'])) {
+            $allTypes = [];
+            $allPrefixes = [];
+            foreach ($filters['tags'] as $tag) {
+                $spec = ActivityLogRenderer::filterSpecForTag((string) $tag);
+                $allTypes = array_merge($allTypes, $spec['types']);
+                $allPrefixes = array_merge($allPrefixes, $spec['prefixes']);
+            }
+            $allTypes = array_values(array_unique($allTypes));
+            $allPrefixes = array_values(array_unique($allPrefixes));
+
+            $query->where(function ($q) use ($allTypes, $allPrefixes): void {
+                if ($allTypes !== []) {
+                    $q->whereIn('activity_type', $allTypes);
+                }
+                foreach ($allPrefixes as $prefix) {
+                    $escaped = addcslashes($prefix, '%_\\');
+                    $q->orWhere('activity_type', 'like', $escaped.'%');
+                }
+            });
+
+            // VISIT tag narrows invoice_created to amount=0; CONS excludes
+            // amount=0 invoice_created rows (those are VISIT).
+            $hasVisit = in_array('VISIT', $filters['tags'], true);
+            $hasCons = in_array('CONS', $filters['tags'], true);
+            if ($hasVisit && ! $hasCons) {
+                $query->where(function ($q): void {
+                    $q->where('activity_type', '!=', 'invoice_created')
+                        ->orWhere('amount', '=', 0)
+                        ->orWhereNull('amount');
+                });
+            } elseif ($hasCons && ! $hasVisit) {
+                $query->where(function ($q): void {
+                    $q->where('activity_type', '!=', 'invoice_created')
+                        ->orWhere('amount', '>', 0);
+                });
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * Format activities for display.
+     *
+     * Appends "— by <actor>" to the stored description at render time
+     * (never at write time). The stored `description` column stays
+     * PII-free and compact; the actor name is derived live from the
+     * eager-loaded `user` relation (belongsTo via created_by). Skips
+     * the append when the description already mentions the actor (the
+     * legacy ActivityLogger helper often embeds the name already).
      */
     private static function formatActivities(mixed $activities): array
     {
         $data = [];
-        
+
         foreach ($activities as $activity) {
             $timestamp = $activity->updated_at ?? $activity->created_at;
-            
+
+            // Compact renderer (HIPAA-aligned) handles ~98% of the feed with
+            // structured column reads — bypasses the stored description
+            // entirely and produces a colored-tag line. Returns null for
+            // unknown types; caller falls back to legacy path below.
+            $compact = ActivityLogRenderer::renderCompact($activity);
+
+            if ($compact !== null) {
+                $description = $compact;
+                // Compact already formats "· by Actor" inline; skip appendActor.
+            } else {
+                $description = $activity->description;
+                if ($description === null) {
+                    if (config('features.activities_strict_descriptions', false)) {
+                        throw new \RuntimeException(
+                            "Activity #{$activity->id} has no stored description. ".
+                            'Producers must populate `description` at write time. '.
+                            '(Disable config(features.activities_strict_descriptions) to fall back to runtime rendering.)'
+                        );
+                    }
+                    $description = ActivityLogRenderer::render($activity);
+                }
+
+                $description = self::appendActor($activity, $description);
+            }
+
             $data[] = [
                 'type' => $activity->activity_type ?? $activity->action ?? 'unknown',
-                'description' => $activity->description ?? self::buildActivityDescription($activity),
+                'description' => $description,
                 'created_at' => $timestamp,
                 'time_formatted' => date('M j, Y g:i A', strtotime($timestamp)),
                 'time_short' => date('m-d-Y H:i', strtotime($timestamp)),
@@ -83,184 +258,26 @@ class ActivityLogService
         return $data;
     }
 
-    /**
-     * Build activity description from activity record if description is not set
-     */
-    private static function buildActivityDescription(mixed $activity): string
+    private static function appendActor(mixed $activity, string $description): string
     {
-        $action = $activity->action ?? 'Activity';
-        $patient = e($activity->patientR->name ?? $activity->patient ?? '');
-        $service = e($activity->serviceR->name ?? $activity->service ?? '');
-        $location = e($activity->centre->name ?? $activity->location ?? '');
-        $amount = $activity->amount ?? '';
-        $planId = $activity->plan_id ?? '';
-        $appointmentType = e($activity->appointment_type ?? '');
-        $scheduleDate = $activity->schedule_date ?? '';
-        $createdBy = $activity->created_by ?? '';
+        $actor = $activity->user?->name;
+        if ($actor === null || $actor === '') {
+            return $description;
+        }
 
-        // Get creator name (escaped to prevent XSS)
-        $creatorName = e(self::getCreatorName($activity));
-        
-        // Format date
-        $dateStr = '';
-        if ($scheduleDate) {
-            $dateStr = date('M j, Y', strtotime($scheduleDate));
-        } elseif ($activity->created_at) {
-            $dateStr = date('M j, Y', strtotime((string) $activity->created_at));
+        if (str_contains($description, $actor)) {
+            return $description;
         }
-        
-        $type = $activity->activity_type ?? '';
-        
-        switch ($type) {
-            case 'lead_created':
-                return '<span class="highlight">' . $creatorName . '</span> created a lead for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'lead_booked':
-                return '<span class="highlight">' . $creatorName . '</span> booked a <span class="highlight-orange">' . ($service ?: 'Service') . '</span> Consultation for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'lead_arrived':
-                return '<span class="highlight">' . $creatorName . '</span> marked <span class="highlight-orange">' . $patient . '</span> as arrived' . ($service ? ' for <span class="highlight-orange">' . $service . '</span>' : '') . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'consultation_booked':
-            case 'Consultancy':
-                return '<span class="highlight">' . $creatorName . '</span> booked <span class="highlight-orange">' . ($service ?: 'Service') . '</span> Consultation for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'treatment_booked':
-                return '<span class="highlight">' . $creatorName . '</span> booked <span class="highlight-orange">' . ($service ?: 'Service') . '</span> Treatment for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'package_created':
-                return '<span class="highlight">' . $creatorName . '</span> created Package <span class="highlight-purple">Plan Id: ' . $planId . '</span>' . ($amount ? ' for Rs. ' . number_format($amount) : '') . ' for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'payment_received':
-                return '<span class="highlight">' . $creatorName . '</span> received payment <span class="highlight-green">Rs. ' . number_format($amount) . '</span> from <span class="highlight-orange">' . $patient . '</span>' . ($planId ? ' for <span class="highlight-purple">Plan Id: ' . $planId . '</span>' : '') . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'refund_made':
-                return '<span class="highlight">' . $creatorName . '</span> made refund <span class="highlight-green">Rs. ' . number_format($amount) . '</span> to <span class="highlight-orange">' . $patient . '</span>' . ($planId ? ' for <span class="highlight-purple">Plan Id: ' . $planId . '</span>' : '') . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'invoice_created':
-                return '<span class="highlight">' . $creatorName . '</span> created invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . ($appointmentType ?: $service ?: 'Consultation') . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'appointment_updated':
-                return '<span class="highlight">' . $creatorName . '</span> updated <span class="highlight-orange">' . ($service ?: 'Service') . '</span> appointment for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'membership_assigned':
-                return '<span class="highlight">' . $creatorName . '</span> assigned membership to <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'membership_cancelled':
-                return '<span class="highlight">' . $creatorName . '</span> cancelled membership for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'appointment_converted':
-                return '<span class="highlight-orange">' . $patient . '</span>\'s <span class="highlight-orange">' . ($service ?: 'Service') . '</span> Consultation status changed to <span class="highlight-green">Converted</span>' . ($amount ? ' with payment of <span class="highlight-green">Rs. ' . number_format($amount) . '</span>' : '') . ($planId ? ' in <span class="highlight-purple">Plan #' . sprintf('%05d', $planId) . '</span>' : '');
-            
-            case 'lead_converted':
-                return '<span class="highlight-orange">' . ($service ?: 'Service') . '</span> lead status changed to <span class="highlight-green">Converted</span> against <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($amount ? ' with payment of <span class="highlight-green">Rs. ' . number_format($amount) . '</span>' : '');
-            
-            case 'consultation_deleted':
-            case 'treatment_deleted':
-                $apptType = $type == 'consultation_deleted' ? 'Consultation' : 'Treatment';
-                return '<span class="highlight">' . $creatorName . '</span> deleted <span class="highlight-orange">' . $patient . '</span>\'s <span class="highlight-orange">' . ($service ?: 'Service') . '</span> ' . $apptType . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' scheduled on ' . $dateStr : '');
-            
-            case 'patient_updated':
-                return '<span class="highlight">' . $creatorName . '</span> updated <span class="highlight-orange">' . $patient . '</span>\'s profile' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'invoice_cancelled':
-                return '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patient . '</span>\'s <span class="highlight-orange">' . ($service ?: $appointmentType ?: 'Consultation') . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'feedback_added':
-                return '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($service ?: 'Service') . '</span> against <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' scheduled on <span class="highlight-purple">' . $dateStr . '</span>' : '');
-            
-            case 'voucher_assigned':
-                return '<span class="highlight">' . $creatorName . '</span> assigned voucher of <span class="highlight-green">Rs. ' . number_format($amount) . '</span> to <span class="highlight-orange">' . $patient . '</span>';
-            
-            case 'voucher_updated':
-                return '<span class="highlight">' . $creatorName . '</span> updated voucher amount to <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patient . '</span>';
-            
-            case 'voucher_consumed':
-                return '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> consumed from voucher against <span class="highlight-orange">' . $patient . '</span>';
-            
-            case 'voucher_refunded':
-                return '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> refunded to voucher for <span class="highlight-orange">' . $patient . '</span>';
-            
-            case 'note_added':
-                return '<span class="highlight">' . $creatorName . '</span> added a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'note_updated':
-                return '<span class="highlight">' . $creatorName . '</span> updated a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'note_deleted':
-                return '<span class="highlight">' . $creatorName . '</span> deleted a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
-            
-            default:
-                // Fallback for existing records - check action field
-                return self::buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr);
-        }
-    }
 
-    /**
-     * Build fallback description for old records based on action field
-     */
-    private static function buildFallbackDescription(mixed $activity, string $creatorName, string $patient, string $service, string $location, mixed $amount, mixed $planId, string $appointmentType, string $dateStr): string
-    {
-        $action = $activity->action ?? '';
-        
-        switch ($action) {
-            case 'booked':
-            case 'treatment_booked':
-            case 'Treatment Booked':
-                $activityType = $activity->activity_type == 'Consultancy' ? 'Consultation' : ($activity->activity_type ?? 'Consultation');
-                return '<span class="highlight">' . $creatorName . '</span> booked <span class="highlight-orange">' . ($service ?: 'Service') . '</span> ' . $activityType . ' for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'received':
-                if ($appointmentType == "Plan" || $planId) {
-                    return '<span class="highlight">' . $creatorName . '</span> received payment <span class="highlight-green">Rs. ' . number_format($amount) . '</span> from <span class="highlight-orange">' . $patient . '</span> for <span class="highlight-purple">Plan Id: ' . $planId . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-                }
-                return '<span class="highlight">' . $creatorName . '</span> received payment' . ($amount ? ' <span class="highlight-green">Rs. ' . number_format($amount) . '</span>' : '') . ' from <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'consumed':
-                $activityType = $activity->activity_type == 'Consultancy' ? 'Consultation' : ($activity->activity_type ?? '');
-                return '<span class="highlight">' . $creatorName . '</span> consumed <span class="highlight-green">Rs. ' . number_format($amount) . '</span> from <span class="highlight-orange">' . $patient . '</span> for <span class="highlight-orange">' . ($service ?: $appointmentType ?: 'Service') . '</span> ' . $activityType . ($location ? ' at <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'rescheduled':
-            case 'Appointment Rescheduled':
-            case 'Appointment Updated':
-                $activityType = $activity->activity_type == 'Consultancy' ? 'Consultation' : ($activity->activity_type ?? '');
-                return '<span class="highlight">' . $creatorName . '</span> ' . strtolower($action) . ' <span class="highlight-orange">' . ($service ?: 'Service') . '</span> ' . $activityType . ' for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-            
-            case 'deleted':
-                $activityType = $activity->activity_type == 'Consultancy' ? 'Consultation' : ($activity->activity_type ?? '');
-                return '<span class="highlight">' . $creatorName . '</span> deleted <span class="highlight-orange">' . ($service ?: 'Service') . '</span> ' . $activityType . ' for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' scheduled on ' . $dateStr : '');
-            
-            default:
-                if ($patient) {
-                    return '<span class="highlight">' . $creatorName . '</span> ' . strtolower($action ?: 'activity') . ' for <span class="highlight-orange">' . $patient . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
-                }
-                return '<span class="highlight">' . $creatorName . '</span> performed ' . ($action ?: 'activity');
-        }
-    }
-
-    /**
-     * Get creator name from activity
-     */
-    private static function getCreatorName(mixed $activity): string
-    {
-        // If user relationship exists and has name, use it
-        if ($activity->user && $activity->user->name) {
-            return $activity->user->name;
-        }
-        
-        // If created_by is not numeric (old records stored name directly), return it
-        if (!is_numeric($activity->created_by) && $activity->created_by) {
-            return $activity->created_by;
-        }
-        
-        // If created_by is numeric, try to find the user
-        if (is_numeric($activity->created_by) && $activity->created_by > 0) {
-            $user = DB::table('users')->where('id', $activity->created_by)->first();
-            if ($user) {
-                return $user->name;
+        $createdBy = (int) ($activity->created_by ?? 0);
+        if ($createdBy > 0) {
+            $subjectPattern = '/User#'.preg_quote((string) $createdBy, '/').'\b/';
+            if (preg_match($subjectPattern, $description) === 1) {
+                // Self-action — don't repeat the actor name.
+                return $description;
             }
         }
-        
-        return 'System';
+
+        return $description.' — by '.$actor;
     }
 }

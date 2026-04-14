@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\AppointmentEvent;
+use App\Events\CustomFormEvent;
+use App\Events\CustomFormFieldEvent;
+use App\Listeners\AuthActivityListener;
+use App\Listeners\PermissionActivityListener;
 use App\Models\Appointments;
 use App\Models\CashFlow\CashTransfer;
 use App\Models\CashFlow\Expense;
@@ -20,9 +25,7 @@ use App\Models\Patients;
 use App\Models\PlanInvoice;
 use App\Models\Services;
 use App\Models\User;
-use App\Events\AppointmentEvent;
-use App\Events\CustomFormEvent;
-use App\Events\CustomFormFieldEvent;
+use App\Observers\ActivityLogObserver;
 use App\Observers\CashFlow\CashTransferObserver;
 use App\Observers\CashFlow\ExpenseObserver;
 use App\Observers\CashFlow\LocationCashflowObserver;
@@ -39,13 +42,25 @@ use App\Policies\PatientPolicy;
 use App\Policies\PlanPolicy;
 use App\Policies\ServicePolicy;
 use App\Policies\UserPolicy;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Lockout;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Events\PermissionAttached;
+use Spatie\Permission\Events\PermissionDetached;
+use Spatie\Permission\Events\RoleAttached;
+use Spatie\Permission\Events\RoleDetached;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 class AppServiceProvider extends ServiceProvider
@@ -68,6 +83,128 @@ class AppServiceProvider extends ServiceProvider
         $this->ensurePermissionCacheHealth();
         $this->registerObservers();
         $this->registerAuditEventListeners();
+        $this->registerAuthEventListeners();
+        $this->registerObservedModels();
+    }
+
+    /**
+     * Attach App\Observers\ActivityLogObserver to every Eloquent model
+     * under App\Models (recursive) except those in
+     * config('activity_log.exclude'). Adding a new module to the audit
+     * log requires zero code changes — the model is picked up on the
+     * next boot and its rows start flowing into `activities` at the
+     * configured tier (or `default_tier` if unlisted).
+     *
+     * Discovery is cached (file store; no Redis per infra constraint) for
+     * one hour in production to avoid filesystem-walking every boot. In
+     * local/testing the cache TTL is short so new model files are
+     * picked up without manual cache flushing.
+     */
+    private function registerObservedModels(): void
+    {
+        if (! (bool) config('activity_log.enabled', true)) {
+            return;
+        }
+
+        $exclude = (array) config('activity_log.exclude', []);
+        $tierOverrides = (array) config('activity_log.tiers', []);
+        $defaultTier = config('activity_log.default_tier');
+        $autoDiscover = (bool) config('activity_log.auto_discover', true);
+
+        $classes = $autoDiscover
+            ? $this->discoverModelClasses()
+            : array_keys($tierOverrides);
+
+        foreach ($classes as $class) {
+            if (in_array($class, $exclude, true)) {
+                continue;
+            }
+
+            if (! class_exists($class)) {
+                continue;
+            }
+
+            // Skip abstract models (e.g. BaseModel) and non-model classes
+            // that happen to live under app/Models (helpers, enums).
+            if (! is_subclass_of($class, Model::class)) {
+                continue;
+            }
+
+            $reflect = new \ReflectionClass($class);
+            if ($reflect->isAbstract()) {
+                continue;
+            }
+
+            // Skip if the class has no resolvable tier — neither in the
+            // overrides map nor a global default — meaning the operator
+            // has explicitly opted that class out.
+            $hasExplicitTier = isset($tierOverrides[$class]);
+            if (! $hasExplicitTier && $defaultTier === null) {
+                continue;
+            }
+
+            $class::observe(ActivityLogObserver::class);
+        }
+    }
+
+    /**
+     * @return array<int, class-string>
+     */
+    private function discoverModelClasses(): array
+    {
+        $ttl = app()->environment('production') ? 3600 : 60;
+
+        return Cache::remember(
+            'activity_log.discovered_models',
+            $ttl,
+            static function (): array {
+                $base = app_path('Models');
+                if (! is_dir($base)) {
+                    return [];
+                }
+
+                $classes = [];
+                $iterator = new \RecursiveIteratorIterator(
+                    new \RecursiveDirectoryIterator($base, \FilesystemIterator::SKIP_DOTS)
+                );
+
+                foreach ($iterator as $file) {
+                    if (! $file->isFile() || $file->getExtension() !== 'php') {
+                        continue;
+                    }
+
+                    $relative = str_replace([$base.DIRECTORY_SEPARATOR, '.php'], '', $file->getRealPath());
+                    $class = 'App\\Models\\'.str_replace(DIRECTORY_SEPARATOR, '\\', $relative);
+                    $classes[] = $class;
+                }
+
+                sort($classes);
+
+                return $classes;
+            },
+        );
+    }
+
+    /**
+     * Write a security-tier row to `activities` for every auth event
+     * (login, logout, failed login, lockout, password reset). The listener
+     * itself handles PII redaction — see App\Listeners\AuthActivityListener.
+     */
+    private function registerAuthEventListeners(): void
+    {
+        foreach ([
+            Login::class => [AuthActivityListener::class, 'onLogin'],
+            Logout::class => [AuthActivityListener::class, 'onLogout'],
+            Failed::class => [AuthActivityListener::class, 'onFailed'],
+            Lockout::class => [AuthActivityListener::class, 'onLockout'],
+            PasswordReset::class => [AuthActivityListener::class, 'onPasswordReset'],
+            RoleAttached::class => [PermissionActivityListener::class, 'onRoleAttached'],
+            RoleDetached::class => [PermissionActivityListener::class, 'onRoleDetached'],
+            PermissionAttached::class => [PermissionActivityListener::class, 'onPermissionAttached'],
+            PermissionDetached::class => [PermissionActivityListener::class, 'onPermissionDetached'],
+        ] as $eventClass => $handler) {
+            Event::listen($eventClass, $handler);
+        }
     }
 
     /**
@@ -117,7 +254,7 @@ class AppServiceProvider extends ServiceProvider
             $cached = $registrar->getPermissions();
 
             if ($cached->count() < 50) {
-                $dbCount = \Spatie\Permission\Models\Permission::count();
+                $dbCount = Permission::count();
                 if ($dbCount > 50 && $cached->count() < $dbCount * 0.5) {
                     $registrar->forgetCachedPermissions();
                 }
@@ -129,7 +266,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        RateLimiter::for('api', fn(Request $request): Limit => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
     }
 
     private function configureAuthorization(): void
@@ -145,7 +282,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Membership::class, MembershipPolicy::class);
         Gate::policy(CashFlowPolicy::class, CashFlowPolicy::class);
 
-        Gate::before(fn($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
+        Gate::before(fn ($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
     }
 
     private function registerObservers(): void
