@@ -1006,7 +1006,9 @@ function setFilters(filter_values, active_filters) {
         $("#date_range").val(active_filters.created_at);
         $("#search_created_by").val(active_filters.created_by);
         hideShowAdvanceFilters(active_filters);
-        getUserCity();
+        if (!active_filters.city_id) {
+            getUserCity();
+        }
     } catch (error) {
         showException(error);
     }
