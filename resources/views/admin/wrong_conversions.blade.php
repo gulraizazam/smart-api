@@ -93,7 +93,7 @@
                                             <tr>
                                                 <td>{{ $appointment->id }}</td>
                                                 <td>{{ $appointment->patient->name ?? 'N/A' }}</td>
-                                                <td>{{ $appointment->patient->phone ?? 'N/A' }}</td>
+                                                <td>{{ \Illuminate\Support\Facades\Gate::allows('contact') ? ($appointment->patient->phone ?? 'N/A') : '***********' }}</td>
                                                 <td>{{ $appointment->service->name ?? 'N/A' }}</td>
                                                 <td>{{ $appointment->location->name ?? 'N/A' }}</td>
                                                 <td>{{ $appointment->doctor->name ?? 'N/A' }}</td>

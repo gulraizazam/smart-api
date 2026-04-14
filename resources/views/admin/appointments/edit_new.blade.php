@@ -84,7 +84,11 @@
                         <div class="col-md-12">
                             <input type="hidden" name="lead_id" id="lead_id" value="{{ $appointment->lead_id }}" />
                             {!! Form::select('service_id', $services, $appointment->service_id, ['id' => 'service_id', 'class' => 'required']) !!}
-                            <input id="mobile" readonly="true" name="phone" type="number" size="11" class="required custom-input" value="{{ $appointment->lead->patient->phone }}" placeholder="Patient Phone*">
+                            @can('contact')
+                                <input id="mobile" readonly="true" name="phone" type="number" size="11" class="required custom-input" value="{{ $appointment->lead->patient->phone }}" placeholder="Patient Phone*">
+                            @else
+                                <input id="mobile" type="hidden" name="phone" value="{{ $appointment->lead->patient->phone }}">
+                            @endcan
                             <input id="name" name="name" type="text" class="required custom-input" value="{{ ($appointment->name) ? $appointment->name : $appointment->lead->patient->name }}" placeholder="Patient Name*">
                         </div>
                         <div class="col-md-12">

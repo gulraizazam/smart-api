@@ -9,6 +9,7 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
+use App\Helpers\PatientAccessScope;
 use App\Services\Phone\PhoneFormattingService;
 use App\Models\Activity;
 use App\Models\Appointments;
@@ -455,9 +456,20 @@ class PatientService
         $userCentres = ACL::getUserCentres();
 
         return [
-            'appointments' => $patient->appointments()->where('account_id', $accountId)->count(),
-            'consultations' => $patient->appointments()->where('account_id', $accountId)->where('appointment_type_id', 1)->count(),
-            'treatments' => $patient->appointments()->where('account_id', $accountId)->where('appointment_type_id', 2)->count(),
+            'appointments' => $patient->appointments()
+                ->where('account_id', $accountId)
+                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->count(),
+            'consultations' => $patient->appointments()
+                ->where('account_id', $accountId)
+                ->where('appointment_type_id', 1)
+                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->count(),
+            'treatments' => $patient->appointments()
+                ->where('account_id', $accountId)
+                ->where('appointment_type_id', 2)
+                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->count(),
             'vouchers' => UserVouchers::where('user_id', $patientId)->count(),
             'documents' => $patient->documents()->count(),
             'plans' => $patient->packages()
@@ -619,6 +631,12 @@ class PatientService
         $baseQuery = Patients::where('user_type_id', Config::get('constants.patient_id'))
             ->where('active', 1)
             ->where('account_id', $accountId);
+
+        // Restrict typeahead to patients with an appointment at a centre the
+        // caller is assigned to. No-op for super-admin or "All Centres" users;
+        // forces 1=0 when the caller has zero assignments. Applied to the base
+        // query so every cloned branch (id, phone, name) inherits it.
+        PatientAccessScope::applyTo($baseQuery);
 
         if (is_numeric($cleanedSearch)) {
             $numericValue = (int) $cleanedSearch;

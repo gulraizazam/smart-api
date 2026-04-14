@@ -19,7 +19,7 @@ class ConsultancyResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'phone' => $canViewContact ? $this->patient?->phone : '***********',
+            'phone' => $this->when($canViewContact, fn () => $this->patient?->phone),
             'patient_id' => $this->patient_id,
             'lead_id' => $this->lead_id,
             'consultancy_type' => $this->consultancy_type,
@@ -57,11 +57,18 @@ class ConsultancyResource extends JsonResource
                 : null,
             'arrived_at' => $this->arrived_at,
             'converted_at' => $this->converted_at,
-            'patient' => $this->whenLoaded('patient', fn () => [
-                'id' => $this->patient->id,
-                'name' => $this->patient->name,
-                'phone' => $canViewContact ? $this->patient->phone : '***********',
-            ]),
+            'patient' => $this->whenLoaded('patient', function () use ($canViewContact): array {
+                $patient = [
+                    'id' => $this->patient->id,
+                    'name' => $this->patient->name,
+                ];
+
+                if ($canViewContact) {
+                    $patient['phone'] = $this->patient->phone;
+                }
+
+                return $patient;
+            }),
             'lead' => $this->whenLoaded('lead', fn () => [
                 'id' => $this->lead->id,
                 'name' => $this->lead->name,

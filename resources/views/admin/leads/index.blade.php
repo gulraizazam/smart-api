@@ -360,6 +360,7 @@
             }
 
             // Lead Search for Filter
+            const canViewContact = @json(\Illuminate\Support\Facades\Gate::allows('contact'));
             let leadSearchDebounceTimer;
             $('.lead_search_filter').on('keyup', function() {
                 let searchValue = $(this).val();
@@ -397,7 +398,9 @@
                                 
                                 if (leads.length) {
                                     leads.forEach(function(lead) {
-                                        html += '<li onclick="selectLeadFilter(\'' + lead.id + '\', \'' + lead.name + '\', \'' + lead.phone + '\');" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;">' + lead.name + ' - ' + lead.phone + '</li>';
+                                        var phoneArg = canViewContact ? lead.phone : '';
+                                        var labelSuffix = canViewContact ? (' - ' + lead.phone) : (' - ID ' + lead.id);
+                                        html += '<li onclick="selectLeadFilter(\'' + lead.id + '\', \'' + lead.name + '\', \'' + phoneArg + '\');" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;">' + lead.name + labelSuffix + '</li>';
                                     });
                                     $('.suggestion-list-leads').html(html);
                                     $('.suggesstion-box-leads').show();
@@ -414,8 +417,12 @@
             function selectLeadFilter(id, name, phone) {
                 $('#search_id').val(id);
                 $('#search_full_name').val(name);
-                $('#search_phone').val(phone);
-                $('.lead_search_filter').val(name + ' - ' + phone);
+                if (canViewContact) {
+                    $('#search_phone').val(phone);
+                    $('.lead_search_filter').val(name + ' - ' + phone);
+                } else {
+                    $('.lead_search_filter').val(name + ' - ID ' + id);
+                }
                 $('.suggesstion-box-leads').hide();
             }
 

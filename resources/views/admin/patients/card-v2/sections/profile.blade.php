@@ -24,16 +24,12 @@
                     <td class="text-muted">Email</td>
                     <td>{{ $patient->email ?? '-' }}</td>
                 </tr>
-                <tr>
-                    <td class="text-muted">Phone</td>
-                    <td>
-                        @if($permissions['contact'])
-                            {{ $patient->phone ?? '-' }}
-                        @else
-                            ***********
-                        @endif
-                    </td>
-                </tr>
+                @if($permissions['contact'])
+                    <tr>
+                        <td class="text-muted">Phone</td>
+                        <td>{{ $patient->phone ?? '-' }}</td>
+                    </tr>
+                @endif
                 <tr>
                     <td class="text-muted">Gender</td>
                     <td>
@@ -191,12 +187,9 @@
         $("#edit_gender_id").html(gender_option);
         $("#edit_name").val(patient.name);
         $("#edit_email").val(patient.email);
-        $("#edit_old_phone").val(patient.phone);
-
         @if($permissions['contact'])
+            $("#edit_old_phone").val(patient.phone);
             $("#edit_phone").val(patient.phone);
-        @else
-            $("#edit_phone").val("***********").attr("readonly", true);
         @endif
 
         $("#edit_gender_id").val(patient.gender);

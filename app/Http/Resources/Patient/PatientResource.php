@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Resources\Patient;
 
 use App\Enums\Gender;
-use App\Helpers\GeneralFunctions;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -22,9 +21,7 @@ class PatientResource extends JsonResource
             'patient_code' => "C-{$this->id}",
             'name' => $this->name,
             'email' => $this->email,
-            'phone' => $canViewContact
-                ? GeneralFunctions::contactStatus($this->phone)
-                : '***********',
+            'phone' => $this->when($canViewContact, fn () => $this->phone),
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => Gender::tryFrom((int) ($this->resource->getAttributes()['gender'] ?? 0))?->label() ?? 'N/A',
             'active' => $this->active,

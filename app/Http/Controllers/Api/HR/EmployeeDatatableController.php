@@ -59,7 +59,7 @@ class EmployeeDatatableController extends Controller
                 'data' => $data,
                 'permissions' => [
                     'view' => Gate::allows('hr_employees_view'),
-                    'edit' => Gate::allows('hr_employees_edit'),
+                    'edit' => Gate::allows('hr_employees_manage'),
                 ],
                 'active_filters' => $datatableData['active_filters'],
                 'filter_values' => [

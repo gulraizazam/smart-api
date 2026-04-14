@@ -25,9 +25,10 @@ class FeedbackDatatableResource extends JsonResource
             'id' => $this->id,
             'paient_id' => $this->patient_id,
             'paient_name' => $this->patient_name,
-            'phone' => $canViewContact
-                ? GeneralFunctions::prepareNumber4Call($this->patient?->phone ?? '')
-                : '***********',
+            'phone' => $this->when(
+                $canViewContact,
+                fn () => GeneralFunctions::prepareNumber4Call($this->patient?->phone ?? ''),
+            ),
             'service_id' => $this->service_id ?? '',
             'service' => $this->service?->name ?? '',
             'treatment' => $this->treatment?->name ?? '',

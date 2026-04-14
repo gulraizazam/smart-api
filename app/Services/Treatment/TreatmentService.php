@@ -709,7 +709,6 @@ final class TreatmentService
                 'city:id,name',
                 'location:id,name',
                 'service:id,name,parent_id',
-                'service.parent:id,name',
                 'appointment_type:id,name',
                 'appointment_status:id,name,parent_id',
                 'invoice' => fn ($q) => $q->where('invoice_status_id', $invoiceStatus?->id ?? 0),

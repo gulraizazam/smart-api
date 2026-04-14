@@ -156,7 +156,12 @@ class LeaveApplicationController extends Controller
                 if (!Gate::allows('hr_leave_approve')) {
                     return $this->errorResponse('Only HR managers can cancel approved leaves.', 403);
                 }
-            } elseif ($status !== 'pending') {
+            } elseif ($status === 'pending') {
+                $isOwner = (int) $leaveApplication->user_id === (int) Auth::id();
+                if (!$isOwner && !Gate::allows('hr_leave_approve')) {
+                    return $this->errorResponse('You can only cancel your own leave applications.', 403);
+                }
+            } else {
                 return $this->errorResponse('Only pending or approved applications can be cancelled.');
             }
 

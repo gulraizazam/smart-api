@@ -4,34 +4,38 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Appointments;
 
-use Carbon\Carbon;
 use App\Enums\AppointmentType;
-use App\Models\User;
-use App\Models\Bundles;
+use App\Helpers\Filters;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Jobs\IndexSingleAppointmentJob;
 use App\Models\Accounts;
 use App\Models\Activity;
-use App\Models\Invoices;
-use App\Models\Packages;
-use App\Models\Services;
-use App\Models\Discounts;
-use App\Models\Locations;
 use App\Models\Appointments;
-use App\Models\PaymentModes;
-use App\Models\InvoiceDetails;
-use App\Models\PackageBundles;
-use App\Models\PackageService;
-use App\Models\InvoiceStatuses;
-use App\Models\PackageAdvances;
+use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Models\Bundles;
+use App\Models\Discounts;
+use App\Models\InvoiceDetails;
+use App\Models\Invoices;
+use App\Models\InvoiceStatuses;
+use App\Models\Locations;
+use App\Models\PackageAdvances;
+use App\Models\PackageBundles;
+use App\Models\Packages;
+use App\Models\PackageService;
+use App\Models\PaymentModes;
+use App\Models\Services;
+use App\Models\Settings;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use App\Helpers\Filters;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
-use App\Jobs\IndexSingleAppointmentJob;
+use Illuminate\View\View;
 
 class AppointmentInvoiceController extends AppointmentBaseController
 {
@@ -43,7 +47,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
      * @return mixed
      */
 
-    public function invoice(int $id): \Illuminate\View\View
+    public function invoice(int $id): View
     {
 
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
@@ -63,7 +67,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $balance = 0;
             $appointment_type = AppointmentTypes::find($appointment->appointment_type_id);
             $service = Services::find($appointment->service_id);
-            /*In case of treatment not belongs to treatment plans So i set but must be null in case of consultancy and treatment plans*/
+            /* In case of treatment not belongs to treatment plans So i set but must be null in case of consultancy and treatment plans */
             $amount_create = 0;
             $tax_create = 0;
             $location_id = 0;
@@ -71,13 +75,13 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $appointmentArray = [];
             $service_in_plan = false;
             if ($appointment_type->name == Config::get('constants.Service')) {
-                /*Check if service has */
+                /* Check if service has */
                 // Check if service exists in any plan (consumed or not)
                 $serviceInAnyPlan = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
                         'packages.active' => '1',
-                        'packages.patient_id' =>  $appointment->patient_id,
+                        'packages.patient_id' => $appointment->patient_id,
                         'package_services.service_id' => $appointment->service_id,
                         'packages.location_id' => $appointment->location_id,
                     ])->exists();
@@ -88,13 +92,13 @@ class AppointmentInvoiceController extends AppointmentBaseController
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
                         'packages.active' => '1',
-                        'packages.patient_id' =>  $appointment->patient_id,
+                        'packages.patient_id' => $appointment->patient_id,
                         'package_services.service_id' => $appointment->service_id,
                         'package_services.is_consumed' => '0',
                         'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
 
-                    $status = 'true';
+                $status = 'true';
                 if ($packages->isEmpty()) {
                     $location_information = Locations::find($appointment->location_id);
                     $location_id = $appointment->location_id;
@@ -173,7 +177,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive', 'service_in_plan', 'patient'));
     }
 
-    public function saveinvoice(Request $request): \Illuminate\Http\JsonResponse
+    public function saveinvoice(Request $request): JsonResponse
     {
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
@@ -181,8 +185,8 @@ class AppointmentInvoiceController extends AppointmentBaseController
             ['is_setteled', '=', '1'],
             ['package_id', '=', $request->package_id],
         ])->first();
-        if($check_is_setteled){
-            return $this->errorResponse('This plan is settled out and cannot consume any further treatments.', 404, ['setteled'=>1]);
+        if ($check_is_setteled) {
+            return $this->errorResponse('This plan is settled out and cannot consume any further treatments.', 404, ['setteled' => 1]);
         }
 
         // ============================================
@@ -204,7 +208,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
             // Ordering check: enforce BUY-before-GET within configurable discount groups
             // Skip ordering if the plan is fully paid (safe because plan is locked after first consumption)
-            if (!$isPlanFullyPaid && $packageService && $packageService->consumption_order > 0) {
+            if (! $isPlanFullyPaid && $packageService && $packageService->consumption_order > 0) {
                 $packageBundle = PackageBundles::find($packageService->package_bundle_id);
                 $configGroupId = $packageBundle?->config_group_id;
 
@@ -225,14 +229,15 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
             // Payment coverage check (for any service with price > 0)
             // Skip if plan is fully paid — rounding may cause SUM(services) to slightly exceed actual payment
-            if (!$isPlanFullyPaid && $packageService && $packageService->tax_including_price > 0) {
+            if (! $isPlanFullyPaid && $packageService && $packageService->tax_including_price > 0) {
                 $totalConsumedValue = PackageService::where('package_id', $request->package_id)
                     ->where('is_consumed', 1)
                     ->sum('tax_including_price');
 
                 if ($totalPlanPayments < ($totalConsumedValue + $packageService->tax_including_price)) {
                     $shortfall = ceil(($totalConsumedValue + $packageService->tax_including_price) - $totalPlanPayments);
-                    return $this->errorResponse('Insufficient payment on this plan. Please collect Rs. ' . number_format($shortfall) . ' before consuming this service.', 200);
+
+                    return $this->errorResponse('Insufficient payment on this plan. Please collect Rs. '.number_format($shortfall).' before consuming this service.', 200);
                 }
             }
         }
@@ -248,7 +253,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             if ($tag_appoint[1] == 'A') {
                 $appointment_id_consultancy = $tag_appoint[0];
             } else {
-                $PlanAppointmentCalculation = new PlanAppointmentCalculation();
+                $PlanAppointmentCalculation = new PlanAppointmentCalculation;
                 $appointment_id_consultancy = $PlanAppointmentCalculation->storeAppointment($appointmentinfo->patient_id, $appointmentinfo->location_id, $appointmentinfo->service_id, $tag_appoint[0], true);
                 $PlanAppointmentCalculation->saveinvoice($appointment_id_consultancy);
             }
@@ -261,7 +266,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $payment_mode_id = $request->package_mode_id;
         }
         if ($request->checked_treatment == '0') {
-            /*Than First find that bundle package id */
+            /* Than First find that bundle package id */
             $package_service_info = PackageService::where([
                 ['package_id', '=', $request->package_id],
                 ['id', '=', $request->exclusive_or_bundle],
@@ -335,7 +340,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         }
         if ($request->package_id != null) {
             // Only fetch from package_bundles if we don't already have discount info from package_service
-            if (!isset($data_detail['discount_name']) || empty($data_detail['discount_name'])) {
+            if (! isset($data_detail['discount_name']) || empty($data_detail['discount_name'])) {
                 $packages = DB::table('packages')
                     ->join('package_bundles', 'packages.id', '=', 'package_bundles.package_id')
                     ->join('package_services', 'package_bundles.id', '=', 'package_services.package_bundle_id')
@@ -381,7 +386,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 ->whereIn('package_bundle_id', $packagebundle)
                 ->where('created_at', '>', Carbon::parse($GetInvoiceInfo->created_at))
                 ->get();
-            if (!empty($packageservicez)) {
+            if (! empty($packageservicez)) {
                 $data_package['appointment_id'] = $GetAppointment->id;
             } else {
                 $data_package['appointment_id'] = $request->appointment_id;
@@ -442,7 +447,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(),'consumed_at' => Filters::getCurrentTimeStamp()]);
+            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(), 'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
 
             // Update plan_name in packages table
@@ -452,10 +457,15 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 $patient = User::whereId($appointmentinfo->patient_id)->first();
                 $location = Locations::whereId($appointmentinfo->location_id)->first();
                 $servicename = Services::whereId($appointmentinfo->service_id)->first();
-                $activity = new Activity();
+                $creatorName = Auth::user()->name ?? 'System';
+                $locationLabel = $location?->name ?? '';
+                $description = '<span class="highlight">'.e($creatorName).'</span> received payment <span class="highlight-green">Rs. '.number_format((float) $request->cash).'</span> from <span class="highlight-orange">'.e($patient->name).'</span> for <span class="highlight-purple">Plan Id: '.$package_advances->package_id.'</span>'.($locationLabel ? ' in <span class="highlight">'.e($locationLabel).'</span>' : '');
+
+                $activity = new Activity;
                 $activity->timestamps = false;
                 $activity->action = 'received';
                 $activity->activity_type = 'payment_received';
+                $activity->description = $description;
                 $activity->patient = $patient->name;
                 $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
@@ -476,10 +486,10 @@ class AppointmentInvoiceController extends AppointmentBaseController
         } else {
             Invoice_Plan_Refund_Sms_Functions::InvoiceCashReceived_SMS($invoice, $invoice_detail, false);
         }
-        $arrivedStatus = \App\Models\AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
+        $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', 1)->select('id')->first();
         if (Appointments::where('id', '=', $request->appointment_id)->where('appointment_type_id', '=', Config::get('constants.appointment_type_service'))->where('base_appointment_status_id', '!=', Config::get('constants.appointment_type_service'))->exists()) {
-            if (\App\Models\AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
-                $appointmentStatus = \App\Models\AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
+            if (AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->exists()) {
+                $appointmentStatus = AppointmentStatuses::where('parent_id', '=', $arrivedStatus->id)->where('active', '=', 1)->first();
                 if ($appointmentStatus) {
                     Appointments::where('id', '=', $request->appointment_id)->update(['base_appointment_status_id' => $arrivedStatus->id, 'appointment_status_id' => $appointmentStatus->id, 'updated_at' => Filters::getCurrentTimeStamp()]);
                 } else {
@@ -493,7 +503,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $appointment_data_status['updated_by'] = Auth::user()->id;
         $appointmentinfo->update($appointment_data_status);
 
-        ///Save activity//
+        // /Save activity//
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
         $servicename = Services::whereId($appointmentinfo->service_id)->first();
@@ -505,9 +515,9 @@ class AppointmentInvoiceController extends AppointmentBaseController
         $scheduleDate = $appointmentinfo->scheduled_date ? date('M j, Y', strtotime((string) $appointmentinfo->scheduled_date)) : '';
 
         // Format description with highlights
-        $description = '<span class="highlight">' . $creatorName . '</span> consumed <span class="highlight-green">Rs. ' . $amount . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">' . $serviceName . '</span> Treatment' . ($locationName ? ' at <span class="highlight">' . $locationName . '</span>' : '') . ($scheduleDate ? ' on <span class="highlight-purple">' . $scheduleDate . '</span>' : '');
+        $description = '<span class="highlight">'.$creatorName.'</span> consumed <span class="highlight-green">Rs. '.$amount.'</span> from <span class="highlight-orange">'.$patientName.'</span> for <span class="highlight-orange">'.$serviceName.'</span> Treatment'.($locationName ? ' at <span class="highlight">'.$locationName.'</span>' : '').($scheduleDate ? ' on <span class="highlight-purple">'.$scheduleDate.'</span>' : '');
 
-        $activity = new Activity();
+        $activity = new Activity;
         $activity->action = 'consumed';
         $activity->description = $description;
         $activity->patient = $patient->name;
@@ -530,16 +540,16 @@ class AppointmentInvoiceController extends AppointmentBaseController
          * Dispatch Elastic Search Index
          */
         IndexSingleAppointmentJob::dispatch([
-                'account_id' => Auth::user()->account_id,
-                'appointment_id' => $appointmentinfo->id,
-            ]);
+            'account_id' => Auth::user()->account_id,
+            'appointment_id' => $appointmentinfo->id,
+        ]);
 
         return $this->successResponse('Invoice created successfully', [
             'invoice_id' => $invoice?->id ?? 0,
         ]);
     }
 
-    public function displayInvoiceAppointment(int $id): \Illuminate\View\View
+    public function displayInvoiceAppointment(int $id): View
     {
         if (! Gate::allows('appointments_invoice_display')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
@@ -595,7 +605,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
 
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
-        $company_phone_number = \App\Models\Settings::where('slug', '=', 'sys-headoffice')->first();
+        $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
         // Get doctor name from appointment
         $doctor = null;
@@ -614,13 +624,13 @@ class AppointmentInvoiceController extends AppointmentBaseController
      *
      * @return mixed
      */
-    public function getplansinformation(Request $request): \Illuminate\Http\JsonResponse
+    public function getplansinformation(Request $request): JsonResponse
     {
         // Validate input parameters
         $appointmentId = $request->appointment_id_create;
         $packageId = $request->package_id_create;
 
-        if (!$appointmentId || !$packageId) {
+        if (! $appointmentId || ! $packageId) {
             return response()->json([
                 'status' => true,
                 'packagebundles' => [],
@@ -631,7 +641,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         // Get only the service_id we need from appointment
         $appointmentinfo = Appointments::select('service_id')->find($appointmentId);
 
-        if (!$appointmentinfo) {
+        if (! $appointmentinfo) {
             return response()->json([
                 'status' => true,
                 'packagebundles' => [],
@@ -650,7 +660,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         // Check if package exists
         $package = Packages::select('id')->find($packageId);
 
-        if (!$package) {
+        if (! $package) {
             return response()->json([
                 'status' => true,
                 'packagebundles' => [],
@@ -662,7 +672,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         // 1. Bundle-type: bundle_id is a real bundles.id (JOIN works)
         // 2. Plan-type: bundle_id stores service_id (JOIN fails, use LEFT JOIN with service name)
         $bundleTypeBundles = collect();
-        if (!empty($bundleIds)) {
+        if (! empty($bundleIds)) {
             $bundleTypeBundles = PackageBundles::join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
                 ->where('package_bundles.package_id', '=', $package->id)
                 ->whereIn('package_bundles.bundle_id', $bundleIds)
@@ -740,150 +750,152 @@ class AppointmentInvoiceController extends AppointmentBaseController
      * @return mixed
      */
 
-     public function getpackageprice(Request $request): \Illuminate\Http\JsonResponse
-     {
-         // Validate input parameters
-         $appointmentId = $request->appointment_id_create;
-         $packageId = $request->package_id_create;
-         $packageServiceId = $request->package_service_id;
+    public function getpackageprice(Request $request): JsonResponse
+    {
+        // Validate input parameters
+        $appointmentId = $request->appointment_id_create;
+        $packageId = $request->package_id_create;
+        $packageServiceId = $request->package_service_id;
 
-         if (!$appointmentId || !$packageId || !$packageServiceId) {
-             return response()->json([
-                 'status' => false,
-                 'message' => 'Missing required parameters',
-             ]);
-         }
+        if (! $appointmentId || ! $packageId || ! $packageServiceId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Missing required parameters',
+            ]);
+        }
 
-         // Get only patient_id from appointment
-         $appointmentinfo = Appointments::select('patient_id')->find($appointmentId);
+        // Get only patient_id from appointment
+        $appointmentinfo = Appointments::select('patient_id')->find($appointmentId);
 
-         if (!$appointmentinfo) {
-             return response()->json([
-                 'status' => false,
-                 'message' => 'Appointment not found',
-             ]);
-         }
+        if (! $appointmentinfo) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Appointment not found',
+            ]);
+        }
 
-         $patientId = $appointmentinfo->patient_id;
+        $patientId = $appointmentinfo->patient_id;
 
-         // Calculate balance using single query with conditional sum
-         $balanceData = PackageAdvances::where('patient_id', '=', $patientId)
-             ->where('package_id', '=', $packageId)
-             ->selectRaw("
+        // Calculate balance using single query with conditional sum
+        $balanceData = PackageAdvances::where('patient_id', '=', $patientId)
+            ->where('package_id', '=', $packageId)
+            ->selectRaw("
                  SUM(CASE WHEN cash_flow = 'in' THEN cash_amount ELSE 0 END) as total_in,
                  SUM(CASE WHEN cash_flow = 'out' THEN cash_amount ELSE 0 END) as total_out
              ")
-             ->first();
+            ->first();
 
-         $balance = ceil(($balanceData->total_in ?? 0) - ($balanceData->total_out ?? 0));
+        $balance = ceil(($balanceData->total_in ?? 0) - ($balanceData->total_out ?? 0));
 
-         // Get package service
-         $package_service = PackageService::find($packageServiceId);
+        // Get package service
+        $package_service = PackageService::find($packageServiceId);
 
-         if (!$package_service) {
-             return response()->json([
-                 'status' => false,
-                 'message' => 'Package service not found',
-             ]);
-         }
+        if (! $package_service) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Package service not found',
+            ]);
+        }
 
-         // Get package bundle
-         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
+        // Get package bundle
+        $package_bundle = PackageBundles::find($package_service->package_bundle_id);
 
-         if (!$package_bundle) {
-             return response()->json([
-                 'status' => false,
-                 'message' => 'Package bundle not found',
-             ]);
-         }
+        if (! $package_bundle) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Package bundle not found',
+            ]);
+        }
 
-         // Get bundle (only if type is 'multiple')
-         $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)
-             ->where('type', '=', 'multiple')
-             ->first();
+        // Get bundle (only if type is 'multiple')
+        $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)
+            ->where('type', '=', 'multiple')
+            ->first();
 
-         // Get service
-         $service = Services::find($package_service->service_id);
+        // Get service
+        $service = Services::find($package_service->service_id);
 
-         if (!$service) {
-             return response()->json([
-                 'status' => false,
-                 'message' => 'Service not found',
-             ]);
-         }
+        if (! $service) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Service not found',
+            ]);
+        }
 
-         // Determine package access
-         $package_access = 1;
-         if ($bundle) {
-             if ($balance < $bundle->price && $balance < $service->price) {
-                 $package_access = 0;
-             }
-         }
+        // Determine package access
+        $package_access = 1;
+        if ($bundle) {
+            if ($balance < $bundle->price && $balance < $service->price) {
+                $package_access = 0;
+            }
+        }
 
-         // Calculate total package cost and remaining amount to pay for bundle logic
-         $total_package_cost = $package_bundle->tax_including_price;
+        // Calculate total package cost and remaining amount to pay for bundle logic
+        $total_package_cost = $package_bundle->tax_including_price;
 
-         // Calculate how much has been consumed from this specific bundle
-         $consumed_from_bundle = PackageService::where('package_bundle_id', '=', $package_bundle->id)
-             ->where('is_consumed', '=', 1)
-             ->sum('tax_including_price');
+        // Calculate how much has been consumed from this specific bundle
+        $consumed_from_bundle = PackageService::where('package_bundle_id', '=', $package_bundle->id)
+            ->where('is_consumed', '=', 1)
+            ->sum('tax_including_price');
 
-         // Remaining to pay is the bundle price minus what's been consumed minus current balance
-         $remaining_to_pay = max(0, $total_package_cost - $consumed_from_bundle - $balance);
+        // Remaining to pay is the bundle price minus what's been consumed minus current balance
+        $remaining_to_pay = max(0, $total_package_cost - $consumed_from_bundle - $balance);
 
-         $cash = 0;
+        $cash = 0;
 
-         // Helper function to calculate outstanding
-         $calculateOutstanding = function ($bundle, $service, $balance, $cash, $remaining_to_pay, $fallbackAmount = 0) {
-             if ($bundle) {
-                 if ($balance >= $service->price) {
-                     return 0;
-                 }
-                 $naive_outstanding = (int) $service->price - (int) $balance - $cash;
-                 return min($naive_outstanding, max(0, $remaining_to_pay));
-             }
-             return (int) $fallbackAmount - $cash - (int) $balance;
-         };
+        // Helper function to calculate outstanding
+        $calculateOutstanding = function ($bundle, $service, $balance, $cash, $remaining_to_pay, $fallbackAmount = 0) {
+            if ($bundle) {
+                if ($balance >= $service->price) {
+                    return 0;
+                }
+                $naive_outstanding = (int) $service->price - (int) $balance - $cash;
 
-         if ($package_access == 1) {
-             $price = $package_service->tax_including_price;
-             $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay, $package_service->tax_including_price);
-             $remaining = 0;
-             $settleamount = min($price - $cash, $balance);
-         } else {
-             if ($package_service->price > ($package_bundle->net_amount - $balance)) {
-                 $price = $package_service->price;
-                 $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
-                 $settleamount = min((int) ($package_bundle->net_amount - $balance) - $cash, $balance);
-             } else {
-                 $price = $package_service->price;
-                 $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
-                 $settleamount = min($price - $cash, $balance);
-             }
-             $remaining = $package_service->tax_including_price;
-         }
+                return min($naive_outstanding, max(0, $remaining_to_pay));
+            }
 
-         // Ensure outstanding is not negative
-         $outstanding = max(0, $outstanding);
+            return (int) $fallbackAmount - $cash - (int) $balance;
+        };
 
-         return response()->json([
-             'status' => true,
-             'amount' => $package_service->tax_exclusive_price,
-             'tax_price' => $package_service->tax_price,
-             'serviceprice' => $price,
-             'outstanding' => $outstanding,
-             'settleamount' => round($settleamount, 2),
-             'balance' => round($balance, 2),
-             'remaining' => $remaining,
-             'package_service_id' => $request->package_id_create,
-         ]);
-     }
+        if ($package_access == 1) {
+            $price = $package_service->tax_including_price;
+            $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay, $package_service->tax_including_price);
+            $remaining = 0;
+            $settleamount = min($price - $cash, $balance);
+        } else {
+            if ($package_service->price > ($package_bundle->net_amount - $balance)) {
+                $price = $package_service->price;
+                $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
+                $settleamount = min((int) ($package_bundle->net_amount - $balance) - $cash, $balance);
+            } else {
+                $price = $package_service->price;
+                $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
+                $settleamount = min($price - $cash, $balance);
+            }
+            $remaining = $package_service->tax_including_price;
+        }
+
+        // Ensure outstanding is not negative
+        $outstanding = max(0, $outstanding);
+
+        return response()->json([
+            'status' => true,
+            'amount' => $package_service->tax_exclusive_price,
+            'tax_price' => $package_service->tax_price,
+            'serviceprice' => $price,
+            'outstanding' => $outstanding,
+            'settleamount' => round($settleamount, 2),
+            'balance' => round($balance, 2),
+            'remaining' => $remaining,
+            'package_service_id' => $request->package_id_create,
+        ]);
+    }
 
     /*
      * Get the package price against package id
      *
      * */
-    public function getinvoicecalculation(Request $request): \Illuminate\Http\JsonResponse
+    public function getinvoicecalculation(Request $request): JsonResponse
     {
         if ($request->cash_create == 0 || $request->cash_create < 0) {
             return response()->json([
@@ -908,7 +920,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
      * Get the calculation of service price according to exclusive and inclusive check
      *
      * */
-    public function getcalculatedPriceExclusicecheck(Request $request): \Illuminate\Http\JsonResponse
+    public function getcalculatedPriceExclusicecheck(Request $request): JsonResponse
     {
         $location_info = Locations::find($request->location_id);
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
@@ -950,7 +962,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
     private function updatePlanNameForPackage(int $packageId): void
     {
         $package = Packages::find($packageId);
-        if (!$package) {
+        if (! $package) {
             return;
         }
 
@@ -962,10 +974,11 @@ class AppointmentInvoiceController extends AppointmentBaseController
                 ->pluck('membership_types.name')
                 ->toArray();
 
-            if (!empty($membershipNames)) {
+            if (! empty($membershipNames)) {
                 $planName = implode(', ', $membershipNames);
                 Packages::where('id', $package->id)->update(['plan_name' => $planName]);
             }
+
             return;
         }
 

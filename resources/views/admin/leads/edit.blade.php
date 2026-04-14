@@ -57,16 +57,18 @@
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-                            <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <input type="hidden" id="edit_old_phone" name="old_phone">
+                        @can('contact')
+                            <div class="fv-row col-md-6 mt-5">
+                                <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
+                                <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
+                                <input type="hidden" id="edit_old_phone" name="old_phone">
 
-                            <div class="suggesstion-box">
-                                <ul class="suggestion-list"></ul>
+                                <div class="suggesstion-box">
+                                    <ul class="suggestion-list"></ul>
+                                </div>
+
                             </div>
-
-                        </div>
+                        @endcan
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>

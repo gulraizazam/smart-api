@@ -122,6 +122,6 @@ class PlanPolicy
      */
     public function manageBundles(User $user): bool
     {
-        return $user->can('packages_manage') || $user->can('bundles_manage');
+        return $user->can('packages_manage');
     }
 }

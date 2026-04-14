@@ -76,7 +76,7 @@ Route::prefix('cashflow')->name('cashflow.')->group(function () {
     });
 
     // Notifications (lightweight controller to avoid heavy CashFlowController instantiation on every page poll)
-    Route::prefix('notifications')->name('notifications.')->group(function () {
+    Route::prefix('notifications')->name('notifications.')->middleware('permission:cashflow_manage')->group(function () {
         Route::get('/', [CashflowNotificationController::class, 'index'])->name('index');
         Route::post('mark-read', [CashflowNotificationController::class, 'markRead'])->name('mark_read');
     });

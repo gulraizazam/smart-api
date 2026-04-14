@@ -1799,9 +1799,14 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                             let html = '';
                             let leads = response.data.leads;
                             let haveObjleads = Object.keys(leads).length;
+                            // Hide phone in suggestion label when redacted (empty/sentinel/missing).
+                            // Server strips `phone` when the user lacks the `contact` permission;
+                            // we fall back to the patient ID so the row still identifies someone.
+                            var hasPhone = function (p) { return p && p !== '***********'; };
                             if (leads.length) {
                                 leads.forEach(function (lead) {
-                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.phone + '</li>'
+                                    var label = hasPhone(lead.phone) ? (lead.name + ' - ' + lead.phone) : (lead.name + ' - ID ' + lead.id);
+                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + label + '</li>'
                                 });
                                 $(".suggestion-list").html(html);
                                 $(".suggesstion-box").show();
@@ -1809,7 +1814,8 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                                 handlePatientFound();
                             } else if (haveObjleads) {
                                 for (const [key, lead] of Object.entries(leads)) {
-                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.phone + '</li>'
+                                    var label2 = hasPhone(lead.phone) ? (lead.name + ' - ' + lead.phone) : (lead.name + ' - ID ' + lead.id);
+                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + label2 + '</li>'
                                 }
                                 $(".suggestion-list").html(html);
                                 $(".suggesstion-box").show();

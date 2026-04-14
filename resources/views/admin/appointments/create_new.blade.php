@@ -106,7 +106,11 @@
                                                         {!! Form::hidden('lead_id', (old('lead_id')) ? old('lead_id') : $lead['id'], ['id' => 'lead_id']) !!}
                                                         {!! Form::hidden('patient_id', (old('patient_id')) ? old('patient_id') : $lead['patient_id'], ['id' => 'patient_id']) !!}
                                                         {!! Form::select('service_id', $services, $lead['service_id'], ['id' => 'service_id', 'class' => 'form-control']) !!}
-                                                        {!! Form::number('phone', (old('phone')) ? old('phone') : $lead['phone'], ['id' => 'phone', 'size' => 11, 'class' => 'form-control', 'placeholder' => 'Patient Phone*']) !!}
+                                                        @can('contact')
+                                                            {!! Form::number('phone', (old('phone')) ? old('phone') : $lead['phone'], ['id' => 'phone', 'size' => 11, 'class' => 'form-control', 'placeholder' => 'Patient Phone*']) !!}
+                                                        @else
+                                                            {!! Form::hidden('phone', (old('phone')) ? old('phone') : $lead['phone'], ['id' => 'phone']) !!}
+                                                        @endcan
                                                         {!! Form::text('name', (old('name')) ? old('name') : $lead['name'], ['id' => 'name', 'class' => 'form-control', 'placeholder' => 'Patient Name*']) !!}
                                                         {!! Form::email('email', null, ['id' => 'email', 'style' => 'display:none;', 'placeholder' => 'Patient Email', 'class' => 'form-control']) !!}
                                                         <br/>

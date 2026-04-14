@@ -43,45 +43,45 @@ return new class extends Migration
         $this->addIndex('appointments', ['patient_id', 'deleted_at'], 'idx_appointments_patient_deleted');
         $this->addIndex('appointments', ['location_id', 'deleted_at'], 'idx_appointments_location_deleted');
 
-        // invoices
-        $this->dropIndex('invoices', 'invoices_account_id_foreign');
+        // invoices — add composite before dropping single-col so FK stays covered
         $this->addIndex('invoices', ['account_id', 'deleted_at'], 'idx_invoices_account_deleted');
-        $this->dropIndex('invoices', 'invoices_patient_id_foreign');
+        $this->dropIndex('invoices', 'invoices_account_id_foreign');
         $this->addIndex('invoices', ['patient_id', 'deleted_at'], 'idx_invoices_patient_deleted');
+        $this->dropIndex('invoices', 'invoices_patient_id_foreign');
 
         // invoice_details
-        $this->dropIndex('invoice_details', 'invoice_details_invoice_id_foreign');
         $this->addIndex('invoice_details', ['invoice_id', 'deleted_at'], 'idx_invoice_details_invoice_deleted');
+        $this->dropIndex('invoice_details', 'invoice_details_invoice_id_foreign');
 
         // leads
-        $this->dropIndex('leads', 'leads_account');
         $this->addIndex('leads', ['account_id', 'deleted_at'], 'idx_leads_account_deleted');
-        $this->dropIndex('leads', 'leads_patient_id_foreign');
+        $this->dropIndex('leads', 'leads_account');
         $this->addIndex('leads', ['patient_id', 'deleted_at'], 'idx_leads_patient_deleted');
+        $this->dropIndex('leads', 'leads_patient_id_foreign');
 
         // lead_comments
-        $this->dropIndex('lead_comments', 'lead_comments_lead_id_foreign');
         $this->addIndex('lead_comments', ['lead_id', 'deleted_at'], 'idx_lead_comments_lead_deleted');
-        $this->dropIndex('lead_comments', 'lead_comments_account');
+        $this->dropIndex('lead_comments', 'lead_comments_lead_id_foreign');
         $this->addIndex('lead_comments', ['account_id', 'deleted_at'], 'idx_lead_comments_account_deleted');
+        $this->dropIndex('lead_comments', 'lead_comments_account');
 
         // package_bundles
-        $this->dropIndex('package_bundles', 'package_bundles_package_id_foreign');
         $this->addIndex('package_bundles', ['package_id', 'deleted_at'], 'idx_package_bundles_package_deleted');
+        $this->dropIndex('package_bundles', 'package_bundles_package_id_foreign');
 
         // plan_invoices
-        $this->dropIndex('plan_invoices', 'plan_invoices_account_id_index');
         $this->addIndex('plan_invoices', ['account_id', 'deleted_at'], 'idx_plan_invoices_account_deleted');
-        $this->dropIndex('plan_invoices', 'plan_invoices_patient_id_index');
+        $this->dropIndex('plan_invoices', 'plan_invoices_account_id_index');
         $this->addIndex('plan_invoices', ['patient_id', 'deleted_at'], 'idx_plan_invoices_patient_deleted');
+        $this->dropIndex('plan_invoices', 'plan_invoices_patient_id_index');
 
         // resource_has_rota_days
-        $this->dropIndex('resource_has_rota_days', 'resource_has_rota_days_resource_has_rota_id_foreign');
         $this->addIndex('resource_has_rota_days', ['resource_has_rota_id', 'deleted_at'], 'idx_rota_days_rota_deleted');
+        $this->dropIndex('resource_has_rota_days', 'resource_has_rota_days_resource_has_rota_id_foreign');
 
         // sms_logs
-        $this->dropIndex('sms_logs', 'sms_logs_appointment_id_foreign');
         $this->addIndex('sms_logs', ['appointment_id', 'deleted_at'], 'idx_sms_logs_appointment_deleted');
+        $this->dropIndex('sms_logs', 'sms_logs_appointment_id_foreign');
     }
 
     public function down(): void

@@ -344,7 +344,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'patients_assign_membership', 'title' => 'Assign Membership', 'main_group' => 0, 'parent_id' => 169],
             ['name' => 'patients_cancel_membership', 'title' => 'Cancel Membership', 'main_group' => 0, 'parent_id' => 169],
             ['name' => 'patients_add_referrals', 'title' => 'Add Referrals', 'main_group' => 0, 'parent_id' => 169],
-            ['name' => 'packages_manage', 'title' => 'Packages', 'main_group' => 1, 'parent_id' => 0],
+            ['name' => 'packages_manage', 'title' => 'Bundles / Packages', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'packages_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 195],
             ['name' => 'packages_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 195],
             ['name' => 'packages_active', 'title' => 'Activate', 'main_group' => 0, 'parent_id' => 195],

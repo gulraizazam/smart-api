@@ -1,5 +1,8 @@
 var table_url = route('admin.appointments.viewlog', {id: appointment_id, type: 'web'});
 
+var _listingPerms = (typeof window !== 'undefined' && window.listingPerms) ? window.listingPerms : {};
+var _canShowContact = _listingPerms.contact !== false && (typeof permissions === 'undefined' || permissions.contact !== false);
+
 var table_columns = [
 
     {
@@ -12,10 +15,7 @@ var table_columns = [
         title: 'Phone',
         width: 'auto',
         template: function (data) {
-            if (permissions.contact) {
-                return data.phone ?? 'N/A';
-            }
-            return '***********';
+            return data.phone ?? 'N/A';
         }
     },{
         field: 'scheduled_date',
@@ -87,3 +87,7 @@ var table_columns = [
             return data.send_message ? data.send_message == 1  ? 'Sent' : 'Not Sent' : '-' ;
         }
     }];
+
+if (!_canShowContact) {
+    table_columns = table_columns.filter(function (col) { return col.field !== 'phone'; });
+}

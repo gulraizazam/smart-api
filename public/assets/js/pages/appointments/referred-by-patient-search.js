@@ -22,8 +22,11 @@ $(document).ready(function () {
                 
                 return {
                     results: $.map(patients, function (patient) {
+                        // Phone is redacted (empty/sentinel) when contact permission is off;
+                        // fall back to the patient ID so the row is still identifiable.
+                        var hasPhone = patient.phone && patient.phone !== '***********';
                         return {
-                            text: patient.name + ' - ' + patient.phone,
+                            text: hasPhone ? (patient.name + ' - ' + patient.phone) : (patient.name + ' - ID ' + patient.id),
                             id: patient.id
                         }
                     }),

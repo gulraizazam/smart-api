@@ -34,7 +34,7 @@ class LeadResource extends JsonResource
             // client-side validation. Display-time formatting for click-to-
             // call should be done at the presentation layer, not in the API
             // resource.
-            'phone' => $canViewContact ? $this->phone : '***********',
+            'phone' => $this->when($canViewContact, fn () => $this->phone),
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => $this->resolveGenderLabel(),
             'active' => $this->active,

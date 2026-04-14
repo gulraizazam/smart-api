@@ -121,10 +121,12 @@
                 <span class="appointment-detail-label">Patient ID</span>
                 <span class="appointment-detail-value" id="appointment_patient_c_id"></span>
             </div>
-            <div class="appointment-detail-item" id="appointment_patient_phone_row">
-                <span class="appointment-detail-label">Phone</span>
-                <span class="appointment-detail-value" id="appointment_patient_phone"></span>
-            </div>
+            @can('contact')
+                <div class="appointment-detail-item" id="appointment_patient_phone_row">
+                    <span class="appointment-detail-label">Phone</span>
+                    <span class="appointment-detail-value" id="appointment_patient_phone"></span>
+                </div>
+            @endcan
             <div class="appointment-detail-item">
                 <span class="appointment-detail-label">Gender</span>
                 <span class="appointment-detail-value" id="appointment_patient_gender"></span>

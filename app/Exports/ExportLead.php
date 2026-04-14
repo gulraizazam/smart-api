@@ -56,11 +56,17 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
 
         $rows = [];
         foreach ($leads as $lead) {
-            $phone = $this->canViewContact ? ($lead->phone ?? 'N/A') : '***********';
             $baseRow = [
                 $lead->id,
                 $lead->name ?? 'N/A',
-                $phone,
+            ];
+
+            if ($this->canViewContact) {
+                $baseRow[] = $lead->phone ?? 'N/A';
+            }
+
+            $baseRow = [
+                ...$baseRow,
                 $lead->gender == 1 ? 'Male' : 'Female',
                 $lead->city?->name ?? 'N/A',
                 $lead->towns?->name ?? 'N/A',
@@ -126,11 +132,17 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
 
     public function headings(): array
     {
-        return [
+        $headings = [
             'ID', 'Full Name', 'Phone', 'Gender', 'City',
             'Centre', 'Region', 'Lead Status', 'Service',
             'Treatment', 'Created At', 'Created By',
         ];
+
+        if (! $this->canViewContact) {
+            $headings = array_values(array_filter($headings, fn (string $h): bool => $h !== 'Phone'));
+        }
+
+        return $headings;
     }
 
     public function registerEvents(): array
@@ -138,11 +150,14 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
         return [
             AfterSheet::class => function (AfterSheet $event): void {
                 $sheet = $event->sheet->getDelegate();
-                $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+                $columnCount = $this->canViewContact ? 12 : 11;
+                $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($columnCount);
+                $sheet->getStyle('A1:'.$lastColumn.'1')->getFont()->setBold(true);
                 $sheet->getRowDimension(1)->setRowHeight(30);
 
-                foreach (range('A', 'L') as $col) {
-                    $width = in_array($col, ['I'], true) ? 40 : 20;
+                $serviceColumn = $this->canViewContact ? 'I' : 'H';
+                foreach (range('A', $lastColumn) as $col) {
+                    $width = $col === $serviceColumn ? 40 : 20;
                     $sheet->getColumnDimension($col)->setWidth($width);
                 }
             },

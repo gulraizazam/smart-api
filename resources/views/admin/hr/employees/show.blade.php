@@ -15,7 +15,7 @@
                         <div class="card-title">
                             <h3 class="card-label"><i class="la la-user text-primary mr-2"></i>Personal Information</h3>
                         </div>
-                        @can('hr_employees_edit')
+                        @can('hr_employees_manage')
                         <div class="card-toolbar">
                             <a href="javascript:void(0);" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_edit_employee">
                                 <i class="la la-pencil"></i> Edit HR Details

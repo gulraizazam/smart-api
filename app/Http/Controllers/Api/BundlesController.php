@@ -84,6 +84,10 @@ final class BundlesController extends Controller
      */
     public function store(StoreBundleRequest $request): JsonResponse
     {
+        if (! Gate::allows('packages_create')) {
+            return $this->unauthorizedResponse();
+        }
+
         try {
             $this->bundleService->createBundle($request->validated());
 

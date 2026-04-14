@@ -208,29 +208,29 @@ class AppointmentFilterService
     }
 
     /**
-     * Build base query with ACL and permissions
+     * Build base query with ACL and permissions.
+     *
+     * $scopeByDoctor=false is used on patient profile views so doctors see
+     * the patient's full consultation history at centres they can access,
+     * not just their own consultations.
      */
-    public function buildBaseQuery(): \Illuminate\Database\Eloquent\Builder
+    public function buildBaseQuery(bool $scopeByDoctor = true): \Illuminate\Database\Eloquent\Builder
     {
         // Use config constant for consultancy type ID (same as TreatmentService approach)
         $consultancyTypeId = config('constants.appointment_type_consultancy');
-
-        // Cache permissions
-        $canViewConsultancy = Gate::allows('consultations_manage');
-        $canViewTreatments = Gate::allows('treatments_services');
 
         // Build base query with LEFT JOIN to include consultations without patient records
         $query = \App\Models\Appointments::leftJoin('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id');
         })
-        //->whereIn('appointments.city_id', ACL::getUserCities())
         ->whereIn('appointments.location_id', ACL::getUserCentres())
         ->where('appointments.appointment_type_id', $consultancyTypeId); // Always filter for consultancy only
 
-        // Auto-filter by doctor_id for doctor roles
-        $user = Auth::user();
-        if ($user && $user->hasAnyRole(DoctorDashboardHelper::DOCTOR_ROLE_NAMES)) {
-            $query->where('appointments.doctor_id', $user->id);
+        if ($scopeByDoctor) {
+            $user = Auth::user();
+            if ($user && $user->hasAnyRole(DoctorDashboardHelper::DOCTOR_ROLE_NAMES)) {
+                $query->where('appointments.doctor_id', $user->id);
+            }
         }
 
         return $query;
