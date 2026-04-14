@@ -279,6 +279,8 @@ final class PlanRefundService
                     'service_id' => $services->id,
                     'package_id' => $data['package_id'],
                     'invoice_id' => $createInvoice->id,
+                    'service_price' => $amountLeft,
+                    'net_amount' => $amountLeft,
                     'is_settlement' => 1,
                 ];
                 InvoiceDetails::create($dataInvoiceDetail);

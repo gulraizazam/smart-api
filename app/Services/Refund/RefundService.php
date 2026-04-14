@@ -715,6 +715,8 @@ final class RefundService
                     'qty' => 1,
                     'service_id' => $settlementService->id,
                     'invoice_id' => $invoice->id,
+                    'service_price' => $amountLeft,
+                    'net_amount' => $amountLeft,
                     'is_settlement' => 1,
                 ]);
             }
