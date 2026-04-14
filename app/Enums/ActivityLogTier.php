@@ -159,6 +159,7 @@ enum ActivityLogTier: string
             'account_locked',
             'role_',
             'permission_',
+            'audit_log_viewed',
         ])) {
             return self::SecurityAudit;
         }

@@ -224,6 +224,7 @@ final class ActivityLogRenderer
             self::isAuthType($type, $action) => self::renderAuth($activity, $type, $action),
             $type === 'patient_accessed' => self::renderAccess($activity),
             $type === 'data_export' => self::renderExport($activity),
+            $type === 'audit_log_viewed' => self::renderAuditLogAccess($activity),
             self::isCfgType($type) => self::renderCfg($activity, $type),
             self::isHrType($type) => self::renderHr($activity, $type),
             self::isStkType($type) => self::renderStk($activity, $type),
@@ -863,6 +864,24 @@ final class ActivityLogRenderer
         $primary = $clean !== '' ? $clean : (($actor ?? 'User').' exported data');
 
         return self::compose('EXPORT', [e($primary)], null);
+    }
+
+    private static function renderAuditLogAccess(object $a): string
+    {
+        $action = (string) ($a->action ?? 'view');
+        $actor = self::actorName($a) ?? 'User';
+        $verb = $action === 'export' ? 'exported the audit log' : 'viewed the audit log';
+
+        // Filters summary lives in stored description; clean it and show tail.
+        $clean = self::cleanStoredDescription((string) ($a->description ?? ''));
+        $filtersPart = '';
+        if (str_contains($clean, 'filters: ')) {
+            $filtersPart = ' · '.trim(substr($clean, strpos($clean, 'filters: ')));
+        }
+
+        $primary = e($actor).' '.e($verb).e($filtersPart);
+
+        return self::compose('AUTH', [$primary], null);
     }
 
     private static function renderCfg(object $a, string $type): string

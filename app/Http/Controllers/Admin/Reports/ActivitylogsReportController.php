@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Reports;
 
 use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Helpers\ActivityLogRenderer;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
@@ -16,6 +17,7 @@ use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -50,6 +52,22 @@ class ActivitylogsReportController extends Controller
         $cursor = $request->input('cursor');
         if ($cursor === '') {
             $cursor = null;
+        }
+
+        // HIPAA §164.312(b) meta-audit: log who viewed the audit log.
+        // Throttled inside the writer (one row per user per 60min) so
+        // paging / refresh within the window doesn't spam the feed.
+        // Only fire on first-page loads (cursor === null) — subsequent
+        // pages are the same "view" session.
+        if ($cursor === null) {
+            try {
+                ActivityLogger::logAuditLogAccessed($filters, 'view');
+            } catch (\Throwable $e) {
+                Log::warning('activities.audit_log_viewed.write_failed', [
+                    'event' => 'activities.audit_log_viewed.write_failed',
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         $result = ActivityLogService::paginateActivityLogs(
@@ -95,6 +113,17 @@ class ActivitylogsReportController extends Controller
     public function exportCsv(Request $request): StreamedResponse
     {
         $filters = $this->buildFiltersFromRequest($request);
+
+        // Meta-audit: the export itself is an audit-log read. Distinct
+        // 'export' mode so view vs export can be distinguished in the feed.
+        try {
+            ActivityLogger::logAuditLogAccessed($filters, 'export');
+        } catch (\Throwable $e) {
+            Log::warning('activities.audit_log_viewed.export_write_failed', [
+                'event' => 'activities.audit_log_viewed.export_write_failed',
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $filename = 'activity-logs-'.date('Ymd-His').'.csv';
 
