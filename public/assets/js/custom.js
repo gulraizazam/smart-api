@@ -1206,15 +1206,17 @@ function submitForm(action, method, data, callback, form = '') {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            let serverMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '';
+
             if (xhr.status == '401') {
                 callback({
                     'status': 0,
-                    'message': 'You are not authorized to access this resource',
+                    'message': serverMessage || 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
             } else if (xhr.status == '422') {
                 // Laravel validation errors
-                let errors = xhr.responseJSON.errors;
+                let errors = xhr.responseJSON ? xhr.responseJSON.errors : null;
                 let errorMessage = '';
                 if (errors) {
                     // Collect all validation error messages
@@ -1228,20 +1230,14 @@ function submitForm(action, method, data, callback, form = '') {
                 }
                 callback({
                     'status': 0,
-                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'message': errorMessage || serverMessage || 'Validation failed',
                     'errors': errors
-                });
-                hideSpinnerRestForm();
-            } else if (xhr.status == '500') {
-                callback({
-                    'status': 0,
-                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
+                    'message': serverMessage || 'Unable to process your request, please try again later.',
                 });
                 hideSpinnerRestForm();
             }
@@ -1294,15 +1290,17 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            let serverMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '';
+
             if (xhr.status == '401') {
                 callback({
                     'status': 0,
-                    'message': 'You are not authorized to access this resource',
+                    'message': serverMessage || 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
             } else if (xhr.status == '422') {
                 // Laravel validation errors
-                let errors = xhr.responseJSON.errors;
+                let errors = xhr.responseJSON ? xhr.responseJSON.errors : null;
                 let errorMessage = '';
                 if (errors) {
                     // Collect all validation error messages
@@ -1316,20 +1314,14 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
                 }
                 callback({
                     'status': 0,
-                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'message': errorMessage || serverMessage || 'Validation failed',
                     'errors': errors
-                });
-                hideSpinnerRestForm();
-            } else if (xhr.status == '500') {
-                callback({
-                    'status': 0,
-                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
+                    'message': serverMessage || 'Unable to process your request, please try again later.',
                 });
                 hideSpinnerRestForm();
             }
