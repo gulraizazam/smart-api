@@ -623,6 +623,14 @@ class AppointmentService
             // }
 
             $oldData = $appointment->toArray();
+
+            if (isset($appointmentData['scheduled_date'])) {
+                $newScheduledDate = Carbon::parse($appointmentData['scheduled_date'])->format('Y-m-d');
+                if ((string) $appointment->scheduled_date !== $newScheduledDate) {
+                    $appointmentData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
+                }
+            }
+
             $appointment->update($appointmentData);
 
             AuditTrails::editEventLogger(
