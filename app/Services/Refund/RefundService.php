@@ -784,22 +784,32 @@ final class RefundService
 
     private function resolveFilterValues(string $filterKey): array
     {
-        $userId = Auth::id();
+        $userCentres = ACL::getUserCentres();
+
+        $refundedPackageIds = PackageAdvances::where('is_refund', 1)
+            ->whereIn('location_id', $userCentres)
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('package_id');
+
+        $package = Packages::whereIn('id', $refundedPackageIds)
+            ->orderByDesc('id')
+            ->pluck('plan_name', 'id')
+            ->map(fn($name, $id): string => $name ?: 'Plan #' . $id)
+            ->toArray();
 
         $patient = [];
-        if ($patientId = Filters::get($userId, $filterKey, 'patient_id')) {
-            $patient = User::find($patientId)?->toArray() ?? [];
+        $patientIds = PackageAdvances::whereIn('package_id', $refundedPackageIds)
+            ->whereNotNull('patient_id')
+            ->distinct()
+            ->pluck('patient_id');
+        if ($patientIds->isNotEmpty()) {
+            $patient = User::whereIn('id', $patientIds)
+                ->pluck('name', 'id')
+                ->toArray();
         }
 
-        $package = [];
-        if ($packageId = Filters::get($userId, $filterKey, 'package_id')) {
-            $pkg = Packages::find($packageId);
-            if ($pkg) {
-                $package = [$pkg->id => ($pkg->plan_name ?: 'Plan #' . $pkg->id)];
-            }
-        }
-
-        $locations = Locations::getActiveSorted(ACL::getUserCentres());
+        $locations = Locations::getActiveSorted($userCentres);
 
         return [
             'patient' => $patient,
