@@ -145,6 +145,10 @@
         <script>
             // Pass data to JS - patientId triggers patient-specific filtering in datatable.js
             var patientId = {{ $patientId }};
+            window.listingPerms = {
+                contact: @json(Gate::allows('contact')),
+                canManage: @json(Gate::allows('appointments_consultancy')),
+            };
             // Note: 'permissions' is already declared in row-details.js, will be set from API response
             
             // Stub functions - not needed in patient card context but called by datatable.js
@@ -169,6 +173,10 @@
         <script>
             // Pass data to JS - patientId triggers patient-specific filtering in treatmentDatatable.js
             var patientId = {{ $patientId }};
+            window.listingPerms = {
+                contact: @json(Gate::allows('contact')),
+                canManage: @json(Gate::allows('treatments_services')),
+            };
             // Note: 'permissions' is already declared in row-details.js, will be set from API response
             
             // Stub functions - not needed in patient card context but called by treatmentDatatable.js

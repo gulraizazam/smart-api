@@ -15,7 +15,7 @@ class LeadComments extends Model
     protected $table = 'lead_comments';
 
     protected $fillable = [
-        'comment', 'lead_id', 'created_by', 'created_at', 'updated_at',
+        'comment', 'lead_id', 'created_by', 'account_id', 'created_at', 'updated_at',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class LeadComments extends Model
         return [
             'lead_id' => 'integer',
             'created_by' => 'integer',
+            'account_id' => 'integer',
         ];
     }
 

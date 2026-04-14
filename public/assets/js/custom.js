@@ -1,4 +1,37 @@
 
+(function () {
+    if (typeof window.Swal === 'undefined') return;
+
+    var SwalCenter = window.Swal.mixin({
+        toast: false,
+        position: 'center',
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        timer: 4000,
+        timerProgressBar: true,
+        didOpen: function (el) {
+            el.addEventListener('mouseenter', window.Swal.stopTimer);
+            el.addEventListener('mouseleave', window.Swal.resumeTimer);
+        }
+    });
+
+    function fire(icon, message, title) {
+        if (message === undefined || message === null || message === '') return;
+        SwalCenter.fire({ icon: icon, title: title || message, html: title ? message : undefined });
+    }
+
+    var shim = function (message, title) { fire('info', message, title); };
+    shim.success = function (message, title) { fire('success', message, title); };
+    shim.error   = function (message, title) { fire('error', message, title); };
+    shim.warning = function (message, title) { fire('warning', message, title); };
+    shim.info    = function (message, title) { fire('info', message, title); };
+    shim.clear   = function () { window.Swal.close(); };
+    shim.remove  = function () { window.Swal.close(); };
+    shim.options = {};
+
+    window.toastr = shim;
+})();
+
 $(document).keydown(function (event) {
     if (event.keyCode == 27) {
         $('.modal').modal('hide');

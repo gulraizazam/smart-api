@@ -1542,11 +1542,13 @@ function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function () {
 
+        let patientId = $("#search_patient_id").val();
+
         let filters = {
             delete: '',
             id: $("#search_id").val(),
-            patient_id: $("#search_patient_id").val(),
-            patient_name: $("#search_patient_id").text(),
+            patient_id: patientId,
+            patient_name: patientId ? $("#search_patient_id").find('option:selected').text() : '',
             package_id: $("#search_plan_id").val(),
             location_id: $("#search_location_id").val(),
             created_at: $("#date_range").val(),
@@ -1607,9 +1609,11 @@ function setFilters(filter_values, active_filters) {
 
         let location_options = '<option value="">All</option>';
 
+        let validLocationIds = {};
         if (locations) {
             Object.entries(locations).forEach(function (value) {
                 location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                validLocationIds[String(value[0])] = true;
             });
         }
 
@@ -1617,7 +1621,11 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_id").val(active_filters.id);
 
-        $("#search_location_id").val(active_filters.location_id).trigger('change');
+        let activeLocId = active_filters.location_id;
+        if (activeLocId && !validLocationIds[String(activeLocId)]) {
+            activeLocId = '';
+        }
+        $("#search_location_id").val(activeLocId).trigger('change');
         $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
