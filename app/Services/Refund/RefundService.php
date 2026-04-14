@@ -795,7 +795,7 @@ final class RefundService
         $package = Packages::whereIn('id', $refundedPackageIds)
             ->orderByDesc('id')
             ->pluck('plan_name', 'id')
-            ->map(fn($name, $id): string => $name ?: 'Plan #' . $id)
+            ->map(fn($name, $id): string => '#' . $id . ' — ' . ($name ?: 'Plan'))
             ->toArray();
 
         $patient = [];
