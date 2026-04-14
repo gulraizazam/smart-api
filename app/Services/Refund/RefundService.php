@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Refund;
 
+use App\Enums\ActivityLogTier;
 use App\Enums\CashFlow;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
@@ -644,6 +645,7 @@ final class RefundService
         $activity->timestamps = false;
         $activity->action = 'refunded';
         $activity->activity_type = 'refund_made';
+        $activity->log_tier = ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient?->id;
