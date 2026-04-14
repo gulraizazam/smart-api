@@ -17,6 +17,12 @@ var table_columns = [
         title: 'Plans',
         sortable: false,
         width: 70,
+        template: function (data) {
+            if (typeof data.package_id === 'undefined' || data.package_id === null) {
+                return '-';
+            }
+            return '<a href="javascript:void(0);" onclick="filterByPlanId(' + data.package_id + ');" class="text-primary">' + data.package_id + '</a>';
+        }
     },{
         field: 'total',
         title: 'Plan Amount',
@@ -418,6 +424,11 @@ function refundData(response) {
         showException(error);
     }
 
+}
+
+function filterByPlanId(planId) {
+    $("#search_plans").val(String(planId)).trigger('change');
+    $('#apply-filters').trigger('click');
 }
 
 function applyFilters(datatable) {
