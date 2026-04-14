@@ -793,7 +793,10 @@ final class RefundService
 
         $package = [];
         if ($packageId = Filters::get($userId, $filterKey, 'package_id')) {
-            $package = Packages::find($packageId)?->toArray() ?? [];
+            $pkg = Packages::find($packageId);
+            if ($pkg) {
+                $package = [$pkg->id => ($pkg->plan_name ?: 'Plan #' . $pkg->id)];
+            }
         }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());

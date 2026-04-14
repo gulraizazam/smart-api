@@ -482,6 +482,7 @@ function setFilters(filter_values, active_filters) {
 
 
         $("#search_plans").html(package_options);
+        $("#search_plans").val(active_filters.package_id);
         $("#search_id").html(patients_options);
 
         $("#search_id").val(active_filters.patient_id);
