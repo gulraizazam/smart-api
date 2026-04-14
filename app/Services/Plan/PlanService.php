@@ -721,7 +721,7 @@ final class PlanService
 
             DB::commit();
 
-            return ['status' => true, 'message' => 'updated successfully', 'package_id' => $package->id];
+            return ['status' => true, 'message' => 'Plan updated successfully.', 'package_id' => $package->id];
         } catch (PlanException $e) {
             DB::rollBack();
             throw $e;
