@@ -95,6 +95,11 @@ final class RefundService
             ->groupBy('package_id')
             ->selectRaw('package_id, SUM(tax_including_price) as total')
             ->pluck('total', 'package_id');
+        $serviceTotals = PackageService::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $planTypes = Packages::whereIn('id', $packageIds)->pluck('plan_type', 'id');
 
         $canViewContact = Gate::allows('contact');
 
@@ -113,6 +118,10 @@ final class RefundService
                 'is_refund' => '1',
             ])->latest()->first();
 
+            $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
+                ? (float) ($bundleTotals[$pkgId] ?? 0)
+                : (float) ($serviceTotals[$pkgId] ?? 0);
+
             $rows[] = [
                 'id' => $pkgId,
                 'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
@@ -122,7 +131,7 @@ final class RefundService
                     : '-',
                 'package_id' => $pkgId,
                 'location_id' => $this->formatLocation($package),
-                'total' => number_format((float) ($bundleTotals[$pkgId] ?? 0)),
+                'total' => number_format($planTotal),
                 'cash_receive' => number_format($agg['cash_receive']),
                 'settle_amount' => number_format($agg['settle_amount_with_tax']),
                 'refunded' => $agg['refunded_amount'],
@@ -190,7 +199,15 @@ final class RefundService
         }
 
         $aggregates = $this->batchLoadPackageAggregates($packageIds);
-        $packageInfos = Packages::whereIn('id', $packageIds)->pluck('total_price', 'id');
+        $bundleTotals = PackageBundles::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $serviceTotals = PackageService::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $planTypes = Packages::whereIn('id', $packageIds)->pluck('plan_type', 'id');
 
         foreach ($packages as $package) {
             $pkgId = $package->package_id;
@@ -207,11 +224,15 @@ final class RefundService
                 'is_refund' => '1',
             ])->latest()->first();
 
+            $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
+                ? (float) ($bundleTotals[$pkgId] ?? 0)
+                : (float) ($serviceTotals[$pkgId] ?? 0);
+
             $rows[] = [
                 'id' => $pkgId,
                 'name' => $package->user?->name ?? '-',
                 'plan_id' => $pkgId,
-                'total' => number_format((float) ($packageInfos[$pkgId] ?? 0)),
+                'total' => number_format($planTotal),
                 'cash_in' => number_format($agg['cash_receive']),
                 'cash_out' => number_format($agg['cash_out']),
                 'refunded_amount' => number_format($agg['refunded_amount']),
