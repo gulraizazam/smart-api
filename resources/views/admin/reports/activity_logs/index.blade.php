@@ -7,81 +7,109 @@
     @push('css')
         <style>
             /* Activity log page — filter bar */
-            .al-filter-card { background: #fff; border: 1px solid #ebedf3; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
-            .al-preset-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+            .al-filter-card { background:#fff; border:1px solid #ebedf3; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
+
+            /* Row 1: date preset pills */
+            .al-preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
             .al-preset-btn {
-                padding: 5px 14px;
-                border-radius: 999px;
-                border: 1px solid #e4e6ef;
-                background: #f3f6f9;
-                color: #3f4254;
-                font-size: 0.85rem;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.15s;
+                padding:5px 14px; border-radius:999px;
+                border:1px solid #e4e6ef; background:#f3f6f9; color:#3f4254;
+                font-size:0.85rem; font-weight:500; cursor:pointer; transition:all .15s;
             }
-            .al-preset-btn:hover { background: #e4e6ef; }
-            .al-preset-btn.active { background: #3699ff; color: #fff; border-color: #3699ff; }
+            .al-preset-btn:hover { background:#e4e6ef; }
+            .al-preset-btn.active { background:#3699ff; color:#fff; border-color:#3699ff; }
 
-            .al-filter-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr; gap: 12px; margin-bottom: 12px; }
-            @media (max-width: 992px) {
-                .al-filter-row { grid-template-columns: 1fr 1fr; }
+            /* Row 2: filters in a single line */
+            .al-filter-row {
+                display:grid;
+                grid-template-columns: 1.6fr 1fr 1fr 1fr;
+                gap:10px;
+                align-items:end;
             }
-            @media (max-width: 600px) {
-                .al-filter-row { grid-template-columns: 1fr; }
+            @media (max-width: 992px) { .al-filter-row { grid-template-columns: 1fr 1fr; } }
+            @media (max-width: 600px) { .al-filter-row { grid-template-columns: 1fr; } }
+
+            .al-field-label {
+                font-size:0.72rem; font-weight:600; color:#7e8299;
+                text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px;
             }
 
-            .al-field-label { font-size: 0.78rem; font-weight: 600; color: #7e8299; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+            /* Search with icon */
+            .al-search-wrap { position:relative; }
+            .al-search-wrap .fa-search {
+                position:absolute; left:12px; top:50%; transform:translateY(-50%);
+                color:#b5b5c3; pointer-events:none;
+            }
+            .al-search-input { padding-left:34px; }
 
-            .al-search-wrap { position: relative; }
-            .al-search-wrap .fa-search { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #b5b5c3; pointer-events: none; }
-            .al-search-input { padding-left: 36px; }
+            /* Event-type multi-select as a button-styled dropdown */
+            .al-tag-dd { position:relative; }
+            .al-tag-dd-btn {
+                width:100%; padding:7px 28px 7px 12px;
+                text-align:left; background:#fff; border:1px solid #e4e6ef; border-radius:4px;
+                cursor:pointer; font-size:0.95rem; color:#3f4254;
+                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                position:relative;
+            }
+            .al-tag-dd-btn::after {
+                content:""; position:absolute; right:10px; top:50%;
+                width:0; height:0; transform:translateY(-50%);
+                border-left:4px solid transparent; border-right:4px solid transparent;
+                border-top:5px solid #a4a7b5;
+            }
+            .al-tag-dd-btn:hover { border-color:#b5b5c3; }
+            .al-tag-dd-panel {
+                display:none; position:absolute; top:calc(100% + 4px); left:0;
+                z-index:50; min-width:260px; max-width:340px;
+                background:#fff; border:1px solid #e4e6ef; border-radius:6px;
+                box-shadow:0 4px 20px rgba(0,0,0,0.08);
+                padding:10px; max-height:280px; overflow-y:auto;
+            }
+            .al-tag-dd.open .al-tag-dd-panel { display:block; }
+            .al-tag-dd-list { display:flex; flex-wrap:wrap; gap:5px; }
+            .al-tag-option { cursor:pointer; user-select:none; }
+            .al-tag-option input { display:none; }
+            .al-tag-option .act-tag { opacity:0.45; transition:opacity .15s; }
+            .al-tag-option input:checked + .act-tag {
+                opacity:1; box-shadow:0 0 0 2px #3699ff;
+            }
+            .al-tag-dd-footer {
+                margin-top:8px; padding-top:8px; border-top:1px solid #ebedf3;
+                display:flex; justify-content:space-between; font-size:0.82rem;
+            }
+            .al-tag-dd-footer a { color:#3699ff; cursor:pointer; }
 
-            .al-tag-picker { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border: 1px solid #e4e6ef; border-radius: 6px; background: #f9fafc; max-height: 120px; overflow-y: auto; }
-            .al-tag-option { cursor: pointer; user-select: none; }
-            .al-tag-option input { display: none; }
-            .al-tag-option .act-tag { opacity: 0.45; transition: opacity 0.15s; }
-            .al-tag-option input:checked + .act-tag { opacity: 1; box-shadow: 0 0 0 2px #3699ff; }
-
-            .al-more-toggle { color: #3699ff; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: inline-block; margin: 8px 0; }
-            .al-more-toggle:hover { text-decoration: underline; }
-            .al-more-wrap { display: none; }
-            .al-more-wrap.open { display: block; }
-
-            .al-active-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+            /* Active filter chips */
+            .al-active-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
             .al-active-chip {
-                display: inline-flex;
-                align-items: center;
-                padding: 3px 4px 3px 10px;
-                background: #eef3f8;
-                border-radius: 999px;
-                font-size: 0.78rem;
-                color: #3f4254;
+                display:inline-flex; align-items:center;
+                padding:3px 4px 3px 10px; background:#eef3f8; border-radius:999px;
+                font-size:0.78rem; color:#3f4254;
             }
             .al-active-chip-remove {
-                margin-left: 6px;
-                width: 18px; height: 18px;
-                display: inline-flex; align-items: center; justify-content: center;
-                border-radius: 50%;
-                background: #d7e1eb;
-                cursor: pointer;
-                font-size: 0.7rem;
-                line-height: 1;
+                margin-left:6px; width:18px; height:18px;
+                display:inline-flex; align-items:center; justify-content:center;
+                border-radius:50%; background:#d7e1eb; cursor:pointer;
+                font-size:0.7rem; line-height:1;
             }
-            .al-active-chip-remove:hover { background: #b5c3d1; }
+            .al-active-chip-remove:hover { background:#b5c3d1; }
 
-            .al-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-            .al-actions .al-total { margin-left: auto; color: #7e8299; font-size: 0.9rem; }
+            /* Actions row */
+            .al-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
+            .al-actions .al-total { margin-left:auto; color:#7e8299; font-size:0.9rem; }
 
-            /* Activity log highlight styles (legacy renderer fallback) */
-            .highlight { color: #3699FF; font-weight: 600; }
-            .highlight-orange { color: #FFA800; font-weight: 600; }
-            .highlight-green { color: #1BC5BD; font-weight: 600; }
-            .highlight-purple { color: #8950FC; font-weight: 600; }
+            /* Legacy highlight classes (fallback renderer) */
+            .highlight { color:#3699FF; font-weight:600; }
+            .highlight-orange { color:#FFA800; font-weight:600; }
+            .highlight-green { color:#1BC5BD; font-weight:600; }
+            .highlight-purple { color:#8950FC; font-weight:600; }
 
-            /* Mobile filter drawer */
+            /* Hidden custom-range picker input */
+            #activity_date_range { position:absolute; left:-9999px; opacity:0; }
+
             @media (max-width: 768px) {
-                .al-filter-card { padding: 12px; }
+                .al-filter-card { padding:12px; }
+                .al-actions .btn { flex:1 1 auto; }
             }
         </style>
     @endpush
@@ -100,7 +128,7 @@
                         {{-- === Filter card === --}}
                         <div class="al-filter-card">
 
-                            {{-- Date preset pills --}}
+                            {{-- Row 1: date preset pills --}}
                             <div class="al-preset-row" id="al_date_presets">
                                 <button type="button" class="al-preset-btn" data-preset="today">Today</button>
                                 <button type="button" class="al-preset-btn" data-preset="yesterday">Yesterday</button>
@@ -109,71 +137,51 @@
                                 <button type="button" class="al-preset-btn" data-preset="thisMonth">This month</button>
                                 <button type="button" class="al-preset-btn" data-preset="lastMonth">Last month</button>
                                 <button type="button" class="al-preset-btn" data-preset="custom">Custom…</button>
+
+                                {{-- Hidden daterangepicker target — opened by Custom… button --}}
+                                {!! Form::text('date_range', null, ['id' => 'activity_date_range']) !!}
                             </div>
 
-                            {{-- Primary filter row: date / search / centre / actor --}}
+                            {{-- Row 2: search + event type + centre + actor on one line --}}
                             <div class="al-filter-row">
-                                <div>
-                                    <div class="al-field-label">Date range</div>
-                                    <div class="al-search-wrap">
-                                        {!! Form::text('date_range', null, ['id' => 'activity_date_range', 'class' => 'form-control', 'readonly' => true]) !!}
-                                    </div>
-                                </div>
                                 <div>
                                     <div class="al-field-label">Search</div>
                                     <div class="al-search-wrap">
                                         <i class="fa fa-search"></i>
-                                        <input type="text" id="al_search" class="form-control al-search-input" placeholder="Patient name, plan #, ...">
+                                        <input type="text" id="al_search" class="form-control al-search-input" placeholder="Patient name, plan #, description…">
                                     </div>
                                 </div>
+
+                                <div>
+                                    <div class="al-field-label">Event type</div>
+                                    <div class="al-tag-dd" id="al_tag_dd">
+                                        <button type="button" class="al-tag-dd-btn" id="al_tag_dd_btn">All events</button>
+                                        <div class="al-tag-dd-panel">
+                                            <div class="al-tag-dd-list">
+                                                @foreach($tags as $tag)
+                                                    @php($color = $tagColors[$tag] ?? 'zinc')
+                                                    <label class="al-tag-option" title="{{ $tag }}">
+                                                        <input type="checkbox" value="{{ $tag }}" class="al-tag-checkbox">
+                                                        <span class="act-tag act-tag--{{ $color }}">{{ $tag }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                            <div class="al-tag-dd-footer">
+                                                <a id="al_tag_clear">Clear</a>
+                                                <a id="al_tag_done">Done</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <div class="al-field-label">Centre</div>
                                     {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, ['id' => 'location_id', 'class' => 'form-control select2']) !!}
                                 </div>
+
                                 <div>
                                     <div class="al-field-label">Actor</div>
                                     {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'class' => 'form-control select2']) !!}
-                                </div>
-                            </div>
-
-                            {{-- Tag family multi-select --}}
-                            <div>
-                                <div class="al-field-label">Event type (filter by tag family)</div>
-                                <div class="al-tag-picker" id="al_tag_picker">
-                                    @foreach($tags as $tag)
-                                        @php($color = $tagColors[$tag] ?? 'zinc')
-                                        <label class="al-tag-option" title="{{ $tag }}">
-                                            <input type="checkbox" value="{{ $tag }}" class="al-tag-checkbox">
-                                            <span class="act-tag act-tag--{{ $color }}">{{ $tag }}</span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            {{-- More filters (collapsible) --}}
-                            <span class="al-more-toggle" id="al_more_toggle">▸ More filters</span>
-                            <div class="al-more-wrap" id="al_more_wrap">
-                                <div class="al-filter-row">
-                                    <div>
-                                        <div class="al-field-label">Activity type</div>
-                                        <select class="form-control" id="activity_type">
-                                            <option value="all">All types</option>
-                                            <option value="Consultancy">Consultancy</option>
-                                            <option value="Plan">Plan</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <div class="al-field-label">Patient ID</div>
-                                        <input type="number" id="al_patient_id" class="form-control" placeholder="e.g. 42018" min="1">
-                                    </div>
-                                    <div>
-                                        <div class="al-field-label">Min Rs.</div>
-                                        <input type="number" id="al_amount_min" class="form-control" placeholder="0" min="0">
-                                    </div>
-                                    <div>
-                                        <div class="al-field-label">Max Rs.</div>
-                                        <input type="number" id="al_amount_max" class="form-control" placeholder="No limit" min="0">
-                                    </div>
                                 </div>
                             </div>
 
@@ -214,11 +222,7 @@
                             <input type="hidden" name="endDate" id="al_export_end">
                             <input type="hidden" name="location_id" id="al_export_location">
                             <input type="hidden" name="user_id" id="al_export_user">
-                            <input type="hidden" name="activity_type" id="al_export_type">
                             <input type="hidden" name="search" id="al_export_search">
-                            <input type="hidden" name="patient_id" id="al_export_patient">
-                            <input type="hidden" name="amount_min" id="al_export_amount_min">
-                            <input type="hidden" name="amount_max" id="al_export_amount_max">
                             <div id="al_export_tags"></div>
                         </form>
 
@@ -231,7 +235,6 @@
     @push('js')
         <script>
             (function () {
-                // Date range picker
                 var $dr = $('#activity_date_range');
                 $dr.daterangepicker({
                     locale: { format: 'MM/DD/YYYY' },
@@ -248,49 +251,73 @@
                     lastMonth: function () { return [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]; }
                 };
 
-                // Preset button clicks
+                // Preset click
                 $('#al_date_presets').on('click', '.al-preset-btn', function () {
                     var preset = $(this).data('preset');
                     $('.al-preset-btn').removeClass('active');
                     $(this).addClass('active');
                     if (preset !== 'custom' && PRESETS[preset]) {
-                        var range = PRESETS[preset]();
-                        $dr.data('daterangepicker').setStartDate(range[0]);
-                        $dr.data('daterangepicker').setEndDate(range[1]);
+                        var r = PRESETS[preset]();
+                        $dr.data('daterangepicker').setStartDate(r[0]);
+                        $dr.data('daterangepicker').setEndDate(r[1]);
                         loadReport();
                     } else if (preset === 'custom') {
-                        $dr.focus().trigger('click');
+                        // Open the picker anchored to the Custom button
+                        $dr.data('daterangepicker').show();
                     }
                 });
 
-                // When custom range is changed, mark Custom preset active
+                // Reposition the picker container to appear under the Custom button
+                $dr.on('show.daterangepicker', function (ev, picker) {
+                    var btn = $('.al-preset-btn[data-preset="custom"]');
+                    var offset = btn.offset();
+                    picker.container.css({
+                        top: offset.top + btn.outerHeight() + 4,
+                        left: offset.left,
+                        right: 'auto'
+                    });
+                });
+
                 $dr.on('apply.daterangepicker', function () {
-                    // A true preset click already sets active — this fires for manual picks
                     var d = $dr.data('daterangepicker');
-                    var start = d.startDate.format('YYYY-MM-DD');
-                    var end = d.endDate.format('YYYY-MM-DD');
+                    var start = d.startDate.format('YYYY-MM-DD'), end = d.endDate.format('YYYY-MM-DD');
                     var matched = null;
                     Object.keys(PRESETS).forEach(function (k) {
                         var r = PRESETS[k]();
-                        if (r[0].format('YYYY-MM-DD') === start && r[1].format('YYYY-MM-DD') === end) {
-                            matched = k;
-                        }
+                        if (r[0].format('YYYY-MM-DD') === start && r[1].format('YYYY-MM-DD') === end) matched = k;
                     });
                     $('.al-preset-btn').removeClass('active');
-                    if (matched) {
-                        $('.al-preset-btn[data-preset="' + matched + '"]').addClass('active');
-                    } else {
-                        $('.al-preset-btn[data-preset="custom"]').addClass('active');
-                    }
+                    $('.al-preset-btn[data-preset="' + (matched || 'custom') + '"]').addClass('active');
                     loadReport();
                 });
 
-                // More filters toggle
-                $('#al_more_toggle').on('click', function () {
-                    var $wrap = $('#al_more_wrap');
-                    $wrap.toggleClass('open');
-                    $(this).text($wrap.hasClass('open') ? '▾ Fewer filters' : '▸ More filters');
+                // Event-type dropdown open/close
+                $('#al_tag_dd_btn').on('click', function (e) {
+                    e.stopPropagation();
+                    $('#al_tag_dd').toggleClass('open');
                 });
+                $(document).on('click', function (e) {
+                    if (!$(e.target).closest('#al_tag_dd').length) $('#al_tag_dd').removeClass('open');
+                });
+                $('#al_tag_done').on('click', function () { $('#al_tag_dd').removeClass('open'); });
+                $('#al_tag_clear').on('click', function () {
+                    $('.al-tag-checkbox').prop('checked', false);
+                    updateTagButtonLabel();
+                    loadReport();
+                });
+
+                $('#al_tag_dd').on('change', '.al-tag-checkbox', function () {
+                    updateTagButtonLabel();
+                    loadReport();
+                });
+
+                function updateTagButtonLabel() {
+                    var selected = $('.al-tag-checkbox:checked').map(function () { return this.value; }).get();
+                    var $btn = $('#al_tag_dd_btn');
+                    if (selected.length === 0) $btn.text('All events');
+                    else if (selected.length <= 2) $btn.text(selected.join(', '));
+                    else $btn.text(selected.length + ' selected');
+                }
 
                 // Debounced search
                 var searchTimer = null;
@@ -299,41 +326,25 @@
                     searchTimer = setTimeout(loadReport, 500);
                 });
 
-                // Tag picker changes
-                $('#al_tag_picker').on('change', '.al-tag-checkbox', function () {
-                    loadReport();
-                });
+                // Centre / Actor change
+                $('#location_id, #doctor_id').on('change', function () { loadReport(); });
 
-                // More-filter inputs — reload on blur (not per-keystroke to avoid query spam)
-                $('#activity_type, #location_id, #doctor_id').on('change', function () {
-                    loadReport();
-                });
-                $('#al_patient_id, #al_amount_min, #al_amount_max').on('blur', function () {
-                    if ($(this).val() !== '') { loadReport(); }
-                });
-
-                // Reset button
+                // Reset
                 $('#al_reset_btn').on('click', function () {
                     $('#al_search').val('');
-                    $('#activity_type').val('all');
-                    $('#location_id').val('').trigger('change');
-                    $('#doctor_id').val('').trigger('change');
-                    $('#al_patient_id').val('');
-                    $('#al_amount_min').val('');
-                    $('#al_amount_max').val('');
+                    $('#location_id').val('').trigger('change.select2').trigger('change');
+                    $('#doctor_id').val('').trigger('change.select2').trigger('change');
                     $('.al-tag-checkbox').prop('checked', false);
-
-                    // Reset to "last 7 days"
-                    var range = PRESETS.last7();
-                    $dr.data('daterangepicker').setStartDate(range[0]);
-                    $dr.data('daterangepicker').setEndDate(range[1]);
+                    updateTagButtonLabel();
+                    var r = PRESETS.last7();
+                    $dr.data('daterangepicker').setStartDate(r[0]);
+                    $dr.data('daterangepicker').setEndDate(r[1]);
                     $('.al-preset-btn').removeClass('active');
                     $('.al-preset-btn[data-preset="last7"]').addClass('active');
                     loadReport();
                 });
 
-                // Load button
-                $('#al_load_btn').on('click', function () { loadReport(); });
+                $('#al_load_btn').on('click', loadReport);
 
                 // Export CSV
                 $('#al_export_btn').on('click', function () {
@@ -342,11 +353,7 @@
                     $('#al_export_end').val(p.endDate);
                     $('#al_export_location').val(p.location_id || '');
                     $('#al_export_user').val(p.user_id || '');
-                    $('#al_export_type').val(p.activity_type || '');
                     $('#al_export_search').val(p.search || '');
-                    $('#al_export_patient').val(p.patient_id || '');
-                    $('#al_export_amount_min').val(p.amount_min || '');
-                    $('#al_export_amount_max').val(p.amount_max || '');
                     var $tagsBox = $('#al_export_tags').empty();
                     (p.tags || []).forEach(function (t) {
                         $tagsBox.append('<input type="hidden" name="tags[]" value="' + t + '">');
@@ -356,26 +363,20 @@
 
                 function collectParams() {
                     var d = $dr.data('daterangepicker');
-                    var tags = [];
-                    $('.al-tag-checkbox:checked').each(function () { tags.push($(this).val()); });
+                    var tags = $('.al-tag-checkbox:checked').map(function () { return this.value; }).get();
                     return {
                         startDate: d.startDate.format('YYYY-MM-DD'),
                         endDate: d.endDate.format('YYYY-MM-DD'),
                         location_id: $('#location_id').val(),
                         user_id: $('#doctor_id').val(),
-                        activity_type: $('#activity_type').val(),
                         search: $.trim($('#al_search').val()),
-                        patient_id: $('#al_patient_id').val(),
-                        amount_min: $('#al_amount_min').val(),
-                        amount_max: $('#al_amount_max').val(),
                         tags: tags
                     };
                 }
 
                 function renderActiveChips() {
                     var p = collectParams();
-                    var chips = [];
-                    chips.push({ label: p.startDate + ' → ' + p.endDate, key: 'date' });
+                    var chips = [{ label: p.startDate + ' → ' + p.endDate, key: 'date' }];
                     if (p.search) chips.push({ label: '🔍 ' + p.search, key: 'search' });
                     (p.tags || []).forEach(function (t) { chips.push({ label: t, key: 'tag:' + t }); });
                     if (p.location_id) {
@@ -386,16 +387,12 @@
                         var un = $('#doctor_id option:selected').text();
                         if (un && un !== 'All') chips.push({ label: 'Actor: ' + un, key: 'user' });
                     }
-                    if (p.patient_id) chips.push({ label: 'Patient #' + p.patient_id, key: 'patient' });
-                    if (p.amount_min) chips.push({ label: '≥ Rs. ' + p.amount_min, key: 'amount_min' });
-                    if (p.amount_max) chips.push({ label: '≤ Rs. ' + p.amount_max, key: 'amount_max' });
-
                     var $box = $('#al_active_chips').empty();
                     chips.forEach(function (c) {
                         $box.append(
                             '<span class="al-active-chip" data-key="' + c.key + '">' +
                                 c.label +
-                                '<span class="al-active-chip-remove">&times;</span>' +
+                                (c.key !== 'date' ? '<span class="al-active-chip-remove">&times;</span>' : '') +
                             '</span>'
                         );
                     });
@@ -404,26 +401,22 @@
                 $('#al_active_chips').on('click', '.al-active-chip-remove', function () {
                     var key = $(this).parent().data('key');
                     if (key === 'search') $('#al_search').val('');
-                    else if (key === 'patient') $('#al_patient_id').val('');
-                    else if (key === 'amount_min') $('#al_amount_min').val('');
-                    else if (key === 'amount_max') $('#al_amount_max').val('');
                     else if (key === 'location') $('#location_id').val('').trigger('change');
                     else if (key === 'user') $('#doctor_id').val('').trigger('change');
                     else if (key && key.indexOf('tag:') === 0) {
                         $('.al-tag-checkbox[value="' + key.substr(4) + '"]').prop('checked', false);
+                        updateTagButtonLabel();
                     }
                     loadReport();
                 });
 
-                // ===================== fetch / pagination =====================
-                var activityNextCursor = null;
-                var activityNextOffset = 0;
+                // Fetch / pagination
+                var activityNextCursor = null, activityNextOffset = 0;
 
                 function fetchActivityPage(cursor) {
                     var isFirstPage = !cursor;
                     showSpinner();
                     $('#activity_load_more').prop('disabled', true);
-
                     var p = collectParams();
                     p.cursor = cursor || '';
                     p.cursor_offset = activityNextOffset;
@@ -431,12 +424,10 @@
                     return $.ajax({
                         headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                         url: route('admin.reports.load_activity_report'),
-                        type: 'POST',
-                        dataType: 'json',
-                        data: p
+                        type: 'POST', dataType: 'json', data: p
                     }).done(function (response) {
                         if (!response || !response.success) {
-                            if (typeof toastr !== 'undefined') toastr.error('Could not load activity logs. Please try again.');
+                            if (typeof toastr !== 'undefined') toastr.error('Could not load activity logs.');
                             return;
                         }
                         var payload = response.data;
