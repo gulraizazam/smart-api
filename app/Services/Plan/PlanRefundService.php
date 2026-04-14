@@ -323,7 +323,7 @@ final class PlanRefundService
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
         $locationName = $location->name ?? '';
-        $refundAmount = $data['refund_amount'];
+        $refundAmount = (float) $data['refund_amount'];
         $refundDate = $data['created_at'] ? date('M j, Y', strtotime($data['created_at'])) : date('M j, Y');
         $caseSetteled = $data['case_setteled'] == '1';
 
