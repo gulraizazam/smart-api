@@ -471,6 +471,7 @@ class ActivityLogger
             'account_id' => Auth::user()->account_id ?? $package->account_id,
             'action' => 'Refund Made',
             'activity_type' => 'refund_made',
+            'log_tier' => \App\Enums\ActivityLogTier::PhiAudit->value,
             'description' => self::sanitizeDescription('Refund Made Rs. '.number_format($refund->cash_amount).' to '.($patient->name ?? 'Unknown').' for Plan Id: '.$package->id.($locationName ? ' at '.$locationName : '')),
             'patient' => $patient->name ?? '',
             'patient_id' => $patient->id ?? $package->patient_id,

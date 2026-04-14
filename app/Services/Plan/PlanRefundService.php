@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Plan;
 
+use App\Enums\ActivityLogTier;
 use App\Helpers\Filters;
 use App\Models\Activity;
 use App\Models\Appointments;
@@ -339,6 +340,7 @@ final class PlanRefundService
         $activity->timestamps = false;
         $activity->action = 'refund_updated';
         $activity->activity_type = 'refund_updated';
+        $activity->log_tier = ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient->id ?? null;

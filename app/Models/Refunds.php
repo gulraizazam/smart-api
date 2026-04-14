@@ -169,6 +169,7 @@ class Refunds extends Model
         $activity->timestamps = false;
         $activity->action = 'refunded';
         $activity->activity_type = 'refund_made';
+        $activity->log_tier = \App\Enums\ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient->id;
