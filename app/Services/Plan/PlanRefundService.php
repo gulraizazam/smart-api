@@ -267,7 +267,7 @@ final class PlanRefundService
                     'invoice_status_id' => 3,
                     'created_by' => Auth::id(),
                     'location_id' => $packageinformation->location_id,
-                    'doctor_id' => $findDoc?->doctor_id,
+                    'doctor_id' => $findDoc?->doctor_id ?? Auth::id(),
                     'active' => 1,
                     'is_exclusive' => 0,
                     'is_settlement' => 1,
