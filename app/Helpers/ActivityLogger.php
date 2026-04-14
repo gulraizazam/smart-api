@@ -1473,6 +1473,56 @@ class ActivityLogger
     }
 
     /**
+     * Log a read of the audit log itself (meta-audit). HIPAA §164.312(b)
+     * requires recording audit-log access, not just the underlying PHI.
+     *
+     * Throttled so a compliance reviewer paging through the feed doesn't
+     * produce a row per page — one row per user per configurable window
+     * (default: 60 minutes). $mode = 'view' or 'export'.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public static function logAuditLogAccessed(array $filters = [], string $mode = 'view'): ?Activity
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return null;
+        }
+
+        $throttleMinutes = (int) env('ACTIVITY_AUDIT_LOG_READ_THROTTLE_MINUTES', 60);
+        $since = now()->subMinutes($throttleMinutes);
+
+        $recent = Activity::where('activity_type', 'audit_log_viewed')
+            ->where('action', $mode)
+            ->where('created_by', $userId)
+            ->where('created_at', '>=', $since)
+            ->exists();
+
+        if ($recent) {
+            return null;
+        }
+
+        $actorName = Auth::user()->name ?? 'System';
+        $filterSummary = self::summarizeFilters($filters);
+
+        $verb = $mode === 'export' ? 'exported the audit log' : 'viewed the audit log';
+        $description = '<span class="highlight">'.$actorName.'</span> '.$verb
+            .($filterSummary !== '' ? ' · filters: '.$filterSummary : '');
+
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => $mode,
+            'activity_type' => 'audit_log_viewed',
+            'log_tier' => 'security_audit',
+            'description' => self::sanitizeDescription($description),
+            'user_id' => $userId,
+            'created_by' => $userId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
      * Compact filter summary for logDataExport / logBulkSmsSent. Keeps
      * the description readable when filters are nested or have long
      * values — truncates any single filter value to 40 chars.
