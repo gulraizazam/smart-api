@@ -116,8 +116,9 @@ final class PlanService
         [$orderBy, $order] = $this->getOrderParams($filters);
 
         $userCentres = ACL::getUserCentres();
-        $locations = Locations::whereIn('id', $userCentres)
+        $locations = (object) Locations::whereIn('id', $userCentres)
             ->where('active', 1)
+            ->where('name', '!=', 'All Centres')
             ->orderBy('name')
             ->pluck('name', 'id')
             ->toArray();
@@ -1119,7 +1120,29 @@ final class PlanService
         $this->addStatusFilter($where, $filters, $userId, $filename, $applyFilter);
         $this->addDateRangeFilter($where, $filters, $userId, $filename, $applyFilter);
 
+        $this->validateLocationFilter($where, $userId, $filename);
+
         return $where;
+    }
+
+    private function validateLocationFilter(array &$where, int|string $userId, string $filename): void
+    {
+        $userCentres = ACL::getUserCentres();
+
+        foreach ($where as $idx => $condition) {
+            if (!is_array($condition) || count($condition) !== 3) {
+                continue;
+            }
+            if ($condition[0] !== 'packages.location_id') {
+                continue;
+            }
+            if (!in_array((int) $condition[2], array_map('intval', $userCentres), true)) {
+                unset($where[$idx]);
+                Filters::forget($userId, $filename, 'location_id');
+            }
+        }
+
+        $where = array_values($where);
     }
 
     private function addPatientFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
@@ -1131,11 +1154,58 @@ final class PlanService
             }
             $where[] = ['packages.patient_id', '=', $patientId];
             Filters::put($userId, $filename, 'patient_id', $patientId);
-        } elseif ($applyFilter) {
+
+            return;
+        }
+
+        if (array_key_exists('patient_id', $filters) && !$this->hasFilter($filters, 'patient_id')) {
+            return;
+        }
+
+        if ($this->hasFilter($filters, 'patient_name')) {
+            $matched = $this->resolvePatientIdsByName($filters['patient_name']);
+            if (!empty($matched)) {
+                $patientId = $matched[0];
+                $where[] = ['packages.patient_id', '=', $patientId];
+                Filters::put($userId, $filename, 'patient_id', $patientId);
+            } else {
+                $where[] = ['packages.patient_id', '=', 0];
+            }
+
+            return;
+        }
+
+        if ($applyFilter) {
             Filters::forget($userId, $filename, 'patient_id');
         } elseif ($cached = Filters::get($userId, $filename, 'patient_id')) {
             $where[] = ['packages.patient_id', '=', $cached];
         }
+    }
+
+    private function resolvePatientIdsByName(string $patientName): array
+    {
+        $name = trim($patientName);
+        if ($name === '') {
+            return [];
+        }
+
+        $phone = null;
+        if (str_contains($name, ' - ')) {
+            [$namePart, $phonePart] = array_map('trim', explode(' - ', $name, 2));
+            $name = $namePart;
+            $phone = $phonePart !== '' ? $phonePart : null;
+        }
+
+        return Patients::query()
+            ->where(function ($q) use ($name, $phone): void {
+                $q->where('name', 'LIKE', '%' . $name . '%');
+                if ($phone !== null) {
+                    $q->orWhere('phone', 'LIKE', '%' . $phone . '%');
+                }
+            })
+            ->limit(100)
+            ->pluck('id')
+            ->all();
     }
 
     private function addFilterCondition(array &$where, array $filters, string $filterKey, string $column, int|string $userId, string $filename, bool $applyFilter): void
@@ -3376,7 +3446,7 @@ final class PlanService
         $oldDate = $packageAdvanceBefore?->created_at;
 
         $record = PackageAdvances::updateRecordFinanceedit(
-            (object) $data,
+            $data,
             Auth::user()->account_id,
             $amountStatus
         );
@@ -3395,9 +3465,9 @@ final class PlanService
 
             // Log payment updated activity
             $package = Packages::find($data['package_id']);
-            $patient = $package ? User::find($package->patient_id) : null;
+            $patient = $package ? Patients::find($package->patient_id) : null;
             $location = $package ? Locations::with('city')->find($package->location_id) : null;
-            $newAmount = $data['cash_amount'];
+            $newAmount = (float) $data['cash_amount'];
             $newDate = $data['created_at'];
 
             $amountChanged = $oldAmount != $newAmount;
@@ -3450,7 +3520,7 @@ final class PlanService
 
             // Log payment deleted activity
             $package = Packages::find($packageadvanceinfo->package_id);
-            $patient = $package ? User::find($package->patient_id) : null;
+            $patient = $package ? Patients::find($package->patient_id) : null;
             $location = $package ? Locations::with('city')->find($package->location_id) : null;
             if ($package && $patient) {
                 ActivityLogger::logPaymentDeleted($packageadvanceinfo->cash_amount, $package, $patient, $location);

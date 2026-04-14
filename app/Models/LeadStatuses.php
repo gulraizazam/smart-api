@@ -80,7 +80,9 @@ class LeadStatuses extends BaseModel
 
     public function scopeParentsOnly(Builder $query): Builder
     {
-        return $query->where('parent_id', 0);
+        return $query->where(function (Builder $q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        });
     }
 
     // =========================================================================

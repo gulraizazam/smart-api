@@ -241,22 +241,22 @@ class PackageAdvances extends BaseModel
         return $record;
     }
 
-    public static function updateRecordFinanceedit(Request $request, int $accountId, bool $amountStatus): ?bool
+    public static function updateRecordFinanceedit(array $input, int $accountId, bool $amountStatus): ?bool
     {
-        $oldData = self::findOrFail($request->package_advances_id)->toArray();
+        $oldData = self::findOrFail($input['package_advances_id'])->toArray();
 
         $data = [
-            'payment_mode_id' => $request->payment_mode_id,
-            'created_at'      => $request->created_at . ' ' . Carbon::now()->toTimeString(),
+            'payment_mode_id' => $input['payment_mode_id'],
+            'created_at'      => $input['created_at'] . ' ' . Carbon::now()->toTimeString(),
             'updated_at'      => now(),
         ];
 
         if ($amountStatus) {
-            $data['cash_amount'] = $request->cash_amount;
+            $data['cash_amount'] = $input['cash_amount'];
         }
 
         $record = self::where([
-            'id'         => $request->package_advances_id,
+            'id'         => $input['package_advances_id'],
             'account_id' => $accountId,
         ])->first();
 
@@ -265,7 +265,7 @@ class PackageAdvances extends BaseModel
         }
 
         $record->update($data);
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $oldData, $request->package_advances_id);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $oldData, $input['package_advances_id']);
 
         return true;
     }

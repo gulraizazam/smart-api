@@ -1476,7 +1476,7 @@ class PackagesController extends Controller
     /*
      * $edit the cash that enter in package advances
      */
-    public function editpackageadvancescashindex(int $id, int $package_id): \Illuminate\View\View
+    public function editpackageadvancescashindex(int $id, int $package_id): \Illuminate\Http\JsonResponse
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -1487,7 +1487,6 @@ class PackagesController extends Controller
             'package_id' => $package_id,
             'paymentmodes' => $paymentmodes,
         ]);
-        //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
     }
 
     /*

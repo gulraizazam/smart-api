@@ -88,20 +88,24 @@ function setStatusData(response, id) {
 
 
         skipLoadChildStatuses = true;
-        if (appointments?.appointment_status?.parent_id != 0) {
-            $("#base_appointment_status_id").val(appointments?.appointment_status?.parent_id).trigger('change');
+        // Root statuses store parent_id as NULL (or 0). Treat both as "root".
+        let parentId = appointments?.appointment_status?.parent_id;
+        let isRoot = parentId == null || parentId == 0;
+
+        if (!isRoot) {
+            $("#base_appointment_status_id").val(parentId).trigger('change');
         } else {
             $("#base_appointment_status_id").val(appointments?.appointment_status_id).trigger('change');
         }
 
-        if (appointments?.appointment_status?.parent_id == 0) {
+        if (isRoot) {
             $("#appointment_status_id_section").hide();
         } else {
             $("#appointment_status_id_section").show();
             $("#appointment_status_id").val(appointments?.appointment_status?.id).trigger('change');
         }
 
-        if (appointments?.appointment_status?.parent_id == 0) {
+        if (isRoot) {
             if (appointments.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
