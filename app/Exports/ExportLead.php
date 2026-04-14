@@ -6,6 +6,7 @@ namespace App\Exports;
 
 use App\Helpers\ACL;
 use App\Models\Leads;
+use App\Models\LeadStatuses;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -52,47 +53,48 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
             $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
         }
 
+        $junkStatusId = LeadStatuses::where(['account_id' => $accountId, 'is_junk' => 1])->value('id');
+        if ($junkStatusId && (int) ($this->request->lead_status_id ?? 0) !== (int) $junkStatusId) {
+            $query->where('lead_status_id', '!=', $junkStatusId);
+        }
+
         $leads = $query->orderByDesc('id')->get();
 
         $rows = [];
         foreach ($leads as $lead) {
-            $baseRow = [
+            $row = [
                 $lead->id,
                 $lead->name ?? 'N/A',
             ];
 
             if ($this->canViewContact) {
-                $baseRow[] = $lead->phone ?? 'N/A';
+                $row[] = $lead->phone ?? 'N/A';
             }
 
-            $baseRow = [
-                ...$baseRow,
+            $services = $lead->lead_service ?? collect();
+            $serviceNames = $services
+                ->map(fn($s): string => $s->service?->name ?? 'N/A')
+                ->filter()
+                ->unique()
+                ->implode(', ');
+            $treatmentNames = $services
+                ->map(fn($s): ?string => $s->childservice?->name)
+                ->filter()
+                ->unique()
+                ->implode(', ');
+
+            $rows[] = [
+                ...$row,
                 $lead->gender == 1 ? 'Male' : 'Female',
                 $lead->city?->name ?? 'N/A',
                 $lead->towns?->name ?? 'N/A',
                 $lead->region?->name ?? 'N/A',
                 $lead->lead_status?->name ?? 'N/A',
+                $serviceNames !== '' ? $serviceNames : 'N/A',
+                $treatmentNames !== '' ? $treatmentNames : 'N/A',
+                Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                $lead->user?->name ?? 'N/A',
             ];
-
-            if ($lead->lead_service && $lead->lead_service->count() > 0) {
-                foreach ($lead->lead_service as $service) {
-                    $rows[] = [
-                        ...$baseRow,
-                        $service->service?->name ?? 'N/A',
-                        $service->childservice?->name ?? 'Empty',
-                        Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                        $lead->user?->name ?? 'N/A',
-                    ];
-                }
-            } else {
-                $rows[] = [
-                    ...$baseRow,
-                    'N/A',
-                    'N/A',
-                    Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                    $lead->user?->name ?? 'N/A',
-                ];
-            }
         }
 
         return collect($rows);
