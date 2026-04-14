@@ -947,15 +947,20 @@ class PatientService
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
+        $paidStatusId = \App\Models\InvoiceStatuses::where('slug', 'paid')->value('id');
+
         $appointments = DB::table('appointments')
             ->select([
                 'appointments.id', 'appointments.scheduled_date', 'appointments.consultancy_type',
                 'appointments.appointment_type_id as type_id', 'appointments.created_at',
+                'appointments.patient_id', 'appointments.doctor_id as doctor_id_raw',
+                'appointments.location_id as location_id_raw',
                 'patients.name as patient_name', 'patients.phone as patient_phone',
                 'doctors.name as doctor_name', 'cities.name as city_name',
                 'locations.name as location_name', 'services.name as service_name',
                 'appointment_statuses.name as status_name', 'appointment_types.name as type_name',
                 'creators.name as created_by_name',
+                'invoices.id as invoice_id', 'invoices.invoice_status_id as invoice_status_id',
             ])
             ->leftJoin('users as patients', 'appointments.patient_id', '=', 'patients.id')
             ->leftJoin('users as doctors', 'appointments.doctor_id', '=', 'doctors.id')
@@ -965,6 +970,11 @@ class PatientService
             ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
             ->leftJoin('appointment_types', 'appointments.appointment_type_id', '=', 'appointment_types.id')
             ->leftJoin('users as creators', 'appointments.created_by', '=', 'creators.id')
+            ->leftJoin('invoices', function ($join) use ($paidStatusId) {
+                $join->on('invoices.appointment_id', '=', 'appointments.id')
+                    ->where('invoices.invoice_status_id', '=', $paidStatusId)
+                    ->whereNull('invoices.deleted_at');
+            })
             ->where('appointments.patient_id', $patientId)
             ->where('appointments.account_id', $accountId)
             ->when($appointmentTypeId, fn ($q) => $q->where('appointments.appointment_type_id', $appointmentTypeId)->whereNull('appointments.deleted_at'))
@@ -980,6 +990,15 @@ class PatientService
                 'perpage' => $iDisplayLength,
                 'total' => $iTotalRecords,
                 'sort' => $order,
+            ],
+            'permissions' => [
+                'edit' => Gate::allows('appointments_edit'),
+                'delete' => Gate::allows('appointments_destroy'),
+                'status' => Gate::allows('appointments_appointment_status'),
+                'invoice' => Gate::allows('consultancy_invoice') || Gate::allows('appointments_invoice'),
+                'invoice_display' => Gate::allows('consultancy_invoice_display') || Gate::allows('appointments_invoice_display'),
+                'log' => Gate::allows('appointments_log'),
+                'contact' => Gate::allows('contact'),
             ],
             'filter_values' => [
                 'patient' => null, 'cities' => [], 'locations' => [],

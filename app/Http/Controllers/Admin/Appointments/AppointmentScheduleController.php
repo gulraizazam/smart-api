@@ -749,7 +749,7 @@ class AppointmentScheduleController extends AppointmentBaseController
                 return $this->successResponse('Record updated successfully!');
             }
 
-            return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 400);
+            return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 200);
         }
 
         return $this->errorResponse('Appointment not found!', 200);

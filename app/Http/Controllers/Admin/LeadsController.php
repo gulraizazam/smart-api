@@ -65,7 +65,8 @@ class LeadsController extends Controller
         $lead_statuses = LeadStatuses::getLeadStatuses();
         $lead_statuses->prepend('Select a Lead Status', '');
 
-        $Services = Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])
+        $Services = Services::where(['slug' => 'custom', 'active' => 1])
+            ->rootServices()
             ->pluck('name', 'id');
         $Services->prepend('Select Service', '');
 
