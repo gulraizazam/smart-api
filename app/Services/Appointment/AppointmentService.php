@@ -626,7 +626,10 @@ class AppointmentService
 
             if (isset($appointmentData['scheduled_date'])) {
                 $newScheduledDate = Carbon::parse($appointmentData['scheduled_date'])->format('Y-m-d');
-                if ((string) $appointment->scheduled_date !== $newScheduledDate) {
+                $currentScheduledDate = $appointment->scheduled_date
+                    ? Carbon::parse($appointment->scheduled_date)->format('Y-m-d')
+                    : null;
+                if ($currentScheduledDate !== $newScheduledDate) {
                     $appointmentData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
                 }
             }

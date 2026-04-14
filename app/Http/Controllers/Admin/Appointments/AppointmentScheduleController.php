@@ -716,7 +716,10 @@ class AppointmentScheduleController extends AppointmentBaseController
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
 
-                if ((string) $appointment->scheduled_date !== $newScheduledDate) {
+                $currentScheduledDate = $appointment->scheduled_date
+                    ? Carbon::parse($appointment->scheduled_date)->format('Y-m-d')
+                    : null;
+                if ($currentScheduledDate !== $newScheduledDate) {
                     $updateData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
                 }
 
