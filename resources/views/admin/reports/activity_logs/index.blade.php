@@ -9,8 +9,11 @@
             /* Activity log page — filter bar */
             .al-filter-card { background:#fff; border:1px solid #ebedf3; border-radius:8px; padding:16px 20px; margin-bottom:16px; }
 
-            /* Row 1: date preset pills */
-            .al-preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+            /* Row 1: date preset pills + export on the right */
+            .al-preset-row {
+                display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;
+                align-items:center;
+            }
             .al-preset-btn {
                 padding:5px 14px; border-radius:999px;
                 border:1px solid #e4e6ef; background:#f3f6f9; color:#3f4254;
@@ -18,16 +21,31 @@
             }
             .al-preset-btn:hover { background:#e4e6ef; }
             .al-preset-btn.active { background:#3699ff; color:#fff; border-color:#3699ff; }
+            .al-preset-row .al-export-btn { margin-left:auto; }
 
-            /* Row 2: filters in a single line */
+            /* Row 2: filters + action buttons in a single line */
             .al-filter-row {
                 display:grid;
-                grid-template-columns: 1.6fr 1fr 1fr 1fr;
+                grid-template-columns: 1.6fr 1fr 1fr 1fr 40px 40px;
                 gap:10px;
                 align-items:end;
             }
-            @media (max-width: 992px) { .al-filter-row { grid-template-columns: 1fr 1fr; } }
-            @media (max-width: 600px) { .al-filter-row { grid-template-columns: 1fr; } }
+            @media (max-width: 992px) {
+                .al-filter-row { grid-template-columns: 1fr 1fr 40px 40px; }
+            }
+            @media (max-width: 600px) {
+                .al-filter-row { grid-template-columns: 1fr 1fr; }
+                .al-filter-row .al-icon-btn { grid-column: span 1; }
+            }
+
+            /* Icon-only action buttons */
+            .al-icon-btn {
+                width:40px; height:38px;
+                display:inline-flex; align-items:center; justify-content:center;
+                padding:0; border-radius:4px; cursor:pointer;
+                font-size:0.95rem;
+            }
+            .al-icon-btn:focus { outline:none; box-shadow:0 0 0 2px rgba(54,153,255,0.3); }
 
             .al-field-label {
                 font-size:0.72rem; font-weight:600; color:#7e8299;
@@ -94,9 +112,11 @@
             }
             .al-active-chip-remove:hover { background:#b5c3d1; }
 
-            /* Actions row */
-            .al-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
-            .al-actions .al-total { margin-left:auto; color:#7e8299; font-size:0.9rem; }
+            /* Total indicator — lives below the chips */
+            .al-total-wrap {
+                margin-top:10px; text-align:right;
+                color:#7e8299; font-size:0.9rem;
+            }
 
             /* Legacy highlight classes (fallback renderer) */
             .highlight { color:#3699FF; font-weight:600; }
@@ -109,7 +129,7 @@
 
             @media (max-width: 768px) {
                 .al-filter-card { padding:12px; }
-                .al-actions .btn { flex:1 1 auto; }
+                .al-preset-row .al-export-btn { margin-left:0; margin-top:6px; width:100%; }
             }
         </style>
     @endpush
@@ -128,7 +148,7 @@
                         {{-- === Filter card === --}}
                         <div class="al-filter-card">
 
-                            {{-- Row 1: date preset pills --}}
+                            {{-- Row 1: date preset pills + Export CSV on the right --}}
                             <div class="al-preset-row" id="al_date_presets">
                                 <button type="button" class="al-preset-btn" data-preset="today">Today</button>
                                 <button type="button" class="al-preset-btn" data-preset="yesterday">Yesterday</button>
@@ -137,6 +157,10 @@
                                 <button type="button" class="al-preset-btn" data-preset="thisMonth">This month</button>
                                 <button type="button" class="al-preset-btn" data-preset="lastMonth">Last month</button>
                                 <button type="button" class="al-preset-btn" data-preset="custom">Custom…</button>
+
+                                <button type="button" id="al_export_btn" class="btn btn-light-primary al-export-btn" title="Download current view as CSV">
+                                    <i class="fa fa-download mr-1"></i> Export CSV
+                                </button>
 
                                 {{-- Hidden daterangepicker target — opened by Custom… button --}}
                                 {!! Form::text('date_range', null, ['id' => 'activity_date_range']) !!}
@@ -183,25 +207,22 @@
                                     <div class="al-field-label">Actor</div>
                                     {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'class' => 'form-control select2']) !!}
                                 </div>
+
+                                {{-- Inline action buttons: Search + Reset --}}
+                                <button type="button" id="al_load_btn" class="btn btn-success al-icon-btn spinner-button" title="Search / Reload">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                                <button type="button" id="al_reset_btn" class="btn btn-light al-icon-btn" title="Reset filters">
+                                    <i class="fa fa-undo"></i>
+                                </button>
                             </div>
 
                             {{-- Active filter chips --}}
                             <div class="al-active-chips" id="al_active_chips"></div>
 
-                            {{-- Action buttons --}}
-                            <div class="al-actions">
-                                <button type="button" id="al_load_btn" class="btn btn-success spinner-button">
-                                    <i class="fa fa-sync-alt mr-1"></i> Load Report
-                                </button>
-                                <button type="button" id="al_reset_btn" class="btn btn-light">
-                                    <i class="fa fa-undo mr-1"></i> Reset
-                                </button>
-                                <button type="button" id="al_export_btn" class="btn btn-light-primary">
-                                    <i class="fa fa-download mr-1"></i> Export CSV
-                                </button>
-                                <span class="al-total" id="activity_total_wrap" style="display:none;">
-                                    Total: <strong><span id="activity_total">0</span></strong> records
-                                </span>
+                            {{-- Total records (right-aligned under chips) --}}
+                            <div class="al-total-wrap" id="activity_total_wrap" style="display:none;">
+                                Total: <strong><span id="activity_total">0</span></strong> records
                             </div>
                         </div>
 
