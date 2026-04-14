@@ -2,11 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\AuthenticateApiWeb;
+use App\Http\Middleware\CheckAccountStatus;
+use App\Http\Middleware\CheckIpRestriction;
+use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\VerifyCsrfToken;
+use App\Jobs\SendCashflowDailyDigest;
+use App\Jobs\SendCashflowMonthlyReport;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,8 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Global middleware: trust proxies with forwarded headers
-        $middleware->trustProxies(headers:
-            Request::HEADER_X_FORWARDED_FOR |
+        $middleware->trustProxies(headers: Request::HEADER_X_FORWARDED_FOR |
             Request::HEADER_X_FORWARDED_HOST |
             Request::HEADER_X_FORWARDED_PORT |
             Request::HEADER_X_FORWARDED_PROTO |
@@ -35,27 +47,27 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Custom CSRF: skips verification for requests with Authorization header
         $middleware->web(replace: [
-            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class => \App\Http\Middleware\VerifyCsrfToken::class,
+            Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class => VerifyCsrfToken::class,
         ]);
 
         // API group includes session/cookies/CSRF for hybrid auth (session + Sanctum token)
         // This is intentional — AuthenticateApiWeb checks session auth before Sanctum fallback
         $middleware->api(prepend: [
-            \Illuminate\Cookie\Middleware\EncryptCookies::class,
-            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            VerifyCsrfToken::class,
         ]);
 
         // Custom middleware aliases
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
-            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-            'checkAccount' => \App\Http\Middleware\CheckAccountStatus::class,
-            'auth.common' => \App\Http\Middleware\AuthenticateApiWeb::class,
-            'permission' => \App\Http\Middleware\CheckPermission::class,
-            'check.ip.restriction' => \App\Http\Middleware\CheckIpRestriction::class,
+            'auth' => Authenticate::class,
+            'guest' => RedirectIfAuthenticated::class,
+            'checkAccount' => CheckAccountStatus::class,
+            'auth.common' => AuthenticateApiWeb::class,
+            'permission' => CheckPermission::class,
+            'check.ip.restriction' => CheckIpRestriction::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
@@ -83,12 +95,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ->dailyAt('23:50')->timezone($timeZone);
 
         // Cash Flow: Daily Digest Email (08:00 AM PKT)
-        $schedule->job(new \App\Jobs\SendCashflowDailyDigest())
+        $schedule->job(new SendCashflowDailyDigest)
             ->dailyAt('08:00')->timezone($timeZone);
 
         // Cash Flow: Monthly Report Email (1st of every month at 09:00 AM)
-        $schedule->job(new \App\Jobs\SendCashflowMonthlyReport())
+        $schedule->job(new SendCashflowMonthlyReport)
             ->monthlyOn(1, '09:00')->timezone($timeZone);
+
+        // Activities: HIPAA-aligned archive sweep. PHI and security tiers
+        // archive-only (append-only cold storage, 6-year min retention). HR
+        // tiers prune at their configured cutoffs. NULL-tier rows are never
+        // touched. See App\Console\Commands\ArchiveAndPruneActivities.
+        $schedule->command('activities:archive')
+            ->dailyAt('03:15')->timezone($timeZone)
+            ->withoutOverlapping()
+            ->onOneServer();
 
         // Security: prune expired password-reset tokens (H3 finding).
         // Closes the H3 audit gap where rows from 2019 still existed in
@@ -101,11 +122,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // is the safety net for crashed/aborted runs.
         $schedule->call(function (): void {
             $dir = storage_path('app');
-            if (!is_dir($dir)) {
+            if (! is_dir($dir)) {
                 return;
             }
             $cutoff = time() - 86400;
-            foreach (glob($dir . DIRECTORY_SEPARATOR . 'temp_import_*.xlsx') ?: [] as $file) {
+            foreach (glob($dir.DIRECTORY_SEPARATOR.'temp_import_*.xlsx') ?: [] as $file) {
                 if (is_file($file) && filemtime($file) < $cutoff) {
                     @unlink($file);
                 }

@@ -4,57 +4,71 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin\Appointments;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\Regions;
+use App\Exports\ExportAppointment;
+use App\Exports\ExportConsultancies;
+use App\Exports\ExportToday;
+use App\Exports\TodayTreatment;
+use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Models\Accounts;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
-use App\Models\AuditTrails;
 use App\Models\AuditTrailActions;
+use App\Models\AuditTrails;
 use App\Models\AuditTrailTables;
+use App\Models\Regions;
+use App\Models\User;
+use App\Services\Phone\PhoneFormattingService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Helpers\ACL;
-use App\Exports\ExportToday;
-use App\Exports\TodayTreatment;
-use App\Exports\ExportConsultancies;
-use App\Exports\ExportAppointment;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\Services\Phone\PhoneFormattingService;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AppointmentExportController extends AppointmentBaseController
 {
-    public function todayexport(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function todayexport(): BinaryFileResponse
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
         $limit = 1000;
         $offset = 0;
+
+        $this->logExport('today_consultancies');
 
         return Excel::download(new ExportToday($limit, $offset), 'todayconsultancies.xlsx');
     }
 
-    public function todaytreatments(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function todaytreatments(): BinaryFileResponse
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
         $limit = 1000;
         $offset = 0;
 
+        $this->logExport('today_treatments');
+
         return Excel::download(new TodayTreatment($limit, $offset), 'todaytreatments.xlsx');
     }
 
-    public function downloadExportdata(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function downloadExportdata(Request $request): BinaryFileResponse
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
         $limit = 10000;
         $offset = 0;
+
+        $exportType = $request->appointmenttype == 1 ? 'consultancies' : 'appointments';
+        $this->logExport($exportType, $this->sanitizeExportFilters($request));
+
         if ($request->appointmenttype == 1) {
             return Excel::download(new ExportConsultancies($limit, $offset, $request), 'consultancies.xlsx');
         } else {
@@ -62,7 +76,7 @@ class AppointmentExportController extends AppointmentBaseController
         }
     }
 
-    public function appointmentexcel(Request $request): \Illuminate\Http\RedirectResponse
+    public function appointmentexcel(Request $request): RedirectResponse
     {
         $today = Carbon::now()->toDateString();
         $this_month = Carbon::now()->firstOfMonth()->toDateString();
@@ -257,8 +271,8 @@ class AppointmentExportController extends AppointmentBaseController
             return redirect()->back();
         }
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')->orderBy('appointments.created_at', 'desc')->get();
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
@@ -315,21 +329,76 @@ class AppointmentExportController extends AppointmentBaseController
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'General Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'General Report'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
-    public function export(Request $request, int $limit = 1000, int $offset = 0): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function export(Request $request, int $limit = 1000, int $offset = 0): BinaryFileResponse
     {
 
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
 
+        $this->logExport('appointments', $this->sanitizeExportFilters($request));
+
         return Excel::download(new ExportAppointment($limit, $offset), 'appointments.xlsx');
     }
 
-    public function viewLog(int $id, string $type): \Illuminate\Http\JsonResponse
+    /**
+     * Fire an [EXPORT] audit row before streaming the file to the browser.
+     * Silent-fail: audit failures never block the download itself.
+     *
+     * Row count is approximated from the `limit` parameter — each exporter
+     * already caps its result set at a fixed limit, and counting exactly
+     * would require an extra query just for the audit log. The approximation
+     * is labeled in the filter summary.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    private function logExport(string $exportType, array $filters = []): void
+    {
+        try {
+            // Best-effort approximate row count from limit; exporter will
+            // produce at most this many rows.
+            $approxRows = (int) ($filters['_limit'] ?? 0);
+            unset($filters['_limit']);
+
+            ActivityLogger::logDataExport(
+                exportType: $exportType,
+                rowCount: $approxRows,
+                filters: $filters,
+            );
+        } catch (\Throwable $e) {
+            Log::warning('activities.data_export.audit_write_failed', [
+                'event' => 'activities.data_export.audit_write_failed',
+                'export_type' => $exportType,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Pluck audit-relevant filter keys out of the Request, dropping verbose
+     * values that would bloat the audit description.
+     *
+     * @return array<string, mixed>
+     */
+    private function sanitizeExportFilters(Request $request): array
+    {
+        $keep = ['appointmenttype', 'date_from', 'date_to', 'location_id', 'service_id', 'status', 'doctor_id'];
+        $out = [];
+        foreach ($keep as $k) {
+            $v = $request->input($k);
+            if ($v !== null && $v !== '') {
+                $out[$k] = is_array($v) ? implode(',', $v) : (string) $v;
+            }
+        }
+
+        return $out;
+    }
+
+    public function viewLog(int $id, string $type): JsonResponse
     {
         if (! Gate::allows('appointments_log')) {
             abort(404);
@@ -426,8 +495,8 @@ class AppointmentExportController extends AppointmentBaseController
     public function viewLogInExcel(int $id, mixed $data): void
     {
         $appointment = Appointments::withTrashed()->find($id);
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
@@ -462,11 +531,11 @@ class AppointmentExportController extends AppointmentBaseController
                     $activeSheet->setCellValue('C'.$counter, $log['name'] ?? '-');
                     $activeSheet->setCellValue('D'.$counter, isset($log['phone']) ? \App\Helpers\PhoneFormattingService::prepareNumber4Call($log['phone']) : '-');
                     if (isset($log['scheduled_date']) && isset($log['scheduled_time'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_date'], null)->format('M j, Y').' at '.\Carbon\Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_date'], null)->format('M j, Y').' at '.Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
                     } elseif (isset($log['scheduled_time'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
                     } elseif (isset($log['scheduled_date'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_date'], null)->format('M j, Y'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_date'], null)->format('M j, Y'));
                     } else {
                         $activeSheet->setCellValue('E'.$counter, '-');
                     }
@@ -479,7 +548,7 @@ class AppointmentExportController extends AppointmentBaseController
                     $activeSheet->setCellValue('L'.$counter, $log['base_appointment_status_id'] ?? '-');
                     $activeSheet->setCellValue('M'.$counter, $log['appointment_status_id'] ?? '-');
                     $activeSheet->setCellValue('N'.$counter, $log['appointment_type_id'] ?? '-');
-                    $activeSheet->setCellValue('O'.$counter, isset($log['created_at']) ? \Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('O'.$counter, isset($log['created_at']) ? Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
                     $activeSheet->setCellValue('P'.$counter, $log['created_by'] ?? '-');
                     $activeSheet->setCellValue('Q'.$counter, $log['converted_by'] ?? '-');
                     $activeSheet->setCellValue('R'.$counter, $log['updated_by'] ?? '-');
@@ -515,11 +584,11 @@ class AppointmentExportController extends AppointmentBaseController
                     $activeSheet->setCellValue('C'.$counter, $log['name'] ?? '-');
                     $activeSheet->setCellValue('D'.$counter, isset($log['phone']) ? \App\Helpers\PhoneFormattingService::prepareNumber4Call($log['phone']) : '-');
                     if (isset($log['scheduled_date']) && isset($log['scheduled_time'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_date'], null)->format('M j, Y').' at '.\Carbon\Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_date'], null)->format('M j, Y').' at '.Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
                     } elseif (isset($log['scheduled_time'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_time'], null)->format('h:i A'));
                     } elseif (isset($log['scheduled_date'])) {
-                        $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($log['scheduled_date'], null)->format('M j, Y'));
+                        $activeSheet->setCellValue('E'.$counter, Carbon::parse($log['scheduled_date'], null)->format('M j, Y'));
                     } else {
                         $activeSheet->setCellValue('E'.$counter, '-');
                     }
@@ -531,7 +600,7 @@ class AppointmentExportController extends AppointmentBaseController
                     $activeSheet->setCellValue('K'.$counter, $log['base_appointment_status_id'] ?? '-');
                     $activeSheet->setCellValue('L'.$counter, $log['appointment_status_id'] ?? '-');
                     $activeSheet->setCellValue('M'.$counter, $log['appointment_type_id'] ?? '-');
-                    $activeSheet->setCellValue('N'.$counter, isset($log['created_at']) ? \Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('N'.$counter, isset($log['created_at']) ? Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
                     $activeSheet->setCellValue('O'.$counter, $log['created_by'] ?? '-');
                     $activeSheet->setCellValue('P'.$counter, $log['converted_by'] ?? '-');
                     $activeSheet->setCellValue('Q'.$counter, $log['updated_by'] ?? '-');
@@ -541,12 +610,12 @@ class AppointmentExportController extends AppointmentBaseController
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'AppointmentLog'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'AppointmentLog'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
-    public function logPage(int $id): \Illuminate\View\View
+    public function logPage(int $id): View
     {
         return view('admin.appointments.logs.appointmentlog', compact('id'));
     }

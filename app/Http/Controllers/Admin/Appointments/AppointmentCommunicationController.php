@@ -5,30 +5,31 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin\Appointments;
 
 use App\Enums\AppointmentType;
-use App\Models\SMSLogs;
-use App\Models\Settings;
-use App\Models\SMSTemplates;
-use App\Models\Appointments;
-use App\Models\AppointmentComments;
-use App\Models\UserOperatorSettings;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Gate;
+use App\Helpers\ActivityLogger;
 use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
-use App\Services\Phone\PhoneFormattingService;
+use App\Models\AppointmentComments;
+use App\Models\Appointments;
+use App\Models\Settings;
+use App\Models\SMSLogs;
+use App\Models\SMSTemplates;
+use App\Models\UserOperatorSettings;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class AppointmentCommunicationController extends AppointmentBaseController
 {
     /**
      * Load Appointment SMS History.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs(int $id): \Illuminate\Http\JsonResponse
+    public function showSMSLogs(int $id): JsonResponse
     {
         $SMSLogs = SMSLogs::whereAppointmentId($id)->orderBy('created_at', 'desc')->get();
 
@@ -40,11 +41,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
 
     /**
      * Re-send Appointment SMS
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function sendLogSMS(Request $request): \Illuminate\Http\JsonResponse
+    public function sendLogSMS(Request $request): JsonResponse
     {
         $data = $request->all();
         $SMSLog = SMSLogs::find($request->id);
@@ -55,6 +53,25 @@ class AppointmentCommunicationController extends AppointmentBaseController
             $response = $this->resendSMS($SMSLog->id, $SMSLog->to, $SMSLog->text, $SMSLog->appointment_id);
 
             if ($response['status']) {
+                // Admin-initiated SMS resend → audit log row.
+                // Silent-fail: audit problems never block the SMS flow.
+                try {
+                    $recipientName = $SMSLog->appointment?->patient?->name ?? 'Unknown';
+                    $templateName = $SMSLog->template ?? 'Manual Resend';
+                    ActivityLogger::logSmsSent(
+                        recipientName: $recipientName,
+                        recipientPhone: (string) $SMSLog->to,
+                        templateName: (string) $templateName,
+                        patient: $SMSLog->appointment?->patient,
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('activities.sms_sent.write_failed', [
+                        'event' => 'activities.sms_sent.write_failed',
+                        'sms_log_id' => $SMSLog->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 return $this->successResponse('SMS sent successfully.');
             }
         }
@@ -64,11 +81,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
 
     /**
      * Get WhatsApp data for appointment
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getWhatsAppData(Request $request): \Illuminate\Http\JsonResponse
+    public function getWhatsAppData(Request $request): JsonResponse
     {
         try {
             $appointmentId = $request->input('id');
@@ -79,23 +93,23 @@ class AppointmentCommunicationController extends AppointmentBaseController
                 'doctor',
                 'location',
                 'service',
-                'appointment_status'
+                'appointment_status',
             ])->find($appointmentId);
 
-            if (!$appointment) {
+            if (! $appointment) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Appointment not found'
+                    'message' => 'Appointment not found',
                 ]);
             }
 
             // Check if patient has WhatsApp number
             $whatsappNumber = $appointment->patient->phone ?? null;
 
-            if (!$whatsappNumber) {
+            if (! $whatsappNumber) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Customer WhatsApp number not found'
+                    'message' => 'Customer WhatsApp number not found',
                 ]);
             }
 
@@ -105,11 +119,11 @@ class AppointmentCommunicationController extends AppointmentBaseController
             // Ensure phone number has country code (Pakistan = 92)
             // If number starts with 0, replace with 92
             if (str_starts_with($whatsappNumber, '0')) {
-                $whatsappNumber = '92' . substr($whatsappNumber, 1);
+                $whatsappNumber = '92'.substr($whatsappNumber, 1);
             }
             // If number doesn't start with 92 and is 10 digits, add 92
-            elseif (strlen($whatsappNumber) === 10 && !str_starts_with($whatsappNumber, '92')) {
-                $whatsappNumber = '92' . $whatsappNumber;
+            elseif (strlen($whatsappNumber) === 10 && ! str_starts_with($whatsappNumber, '92')) {
+                $whatsappNumber = '92'.$whatsappNumber;
             }
 
             // Determine template slug based on appointment type
@@ -119,11 +133,12 @@ class AppointmentCommunicationController extends AppointmentBaseController
             // Fetch SMS template
             $template = SMSTemplates::getBySlug($templateSlug, Auth::user()->account_id);
 
-            if (!$template) {
+            if (! $template) {
                 $templateType = ($appointment->appointment_type_id === AppointmentType::Treatment->value) ? 'Treatment' : 'Consultancy';
+
                 return response()->json([
                     'status' => false,
-                    'message' => 'WhatsApp template not found. Please create a template with slug "' . $templateSlug . '" for ' . $templateType . ' appointments'
+                    'message' => 'WhatsApp template not found. Please create a template with slug "'.$templateSlug.'" for '.$templateType.' appointments',
                 ]);
             }
 
@@ -134,7 +149,7 @@ class AppointmentCommunicationController extends AppointmentBaseController
             $appointmentTime = 'N/A';
             if ($appointment->scheduled_date && $appointment->scheduled_time) {
                 try {
-                    $time = \Carbon\Carbon::parse($appointment->scheduled_time);
+                    $time = Carbon::parse($appointment->scheduled_time);
                     $appointmentTime = $time->format('h:i A');
                 } catch (\Exception $e) {
                     $appointmentTime = $appointment->scheduled_time ?? 'N/A';
@@ -171,14 +186,14 @@ class AppointmentCommunicationController extends AppointmentBaseController
                 'status' => true,
                 'data' => [
                     'whatsapp' => $whatsappNumber,
-                    'message' => $message
-                ]
+                    'message' => $message,
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => false,
-                'message' => 'Error fetching WhatsApp data: ' . $e->getMessage()
+                'message' => 'Error fetching WhatsApp data: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -186,9 +201,9 @@ class AppointmentCommunicationController extends AppointmentBaseController
     /**
      * Store a newly created Appointment comment in storage.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function comment_store(StoreUpdateAppointmentCommentsRequest $request): \Illuminate\Http\RedirectResponse
+    public function comment_store(StoreUpdateAppointmentCommentsRequest $request): RedirectResponse
     {
         if (! Gate::allows('appointments_manage')) {
             return abort(401);
@@ -205,17 +220,17 @@ class AppointmentCommunicationController extends AppointmentBaseController
     /**
      * Store a newly created Appointment comment via AJAX.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
-    public function AppointmentStoreComment(Request $req): \Illuminate\Http\JsonResponse
+    public function AppointmentStoreComment(Request $req): JsonResponse
     {
         $appointmentComment = AppointmentComments::where('appointment_id', '=', $req->appointment_id)->get();
-        $appointment = new AppointmentComments();
+        $appointment = new AppointmentComments;
         $appointment->comment = $req->comment;
         $appointment->appointment_id = $req->appointment_id;
         $appointment->created_by = Auth::user()->id;
-        $appointmentCommentDate = \Carbon\Carbon::parse($appointment->created_at)->format('D M d, Y g:i A');
+        $appointmentCommentDate = Carbon::parse($appointment->created_at)->format('D M d, Y g:i A');
         $appointment->save();
         $username = Auth::user()->name;
         $myarray = ['username' => $username, 'appointment' => $appointment, 'appointmentCommentDate' => $appointmentCommentDate, 'appointmentCommentSection' => $appointmentComment];

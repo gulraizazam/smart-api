@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePatientDocumentRequest;
 use App\Http\Requests\PatientDocumentStoreRequest;
+use App\Models\Appointments;
 use App\Models\Cities;
 use App\Models\Documents;
 use App\Models\Leads;
@@ -24,21 +26,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class PatientsController extends Controller
 {
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
-        if (!Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients_manage')) {
             return abort(401);
         }
 
         return view('admin.patients.index');
     }
 
-    public function preview(int $id): \Illuminate\View\View
+    public function preview(int $id): View
     {
-        if (!Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients_manage')) {
             return abort(401);
         }
 
@@ -49,15 +53,15 @@ class PatientsController extends Controller
      * Patient Card V2 - Section-based navigation.
      * Each section is a separate page load to avoid JS conflicts.
      */
-    public function cardV2(int $id, string $section = 'profile'): \Illuminate\View\View
+    public function cardV2(int $id, string $section = 'profile'): View
     {
-        if (!Gate::allows('patients_manage')) {
+        if (! Gate::allows('patients_manage')) {
             return abort(401);
         }
 
         $sectionPermissions = [
             'profile' => 'patients_manage',
-            'consultations' => 'appointments_manage',
+            'consultations' => 'consultations_manage',
             'treatments' => 'treatments_manage',
             'plans' => 'plans_manage',
             'invoices' => 'invoices_manage',
@@ -66,11 +70,11 @@ class PatientsController extends Controller
             'activity' => 'patients_manage',
         ];
 
-        if (!array_key_exists($section, $sectionPermissions)) {
+        if (! array_key_exists($section, $sectionPermissions)) {
             $section = 'profile';
         }
 
-        if (!Gate::allows($sectionPermissions[$section])) {
+        if (! Gate::allows($sectionPermissions[$section])) {
             return abort(401, 'Unauthorized to access this section');
         }
 
@@ -78,8 +82,22 @@ class PatientsController extends Controller
         // so a guessed cross-tenant ID returns null and aborts 404 instead of
         // exposing another tenant's patient row in the view.
         $patient = Patients::getData((int) $id);
-        if (!$patient) {
+        if (! $patient) {
             return abort(404, 'Patient not found');
+        }
+
+        // HIPAA audit: log the read. Throttled 1/user/patient/day inside
+        // logPatientAccessed so re-visits in the same consultation don't
+        // spam the feed. Silent failure is acceptable — never block the
+        // page render on an audit write.
+        try {
+            ActivityLogger::logPatientAccessed($patient);
+        } catch (\Throwable $e) {
+            Log::warning('patient_accessed audit write failed', [
+                'event' => 'activities.patient_accessed.write_failed',
+                'patient_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         $membership = Membership::where('patient_id', $id)
@@ -113,9 +131,9 @@ class PatientsController extends Controller
                 default => null,
             };
 
-            $lastAppointment = \App\Models\Appointments::where('patient_id', $id)
+            $lastAppointment = Appointments::where('patient_id', $id)
                 ->where('account_id', Auth::user()->account_id)
-                ->when($appointmentTypeId, fn($q) => $q->where('appointment_type_id', $appointmentTypeId))
+                ->when($appointmentTypeId, fn ($q) => $q->where('appointment_type_id', $appointmentTypeId))
                 ->orderByDesc('created_at')
                 ->first();
 
@@ -131,19 +149,20 @@ class PatientsController extends Controller
 
             return response()->json(['status' => false, 'message' => 'No previous appointment found']);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+
             return response()->json(['status' => false, 'message' => 'An error occurred. Please try again.'], 500);
         }
     }
 
-    public function leads(int $id): \Illuminate\View\View
+    public function leads(int $id): View
     {
-        if (!Gate::allows('patients_manage') && !Gate::allows('leads_manage') && !Gate::allows('leads_view')) {
+        if (! Gate::allows('patients_manage') && ! Gate::allows('leads_manage') && ! Gate::allows('leads_view')) {
             return abort(401);
         }
 
         $patient = Patients::getData($id);
-        if (!$patient) {
+        if (! $patient) {
             return view('error_full');
         }
 
@@ -156,7 +175,7 @@ class PatientsController extends Controller
         $lead_statuses = LeadStatuses::getLeadStatuses();
         $lead_statuses->prepend('All', '');
 
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
@@ -169,7 +188,7 @@ class PatientsController extends Controller
 
     public function leadsDatatable(int $id, Request $request): JsonResponse
     {
-        if (!Gate::allows('patients_manage') && !Gate::allows('leads_manage') && !Gate::allows('leads_view')) {
+        if (! Gate::allows('patients_manage') && ! Gate::allows('leads_manage') && ! Gate::allows('leads_view')) {
             return abort(401);
         }
 
@@ -203,7 +222,7 @@ class PatientsController extends Controller
                 if ($operator === 'like') {
                     $where[] = [$column, 'like', "%{$value}%"];
                 } elseif ($operator === 'like_phone') {
-                    $where[] = [$column, 'like', '%' . GeneralFunctions::cleanNumber($value) . '%'];
+                    $where[] = [$column, 'like', '%'.GeneralFunctions::cleanNumber($value).'%'];
                 } else {
                     $where[] = [$column, '=', $value];
                 }
@@ -211,10 +230,10 @@ class PatientsController extends Controller
         }
 
         if ($request->get('date_from') && $request->get('date_from') !== '') {
-            $where[] = ['leads.created_at', '>=', $request->get('date_from') . ' 00:00:00'];
+            $where[] = ['leads.created_at', '>=', $request->get('date_from').' 00:00:00'];
         }
         if ($request->get('date_to') && $request->get('date_to') !== '') {
-            $where[] = ['leads.created_at', '<=', $request->get('date_to') . ' 23:59:59'];
+            $where[] = ['leads.created_at', '<=', $request->get('date_to').' 23:59:59'];
         }
 
         // Get junk lead status
@@ -225,9 +244,9 @@ class PatientsController extends Controller
         $junkStatusId = $defaultJunkStatus?->id ?? Config::get('constants.lead_status_junk');
 
         // Base query builder
-        $baseQuery = fn() => Leads::join('users', 'users.id', '=', 'leads.patient_id')
+        $baseQuery = fn () => Leads::join('users', 'users.id', '=', 'leads.patient_id')
             ->where('users.user_type_id', Config::get('constants.patient_id'))
-            ->where(fn($q) => $q->whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id'))
+            ->where(fn ($q) => $q->whereIn('leads.city_id', ACL::getUserCities())->orWhereNull('leads.city_id'))
             ->whereNotIn('leads.lead_status_id', [$junkStatusId])
             ->where($where);
 
@@ -282,38 +301,38 @@ class PatientsController extends Controller
         return response()->json($records);
     }
 
-    public function appointments(int $id): \Illuminate\View\View
+    public function appointments(int $id): View
     {
-        if (!Gate::allows('patients_appointment_manage')) {
+        if (! Gate::allows('patients_appointment_manage')) {
             return abort(401);
         }
 
         return view('admin.patients.card.appointments.index');
     }
 
-    public function imageindex(int $id): \Illuminate\View\View
+    public function imageindex(int $id): View
     {
-        if (!Gate::allows('patients_manage') && !Gate::allows('users_manage')) {
+        if (! Gate::allows('patients_manage') && ! Gate::allows('users_manage')) {
             return abort(401);
         }
 
         $patient = Patients::getData($id);
-        if (!$patient) {
+        if (! $patient) {
             return abort(401);
         }
 
         return view('admin.patients.card.image.add_image', compact('patient'));
     }
 
-    public function documentindex(int $id): \Illuminate\View\View
+    public function documentindex(int $id): View
     {
-        if (!Gate::allows('patients_document_manage')) {
+        if (! Gate::allows('patients_document_manage')) {
             return abort(401);
         }
 
         $patient = Patients::where([['account_id', '=', Auth::user()->account_id], ['id', '=', $id]])->first();
 
-        if (!$patient) {
+        if (! $patient) {
             return view('error_full');
         }
 
@@ -322,9 +341,9 @@ class PatientsController extends Controller
         return view('admin.patients.card.documents.add_documents', compact('patient', 'filters'));
     }
 
-    public function documentCreate(int $id): \Illuminate\View\View
+    public function documentCreate(int $id): View
     {
-        if (!Gate::allows('patients_document_create')) {
+        if (! Gate::allows('patients_document_create')) {
             return abort(401);
         }
 
@@ -335,18 +354,18 @@ class PatientsController extends Controller
 
     public function documentstore(PatientDocumentStoreRequest $request): JsonResponse
     {
-        if (!Gate::allows('patients_document_create')) {
+        if (! Gate::allows('patients_document_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         $patient = Patients::getData($request->patient_id);
-        if (!$patient) {
+        if (! $patient) {
             return $this->errorResponse('Patient not found', 200);
         }
 
         $file = $request->file('file');
-        $originalName = $file->getClientOriginalName() ?: 'document.' . $file->getClientOriginalExtension();
-        $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $originalName = $file->getClientOriginalName() ?: 'document.'.$file->getClientOriginalExtension();
+        $fileName = time().'_'.preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
 
         try {
             // Round 4 C3 — write to storage/app/patient_image (the local disk),
@@ -355,11 +374,12 @@ class PatientsController extends Controller
             // authenticated admin.files.patient_image route.
             $file->storeAs('patient_image', $fileName);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to save file: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::error('Failed to save file: '.$e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+
             return $this->errorResponse('Failed to save file. Please try again.', 200);
         }
 
-        Documents::CreateRecord($request, 'patient_image/' . $fileName, $patient->id);
+        Documents::CreateRecord($request, 'patient_image/'.$fileName, $patient->id);
 
         return $this->successResponse('Record has been created successfully.', null, 200);
     }
@@ -405,9 +425,9 @@ class PatientsController extends Controller
         return response()->json($records);
     }
 
-    public function documentedit(int $id): \Illuminate\View\View
+    public function documentedit(int $id): View
     {
-        if (!Gate::allows('patients_document_edit')) {
+        if (! Gate::allows('patients_document_edit')) {
             return abort(401);
         }
 
@@ -418,7 +438,7 @@ class PatientsController extends Controller
         $documents = Documents::whereHas('patient', static fn ($q) => $q->where('account_id', Auth::user()->account_id))
             ->find($id);
 
-        if (!$documents) {
+        if (! $documents) {
             return abort(404);
         }
 
@@ -427,7 +447,7 @@ class PatientsController extends Controller
 
     public function documentupdate(UpdatePatientDocumentRequest $request, int $id): JsonResponse
     {
-        if (!Gate::allows('patients_document_edit')) {
+        if (! Gate::allows('patients_document_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -440,7 +460,7 @@ class PatientsController extends Controller
 
     public function documentdelete(int $id): JsonResponse
     {
-        if (!Gate::allows('patients_document_destroy')) {
+        if (! Gate::allows('patients_document_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 

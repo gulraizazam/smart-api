@@ -1,14 +1,17 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\CashFlow;
 
 use App\Exceptions\CashflowException;
+use App\Helpers\ActivityLogger;
 use App\Models\CashFlow\CashPool;
 use App\Models\CashFlow\PeriodLock;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PeriodLockService
 {
@@ -57,7 +60,7 @@ class PeriodLockService
         $prevYear = $month === 1 ? $year - 1 : $year;
 
         $hasAnyLock = PeriodLock::hasAnyLock($accountId);
-        if ($hasAnyLock && !PeriodLock::isLocked($accountId, $prevMonth, $prevYear)) {
+        if ($hasAnyLock && ! PeriodLock::isLocked($accountId, $prevMonth, $prevYear)) {
             $prevLabel = Carbon::createFromDate($prevYear, $prevMonth, 1)->format('F Y');
             throw CashflowException::validationFailed("Cannot lock — {$prevLabel} must be locked first (sequential locking).");
         }
@@ -97,6 +100,20 @@ class PeriodLockService
                 ['month' => $month, 'year' => $year, 'snapshot_pools' => count($snapshot)]
             );
 
+            // Mirror to the unified activities feed so the audit lands in
+            // both cashflow_audit_logs (detail) and activities (discoverable).
+            try {
+                ActivityLogger::logCashflowPeriodLocked(
+                    periodLabel: sprintf('%04d-%02d', $year, $month),
+                    action: 'locked'
+                );
+            } catch (\Throwable $e) {
+                Log::warning('cashflow.period_lock audit mirror failed', [
+                    'event' => 'activities.cashflow_period_locked.mirror_failed',
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $lock;
         });
     }
@@ -108,7 +125,7 @@ class PeriodLockService
     {
         $lock = PeriodLock::forAccount($accountId)->find($lockId);
 
-        if (!$lock) {
+        if (! $lock) {
             throw CashflowException::notFound('Period lock');
         }
 
@@ -120,7 +137,7 @@ class PeriodLockService
             throw CashflowException::validationFailed('Unlock reason must be at least 5 characters.');
         }
 
-        return DB::transaction(function () use ($lock, $reason, $accountId) {
+        return DB::transaction(function () use ($lock, $reason) {
             $oldValues = $lock->toArray();
 
             $lock->update([
@@ -138,6 +155,20 @@ class PeriodLockService
                 ['unlock_reason' => $reason, 'month' => $lock->month, 'year' => $lock->year]
             );
 
+            // Mirror to the unified activities feed (see lockPeriod above).
+            try {
+                ActivityLogger::logCashflowPeriodLocked(
+                    periodLabel: sprintf('%04d-%02d', $lock->year, $lock->month),
+                    action: 'unlocked',
+                    reason: $reason
+                );
+            } catch (\Throwable $e) {
+                Log::warning('cashflow.period_unlock audit mirror failed', [
+                    'event' => 'activities.cashflow_period_unlocked.mirror_failed',
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $lock->fresh();
         });
     }
@@ -153,6 +184,7 @@ class PeriodLockService
             ->where('year', $carbon->year)
             ->whereNull('unlocked_at')
             ->exists();
+
         return $lock;
     }
 

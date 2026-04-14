@@ -4,26 +4,31 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\LeadException;
+use App\Exports\ExportLead;
+use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
-use App\Services\Lead\LeadService;
+use App\Http\Requests\Admin\StoreUpdateLeadCommentsRequest;
+use App\Http\Requests\Lead\ImportLeadsRequest;
 use App\Http\Requests\Lead\StoreLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadRequest;
 use App\Http\Requests\Lead\UpdateLeadStatusRequest;
-use App\Http\Requests\Lead\ImportLeadsRequest;
-use App\Http\Requests\Admin\StoreUpdateLeadCommentsRequest;
-use App\Http\Resources\Lead\LeadResource;
-use App\Http\Resources\Lead\LeadDetailResource;
 use App\Http\Resources\Lead\LeadCommentResource;
-use App\Exceptions\LeadException;
+use App\Http\Resources\Lead\LeadDetailResource;
+use App\Http\Resources\Lead\LeadResource;
+use App\Models\Cities;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
-use App\Exports\ExportLead;
-use Illuminate\Http\Request;
+use App\Models\Services;
+use App\Services\Lead\LeadService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -47,6 +52,7 @@ class LeadsController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $this->leadService->bulkDelete($ids);
+
                 return $this->successResponse('Records deleted successfully.');
             }
 
@@ -55,16 +61,16 @@ class LeadsController extends Controller
 
             $query = $datatableData['query'];
 
-            if (!Gate::allows('view_inactive_leads')) {
+            if (! Gate::allows('view_inactive_leads')) {
                 $query->where('leads.active', 1);
             }
 
             $leads = $query->select([
-                    'leads.id', 'leads.name', 'leads.phone', 'leads.gender',
-                    'leads.active', 'leads.city_id', 'leads.region_id',
-                    'leads.location_id', 'leads.lead_status_id',
-                    'leads.created_by', 'leads.created_at',
-                ])
+                'leads.id', 'leads.name', 'leads.phone', 'leads.gender',
+                'leads.active', 'leads.city_id', 'leads.region_id',
+                'leads.location_id', 'leads.lead_status_id',
+                'leads.created_by', 'leads.created_at',
+            ])
                 ->with('user:id,name')
                 ->limit($displayLength)
                 ->offset($displayStart)
@@ -102,7 +108,7 @@ class LeadsController extends Controller
 
     public function create(): JsonResponse
     {
-        if (!Gate::allows('leads_create')) {
+        if (! Gate::allows('leads_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -117,6 +123,7 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->createLead($request->validated());
+
             return $this->successResponse('Record has been created successfully.');
         } catch (LeadException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -127,14 +134,14 @@ class LeadsController extends Controller
 
     public function detail(int $id): JsonResponse
     {
-        if (!Gate::allows('leads_manage')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $lead = $this->leadService->getLeadDetail($id);
 
-            if (!$lead) {
+            if (! $lead) {
                 return $this->errorResponse('Lead not found.', 500);
             }
 
@@ -148,14 +155,14 @@ class LeadsController extends Controller
 
     public function edit(int $id): JsonResponse
     {
-        if (!Gate::allows('leads_edit')) {
+        if (! Gate::allows('leads_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $editData = $this->leadService->getEditFormData($id);
 
-            if (!$editData) {
+            if (! $editData) {
                 return $this->errorResponse('Resource not found', 404);
             }
 
@@ -169,6 +176,7 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->updateLead($id, $request->validated());
+
             return $this->successResponse('Record has been updated successfully.');
         } catch (LeadException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -179,12 +187,13 @@ class LeadsController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        if (!Gate::allows('leads_destroy')) {
+        if (! Gate::allows('leads_destroy')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $this->leadService->deleteLead($id);
+
             return $this->successResponse('Record has been deleted successfully.');
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -195,6 +204,7 @@ class LeadsController extends Controller
     {
         try {
             $lead = $this->leadService->toggleStatus((int) $request->id, (int) $request->status);
+
             return $this->successResponse('Status Changed Successfully', [
                 'lead' => new LeadResource($lead),
             ]);
@@ -209,12 +219,13 @@ class LeadsController extends Controller
 
     public function showLeadStatuses(Request $request): JsonResponse
     {
-        if (!Gate::allows('leads_lead_status')) {
+        if (! Gate::allows('leads_lead_status')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $data = $this->leadService->getLeadStatusesWithChildren((int) $request->get('id'));
+
             return $this->successResponse('Record Found', $data);
         } catch (LeadException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -227,6 +238,7 @@ class LeadsController extends Controller
     {
         try {
             $this->leadService->updateLeadStatus((int) $request->id, $request->validated());
+
             return $this->successResponse('Status updated successfully!');
         } catch (LeadException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -240,7 +252,7 @@ class LeadsController extends Controller
         try {
             $data = $this->leadService->getStatusWithChildren((int) $request->id);
 
-            if (!$data) {
+            if (! $data) {
                 return $this->errorResponse('Status not found.', 500);
             }
 
@@ -254,6 +266,7 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getChildStatusWithParent((int) $request->id);
+
             return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -268,6 +281,7 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getChildServicesWithLead((int) $request->serviceId, (int) $request->leadId);
+
             return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -278,6 +292,7 @@ class LeadsController extends Controller
     {
         try {
             $data = $this->leadService->getEditServiceData($leadId, $serviceId);
+
             return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -303,6 +318,7 @@ class LeadsController extends Controller
                 foreach ($collection as $key => $value) {
                     $data[strtolower(str_replace(' ', '_', trim($key)))] = $value;
                 }
+
                 return $data;
             })->toArray();
 
@@ -313,16 +329,17 @@ class LeadsController extends Controller
 
             $message = "Leads imported. Created: {$stats['created']}, Updated: {$stats['updated']}";
 
-            if (!empty($stats['invalid_phones'])) {
-                $message .= '. Invalid phones: ' . count($stats['invalid_phones']);
+            if (! empty($stats['invalid_phones'])) {
+                $message .= '. Invalid phones: '.count($stats['invalid_phones']);
             }
-            if (!empty($stats['invalid_services'])) {
-                $message .= '. Invalid services: ' . implode(', ', $stats['invalid_services']);
+            if (! empty($stats['invalid_services'])) {
+                $message .= '. Invalid services: '.implode(', ', $stats['invalid_services']);
             }
 
             return $this->successResponse($message);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+
             return $this->errorResponse('An error occurred. Please try again.', 500);
         }
     }
@@ -336,7 +353,7 @@ class LeadsController extends Controller
             $leads = $this->leadService->getExportData($request->all());
 
             $customPaper = [0, 0, 720, 1440];
-            $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
+            $pdf = Pdf::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
 
             return $pdf->download('leads.pdf');
         } catch (\Exception $e) {
@@ -349,7 +366,28 @@ class LeadsController extends Controller
         set_time_limit(0);
         ini_set('memory_limit', '-1');
 
-        return Excel::download(new ExportLead($request), 'leads.' . $request->ext);
+        try {
+            $filters = [];
+            foreach (['date_from', 'date_to', 'location_id', 'service_id', 'lead_status_id', 'user_id'] as $k) {
+                $v = $request->input($k);
+                if ($v !== null && $v !== '') {
+                    $filters[$k] = is_array($v) ? implode(',', $v) : (string) $v;
+                }
+            }
+            ActivityLogger::logDataExport(
+                exportType: 'leads',
+                rowCount: 0,
+                filters: $filters,
+            );
+        } catch (\Throwable $e) {
+            Log::warning('activities.data_export.audit_write_failed', [
+                'event' => 'activities.data_export.audit_write_failed',
+                'export_type' => 'leads',
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return Excel::download(new ExportLead($request), 'leads.'.$request->ext);
     }
 
     // =========================================================================
@@ -360,6 +398,7 @@ class LeadsController extends Controller
     {
         try {
             $leads = $this->leadService->searchLeadsById($request->search, Auth::user()->account_id);
+
             return $this->successResponse('Record found.', ['leads' => $leads]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -370,6 +409,7 @@ class LeadsController extends Controller
     {
         try {
             $lead = $this->leadService->findLead((int) $request->lead_id);
+
             return $this->successResponse('Record found.', [
                 'lead' => $lead ? new LeadResource($lead) : null,
             ]);
@@ -382,6 +422,7 @@ class LeadsController extends Controller
     {
         try {
             $leads = $this->leadService->searchByPhone($request->search, Auth::user()->account_id);
+
             return $this->successResponse('Record found.', ['leads' => $leads]);
         } catch (\Exception $e) {
             return $this->handleException($e, 'LeadsController');
@@ -414,14 +455,14 @@ class LeadsController extends Controller
 
     public function convert(int $id): JsonResponse
     {
-        if (!Gate::allows('appointments_manage') || !Gate::allows('leads_convert')) {
+        if (! Gate::allows('appointments_manage') || ! Gate::allows('leads_convert')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $data = $this->leadService->getConversionData($id);
 
-            if (!$data) {
+            if (! $data) {
                 return $this->errorResponse('Resource not found.', 404);
             }
 
@@ -439,7 +480,7 @@ class LeadsController extends Controller
     {
         return response()->json(
             LeadStatuses::getActiveOnly()
-                ->map(fn($status): array => ['value' => $status->id, 'text' => $status->name])
+                ->map(fn ($status): array => ['value' => $status->id, 'text' => $status->name])
                 ->toArray()
         );
     }
@@ -447,8 +488,8 @@ class LeadsController extends Controller
     public function loadTreatments(): JsonResponse
     {
         return response()->json(
-            \App\Models\Services::getActiveOnly()
-                ->map(fn($service): array => ['value' => $service->id, 'text' => $service->name])
+            Services::getActiveOnly()
+                ->map(fn ($service): array => ['value' => $service->id, 'text' => $service->name])
                 ->toArray()
         );
     }
@@ -457,20 +498,20 @@ class LeadsController extends Controller
     {
         return response()->json(
             LeadSources::getActiveOnly()
-                ->map(fn($source): array => ['value' => $source->id, 'text' => $source->name])
+                ->map(fn ($source): array => ['value' => $source->id, 'text' => $source->name])
                 ->toArray()
         );
     }
 
     public function loadCities(): JsonResponse
     {
-        if (!Gate::allows('leads_city')) {
+        if (! Gate::allows('leads_city')) {
             return response()->json([]);
         }
 
         return response()->json(
-            \App\Models\Cities::getActiveOnly(\App\Helpers\ACL::getUserCities(), Auth::user()->account_id)
-                ->map(fn($city): array => ['value' => $city->id, 'text' => $city->name])
+            Cities::getActiveOnly(ACL::getUserCities(), Auth::user()->account_id)
+                ->map(fn ($city): array => ['value' => $city->id, 'text' => $city->name])
                 ->toArray()
         );
     }
@@ -481,14 +522,14 @@ class LeadsController extends Controller
 
     public function saveCity(Request $request): JsonResponse
     {
-        if (!Gate::allows('leads_manage')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $result = $this->leadService->updateLeadCity((int) $request->get('pk'), (int) $request->get('value'));
 
-            if (!$result) {
+            if (! $result) {
                 return $this->errorResponse('Resource not found.', 404);
             }
 
@@ -513,7 +554,7 @@ class LeadsController extends Controller
 
     public function sendSms(int $id): JsonResponse
     {
-        if (!Gate::allows('leads_manage')) {
+        if (! Gate::allows('leads_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -530,7 +571,7 @@ class LeadsController extends Controller
 
     public function removeFromJunk(int $id): JsonResponse
     {
-        if (!Gate::allows('leads_convert')) {
+        if (! Gate::allows('leads_convert')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 

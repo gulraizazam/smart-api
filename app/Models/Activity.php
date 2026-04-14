@@ -1,11 +1,12 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Activity extends Model
 {
@@ -20,6 +21,7 @@ class Activity extends Model
         'appointment_id',
         'action',
         'activity_type',
+        'log_tier',
         'description',
         'service',
         'service_id',
@@ -41,7 +43,7 @@ class Activity extends Model
     ];
 
     public $timestamps = false;
-    
+
     protected function casts(): array
     {
         return [
@@ -60,29 +62,27 @@ class Activity extends Model
     {
         return $this->belongsTo(Services::class, 'service_id');
     }
-    
 
     public function centre(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'centre_id');
     }
-    
 
     public function patientR(): BelongsTo
     {
         return $this->belongsTo(Patients::class, 'patient_id');
     }
-    
-    
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
-    
+
     public function rescheduleBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rescheduled_by');
     }
+
     public function deleteBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deleted_by');
