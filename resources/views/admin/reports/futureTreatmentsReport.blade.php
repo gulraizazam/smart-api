@@ -6,7 +6,9 @@
             <tr>
                 <th>Patient ID</th>
                 <th>Name</th>
-                <th>Phone</th>
+                @can('contact')
+                    <th>Phone</th>
+                @endcan
                 <th>Centre</th>
                 <th>Membership</th>
                 <th>Last Arrival Date</th>
@@ -24,7 +26,9 @@
                 <tr>
                     <td>{{ $row->id ?? 'N/A' }}</td>
                     <td>{{ $row->name ?? 'N/A' }}</td>
-                    <td>{{ $row->phone ?? 'N/A' }}</td>
+                    @can('contact')
+                        <td>{{ $row->phone ?? 'N/A' }}</td>
+                    @endcan
                     <td>{{ $locationsMap[$firstAppointment->location_id ?? 0] ?? 'N/A' }}</td>
                     <td>{{ $row->membership->membershipType->name ?? 'N/A' }}</td>
                     <td>

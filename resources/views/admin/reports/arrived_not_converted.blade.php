@@ -72,24 +72,24 @@
                     <tr>
                         <th>ID</th>
                         <th>Patient Name</th>
-                        <th>Phone</th>
+                        @can('contact')
+                            <th>Phone</th>
+                        @endcan
                         <th>Service</th>
                         <th>Doctor</th>
                         <th>Centre</th>
                         <th>Scheduled Date</th>
                     </tr>
                     </thead>
-                    
+
                 <tbody>
                 @foreach($patients as $patient)
                     <tr>
                         <td>{{$patient->id}}</td>
                         <td>{{$patient->name ?? 'N/A'}}</td>
-                        @if(Gate::allows('contact'))
+                        @can('contact')
                             <td>{{$patient->phone}}</td>
-                        @else
-                        <td>***********</td>
-                        @endif
+                        @endcan
                         <td>{{$patient->service_name ?? 'N/A'}}</td>
                         <td>{{$patient->doctor_name ?? 'N/A'}}</td>
                         <td>{{$patient->location_name ?? 'N/A'}}</td>

@@ -23,15 +23,19 @@
             </p>
         @endif
     </div>
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
-        {!! Form::label('phone', 'Phone*', ['class' => 'control-label']) !!}
-        {!! Form::number('phone', (old('phone')) ? old('phone') : $lead->patient->phone, ['id' => 'phone', 'class' => 'form-control', 'placeholder' => '', 'required' => '']) !!}
-        @if($errors->has('phone'))
-            <p class="help-block">
-                {{ $errors->first('phone') }}
-            </p>
-        @endif
-    </div>
+    @can('contact')
+        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
+            {!! Form::label('phone', 'Phone*', ['class' => 'control-label']) !!}
+            {!! Form::number('phone', (old('phone')) ? old('phone') : $lead->patient->phone, ['id' => 'phone', 'class' => 'form-control', 'placeholder' => '', 'required' => '']) !!}
+            @if($errors->has('phone'))
+                <p class="help-block">
+                    {{ $errors->first('phone') }}
+                </p>
+            @endif
+        </div>
+    @else
+        {!! Form::hidden('phone', (old('phone')) ? old('phone') : $lead->patient->phone, ['id' => 'phone']) !!}
+    @endcan
 </div>
 <div class="row">
     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">

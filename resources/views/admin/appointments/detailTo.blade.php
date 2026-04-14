@@ -70,9 +70,11 @@
         @endif
         <tr>
             <th>Patient Name</th>
-            <td>{{ ($appointment->name) ? $appointment->name : $appointment->patient->name }}</td>
-            <th>Patient Phone</th>
-            <td>@if($appointment->patient->phone){{ \App\Helpers\GeneralFunctions::prepareNumber4Call($appointment->patient->phone) }}@else{{'N/A'}}@endif</td>
+            <td @cannot('contact') colspan="3" @endcannot>{{ ($appointment->name) ? $appointment->name : $appointment->patient->name }}</td>
+            @can('contact')
+                <th>Patient Phone</th>
+                <td>@if($appointment->patient->phone){{ \App\Helpers\GeneralFunctions::prepareNumber4Call($appointment->patient->phone) }}@else{{'N/A'}}@endif</td>
+            @endcan
         </tr>
         <tr>
             <th>Email</th>

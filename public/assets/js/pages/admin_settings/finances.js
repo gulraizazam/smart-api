@@ -79,7 +79,9 @@ function setFilters(filter_values, active_filters) {
 
         let patient_options = "";
         Object.values(patients).forEach( function (value) {
-            patient_options += '<option value="'+value.id+'">'+value.name+'-'+value.phone+'</option>';
+            var hasPhone = value.phone && value.phone !== '***********';
+            var label = hasPhone ? (value.name + '-' + value.phone) : (value.name + ' - ID ' + value.id);
+            patient_options += '<option value="'+value.id+'">'+label+'</option>';
         });
         $("#search_patient").html(active_filters.created_to);
     } catch (error) {

@@ -54,7 +54,9 @@ class ConsultancyDatatableService
 
         [$orderBy, $order] = $this->handleSorting($request);
 
-        $baseQuery = $this->filterService->buildBaseQuery();
+        // On a patient profile, show full consultation history at accessible centres
+        // regardless of which doctor owns the consultation.
+        $baseQuery = $this->filterService->buildBaseQuery(scopeByDoctor: $patientId === null);
 
         $countQuery = clone $baseQuery;
         $this->filterService->buildFilters($countQuery, $filters);

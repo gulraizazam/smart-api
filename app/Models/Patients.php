@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class Patients extends BaseModel
 {
@@ -229,10 +230,12 @@ class Patients extends BaseModel
             return [];
         }
 
+        $canViewContact = Gate::allows('contact');
+
         [$scopeSql, $scopeBindings] = PatientAccessScope::rawClause('users.id');
         $cacheKey = "patient_search_{$accountId}_" . PatientAccessScope::cacheSuffix() . '_' . md5($name);
 
-        return Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
+        $rows = Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
             $cleaned = strtr($name, [' ' => '', '-' => '', '+' => '', 'C-' => '', 'c-' => '']);
 
             if (ctype_digit($cleaned)) {
@@ -245,14 +248,14 @@ class Patients extends BaseModel
                     "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
                      FROM users
                      WHERE user_type_id = 3 AND active = 1 AND account_id = ?
-                       AND (phone = ? OR phone LIKE ? OR phone = ? OR phone LIKE ? OR id = ?)
+                       AND (phone = ? OR phone LIKE ? OR phone = ? OR phone LIKE ? OR id = ? OR id LIKE ?)
                        {$scopeSql}
                      ORDER BY CASE
                          WHEN phone = ? THEN 1 WHEN phone = ? THEN 2 WHEN id = ? THEN 3 ELSE 4
                      END, id DESC
                      LIMIT 10",
                     array_merge(
-                        [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned],
+                        [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned, $cleaned . '%'],
                         $scopeBindings,
                         [$phone, $cleaned, $cleaned]
                     )
@@ -280,6 +283,20 @@ class Patients extends BaseModel
 
             return self::decryptCnicColumn($rows);
         });
+
+        // Strip phone per-request *after* cache retrieval so a consultant
+        // (no `contact` permission) never sees phone numbers in the response,
+        // even when the cache entry was populated by an admin. Phone-based
+        // lookup is still allowed at the query layer so the consultant can
+        // find a patient by typing their number — the property is removed
+        // entirely (not masked) so callers receive no phone key at all.
+        if (!$canViewContact) {
+            foreach ($rows as $row) {
+                unset($row->phone);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -312,6 +329,7 @@ class Patients extends BaseModel
 
     public static function getPatientidAjaxOrder(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
+        $canViewContact = Gate::allows('contact');
         $users = collect();
 
         if (str_contains(strtolower($name), 'c-')) {
@@ -349,6 +367,9 @@ class Patients extends BaseModel
             ->keyBy('patient_id');
 
         foreach ($users as $user) {
+            if (! $canViewContact) {
+                $user->makeHidden('phone');
+            }
             $membership = $memberships->get($user->id);
             $user->membership_code = $membership?->code ?? 'N/A';
             $user->membership_status = $membership ? 'Active' : 'Inactive';
@@ -362,12 +383,20 @@ class Patients extends BaseModel
 
     public static function getPatientidAjax(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
+        $canViewContact = Gate::allows('contact');
+        $hidePhone = static function (\Illuminate\Database\Eloquent\Collection $users) use ($canViewContact): \Illuminate\Database\Eloquent\Collection {
+            if (! $canViewContact) {
+                $users->each(fn ($user) => $user->makeHidden('phone'));
+            }
+            return $users;
+        };
+
         if (str_contains(strtolower($name), 'c-')) {
             $cleanId = str_replace(['C-', 'c-'], '', $name);
             $query = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId);
             PatientAccessScope::applyTo($query);
-            return $query->select('name', 'id', 'phone')->get();
+            return $hidePhone($query->select('name', 'id', 'phone')->get());
         }
 
         if (is_numeric($name)) {
@@ -376,7 +405,7 @@ class Patients extends BaseModel
             PatientAccessScope::applyTo($query);
             $users = $query->select('name', 'id', 'phone')->get();
             if ($users->isNotEmpty()) {
-                return $users;
+                return $hidePhone($users);
             }
         }
 
@@ -388,16 +417,22 @@ class Patients extends BaseModel
 
         if (is_numeric($phoneNumeric)) {
             $phone = GeneralFunctions::cleanNumber($search);
-            return $query->where('phone', 'LIKE', "%{$phone}%")
-                ->select('name', 'id', 'phone')->get();
+            return $hidePhone($query->where('phone', 'LIKE', "%{$phone}%")
+                ->select('name', 'id', 'phone')->get());
         }
 
-        return $query->where('name', 'LIKE', "%{$search}%")
-            ->select('name', 'id', 'phone')->get();
+        return $hidePhone($query->where('name', 'LIKE', "%{$search}%")
+            ->select('name', 'id', 'phone')->get());
     }
 
     public static function getPatientPhoneAjax(string $phone, int $accountId): \Illuminate\Database\Eloquent\Collection
     {
+        // Phone-prefix lookup is meaningless — and leaks enumeration signal —
+        // when the caller cannot view contact numbers. Deny outright.
+        if (!Gate::allows('contact')) {
+            return new \Illuminate\Database\Eloquent\Collection();
+        }
+
         $query = self::patientsOnly()->active()->forAccount($accountId)
             ->where('phone', 'LIKE', "%{$phone}%");
         PatientAccessScope::applyTo($query);

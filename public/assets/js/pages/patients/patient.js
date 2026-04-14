@@ -348,12 +348,9 @@ function setEditData(response) {
 
     $("#edit_name").val(patient.name);
     $("#edit_email").val(patient.email);
-    $("#edit_old_phone").val(patient.phone);
-
     if (permissions.contact) {
+        $("#edit_old_phone").val(patient.phone);
         $("#edit_phone").val(patient.phone);
-    } else {
-        $("#edit_phone").val("***********").attr("readonly", true);
     }
 
     $("#edit_gender_id").val(patient.gender);

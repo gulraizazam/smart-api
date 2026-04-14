@@ -18,7 +18,7 @@ class PatientAppointmentResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->patient_name ?? '',
-            'phone' => $canViewContact ? ($this->patient_phone ?? '') : '***********',
+            'phone' => $this->when($canViewContact, fn () => $this->patient_phone ?? ''),
             'scheduled_date' => $this->scheduled_date
                 ? Carbon::parse($this->scheduled_date)->format('D M, d Y h:i A')
                 : '',

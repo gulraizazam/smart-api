@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Resources\User;
 
 use App\Enums\Gender;
-use App\Helpers\GeneralFunctions;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -24,9 +23,7 @@ class ApplicationUserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'phone' => $canViewContact
-                ? GeneralFunctions::contactStatus($this->phone)
-                : '***********',
+            'phone' => $this->when($canViewContact, fn () => $this->phone),
             'gender' => $this->resolveGender(),
             'locations' => $this->resolveLocations(),
             'roles' => $this->whenLoaded('role_has_users', fn (): array => $this->user_roles()->pluck('name')->all(), []),

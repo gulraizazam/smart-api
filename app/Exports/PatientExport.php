@@ -13,9 +13,13 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
 {
     use Exportable;
 
+    private readonly bool $canViewContact;
+
     public function __construct(
         private readonly array $filters,
-    ) {}
+    ) {
+        $this->canViewContact = Gate::allows('contact');
+    }
 
     public function collection(): \Illuminate\Support\Collection
     {
@@ -27,22 +31,21 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
         $records = [];
 
         foreach ($this->filters['leads'] as $lead) {
-
-            if (! Gate::allows('contact')) {
-                $phone = '***********';
-            } else {
-                $phone = $lead->patient->phone ?? 'N/A';
-            }
-
-            $records[] = [
+            $record = [
                 '#' => $count++,
                 'name' => $lead->name,
-                'phone' => $phone,
-                'city' => $Cities[$lead->city_id]->name,
-                'lead_status' => $lead_status[$lead->lead_status_id]->name,
-                'service' => $services[$lead->service_id]->name,
-                'user' => $users[$lead->created_by]->name,
             ];
+
+            if ($this->canViewContact) {
+                $record['phone'] = $lead->patient->phone ?? 'N/A';
+            }
+
+            $record['city'] = $Cities[$lead->city_id]->name;
+            $record['lead_status'] = $lead_status[$lead->lead_status_id]->name;
+            $record['service'] = $services[$lead->service_id]->name;
+            $record['user'] = $users[$lead->created_by]->name;
+
+            $records[] = $record;
         }
 
         // Bug fixed: was collect() inside loop — $collection undefined when leads is empty
@@ -51,7 +54,7 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
 
     public function headings(): array
     {
-        return [
+        $headings = [
             '#',
             'Full Name',
             'Phone',
@@ -60,5 +63,11 @@ class PatientExport implements FromCollection, WithHeadings, ShouldAutoSize
             'Service',
             'Created By',
         ];
+
+        if (! $this->canViewContact) {
+            $headings = array_values(array_filter($headings, fn (string $h): bool => $h !== 'Phone'));
+        }
+
+        return $headings;
     }
 }

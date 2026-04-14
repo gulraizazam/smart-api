@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
@@ -629,6 +630,8 @@ class LeadService
 
     public function searchLeadsById(string $search, int $accountId): Collection
     {
+        $canViewContact = Gate::allows('contact');
+
         if (is_numeric($search)) {
             $leads = Leads::where([
                 'active' => 1,
@@ -637,6 +640,9 @@ class LeadService
             ])->select('name', 'id', 'phone')->get();
 
             if ($leads->isNotEmpty()) {
+                if (!$canViewContact) {
+                    $leads->each(fn ($lead) => $lead->phone = '');
+                }
                 return $leads;
             }
         }
@@ -647,21 +653,37 @@ class LeadService
         $query = Leads::where(['active' => 1, 'account_id' => $accountId]);
 
         if (is_numeric($phoneNumeric)) {
-            $phone = PhoneFormattingService::cleanNumber($search);
-            $query->where('phone', 'LIKE', "%{$phone}%");
+            // Only allow phone-prefix matching when user can see phones; otherwise
+            // treat the numeric input as an ID lookup to avoid enumerating phones.
+            if ($canViewContact) {
+                $phone = PhoneFormattingService::cleanNumber($search);
+                $query->where('phone', 'LIKE', "%{$phone}%");
+            } else {
+                $query->where('id', 'LIKE', "%{$phoneNumeric}%");
+            }
         } else {
             $query->where('name', 'LIKE', "%{$searchTerm}%");
         }
 
-        return $query->select('name', 'id', 'phone')
+        $results = $query->select('name', 'id', 'phone')
             ->orderByDesc('id')
             ->limit(100)
             ->get()
             ->unique('phone');
+
+        if (!$canViewContact) {
+            $results->each(fn ($lead) => $lead->phone = '');
+        }
+        return $results;
     }
 
     public function searchByPhone(string $phone, int $accountId): Collection
     {
+        // Blanket deny: a phone-prefix lookup has no legitimate use without contact permission.
+        if (!Gate::allows('contact')) {
+            return new Collection();
+        }
+
         return Leads::where([
             ['active', '=', 1],
             ['account_id', '=', $accountId],

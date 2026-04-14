@@ -58,10 +58,6 @@ final class TreatmentDatatableResource extends JsonResource
             default     => '',
         };
 
-        $phoneNumber = $this->canViewContact
-            ? ($appointment->patient->phone ?? '')
-            : '***********';
-
         $scheduledDate = $appointment->scheduled_date
             ? Carbon::parse($appointment->scheduled_date)->format('M j, Y')
                 . ' at '
@@ -75,7 +71,10 @@ final class TreatmentDatatableResource extends JsonResource
             'patient_id'                      => $appointment->patient_id,
             'Patient_ID'                      => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
             'name'                            => $appointment->patient_name ?: ($appointment->patient->name ?? ''),
-            'phone'                           => $phoneNumber,
+            'phone'                           => $this->when(
+                $this->canViewContact,
+                fn () => $appointment->patient->phone ?? '',
+            ),
             'scheduled_date'                  => $scheduledDate,
             'apt_scheduled_date'              => $appointment->scheduled_date,
             'doctor_id'                       => $appointment->doctor->name ?? 'N/A',
@@ -87,9 +86,7 @@ final class TreatmentDatatableResource extends JsonResource
             'cityId'                          => $appointment->city_id ?? 0,
             'location_id'                     => $appointment->location->name ?? 'N/A',
             'locationId'                      => $appointment->location_id ?? 'N/A',
-            'service_id'                      => $appointment->service->parent->name
-                ?? $appointment->service->name
-                ?? 'N/A',
+            'service_id'                      => $appointment->service?->name ?? 'N/A',
             'resource_id'                     => $appointment->resource_id ?? 0,
             'appointment_type_id'             => $appointment->appointment_type->name ?? '',
             'appointment_type'                => $appointment->appointment_type->id ?? 0,

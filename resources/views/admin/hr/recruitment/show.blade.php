@@ -20,6 +20,8 @@
                                 <a href="javascript:void(0);" class="btn btn-sm btn-light-primary mr-2" data-toggle="modal" data-target="#modal_edit_candidate">
                                     <i class="la la-pencil"></i> Edit
                                 </a>
+                            @endcan
+                            @can('hr_recruitment_status_update')
                                 @if(!$candidate->converted_user_id)
                                     <form id="form_update_status" class="d-inline-flex align-items-center">
                                         <select id="candidate_status" class="form-control form-control-sm mr-2" style="width: 160px;">
@@ -31,7 +33,7 @@
                                     </form>
                                 @endif
                             @endcan
-                            @can('hr_recruitment_edit')
+                            @can('hr_recruitment_convert')
                                 @if($candidate->status === \App\Enums\CandidateStatus::Hired && !$candidate->converted_user_id)
                                     <a href="{{ route('admin.hr.recruitment.convert', $candidate) }}" class="btn btn-sm btn-success ml-2">
                                         <i class="la la-user-plus"></i> Convert to Employee
@@ -98,7 +100,7 @@
                         <div class="card-title">
                             <h3 class="card-label"><i class="la la-comments text-primary mr-2"></i>Interview History</h3>
                         </div>
-                        @can('hr_recruitment_create')
+                        @can('hr_recruitment_interview_manage')
                             <div class="card-toolbar">
                                 <a href="javascript:void(0);" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal_add_interview">
                                     <i class="la la-plus"></i> Add Interview Round

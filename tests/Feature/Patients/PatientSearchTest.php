@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Patients;
 
+use App\Models\Appointments;
+use App\Models\Locations;
 use App\Models\Patients;
+use App\Models\User;
 use App\Services\PatientManagement\PatientService;
+use Illuminate\Support\Facades\DB;
 use Tests\Concerns\RefreshTestDatabase as RefreshDatabase;
 use Tests\Concerns\UsesFinancialFixtures;
 use Tests\TestCase;
@@ -141,6 +145,165 @@ class PatientSearchTest extends TestCase
             count($results),
             'searchPatients must be scoped to the explicitly passed account_id.'
         );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Location-scoping regression tests
+    |--------------------------------------------------------------------------
+    |
+    | The typeahead feeds consultation/treatment/patient/plan flows. A non
+    | super-admin caller must only see patients who have at least one
+    | appointment at a centre the caller is assigned to. Holding an
+    | "All Centres" virtual centre flips the scope to unrestricted.
+    |
+    | These pin the contract so a refactor can't silently drop
+    | PatientAccessScope::applyTo() from PatientService::searchPatients().
+    */
+
+    public function test_search_hides_patients_with_appointments_only_at_unassigned_centres(): void
+    {
+        $assignedCentre = Locations::factory()->create(['name' => 'Assigned Centre']);
+        $otherCentre = Locations::factory()->create(['name' => 'Other Centre']);
+
+        $visible = Patients::factory()->create(['name' => 'Visible Patient']);
+        $hidden = Patients::factory()->create(['name' => 'Hidden Patient']);
+
+        Appointments::factory()->create([
+            'patient_id' => $visible->id,
+            'location_id' => $assignedCentre->id,
+        ]);
+        Appointments::factory()->create([
+            'patient_id' => $hidden->id,
+            'location_id' => $otherCentre->id,
+        ]);
+
+        $this->actingAsScopedUser([$assignedCentre->id]);
+
+        $results = $this->service->searchPatients('Patient', accountId: 1);
+
+        $names = array_column($results, 'name');
+        $this->assertContains('Visible Patient', $names);
+        $this->assertNotContains(
+            'Hidden Patient',
+            $names,
+            'A caller assigned only to Centre A must not see a patient whose appointments '
+            . 'all sit at Centre B. PatientAccessScope::applyTo() enforces this on the '
+            . 'shared typeahead used by consultation/treatment/patient/plan flows.'
+        );
+    }
+
+    public function test_search_by_exact_id_still_respects_location_scope(): void
+    {
+        // Exact-id lookup is the easiest path to accidentally bypass the
+        // scope — it short-circuits to a single-row SELECT. Pin that the
+        // scope still applies to the clone.
+        $assignedCentre = Locations::factory()->create(['name' => 'My Centre']);
+        $otherCentre = Locations::factory()->create(['name' => 'Their Centre']);
+
+        $hidden = Patients::factory()->create(['name' => 'Cross-Centre Patient']);
+        Appointments::factory()->create([
+            'patient_id' => $hidden->id,
+            'location_id' => $otherCentre->id,
+        ]);
+
+        $this->actingAsScopedUser([$assignedCentre->id]);
+
+        $results = $this->service->searchPatients((string) $hidden->id, accountId: 1);
+
+        $this->assertSame(
+            0,
+            count($results),
+            'Exact-id lookup must inherit the location scope from the base query — '
+            . 'otherwise a scoped user could enumerate patients by typing ids.'
+        );
+    }
+
+    public function test_search_with_all_centres_virtual_assignment_is_unrestricted(): void
+    {
+        // Holding an "All Centres" (or "All South Region" / "All Central
+        // Region") virtual centre in user_has_locations flips the scope to
+        // null — the caller sees every patient in the account, even
+        // patients without any appointment at all.
+        $allCentres = Locations::factory()->create(['name' => 'All Centres']);
+        $regularCentre = Locations::factory()->create(['name' => 'Regular Centre']);
+
+        // An appointment-less patient is the key case: the EXISTS-on-
+        // appointments scope would hide them, so their visibility proves
+        // the scope was bypassed entirely.
+        Patients::factory()->create(['name' => 'Orphan Patient']);
+
+        $atRegular = Patients::factory()->create(['name' => 'Regular Patient']);
+        Appointments::factory()->create([
+            'patient_id' => $atRegular->id,
+            'location_id' => $regularCentre->id,
+        ]);
+
+        $this->actingAsScopedUser([$allCentres->id]);
+
+        $results = $this->service->searchPatients('Patient', accountId: 1);
+
+        $names = array_column($results, 'name');
+        $this->assertContains(
+            'Orphan Patient',
+            $names,
+            '"All Centres" assignment must flip PatientAccessScope to unrestricted — '
+            . 'even a patient with zero appointments should appear.'
+        );
+        $this->assertContains('Regular Patient', $names);
+    }
+
+    public function test_search_with_zero_location_assignments_returns_nothing(): void
+    {
+        // A non super-admin caller with no user_has_locations rows has
+        // empty scope — the helper emits `1=0` and the typeahead must
+        // return zero regardless of what patients exist.
+        $centre = Locations::factory()->create(['name' => 'Some Centre']);
+        $patient = Patients::factory()->create(['name' => 'Any Patient']);
+        Appointments::factory()->create([
+            'patient_id' => $patient->id,
+            'location_id' => $centre->id,
+        ]);
+
+        $this->actingAsScopedUser([]);
+
+        $this->assertSame(
+            [],
+            $this->service->searchPatients('Patient', accountId: 1),
+            'A caller with zero assigned locations must see zero patients — '
+            . 'no silent full-DB leak when user_has_locations is empty.'
+        );
+    }
+
+    /**
+     * Create and authenticate an ordinary application user with an
+     * explicit `user_has_locations` assignment set. Bypasses the
+     * super-admin (id=1) short-circuit so the scope actually runs.
+     *
+     * @param  int[]  $locationIds
+     */
+    private function actingAsScopedUser(array $locationIds): User
+    {
+        // Ensure the acting user is NOT id=1 — PatientAccessScope::resolve()
+        // returns null (unrestricted) for the super-admin, which would
+        // defeat every scope assertion below.
+        if (User::query()->count() === 0) {
+            User::factory()->admin()->create();
+        }
+
+        $user = User::factory()->create(['user_type_id' => 1]);
+
+        foreach ($locationIds as $locationId) {
+            DB::table('user_has_locations')->insert([
+                'user_id' => $user->id,
+                'location_id' => $locationId,
+                'region_id' => 1,
+            ]);
+        }
+
+        $this->actingAs($user);
+
+        return $user;
     }
 
     public function test_search_returns_only_id_name_phone_columns(): void

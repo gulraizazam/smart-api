@@ -20,10 +20,11 @@ class LeadDetailResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $canViewContact ? $this->email : '***********',
-            'phone' => $canViewContact
-                ? GeneralFunctions::prepareNumber4Call($this->phone)
-                : '***********',
+            'email' => $this->when($canViewContact, fn () => $this->email),
+            'phone' => $this->when(
+                $canViewContact,
+                fn () => GeneralFunctions::prepareNumber4Call($this->phone),
+            ),
             'gender' => $this->resource->getAttributes()['gender'] ?? null,
             'gender_label' => $this->resolveGenderLabel(),
             'active' => $this->active,

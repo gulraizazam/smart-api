@@ -66,7 +66,11 @@ class RecruitmentDatatableController extends Controller
                 'data' => $data,
                 'permissions' => [
                     'view' => Gate::allows('hr_recruitment_view'),
+                    'create' => Gate::allows('hr_recruitment_create'),
                     'edit' => Gate::allows('hr_recruitment_edit'),
+                    'status_update' => Gate::allows('hr_recruitment_status_update'),
+                    'interview_manage' => Gate::allows('hr_recruitment_interview_manage'),
+                    'convert' => Gate::allows('hr_recruitment_convert'),
                     'delete' => Gate::allows('hr_recruitment_delete'),
                 ],
                 'active_filters' => $datatableData['active_filters'],

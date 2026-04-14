@@ -17,11 +17,15 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
+    private readonly bool $canViewContact;
+
     public function __construct(
         private readonly int $limit = 10000,
         private readonly int $offset = 0,
         private readonly mixed $request = null,
-    ) {}
+    ) {
+        $this->canViewContact = Gate::allows('contact');
+    }
 
     public function query()
     {
@@ -161,7 +165,7 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
 
     public function headings(): array
     {
-        return [
+        $headings = [
             'ID',
             'Patient',
             'Phone',
@@ -179,6 +183,12 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
             'Updated By',
             'Reschedule By',
         ];
+
+        if (! $this->canViewContact) {
+            $headings = array_values(array_filter($headings, fn (string $h): bool => $h !== 'Phone'));
+        }
+
+        return $headings;
     }
 
     public function map($appointment): array
@@ -191,16 +201,10 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
             $consultancy_type = 'N/A';
         }
 
-        if (! Gate::allows('contact')) {
-            $phone = '***********';
-        } else {
-            $phone = $appointment->phone ?? 'N/A';
-        }
-
-        return [
+        $row = [
             'C-'.$appointment->patient_id,
             $appointment->name ?? 'N/A',
-            $phone,
+            $appointment->phone ?? 'N/A',
             Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A'),
             $appointment->doctor->name ?? 'N/A',
             $appointment->region->name ?? 'N/A',
@@ -215,6 +219,12 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
             $appointment->user_updated_by->name ?? 'N/A',
             $appointment->user_converted_by->name ?? 'N/A',
         ];
+
+        if (! $this->canViewContact) {
+            array_splice($row, 2, 1);
+        }
+
+        return $row;
     }
 
     /**

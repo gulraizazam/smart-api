@@ -260,7 +260,7 @@ class AppointmentsController extends Controller
                 $lead = [
                     'id' => $lead->id,
                     'name' => $lead->patient?->name,
-                    'phone' => $lead->patient?->phone,
+                    'phone' => Gate::allows('contact') ? $lead->patient?->phone : '***********',
                     'dob' => $lead->patient?->dob,
                     'address' => $lead->patient?->address,
                     'cnic' => $lead->patient?->cnic,

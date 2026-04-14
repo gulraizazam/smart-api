@@ -2,6 +2,8 @@ var table_url = route('admin.leads.datatable');
 if (typeof lead_type !== 'undefined' && lead_type != '') {
     table_url = route('admin.leads.datatable', {type: lead_type});
 }
+var _listingPerms = (typeof window !== 'undefined' && window.listingPerms) ? window.listingPerms : {};
+var _canShowContact = _listingPerms.contact !== false && (typeof permissions === 'undefined' || permissions.contact !== false);
 var table_columns = [{
     field: 'lead_id',
     title: 'ID',
@@ -141,6 +143,10 @@ var table_columns = [{
     sortable: false,
     width: 'auto',
 }];
+
+if (!_canShowContact) {
+    table_columns = table_columns.filter(function (col) { return col.field !== 'phone'; });
+}
 
 function editLeadStatus(lead_id) {
     $("#modal_change_status").modal("show");
@@ -783,11 +789,9 @@ function setEditData(response) {
         }
         $("#edit_full_name").val(lead.name);
         $("#edit_lead_id").val(lead.id);
-        $("#edit_old_phone").val(lead.phone).attr("readonly", true);
         if (permissions.contact) {
+            $("#edit_old_phone").val(lead.phone).attr("readonly", true);
             $("#edit_phone").val(lead.phone).attr("readonly", true);
-        } else {
-            $("#edit_phone").val("***********").attr("readonly", true);
         }
     } catch (error) {
         showException(error);
@@ -1071,12 +1075,8 @@ function getLeadDetail($this) {
             if (resposne.status && resposne.data.lead) {
                 lead = resposne.data.lead;
           
-                $('#add_phone').val(lead?.phone);
-
                 if (permissions.contact) {
                     $('#add_phone').val(lead?.phone);
-                } else {
-                    $('#add_phone').val("***********");
                 }
                 $('#add_full_name').val(lead?.name);
                 $('#add_gender_id').val(lead?.gender).change();

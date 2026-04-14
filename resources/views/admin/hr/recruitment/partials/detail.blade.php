@@ -19,27 +19,31 @@
     </div>
 
     {{-- Status Change --}}
-    @can('hr_recruitment_edit')
-        @if(!$candidate->converted_user_id)
+    @if(!$candidate->converted_user_id)
+        @canany(['hr_recruitment_status_update', 'hr_recruitment_convert'])
             <div class="d-flex align-items-center mb-5 p-3 bg-light rounded">
-                <span class="font-weight-bold text-muted mr-3">Status:</span>
-                <select id="candidate_status" class="form-control form-control-sm mr-2" style="width:140px;">
-                    @foreach(\App\Enums\CandidateStatus::cases() as $s)
-                        <option value="{{ $s->value }}" {{ $candidate->status === $s ? 'selected' : '' }}>{{ $s->label() }}</option>
-                    @endforeach
-                </select>
-                <button type="button" id="btn_save_status" class="btn btn-sm btn-primary" data-url="{{ route('admin.hr.recruitment.update-status', $candidate) }}">Update</button>
-                @if($candidate->status === \App\Enums\CandidateStatus::Hired)
-                    <button type="button" id="btn_show_convert" class="btn btn-sm btn-success ml-auto"><i class="la la-user-plus mr-1"></i>Convert to Employee</button>
-                @endif
+                @can('hr_recruitment_status_update')
+                    <span class="font-weight-bold text-muted mr-3">Status:</span>
+                    <select id="candidate_status" class="form-control form-control-sm mr-2" style="width:140px;">
+                        @foreach(\App\Enums\CandidateStatus::cases() as $s)
+                            <option value="{{ $s->value }}" {{ $candidate->status === $s ? 'selected' : '' }}>{{ $s->label() }}</option>
+                        @endforeach
+                    </select>
+                    <button type="button" id="btn_save_status" class="btn btn-sm btn-primary" data-url="{{ route('admin.hr.recruitment.update-status', $candidate) }}">Update</button>
+                @endcan
+                @can('hr_recruitment_convert')
+                    @if($candidate->status === \App\Enums\CandidateStatus::Hired)
+                        <button type="button" id="btn_show_convert" class="btn btn-sm btn-success ml-auto"><i class="la la-user-plus mr-1"></i>Convert to Employee</button>
+                    @endif
+                @endcan
             </div>
-        @else
-            <div class="mb-5 p-3 bg-light-success rounded">
-                <i class="la la-check-circle text-success mr-1"></i>
-                Converted to employee: <strong>{{ $candidate->convertedUser?->name }}</strong>
-            </div>
-        @endif
-    @endcan
+        @endcanany
+    @else
+        <div class="mb-5 p-3 bg-light-success rounded">
+            <i class="la la-check-circle text-success mr-1"></i>
+            Converted to employee: <strong>{{ $candidate->convertedUser?->name }}</strong>
+        </div>
+    @endif
 
     {{-- Info --}}
     <div class="row mb-5">
@@ -91,13 +95,13 @@
     {{-- Interview History --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h5 class="mb-0"><i class="la la-comments text-primary mr-1"></i>Interviews ({{ $candidate->interviews->count() }})</h5>
-        @can('hr_recruitment_create')
+        @can('hr_recruitment_interview_manage')
             <a href="javascript:void(0);" id="btn_toggle_interview_form" class="btn btn-sm btn-light-primary"><i class="la la-plus mr-1"></i>Add Round</a>
         @endcan
     </div>
 
     {{-- Inline Interview Form (hidden by default) --}}
-    @can('hr_recruitment_create')
+    @can('hr_recruitment_interview_manage')
     <div id="interview_form_wrapper" class="mb-5" style="display:none;">
         <div class="border rounded p-4 bg-light">
             <form id="form_add_interview" data-url="{{ route('admin.hr.interviews.store') }}">
@@ -240,7 +244,7 @@
     @endforelse
 
     {{-- Convert to Employee Form (hidden by default) --}}
-    @can('hr_recruitment_edit')
+    @can('hr_recruitment_convert')
     @if($candidate->status === \App\Enums\CandidateStatus::Hired && !$candidate->converted_user_id)
     <div id="convert_form_wrapper" style="display:none;">
         <hr class="my-5">

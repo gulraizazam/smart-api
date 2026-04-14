@@ -205,7 +205,7 @@
 
                 <!-- Appointment menu -->
 
-                @if (Gate::allows('appointments_manage') || Gate::allows('consultations_manage') || Gate::allows('treatments_manage'))
+                @if (Gate::allows('consultations_manage') || Gate::allows('treatments_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.consultancy.index']) }} {{ openMenu(['admin.treatment.index']) }} {{ openMenu(['admin.appointments.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -220,7 +220,7 @@
 
                         <ul class="menu-subnav">
 
-                            @if(Gate::allows('appointments_manage') || Gate::allows('consultations_manage'))
+                            @if(Gate::allows('consultations_manage'))
                             <li class="menu-item manage-consultancy {{ activeMenu('admin.consultancy.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.consultancy.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -1396,7 +1396,7 @@
                 @endcan
 
                 {{-- ── HRM Module ── --}}
-                @if (Gate::allows('hr_dashboard_view') || Gate::allows('hr_employees_view') || Gate::allows('hr_departments_manage') || Gate::allows('hr_designations_manage') || Gate::allows('hr_leave_view') || Gate::allows('hr_leave_manage') || Gate::allows('hr_recruitment_view'))
+                @if (Gate::allows('hr_dashboard_view') || Gate::allows('hr_employees_view') || Gate::allows('hr_departments_view') || Gate::allows('hr_designations_view') || Gate::allows('hr_leave_view') || Gate::allows('hr_leave_approve') || Gate::allows('hr_recruitment_view'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.hr.dashboard', 'admin.hr.employees.index', 'admin.hr.employees.show', 'admin.hr.departments.index', 'admin.hr.designations.index', 'admin.hr.leave-types.index', 'admin.hr.leave-balances.index', 'admin.hr.leave-applications.index', 'admin.hr.leave-applications.calendar', 'admin.hr.recruitment.index', 'admin.hr.recruitment.show']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
@@ -1424,7 +1424,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('hr_departments_manage')
+                            @can('hr_departments_view')
                             <li class="menu-item {{ activeMenu('admin.hr.departments.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.hr.departments.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1432,7 +1432,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('hr_designations_manage')
+                            @can('hr_designations_view')
                             <li class="menu-item {{ activeMenu('admin.hr.designations.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.hr.designations.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1440,7 +1440,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('hr_leave_manage')
+                            @can('hr_leave_view')
                             <li class="menu-item {{ activeMenu('admin.hr.leave-types.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.hr.leave-types.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
@@ -1453,15 +1453,13 @@
                                     <span class="menu-text">Leave Balances</span>
                                 </a>
                             </li>
-                            @endcan
-                            @canany(['hr_leave_view', 'hr_leave_apply'])
                             <li class="menu-item {{ activeMenu('admin.hr.leave-applications.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.hr.leave-applications.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Leave Applications</span>
                                 </a>
                             </li>
-                            @endcanany
+                            @endcan
                             @can('hr_leave_view')
                             <li class="menu-item {{ activeMenu('admin.hr.leave-applications.calendar') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.hr.leave-applications.calendar') }}" class="menu-link">
