@@ -1431,50 +1431,47 @@ function cencleImport($this) {
     $(".skip_lead_status").css("opacity", 0.7);
 }
 
+function buildLeadExportParams(extra) {
+    let params = {
+        id: cleanId($('#search_id').val()),
+        name: $("#search_full_name").val(),
+        phone: $("#search_phone").val(),
+        city_id: $("#search_city_id").val(),
+        location_id: $("#search_location_id").val(),
+        region_id: $("#search_region_id").val(),
+        lead_status_id: $("#search_status_id").val(),
+        service_id: $("#search_service_id").val(),
+        created_by: $("#search_created_by").val(),
+    };
+    if (extra) {
+        Object.assign(params, extra);
+    }
+    let qs = new URLSearchParams();
+    Object.entries(params).forEach(function ([k, v]) {
+        if (v !== undefined && v !== null && v !== '' && v !== 'undefined' && v !== 'null') {
+            qs.append(k, v);
+        }
+    });
+    return qs.toString();
+}
+
 $("#export-pdf-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let created_at =$("#date_range").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by;
+    window.location.href = url + '?' + buildLeadExportParams({ created_at: $("#date_range").val() });
 });
 
 $("#export-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let created_at =$("#date_range").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by+'&ext=xlsx';
+    window.location.href = url + '?' + buildLeadExportParams({ created_at: $("#date_range").val(), ext: 'xlsx' });
 });
 
 $("#csv-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let start_date =$("#search_created_from").val()
-    let end_date =$("#search_created_to").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
+    window.location.href = url + '?' + buildLeadExportParams({
+        start_date: $("#search_created_from").val(),
+        end_date: $("#search_created_to").val(),
+        ext: 'csv',
+    });
 });
 
 function cleanId(id){
