@@ -23,22 +23,38 @@
             .al-preset-btn.active { background:#3699ff; color:#fff; border-color:#3699ff; }
             .al-preset-row .al-export-btn { margin-left:auto; }
 
-            /* Row 2: filters + action buttons in a single line */
+            /* Row 2: filters + action buttons in a single line (desktop) */
             .al-filter-row {
                 display:grid;
                 grid-template-columns: 1.6fr 1fr 1fr 1fr 40px 40px;
                 gap:10px;
                 align-items:end;
             }
-            @media (max-width: 992px) {
+            @media (max-width: 1100px) {
                 .al-filter-row { grid-template-columns: 1fr 1fr 40px 40px; }
             }
-            @media (max-width: 600px) {
-                .al-filter-row { grid-template-columns: 1fr 1fr; }
-                .al-filter-row .al-icon-btn { grid-column: span 1; }
+            @media (max-width: 768px) {
+                /* Mobile: each filter on its own row, full width */
+                .al-filter-row {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                }
+                /* Action buttons share a final row, side by side */
+                .al-filter-row .al-icon-btn {
+                    width: 100%;
+                    height: 42px;
+                    font-size: 0.9rem;
+                }
+                .al-filter-row .al-icon-btn::after {
+                    content: attr(data-label);
+                    margin-left: 8px;
+                    font-weight: 500;
+                }
+                .al-filter-row .al-icon-btn:nth-of-type(1) { grid-column: 1 / 2; grid-row: auto; }
+                .al-filter-row .al-icon-btn:nth-of-type(2) { grid-column: 1 / 2; grid-row: auto; }
             }
 
-            /* Icon-only action buttons */
+            /* Icon-only action buttons (desktop default) */
             .al-icon-btn {
                 width:40px; height:38px;
                 display:inline-flex; align-items:center; justify-content:center;
@@ -129,7 +145,39 @@
 
             @media (max-width: 768px) {
                 .al-filter-card { padding:12px; }
-                .al-preset-row .al-export-btn { margin-left:0; margin-top:6px; width:100%; }
+
+                /* Preset pills in a horizontally scrollable strip so they
+                   never wrap awkwardly on narrow screens. Touch-friendly. */
+                .al-preset-row {
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    padding-bottom: 4px;
+                    gap: 6px;
+                }
+                .al-preset-row::-webkit-scrollbar { height: 4px; }
+                .al-preset-row::-webkit-scrollbar-thumb { background: #e4e6ef; border-radius:4px; }
+                .al-preset-btn { flex: 0 0 auto; }
+
+                /* Export button breaks to its own full-width row under presets */
+                .al-preset-row .al-export-btn {
+                    margin-left: 0;
+                    margin-top: 8px;
+                    width: 100%;
+                    order: 99;
+                    flex: 0 0 100%;
+                }
+
+                /* Wider event-type popover on mobile so chips don't crowd */
+                .al-tag-dd-panel {
+                    min-width: 0;
+                    width: calc(100vw - 48px);
+                    max-width: 340px;
+                }
+
+                /* Active chips and total shrink a bit */
+                .al-active-chip { font-size: 0.72rem; padding: 2px 4px 2px 8px; }
+                .al-total-wrap { text-align: left; margin-top: 8px; }
             }
         </style>
     @endpush
@@ -208,11 +256,12 @@
                                     {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'class' => 'form-control select2']) !!}
                                 </div>
 
-                                {{-- Inline action buttons: Search + Reset --}}
-                                <button type="button" id="al_load_btn" class="btn btn-success al-icon-btn spinner-button" title="Search / Reload">
+                                {{-- Inline action buttons: Search + Reset.
+                                     On mobile, the ::after label "Search" / "Reset" appears next to the icon. --}}
+                                <button type="button" id="al_load_btn" class="btn btn-success al-icon-btn spinner-button" title="Search / Reload" data-label="Search">
                                     <i class="fa fa-search"></i>
                                 </button>
-                                <button type="button" id="al_reset_btn" class="btn btn-light al-icon-btn" title="Reset filters">
+                                <button type="button" id="al_reset_btn" class="btn btn-light al-icon-btn" title="Reset filters" data-label="Reset">
                                     <i class="fa fa-undo"></i>
                                 </button>
                             </div>
