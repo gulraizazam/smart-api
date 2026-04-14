@@ -771,7 +771,7 @@ final class RefundService
             $package = Packages::find($packageId)?->toArray() ?? [];
         }
 
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
+        $locations = Locations::getActiveSorted(ACL::getUserCentres());
 
         return [
             'patient' => $patient,
