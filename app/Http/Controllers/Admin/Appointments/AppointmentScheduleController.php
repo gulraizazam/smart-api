@@ -706,14 +706,19 @@ class AppointmentScheduleController extends AppointmentBaseController
             $rota = $this->checkRota($appointment, $request);
 
             if ($rota['status']) {
+                $newScheduledDate = Carbon::parse($request->scheduled_date)->format('Y-m-d');
                 $updateData = [
-                    'scheduled_date' => Carbon::parse($request->scheduled_date)->format('Y-m-d'),
+                    'scheduled_date' => $newScheduledDate,
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format('H:i:s'),
                     'converted_by' => $data['converted_by'] ?? $appointment->converted_by,
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
+
+                if ((string) $appointment->scheduled_date !== $newScheduledDate) {
+                    $updateData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
+                }
 
                 // Set send_message to 1 if consultation is rescheduled and status is pending
                 if ($isRescheduled && $appointment->base_appointment_status_id == config('constants.appointment_status_pending', 1)) {
