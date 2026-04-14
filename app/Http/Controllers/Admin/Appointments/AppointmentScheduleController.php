@@ -728,7 +728,6 @@ class AppointmentScheduleController extends AppointmentBaseController
                 if ($appointment->isDirty('scheduled_date')) {
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
-                \App\Models\Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
 
                 // Log rescheduled activity
                 if ($isRescheduled) {
