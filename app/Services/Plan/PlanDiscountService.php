@@ -1649,7 +1649,7 @@ final class PlanDiscountService
         // is never decremented through the "Add service to plan" flow
         // and the same voucher can be re-applied until explicitly
         // reset, distorting patient balance and the usage report.
-        $this->consumeVoucherForBundle($discount_data, $data, $service_data->id, $packagebundle, $service_data);
+        $this->consumeVoucherForBundle($discount_data, $data, $service_data->id, $packagebundle, null, $service_data);
 
         $data_service = [
             'random_id' => $data['random_id'],
@@ -2053,7 +2053,7 @@ final class PlanDiscountService
                 // previously skipped consumption entirely, leaving the
                 // voucher balance at its original value so the same voucher
                 // could be re-applied indefinitely.
-                $this->consumeVoucherForBundle($discount_info, $data, $service_data?->id, $packagesbundly);
+                $this->consumeVoucherForBundle($discount_info, $data, $service_data?->id, $packagesbundly, null, null);
 
                 $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
                 $calculable_servcies = [];
@@ -2234,12 +2234,18 @@ final class PlanDiscountService
      * is the Bundles row the user selected; `$packageBundle` is the row
      * just persisted to `package_bundles`.
      */
-    private function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle, ?Services $serviceModel = null): void
+    /**
+     * Public so the final-save path (`PlanService::storePlanTypeServices`)
+     * can call it on the same row it just persisted. Callers must pass
+     * the patient id explicitly — it's not always present in `$data`.
+     */
+    public function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle, int|string|null $patientId = null, ?Services $serviceModel = null): void
     {
         Log::info('=== consumeVoucherForBundle ENTERED ===', [
             'discount_id' => $discount?->id,
             'discount_type' => $discount?->discount_type,
             'data_keys' => array_keys($data),
+            'patient_id_passed' => $patientId,
             'patient_id_in_data' => $data['patient_id'] ?? null,
             'user_id_in_data' => $data['user_id'] ?? null,
             'service_price' => $serviceModel?->price,
@@ -2254,9 +2260,9 @@ final class PlanDiscountService
 
         // The plan-form POSTs the patient id under `user_id`, but
         // sibling save paths (`addServiceToPackage`, other entry
-        // points) pass it as `patient_id`. Accept either so a caller
-        // from any path reaches consumption.
-        $patientId = $data['patient_id'] ?? $data['user_id'] ?? null;
+        // points) pass it as `patient_id`. The final-save path passes
+        // it explicitly. Try the explicit arg first, then both keys.
+        $patientId = $patientId ?? $data['patient_id'] ?? $data['user_id'] ?? null;
 
         if (! $patientId) {
             Log::warning('consumeVoucherForBundle: skipped — no patient_id / user_id in request data');
