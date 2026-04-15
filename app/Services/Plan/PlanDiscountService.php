@@ -2359,6 +2359,11 @@ final class PlanDiscountService
      * persisted after the voucher balance had already been reserved
      * via `reserveVoucherAmount`. Does NOT touch `user_vouchers.amount`
      * — that decrement happened at Add time.
+     *
+     * `service_id` must be a `services.id` (production carries a FK
+     * `fk_pkg_vouchers_service` on this column). `main_service_id` is
+     * also a services.id — in the plan/bundle-save path they're
+     * usually the same row (the selected service).
      */
     public function writeVoucherJournalRow(int $voucherId, int $patientId, float $amount, PackageBundles $packageBundle, int|string|null $mainServiceId): void
     {
@@ -2371,7 +2376,7 @@ final class PlanDiscountService
             'voucher_id' => $voucherId,
             'user_id' => $patientId,
             'amount' => $amount,
-            'service_id' => $packageBundle->id,
+            'service_id' => $mainServiceId,
             'main_service_id' => $mainServiceId,
         ]);
     }
