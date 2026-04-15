@@ -2160,7 +2160,7 @@ function getDiscountInfo($this) {
                                 // Show configurable preview table
                                 $('#configurable_preview').remove();
                                 if (resposne.data.preview_rows && resposne.data.preview_rows.length) {
-                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white; max-width: 430px;">';
                                     html += '<strong>Configurable Discount Preview:</strong>';
                                     html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
                                     html += '<thead><tr><th style="color: white !important;">Service</th><th style="color: white !important;">Regular Price</th><th style="color: white !important;">Discount</th><th style="color: white !important;">Net Amount</th></tr></thead><tbody>';
@@ -2689,7 +2689,7 @@ function editDiscountInfo($this) {
                                 // Show configurable preview table
                                 $('#configurable_preview').remove();
                                 if (resposne.data.preview_rows && resposne.data.preview_rows.length) {
-                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white; max-width: 430px;">';
                                     html += '<strong>Configurable Discount Preview:</strong>';
                                     html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
                                     html += '<thead><tr><th style="color: white !important;">Service</th><th style="color: white !important;">Regular Price</th><th style="color: white !important;">Discount</th><th style="color: white !important;">Net Amount</th></tr></thead><tbody>';
