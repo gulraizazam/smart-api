@@ -1644,6 +1644,13 @@ final class PlanDiscountService
             'service_data_name' => $service_data->name,
         ]);
 
+        // Consume the voucher balance on this plan row if a voucher-type
+        // discount was applied. Without this, the `user_vouchers` ledger
+        // is never decremented through the "Add service to plan" flow
+        // and the same voucher can be re-applied until explicitly
+        // reset, distorting patient balance and the usage report.
+        $this->consumeVoucherForBundle($discount_data, $data, $service_data->id, $packagebundle);
+
         $data_service = [
             'random_id' => $data['random_id'],
             'package_bundle_id' => $packagebundle->id,
@@ -2046,7 +2053,7 @@ final class PlanDiscountService
                 // previously skipped consumption entirely, leaving the
                 // voucher balance at its original value so the same voucher
                 // could be re-applied indefinitely.
-                $this->consumeVoucherForBundle($discount_info, $data, $service_data, $packagesbundly);
+                $this->consumeVoucherForBundle($discount_info, $data, $service_data?->id, $packagesbundly);
 
                 $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
                 $calculable_servcies = [];
@@ -2227,20 +2234,24 @@ final class PlanDiscountService
      * is the Bundles row the user selected; `$packageBundle` is the row
      * just persisted to `package_bundles`.
      */
-    private function consumeVoucherForBundle(?Discounts $discount, array $data, ?Bundles $bundleServiceModel, PackageBundles $packageBundle): void
+    private function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle): void
     {
         if (! $discount || $discount->discount_type !== 'voucher') {
             return;
         }
 
-        $patientId = $data['patient_id'] ?? null;
+        // The plan-form POSTs the patient id under `user_id`, but
+        // sibling save paths (`addServiceToPackage`, other entry
+        // points) pass it as `patient_id`. Accept either so a caller
+        // from any path reaches consumption.
+        $patientId = $data['patient_id'] ?? $data['user_id'] ?? null;
         $discountPrice = (float) ($data['discount_price'] ?? 0);
 
         if (! $patientId || $discountPrice <= 0) {
             return;
         }
 
-        DB::transaction(function () use ($discount, $patientId, $data, $discountPrice, $bundleServiceModel, $packageBundle): void {
+        DB::transaction(function () use ($discount, $patientId, $data, $discountPrice, $mainServiceId, $packageBundle): void {
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)
                 ->where('user_id', $patientId)
                 ->lockForUpdate()
@@ -2262,7 +2273,7 @@ final class PlanDiscountService
                 'user_id' => $patientId,
                 'amount' => $actualConsumed > 0 ? $actualConsumed : $discountPrice,
                 'service_id' => $packageBundle->id,
-                'main_service_id' => $bundleServiceModel?->id,
+                'main_service_id' => $mainServiceId,
             ]);
 
             if ($actualConsumed > 0) {
