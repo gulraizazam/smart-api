@@ -3484,63 +3484,126 @@ jQuery(document).ready(function () {
                 // --- SIMPLE DISCOUNT: single row ---
                 var rowNetAmount = parseFloat(net_amount) || 0;
                 var taxCalc = calculatePlanTax(rowNetAmount, taxPct, taxType, is_exclusive);
-
-                total_amountArray.push(parseFloat(taxCalc.tax_including_price));
-
-                var sum = total_amountArray.reduce((a, b) => a + b, 0);
-                $("#package_total_1").val(sum.toFixed(2));
-
                 var deleteBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(this)'>" + trashBtn() + "</button>";
 
-                $('#plan_services').append(buildPlanServiceRow({
-                    groupClass: random_id + ' plan-row-' + rowUid,
-                    serviceName: svcName,
-                    regularPrice: svcPrice,
-                    discountName: discountName,
-                    discountValue: discount_price || 0,
-                    subtotal: taxCalc.tax_exclusive_net_amount,
-                    tax: taxCalc.tax_price,
-                    total: taxCalc.tax_including_price,
-                    serviceId: service_id,
-                    discountId: discount_id,
-                    discountType: discount_type || '',
-                    taxTreatmentTypeId: taxType,
-                    soldBy: sold_by,
-                    soldByName: sold_by_name,
-                    configGroupId: ''
-                }, deleteBtn));
+                var appendSimpleRow = function (voucherAmountApplied) {
+                    total_amountArray.push(parseFloat(taxCalc.tax_including_price));
 
-                // Book the voucher amount the new row consumes so
-                // subsequent voucher selections in this in-progress
-                // plan see the reduced available balance immediately.
+                    var sum = total_amountArray.reduce((a, b) => a + b, 0);
+                    $("#package_total_1").val(sum.toFixed(2));
+
+                    $('#plan_services').append(buildPlanServiceRow({
+                        groupClass: random_id + ' plan-row-' + rowUid,
+                        serviceName: svcName,
+                        regularPrice: svcPrice,
+                        discountName: discountName,
+                        discountValue: voucherAmountApplied !== null ? voucherAmountApplied : (discount_price || 0),
+                        subtotal: taxCalc.tax_exclusive_net_amount,
+                        tax: taxCalc.tax_price,
+                        total: taxCalc.tax_including_price,
+                        serviceId: service_id,
+                        discountId: discount_id,
+                        discountType: discount_type || '',
+                        taxTreatmentTypeId: taxType,
+                        soldBy: sold_by,
+                        soldByName: sold_by_name,
+                        configGroupId: ''
+                    }, deleteBtn));
+
+                    if (voucherAmountApplied !== null) {
+                        var $newRow = $('#plan_services tr.plan-row-' + rowUid);
+                        $newRow.attr('data-pending-voucher-id', discount_id);
+                        $newRow.attr('data-pending-voucher-amount', voucherAmountApplied);
+                        // Mirror the reservation in the client-side
+                        // ledger so the next `getDiscountInfo` call in
+                        // this same modal reflects the reduction even
+                        // before the AJAX round-trip completes.
+                        bookPendingVoucherUsage(discount_id, voucherAmountApplied);
+                    }
+
+                    finalizeAddRow();
+                };
+
+                // Voucher discounts require a real server-side
+                // reservation BEFORE the row is rendered. If the
+                // reservation fails (no balance, no row for this
+                // patient, etc.) the row must NOT be added or the
+                // user will see a phantom discount that was never
+                // deducted from the voucher.
                 if (discInfo && discInfo.discount_is_voucher) {
-                    bookPendingVoucherUsage(discount_id, discount_price || 0);
-                    var $newRow = $('#plan_services tr.plan-row-' + rowUid);
-                    $newRow.attr('data-pending-voucher-id', discount_id);
-                    $newRow.attr('data-pending-voucher-amount', discount_price || 0);
+                    var requested = parseFloat(discount_price) || 0;
+                    if (requested <= 0) {
+                        toastr.error('Voucher has no remaining balance.');
+                        $("#AddPackage").attr("disabled", false);
+                        hideSpinner("-add");
+                        return;
+                    }
+                    $.ajax({
+                        type: 'post',
+                        url: route('admin.plans.voucher.reserve'),
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                        data: {
+                            voucher_id: discount_id,
+                            patient_id: user_id,
+                            amount: requested
+                        },
+                        success: function (resp) {
+                            if (resp && resp.status) {
+                                var applied = parseFloat(resp.data.consumed_amount) || requested;
+                                appendSimpleRow(applied);
+                            } else {
+                                toastr.error(resp && resp.message ? resp.message : 'Failed to reserve voucher amount.');
+                                $("#AddPackage").attr("disabled", false);
+                                hideSpinner("-add");
+                            }
+                        },
+                        error: function (xhr) {
+                            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to reserve voucher amount.';
+                            toastr.error(msg);
+                            $("#AddPackage").attr("disabled", false);
+                            hideSpinner("-add");
+                        }
+                    });
+                    return;
                 }
+
+                appendSimpleRow(null);
             }
 
-            keyfunction_grandtotal();
-            var rowCount = $('#plan_services tr').length;
-            if (rowCount > 0) {
-                $("#add_plan_location_id").prop("disabled", true).trigger("change.select2");
-                $("#add_patient_id").prop("disabled", true).trigger("change.select2");
+            function finalizeAddRow() {
+                keyfunction_grandtotal();
+                var rowCount = $('#plan_services tr').length;
+                if (rowCount > 0) {
+                    $("#add_plan_location_id").prop("disabled", true).trigger("change.select2");
+                    $("#add_patient_id").prop("disabled", true).trigger("change.select2");
+                }
+
+                // Reset form fields after successful addition
+                $('#configurable_preview').remove();
+                $('#add_service_id').val(null).trigger('change');
+                $('#add_discount_id').val(null).trigger('change');
+                $('#add_discount_type').val(null).trigger('change');
+                $('#discount_value_1').val('');
+                $('#net_amount_1').val('');
+                $('#add_sold_by').val(null).trigger('change');
+                window.createPlanDiscountInfo = null;
+                window.createPlanServiceInfo = null;
+
+                $("#AddPackage").attr("disabled", false);
+                hideSpinner("-add");
             }
 
-            // Reset form fields after successful addition
-            $('#configurable_preview').remove();
-            $('#add_service_id').val(null).trigger('change');
-            $('#add_discount_id').val(null).trigger('change');
-            $('#add_discount_type').val(null).trigger('change');
-            $('#discount_value_1').val('');
-            $('#net_amount_1').val('');
-            $('#add_sold_by').val(null).trigger('change');
-            window.createPlanDiscountInfo = null;
-            window.createPlanServiceInfo = null;
+            // Configurable branch lands here after rendering its
+            // preview rows — run the finalisation (form reset, totals,
+            // lock location+patient) and exit.
+            if (is_configurable_selected) {
+                finalizeAddRow();
+                return;
+            }
 
-            $("#AddPackage").attr("disabled", false);
-            hideSpinner("-add");
+            // Simple-discount branch already handled above
+            // (appendSimpleRow → finalizeAddRow for non-voucher, AJAX
+            // callback → appendSimpleRow → finalizeAddRow for voucher).
         } else {
             $('#inputfieldMessage').show();
             toastr.error('Please fill all required fields (service, location, price)');
@@ -4274,11 +4337,27 @@ function deletePlanRowTem(btn) {
     var $row = $(btn).closest('tr');
     var rowIndex = $row.index();
 
-    // Refund pending voucher consumption if this row had booked one.
+    // Refund the server-side voucher reservation this row booked at
+    // Add time. Client-side ledger mirrors the refund optimistically
+    // so subsequent voucher picks see the restored balance without
+    // waiting for the AJAX round-trip.
     var pendingVoucherId = $row.attr('data-pending-voucher-id');
-    var pendingVoucherAmount = $row.attr('data-pending-voucher-amount');
-    if (pendingVoucherId && pendingVoucherAmount) {
-        refundPendingVoucherUsage(pendingVoucherId, pendingVoucherAmount);
+    var pendingVoucherAmt = $row.attr('data-pending-voucher-amount');
+    if (pendingVoucherId && pendingVoucherAmt) {
+        refundPendingVoucherUsage(pendingVoucherId, pendingVoucherAmt);
+        var patientIdForRefund = $('#add_patient_id').val();
+        if (patientIdForRefund) {
+            $.ajax({
+                type: 'post',
+                url: route('admin.plans.voucher.refund'),
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                data: {
+                    voucher_id: pendingVoucherId,
+                    patient_id: patientIdForRefund,
+                    amount: pendingVoucherAmt
+                }
+            });
+        }
     }
 
     // Remove from total_amountArray
