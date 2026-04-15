@@ -9,11 +9,12 @@ use App\Helpers\NodesTree;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Models\AuditTrails;
-use App\Models\Discounts;
 use App\Models\DiscountHasLocations;
+use App\Models\Discounts;
 use App\Models\Locations;
 use App\Models\UserVouchers;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 final class VoucherTypeService
@@ -74,7 +75,7 @@ final class VoucherTypeService
     {
         $voucher = $this->find($id);
 
-        if (!$voucher) {
+        if (! $voucher) {
             return null;
         }
 
@@ -154,7 +155,7 @@ final class VoucherTypeService
 
         $voucher = $this->find($id);
 
-        if (!$voucher) {
+        if (! $voucher) {
             return [
                 'success' => false,
                 'message' => 'Resource not found.',
@@ -182,7 +183,7 @@ final class VoucherTypeService
     {
         $voucher = $this->find($id);
 
-        if (!$voucher) {
+        if (! $voucher) {
             return [
                 'success' => false,
                 'message' => 'Resource not found.',
@@ -213,7 +214,7 @@ final class VoucherTypeService
 
         $baseQuery = Discounts::where('discount_type', self::DISCOUNT_TYPE);
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $baseQuery->where($where);
         }
 
@@ -296,7 +297,7 @@ final class VoucherTypeService
             'service_id' => $serviceId,
         ]);
 
-        $locationName = $record->location?->city?->name . '-' . $record->location?->name;
+        $locationName = $record->location?->city?->name.'-'.$record->location?->name;
         $serviceName = $record->service?->name;
 
         return [
@@ -321,26 +322,28 @@ final class VoucherTypeService
     {
         $voucherType = Discounts::find($voucherId);
 
-        if (!$voucherType) {
+        if (! $voucherType) {
             return [
                 'success' => false,
                 'message' => 'Voucher type not found.',
             ];
         }
 
-        if (!$voucherType->active) {
+        if (! $voucherType->active) {
             return [
                 'success' => false,
                 'message' => 'Cannot assign inactive voucher type to patient.',
             ];
         }
 
-        UserVouchers::create([
-            'user_id' => $patientId,
-            'voucher_id' => $voucherId,
-            'amount' => $amount,
-            'total_amount' => $amount,
-        ]);
+        DB::transaction(function () use ($patientId, $voucherId, $amount): void {
+            UserVouchers::create([
+                'user_id' => $patientId,
+                'voucher_id' => $voucherId,
+                'amount' => $amount,
+                'total_amount' => $amount,
+            ]);
+        });
 
         return [
             'success' => true,
@@ -350,9 +353,12 @@ final class VoucherTypeService
 
     // ── Listing ─────────────────────────────────────────
 
-    public function getListing(): array
+    public function getListing(?string $search = null, int $limit = 50): array
     {
         return Discounts::where('discount_type', self::DISCOUNT_TYPE)
+            ->when($search, fn ($q, $s) => $q->where('name', 'like', '%'.$s.'%'))
+            ->orderBy('name')
+            ->limit($limit)
             ->pluck('name', 'id')
             ->toArray();
     }
@@ -361,7 +367,7 @@ final class VoucherTypeService
 
     public function getFilterValues(): array
     {
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
@@ -438,13 +444,13 @@ final class VoucherTypeService
         bool $wrapLike = false,
     ): void {
         if (hasFilter($filters, $paramKey)) {
-            $value = $wrapLike ? '%' . $filters[$paramKey] . '%' : $filters[$paramKey];
+            $value = $wrapLike ? '%'.$filters[$paramKey].'%' : $filters[$paramKey];
             $where[] = [$column, $operator, $value];
             Filters::put($userId, self::FILTER_KEY, $paramKey, $filters[$paramKey]);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, $paramKey);
         } elseif ($stored = Filters::get($userId, self::FILTER_KEY, $paramKey)) {
-            $value = $wrapLike ? '%' . $stored . '%' : $stored;
+            $value = $wrapLike ? '%'.$stored.'%' : $stored;
             $where[] = [$column, $operator, $value];
         }
     }
@@ -460,8 +466,8 @@ final class VoucherTypeService
         string $suffix = '',
     ): void {
         if (hasFilter($filters, $paramKey)) {
-            $where[] = [$column, $operator, $filters[$paramKey] . $suffix];
-            Filters::put($userId, self::FILTER_KEY, $paramKey, $filters[$paramKey] . $suffix);
+            $where[] = [$column, $operator, $filters[$paramKey].$suffix];
+            Filters::put($userId, self::FILTER_KEY, $paramKey, $filters[$paramKey].$suffix);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, $paramKey);
         } elseif ($stored = Filters::get($userId, self::FILTER_KEY, $paramKey)) {

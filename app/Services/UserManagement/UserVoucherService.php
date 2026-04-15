@@ -18,6 +18,7 @@ use App\Models\UserVouchers;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 final class UserVoucherService
@@ -28,26 +29,31 @@ final class UserVoucherService
 
     public function store(array $data): UserVouchers
     {
-        $voucher = UserVouchers::create([
-            'user_id' => $data['patient_id'],
-            'voucher_id' => $data['voucher_id'],
-            'amount' => $data['amount'],
-            'total_amount' => $data['amount'],
-        ]);
+        return DB::transaction(function () use ($data): UserVouchers {
+            $voucher = UserVouchers::create([
+                'user_id' => $data['patient_id'],
+                'voucher_id' => $data['voucher_id'],
+                'amount' => $data['amount'],
+                'total_amount' => $data['amount'],
+            ]);
 
-        // ActivityLogger::logVoucherAssigned() is typed to
-        // App\Models\Patients (which extends BaseModel, NOT User), so
-        // fetching the patient via User::find() triggers a TypeError
-        // at the logger call — identical to the bug fixed in
-        // MembershipAssignmentService. Fetch through the Patients model
-        // directly so the assigned patient passes the type check.
-        $patient = Patients::find($data['patient_id']);
-        $discount = Discounts::find($data['voucher_id']);
-        if ($patient && $discount) {
-            ActivityLogger::logVoucherAssigned($voucher, $patient, $discount);
-        }
+            // ActivityLogger::logVoucherAssigned() is typed to
+            // App\Models\Patients (which extends BaseModel, NOT User), so
+            // fetching the patient via User::find() triggers a TypeError
+            // at the logger call — identical to the bug fixed in
+            // MembershipAssignmentService. Fetch through the Patients model
+            // directly so the assigned patient passes the type check.
+            $patient = Patients::find($data['patient_id']);
+            $discount = Discounts::find($data['voucher_id']);
 
-        return $voucher;
+            if ($patient && $discount) {
+                DB::afterCommit(static function () use ($voucher, $patient, $discount): void {
+                    ActivityLogger::logVoucherAssigned($voucher, $patient, $discount);
+                });
+            }
+
+            return $voucher;
+        });
     }
 
     public function find(int $id): ?UserVouchers
@@ -115,7 +121,7 @@ final class UserVoucherService
     {
         $voucher = $this->find($id);
 
-        if (!$voucher) {
+        if (! $voucher) {
             return null;
         }
 
@@ -161,7 +167,7 @@ final class UserVoucherService
     {
         $userVoucher = $this->find($id);
 
-        if (!$userVoucher) {
+        if (! $userVoucher) {
             return [];
         }
 
@@ -183,18 +189,19 @@ final class UserVoucherService
             ->get()
             ->keyBy('random_id');
 
-        $allBundles = PackageBundles::whereIn('random_id', $randomIds)
+        $bundlesByKey = PackageBundles::whereIn('random_id', $randomIds)
             ->whereIn('bundle_id', $mainServiceIds)
             ->where('discount_name', $voucherName)
             ->with('bundle')
-            ->get();
+            ->get()
+            ->groupBy(static fn ($b): string => $b->random_id.'|'.$b->bundle_id);
 
-        if ($allBundles->isEmpty()) {
+        if ($bundlesByKey->isEmpty()) {
             return [];
         }
 
-        $bundleIds = $allBundles->pluck('id')->all();
-        $allPackageServices = PackageService::whereIn('package_bundle_id', $bundleIds)
+        $allBundleIds = $bundlesByKey->flatten(1)->pluck('id')->all();
+        $servicesByBundle = PackageService::whereIn('package_bundle_id', $allBundleIds)
             ->with('service')
             ->get()
             ->groupBy('package_bundle_id');
@@ -202,15 +209,12 @@ final class UserVoucherService
         $voucherUsageData = [];
 
         foreach ($packageVouchers as $packageVoucher) {
-            $matchingBundles = $allBundles->filter(
-                fn ($b): bool => $b->random_id === $packageVoucher->package_random_id
-                    && $b->bundle_id === $packageVoucher->main_service_id,
-            );
-
+            $key = $packageVoucher->package_random_id.'|'.$packageVoucher->main_service_id;
+            $matchingBundles = $bundlesByKey->get($key, collect());
             $package = $packagesLookup[$packageVoucher->package_random_id] ?? null;
 
             foreach ($matchingBundles as $bundle) {
-                $services = $allPackageServices[$bundle->id] ?? collect();
+                $services = $servicesByBundle->get($bundle->id, collect());
 
                 foreach ($services as $service) {
                     $voucherUsageData[] = [
@@ -236,6 +240,8 @@ final class UserVoucherService
         return [
             'vouchers' => Discounts::where('discount_type', 'voucher')
                 ->select('id', 'name')
+                ->orderBy('name')
+                ->limit(200)
                 ->get(),
         ];
     }
@@ -244,7 +250,7 @@ final class UserVoucherService
     {
         $filters = Filters::all(Auth::id(), self::FILTER_KEY);
 
-        if (!empty($filters['patient_id'])) {
+        if (! empty($filters['patient_id'])) {
             $patient = User::find($filters['patient_id']);
 
             if ($patient) {
@@ -282,7 +288,7 @@ final class UserVoucherService
         $where = $this->buildWhereConditions($params, $userId, $applyFilter);
 
         return UserVouchers::query()
-            ->when(!empty($where), fn (Builder $q): Builder => $q->where($where));
+            ->when(! empty($where), fn (Builder $q): Builder => $q->where($where));
     }
 
     private function buildUsedVouchersLookup(Collection $vouchers): array
@@ -298,7 +304,7 @@ final class UserVoucherService
             ->whereIn('voucher_id', $voucherIds)
             ->select('user_id', 'voucher_id')
             ->get()
-            ->groupBy(fn ($item): string => $item->user_id . '_' . $item->voucher_id)
+            ->groupBy(fn ($item): string => $item->user_id.'_'.$item->voucher_id)
             ->all();
     }
 
@@ -309,22 +315,22 @@ final class UserVoucherService
         $this->addFilter($where, $params, 'patient_id', 'user_id', '=', $userId, $applyFilter);
         $this->addFilter($where, $params, 'voucher_type', 'voucher_id', '=', $userId, $applyFilter);
 
-        if (!empty($params['created_from'])) {
-            $where[] = ['created_at', '>=', $params['created_from'] . ' 00:00:00'];
+        if (! empty($params['created_from'])) {
+            $where[] = ['created_at', '>=', $params['created_from'].' 00:00:00'];
             Filters::put($userId, self::FILTER_KEY, 'created_from', $params['created_from']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'created_from');
         } elseif ($stored = Filters::get($userId, self::FILTER_KEY, 'created_from')) {
-            $where[] = ['created_at', '>=', $stored . ' 00:00:00'];
+            $where[] = ['created_at', '>=', $stored.' 00:00:00'];
         }
 
-        if (!empty($params['created_to'])) {
-            $where[] = ['created_at', '<=', $params['created_to'] . ' 23:59:59'];
+        if (! empty($params['created_to'])) {
+            $where[] = ['created_at', '<=', $params['created_to'].' 23:59:59'];
             Filters::put($userId, self::FILTER_KEY, 'created_to', $params['created_to']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'created_to');
         } elseif ($stored = Filters::get($userId, self::FILTER_KEY, 'created_to')) {
-            $where[] = ['created_at', '<=', $stored . ' 23:59:59'];
+            $where[] = ['created_at', '<=', $stored.' 23:59:59'];
         }
 
         return $where;
@@ -339,7 +345,7 @@ final class UserVoucherService
         int $userId,
         bool $applyFilter,
     ): void {
-        if (!empty($params[$paramKey])) {
+        if (! empty($params[$paramKey])) {
             $where[] = [$column, $operator, $params[$paramKey]];
             Filters::put($userId, self::FILTER_KEY, $paramKey, $params[$paramKey]);
         } elseif ($applyFilter) {
