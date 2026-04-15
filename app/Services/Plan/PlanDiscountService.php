@@ -1649,7 +1649,7 @@ final class PlanDiscountService
         // is never decremented through the "Add service to plan" flow
         // and the same voucher can be re-applied until explicitly
         // reset, distorting patient balance and the usage report.
-        $this->consumeVoucherForBundle($discount_data, $data, $service_data->id, $packagebundle);
+        $this->consumeVoucherForBundle($discount_data, $data, $service_data->id, $packagebundle, $service_data);
 
         $data_service = [
             'random_id' => $data['random_id'],
@@ -2234,7 +2234,7 @@ final class PlanDiscountService
      * is the Bundles row the user selected; `$packageBundle` is the row
      * just persisted to `package_bundles`.
      */
-    private function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle): void
+    private function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle, ?Services $serviceModel = null): void
     {
         if (! $discount || $discount->discount_type !== 'voucher') {
             return;
@@ -2245,13 +2245,28 @@ final class PlanDiscountService
         // points) pass it as `patient_id`. Accept either so a caller
         // from any path reaches consumption.
         $patientId = $data['patient_id'] ?? $data['user_id'] ?? null;
-        $discountPrice = (float) ($data['discount_price'] ?? 0);
 
-        if (! $patientId || $discountPrice <= 0) {
+        if (! $patientId) {
             return;
         }
 
-        DB::transaction(function () use ($discount, $patientId, $data, $discountPrice, $mainServiceId, $packageBundle): void {
+        // Resolve the per-row amount the voucher should pay for. The
+        // plan-form does NOT populate `discount_price` for voucher
+        // discounts (it only fills `net_amount`), so falling back to
+        // discount_price would always read 0 and skip consumption.
+        // Mirror `PlanService::handleVoucherConsumption`: deduct the
+        // service price (capped at the voucher balance) and write the
+        // journal row for the actually-applied portion.
+        $servicePrice = (float) ($serviceModel?->price
+            ?? $data['service_price']
+            ?? $packageBundle->service_price
+            ?? 0);
+
+        if ($servicePrice <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($discount, $patientId, $data, $servicePrice, $mainServiceId, $packageBundle): void {
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)
                 ->where('user_id', $patientId)
                 ->lockForUpdate()
@@ -2262,7 +2277,7 @@ final class PlanDiscountService
             }
 
             $originalAmount = (float) $userVoucher->amount;
-            $amountLeft = max(0.0, $originalAmount - $discountPrice);
+            $amountLeft = max(0.0, $originalAmount - $servicePrice);
             $actualConsumed = $originalAmount - $amountLeft;
 
             $userVoucher->update(['amount' => $amountLeft]);
@@ -2271,7 +2286,12 @@ final class PlanDiscountService
                 'package_random_id' => $data['random_id'] ?? null,
                 'voucher_id' => $discount->id,
                 'user_id' => $patientId,
-                'amount' => $actualConsumed > 0 ? $actualConsumed : $discountPrice,
+                // When the voucher is exhausted by an oversized service
+                // the journal still needs to record the value applied;
+                // fall back to the full service price as the sentinel,
+                // matching the behaviour pinned by
+                // VoucherDoubleRedemptionPreventedTest.
+                'amount' => $actualConsumed > 0 ? $actualConsumed : $servicePrice,
                 'service_id' => $packageBundle->id,
                 'main_service_id' => $mainServiceId,
             ]);
