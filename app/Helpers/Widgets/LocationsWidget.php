@@ -511,20 +511,20 @@ class LocationsWidget
 
     public static function findServiceParents($service_id, $data, $parents = [])
     {
-        if (isset($data[$service_id]['parent_id']) && $data[$service_id]['parent_id'] == '0') {
-            if ($data[$service_id]['end_node'] == '0') {
-                $parents[] = $data[$service_id]['id'];
-            }
-
+        if (!isset($data[$service_id])) {
             return $parents;
-        } else {
-            if (isset($data[$service_id]['end_node']) && $data[$service_id]['end_node'] == '0') {
-                $parents[] = $data[$service_id]['id'];
-            }
-            if (isset($data[$service_id]['parent_id'])) {
-                return self::findServiceParents($data[$service_id]['parent_id'], $data, $parents);
-            }
         }
+
+        if (isset($data[$service_id]['end_node']) && $data[$service_id]['end_node'] == '0') {
+            $parents[] = $data[$service_id]['id'];
+        }
+
+        $parentId = $data[$service_id]['parent_id'] ?? null;
+        if ($parentId !== null && $parentId !== 0 && $parentId !== '0') {
+            return self::findServiceParents($parentId, $data, $parents);
+        }
+
+        return $parents;
     }
 
     public static function findNestedServicesEndNodes($data, $nodes = [])
