@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -24,9 +25,32 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // user_vouchers + package_vouchers may carry stale FKs that
+        // reference the legacy `vouchers` table (e.g. fk_user_vouchers_voucher_id,
+        // fk_pkg_vouchers_voucher). Vouchers were unified into the
+        // `discounts` table — these FKs are dead weight blocking the
+        // table drop. Names vary across environments, so introspect
+        // INFORMATION_SCHEMA and drop any FK whose REFERENCED_TABLE_NAME
+        // is `vouchers`.
+        $this->dropForeignKeysReferencingVouchers();
+
         Schema::dropIfExists('voucher_has_services');
         Schema::dropIfExists('voucher_has_locations');
         Schema::dropIfExists('vouchers');
+    }
+
+    private function dropForeignKeysReferencingVouchers(): void
+    {
+        $rows = DB::select(
+            "SELECT TABLE_NAME, CONSTRAINT_NAME
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND REFERENCED_TABLE_NAME = 'vouchers'"
+        );
+
+        foreach ($rows as $row) {
+            DB::statement("ALTER TABLE `{$row->TABLE_NAME}` DROP FOREIGN KEY `{$row->CONSTRAINT_NAME}`");
+        }
     }
 
     public function down(): void
