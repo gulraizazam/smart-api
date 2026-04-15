@@ -48,6 +48,11 @@ final class VoucherTypeService
         $data['active'] ??= '0';
         $data['type'] = 'Fixed';
         $data['discount_type'] = self::DISCOUNT_TYPE;
+        // Vouchers carry their amount on the patient assignment row
+        // (`user_vouchers.amount`), not on the type. The shared
+        // `discounts.amount` column is NOT NULL with no default, so
+        // stamp 0 when the voucher form omits it.
+        $data['amount'] ??= 0;
 
         $record = Discounts::create($data);
 
