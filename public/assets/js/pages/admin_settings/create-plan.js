@@ -3,6 +3,37 @@ var TAX_BOTH = 1;
 var TAX_IS_EXCLUSIVE = 2;
 var TAX_IS_INCLUSIVE = 3;
 
+// Client-side voucher consumption ledger. The plan-form's "Add" button
+// only renders an HTML row — no backend persistence happens until
+// "Save Plan" is clicked. Without tracking pending consumption here,
+// the same voucher can be re-applied to multiple services in the same
+// in-progress plan even though its server-side balance will only
+// cover the first one. Keys are voucher (discount) ids; values are
+// the running total of `discount_price` already booked client-side.
+window.pendingVoucherUsage = window.pendingVoucherUsage || {};
+
+function pendingVoucherAmount(discountId) {
+    if (!discountId) return 0;
+    return parseFloat(window.pendingVoucherUsage[discountId] || 0);
+}
+
+function bookPendingVoucherUsage(discountId, amount) {
+    if (!discountId) return;
+    var current = pendingVoucherAmount(discountId);
+    window.pendingVoucherUsage[discountId] = current + (parseFloat(amount) || 0);
+}
+
+function refundPendingVoucherUsage(discountId, amount) {
+    if (!discountId) return;
+    var current = pendingVoucherAmount(discountId);
+    var next = current - (parseFloat(amount) || 0);
+    window.pendingVoucherUsage[discountId] = next > 0 ? next : 0;
+}
+
+function resetPendingVoucherUsage() {
+    window.pendingVoucherUsage = {};
+}
+
 // Client-side tax calculation matching backend calculateServiceTaxForPackage
 function calculatePlanTax(netAmount, taxPct, taxTreatmentTypeId, isExclusive) {
     netAmount = parseFloat(netAmount) || 0;
@@ -2146,6 +2177,28 @@ function getDiscountInfo($this) {
                 success: function (resposne) {
 
                     if (resposne.status) {
+                        // Subtract any voucher amount the user has
+                        // already booked (via "Add") on the current
+                        // in-progress plan but not yet persisted. The
+                        // server can't know about those pending rows,
+                        // so adjust client-side before showing the
+                        // available balance to avoid letting the same
+                        // voucher pay twice.
+                        if (resposne.data.discount_is_voucher) {
+                            var pending = pendingVoucherAmount(discount_id);
+                            var serverAmount = parseFloat(resposne.data.discount_price) || 0;
+                            var available = serverAmount - pending;
+                            if (available < 0) available = 0;
+                            var svcPrice = parseFloat(resposne.data.service_price) || 0;
+                            // Cap at service price so the deduction
+                            // never exceeds what this row can absorb.
+                            if (svcPrice > 0 && available > svcPrice) {
+                                available = svcPrice;
+                            }
+                            resposne.data.discount_price = available;
+                            resposne.data.net_amount = svcPrice > 0 ? Math.max(0, svcPrice - available) : resposne.data.net_amount;
+                        }
+
                         // Store discount info for client-side Add button
                         window.createPlanDiscountInfo = resposne.data;
 
@@ -3456,6 +3509,16 @@ jQuery(document).ready(function () {
                     soldByName: sold_by_name,
                     configGroupId: ''
                 }, deleteBtn));
+
+                // Book the voucher amount the new row consumes so
+                // subsequent voucher selections in this in-progress
+                // plan see the reduced available balance immediately.
+                if (discInfo && discInfo.discount_is_voucher) {
+                    bookPendingVoucherUsage(discount_id, discount_price || 0);
+                    var $newRow = $('#plan_services tr.plan-row-' + rowUid);
+                    $newRow.attr('data-pending-voucher-id', discount_id);
+                    $newRow.attr('data-pending-voucher-amount', discount_price || 0);
+                }
             }
 
             keyfunction_grandtotal();
@@ -3574,6 +3637,12 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status) {
+
+                        // Plan persisted: server has now decremented
+                        // user_vouchers via consumeVoucherForBundle, so
+                        // the client-side ledger is no longer
+                        // load-bearing — clear it for the next plan.
+                        resetPendingVoucherUsage();
 
                         $('#successMessage').show();
                         toastr.success(" Plan successfully created")
@@ -4204,12 +4273,19 @@ function deleteConfigGroupUpdateTotals(rowsToRemove) {
 function deletePlanRowTem(btn) {
     var $row = $(btn).closest('tr');
     var rowIndex = $row.index();
-    
+
+    // Refund pending voucher consumption if this row had booked one.
+    var pendingVoucherId = $row.attr('data-pending-voucher-id');
+    var pendingVoucherAmount = $row.attr('data-pending-voucher-amount');
+    if (pendingVoucherId && pendingVoucherAmount) {
+        refundPendingVoucherUsage(pendingVoucherId, pendingVoucherAmount);
+    }
+
     // Remove from total_amountArray
     if (rowIndex >= 0 && rowIndex < total_amountArray.length) {
         total_amountArray.splice(rowIndex, 1);
     }
-    
+
     // Remove DOM row
     $row.remove();
     
