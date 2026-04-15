@@ -774,6 +774,7 @@ final class PlanDiscountService
 
         $generalDiscountsQuery = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
+            ->where('type', '!=', 'Configurable')
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
             ->whereDate('end', '>=', $today);
