@@ -2236,7 +2236,19 @@ final class PlanDiscountService
      */
     private function consumeVoucherForBundle(?Discounts $discount, array $data, int|string|null $mainServiceId, PackageBundles $packageBundle, ?Services $serviceModel = null): void
     {
+        Log::info('=== consumeVoucherForBundle ENTERED ===', [
+            'discount_id' => $discount?->id,
+            'discount_type' => $discount?->discount_type,
+            'data_keys' => array_keys($data),
+            'patient_id_in_data' => $data['patient_id'] ?? null,
+            'user_id_in_data' => $data['user_id'] ?? null,
+            'service_price' => $serviceModel?->price,
+            'package_bundle_id' => $packageBundle->id,
+        ]);
+
         if (! $discount || $discount->discount_type !== 'voucher') {
+            Log::info('consumeVoucherForBundle: skipped — not a voucher discount');
+
             return;
         }
 
@@ -2247,6 +2259,8 @@ final class PlanDiscountService
         $patientId = $data['patient_id'] ?? $data['user_id'] ?? null;
 
         if (! $patientId) {
+            Log::warning('consumeVoucherForBundle: skipped — no patient_id / user_id in request data');
+
             return;
         }
 
@@ -2263,6 +2277,12 @@ final class PlanDiscountService
             ?? 0);
 
         if ($servicePrice <= 0) {
+            Log::warning('consumeVoucherForBundle: skipped — service price resolved to 0', [
+                'service_model_price' => $serviceModel?->price,
+                'data_service_price' => $data['service_price'] ?? null,
+                'bundle_service_price' => $packageBundle->service_price ?? null,
+            ]);
+
             return;
         }
 
@@ -2273,6 +2293,11 @@ final class PlanDiscountService
                 ->first();
 
             if (! $userVoucher) {
+                Log::warning('consumeVoucherForBundle: skipped — no UserVouchers row for this patient/voucher', [
+                    'voucher_id' => $discount->id,
+                    'user_id' => $patientId,
+                ]);
+
                 return;
             }
 
@@ -2281,6 +2306,14 @@ final class PlanDiscountService
             $actualConsumed = $originalAmount - $amountLeft;
 
             $userVoucher->update(['amount' => $amountLeft]);
+
+            Log::info('consumeVoucherForBundle: balance updated', [
+                'user_voucher_id' => $userVoucher->id,
+                'original_amount' => $originalAmount,
+                'service_price' => $servicePrice,
+                'amount_left' => $amountLeft,
+                'actual_consumed' => $actualConsumed,
+            ]);
 
             PackageVouchers::create([
                 'package_random_id' => $data['random_id'] ?? null,
