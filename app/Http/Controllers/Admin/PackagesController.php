@@ -695,18 +695,38 @@ class PackagesController extends Controller
     {
         $result = $this->planService->deletePackageService($request->all());
 
-        return $result['success']
-            ? $this->successResponse($result['message'], $result['data'] ?? [])
-            : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
+        if ($result['success']) {
+            return $this->successResponse($result['message'], $result['data'] ?? []);
+        }
+
+        // Business-rule failures (e.g. service already consumed) return 200 so the
+        // front-end success handler can branch on `status:false` + `data.del` and
+        // surface the toast/alert. jQuery's error handler is not wired at any of
+        // the delete call sites; a 4xx here would silently drop the message.
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $result['message'],
+            'data'    => $result['data'] ?? null,
+            'errors'  => $result['errors'] ?? [],
+        ], 200);
     }
 
     public function deleteconfpackagesservice(Request $request): \Illuminate\Http\JsonResponse
     {
         $result = $this->planService->deleteConfigurablePackageService($request->all());
 
-        return $result['success']
-            ? $this->successResponse($result['message'], $result['data'] ?? [])
-            : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
+        if ($result['success']) {
+            return $this->successResponse($result['message'], $result['data'] ?? []);
+        }
+
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $result['message'],
+            'data'    => $result['data'] ?? null,
+            'errors'  => $result['errors'] ?? [],
+        ], 200);
     }
 
     /**
