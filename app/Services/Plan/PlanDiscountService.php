@@ -2235,6 +2235,148 @@ final class PlanDiscountService
      * just persisted to `package_bundles`.
      */
     /**
+     * Decrement the patient's voucher balance by `$amount` at the moment
+     * the user clicks the "Add" button on the plan form. No journal row
+     * is written — that happens at final save once the PackageBundles
+     * record exists. Locks the row FOR UPDATE to serialise concurrent
+     * reservations against the same voucher.
+     *
+     * Returns the fresh user_vouchers.amount so the caller can echo
+     * the new balance back to the browser.
+     */
+    public function reserveVoucherAmount(int $voucherId, int $patientId, float $amount): array
+    {
+        if ($amount <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Invalid reservation amount.',
+                'status_code' => 422,
+            ];
+        }
+
+        return DB::transaction(function () use ($voucherId, $patientId, $amount): array {
+            $userVoucher = UserVouchers::where('voucher_id', $voucherId)
+                ->where('user_id', $patientId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $userVoucher) {
+                return [
+                    'success' => false,
+                    'message' => 'Voucher is not assigned to this patient.',
+                    'status_code' => 404,
+                ];
+            }
+
+            $originalAmount = (float) $userVoucher->amount;
+
+            if ($originalAmount <= 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Voucher has no remaining balance.',
+                    'code' => 'VOUCHER_EXHAUSTED',
+                    'status_code' => 422,
+                    'data' => ['remaining_amount' => 0],
+                ];
+            }
+
+            $consumed = min($originalAmount, $amount);
+            $amountLeft = max(0.0, $originalAmount - $consumed);
+
+            $userVoucher->update(['amount' => $amountLeft]);
+
+            Log::info('reserveVoucherAmount: balance reserved', [
+                'user_voucher_id' => $userVoucher->id,
+                'voucher_id' => $voucherId,
+                'user_id' => $patientId,
+                'requested' => $amount,
+                'consumed' => $consumed,
+                'remaining' => $amountLeft,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Voucher amount reserved.',
+                'data' => [
+                    'consumed_amount' => $consumed,
+                    'remaining_amount' => $amountLeft,
+                    'original_amount' => $originalAmount,
+                ],
+            ];
+        });
+    }
+
+    /**
+     * Reverse a prior `reserveVoucherAmount` — called when the user
+     * removes a plan row before saving, or closes the modal without
+     * committing.
+     */
+    public function refundVoucherAmount(int $voucherId, int $patientId, float $amount): array
+    {
+        if ($amount <= 0) {
+            return [
+                'success' => true,
+                'message' => 'Nothing to refund.',
+                'data' => ['remaining_amount' => null],
+            ];
+        }
+
+        return DB::transaction(function () use ($voucherId, $patientId, $amount): array {
+            $userVoucher = UserVouchers::where('voucher_id', $voucherId)
+                ->where('user_id', $patientId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $userVoucher) {
+                return [
+                    'success' => false,
+                    'message' => 'Voucher is not assigned to this patient.',
+                    'status_code' => 404,
+                ];
+            }
+
+            $capped = min((float) $userVoucher->total_amount, (float) $userVoucher->amount + $amount);
+            $userVoucher->update(['amount' => $capped]);
+
+            Log::info('refundVoucherAmount: balance refunded', [
+                'user_voucher_id' => $userVoucher->id,
+                'voucher_id' => $voucherId,
+                'user_id' => $patientId,
+                'refunded' => $amount,
+                'remaining' => $capped,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => 'Voucher amount refunded.',
+                'data' => ['remaining_amount' => $capped],
+            ];
+        });
+    }
+
+    /**
+     * Write the `package_vouchers` journal row for a bundle that was
+     * persisted after the voucher balance had already been reserved
+     * via `reserveVoucherAmount`. Does NOT touch `user_vouchers.amount`
+     * — that decrement happened at Add time.
+     */
+    public function writeVoucherJournalRow(int $voucherId, int $patientId, float $amount, PackageBundles $packageBundle, int|string|null $mainServiceId): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        PackageVouchers::create([
+            'package_random_id' => $packageBundle->random_id,
+            'voucher_id' => $voucherId,
+            'user_id' => $patientId,
+            'amount' => $amount,
+            'service_id' => $packageBundle->id,
+            'main_service_id' => $mainServiceId,
+        ]);
+    }
+
+    /**
      * Public so the final-save path (`PlanService::storePlanTypeServices`)
      * can call it on the same row it just persisted. Callers must pass
      * the patient id explicitly — it's not always present in `$data`.

@@ -1587,23 +1587,26 @@ final class PlanService
 
             $packageBundleRecord = PackageBundles::create($packageBundleData);
 
-            // Decrement the patient's voucher balance and write a
-            // PackageVouchers journal row when this bundle was paid
-            // for with a voucher discount. The plan-form's "Add"
-            // button only does a client-side preview row; this is the
-            // first server-side commit point that knows about the
-            // selected voucher, so the consumption MUST happen here
-            // or the voucher balance never moves.
+            // Write the voucher usage journal row. The balance itself
+            // was already decremented by `reserveVoucherAmount` when
+            // the user clicked "Add" on the plan form — this just
+            // pins the usage to the now-persisted PackageBundles row
+            // so reports (voucher-usage-by-patient, etc.) can join on
+            // a real bundle id.
             if ($discountId) {
                 $discountModel = Discounts::find($discountId);
                 if ($discountModel && $discountModel->discount_type === 'voucher') {
-                    $this->discountService->consumeVoucherForBundle(
-                        $discountModel,
-                        $data,
-                        $serviceData->id,
+                    $voucherAmountApplied = (float) str_replace(',', '', $packageBundle['DiscountValue'] ?? '0');
+                    if ($voucherAmountApplied <= 0) {
+                        $voucherAmountApplied = (float) str_replace(',', '', $packageBundle['RegularPrice'] ?? '0')
+                            - (float) str_replace(',', '', $packageBundle['Amount'] ?? '0');
+                    }
+                    $this->discountService->writeVoucherJournalRow(
+                        (int) $discountModel->id,
+                        (int) $package->patient_id,
+                        max(0.0, $voucherAmountApplied),
                         $packageBundleRecord,
-                        $package->patient_id,
-                        $serviceData,
+                        $serviceData->id,
                     );
                 }
             }
@@ -3967,6 +3970,16 @@ final class PlanService
     public function saveServiceForPlan(array $data): array
     {
         return $this->discountService->saveServiceForPlan($data);
+    }
+
+    public function reserveVoucherAmount(int $voucherId, int $patientId, float $amount): array
+    {
+        return $this->discountService->reserveVoucherAmount($voucherId, $patientId, $amount);
+    }
+
+    public function refundVoucherAmount(int $voucherId, int $patientId, float $amount): array
+    {
+        return $this->discountService->refundVoucherAmount($voucherId, $patientId, $amount);
     }
 
     /** @internal dead placeholder - REMOVED */
