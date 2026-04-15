@@ -23,7 +23,6 @@ use App\Models\Patients;
 use App\Models\Refunds;
 use App\Models\Services;
 use App\Models\UserVouchers;
-use App\Models\Voucher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;

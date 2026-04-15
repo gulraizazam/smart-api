@@ -8,10 +8,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * `amount` is the REMAINING credit on the voucher (decremented as
+ * the patient redeems against services). `total_amount` is the
+ * ORIGINAL face value at issuance and is only mutated by an
+ * explicit UserVoucherService::update — never by redemption.
+ */
 class UserVouchers extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'user_id',

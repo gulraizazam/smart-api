@@ -27,7 +27,6 @@ use App\Models\AuditTrails;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\PaymentModes;
-use App\Models\Voucher;
 use App\Http\Requests\Admin\MakePackageServicesRequest;
 use App\Http\Requests\Admin\UpdatePackagesRequest;
 use Illuminate\Http\Request;
