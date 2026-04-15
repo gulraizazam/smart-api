@@ -34,6 +34,74 @@ function resetPendingVoucherUsage() {
     window.pendingVoucherUsage = {};
 }
 
+/**
+ * Refund one row's voucher reservation to the server AND the client
+ * ledger. Reads voucher id / amount / patient id from data attributes
+ * stamped on the row at Add time so the refund still works after the
+ * form has been reset (e.g. when the modal is being torn down).
+ */
+function refundPendingVoucherForRow($row) {
+    var voucherId = $row.attr('data-pending-voucher-id');
+    var amount = $row.attr('data-pending-voucher-amount');
+    var patientId = $row.attr('data-pending-voucher-patient-id') || $('#add_patient_id').val();
+
+    if (!voucherId || !amount) {
+        return;
+    }
+
+    refundPendingVoucherUsage(voucherId, amount);
+    // Strip the markers so a second close-handler sweep can't
+    // double-refund the same row.
+    $row.removeAttr('data-pending-voucher-id')
+        .removeAttr('data-pending-voucher-amount')
+        .removeAttr('data-pending-voucher-patient-id');
+
+    if (!patientId) {
+        return;
+    }
+
+    $.ajax({
+        type: 'post',
+        url: route('admin.plans.voucher.refund'),
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        data: {
+            voucher_id: voucherId,
+            patient_id: patientId,
+            amount: amount
+        }
+    });
+}
+
+/**
+ * Refund every pending voucher reservation on the in-progress plan
+ * form. Called when the plan modal is dismissed without a successful
+ * save (X button, Esc, backdrop click, Cancel link).
+ */
+function refundAllPendingPlanVouchers() {
+    $('#plan_services tr[data-pending-voucher-id]').each(function () {
+        refundPendingVoucherForRow($(this));
+    });
+    resetPendingVoucherUsage();
+}
+
+// Wire the plan modal's dismiss events to the refund sweep. Bootstrap
+// fires `hide.bs.modal` for every dismiss path (X, backdrop, Esc,
+// programmatic `.modal('hide')`). The successful-save handler sets
+// `window.planModalSavedCleanly = true` first so we skip the refund
+// in that case — the server has already moved on from the reservation
+// (the journal row points at the persisted bundle).
+$(document).on('hide.bs.modal', function (e) {
+    var $modal = $(e.target);
+    if (!$modal.find('#plan_services').length) {
+        return; // Not the plan modal — ignore.
+    }
+    if (window.planModalSavedCleanly) {
+        window.planModalSavedCleanly = false;
+        return;
+    }
+    refundAllPendingPlanVouchers();
+});
+
 // Client-side tax calculation matching backend calculateServiceTaxForPackage
 function calculatePlanTax(netAmount, taxPct, taxTreatmentTypeId, isExclusive) {
     netAmount = parseFloat(netAmount) || 0;
@@ -3514,6 +3582,10 @@ jQuery(document).ready(function () {
                         var $newRow = $('#plan_services tr.plan-row-' + rowUid);
                         $newRow.attr('data-pending-voucher-id', discount_id);
                         $newRow.attr('data-pending-voucher-amount', voucherAmountApplied);
+                        // Cache the patient id on the row so a
+                        // modal-close refund can still identify the
+                        // voucher owner after the form has been reset.
+                        $newRow.attr('data-pending-voucher-patient-id', user_id);
                         // Mirror the reservation in the client-side
                         // ledger so the next `getDiscountInfo` call in
                         // this same modal reflects the reduction even
@@ -3701,11 +3773,20 @@ jQuery(document).ready(function () {
 
                     if (resposne.status) {
 
-                        // Plan persisted: server has now decremented
-                        // user_vouchers via consumeVoucherForBundle, so
-                        // the client-side ledger is no longer
-                        // load-bearing — clear it for the next plan.
+                        // Plan persisted: the voucher balance was
+                        // already decremented at Add time (via
+                        // reserveVoucherAmount) and the server has
+                        // just written the journal rows against the
+                        // persisted bundles, so the pending ledger is
+                        // no longer load-bearing. Strip the row
+                        // attributes and set the `savedCleanly` flag
+                        // so the modal-hide handler does NOT refund.
+                        $('#plan_services tr[data-pending-voucher-id]')
+                            .removeAttr('data-pending-voucher-id')
+                            .removeAttr('data-pending-voucher-amount')
+                            .removeAttr('data-pending-voucher-patient-id');
                         resetPendingVoucherUsage();
+                        window.planModalSavedCleanly = true;
 
                         $('#successMessage').show();
                         toastr.success(" Plan successfully created")
@@ -4341,24 +4422,7 @@ function deletePlanRowTem(btn) {
     // Add time. Client-side ledger mirrors the refund optimistically
     // so subsequent voucher picks see the restored balance without
     // waiting for the AJAX round-trip.
-    var pendingVoucherId = $row.attr('data-pending-voucher-id');
-    var pendingVoucherAmt = $row.attr('data-pending-voucher-amount');
-    if (pendingVoucherId && pendingVoucherAmt) {
-        refundPendingVoucherUsage(pendingVoucherId, pendingVoucherAmt);
-        var patientIdForRefund = $('#add_patient_id').val();
-        if (patientIdForRefund) {
-            $.ajax({
-                type: 'post',
-                url: route('admin.plans.voucher.refund'),
-                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-                data: {
-                    voucher_id: pendingVoucherId,
-                    patient_id: patientIdForRefund,
-                    amount: pendingVoucherAmt
-                }
-            });
-        }
-    }
+    refundPendingVoucherForRow($row);
 
     // Remove from total_amountArray
     if (rowIndex >= 0 && rowIndex < total_amountArray.length) {
