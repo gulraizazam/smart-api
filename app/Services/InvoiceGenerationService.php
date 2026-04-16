@@ -41,11 +41,11 @@ class InvoiceGenerationService
         $this->dateFrom = Carbon::parse($params['date_from'])->startOfDay();
         $this->dateTo = Carbon::parse($params['date_to'])->endOfDay();
         $this->locationIds = $params['location_ids'];
-        $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
-        $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
-        $this->consultationAmount = $params['consultation_amount']; // e.g., 1500 or 2000
-        $this->taxPercent = $params['tax_percent'] ?? 13;
-        $this->maxInvoicesPerDay = $params['max_invoices_per_day'] ?? 2;
+        $this->bankTaxablePercent = (float) $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
+        $this->cashPercent = (float) $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
+        $this->consultationAmount = (float) $params['consultation_amount']; // e.g., 1500 or 2000
+        $this->taxPercent = (float) ($params['tax_percent'] ?? 13);
+        $this->maxInvoicesPerDay = (int) ($params['max_invoices_per_day'] ?? 2);
         $this->usedInvoiceNumbers = [];
 
         // Set up denomination mode
