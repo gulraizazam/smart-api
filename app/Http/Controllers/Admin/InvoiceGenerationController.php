@@ -230,7 +230,7 @@ class InvoiceGenerationController extends Controller
                     $dateSequence[$dateKey] = 0;
                 }
                 $dateSequence[$dateKey]++;
-                $inv['_pdf_name'] = $dateKey . str_pad($dateSequence[$dateKey], 4, '0', STR_PAD_LEFT) . '.pdf';
+                $inv['_pdf_name'] = $dateKey . str_pad((string) $dateSequence[$dateKey], 4, '0', STR_PAD_LEFT) . '.pdf';
             }
             unset($inv);
 
