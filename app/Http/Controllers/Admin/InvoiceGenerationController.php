@@ -41,10 +41,10 @@ class InvoiceGenerationController extends Controller
             'date_from' => $dates['from'],
             'date_to' => $dates['to'],
             'location_ids' => $validated['location_ids'],
-            'bank_taxable' => $validated['bank_taxable'],
-            'cash_percent' => $validated['cash_percent'],
-            'consultation_amount' => $validated['consultation_amount'],
-            'tax_percent' => $validated['tax_percent'] ?? 13,
+            'bank_taxable' => (float) $validated['bank_taxable'],
+            'cash_percent' => (float) $validated['cash_percent'],
+            'consultation_amount' => (float) $validated['consultation_amount'],
+            'tax_percent' => (float) ($validated['tax_percent'] ?? 13),
             'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
@@ -82,10 +82,10 @@ class InvoiceGenerationController extends Controller
             'date_from' => $dates['from'],
             'date_to' => $dates['to'],
             'location_ids' => $validated['location_ids'],
-            'bank_taxable' => $validated['bank_taxable'],
-            'cash_percent' => $validated['cash_percent'],
-            'consultation_amount' => $validated['consultation_amount'],
-            'tax_percent' => $validated['tax_percent'] ?? 13,
+            'bank_taxable' => (float) $validated['bank_taxable'],
+            'cash_percent' => (float) $validated['cash_percent'],
+            'consultation_amount' => (float) $validated['consultation_amount'],
+            'tax_percent' => (float) ($validated['tax_percent'] ?? 13),
             'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
@@ -159,10 +159,10 @@ class InvoiceGenerationController extends Controller
             'date_from' => $dates['from'],
             'date_to' => $dates['to'],
             'location_ids' => $validated['location_ids'],
-            'bank_taxable' => $validated['bank_taxable'],
-            'cash_percent' => $validated['cash_percent'],
-            'consultation_amount' => $validated['consultation_amount'],
-            'tax_percent' => $validated['tax_percent'] ?? 13,
+            'bank_taxable' => (float) $validated['bank_taxable'],
+            'cash_percent' => (float) $validated['cash_percent'],
+            'consultation_amount' => (float) $validated['consultation_amount'],
+            'tax_percent' => (float) ($validated['tax_percent'] ?? 13),
             'max_invoices_per_day' => (int) ($validated['max_invoices_per_day'] ?? 2),
         ];
 
