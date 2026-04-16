@@ -50,6 +50,7 @@ class OrderDetail extends BaseModel
                 
                 $discountedPrice = $discount > 0 ? $originalPrice - ($originalPrice * ($discount / 100)) : $originalPrice;
                 $data['sale_price'] = $discountedPrice;
+                $data['order_type'] = 'sale';
                 $data['stock_type'] = 'out';
 
                 // Deduct from specific inventory entry (FIFO) with row locking
@@ -146,6 +147,7 @@ class OrderDetail extends BaseModel
                 $data['account_id'] = $account_id;
                 $data['order_id'] = $new_order_id;
                 $data['sale_price'] = $combinedData[$product_id];
+                $data['order_type'] = 'refund';
                 $data['stock_type'] = 'in';
 
                 $check_order_detail = self::where(['order_id' => $new_order_id, 'product_id' => $product_id])->first();
