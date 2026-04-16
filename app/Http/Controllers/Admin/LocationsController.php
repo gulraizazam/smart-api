@@ -112,14 +112,14 @@ class LocationsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function edit(int $id): \Illuminate\View\View
+    public function edit(int $id): \Illuminate\Http\JsonResponse
     {
         if (! Gate::allows('locations_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
         $data = $this->locationService->getEditData($id, Auth::user()->account_id);
         if (! $data['found']) {
-            return view('error', compact('lead_statuse'));
+            return $this->errorResponse('Record not found.', 404);
         }
         unset($data['found']);
 
