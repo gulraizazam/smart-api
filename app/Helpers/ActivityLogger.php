@@ -58,6 +58,7 @@ class ActivityLogger
             'highlight',
             'highlight-orange',
             'highlight-green',
+            'highlight-purple',
             'highlight-blue',
             'highlight-red',
         ];
