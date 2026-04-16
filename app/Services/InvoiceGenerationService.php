@@ -14,8 +14,8 @@ class InvoiceGenerationService
     const PAYMENT_MODE_BANK = 4;  // Bank/Wire Transfer
     // Note: PayPal (ID 3) is deleted, Settle Amount (ID 5) is excluded from calculations
 
-    protected ?string $dateFrom = null;
-    protected ?string $dateTo = null;
+    protected ?Carbon $dateFrom = null;
+    protected ?Carbon $dateTo = null;
     protected ?array $locationIds = null;
     protected float $bankTaxablePercent = 0.0;
     protected float $cashPercent = 0.0;
