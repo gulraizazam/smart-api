@@ -266,12 +266,12 @@ class InvoiceGenerationService
     protected function calculateMaxInvoicesPerPatient(): int
     {
         $totalWorkingDays = count($this->workingDays);
-        
+
         // With 1-day gap, usable days = floor(working_days / 2)
-        $usableInvoiceDays = floor($totalWorkingDays / 2);
-        
+        $usableInvoiceDays = intdiv($totalWorkingDays, 2);
+
         $invoicesPerDay = $this->maxInvoicesPerDay;
-        
+
         return $usableInvoiceDays * $invoicesPerDay;
     }
 
