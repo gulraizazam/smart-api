@@ -203,12 +203,12 @@ class LocationService
         /*Get Service as we get in resource create module*/
         $Services = GeneralFunctions::ServicesTreeList();
 
-        $cities = Cities::where([
+        $cities = Cities::with('region')->where([
             ['account_id', '=', $accountId],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->pluck('full_name', 'id');
+        ])->get()->pluck('full_name', 'id');
         $ServiceLocations = [];
 
         return [
@@ -297,12 +297,12 @@ class LocationService
             return ['found' => false];
         }
         $ServiceLocations = $location->service_has_locations()->pluck('service_id')->toArray();
-        $cities = Cities::where([
+        $cities = Cities::with('region')->where([
             ['account_id', '=', $accountId],
             ['slug', '=', 'custom'],
             ['active', '=', '1'],
             ['is_featured', '=', '1'],
-        ])->pluck('full_name', 'id');
+        ])->get()->pluck('full_name', 'id');
         $cities->prepend('Select a City', '');
         $Services = GeneralFunctions::ServicesTreeList();
 
