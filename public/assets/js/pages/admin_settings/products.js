@@ -249,6 +249,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function () {
+        $("#date_range").val("");
         let filters = {
             delete: '',
             name: '',
