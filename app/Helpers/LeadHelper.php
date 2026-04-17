@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Helpers;
 
 use App\Models\Leads;
-use App\Models\LeadStatuses;
 use App\Models\LeadsServices;
+use App\Models\LeadStatuses;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -16,7 +17,7 @@ class LeadHelper
 
     public static function formatPhone(string $phone, bool $hasPermission = true): string
     {
-        if (!$hasPermission) {
+        if (! $hasPermission) {
             return '***********';
         }
 
@@ -37,7 +38,7 @@ class LeadHelper
     {
         $accountId ??= Auth::user()->account_id;
 
-        return Cache::remember("default_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("default_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_default' => 1,
         ])->first());
@@ -47,7 +48,7 @@ class LeadHelper
     {
         $accountId ??= Auth::user()->account_id;
 
-        return Cache::remember("junk_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("junk_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_junk' => 1,
         ])->first());
@@ -57,7 +58,7 @@ class LeadHelper
     {
         $accountId ??= Auth::user()->account_id;
 
-        return Cache::remember("converted_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("converted_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_converted' => 1,
         ])->first());
@@ -65,13 +66,13 @@ class LeadHelper
 
     public static function canChangeStatus(Leads $lead): bool
     {
-        if (!$lead->lead_status_id) {
+        if (! $lead->lead_status_id) {
             return true;
         }
 
         $currentStatus = LeadStatuses::find($lead->lead_status_id);
 
-        return !$currentStatus || !($currentStatus->is_arrived || $currentStatus->is_converted);
+        return ! $currentStatus || ! ($currentStatus->is_arrived || $currentStatus->is_converted);
     }
 
     public static function getActiveServices(int $leadId): array
@@ -102,7 +103,7 @@ class LeadHelper
     {
         $status = LeadStatuses::find($statusId);
 
-        if (!$status) {
+        if (! $status) {
             return ['parent' => null, 'child' => null];
         }
 
@@ -121,13 +122,15 @@ class LeadHelper
     public static function clearAccountCache(?int $accountId = null): void
     {
         $accountId ??= Auth::user()->account_id;
+        $userId = Auth::id();
 
         $keys = [
             "default_lead_status_{$accountId}",
             "junk_lead_status_{$accountId}",
             "converted_lead_status_{$accountId}",
             "lead_form_lookup_{$accountId}",
-            "lead_filters_{$accountId}",
+            "lead_form_lookup_cities_user_{$userId}",
+            "lead_filters_user_{$userId}",
             "lead_import_lookup_{$accountId}",
         ];
 
@@ -163,10 +166,10 @@ class LeadHelper
 
     public static function formatDate(mixed $date, string $format = 'F j, Y h:i A'): string
     {
-        if (!$date) {
+        if (! $date) {
             return 'N/A';
         }
 
-        return \Carbon\Carbon::parse($date)->format($format);
+        return Carbon::parse($date)->format($format);
     }
 }
