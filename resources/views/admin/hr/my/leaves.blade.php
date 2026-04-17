@@ -221,7 +221,7 @@
                                 </label>
                                 @if(!empty($shiftHours))
                                 <label class="btn btn-outline-primary btn-sm mb-0 leave-dur-btn">
-                                    <input type="radio" name="duration_type" value="custom" class="d-none"> Custom Hours
+                                    <input type="radio" name="duration_type" value="custom" class="d-none"> By Hours
                                 </label>
                                 @endif
                             </div>

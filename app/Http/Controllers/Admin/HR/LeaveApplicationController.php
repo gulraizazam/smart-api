@@ -68,10 +68,10 @@ class LeaveApplicationController extends Controller
             if ($validated['duration_type'] === 'custom') {
                 $shiftHours = $this->leaveService->resolveShiftHours($user->id);
                 if ($shiftHours === null) {
-                    return $this->errorResponse('Custom hours leave requires a shift duration on the employee profile.');
+                    return $this->errorResponse('By-hours leave requires a shift duration on the employee profile.');
                 }
                 if ((float) $validated['custom_hours'] >= $shiftHours) {
-                    return $this->errorResponse('Custom hours must be less than shift hours (' . $shiftHours . '). Use Full Day instead.');
+                    return $this->errorResponse('Hours must be less than shift hours (' . $shiftHours . '). Use Full Day instead.');
                 }
             }
 

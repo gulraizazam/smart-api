@@ -17,7 +17,7 @@ enum LeaveDurationType: string
             self::Full => 'Full Day',
             self::Half => 'Half Day',
             self::Short => 'Short Leave',
-            self::Custom => 'Custom Hours',
+            self::Custom => 'By Hours',
         };
     }
 
