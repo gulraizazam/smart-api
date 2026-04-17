@@ -910,10 +910,13 @@ $(document).ready(function() {
                         // Disable location and Add button after service added (only 1 service allowed)
                         $("#add_membership_location_id").prop("disabled", true);
                         $("#AddPackageMembership").prop("disabled", true);
-                        
+
                         // Disable service and sold by fields
                         $("#add_service_id_membership").prop("disabled", true);
                         $("#add_sold_by_membership").prop("disabled", true);
+
+                        // Lock patient once a membership is in the preview (matches plan-type behaviour)
+                        $("#add_patient_id_membership").prop("disabled", true).trigger("change.select2");
 
                     } else {
                         toastr.error(response.message || 'Failed to add membership');
@@ -948,6 +951,7 @@ function deleteMembershipRowTem(id) {
         $("#AddPackageMembership").prop("disabled", false);
         $("#add_service_id_membership").prop("disabled", false);
         $("#add_sold_by_membership").prop("disabled", false);
+        $("#add_patient_id_membership").prop("disabled", false).trigger("change.select2");
         
         // Clear the fields
         $('#add_service_id_membership').val(null).trigger('change');
