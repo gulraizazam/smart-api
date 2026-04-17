@@ -6,6 +6,7 @@ namespace App\Services\HR;
 
 use App\Enums\LeaveDurationType;
 use App\Enums\LeaveStatus;
+use App\Models\EmployeeDetail;
 use App\Models\LeaveApplication;
 use App\Models\LeaveBalance;
 use App\Models\LeaveType;
@@ -37,10 +38,17 @@ class LeaveService
     public function apply(array $data, int $userId, int $accountId): LeaveApplication
     {
         $durationType = LeaveDurationType::from($data['duration_type']);
+        $shiftHours = $this->resolveShiftHours($userId);
+        $customHours = $durationType === LeaveDurationType::Custom
+            ? (float) ($data['custom_hours'] ?? 0)
+            : null;
+
         $totalDays = LeaveApplication::calculateTotalDays(
             $durationType,
             $data['start_date'],
             $data['end_date'],
+            $customHours,
+            $shiftHours,
         );
 
         return LeaveApplication::create([
@@ -49,6 +57,8 @@ class LeaveService
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'duration_type' => $durationType->value,
+            'custom_hours' => $customHours,
+            'shift_hours_snapshot' => $shiftHours,
             'total_days' => $totalDays,
             'reason' => $data['reason'],
             'status' => LeaveStatus::Pending->value,
@@ -59,10 +69,18 @@ class LeaveService
     public function update(LeaveApplication $application, array $data): LeaveApplication
     {
         $durationType = LeaveDurationType::from($data['duration_type']);
+        // Re-snapshot on edit so the pending application reflects the employee's current shift.
+        $shiftHours = $this->resolveShiftHours((int) $application->user_id);
+        $customHours = $durationType === LeaveDurationType::Custom
+            ? (float) ($data['custom_hours'] ?? 0)
+            : null;
+
         $totalDays = LeaveApplication::calculateTotalDays(
             $durationType,
             $data['start_date'],
             $data['end_date'],
+            $customHours,
+            $shiftHours,
         );
 
         $application->update([
@@ -70,11 +88,20 @@ class LeaveService
             'start_date' => $data['start_date'],
             'end_date' => $data['end_date'],
             'duration_type' => $durationType->value,
+            'custom_hours' => $customHours,
+            'shift_hours_snapshot' => $shiftHours,
             'total_days' => $totalDays,
             'reason' => $data['reason'],
         ]);
 
         return $application->fresh();
+    }
+
+    public function resolveShiftHours(int $userId): ?float
+    {
+        $hours = EmployeeDetail::where('user_id', $userId)->value('shift_hours');
+
+        return $hours !== null ? (float) $hours : null;
     }
 
     public function approve(LeaveApplication $application, ?string $notes, int $reviewerId): LeaveApplication

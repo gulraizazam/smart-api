@@ -100,7 +100,12 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-8 mb-4">
+                        <div class="col-md-4 mb-4">
+                            <label class="fw-bold fs-6 mb-2">Shift Hours</label>
+                            <input type="number" step="0.25" min="0" max="24" name="shift_hours" class="form-control form-control-solid" value="{{ $detail?->shift_hours }}" placeholder="e.g. 8">
+                            <span class="form-text text-muted">Length of working day. Enables hour-based leave deductions.</span>
+                        </div>
+                        <div class="col-md-4 mb-4">
                             @php $assignedLocationIds = $employee->user_has_locations->pluck('location_id')->toArray(); @endphp
                             <label class="fw-bold fs-6 mb-2">Centres</label>
                             <select name="location_ids[]" class="form-control form-control-solid select2" multiple style="width: 100%;">

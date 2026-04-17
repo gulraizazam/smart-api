@@ -20,6 +20,8 @@ class LeaveApplication extends BaseModel
         'start_date',
         'end_date',
         'duration_type',
+        'custom_hours',
+        'shift_hours_snapshot',
         'total_days',
         'reason',
         'status',
@@ -35,6 +37,8 @@ class LeaveApplication extends BaseModel
             'start_date' => 'date',
             'end_date' => 'date',
             'duration_type' => LeaveDurationType::class,
+            'custom_hours' => 'decimal:2',
+            'shift_hours_snapshot' => 'decimal:2',
             'total_days' => 'decimal:2',
             'status' => LeaveStatus::class,
             'reviewed_at' => 'datetime',
@@ -94,9 +98,25 @@ class LeaveApplication extends BaseModel
 
     /**
      * Calculate total days based on duration type and date range.
+     *
+     * For Custom, $customHours is divided by $shiftHours to yield the fraction of a
+     * working day consumed (e.g. 3 hours on a 9-hour shift = 0.3333 day).
      */
-    public static function calculateTotalDays(LeaveDurationType $durationType, string $startDate, string $endDate): float
-    {
+    public static function calculateTotalDays(
+        LeaveDurationType $durationType,
+        string $startDate,
+        string $endDate,
+        ?float $customHours = null,
+        ?float $shiftHours = null,
+    ): float {
+        if ($durationType === LeaveDurationType::Custom) {
+            if ($customHours === null || $shiftHours === null || $shiftHours <= 0) {
+                throw new \InvalidArgumentException('Custom duration requires positive custom_hours and shift_hours.');
+            }
+
+            return round($customHours / $shiftHours, 2);
+        }
+
         if ($durationType !== LeaveDurationType::Full) {
             return $durationType->dayValue();
         }

@@ -33,6 +33,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('color', [ServicesController::class, 'getColor'])->name('get_color');
 
         Route::get('{id}/edit', [ServicesController::class, 'edit'])->name('edit')->whereNumber('id');
+        Route::get('{id}/bundle-impact', [ServicesController::class, 'bundleImpact'])->name('bundle_impact')->whereNumber('id');
         Route::get('{id}/duplicate', [ServicesController::class, 'duplicate'])->name('duplicate')->whereNumber('id');
         Route::get('{id}', [ServicesController::class, 'show'])->name('show')->whereNumber('id');
         Route::put('{id}', [ServicesController::class, 'update'])->name('update')->whereNumber('id');
