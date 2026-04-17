@@ -159,8 +159,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
             // Replace single # variables
             $message = str_replace('#patient_name#', $appointment->patient->name ?? 'N/A', $message);
             $message = str_replace('#appointment_time#', $appointmentTime, $message);
-            $message = str_replace('#patient_id#', $appointment->patient->id ?? 'N/A', $message);
-            $message = str_replace('#appointment_id#', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('#patient_id#', (string) ($appointment->patient->id ?? 'N/A'), $message);
+            $message = str_replace('#appointment_id#', (string) ($appointment->id ?? 'N/A'), $message);
             $message = str_replace('#doctor_name#', $appointment->doctor->name ?? 'N/A', $message);
             $message = str_replace('#location_name#', $appointment->location->name ?? 'N/A', $message);
             $message = str_replace('#centre_google_map#', $appointment->location->google_map ?? 'N/A', $message);
@@ -172,8 +172,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
             // Also support double ## format for backward compatibility
             $message = str_replace('##patient_name##', $appointment->patient->name ?? 'N/A', $message);
             $message = str_replace('##appointment_time##', $appointmentTime, $message);
-            $message = str_replace('##patient_id##', $appointment->patient->id ?? 'N/A', $message);
-            $message = str_replace('##appointment_id##', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('##patient_id##', (string) ($appointment->patient->id ?? 'N/A'), $message);
+            $message = str_replace('##appointment_id##', (string) ($appointment->id ?? 'N/A'), $message);
             $message = str_replace('##doctor_name##', $appointment->doctor->name ?? 'N/A', $message);
             $message = str_replace('##location_name##', $appointment->location->name ?? 'N/A', $message);
             $message = str_replace('##centre_google_map##', $appointment->location->google_map ?? 'N/A', $message);
