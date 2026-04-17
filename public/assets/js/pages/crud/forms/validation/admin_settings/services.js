@@ -129,20 +129,7 @@ var EditValidation = function () {
            select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-                if (response.status == true) {
-                    toastr.success(response.message);
-                    closePopup(modal_id);
-                    // Check if this is a duplicate action, reload page
-                    if ($(form).attr('action').includes('duplicate')) {
-                        location.reload();
-                    } else {
-                        reInitTable('service');
-                    }
-                } else {
-                    toastr.error(response.message);
-                }
-            }, form);
+            runEditSubmitWithBundleImpactCheck(form, modal_id);
         });
     }
 
@@ -152,6 +139,93 @@ var EditValidation = function () {
         }
     };
 }();
+
+function runEditSubmitWithBundleImpactCheck(form, modal_id) {
+    var action = $(form).attr('action');
+    var isDuplicate = action.indexOf('duplicate') !== -1;
+    var priceInput = $('#edit_price');
+    var originalPrice = priceInput.data('original-price');
+    var newPrice = parseFloat(priceInput.val());
+    var serviceId = priceInput.data('service-id');
+
+    var priceChanged = originalPrice !== undefined
+        && !isNaN(newPrice)
+        && parseFloat(originalPrice) !== newPrice;
+
+    if (isDuplicate || !priceChanged || !serviceId) {
+        submitEditForm(form, modal_id);
+        return;
+    }
+
+    var previewUrl = route('admin.services.bundle_impact', {id: serviceId});
+
+    $.ajax({
+        url: previewUrl,
+        type: 'GET',
+        data: { new_price: newPrice },
+        success: function (response) {
+            var affected = (response && response.data && response.data.affected) || [];
+            if (!affected.length) {
+                submitEditForm(form, modal_id);
+                return;
+            }
+            showBundleImpactModal(affected, function () {
+                submitEditForm(form, modal_id);
+            });
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+function submitEditForm(form, modal_id) {
+    submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+        if (response.status == true) {
+            toastr.success(response.message);
+            closePopup(modal_id);
+            if ($(form).attr('action').indexOf('duplicate') !== -1) {
+                location.reload();
+            } else {
+                reInitTable('service');
+            }
+        } else {
+            toastr.error(response.message);
+        }
+    }, form);
+}
+
+function showBundleImpactModal(affected, onConfirm) {
+    var rows = affected.map(function (b) {
+        var label = b.sessions + 'x service';
+        if (b.discount_percentage) {
+            label += ' @ ' + b.discount_percentage + '% off';
+        }
+        return '<tr>'
+            + '<td>' + label + '</td>'
+            + '<td class="text-end">' + formatMoney(b.old_bundle_price) + '</td>'
+            + '<td class="text-end"><strong>' + formatMoney(b.new_bundle_price) + '</strong></td>'
+            + '</tr>';
+    }).join('');
+
+    $('#bundle_impact_rows').html(rows);
+
+    var $modal = $('#modal_bundle_impact');
+    $modal.modal('show');
+
+    $('#bundle_impact_confirm').off('click').on('click', function () {
+        $modal.modal('hide');
+        onConfirm();
+    });
+    $('#bundle_impact_cancel, #bundle_impact_close').off('click').on('click', function () {
+        $modal.modal('hide');
+    });
+}
+
+function formatMoney(value) {
+    var n = Number(value) || 0;
+    return n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
 
 jQuery(document).ready(function() {
     AddValidation.init();

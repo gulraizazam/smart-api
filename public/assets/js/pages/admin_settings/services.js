@@ -245,6 +245,8 @@ function setEditData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+        $("#edit_price").data('original-price', service.price);
+        $("#edit_price").data('service-id', service.id);
 
         // Set Trix editor content
         $("#edit_description").val(service.description || '');
@@ -353,6 +355,8 @@ function setDuplicateData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+        $("#edit_price").data('original-price', service.price);
+        $("#edit_price").data('service-id', service.id);
 
         // Set Trix editor content
         $("#edit_description").val(service.description || '');

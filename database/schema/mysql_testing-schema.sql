@@ -2388,6 +2388,29 @@ CREATE TABLE `service_bundles` (
   CONSTRAINT `service_bundles_service_id_foreign` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS `service_bundle_price_history`;
+CREATE TABLE `service_bundle_price_history` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `service_bundle_id` bigint(20) unsigned NOT NULL,
+  `service_id` int(10) unsigned NOT NULL,
+  `sessions` int(10) unsigned NOT NULL,
+  `discount_percentage` decimal(5,2) DEFAULT NULL,
+  `old_service_price` decimal(11,2) NOT NULL,
+  `new_service_price` decimal(11,2) NOT NULL,
+  `old_bundle_price` decimal(11,2) NOT NULL,
+  `new_bundle_price` decimal(11,2) NOT NULL,
+  `changed_by` int(10) unsigned DEFAULT NULL,
+  `account_id` int(10) unsigned NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_sbph_bundle_created` (`service_bundle_id`,`created_at`),
+  KEY `idx_sbph_service_created` (`service_id`,`created_at`),
+  KEY `idx_sbph_account_created` (`account_id`,`created_at`),
+  CONSTRAINT `service_bundle_price_history_service_bundle_id_foreign` FOREIGN KEY (`service_bundle_id`) REFERENCES `service_bundles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `service_bundle_price_history_service_id_foreign` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `service_bundle_price_history_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 DROP TABLE IF EXISTS `settings`;
 CREATE TABLE `settings` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
