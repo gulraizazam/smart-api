@@ -29,8 +29,6 @@ class AppointmentsController extends Controller
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
-            $this->authorize('view', Appointments::class);
-
             $filters = $request->only([
                 'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
                 'appointment_status_id', 'scheduled_date_from', 'scheduled_date_to',
