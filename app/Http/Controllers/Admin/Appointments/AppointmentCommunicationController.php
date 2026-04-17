@@ -165,8 +165,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
             $message = str_replace('#location_name#', $appointment->location->name ?? 'N/A', $message);
             $message = str_replace('#centre_google_map#', $appointment->location->google_map ?? 'N/A', $message);
             $message = str_replace('#service_name#', $appointment->service->name ?? 'N/A', $message);
-            $message = str_replace('#scheduled_date#', $appointment->scheduled_date ?? 'N/A', $message);
-            $message = str_replace('#scheduled_time#', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('#scheduled_date#', $appointment->scheduled_date ? $appointment->scheduled_date->format('Y-m-d') : 'N/A', $message);
+            $message = str_replace('#scheduled_time#', $appointment->scheduled_time ? (string) $appointment->scheduled_time : 'N/A', $message);
             $message = str_replace('#status#', $appointment->appointment_status->name ?? 'N/A', $message);
 
             // Also support double ## format for backward compatibility
@@ -178,8 +178,8 @@ class AppointmentCommunicationController extends AppointmentBaseController
             $message = str_replace('##location_name##', $appointment->location->name ?? 'N/A', $message);
             $message = str_replace('##centre_google_map##', $appointment->location->google_map ?? 'N/A', $message);
             $message = str_replace('##service_name##', $appointment->service->name ?? 'N/A', $message);
-            $message = str_replace('##scheduled_date##', $appointment->scheduled_date ?? 'N/A', $message);
-            $message = str_replace('##scheduled_time##', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('##scheduled_date##', $appointment->scheduled_date ? $appointment->scheduled_date->format('Y-m-d') : 'N/A', $message);
+            $message = str_replace('##scheduled_time##', $appointment->scheduled_time ? (string) $appointment->scheduled_time : 'N/A', $message);
             $message = str_replace('##status##', $appointment->appointment_status->name ?? 'N/A', $message);
 
             return response()->json([
