@@ -955,9 +955,6 @@ class AppointmentsController extends Controller
      */
     public function createConsultingAppointment(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('appointments_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
         if (
             $request->location_id &&
             $request->doctor_id
