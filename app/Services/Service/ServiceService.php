@@ -256,6 +256,8 @@ final class ServiceService
     }
 
     /**
+<<<<<<< Updated upstream
+=======
      * Re-price every ServiceBundle whose service price just changed,
      * and log one history row per affected bundle.
      *
@@ -357,6 +359,7 @@ final class ServiceService
     }
 
     /**
+>>>>>>> Stashed changes
      * Delete a service after dependency checks.
      *
      * @return array{status: bool, message: string}
