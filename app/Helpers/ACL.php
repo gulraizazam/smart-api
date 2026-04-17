@@ -40,7 +40,7 @@ class ACL
             default => $user->user_has_locations()->pluck('location_id'),
         };
 
-        $result = $locations?->toArray() ?? [];
+        $result = self::expandAllCentres($locations?->toArray() ?? [], (int) $user->account_id);
         $cachedLocations[$userId] = $result;
 
         return $result;
@@ -108,7 +108,13 @@ class ACL
                 ->where('account_id', $accountId)
                 ->pluck('city_id'),
 
-            default => Locations::whereIn('id', $user->user_has_locations()->pluck('location_id'))
+            default => Locations::whereIn(
+                'id',
+                self::expandAllCentres(
+                    $user->user_has_locations()->pluck('location_id')->toArray(),
+                    (int) $accountId,
+                ),
+            )
                 ->where('account_id', $accountId)
                 ->pluck('city_id'),
         };
@@ -117,5 +123,31 @@ class ACL
         $cachedCities[$userId] = $result;
 
         return $result;
+    }
+
+    /**
+     * If the pivot grants the virtual "All Centres" location, expand it to every
+     * real active centre for the account. Real appointments are booked against
+     * real centres, so queries must filter by real ids — not the virtual one.
+     *
+     * @param  array<int, int|string>  $locationIds
+     * @return array<int, int>
+     */
+    private static function expandAllCentres(array $locationIds, int $accountId): array
+    {
+        $allCentresId = (int) Config::get('constants.all_centres_location_id');
+
+        $normalized = array_map('intval', $locationIds);
+
+        if ($allCentresId === 0 || !in_array($allCentresId, $normalized, true)) {
+            return $normalized;
+        }
+
+        return Locations::where('active', 1)
+            ->where('account_id', $accountId)
+            ->where('name', '!=', 'All Centres')
+            ->pluck('id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
     }
 }
