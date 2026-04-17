@@ -38,11 +38,11 @@
                             <select id="update_child_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2">
                             </select>
                         </div>
-                        <div class="fv-row col-md-12 mt-5 d-none">
+                        <div class="fv-row col-md-12 mt-5 d-none" id="lead_status_comment1_wrapper">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
                             <textarea id="lead_status_comment1_id" name="" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
                         </div>
-                        <div class="fv-row col-md-12 mt-5">
+                        <div class="fv-row col-md-12 mt-5 d-none" id="lead_status_comment2_wrapper">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Comment </label>
                             <textarea id="lead_status_comment2_id" name="comment2" placeholder="Type your comment.." class="form-control" rows="5"></textarea>
                         </div>

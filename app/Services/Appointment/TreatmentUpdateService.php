@@ -19,6 +19,7 @@ use App\Models\ResourceHasRotaDays;
 use App\Models\Resources;
 use App\Models\ResourceTimeOff;
 use App\Models\Services;
+use App\Models\Patients;
 use App\Models\User;
 use App\Models\WorkingDayException;
 use Carbon\Carbon;
@@ -504,7 +505,7 @@ final class TreatmentUpdateService
 
     private function logActivity(Appointments $appointment, array $requestData, array $oldValues): void
     {
-        $patient  = User::find($appointment->patient_id);
+        $patient  = Patients::find($appointment->patient_id);
         $location = Locations::with('city')->find($appointment->location_id);
         $service  = Services::find($appointment->service_id);
 
@@ -537,7 +538,7 @@ final class TreatmentUpdateService
         Appointments $appointment,
         array $requestData,
         array $oldValues,
-        ?User $patient,
+        ?Patients $patient,
     ): array {
         $changes = [];
 

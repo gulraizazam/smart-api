@@ -149,7 +149,7 @@ class UserVouchersController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): \Illuminate\View\View
+    public function show(Request $request, int $id): \Illuminate\View\View|JsonResponse
     {
         if (!Gate::allows('vouchers_manage')) {
             if ($request->ajax()) {

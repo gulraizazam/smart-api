@@ -38,6 +38,8 @@ final class DiscountService
 
     public function createSimpleDiscount(array $data): Discount
     {
+        $data['amount'] = $data['amount'] ?? '0';
+
         $discount = Discount::create($data);
 
         if (!empty($data['roles'])) {

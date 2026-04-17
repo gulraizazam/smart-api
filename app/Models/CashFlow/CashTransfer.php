@@ -27,6 +27,8 @@ class CashTransfer extends Model
         return [
             'transfer_date' => 'date:Y-m-d',
             'amount' => 'decimal:2',
+            'from_pool_id' => 'integer',
+            'to_pool_id' => 'integer',
             'voided_at' => 'datetime',
         ];
     }

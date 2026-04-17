@@ -169,6 +169,7 @@ class Refunds extends Model
         $activity->timestamps = false;
         $activity->action = 'refunded';
         $activity->activity_type = 'refund_made';
+        $activity->log_tier = \App\Enums\ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient->id;
@@ -245,6 +246,8 @@ class Refunds extends Model
                     $dataInvoiceDetail['qty'] = 1;
                     $dataInvoiceDetail['service_id'] =$services->id;
                     $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+                    $dataInvoiceDetail['service_price'] = $amount_left;
+                    $dataInvoiceDetail['net_amount'] = $amount_left;
                     $dataInvoiceDetail['is_settlement'] = 1;
                     InvoiceDetails::create($dataInvoiceDetail);
                 }

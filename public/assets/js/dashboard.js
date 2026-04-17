@@ -169,7 +169,7 @@
             const centreName = log.centre ? log.centre.name : (log.location || '');
             const action = log.action;
             const appointmentType = log.appointment_type;
-            const planId = log.planId;
+            const planId = log.plan_id;
             
             let content = '';
             if (appointmentType === 'Plan') {

@@ -7,12 +7,13 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 
 class UserVoucherStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Gate::allows('vouchers_create');
     }
 
     public function rules(): array

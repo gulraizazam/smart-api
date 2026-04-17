@@ -3,6 +3,105 @@ var TAX_BOTH = 1;
 var TAX_IS_EXCLUSIVE = 2;
 var TAX_IS_INCLUSIVE = 3;
 
+// Client-side voucher consumption ledger. The plan-form's "Add" button
+// only renders an HTML row — no backend persistence happens until
+// "Save Plan" is clicked. Without tracking pending consumption here,
+// the same voucher can be re-applied to multiple services in the same
+// in-progress plan even though its server-side balance will only
+// cover the first one. Keys are voucher (discount) ids; values are
+// the running total of `discount_price` already booked client-side.
+window.pendingVoucherUsage = window.pendingVoucherUsage || {};
+
+function pendingVoucherAmount(discountId) {
+    if (!discountId) return 0;
+    return parseFloat(window.pendingVoucherUsage[discountId] || 0);
+}
+
+function bookPendingVoucherUsage(discountId, amount) {
+    if (!discountId) return;
+    var current = pendingVoucherAmount(discountId);
+    window.pendingVoucherUsage[discountId] = current + (parseFloat(amount) || 0);
+}
+
+function refundPendingVoucherUsage(discountId, amount) {
+    if (!discountId) return;
+    var current = pendingVoucherAmount(discountId);
+    var next = current - (parseFloat(amount) || 0);
+    window.pendingVoucherUsage[discountId] = next > 0 ? next : 0;
+}
+
+function resetPendingVoucherUsage() {
+    window.pendingVoucherUsage = {};
+}
+
+/**
+ * Refund one row's voucher reservation to the server AND the client
+ * ledger. Reads voucher id / amount / patient id from data attributes
+ * stamped on the row at Add time so the refund still works after the
+ * form has been reset (e.g. when the modal is being torn down).
+ */
+function refundPendingVoucherForRow($row) {
+    var voucherId = $row.attr('data-pending-voucher-id');
+    var amount = $row.attr('data-pending-voucher-amount');
+    var patientId = $row.attr('data-pending-voucher-patient-id') || $('#add_patient_id').val();
+
+    if (!voucherId || !amount) {
+        return;
+    }
+
+    refundPendingVoucherUsage(voucherId, amount);
+    // Strip the markers so a second close-handler sweep can't
+    // double-refund the same row.
+    $row.removeAttr('data-pending-voucher-id')
+        .removeAttr('data-pending-voucher-amount')
+        .removeAttr('data-pending-voucher-patient-id');
+
+    if (!patientId) {
+        return;
+    }
+
+    $.ajax({
+        type: 'post',
+        url: route('admin.plans.voucher.refund'),
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        data: {
+            voucher_id: voucherId,
+            patient_id: patientId,
+            amount: amount
+        }
+    });
+}
+
+/**
+ * Refund every pending voucher reservation on the in-progress plan
+ * form. Called when the plan modal is dismissed without a successful
+ * save (X button, Esc, backdrop click, Cancel link).
+ */
+function refundAllPendingPlanVouchers() {
+    $('#plan_services tr[data-pending-voucher-id]').each(function () {
+        refundPendingVoucherForRow($(this));
+    });
+    resetPendingVoucherUsage();
+}
+
+// Wire the plan modal's dismiss events to the refund sweep. Bootstrap
+// fires `hide.bs.modal` for every dismiss path (X, backdrop, Esc,
+// programmatic `.modal('hide')`). The successful-save handler sets
+// `window.planModalSavedCleanly = true` first so we skip the refund
+// in that case — the server has already moved on from the reservation
+// (the journal row points at the persisted bundle).
+$(document).on('hide.bs.modal', function (e) {
+    var $modal = $(e.target);
+    if (!$modal.find('#plan_services').length) {
+        return; // Not the plan modal — ignore.
+    }
+    if (window.planModalSavedCleanly) {
+        window.planModalSavedCleanly = false;
+        return;
+    }
+    refundAllPendingPlanVouchers();
+});
+
 // Client-side tax calculation matching backend calculateServiceTaxForPackage
 function calculatePlanTax(netAmount, taxPct, taxTreatmentTypeId, isExclusive) {
     netAmount = parseFloat(netAmount) || 0;
@@ -1542,11 +1641,13 @@ function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function () {
 
+        let patientId = $("#search_patient_id").val();
+
         let filters = {
             delete: '',
             id: $("#search_id").val(),
-            patient_id: $("#search_patient_id").val(),
-            patient_name: $("#search_patient_id").text(),
+            patient_id: patientId,
+            patient_name: patientId ? $("#search_patient_id").find('option:selected').text() : '',
             package_id: $("#search_plan_id").val(),
             location_id: $("#search_location_id").val(),
             created_at: $("#date_range").val(),
@@ -1607,9 +1708,11 @@ function setFilters(filter_values, active_filters) {
 
         let location_options = '<option value="">All</option>';
 
+        let validLocationIds = {};
         if (locations) {
             Object.entries(locations).forEach(function (value) {
                 location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                validLocationIds[String(value[0])] = true;
             });
         }
 
@@ -1617,7 +1720,11 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_id").val(active_filters.id);
 
-        $("#search_location_id").val(active_filters.location_id).trigger('change');
+        let activeLocId = active_filters.location_id;
+        if (activeLocId && !validLocationIds[String(activeLocId)]) {
+            activeLocId = '';
+        }
+        $("#search_location_id").val(activeLocId).trigger('change');
         $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
@@ -2138,6 +2245,28 @@ function getDiscountInfo($this) {
                 success: function (resposne) {
 
                     if (resposne.status) {
+                        // Subtract any voucher amount the user has
+                        // already booked (via "Add") on the current
+                        // in-progress plan but not yet persisted. The
+                        // server can't know about those pending rows,
+                        // so adjust client-side before showing the
+                        // available balance to avoid letting the same
+                        // voucher pay twice.
+                        if (resposne.data.discount_is_voucher) {
+                            var pending = pendingVoucherAmount(discount_id);
+                            var serverAmount = parseFloat(resposne.data.discount_price) || 0;
+                            var available = serverAmount - pending;
+                            if (available < 0) available = 0;
+                            var svcPrice = parseFloat(resposne.data.service_price) || 0;
+                            // Cap at service price so the deduction
+                            // never exceeds what this row can absorb.
+                            if (svcPrice > 0 && available > svcPrice) {
+                                available = svcPrice;
+                            }
+                            resposne.data.discount_price = available;
+                            resposne.data.net_amount = svcPrice > 0 ? Math.max(0, svcPrice - available) : resposne.data.net_amount;
+                        }
+
                         // Store discount info for client-side Add button
                         window.createPlanDiscountInfo = resposne.data;
 
@@ -2152,7 +2281,7 @@ function getDiscountInfo($this) {
                                 // Show configurable preview table
                                 $('#configurable_preview').remove();
                                 if (resposne.data.preview_rows && resposne.data.preview_rows.length) {
-                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white; max-width: 430px;">';
                                     html += '<strong>Configurable Discount Preview:</strong>';
                                     html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
                                     html += '<thead><tr><th style="color: white !important;">Service</th><th style="color: white !important;">Regular Price</th><th style="color: white !important;">Discount</th><th style="color: white !important;">Net Amount</th></tr></thead><tbody>';
@@ -2681,7 +2810,7 @@ function editDiscountInfo($this) {
                                 // Show configurable preview table
                                 $('#configurable_preview').remove();
                                 if (resposne.data.preview_rows && resposne.data.preview_rows.length) {
-                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white; max-width: 430px;">';
                                     html += '<strong>Configurable Discount Preview:</strong>';
                                     html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
                                     html += '<thead><tr><th style="color: white !important;">Service</th><th style="color: white !important;">Regular Price</th><th style="color: white !important;">Discount</th><th style="color: white !important;">Net Amount</th></tr></thead><tbody>';
@@ -3423,53 +3552,130 @@ jQuery(document).ready(function () {
                 // --- SIMPLE DISCOUNT: single row ---
                 var rowNetAmount = parseFloat(net_amount) || 0;
                 var taxCalc = calculatePlanTax(rowNetAmount, taxPct, taxType, is_exclusive);
-
-                total_amountArray.push(parseFloat(taxCalc.tax_including_price));
-
-                var sum = total_amountArray.reduce((a, b) => a + b, 0);
-                $("#package_total_1").val(sum.toFixed(2));
-
                 var deleteBtn = "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(this)'>" + trashBtn() + "</button>";
 
-                $('#plan_services').append(buildPlanServiceRow({
-                    groupClass: random_id + ' plan-row-' + rowUid,
-                    serviceName: svcName,
-                    regularPrice: svcPrice,
-                    discountName: discountName,
-                    discountValue: discount_price || 0,
-                    subtotal: taxCalc.tax_exclusive_net_amount,
-                    tax: taxCalc.tax_price,
-                    total: taxCalc.tax_including_price,
-                    serviceId: service_id,
-                    discountId: discount_id,
-                    discountType: discount_type || '',
-                    taxTreatmentTypeId: taxType,
-                    soldBy: sold_by,
-                    soldByName: sold_by_name,
-                    configGroupId: ''
-                }, deleteBtn));
+                var appendSimpleRow = function (voucherAmountApplied) {
+                    total_amountArray.push(parseFloat(taxCalc.tax_including_price));
+
+                    var sum = total_amountArray.reduce((a, b) => a + b, 0);
+                    $("#package_total_1").val(sum.toFixed(2));
+
+                    $('#plan_services').append(buildPlanServiceRow({
+                        groupClass: random_id + ' plan-row-' + rowUid,
+                        serviceName: svcName,
+                        regularPrice: svcPrice,
+                        discountName: discountName,
+                        discountValue: voucherAmountApplied !== null ? voucherAmountApplied : (discount_price || 0),
+                        subtotal: taxCalc.tax_exclusive_net_amount,
+                        tax: taxCalc.tax_price,
+                        total: taxCalc.tax_including_price,
+                        serviceId: service_id,
+                        discountId: discount_id,
+                        discountType: discount_type || '',
+                        taxTreatmentTypeId: taxType,
+                        soldBy: sold_by,
+                        soldByName: sold_by_name,
+                        configGroupId: ''
+                    }, deleteBtn));
+
+                    if (voucherAmountApplied !== null) {
+                        var $newRow = $('#plan_services tr.plan-row-' + rowUid);
+                        $newRow.attr('data-pending-voucher-id', discount_id);
+                        $newRow.attr('data-pending-voucher-amount', voucherAmountApplied);
+                        // Cache the patient id on the row so a
+                        // modal-close refund can still identify the
+                        // voucher owner after the form has been reset.
+                        $newRow.attr('data-pending-voucher-patient-id', user_id);
+                        // Mirror the reservation in the client-side
+                        // ledger so the next `getDiscountInfo` call in
+                        // this same modal reflects the reduction even
+                        // before the AJAX round-trip completes.
+                        bookPendingVoucherUsage(discount_id, voucherAmountApplied);
+                    }
+
+                    finalizeAddRow();
+                };
+
+                // Voucher discounts require a real server-side
+                // reservation BEFORE the row is rendered. If the
+                // reservation fails (no balance, no row for this
+                // patient, etc.) the row must NOT be added or the
+                // user will see a phantom discount that was never
+                // deducted from the voucher.
+                if (discInfo && discInfo.discount_is_voucher) {
+                    var requested = parseFloat(discount_price) || 0;
+                    if (requested <= 0) {
+                        toastr.error('Voucher has no remaining balance.');
+                        $("#AddPackage").attr("disabled", false);
+                        hideSpinner("-add");
+                        return;
+                    }
+                    $.ajax({
+                        type: 'post',
+                        url: route('admin.plans.voucher.reserve'),
+                        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                        data: {
+                            voucher_id: discount_id,
+                            patient_id: user_id,
+                            amount: requested
+                        },
+                        success: function (resp) {
+                            if (resp && resp.status) {
+                                var applied = parseFloat(resp.data.consumed_amount) || requested;
+                                appendSimpleRow(applied);
+                            } else {
+                                toastr.error(resp && resp.message ? resp.message : 'Failed to reserve voucher amount.');
+                                $("#AddPackage").attr("disabled", false);
+                                hideSpinner("-add");
+                            }
+                        },
+                        error: function (xhr) {
+                            var msg = (xhr.responseJSON && xhr.responseJSON.message) || 'Failed to reserve voucher amount.';
+                            toastr.error(msg);
+                            $("#AddPackage").attr("disabled", false);
+                            hideSpinner("-add");
+                        }
+                    });
+                    return;
+                }
+
+                appendSimpleRow(null);
             }
 
-            keyfunction_grandtotal();
-            var rowCount = $('#plan_services tr').length;
-            if (rowCount > 0) {
-                $("#add_plan_location_id").prop("disabled", true).trigger("change.select2");
-                $("#add_patient_id").prop("disabled", true).trigger("change.select2");
+            function finalizeAddRow() {
+                keyfunction_grandtotal();
+                var rowCount = $('#plan_services tr').length;
+                if (rowCount > 0) {
+                    $("#add_plan_location_id").prop("disabled", true).trigger("change.select2");
+                    $("#add_patient_id").prop("disabled", true).trigger("change.select2");
+                }
+
+                // Reset form fields after successful addition
+                $('#configurable_preview').remove();
+                $('#add_service_id').val(null).trigger('change');
+                $('#add_discount_id').val(null).trigger('change');
+                $('#add_discount_type').val(null).trigger('change');
+                $('#discount_value_1').val('');
+                $('#net_amount_1').val('');
+                $('#add_sold_by').val(null).trigger('change');
+                window.createPlanDiscountInfo = null;
+                window.createPlanServiceInfo = null;
+
+                $("#AddPackage").attr("disabled", false);
+                hideSpinner("-add");
             }
 
-            // Reset form fields after successful addition
-            $('#configurable_preview').remove();
-            $('#add_service_id').val(null).trigger('change');
-            $('#add_discount_id').val(null).trigger('change');
-            $('#add_discount_type').val(null).trigger('change');
-            $('#discount_value_1').val('');
-            $('#net_amount_1').val('');
-            $('#add_sold_by').val(null).trigger('change');
-            window.createPlanDiscountInfo = null;
-            window.createPlanServiceInfo = null;
+            // Configurable branch lands here after rendering its
+            // preview rows — run the finalisation (form reset, totals,
+            // lock location+patient) and exit.
+            if (is_configurable_selected) {
+                finalizeAddRow();
+                return;
+            }
 
-            $("#AddPackage").attr("disabled", false);
-            hideSpinner("-add");
+            // Simple-discount branch already handled above
+            // (appendSimpleRow → finalizeAddRow for non-voucher, AJAX
+            // callback → appendSimpleRow → finalizeAddRow for voucher).
         } else {
             $('#inputfieldMessage').show();
             toastr.error('Please fill all required fields (service, location, price)');
@@ -3566,6 +3772,21 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status) {
+
+                        // Plan persisted: the voucher balance was
+                        // already decremented at Add time (via
+                        // reserveVoucherAmount) and the server has
+                        // just written the journal rows against the
+                        // persisted bundles, so the pending ledger is
+                        // no longer load-bearing. Strip the row
+                        // attributes and set the `savedCleanly` flag
+                        // so the modal-hide handler does NOT refund.
+                        $('#plan_services tr[data-pending-voucher-id]')
+                            .removeAttr('data-pending-voucher-id')
+                            .removeAttr('data-pending-voucher-amount')
+                            .removeAttr('data-pending-voucher-patient-id');
+                        resetPendingVoucherUsage();
+                        window.planModalSavedCleanly = true;
 
                         $('#successMessage').show();
                         toastr.success(" Plan successfully created")
@@ -4196,12 +4417,18 @@ function deleteConfigGroupUpdateTotals(rowsToRemove) {
 function deletePlanRowTem(btn) {
     var $row = $(btn).closest('tr');
     var rowIndex = $row.index();
-    
+
+    // Refund the server-side voucher reservation this row booked at
+    // Add time. Client-side ledger mirrors the refund optimistically
+    // so subsequent voucher picks see the restored balance without
+    // waiting for the AJAX round-trip.
+    refundPendingVoucherForRow($row);
+
     // Remove from total_amountArray
     if (rowIndex >= 0 && rowIndex < total_amountArray.length) {
         total_amountArray.splice(rowIndex, 1);
     }
-    
+
     // Remove DOM row
     $row.remove();
     

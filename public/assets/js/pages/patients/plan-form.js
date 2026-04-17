@@ -2781,7 +2781,7 @@ jQuery(document).ready(function () {
                 if (response.data.is_configurable) {
                     // Show configurable preview table
                     var rows = response.data.preview_rows;
-                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white;">';
+                    var html = '<div id="configurable_preview" class="mt-3 alert alert-info" style="color: white; max-width: 430px;">';
                     html += '<strong>Configurable Discount Preview:</strong>';
                     html += '<table class="table table-sm table-bordered mt-2 mb-0" style="color: white;">';
                     html += '<thead><tr style="color: white;"><th style="color: white;">Service</th><th style="color: white;">Regular Price</th><th style="color: white;">Discount</th><th style="color: white;">Net Amount</th></tr></thead><tbody>';

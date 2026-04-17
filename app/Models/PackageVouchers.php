@@ -25,7 +25,7 @@ class PackageVouchers extends Model
     protected function casts(): array
     {
         return [
-            'amount' => 'float',
+            'amount' => 'decimal:2',
         ];
     }
 
@@ -36,7 +36,7 @@ class PackageVouchers extends Model
 
     public function voucher(): BelongsTo
     {
-        return $this->belongsTo(Voucher::class);
+        return $this->belongsTo(Discounts::class, 'voucher_id');
     }
 
     public function package(): BelongsTo

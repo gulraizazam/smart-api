@@ -881,10 +881,13 @@ $(document).ready(function() {
                         // Disable location and Add button after service added (only 1 service allowed)
                         $("#add_bundle_location_id").prop("disabled", true);
                         $("#AddPackageBundle").prop("disabled", true);
-                        
+
                         // Disable service and sold by fields
                         $("#add_service_id_bundle").prop("disabled", true);
                         $("#add_sold_by_bundle").prop("disabled", true);
+
+                        // Lock patient once a bundle is in the preview (matches plan-type behaviour)
+                        $("#add_patient_id_bundle").prop("disabled", true).trigger("change.select2");
 
                         //toastr.success('Bundle added successfully.');
                     } else {
@@ -920,6 +923,7 @@ function deleteBundleRowTem(id) {
         $("#AddPackageBundle").prop("disabled", false);
         $("#add_service_id_bundle").prop("disabled", false);
         $("#add_sold_by_bundle").prop("disabled", false);
+        $("#add_patient_id_bundle").prop("disabled", false).trigger("change.select2");
         
         // Clear the fields
         $('#add_service_id_bundle').val(null).trigger('change');

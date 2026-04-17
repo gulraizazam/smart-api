@@ -1,73 +1,61 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
 use App\Enums\AppointmentType;
+use App\Exceptions\PlanException;
 use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
-use App\Models\User;
-use App\Models\Bundles;
-use App\Models\SMSLogs;
 use App\Helpers\Filters;
+use App\Helpers\Financelog;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\MakePackageServicesRequest;
+use App\Http\Requests\Admin\StoreUpdateAppointmentsRequest;
+use App\Http\Requests\Admin\UpdatePackagesRequest;
 use App\Models\Accounts;
 use App\Models\Activity;
-use App\Models\Invoices;
-use App\Models\Packages;
-use App\Models\Services;
-use App\Models\Settings;
-use App\Models\PackageVouchers;
-use App\Models\Discounts;
-use App\Models\Locations;
-use App\Helpers\Financelog;
-use App\Helpers\JazzSMSAPI;
-use App\Models\AuditTrails;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
-use App\Models\PaymentModes;
-use App\Models\Voucher;
-use App\Http\Requests\Admin\MakePackageServicesRequest;
-use App\Http\Requests\Admin\UpdatePackagesRequest;
-use Illuminate\Http\Request;
-use App\Helpers\TelenorSMSAPI;
-use App\Models\InvoiceDetails;
-use App\Models\PackageBundles;
-use App\Models\PackageService;
-use App\Models\PackageAdvances;
-use App\Models\PlanInvoice;
-use App\Models\UserVouchers;
-use App\Models\UserHasLocations;
-use App\Helpers\GeneralFunctions;
 use App\Models\AuditTrailChanges;
+use App\Models\AuditTrails;
 use App\Models\BundleHasServices;
-use App\Models\GetDiscountService;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use App\Models\BaseDiscountService;
-use Illuminate\Support\Facades\App;
-use App\Http\Controllers\Controller;
-use App\Models\UserOperatorSettings;
-use Illuminate\Support\Facades\Auth;
-use App\Helpers\Widgets\ServiceWidget;
-use Illuminate\Support\Facades\Config;
-use App\Helpers\Widgets\DiscountWidget;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Exceptions\PlanException;
-use App\Models\DoctorHasLocations;
+use App\Models\Bundles;
+use App\Models\Discounts;
+use App\Models\Invoices;
+use App\Models\Leads;
+use App\Models\LeadStatuses;
+use App\Models\Locations;
 use App\Models\Membership;
 use App\Models\MembershipType;
-use App\Models\RoleHasUsers;
-use App\Models\Leads;
+use App\Models\PackageAdvances;
+use App\Models\PackageBundles;
+use App\Models\Packages;
+use App\Models\PackageService;
+use App\Models\Patients;
+use App\Models\PaymentModes;
+use App\Models\Services;
+use App\Models\Settings;
+use App\Models\SMSLogs;
+use App\Models\StudentVerification;
+use App\Models\User;
+use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
 use App\Services\Plan\PlanService;
-use App\Services\Membership\StudentVerificationService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Validator;
+use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class PackagesController extends Controller
 {
@@ -81,7 +69,7 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $this->authorize('managePlans', Packages::class);
 
@@ -90,47 +78,44 @@ class PackagesController extends Controller
 
     /**
      * Show the form for creating a new package.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function create(Request $request): \Illuminate\Http\JsonResponse
+    public function create(Request $request): JsonResponse
     {
         $this->authorize('createPlan', Packages::class);
 
         try {
             // Get patient ID from route parameter
             $patientId = $request->route('id');
-            
+
             // Use patient-specific method if patient ID is provided
             if ($patientId) {
-                \Log::info('Loading patient-specific plan data for patient: ' . $patientId);
-                $data = $this->planService->getCreateFormDataForPatient(ACL::getUserCentres(), (int)$patientId);
+                \Log::info('Loading patient-specific plan data for patient: '.$patientId);
+                $data = $this->planService->getCreateFormDataForPatient(ACL::getUserCentres(), (int) $patientId);
             } else {
                 \Log::info('Loading general plan data (no patient ID)');
                 $data = $this->planService->getCreateFormData(ACL::getUserCentres());
             }
-            
+
             return $this->successResponse('Record found.', $data);
         } catch (\Exception $e) {
             // Round 4 Crypto-H3 — drop trace string (inlines arg PII), keep
             // file/line for debuggability without leaking patient identifiers.
-            \Illuminate\Support\Facades\Log::error('Plans Create Form Data Error: ' . $e->getMessage(), [
+            Log::error('Plans Create Form Data Error: '.$e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
+
             return $this->errorResponse('Failed to load form data.', 500);
         }
     }
 
     /**
      * Return an array of location base service.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getservices(Request $request): \Illuminate\Http\JsonResponse
+    public function getservices(Request $request): JsonResponse
     {
         try {
-            if (!$request->has('location_id') || !$request->location_id) {
+            if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
             }
 
@@ -139,7 +124,7 @@ class PackagesController extends Controller
                 Auth::user()->account_id
             );
 
-            if (!empty($services)) {
+            if (! empty($services)) {
                 return $this->successResponse('Record found', [
                     'service' => $services,
                 ]);
@@ -147,7 +132,8 @@ class PackagesController extends Controller
 
             return $this->errorResponse('Record not found', 404);
         } catch (\Exception $e) {
-            \Log::error('Get Services Error: ' . $e->getMessage());
+            \Log::error('Get Services Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to load services.', 500);
         }
     }
@@ -155,18 +141,16 @@ class PackagesController extends Controller
     /**
      * Save bundle service for bundle plan creation
      * Uses the same logic as plan creation but for bundles
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function savebundle_service(Request $request): \Illuminate\Http\JsonResponse
+    public function savebundle_service(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->addBundleService([
-                'bundle_id'   => $request->bundle_id,
+                'bundle_id' => $request->bundle_id,
                 'location_id' => $request->location_id,
-                'net_amount'  => $request->net_amount,
-                'random_id'   => $request->random_id,
-                'sold_by'     => $request->sold_by ?? null,
+                'net_amount' => $request->net_amount,
+                'random_id' => $request->random_id,
+                'sold_by' => $request->sold_by ?? null,
                 'source_type' => $request->source_type ?? 'bundle',
             ]);
 
@@ -174,41 +158,39 @@ class PackagesController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Save Bundle Service Error: ' . $e->getMessage());
+            \Log::error('Save Bundle Service Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to add bundle service.', 500);
         }
     }
 
     /**
      * Save membership service (Add button in membership creation)
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function savemembership_service(Request $request): \Illuminate\Http\JsonResponse
+    public function savemembership_service(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->addMembershipService([
                 'membership_id' => $request->membership_id,
-                'location_id'   => $request->location_id,
-                'net_amount'    => $request->net_amount,
-                'sold_by'       => $request->sold_by ?? null,
+                'location_id' => $request->location_id,
+                'net_amount' => $request->net_amount,
+                'sold_by' => $request->sold_by ?? null,
             ]);
 
             return $this->successResponse('Membership service added successfully', $result);
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Save Membership Service Error: ' . $e->getMessage());
+            \Log::error('Save Membership Service Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to add membership service.', 500);
         }
     }
 
     /**
      * Update membership plan - add payment to existing membership package
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function updateMembershipPlan(Request $request): \Illuminate\Http\JsonResponse
+    public function updateMembershipPlan(Request $request): JsonResponse
     {
         try {
             $packageId = $request->package_id;
@@ -221,12 +203,12 @@ class PackagesController extends Controller
             $isStudentMembership = $request->is_student_membership === '1';
             $membershipTypeId = $request->membership_type_id;
 
-            if (!$packageId) {
+            if (! $packageId) {
                 return $this->errorResponse('Package ID is required', 500);
             }
 
             $package = Packages::find($packageId);
-            if (!$package) {
+            if (! $package) {
                 return $this->errorResponse('Package not found', 500);
             }
 
@@ -251,64 +233,64 @@ class PackagesController extends Controller
             // ========================================
             $hasNewDocuments = false;
             $hasStudentDocuments = false;
-            
+
             // Also check from database if this is a student membership (in case frontend doesn't pass it)
-            if (!$isStudentMembership && $packageBundle && $packageBundle->membership_type_id) {
+            if (! $isStudentMembership && $packageBundle && $packageBundle->membership_type_id) {
                 $isStudentMembership = $this->studentVerificationService->isStudentMembership((int) $packageBundle->membership_type_id);
             }
-            
+
             \Log::info('Edit membership - document check', [
                 'is_student_membership_param' => $request->is_student_membership,
                 'is_student_membership' => $isStudentMembership,
                 'has_files' => $request->hasFile('student_documents'),
-                'membership_type_id_from_bundle' => $packageBundle?->membership_type_id
+                'membership_type_id_from_bundle' => $packageBundle?->membership_type_id,
             ]);
-            
+
             if ($isStudentMembership) {
                 // Get existing verification record
-                $existingVerification = \App\Models\StudentVerification::where('package_id', $packageId)->first();
+                $existingVerification = StudentVerification::where('package_id', $packageId)->first();
                 $existingDocPaths = $existingVerification ? ($existingVerification->document_paths ?? []) : [];
-                
+
                 // Handle document removal
                 $documentsToRemove = $request->documents_to_remove ? json_decode($request->documents_to_remove, true) : [];
-                if (!empty($documentsToRemove)) {
+                if (! empty($documentsToRemove)) {
                     foreach ($documentsToRemove as $docPath) {
                         // Remove from existing paths array
-                        $existingDocPaths = array_filter($existingDocPaths, fn($path) => $path !== $docPath);
+                        $existingDocPaths = array_filter($existingDocPaths, fn ($path) => $path !== $docPath);
                         // Delete file from storage
-                        $fullPath = storage_path('app/public/' . $docPath);
+                        $fullPath = storage_path('app/public/'.$docPath);
                         if (file_exists($fullPath)) {
                             unlink($fullPath);
                         }
                     }
                     $existingDocPaths = array_values($existingDocPaths); // Re-index array
-                    $messages[] = count($documentsToRemove) . ' document(s) removed';
-                    
+                    $messages[] = count($documentsToRemove).' document(s) removed';
+
                     \Log::info('Documents removed', [
                         'package_id' => $packageId,
                         'removed_count' => count($documentsToRemove),
-                        'remaining_count' => count($existingDocPaths)
+                        'remaining_count' => count($existingDocPaths),
                     ]);
                 }
-                
+
                 // Store new documents IMMEDIATELY
                 $documents = $request->file('student_documents', []);
                 $newStoredPaths = $this->storeStudentDocumentsImmediately($documents);
-                $hasNewDocuments = !empty($newStoredPaths);
-                
+                $hasNewDocuments = ! empty($newStoredPaths);
+
                 // Merge existing (after removal) with new documents
                 $allDocumentPaths = array_merge($existingDocPaths, $newStoredPaths);
-                
+
                 \Log::info('Student membership - document processing', [
                     'existing_after_removal' => count($existingDocPaths),
                     'new_uploaded' => count($newStoredPaths),
-                    'total_documents' => count($allDocumentPaths)
+                    'total_documents' => count($allDocumentPaths),
                 ]);
-                
+
                 // Update or create verification record
-                if (!empty($allDocumentPaths)) {
+                if (! empty($allDocumentPaths)) {
                     $membershipCodeId = $packageBundle?->membership_code_id;
-                    
+
                     if ($existingVerification) {
                         // Update existing record
                         $existingVerification->update([
@@ -324,23 +306,23 @@ class PackagesController extends Controller
                             'document_paths' => $allDocumentPaths,
                         ]);
                     }
-                    
+
                     if ($hasNewDocuments) {
                         $documentsUploaded = true;
-                        $messages[] = count($newStoredPaths) . ' document(s) uploaded';
+                        $messages[] = count($newStoredPaths).' document(s) uploaded';
                     }
                 } elseif ($existingVerification && empty($allDocumentPaths)) {
                     // All documents removed - delete the verification record
                     $existingVerification->delete();
                     \Log::info('Verification record deleted - no documents remaining', ['package_id' => $packageId]);
                 }
-                
+
                 // Check if student membership has documents
-                $hasStudentDocuments = !empty($allDocumentPaths);
-                
+                $hasStudentDocuments = ! empty($allDocumentPaths);
+
                 \Log::info('Student membership - final document status', [
                     'has_documents' => $hasStudentDocuments,
-                    'document_count' => count($allDocumentPaths)
+                    'document_count' => count($allDocumentPaths),
                 ]);
             }
 
@@ -350,7 +332,7 @@ class PackagesController extends Controller
             if ($paymentModeId && $cashAmount > 0) {
                 // Update package's updated_at
                 Packages::where('id', $packageId)->update(['updated_at' => Filters::getCurrentTimeStamp()]);
-                
+
                 $packageAdvanceData = [
                     'cash_flow' => 'in',
                     'cash_amount' => $cashAmount,
@@ -369,11 +351,11 @@ class PackagesController extends Controller
                 PackageAdvances::createRecord($packageAdvanceData, $package);
                 $paymentAdded = true;
                 $messages[] = 'Payment recorded';
-                
+
                 \Log::info('Payment added in edit', [
                     'package_id' => $packageId,
                     'cash_amount' => $cashAmount,
-                    'grand_total_after' => $grandTotal
+                    'grand_total_after' => $grandTotal,
                 ]);
             }
 
@@ -394,7 +376,7 @@ class PackagesController extends Controller
                 'is_fully_paid' => $isFullyPaid,
                 'is_student' => $isStudentMembership,
                 'has_documents' => $hasStudentDocuments,
-                'is_already_consumed' => $isAlreadyConsumed
+                'is_already_consumed' => $isAlreadyConsumed,
             ]);
 
             // ========================================
@@ -403,8 +385,8 @@ class PackagesController extends Controller
             // For student membership: consume only if fully paid AND has documents
             // For non-student membership: consume if fully paid
             $shouldConsume = false;
-            
-            if (!$isAlreadyConsumed && $isFullyPaid) {
+
+            if (! $isAlreadyConsumed && $isFullyPaid) {
                 if ($isStudentMembership) {
                     $shouldConsume = $hasStudentDocuments;
                 } else {
@@ -430,7 +412,7 @@ class PackagesController extends Controller
                     $membershipRecord = Membership::find($membershipCodeId);
                     if ($membershipRecord) {
                         $membershipType = MembershipType::find($packageBundle->membership_type_id);
-                        $durationDays = (int)($membershipType->period ?? 365);
+                        $durationDays = (int) ($membershipType->period ?? 365);
 
                         $startDate = now()->toDateString();
                         $endDate = now()->addDays($durationDays)->toDateString();
@@ -442,10 +424,10 @@ class PackagesController extends Controller
                             'assigned_at' => now()->toDateString(),
                             'updated_by' => Auth::id(),
                         ]);
-                        
+
                         \Log::info('Membership consumed in edit', [
                             'membership_code_id' => $membershipCodeId,
-                            'patient_id' => $patientId
+                            'patient_id' => $patientId,
                         ]);
                     }
                 }
@@ -500,6 +482,7 @@ class PackagesController extends Controller
             // ========================================
             if ($paymentAdded || $documentsUploaded || $membershipConsumed) {
                 $message = implode(', ', $messages);
+
                 return $this->successResponse($message);
             }
 
@@ -507,48 +490,46 @@ class PackagesController extends Controller
 
         } catch (\Exception $e) {
             // Round 4 Crypto-H3 — drop trace, keep file/line.
-            \Log::error('Update Membership Plan Error: ' . $e->getMessage(), [
+            \Log::error('Update Membership Plan Error: '.$e->getMessage(), [
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
+
             return $this->errorResponse('Failed to update membership.', 500);
         }
     }
 
     /**
      * Get bundles by location for bundle creation
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getbundles(Request $request): \Illuminate\Http\JsonResponse
+    public function getbundles(Request $request): JsonResponse
     {
         try {
-            if (!$request->has('location_id') || !$request->location_id) {
+            if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
             }
 
             $result = $this->planService->getBundlesByLocation((int) $request->location_id);
 
-            if (!empty($result['bundles'])) {
+            if (! empty($result['bundles'])) {
                 return $this->successResponse('Record found', $result);
             }
 
             return $this->errorResponse('No bundles found', 404);
         } catch (\Exception $e) {
-            \Log::error('Get Bundles Error: ' . $e->getMessage());
+            \Log::error('Get Bundles Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to load bundles.', 500);
         }
     }
 
     /**
      * Get membership types for membership creation
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getmemberships(Request $request): \Illuminate\Http\JsonResponse
+    public function getmemberships(Request $request): JsonResponse
     {
         try {
-            if (!$request->has('location_id') || !$request->location_id) {
+            if (! $request->has('location_id') || ! $request->location_id) {
                 return $this->errorResponse('Location ID is required.', 500);
             }
 
@@ -557,26 +538,25 @@ class PackagesController extends Controller
                 $request->patient_id ? (int) $request->patient_id : null
             );
 
-            if (!empty($result['memberships'])) {
+            if (! empty($result['memberships'])) {
                 return $this->successResponse('Record found', $result);
             }
 
             return $this->errorResponse('No memberships found', 404);
         } catch (\Exception $e) {
-            \Log::error('Get Memberships Error: ' . $e->getMessage());
+            \Log::error('Get Memberships Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to load memberships.', 500);
         }
     }
 
     /**
      * Get membership type info (price) for membership creation
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getmembershipinfo(Request $request): \Illuminate\Http\JsonResponse
+    public function getmembershipinfo(Request $request): JsonResponse
     {
         try {
-            if (!$request->membership_id) {
+            if (! $request->membership_id) {
                 return $this->errorResponse('Membership ID is required.', 500);
             }
 
@@ -586,22 +566,21 @@ class PackagesController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Get Membership Info Error: ' . $e->getMessage());
+            \Log::error('Get Membership Info Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to load membership info.', 500);
         }
     }
 
     /**
      * Search membership codes by keyword and check if assigned
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function searchMembershipCodes(Request $request): \Illuminate\Http\JsonResponse
+    public function searchMembershipCodes(Request $request): JsonResponse
     {
         try {
             $search = $request->search;
 
-            if (!$search || strlen($search) < 2) {
+            if (! $search || strlen($search) < 2) {
                 return response()->json(['status' => true, 'data' => ['codes' => []]]);
             }
 
@@ -612,17 +591,16 @@ class PackagesController extends Controller
 
             return response()->json(['status' => true, 'data' => $result]);
         } catch (\Exception $e) {
-            \Log::error('Search Membership Codes Error: ' . $e->getMessage());
+            \Log::error('Search Membership Codes Error: '.$e->getMessage());
+
             return response()->json(['status' => false, 'message' => 'Failed to search codes.']);
         }
     }
 
     /**
      * get discount information.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function getdiscountinfo(Request $request): \Illuminate\Http\JsonResponse
+    public function getdiscountinfo(Request $request): JsonResponse
     {
         $result = $this->planService->getDiscountInfo($request->all());
 
@@ -633,10 +611,8 @@ class PackagesController extends Controller
 
     /**
      * save packages services information.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function savepackages_service(Request $request): \Illuminate\Http\JsonResponse
+    public function savepackages_service(Request $request): JsonResponse
     {
         $result = $this->planService->savePackagesService($request->all());
 
@@ -644,10 +620,11 @@ class PackagesController extends Controller
             ? $this->successResponse($result['message'], $result['data'] ?? [])
             : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
     }
+
     /**
      * Add service/bundle to package (optimized)
      */
-    public function makePackagesServicesData(MakePackageServicesRequest $request): \Illuminate\Http\JsonResponse
+    public function makePackagesServicesData(MakePackageServicesRequest $request): JsonResponse
     {
         \Log::info('=== makePackagesServicesData (POST BUNDLE PATH) CALLED ===', [
             'bundle_id_from_request' => $request->bundle_id,
@@ -664,16 +641,18 @@ class PackagesController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Make Packages Services Data Error: ' . $e->getMessage());
+            \Log::error('Make Packages Services Data Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to add service to package.', 500);
         }
     }
+
     /**
      * get discount information for custom package.
      *
      * @return Response
      */
-    public function getdiscountinfocustom(Request $request): \Illuminate\Http\JsonResponse|false
+    public function getdiscountinfocustom(Request $request): JsonResponse|false
     {
         $result = $this->planService->getCustomDiscountInfo($request->all());
 
@@ -689,32 +668,52 @@ class PackagesController extends Controller
     /**
      * delete serive from packages
      *
-     * @param request
+     * @param Request
      */
-    public function deletepackagesservice(Request $request): \Illuminate\Http\JsonResponse
+    public function deletepackagesservice(Request $request): JsonResponse
     {
         $result = $this->planService->deletePackageService($request->all());
 
-        return $result['success']
-            ? $this->successResponse($result['message'], $result['data'] ?? [])
-            : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
+        if ($result['success']) {
+            return $this->successResponse($result['message'], $result['data'] ?? []);
+        }
+
+        // Business-rule failures (e.g. service already consumed) return 200 so the
+        // front-end success handler can branch on `status:false` + `data.del` and
+        // surface the toast/alert. jQuery's error handler is not wired at any of
+        // the delete call sites; a 4xx here would silently drop the message.
+        return response()->json([
+            'success' => false,
+            'status' => false,
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+            'errors' => $result['errors'] ?? [],
+        ], 200);
     }
 
-    public function deleteconfpackagesservice(Request $request): \Illuminate\Http\JsonResponse
+    public function deleteconfpackagesservice(Request $request): JsonResponse
     {
         $result = $this->planService->deleteConfigurablePackageService($request->all());
 
-        return $result['success']
-            ? $this->successResponse($result['message'], $result['data'] ?? [])
-            : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
+        if ($result['success']) {
+            return $this->successResponse($result['message'], $result['data'] ?? []);
+        }
+
+        return response()->json([
+            'success' => false,
+            'status' => false,
+            'message' => $result['message'],
+            'data' => $result['data'] ?? null,
+            'errors' => $result['errors'] ?? [],
+        ], 200);
     }
 
     /**
      * delete serive from packages
      *
-     * @param request
+     * @param Request
      */
-    public function deletepackagesexclusive(Request $request): \Illuminate\Http\JsonResponse
+    public function deletepackagesexclusive(Request $request): JsonResponse
     {
         $result = $this->planService->deleteExclusiveService($request->all());
 
@@ -726,12 +725,12 @@ class PackagesController extends Controller
     /**
      * save package
      *
-     * @param request
+     * @param Request
      */
     /**
      * Save plan package (optimized)
      */
-    public function savepackages(Request $request): \Illuminate\Http\JsonResponse
+    public function savepackages(Request $request): JsonResponse
     {
         try {
             // IMPORTANT: Store student documents IMMEDIATELY at the start of the request
@@ -741,83 +740,86 @@ class PackagesController extends Controller
                 $storedDocumentPaths = $this->storeStudentDocumentsImmediately($request->file('student_documents'));
                 \Log::info('Documents stored at controller entry', [
                     'count' => count($storedDocumentPaths),
-                    'paths' => $storedDocumentPaths
+                    'paths' => $storedDocumentPaths,
                 ]);
             }
-            
+
             // Pass the full request object and pre-stored document paths
             $data = $request->all();
             $data['pre_stored_document_paths'] = $storedDocumentPaths;
-            
+
             $result = $this->planService->savePlanPackage($data, $request);
-            
+
             return response()->json($result);
         } catch (PlanException $e) {
-            \Log::error('Save Packages Error: ' . $e->getMessage());
+            \Log::error('Save Packages Error: '.$e->getMessage());
+
             return response()->json([
                 'status' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Save Packages Error: ' . $e->getMessage());
+            \Log::error('Save Packages Error: '.$e->getMessage());
+
             return response()->json([
                 'status' => false,
-                'message' => 'An error occurred while saving the package'
+                'message' => 'An error occurred while saving the package',
             ]);
         }
     }
-    
+
     /**
      * Store student documents immediately to prevent temp file loss
      */
     private function storeStudentDocumentsImmediately($documents): array
     {
         $storedPaths = [];
-        
+
         if (empty($documents)) {
             return $storedPaths;
         }
-        
+
         // Round 4 C3 — store under storage/app/student_verifications (private),
         // NOT storage/app/public/student_verifications which is exposed via the
         // public/storage symlink. Files are streamed only through the
         // authenticated admin.files.student_verification route.
         $storagePath = storage_path('app/student_verifications');
-        if (!file_exists($storagePath)) {
+        if (! file_exists($storagePath)) {
             mkdir($storagePath, 0755, true);
         }
-        
+
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf'];
 
         foreach ($documents as $index => $document) {
-            if ($document instanceof \Illuminate\Http\UploadedFile && $document->isValid()) {
+            if ($document instanceof UploadedFile && $document->isValid()) {
                 try {
                     $extension = strtolower($document->getClientOriginalExtension() ?: 'jpg');
-                    if (!in_array($extension, $allowedExtensions, true)) {
+                    if (! in_array($extension, $allowedExtensions, true)) {
                         \Log::warning('Student document upload rejected: invalid extension', ['extension' => $extension]);
+
                         continue;
                     }
-                    $filename = 'student_doc_' . time() . '_' . $index . '_' . uniqid() . '.' . $extension;
-                    
+                    $filename = 'student_doc_'.time().'_'.$index.'_'.uniqid().'.'.$extension;
+
                     // Move the file immediately
                     $document->move($storagePath, $filename);
-                    
-                    $path = 'student_verifications/' . $filename;
+
+                    $path = 'student_verifications/'.$filename;
                     $storedPaths[] = $path;
-                    
+
                     \Log::info('Document stored immediately', [
                         'path' => $path,
-                        'original_name' => $document->getClientOriginalName()
+                        'original_name' => $document->getClientOriginalName(),
                     ]);
                 } catch (\Exception $e) {
                     \Log::error('Failed to store document immediately', [
                         'index' => $index,
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
                 }
             }
         }
-        
+
         return $storedPaths;
     }
 
@@ -829,112 +831,119 @@ class PackagesController extends Controller
      * 3. Check if a service is added on/after invoice creation date in any package for this patient
      * 4. Check if this is the FIRST payment after invoice creation date (no prior payments exist)
      * 5. If all conditions met, mark the consultation as converted and send Meta event
-     * 
+     *
      * NOTE: If consultation is already converted OR this is 2nd/3rd payment OR no new service added,
      *       do NOT mark as converted and do NOT send Meta event
-     * 
-     * @param int $appointment_id - The appointment being processed (used to get account_id and patient context)
-     * @param int $package_id - The package where service/payment was added
-     * @param float $payment_amount - The payment amount for Meta event
+     *
+     * @param  int  $appointment_id  - The appointment being processed (used to get account_id and patient context)
+     * @param  int  $package_id  - The package where service/payment was added
+     * @param  float  $payment_amount  - The payment amount for Meta event
      */
     private static function markAppointmentAsConverted($appointment_id, $package_id = null, $payment_amount = null): null
     {
-        if (!$appointment_id || !$package_id) {
+        if (! $appointment_id || ! $package_id) {
             \Log::info('markAppointmentAsConverted: Missing appointment_id or package_id');
+
             return null;
         }
-        
+
         $appointment = Appointments::find($appointment_id);
-        if (!$appointment) {
+        if (! $appointment) {
             \Log::info('markAppointmentAsConverted: Appointment not found');
+
             return null;
         }
 
         $package = Packages::find($package_id);
-        if (!$package) {
+        if (! $package) {
             \Log::info('markAppointmentAsConverted: Package not found');
+
             return null;
         }
-        
+
         // Get the arrived and converted appointment statuses
         $arrivedStatus = AppointmentStatuses::where([
             'account_id' => $appointment->account_id,
-            'is_arrived' => 1
+            'is_arrived' => 1,
         ])->first();
-        
+
         $convertedStatus = AppointmentStatuses::where([
             'account_id' => $appointment->account_id,
-            'is_converted' => 1
+            'is_converted' => 1,
         ])->first();
-        
-        if (!$arrivedStatus || !$convertedStatus) {
+
+        if (! $arrivedStatus || ! $convertedStatus) {
             \Log::info('markAppointmentAsConverted: Arrived or Converted status not found');
+
             return null;
         }
-        
+
         // Step 1: Find the latest arrived consultation for this patient
         // Only look for consultations that are still in "arrived" status (not already converted)
         $latestArrivedConsultation = Appointments::where([
-                'patient_id' => $package->patient_id,
-                'appointment_type_id' => AppointmentType::Consultancy->value, // Consultation
-                'base_appointment_status_id' => $arrivedStatus->id
-            ])
+            'patient_id' => $package->patient_id,
+            'appointment_type_id' => AppointmentType::Consultancy->value, // Consultation
+            'base_appointment_status_id' => $arrivedStatus->id,
+        ])
             ->whereNull('deleted_at')
             ->orderBy('scheduled_date', 'desc')
             ->orderBy('id', 'desc')
             ->first();
-        
-        if (!$latestArrivedConsultation) {
+
+        if (! $latestArrivedConsultation) {
             \Log::info('markAppointmentAsConverted: No arrived consultation found for patient (may already be converted)', [
-                'patient_id' => $package->patient_id
+                'patient_id' => $package->patient_id,
             ]);
+
             return null;
         }
-        
+
         \Log::info('markAppointmentAsConverted: Found latest arrived consultation', [
             'appointment_id' => $latestArrivedConsultation->id,
-            'patient_id' => $package->patient_id
+            'patient_id' => $package->patient_id,
         ]);
-        
+
         // Step 2: Get the invoice creation date of this consultation
-        $consultationInvoice = \App\Models\Invoices::where('appointment_id', $latestArrivedConsultation->id)
+        $consultationInvoice = Invoices::where('appointment_id', $latestArrivedConsultation->id)
             ->whereNull('deleted_at')
             ->orderBy('created_at', 'asc')
             ->first();
-        
-        if (!$consultationInvoice) {
+
+        if (! $consultationInvoice) {
             \Log::info('markAppointmentAsConverted: No invoice found for consultation', [
-                'appointment_id' => $latestArrivedConsultation->id
+                'appointment_id' => $latestArrivedConsultation->id,
             ]);
+
             return null;
         }
-        
+
         $invoiceCreatedAt = $consultationInvoice->created_at;
-        $invoiceDate = \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d');
-        
+        $invoiceDate = Carbon::parse($invoiceCreatedAt)->format('Y-m-d');
+
         \Log::info('markAppointmentAsConverted: Invoice found', [
             'invoice_id' => $consultationInvoice->id,
-            'invoice_date' => $invoiceDate
+            'invoice_date' => $invoiceDate,
         ]);
-        
+
         // Step 3: Check if a service is added on/after invoice creation date in any package for this patient
         $patientPackageIds = Packages::where('patient_id', $package->patient_id)
             ->whereNull('deleted_at')
             ->pluck('id');
-        
+
         $packageBundleIds = PackageBundles::whereIn('package_id', $patientPackageIds)->pluck('id');
-        
+
         $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packageBundleIds)
             ->whereDate('created_at', '>=', $invoiceDate)
             ->exists();
-        
-        if (!$serviceAfterInvoice) {
+
+        if (! $serviceAfterInvoice) {
             \Log::info('markAppointmentAsConverted: No service found on/after invoice date - not converting', [
-                'invoice_date' => $invoiceDate
+                'invoice_date' => $invoiceDate,
             ]);
+
             return null;
         }
-        
+
         // Step 4: Check if this is the FIRST payment after invoice creation date
         // Count how many payments exist on/after invoice date (excluding the current one being added)
         $existingPaymentsCount = PackageAdvances::whereIn('package_id', $patientPackageIds)
@@ -943,72 +952,73 @@ class PackagesController extends Controller
             ->whereNull('deleted_at')
             ->whereDate('created_at', '>=', $invoiceDate)
             ->count();
-        
+
         // If more than 1 payment exists (current + previous), this is not the first payment
         // Note: The current payment is already saved when this function is called, so count > 1 means duplicate
         if ($existingPaymentsCount > 1) {
             \Log::info('markAppointmentAsConverted: This is not the first payment after invoice date - not converting', [
                 'invoice_date' => $invoiceDate,
-                'existing_payments_count' => $existingPaymentsCount
+                'existing_payments_count' => $existingPaymentsCount,
             ]);
+
             return null;
         }
-        
+
         \Log::info('markAppointmentAsConverted: Conversion criteria met (first payment + service after invoice), marking as converted', [
             'appointment_id' => $latestArrivedConsultation->id,
-            'invoice_date' => $invoiceDate
+            'invoice_date' => $invoiceDate,
         ]);
-        
+
         // Step 5: Mark the consultation as converted
         $latestArrivedConsultation->update([
             'base_appointment_status_id' => $convertedStatus->id,
             'appointment_status_id' => $convertedStatus->id,
-            'converted_at' => now()
+            'converted_at' => now(),
         ]);
-        
+
         // Log activity for conversion
-        $patient = \App\Models\Patients::find($package->patient_id);
+        $patient = Patients::find($package->patient_id);
         $location = Locations::with('city')->find($latestArrivedConsultation->location_id);
         $service = Services::find($latestArrivedConsultation->service_id);
-        
+
         // Log appointment converted activity
-        \App\Helpers\ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $payment_amount, $package_id);
-        
+        ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $payment_amount, $package_id);
+
         // Also update lead status to converted and log it
         if ($latestArrivedConsultation->lead_id) {
             $lead = Leads::find($latestArrivedConsultation->lead_id);
             if ($lead) {
-                $convertedLeadStatus = \App\Models\LeadStatuses::where([
+                $convertedLeadStatus = LeadStatuses::where([
                     'account_id' => $latestArrivedConsultation->account_id,
-                    'is_converted' => 1
+                    'is_converted' => 1,
                 ])->first();
-                
+
                 if ($convertedLeadStatus) {
                     $lead->update(['lead_status_id' => $convertedLeadStatus->id]);
-                    \App\Helpers\ActivityLogger::logLeadConverted($lead, $latestArrivedConsultation, $location, $service, $payment_amount);
+                    ActivityLogger::logLeadConverted($lead, $latestArrivedConsultation, $location, $service, $payment_amount);
                 }
             }
         }
-        
+
         // Send Meta CAPI event
         self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
     }
-    
+
     /**
      * Send Meta CAPI event for converted status
-     * 
-     * @param Appointments $appointment
-     * @param int $package_id
-     * @param float $payment_amount
+     *
+     * @param  Appointments  $appointment
+     * @param  int  $package_id
+     * @param  float  $payment_amount
      */
     private static function sendMetaConvertedEvent($appointment, $package_id, $payment_amount): null
     {
-        if (!$appointment || !$appointment->lead_id) {
+        if (! $appointment || ! $appointment->lead_id) {
             return null;
         }
 
         $lead = Leads::find($appointment->lead_id);
-        if (!$lead) {
+        if (! $lead) {
             return null;
         }
 
@@ -1021,15 +1031,16 @@ class PackagesController extends Controller
         if ($alreadySent) {
             \Log::info('Meta CAPI converted event already sent for this lead, skipping', [
                 'lead_id' => $lead->id,
-                'appointment_id' => $appointment->id
+                'appointment_id' => $appointment->id,
             ]);
+
             return null;
         }
-        
+
         try {
-            $metaService = new MetaConversionApiService();
+            $metaService = new MetaConversionApiService;
             // Use appointment_id as lead_id for event_id if meta_lead_id is null
-            $eventLeadId = $lead->meta_lead_id ?? 'apt_' . $appointment->id;
+            $eventLeadId = $lead->meta_lead_id ?? 'apt_'.$appointment->id;
             $metaService->sendLeadStatus(
                 $lead->phone,
                 'converted',
@@ -1038,27 +1049,27 @@ class PackagesController extends Controller
                 'PKR',
                 $payment_amount ?? 0
             );
-            
+
             // Mark this appointment as having sent the Meta purchase event
             $appointment->update(['meta_purchase_sent' => 1]);
-            
+
             \Log::info('Meta CAPI converted event sent', [
                 'lead_id' => $lead->id,
                 'appointment_id' => $appointment->id,
-                'event_lead_id' => $eventLeadId
+                'event_lead_id' => $eventLeadId,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Meta CAPI converted event failed: ' . $e->getMessage());
+            \Log::error('Meta CAPI converted event failed: '.$e->getMessage());
         }
     }
 
     /**
      * Get service info
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getserviceinfo(Request $request): \Illuminate\Http\JsonResponse
+    public function getserviceinfo(Request $request): JsonResponse
     {
         $result = $this->planService->getServiceInfoForPackage($request->all());
 
@@ -1067,15 +1078,14 @@ class PackagesController extends Controller
             : $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
     }
 
-   
     /**
      * Get service info for simple plans (non-bundle)
      * Directly queries services table instead of bundles
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getserviceinfo_for_plan(Request $request): \Illuminate\Http\JsonResponse
+    public function getserviceinfo_for_plan(Request $request): JsonResponse
     {
         $result = $this->planService->getServiceInfoForPlan($request->all());
 
@@ -1086,15 +1096,14 @@ class PackagesController extends Controller
         return $this->errorResponse($result['message'], $result['status_code'] ?? 404, $result['data'] ?? []);
     }
 
-
     /**
      * Get discount info for simple plans (non-bundle)
      * Directly queries services table instead of bundles
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getdiscountinfo_for_plan(Request $request): \Illuminate\Http\JsonResponse
+    public function getdiscountinfo_for_plan(Request $request): JsonResponse
     {
         $result = $this->planService->getDiscountInfoForPlan($request->all());
 
@@ -1103,15 +1112,14 @@ class PackagesController extends Controller
             : $this->errorResponse($result['message'], $result['status_code'] ?? 404);
     }
 
-
     /**
      * Get custom discount info for simple plans (non-bundle)
      * Directly queries services table instead of bundles
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getdiscountinfocustom_for_plan(Request $request): \Illuminate\Http\JsonResponse
+    public function getdiscountinfocustom_for_plan(Request $request): JsonResponse
     {
         $result = $this->planService->getCustomDiscountInfoForPlan($request->all());
 
@@ -1124,10 +1132,10 @@ class PackagesController extends Controller
      * Save service to plan - handles both simple and configurable discounts.
      * For plans, services are stored directly (not via bundles).
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function savepackages_service_for_plan(Request $request): \Illuminate\Http\JsonResponse
+    public function savepackages_service_for_plan(Request $request): JsonResponse
     {
         $result = $this->planService->saveServiceForPlan($request->all());
 
@@ -1137,12 +1145,60 @@ class PackagesController extends Controller
     }
 
     /**
+     * Reserve voucher amount at the moment the user clicks "Add" on
+     * the plan form. Decrements `user_vouchers.amount` immediately so
+     * picking the same voucher on a subsequent row reflects the
+     * reduced balance — even before the plan is saved.
+     */
+    public function reserveVoucherForPlan(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'voucher_id' => 'required|integer|exists:discounts,id',
+            'patient_id' => 'required|integer|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $result = $this->planService->reserveVoucherAmount(
+            (int) $validated['voucher_id'],
+            (int) $validated['patient_id'],
+            (float) $validated['amount'],
+        );
+
+        return $result['success']
+            ? $this->successResponse($result['message'], $result['data'] ?? [])
+            : $this->errorResponse($result['message'], $result['status_code'] ?? 500, $result['data'] ?? []);
+    }
+
+    /**
+     * Refund a prior reservation — called when the user removes a
+     * plan row or abandons the in-progress plan.
+     */
+    public function refundVoucherForPlan(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'voucher_id' => 'required|integer|exists:discounts,id',
+            'patient_id' => 'required|integer|exists:users,id',
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $result = $this->planService->refundVoucherAmount(
+            (int) $validated['voucher_id'],
+            (int) $validated['patient_id'],
+            (float) $validated['amount'],
+        );
+
+        return $result['success']
+            ? $this->successResponse($result['message'], $result['data'] ?? [])
+            : $this->errorResponse($result['message'], $result['status_code'] ?? 500);
+    }
+
+    /**
      * Get service info whan discount not selected
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getservices_for_zero(Request $request): \Illuminate\Http\JsonResponse
+    public function getservices_for_zero(Request $request): JsonResponse
     {
         $result = $this->planService->getBundleServices((int) $request->bundle_id);
 
@@ -1154,10 +1210,10 @@ class PackagesController extends Controller
     /**
      * calculate the grand total
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getgrandtotal(Request $request): \Illuminate\Http\JsonResponse
+    public function getgrandtotal(Request $request): JsonResponse
     {
         $result = $this->planService->calculateGrandTotal(
             (string) $request->total,
@@ -1170,17 +1226,15 @@ class PackagesController extends Controller
     /**
      * Display a User As package in datatables.
      *
-     * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request
      */
 
     /**
      * Inactive Record from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function status(Request $request): \Illuminate\Http\JsonResponse
+    public function status(Request $request): JsonResponse
     {
         $this->authorize('inactivatePlan', Packages::class);
 
@@ -1196,32 +1250,29 @@ class PackagesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request): \Illuminate\Http\JsonResponse
+    public function store(Request $request): JsonResponse
     {
         abort(404);
     }
 
-    public function show(int $id): \Illuminate\Http\JsonResponse
+    public function show(int $id): JsonResponse
     {
         abort(404);
     }
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
     /**
      * Get edit form data for package (optimized)
      */
-    public function edit(int $id): \Illuminate\Http\JsonResponse
+    public function edit(int $id): JsonResponse
     {
         $this->authorize('editPlan', Packages::class);
 
         try {
             $data = $this->planService->getEditFormData($id);
-            
+
             return $this->successResponse('Record found.', $data);
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -1233,10 +1284,10 @@ class PackagesController extends Controller
     /**
      * calculate the grand total
      *
-     * @param request
+     * @param Request
      * @return mixed
      */
-    public function getgrandtotal_update(Request $request): \Illuminate\Http\JsonResponse
+    public function getgrandtotal_update(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->calculateGrandTotalForUpdate(
@@ -1249,7 +1300,8 @@ class PackagesController extends Controller
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Get Grand Total Update Error: ' . $e->getMessage());
+            \Log::error('Get Grand Total Update Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to calculate grand total.', 500);
         }
     }
@@ -1262,7 +1314,7 @@ class PackagesController extends Controller
     /**
      * Update bundle plan
      */
-    public function updatebundle(Request $request): \Illuminate\Http\JsonResponse
+    public function updatebundle(Request $request): JsonResponse
     {
         try {
             $request->validate([
@@ -1270,7 +1322,7 @@ class PackagesController extends Controller
                 'appointment_id' => 'required|exists:appointments,id',
                 'payment_mode_id' => 'nullable|exists:payment_modes,id',
                 'cash_amount' => 'nullable|numeric|min:0',
-                'grand_total' => 'nullable|numeric'
+                'grand_total' => 'nullable|numeric',
             ]);
 
             $result = $this->planService->updateBundlePayment($request->all());
@@ -1280,11 +1332,12 @@ class PackagesController extends Controller
                 : $this->errorResponse($result['message'], $result['status_code'] ?? 500);
 
         } catch (\Exception $e) {
-            \Log::error('Update Bundle Error: ' . $e->getMessage());
+            \Log::error('Update Bundle Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to update bundle plan.', 500);
         }
     }
-    
+
     /**
      * Update plan name for a package based on its bundles/memberships.
      * Delegates to PlanService.
@@ -1297,27 +1350,29 @@ class PackagesController extends Controller
     /**
      * Update plan package (optimized)
      */
-    public function updatepackages(UpdatePackagesRequest $request): \Illuminate\Http\JsonResponse
+    public function updatepackages(UpdatePackagesRequest $request): JsonResponse
     {
 
         try {
             $result = $this->planService->updatePlanPackage($request->all());
-            
+
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (PlanException $e) {
-            \Log::error('Update Packages Error: ' . $e->getMessage());
-            
+            \Log::error('Update Packages Error: '.$e->getMessage());
+
             // Check if it's a settled package error
             if ($e->getCode() == 400 && str_contains($e->getMessage(), 'settled')) {
                 return $this->successResponse($e->getMessage(), false, ['setteled' => 1]);
             }
-            
+
             return $this->successResponse($e->getMessage(), false);
         } catch (\Exception $e) {
-            \Log::error('Update Packages Error: ' . $e->getMessage());
+            \Log::error('Update Packages Error: '.$e->getMessage());
+
             return $this->successResponse('An error occurred. Please try again.', false);
         }
     }
+
     protected function verifyRefundsFields(Request $request): \Illuminate\Contracts\Validation\Validator
     {
         return $validator = Validator::make($request->all(), [
@@ -1325,51 +1380,46 @@ class PackagesController extends Controller
             'refund_note' => 'required',
             'payment_mode_id' => 'required',
 
-
         ]);
     }
+
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
     /**
      * Delete plan package (optimized)
      */
-    public function destroy(int $id): \Illuminate\Http\JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         $this->authorize('destroyPlan', Packages::class);
 
         try {
             $result = $this->planService->deletePlan($id);
-            
+
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (PlanException $e) {
             // Return clean error message without file path
             return $this->errorResponse($e->getMessage(), 500);
         } catch (\Exception $e) {
-            \Log::error('Delete Package Error: ' . $e->getMessage());
+            \Log::error('Delete Package Error: '.$e->getMessage());
+
             return $this->errorResponse('An error occurred while deleting the package.', 500);
         }
     }
 
     /**
      * display the package.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
     /**
      * Display package details (optimized)
      */
-    public function display(int $id): \Illuminate\Http\JsonResponse
+    public function display(int $id): JsonResponse
     {
         $this->authorize('managePlans', Packages::class);
 
         try {
             $data = $this->planService->getDisplayData($id);
-            
+
             return $this->successResponse('Record found.', $data);
         } catch (PlanException $e) {
             return $this->errorResponse($e->getMessage(), 500);
@@ -1409,9 +1459,6 @@ class PackagesController extends Controller
 
     /**
      * Print the package.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
      */
     public function package_pdf(int $id): \Illuminate\Http\Response
     {
@@ -1444,7 +1491,7 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
-        
+
         // For membership plans, use PackageBundles sum; for others use PackageService sum.
         // Cast to float — Eloquent `sum()` on a decimal column returns a
         // string, which would break the `number_format()` call below (PHP 8
@@ -1455,8 +1502,8 @@ class PackagesController extends Controller
             $packageservices_price = (float) PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         }
         $cash_amount = (float) $cash_amount_in - (float) $cash_amount_out;
-        /*We discuss it in future what happen next*/
-        //$grand_total = number_format($package->total_price - $cash_amount_in);
+        /* We discuss it in future what happen next */
+        // $grand_total = number_format($package->total_price - $cash_amount_in);
         $grand_total = number_format($packageservices_price);
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::user()->account_id);
@@ -1470,13 +1517,13 @@ class PackagesController extends Controller
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content->render());
 
-        return $pdf->stream('treatment-plans-invoice-C-' . $package->patient_id . '.pdf');
+        return $pdf->stream('treatment-plans-invoice-C-'.$package->patient_id.'.pdf');
     }
 
     /*
      * $edit the cash that enter in package advances
      */
-    public function editpackageadvancescashindex(int $id, int $package_id): \Illuminate\View\View
+    public function editpackageadvancescashindex(int $id, int $package_id): JsonResponse
     {
         $pack_adv_info = PackageAdvances::find($id);
 
@@ -1487,14 +1534,13 @@ class PackagesController extends Controller
             'package_id' => $package_id,
             'paymentmodes' => $paymentmodes,
         ]);
-        //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
     }
 
     /*
      * Store the cash that is request to change
      */
 
-    public function storepackageadvancescash(Request $request): \Illuminate\Http\JsonResponse
+    public function storepackageadvancescash(Request $request): JsonResponse
     {
         $result = $this->planService->storePayment($request->all());
 
@@ -1508,7 +1554,7 @@ class PackagesController extends Controller
     /*
      * Delete the cash that reqquire to delete
      */
-    public function deletepackageadvancescash(Request $request): \Illuminate\Http\JsonResponse
+    public function deletepackageadvancescash(Request $request): JsonResponse
     {
         $result = $this->planService->deletePayment($request->all());
 
@@ -1522,10 +1568,10 @@ class PackagesController extends Controller
     /*
      *  Get the information of appointment against (optimized)
      */
-    public function getappointmentinfo(Request $request): \Illuminate\Http\JsonResponse
+    public function getappointmentinfo(Request $request): JsonResponse
     {
         // Validate required parameters
-        if (!$request->patient_id || !$request->location_id) {
+        if (! $request->patient_id || ! $request->location_id) {
             return $this->errorResponse('Patient ID and Location ID are required.', 500);
         }
 
@@ -1537,7 +1583,8 @@ class PackagesController extends Controller
 
             return $this->successResponse('Record found', $data);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Get Appointment Info Error: ' . $e->getMessage());
+            Log::error('Get Appointment Info Error: '.$e->getMessage());
+
             return $this->errorResponse('Failed to load appointment information.', 500);
         }
     }
@@ -1545,7 +1592,7 @@ class PackagesController extends Controller
     /*
      * Get sold by data for editing
      */
-    public function getSoldByData(Request $request): \Illuminate\Http\JsonResponse
+    public function getSoldByData(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->getSoldByData(
@@ -1568,7 +1615,7 @@ class PackagesController extends Controller
     /*
      * Update sold by for package service(s)
      */
-    public function updateSoldBy(Request $request): \Illuminate\Http\JsonResponse
+    public function updateSoldBy(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->updateSoldBy($request->all());
@@ -1586,7 +1633,7 @@ class PackagesController extends Controller
     /*
      * Check if service is duplicate and return appropriate sold by users
      */
-    public function checkDuplicateServiceForSoldBy(Request $request): \Illuminate\Http\JsonResponse
+    public function checkDuplicateServiceForSoldBy(Request $request): JsonResponse
     {
         try {
             $result = $this->planService->checkDuplicateServiceForSoldBy($request->all());
@@ -1604,7 +1651,7 @@ class PackagesController extends Controller
     /*
      *  Function for log for package
      */
-    public function packagelog(int $id, string $type): \Illuminate\View\View
+    public function packagelog(int $id, string $type): View
     {
         $this->authorize('viewLog', Packages::class);
 
@@ -1661,7 +1708,7 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 // Was a second copy of the same query — reuse the eager-loaded relation.
                 $type_2_detail = $audittrail->auditTrailChanges;
@@ -1690,7 +1737,7 @@ class PackagesController extends Controller
         return $this->packagelogexcel($id, $finance_log);
     }
 
-    public function planDatatable(Request $request, int $id): \Illuminate\Http\JsonResponse
+    public function planDatatable(Request $request, int $id): JsonResponse
     {
 
         $records = [];
@@ -1758,7 +1805,7 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 // Was a second copy of the same query — reuse the eager-loaded relation.
                 $type_2_detail = $audittrail->auditTrailChanges;
@@ -1780,7 +1827,7 @@ class PackagesController extends Controller
             }
         }
 
-        if (!empty($finance_log)) {
+        if (! empty($finance_log)) {
 
             $records['data'] = $finance_log;
 
@@ -1805,7 +1852,7 @@ class PackagesController extends Controller
     {
         $this->authorize('viewLog', Packages::class);
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $Excel_writer = new Xlsx($spreadsheet);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1840,35 +1887,35 @@ class PackagesController extends Controller
         $counter = 4;
 
         foreach ($finance_log as $log) {
-            if ((isset($log['package_id']) && $log['package_id'] == $id) || !isset($log['package_id'])) {
-                $activeSheet->setCellValue('A' . $counter, $count++);
-                $activeSheet->setCellValue('B' . $counter, $log['cash_flow'] ?? '-');
-                $activeSheet->setCellValue('C' . $counter, $log['cash_amount'] ?? '-');
-                $activeSheet->setCellValue('D' . $counter, $log['is_refund'] ?? '-');
-                $activeSheet->setCellValue('E' . $counter, $log['is_adjustment'] ?? '-');
-                $activeSheet->setCellValue('F' . $counter, $log['is_tax'] ?? '-');
-                $activeSheet->setCellValue('G' . $counter, $log['is_cancel'] ?? '-');
-                $activeSheet->setCellValue('H' . $counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
-                $activeSheet->setCellValue('I' . $counter, $log['refund_note'] ?? '-');
-                $activeSheet->setCellValue('J' . $counter, $log['payment_mode_id'] ?? '-');
-                $activeSheet->setCellValue('K' . $counter, $log['appointment_type_id'] ?? '-');
-                $activeSheet->setCellValue('L' . $counter, $log['location_id'] ?? '-');
-                $activeSheet->setCellValue('M' . $counter, $log['created_by'] ?? '-');
-                $activeSheet->setCellValue('N' . $counter, isset($log['cash_flow']) ? ($log['updated_by'] ?? '-') : $log['user_id']);
-                $activeSheet->setCellValue('O' . $counter, $log['package_id'] ?? '-');
-                $activeSheet->setCellValue('P' . $counter, $log['invoice_id'] ?? '-');
-                $activeSheet->setCellValue('Q' . $counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
-                $activeSheet->setCellValue('R' . $counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
+            if ((isset($log['package_id']) && $log['package_id'] == $id) || ! isset($log['package_id'])) {
+                $activeSheet->setCellValue('A'.$counter, $count++);
+                $activeSheet->setCellValue('B'.$counter, $log['cash_flow'] ?? '-');
+                $activeSheet->setCellValue('C'.$counter, $log['cash_amount'] ?? '-');
+                $activeSheet->setCellValue('D'.$counter, $log['is_refund'] ?? '-');
+                $activeSheet->setCellValue('E'.$counter, $log['is_adjustment'] ?? '-');
+                $activeSheet->setCellValue('F'.$counter, $log['is_tax'] ?? '-');
+                $activeSheet->setCellValue('G'.$counter, $log['is_cancel'] ?? '-');
+                $activeSheet->setCellValue('H'.$counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
+                $activeSheet->setCellValue('I'.$counter, $log['refund_note'] ?? '-');
+                $activeSheet->setCellValue('J'.$counter, $log['payment_mode_id'] ?? '-');
+                $activeSheet->setCellValue('K'.$counter, $log['appointment_type_id'] ?? '-');
+                $activeSheet->setCellValue('L'.$counter, $log['location_id'] ?? '-');
+                $activeSheet->setCellValue('M'.$counter, $log['created_by'] ?? '-');
+                $activeSheet->setCellValue('N'.$counter, isset($log['cash_flow']) ? ($log['updated_by'] ?? '-') : $log['user_id']);
+                $activeSheet->setCellValue('O'.$counter, $log['package_id'] ?? '-');
+                $activeSheet->setCellValue('P'.$counter, $log['invoice_id'] ?? '-');
+                $activeSheet->setCellValue('Q'.$counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
+                $activeSheet->setCellValue('R'.$counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
 
                 if ($log['action'] == 'Delete') {
-                    $activeSheet->setCellValue('S' . $counter, '-');
-                    $activeSheet->setCellValue('T' . $counter, '-');
+                    $activeSheet->setCellValue('S'.$counter, '-');
+                    $activeSheet->setCellValue('T'.$counter, '-');
                 } else {
-                    $activeSheet->setCellValue('S' . $counter, isset($log['created_at_orignal']) ? \Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
-                    $activeSheet->setCellValue('T' . $counter, isset($log['updated_at_orignal']) ? \Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('S'.$counter, isset($log['created_at_orignal']) ? Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('T'.$counter, isset($log['updated_at_orignal']) ? Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
                 }
 
-                $activeSheet->setCellValue('U' . $counter, isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
+                $activeSheet->setCellValue('U'.$counter, isset($log['deleted_at']) ? Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
 
                 $counter++;
 
@@ -1876,18 +1923,18 @@ class PackagesController extends Controller
 
                     $countt = 1;
 
-                    $activeSheet->setCellValue('H' . $counter, '#')->getStyle('H' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('I' . $counter, 'Field Name')->getStyle('I' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('J' . $counter, 'Before')->getStyle('J' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('K' . $counter, 'After')->getStyle('K' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('H'.$counter, '#')->getStyle('H'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('I'.$counter, 'Field Name')->getStyle('I'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('J'.$counter, 'Before')->getStyle('J'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('K'.$counter, 'After')->getStyle('K'.$counter)->getFont()->setBold(true);
 
                     $counter++;
 
                     foreach ($log['detail_log'] as $detail) {
-                        $activeSheet->setCellValue('H' . $counter, $countt++);
-                        $activeSheet->setCellValue('I' . $counter, $detail['field_name'] ?? '-');
-                        $activeSheet->setCellValue('J' . $counter, $detail['field_before'] ?? '-');
-                        $activeSheet->setCellValue('K' . $counter, $detail['field_after'] ?? '-');
+                        $activeSheet->setCellValue('H'.$counter, $countt++);
+                        $activeSheet->setCellValue('I'.$counter, $detail['field_name'] ?? '-');
+                        $activeSheet->setCellValue('J'.$counter, $detail['field_before'] ?? '-');
+                        $activeSheet->setCellValue('K'.$counter, $detail['field_after'] ?? '-');
 
                         $counter++;
                     }
@@ -1896,18 +1943,15 @@ class PackagesController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'PackageLog' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'PackageLog'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
     /**
      * Load plan Sms History.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function showSMSLogs(int $id): \Illuminate\Http\JsonResponse
+    public function showSMSLogs(int $id): JsonResponse
     {
         $SMSLogs = SMSLogs::where('package_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
@@ -1919,10 +1963,9 @@ class PackagesController extends Controller
     /**
      * Re-send Plan SMS
      *
-     * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  StoreUpdateAppointmentsRequest  $request
      */
-    public function sendLogSMS(Request $request): \Illuminate\Http\JsonResponse
+    public function sendLogSMS(Request $request): JsonResponse
     {
         $result = $this->planService->resendSms((int) $request->get('id'));
 
@@ -1937,24 +1980,28 @@ class PackagesController extends Controller
      * Function get the variable to search in database to get the package
      *
      * */
-    public function getpackage(Request $request): \Illuminate\Http\JsonResponse
+    public function getpackage(Request $request): JsonResponse
     {
         $package = Packages::where('name', 'LIKE', "%{$request->q}%")->select('name', 'id')->get();
 
         return response()->json($package);
     }
-    public function getPlans(Request $request): \Illuminate\Http\JsonResponse
+
+    public function getPlans(Request $request): JsonResponse
     {
-        $plans  = Packages::where('patient_id', $request->patient_id)->pluck('name');
+        $plans = Packages::where('patient_id', $request->patient_id)->pluck('name');
+
         return response()->json(['stataus' => 1, 'message' => 'plan found', 'plans' => $plans]);
     }
-    public function editRefund(int $id): \Illuminate\Http\JsonResponse
+
+    public function editRefund(int $id): JsonResponse
     {
         $result = $this->planService->getRefundFormData((int) $id);
 
         return $this->successResponse($result['message'], $result['data']);
     }
-    public function updateRefund(Request $request): \Illuminate\Http\JsonResponse
+
+    public function updateRefund(Request $request): JsonResponse
     {
         $validator = $this->verifyFields($request);
 
@@ -1970,6 +2017,7 @@ class PackagesController extends Controller
 
         return $this->errorResponse($result['message'], 500);
     }
+
     protected function verifyFields(Request $request): \Illuminate\Contracts\Validation\Validator
     {
         $rules = [
@@ -1986,13 +2034,15 @@ class PackagesController extends Controller
 
         return Validator::make($request->all(), $rules, $customMessages);
     }
-    public function viewPackage(int $id): \Illuminate\View\View
+
+    public function viewPackage(int $id): View
     {
 
         $url = route('admin.packages.edit', $id);
 
         return view('admin.packages.details', compact('url'));
     }
+
     public function storeRecord($package, $request): ?bool
     {
 
@@ -2030,13 +2080,28 @@ class PackagesController extends Controller
                     }
                     $calculatedServicesPrice = Bundles::calculatePrices($calculable_servcies, str_replace(',', '', $packageBundle['RegularPrice']), $packageBundle['Total']);
                     foreach ($calculatedServicesPrice as $calculatedServicePrice) {
-                    $data_service['random_id'] = $request->random_id;
-                    $data_service['package_bundle_id'] = $packageBundleRecord->id;
-                    $data_service['service_id'] = $calculatedServicePrice['service_id'];
-                    $data_service['price'] = $calculatedServicePrice['calculated_price'];
-                    $data_service['orignal_price'] = $calculatedServicePrice['service_price'];
-                    if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
-                        if ($request->is_exclusive == '1') {
+                        $data_service['random_id'] = $request->random_id;
+                        $data_service['package_bundle_id'] = $packageBundleRecord->id;
+                        $data_service['service_id'] = $calculatedServicePrice['service_id'];
+                        $data_service['price'] = $calculatedServicePrice['calculated_price'];
+                        $data_service['orignal_price'] = $calculatedServicePrice['service_price'];
+                        if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                            if ($request->is_exclusive == '1') {
+                                $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
+                                $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
+                                $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
+
+                                $data_service['is_exclusive'] = 1;
+                            } else {
+                                $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
+                                $data_service['tax_percentage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
+                                $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+
+                                $data_service['is_exclusive'] = 0;
+                            }
+                        } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                             $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
                             $data_service['tax_percentage'] = $location_information->tax_percentage;
                             $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
@@ -2051,32 +2116,19 @@ class PackagesController extends Controller
 
                             $data_service['is_exclusive'] = 0;
                         }
-                    } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                        $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
-                        $data_service['tax_percentage'] = $location_information->tax_percentage;
-                        $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
-                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percentage']) / 100));
-
-                        $data_service['is_exclusive'] = 1;
-                    } else {
-                        $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
-                        $data_service['tax_percentage'] = $location_information->tax_percentage;
-                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percentage'] + 100));
-                        $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
-
-                        $data_service['is_exclusive'] = 0;
+                        $data_service['created_at'] = Filters::getCurrentTimeStamp();
+                        $data_service['updated_at'] = Filters::getCurrentTimeStamp();
+                        $data_service['sold_by'] = $packageBundle['sold_by'];
+                        $packageservice = PackageService::createPackageService($data_service);
                     }
-                    $data_service['created_at'] = Filters::getCurrentTimeStamp();
-                    $data_service['updated_at'] = Filters::getCurrentTimeStamp();
-                    $data_service['sold_by'] =$packageBundle['sold_by'] ;
-                    $packageservice = PackageService::createPackageService($data_service);
                 }
-                }
+
                 return true;
             });
         }
     }
-    public function deleteplanrowtem(Request $request): \Illuminate\Http\JsonResponse
+
+    public function deleteplanrowtem(Request $request): JsonResponse
     {
         $result = $this->planService->deletePlanRow($request->all());
 
@@ -2086,7 +2138,7 @@ class PackagesController extends Controller
         ]);
     }
 
-    public function resetvoucherpacakgebundles(Request $request): \Illuminate\Http\JsonResponse
+    public function resetvoucherpacakgebundles(Request $request): JsonResponse
     {
         $result = $this->planService->resetVoucherPackageBundles($request->all());
 

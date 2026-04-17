@@ -17,14 +17,17 @@ class PatientAppointmentResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'Patient_ID' => $this->patient_id ?? $this->id,
             'name' => $this->patient_name ?? '',
             'phone' => $this->when($canViewContact, fn () => $this->patient_phone ?? ''),
             'scheduled_date' => $this->scheduled_date
                 ? Carbon::parse($this->scheduled_date)->format('D M, d Y h:i A')
-                : '',
+                : '-',
             'doctor_id' => $this->doctor_name ?? '',
+            'doctorId' => $this->doctor_id_raw ?? 0,
             'city_id' => $this->city_name ?? '',
             'location_id' => $this->location_name ?? '',
+            'locationId' => $this->location_id_raw ?? 0,
             'service_id' => $this->service_name ?? '',
             'appointment_status_id' => $this->status_name ?? '',
             'appointment_type_id' => $this->type_id ?? 0,
@@ -33,6 +36,8 @@ class PatientAppointmentResource extends JsonResource
                 ? Carbon::parse($this->created_at)->format('D M, d Y h:i A')
                 : '',
             'created_by' => $this->created_by_name ?? '',
+            'invoice_id' => $this->invoice_id ?? 0,
+            'invoice' => $this->invoice_id ? (object) ['id' => $this->invoice_id] : null,
         ];
     }
 }

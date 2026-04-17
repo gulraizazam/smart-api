@@ -131,7 +131,7 @@ class JazzSMSAPI
             $status = true;
             $error_msg = '';
             if ($response->getStatusCode() == 200) {
-                $responseBody = $response->getBody();
+                $responseBody = (string) $response->getBody();
                 if ($responseBody) {
                     try {
                         $responseJSON = \GuzzleHttp\json_decode(\GuzzleHttp\json_encode(simplexml_load_string($responseBody, 'SimpleXMLElement', LIBXML_NOCDATA)), true);
