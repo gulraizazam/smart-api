@@ -100,18 +100,30 @@ class LeaveApplicationDatatableController extends Controller
                 ->orderBy($sortColumn, $order ?: 'desc')
                 ->get();
 
-            $data = $records->map(fn ($app) => [
-                'id' => $app->id,
-                'employee_name' => $app->employee_name,
-                'leave_type' => $app->leave_type_name,
-                'start_date' => \Carbon\Carbon::parse($app->start_date)->format('d M Y'),
-                'end_date' => \Carbon\Carbon::parse($app->end_date)->format('d M Y'),
-                'total_days' => (float) $app->total_days,
-                'duration_type' => $app->duration_type?->label(),
-                'status' => $app->status,
-                'applied_on' => $app->created_at->format('d M Y'),
-                'designation' => $app->designation_name ?? '—',
-            ]);
+            $data = $records->map(function ($app) {
+                $hoursDisplay = null;
+                $durationValue = $app->duration_type?->value;
+
+                if ($durationValue === 'custom' && $app->custom_hours !== null) {
+                    $hoursDisplay = rtrim(rtrim((string) $app->custom_hours, '0'), '.') . ' hrs';
+                } elseif (in_array($durationValue, ['half', 'short'], true) && $app->shift_hours_snapshot) {
+                    $hoursDisplay = rtrim(rtrim(number_format((float) $app->total_days * (float) $app->shift_hours_snapshot, 2), '0'), '.') . ' hrs';
+                }
+
+                return [
+                    'id' => $app->id,
+                    'employee_name' => $app->employee_name,
+                    'leave_type' => $app->leave_type_name,
+                    'start_date' => \Carbon\Carbon::parse($app->start_date)->format('d M Y'),
+                    'end_date' => \Carbon\Carbon::parse($app->end_date)->format('d M Y'),
+                    'total_days' => (float) $app->total_days,
+                    'hours_display' => $hoursDisplay,
+                    'duration_type' => $app->duration_type?->label(),
+                    'status' => $app->status,
+                    'applied_on' => $app->created_at->format('d M Y'),
+                    'designation' => $app->designation_name ?? '—',
+                ];
+            });
 
             return response()->json([
                 'data' => $data,

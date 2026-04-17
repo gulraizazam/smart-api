@@ -55,13 +55,24 @@ class LeaveApplicationController extends Controller
                 'leave_type_id' => ['required', "exists:leave_types,id,account_id,{$accountId}"],
                 'start_date' => ['required', 'date'],
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-                'duration_type' => ['required', 'in:full,half,short'],
+                'duration_type' => ['required', 'in:full,half,short,custom'],
+                'custom_hours' => ['nullable', 'required_if:duration_type,custom', 'numeric', 'gt:0'],
                 'reason' => ['required', 'string', 'max:1000'],
             ]);
 
-            // Half/Short: end_date must equal start_date
-            if (in_array($validated['duration_type'], ['half', 'short'])) {
+            // Half/Short/Custom are single-day — pin end_date to start_date.
+            if (in_array($validated['duration_type'], ['half', 'short', 'custom'], true)) {
                 $validated['end_date'] = $validated['start_date'];
+            }
+
+            if ($validated['duration_type'] === 'custom') {
+                $shiftHours = $this->leaveService->resolveShiftHours($user->id);
+                if ($shiftHours === null) {
+                    return $this->errorResponse('Custom hours leave requires a shift duration on the employee profile.');
+                }
+                if ((float) $validated['custom_hours'] >= $shiftHours) {
+                    return $this->errorResponse('Custom hours must be less than shift hours (' . $shiftHours . '). Use Full Day instead.');
+                }
             }
 
             // Check overlap
