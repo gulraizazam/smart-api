@@ -78,6 +78,8 @@ class DeliverOnAppointmentBook extends Command
 
             }
         }
+
+        return self::SUCCESS;
     }
 
     /*
