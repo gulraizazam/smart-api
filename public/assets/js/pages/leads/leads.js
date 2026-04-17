@@ -144,13 +144,32 @@ var table_columns = [{
     width: 'auto',
 }];
 
-if (!_canShowContact) {
-    table_columns = table_columns.filter(function (col) { return col.field !== 'phone'; });
+window.leadStatusIsCommentMap = window.leadStatusIsCommentMap || {};
+
+function toggleLeadStatusComment(selectId, wrapperId, textareaId, fieldName) {
+    let statusId = $(selectId).val();
+    let isComment = parseInt(window.leadStatusIsCommentMap[statusId] || 0, 10) === 1;
+    if (isComment) {
+        $(textareaId).attr('name', fieldName);
+        $(wrapperId).removeClass('d-none');
+    } else {
+        $(textareaId).val('').attr('name', '');
+        $(wrapperId).addClass('d-none');
+    }
 }
 
 function editLeadStatus(lead_id) {
     $("#modal_change_status").modal("show");
     $("#lead_id").val(lead_id);
+
+    // Reset comment fields every time the modal opens so stale state from the
+    // previous lead doesn't carry over. They'll be shown again only if the
+    // corresponding status row has is_comment == 1.
+    $("#lead_status_comment1_wrapper").addClass('d-none');
+    $("#lead_status_comment1_id").val('').attr('name', '');
+    $("#lead_status_comment2_wrapper").addClass('d-none');
+    $("#lead_status_comment2_id").val('');
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -165,6 +184,7 @@ function editLeadStatus(lead_id) {
                 let lead_status_chalid = response.data.lead_status_chalid;
                 let lead_statuses_Cdata = response.data.lead_statuses_Cdata;
                 let lead_status_parent = response.data.lead_status_parent;
+                window.leadStatusIsCommentMap = response.data.lead_status_is_comment_map || {};
                 let status_option = '<option value="">Select a Lead Status</option>';
                 if (statuses) {
                     Object.entries(statuses).forEach(function (status) {
@@ -189,10 +209,9 @@ function editLeadStatus(lead_id) {
                     $("#lead_status_chalid_id").removeClass('d-none');
                     $("#update_status_id").addClass('d-none');
                 }
-                if(lead_status_parent.is_comment == '1') {
-                    $("#lead_status_comment1_id").attr('name', 'comment1');
-                    $("#lead_status_comment1_id").removeClass('d-none');
-                }
+
+                toggleLeadStatusComment('#update_status_id', '#lead_status_comment1_wrapper', '#lead_status_comment1_id', 'comment1');
+                toggleLeadStatusComment('#lead_status_chalid_id', '#lead_status_comment2_wrapper', '#lead_status_comment2_id', 'comment2');
             }
         },
         error: function(xhr, ajaxOptions, thrownError) {
@@ -200,6 +219,14 @@ function editLeadStatus(lead_id) {
         }
     });
 }
+
+$(document).on('change', '#update_status_id', function() {
+    toggleLeadStatusComment('#update_status_id', '#lead_status_comment1_wrapper', '#lead_status_comment1_id', 'comment1');
+});
+
+$(document).on('change', '#lead_status_chalid_id', function() {
+    toggleLeadStatusComment('#lead_status_chalid_id', '#lead_status_comment2_wrapper', '#lead_status_comment2_id', 'comment2');
+});
 
 function updateLeadStatus() {
     showSpinner();
@@ -1006,7 +1033,9 @@ function setFilters(filter_values, active_filters) {
         $("#date_range").val(active_filters.created_at);
         $("#search_created_by").val(active_filters.created_by);
         hideShowAdvanceFilters(active_filters);
-        getUserCity();
+        if (!active_filters.city_id) {
+            getUserCity();
+        }
     } catch (error) {
         showException(error);
     }
@@ -1402,50 +1431,47 @@ function cencleImport($this) {
     $(".skip_lead_status").css("opacity", 0.7);
 }
 
+function buildLeadExportParams(extra) {
+    let params = {
+        id: cleanId($('#search_id').val()),
+        name: $("#search_full_name").val(),
+        phone: $("#search_phone").val(),
+        city_id: $("#search_city_id").val(),
+        location_id: $("#search_location_id").val(),
+        region_id: $("#search_region_id").val(),
+        lead_status_id: $("#search_status_id").val(),
+        service_id: $("#search_service_id").val(),
+        created_by: $("#search_created_by").val(),
+    };
+    if (extra) {
+        Object.assign(params, extra);
+    }
+    let qs = new URLSearchParams();
+    Object.entries(params).forEach(function ([k, v]) {
+        if (v !== undefined && v !== null && v !== '' && v !== 'undefined' && v !== 'null') {
+            qs.append(k, v);
+        }
+    });
+    return qs.toString();
+}
+
 $("#export-pdf-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let created_at =$("#date_range").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by;
+    window.location.href = url + '?' + buildLeadExportParams({ created_at: $("#date_range").val() });
 });
 
 $("#export-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let created_at =$("#date_range").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by+'&ext=xlsx';
+    window.location.href = url + '?' + buildLeadExportParams({ created_at: $("#date_range").val(), ext: 'xlsx' });
 });
 
 $("#csv-leads").on("click",function(){
-    let id =$('#search_id').val();
-    let name =$('#search_full_name').val();
-    let phone =$("#search_phone").val()
-    let city_id =$("#search_city_id").val()
-    let location_id =$("#search_location_id").val()
-    let region_id =$("#search_region_id").val()
-    let lead_status_id =$("#search_status_id").val()
-    let service_id =$("#search_service_id").val()
-    let start_date =$("#search_created_from").val()
-    let end_date =$("#search_created_to").val()
-    let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=csv';
+    window.location.href = url + '?' + buildLeadExportParams({
+        start_date: $("#search_created_from").val(),
+        end_date: $("#search_created_to").val(),
+        ext: 'csv',
+    });
 });
 
 function cleanId(id){

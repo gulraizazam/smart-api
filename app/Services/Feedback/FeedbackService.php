@@ -11,6 +11,7 @@ use App\Http\Resources\Feedback\FeedbackDatatableResource;
 use App\Models\Appointments;
 use App\Models\Feedback;
 use App\Models\Locations;
+use App\Models\Patients;
 use App\Models\Services;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -92,7 +93,7 @@ class FeedbackService
         $this->ensureNoDuplicateFeedback($appointmentId);
 
         $appointment = Appointments::findOrFail($appointmentId);
-        $patient = User::findOrFail($appointment->patient_id);
+        $patient = Patients::findOrFail($appointment->patient_id);
         $treatmentService = Services::findOrFail($appointment->service_id);
 
         $feedback = Feedback::create([
@@ -357,7 +358,7 @@ class FeedbackService
     private function logFeedbackActivity(
         Feedback $feedback,
         Appointments $appointment,
-        User $patient,
+        Patients $patient,
         Services $service,
     ): void {
         $location = $appointment->location_id ? Locations::find($appointment->location_id) : null;

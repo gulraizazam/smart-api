@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Refund;
 
+use App\Enums\ActivityLogTier;
 use App\Enums\CashFlow;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
@@ -94,6 +95,11 @@ final class RefundService
             ->groupBy('package_id')
             ->selectRaw('package_id, SUM(tax_including_price) as total')
             ->pluck('total', 'package_id');
+        $serviceTotals = PackageService::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $planTypes = Packages::whereIn('id', $packageIds)->pluck('plan_type', 'id');
 
         $canViewContact = Gate::allows('contact');
 
@@ -112,6 +118,10 @@ final class RefundService
                 'is_refund' => '1',
             ])->latest()->first();
 
+            $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
+                ? (float) ($bundleTotals[$pkgId] ?? 0)
+                : (float) ($serviceTotals[$pkgId] ?? 0);
+
             $rows[] = [
                 'id' => $pkgId,
                 'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
@@ -121,7 +131,7 @@ final class RefundService
                     : '-',
                 'package_id' => $pkgId,
                 'location_id' => $this->formatLocation($package),
-                'total' => number_format((float) ($bundleTotals[$pkgId] ?? 0)),
+                'total' => number_format($planTotal),
                 'cash_receive' => number_format($agg['cash_receive']),
                 'settle_amount' => number_format($agg['settle_amount_with_tax']),
                 'refunded' => $agg['refunded_amount'],
@@ -189,7 +199,15 @@ final class RefundService
         }
 
         $aggregates = $this->batchLoadPackageAggregates($packageIds);
-        $packageInfos = Packages::whereIn('id', $packageIds)->pluck('total_price', 'id');
+        $bundleTotals = PackageBundles::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $serviceTotals = PackageService::whereIn('package_id', $packageIds)
+            ->groupBy('package_id')
+            ->selectRaw('package_id, SUM(tax_including_price) as total')
+            ->pluck('total', 'package_id');
+        $planTypes = Packages::whereIn('id', $packageIds)->pluck('plan_type', 'id');
 
         foreach ($packages as $package) {
             $pkgId = $package->package_id;
@@ -206,11 +224,15 @@ final class RefundService
                 'is_refund' => '1',
             ])->latest()->first();
 
+            $planTotal = ($planTypes[$pkgId] ?? null) === 'membership'
+                ? (float) ($bundleTotals[$pkgId] ?? 0)
+                : (float) ($serviceTotals[$pkgId] ?? 0);
+
             $rows[] = [
                 'id' => $pkgId,
                 'name' => $package->user?->name ?? '-',
                 'plan_id' => $pkgId,
-                'total' => number_format((float) ($packageInfos[$pkgId] ?? 0)),
+                'total' => number_format($planTotal),
                 'cash_in' => number_format($agg['cash_receive']),
                 'cash_out' => number_format($agg['cash_out']),
                 'refunded_amount' => number_format($agg['refunded_amount']),
@@ -644,6 +666,7 @@ final class RefundService
         $activity->timestamps = false;
         $activity->action = 'refunded';
         $activity->activity_type = 'refund_made';
+        $activity->log_tier = ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient?->id;
@@ -703,7 +726,7 @@ final class RefundService
                 'invoice_status_id' => 3,
                 'created_by' => Auth::id(),
                 'location_id' => $packageInfo->location_id,
-                'doctor_id' => $appointment?->doctor_id,
+                'doctor_id' => $appointment?->doctor_id ?? Auth::id(),
                 'active' => 1,
                 'is_exclusive' => 0,
                 'is_settlement' => 1,
@@ -715,6 +738,8 @@ final class RefundService
                     'qty' => 1,
                     'service_id' => $settlementService->id,
                     'invoice_id' => $invoice->id,
+                    'service_price' => $amountLeft,
+                    'net_amount' => $amountLeft,
                     'is_settlement' => 1,
                 ]);
             }
@@ -759,19 +784,32 @@ final class RefundService
 
     private function resolveFilterValues(string $filterKey): array
     {
-        $userId = Auth::id();
+        $userCentres = ACL::getUserCentres();
+
+        $refundedPackageIds = PackageAdvances::where('is_refund', 1)
+            ->whereIn('location_id', $userCentres)
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('package_id');
+
+        $package = Packages::whereIn('id', $refundedPackageIds)
+            ->orderByDesc('id')
+            ->pluck('plan_name', 'id')
+            ->map(fn($name, $id): string => '#' . $id . ' — ' . ($name ?: 'Plan'))
+            ->toArray();
 
         $patient = [];
-        if ($patientId = Filters::get($userId, $filterKey, 'patient_id')) {
-            $patient = User::find($patientId)?->toArray() ?? [];
+        $patientIds = PackageAdvances::whereIn('package_id', $refundedPackageIds)
+            ->whereNotNull('patient_id')
+            ->distinct()
+            ->pluck('patient_id');
+        if ($patientIds->isNotEmpty()) {
+            $patient = User::whereIn('id', $patientIds)
+                ->pluck('name', 'id')
+                ->toArray();
         }
 
-        $package = [];
-        if ($packageId = Filters::get($userId, $filterKey, 'package_id')) {
-            $package = Packages::find($packageId)?->toArray() ?? [];
-        }
-
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
+        $locations = Locations::getActiveSorted($userCentres);
 
         return [
             'patient' => $patient,

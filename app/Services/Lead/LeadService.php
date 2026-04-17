@@ -161,9 +161,8 @@ class LeadService
                     : LeadStatuses::getLeadStatuses(),
                 'Services' => Services::where([
                     'slug' => 'custom',
-                    'parent_id' => 0,
                     'active' => 1,
-                ])->pluck('name', 'id'),
+                ])->rootServices()->pluck('name', 'id'),
             ];
         });
 
@@ -310,6 +309,7 @@ class LeadService
                     'lead_id' => $leadId,
                     'comment' => $comment,
                     'created_by' => Auth::id(),
+                    'account_id' => Auth::user()->account_id,
                 ]);
             }
 
@@ -502,9 +502,8 @@ class LeadService
                 'lead_statuses' => LeadStatuses::getLeadStatuses(),
                 'services' => Services::where([
                     'slug' => 'custom',
-                    'parent_id' => 0,
                     'active' => 1,
-                ])->pluck('name', 'id'),
+                ])->rootServices()->pluck('name', 'id'),
                 'gender' => Config::get('constants.gender_array'),
             ]);
     }
@@ -525,7 +524,7 @@ class LeadService
         $parentStatuses = LeadStatuses::getLeadStatuses();
         $comments = LeadComments::where('lead_id', $leadId)->get();
 
-        if ($leadStatus->parent_id == 0) {
+        if ($leadStatus->parent_id === null || $leadStatus->parent_id == 0) {
             $parentStatus = $leadStatus;
             $childStatus = null;
         } else {
@@ -535,6 +534,13 @@ class LeadService
 
         $childStatuses = LeadStatuses::where('parent_id', $parentStatus->id)->get();
 
+        $accountId = Auth::user()->account_id;
+        $commentMap = LeadStatuses::where('account_id', $accountId)
+            ->where('active', 1)
+            ->pluck('is_comment', 'id')
+            ->map(fn ($v) => (int) $v)
+            ->toArray();
+
         return [
             'lead' => $lead,
             'lead_statuses_Pdata' => $parentStatuses,
@@ -542,6 +548,7 @@ class LeadService
             'lead_status_parent' => $parentStatus,
             'lead_status_chalid' => $childStatus ?? 'null',
             'lead_status_comment' => $comments,
+            'lead_status_is_comment_map' => $commentMap,
         ];
     }
 
@@ -606,7 +613,7 @@ class LeadService
 
         return [
             'lead_service' => $leadService,
-            'Services' => Services::where(['slug' => 'custom', 'parent_id' => 0, 'active' => 1])->pluck('name', 'id'),
+            'Services' => Services::where(['slug' => 'custom', 'active' => 1])->rootServices()->pluck('name', 'id'),
             'Child_service' => Services::where(['slug' => 'custom', 'parent_id' => $serviceId, 'active' => 1])->pluck('name', 'id'),
         ];
     }
@@ -621,6 +628,7 @@ class LeadService
             'lead_id' => $leadId,
             'comment' => $comment,
             'created_by' => Auth::id(),
+            'account_id' => Auth::user()->account_id,
         ]);
     }
 

@@ -202,16 +202,10 @@ function setEditData(response) {
     $("#edit_name").val(product.name);
     $("#product_sku").val(product.sku);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
-    $("#edit_sale_price").val(product.sale_price);
     $("#edit_product_centre").val(product.location_id).trigger('change');
     $("#edit_product_warehouse").val(product.warehouse_id).trigger('change');
     $("#edit_product_type").val(product.product_type).trigger('change');
     $('#edit_select_option').show();
-    if (product.product_type == 'in_house_use') {
-        $('#edit_sale_price_section').hide();
-    } else if (product.product_type == 'for_sale') {
-        $('#edit_sale_price_section').show();
-    }
     // if (product.warehouse_id != null) {
     //     $('#edit_product_type_option').val('in_warehouse').trigger('change');
     //     $('#edit_select_warehouse').show();
@@ -249,6 +243,7 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function () {
+        $("#date_range").val("");
         let filters = {
             delete: '',
             name: '',

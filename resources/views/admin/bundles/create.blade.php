@@ -38,14 +38,14 @@
                             <select id="services" class="form-control form-control-lg select2 form-control-solid"></select>
                         </div>
                         <div class="fv-row col-md-1 d-flex align-items-end">
-                            <button class="btn btn-primary btn-sm btn-block mb-2" type="button" onclick="addRow()"><i class="la la-plus p-0"></i></button>
+                            <button class="btn btn-primary btn-sm btn-block mb-2" style="width: 36px;" type="button" onclick="addRow()"><i class="la la-plus p-0"></i></button>
                         </div>
                         <div class="fv-row col-md-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Add Bundle</label>
                             <select id="bundles_dropdown" class="form-control form-control-lg select2 form-control-solid"></select>
                         </div>
                         <div class="fv-row col-md-1 d-flex align-items-end">
-                            <button class="btn btn-info btn-sm btn-block mb-2" type="button" onclick="addBundleRow()"><i class="la la-plus p-0"></i></button>
+                            <button class="btn btn-info btn-sm btn-block mb-2" style="width: 36px;" type="button" onclick="addBundleRow()"><i class="la la-plus p-0"></i></button>
                         </div>
                     </div>
 

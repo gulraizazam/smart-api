@@ -57,7 +57,7 @@ trait RefreshTestDatabase
         if (! str_ends_with($database, '_test')) {
             throw new RuntimeException(
                 "Refusing to wipe database `{$database}` — test database name must end in `_test`. "
-                . 'Check DB_TEST_DATABASE in phpunit.xml / .env.testing.'
+                .'Check DB_TEST_DATABASE in phpunit.xml / .env.testing.'
             );
         }
 
@@ -73,7 +73,7 @@ trait RefreshTestDatabase
         if (! is_file($dumpPath)) {
             throw new RuntimeException(
                 "Test schema dump not found at {$dumpPath}. "
-                . 'Run `php database/schema/dump_schema.php` from a workstation with the dev `crm` DB available to regenerate.'
+                .'Run `php database/schema/dump_schema.php` from a workstation with the dev `crm` DB available to regenerate.'
             );
         }
 
@@ -108,9 +108,54 @@ trait RefreshTestDatabase
 
         $this->dropStaleSchemaForeignKeys($pdo);
 
+        $this->applyVoucherHardening($pdo);
+
         $this->installCashflowAuditLogTriggers($pdo);
 
         RefreshDatabaseState::$migrated = true;
+    }
+
+    /**
+     * Mirror the production `harden_voucher_tables` migration on the
+     * test schema. The dump file pre-dates the migration, so without
+     * this the test DB would lack the soft-delete column, the new
+     * FK + index pair, and the corrected decimal(10,2) precision on
+     * `package_vouchers.amount` (the dump still has decimal(10,0),
+     * which silently truncates partial-rupee redemptions).
+     *
+     * Keep this in lockstep with
+     * database/migrations/2026_04_15_162039_harden_voucher_tables.php.
+     * If that migration evolves, update this method to match.
+     */
+    protected function applyVoucherHardening(\PDO $pdo): void
+    {
+        $statements = [
+            // Soft-delete column on user_vouchers.
+            'ALTER TABLE `user_vouchers` ADD COLUMN `deleted_at` TIMESTAMP NULL DEFAULT NULL',
+
+            // Indexes for the new redemption / datatable filter shape.
+            'ALTER TABLE `user_vouchers` ADD INDEX `user_vouchers_user_voucher_index` (`user_id`, `voucher_id`)',
+            'ALTER TABLE `user_vouchers` ADD INDEX `user_vouchers_voucher_id_index` (`voucher_id`)',
+
+            // Fix the dropped-precision amount column on package_vouchers.
+            'ALTER TABLE `package_vouchers` MODIFY COLUMN `amount` DECIMAL(10,2) NOT NULL DEFAULT 0',
+
+            // Indexes for the package-vouchers filter shape.
+            'ALTER TABLE `package_vouchers` ADD INDEX `package_vouchers_voucher_user_index` (`voucher_id`, `user_id`)',
+            'ALTER TABLE `package_vouchers` ADD INDEX `package_vouchers_package_random_id_index` (`package_random_id`)',
+        ];
+
+        foreach ($statements as $sql) {
+            try {
+                $pdo->exec($sql);
+            } catch (\PDOException $e) {
+                // Idempotency: tolerate "already exists" / "doesn't exist"
+                // when the dump is regenerated to include these in future.
+                if (! preg_match('/(Duplicate|exists|already|doesn\'t exist|check that column)/i', $e->getMessage())) {
+                    throw $e;
+                }
+            }
+        }
     }
 
     /**

@@ -7,12 +7,13 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 
 class AssignVoucherRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Gate::any(['voucher_types_assign', 'vouchers_create']);
     }
 
     public function rules(): array

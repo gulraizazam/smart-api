@@ -95,7 +95,7 @@ class SecondSmsJob implements ShouldQueue
             }
             SMSLogs::create($SMSLog);
 
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             \Illuminate\Support\Facades\Log::error('SecondSmsJob failed', [
                 'appointment_id' => $this->payload['appointment_id'] ?? null,
                 'line' => $exception->getLine(),

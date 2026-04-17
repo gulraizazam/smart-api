@@ -17,6 +17,12 @@ var table_columns = [
         title: 'Plans',
         sortable: false,
         width: 70,
+        template: function (data) {
+            if (typeof data.package_id === 'undefined' || data.package_id === null) {
+                return '-';
+            }
+            return '<a href="javascript:void(0);" onclick="filterByPlanId(' + data.package_id + ');" class="text-primary">' + data.package_id + '</a>';
+        }
     },{
         field: 'total',
         title: 'Plan Amount',
@@ -420,17 +426,22 @@ function refundData(response) {
 
 }
 
+function filterByPlanId(planId) {
+    $("#search_plans").val(String(planId)).trigger('change');
+    $('#apply-filters').trigger('click');
+}
+
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
 
         let filters =  {
             delete: '',
-            id: $("#search_id").val(),
             patient_id: $("#search_patient").val(),
             location_id: $("#search_centres").val(),
             package_id: $("#search_plans").val(),
-            created_at: $("#date_range").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
             filter: 'filter',
         }
 
@@ -443,13 +454,20 @@ function applyFilters(datatable) {
 function resetAllFilters(datatable) {
 
     $('#reset-filters').on('click', function() {
+        $("#search_plans").val('').trigger('change');
+        $("#search_centres").val('').trigger('change');
+        $("#search_patient").val('');
+        $(".search_patient").val('');
+        $("#search_created_from").val('');
+        $("#search_created_to").val('');
+
         let filters =  {
-            delete: '',
             delete: '',
             patient_id: '',
             package_id: '',
             location_id: '',
-            created_at: '',
+            created_from: '',
+            created_to: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -460,38 +478,44 @@ function resetAllFilters(datatable) {
 function setFilters(filter_values, active_filters) {
     try {
 
-        let patients = filter_values.patient;
-        let locations = filter_values.locations;
-        let package = filter_values.package;
+        let patients = filter_values.patient || {};
+        let locations = filter_values.locations || {};
+        let pkg = filter_values.package || {};
 
-        let patients_options = '<option value="">All</option>';
         let location_options = '<option value="">All</option>';
         let package_options = '<option value="">All</option>';
 
-        Object.entries(package).forEach(function (value, index) {
+        Object.entries(pkg).forEach(function (value) {
             package_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
-        Object.entries(patients).forEach(function (value, index) {
-            patients_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-        });
-
-        Object.entries(locations).forEach(function (value, index) {
+        Object.entries(locations).forEach(function (value) {
             location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
+        $("#search_centres").html(location_options);
+        $("#search_centres").val(active_filters.location_id || '').trigger('change');
 
         $("#search_plans").html(package_options);
-        $("#search_id").html(patients_options);
+        $("#search_plans").val(active_filters.package_id || '').trigger('change');
 
-        $("#search_id").val(active_filters.patient_id);
-        $("#date_range").val(active_filters.created_at);
-        $("#search_centres").html(location_options);
-        $("#search_centres").val(active_filters.location_id);
+        $("#search_patient").val(active_filters.patient_id || '');
+        if (active_filters.patient_id && patients[active_filters.patient_id]) {
+            $(".search_patient").val(patients[active_filters.patient_id]);
+        } else if (!active_filters.patient_id) {
+            $(".search_patient").val('');
+        }
+
+        let createdFrom = active_filters.created_from ? String(active_filters.created_from).substring(0, 10) : '';
+        let createdTo = active_filters.created_to ? String(active_filters.created_to).substring(0, 10) : '';
+        $("#search_created_from").val(createdFrom);
+        $("#search_created_to").val(createdTo);
 
         hideShowAdvanceFilters(active_filters);
 
-        getUserCentre();
+        if (!active_filters.location_id) {
+            getUserCentre();
+        }
 
     } catch (err) {
 

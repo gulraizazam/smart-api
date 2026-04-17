@@ -72,12 +72,19 @@ class DeliverOnAppointmentBook extends Command
                         // Update Flags
                         Appointments::where(['id' => $appointment->appointment_id])->update(['send_message' => 0, 'msg_count' => 1]);
                     }
-                } catch (\Exception $e) {
-                    \Log::error('DeliverOnAppointmentBook SMS failed', ['error' => $e->getMessage()]);
+                } catch (\Throwable $e) {
+                    \Log::error('DeliverOnAppointmentBook SMS failed', [
+                        'appointment_id' => $appointment->appointment_id,
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
                 }
 
             }
         }
+
+        return self::SUCCESS;
     }
 
     /*
@@ -116,7 +123,7 @@ class DeliverOnAppointmentBook extends Command
 
         $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
-        $UserOperatorSettings = UserOperatorSettings::getRecord($account_id, $setting->data);
+        $UserOperatorSettings = UserOperatorSettings::getRecord((int) $account_id, (int) $setting->data);
 
         if ($setting->data == 1) {
             $SMSObj = [

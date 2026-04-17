@@ -7,7 +7,6 @@ namespace App\Models;
 use App\Helpers\NodesTree;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -55,6 +54,13 @@ class Services extends BaseModel
             'sort_no'               => 'integer',
             'sort_number'           => 'integer',
         ];
+    }
+
+    public function scopeRootServices(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            $q->whereNull('parent_id')->orWhere('parent_id', 0);
+        });
     }
 
     /**
@@ -143,23 +149,6 @@ class Services extends BaseModel
     public function discounthaslocation(): HasMany
     {
         return $this->hasMany(DiscountHasLocations::class, 'service_id');
-    }
-
-    public function voucherHasLocations(): HasMany
-    {
-        return $this->hasMany(VoucherHasLocation::class);
-    }
-
-    public function vouchers(): HasManyThrough
-    {
-        return $this->hasManyThrough(
-            Voucher::class,
-            VoucherHasLocation::class,
-            'service_id',
-            'id',
-            'id',
-            'voucher_id'
-        );
     }
 
     public function audit_field_before(): HasMany

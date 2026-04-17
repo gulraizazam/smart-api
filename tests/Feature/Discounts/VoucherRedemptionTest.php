@@ -181,7 +181,10 @@ class VoucherRedemptionTest extends TestCase
         $result = $this->service->delete($userVoucher->id);
 
         $this->assertTrue($result['success']);
-        $this->assertDatabaseMissing('user_vouchers', ['id' => $userVoucher->id]);
+        // The hardening migration added soft deletes to user_vouchers
+        // so the assignment ledger keeps an audit trail. The row is no
+        // longer hard-deleted; it is excluded from default queries.
+        $this->assertSoftDeleted('user_vouchers', ['id' => $userVoucher->id]);
     }
 
     public function test_delete_refuses_after_redemption(): void

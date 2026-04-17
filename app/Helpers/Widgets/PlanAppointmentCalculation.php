@@ -369,11 +369,16 @@ class PlanAppointmentCalculation
      */
     public static function findRoot($service_id, $data)
     {
-        if ($data[$service_id]['parent_id'] == '0') {
+        if (! isset($data[$service_id])) {
             return $service_id;
-        } else {
-            return self::findRoot($data[$service_id]['parent_id'], $data);
         }
+
+        $parentId = $data[$service_id]['parent_id'] ?? null;
+        if ($parentId === null || $parentId === 0 || $parentId === '0') {
+            return $service_id;
+        }
+
+        return self::findRoot($parentId, $data);
     }
 
     /*

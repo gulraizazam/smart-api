@@ -26,7 +26,7 @@ class Appointments extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+        'scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'rescheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
@@ -45,7 +45,7 @@ class Appointments extends Model
      */
     public string $__table = 'appointments';
 
-    public static array $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+    public static array $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'rescheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',

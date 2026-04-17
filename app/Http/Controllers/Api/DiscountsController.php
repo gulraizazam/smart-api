@@ -336,7 +336,9 @@ final class DiscountsController extends Controller
             return response()->json([
                 'status'  => $result['success'],
                 'message' => $result['message'],
-                'data'    => $result['record'] ?? null,
+                'data'    => [
+                    'record' => $result['record'] ?? null,
+                ],
             ], 200);
         } catch (\Throwable $e) {
             Log::error('Allocate Configurable Error', ['message' => $e->getMessage()]);

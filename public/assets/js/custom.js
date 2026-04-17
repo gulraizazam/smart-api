@@ -1,4 +1,37 @@
 
+(function () {
+    if (typeof window.Swal === 'undefined') return;
+
+    var SwalCenter = window.Swal.mixin({
+        toast: false,
+        position: 'center',
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        timer: 4000,
+        timerProgressBar: true,
+        didOpen: function (el) {
+            el.addEventListener('mouseenter', window.Swal.stopTimer);
+            el.addEventListener('mouseleave', window.Swal.resumeTimer);
+        }
+    });
+
+    function fire(icon, message, title) {
+        if (message === undefined || message === null || message === '') return;
+        SwalCenter.fire({ icon: icon, title: title || message, html: title ? message : undefined });
+    }
+
+    var shim = function (message, title) { fire('info', message, title); };
+    shim.success = function (message, title) { fire('success', message, title); };
+    shim.error   = function (message, title) { fire('error', message, title); };
+    shim.warning = function (message, title) { fire('warning', message, title); };
+    shim.info    = function (message, title) { fire('info', message, title); };
+    shim.clear   = function () { window.Swal.close(); };
+    shim.remove  = function () { window.Swal.close(); };
+    shim.options = {};
+
+    window.toastr = shim;
+})();
+
 $(document).keydown(function (event) {
     if (event.keyCode == 27) {
         $('.modal').modal('hide');
@@ -1173,15 +1206,17 @@ function submitForm(action, method, data, callback, form = '') {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            let serverMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '';
+
             if (xhr.status == '401') {
                 callback({
                     'status': 0,
-                    'message': 'You are not authorized to access this resource',
+                    'message': serverMessage || 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
             } else if (xhr.status == '422') {
                 // Laravel validation errors
-                let errors = xhr.responseJSON.errors;
+                let errors = xhr.responseJSON ? xhr.responseJSON.errors : null;
                 let errorMessage = '';
                 if (errors) {
                     // Collect all validation error messages
@@ -1195,20 +1230,14 @@ function submitForm(action, method, data, callback, form = '') {
                 }
                 callback({
                     'status': 0,
-                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'message': errorMessage || serverMessage || 'Validation failed',
                     'errors': errors
-                });
-                hideSpinnerRestForm();
-            } else if (xhr.status == '500') {
-                callback({
-                    'status': 0,
-                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
+                    'message': serverMessage || 'Unable to process your request, please try again later.',
                 });
                 hideSpinnerRestForm();
             }
@@ -1261,15 +1290,17 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            let serverMessage = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : '';
+
             if (xhr.status == '401') {
                 callback({
                     'status': 0,
-                    'message': 'You are not authorized to access this resource',
+                    'message': serverMessage || 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
             } else if (xhr.status == '422') {
                 // Laravel validation errors
-                let errors = xhr.responseJSON.errors;
+                let errors = xhr.responseJSON ? xhr.responseJSON.errors : null;
                 let errorMessage = '';
                 if (errors) {
                     // Collect all validation error messages
@@ -1283,20 +1314,14 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
                 }
                 callback({
                     'status': 0,
-                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'message': errorMessage || serverMessage || 'Validation failed',
                     'errors': errors
-                });
-                hideSpinnerRestForm();
-            } else if (xhr.status == '500') {
-                callback({
-                    'status': 0,
-                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
+                    'message': serverMessage || 'Unable to process your request, please try again later.',
                 });
                 hideSpinnerRestForm();
             }

@@ -7,12 +7,13 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 
 class VoucherTypeStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Gate::any(['voucher_types_active', 'voucher_types_inactive']);
     }
 
     public function rules(): array

@@ -34,6 +34,7 @@ class Expense extends Model
         return [
             'expense_date' => 'date:Y-m-d',
             'amount' => 'decimal:2',
+            'paid_from_pool_id' => 'integer',
             'is_flagged' => 'boolean',
             'is_for_general' => 'boolean',
             'voided_at' => 'datetime',

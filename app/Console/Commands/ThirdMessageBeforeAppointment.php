@@ -105,9 +105,20 @@ class ThirdMessageBeforeAppointment extends Command
                     continue;
                 }
 
-                $response = $this->sendSMS($appointment->appointment_id, $appointment->phone, $log_type, $appointment->account_id);
+                try {
+                    $response = $this->sendSMS($appointment->appointment_id, $appointment->phone, $log_type, $appointment->account_id);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('ThirdMessageBeforeAppointment SMS failed', [
+                        'appointment_id' => $appointment->appointment_id,
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
+                }
             }
         }
+
+        return self::SUCCESS;
     }
 
     /*

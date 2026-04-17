@@ -49,11 +49,7 @@
                             <input type="text" id="edit_name" name="name"
                                 class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                        <div class="fv-row col-md-6" id="sale_price_section">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
-                            <input type="number" id="edit_sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
-                        </div>
-                       
+
                     </div>
                     </div>
                  

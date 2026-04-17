@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Plan;
 
+use App\Enums\ActivityLogTier;
 use App\Helpers\Filters;
 use App\Models\Activity;
 use App\Models\Appointments;
@@ -266,7 +267,7 @@ final class PlanRefundService
                     'invoice_status_id' => 3,
                     'created_by' => Auth::id(),
                     'location_id' => $packageinformation->location_id,
-                    'doctor_id' => $findDoc->doctor_id,
+                    'doctor_id' => $findDoc?->doctor_id ?? Auth::id(),
                     'active' => 1,
                     'is_exclusive' => 0,
                     'is_settlement' => 1,
@@ -279,6 +280,8 @@ final class PlanRefundService
                     'service_id' => $services->id,
                     'package_id' => $data['package_id'],
                     'invoice_id' => $createInvoice->id,
+                    'service_price' => $amountLeft,
+                    'net_amount' => $amountLeft,
                     'is_settlement' => 1,
                 ];
                 InvoiceDetails::create($dataInvoiceDetail);
@@ -321,7 +324,7 @@ final class PlanRefundService
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
         $locationName = $location->name ?? '';
-        $refundAmount = $data['refund_amount'];
+        $refundAmount = (float) $data['refund_amount'];
         $refundDate = $data['created_at'] ? date('M j, Y', strtotime($data['created_at'])) : date('M j, Y');
         $caseSetteled = $data['case_setteled'] == '1';
 
@@ -337,6 +340,7 @@ final class PlanRefundService
         $activity->timestamps = false;
         $activity->action = 'refund_updated';
         $activity->activity_type = 'refund_updated';
+        $activity->log_tier = ActivityLogTier::PhiAudit->value;
         $activity->description = $description;
         $activity->patient = $patientName;
         $activity->patient_id = $patient->id ?? null;

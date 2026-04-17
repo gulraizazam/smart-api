@@ -706,14 +706,22 @@ class AppointmentScheduleController extends AppointmentBaseController
             $rota = $this->checkRota($appointment, $request);
 
             if ($rota['status']) {
+                $newScheduledDate = Carbon::parse($request->scheduled_date)->format('Y-m-d');
                 $updateData = [
-                    'scheduled_date' => Carbon::parse($request->scheduled_date)->format('Y-m-d'),
+                    'scheduled_date' => $newScheduledDate,
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format('H:i:s'),
                     'converted_by' => $data['converted_by'] ?? $appointment->converted_by,
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at' => Filters::getCurrentTimeStamp(),
                 ];
+
+                $currentScheduledDate = $appointment->scheduled_date
+                    ? Carbon::parse($appointment->scheduled_date)->format('Y-m-d')
+                    : null;
+                if ($currentScheduledDate !== $newScheduledDate) {
+                    $updateData['rescheduled_count'] = ((int) $appointment->rescheduled_count) + 1;
+                }
 
                 // Set send_message to 1 if consultation is rescheduled and status is pending
                 if ($isRescheduled && $appointment->base_appointment_status_id == config('constants.appointment_status_pending', 1)) {
@@ -728,7 +736,6 @@ class AppointmentScheduleController extends AppointmentBaseController
                 if ($appointment->isDirty('scheduled_date')) {
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
-                \App\Models\Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
 
                 // Log rescheduled activity
                 if ($isRescheduled) {
@@ -749,7 +756,7 @@ class AppointmentScheduleController extends AppointmentBaseController
                 return $this->successResponse('Record updated successfully!');
             }
 
-            return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 400);
+            return $rota['status'] ? $this->successResponse($rota['message']) : $this->errorResponse($rota['message'], 200);
         }
 
         return $this->errorResponse('Appointment not found!', 200);

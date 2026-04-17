@@ -823,9 +823,6 @@ class AppointmentsController extends Controller
 
     public function createTreatmentAppointment(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('appointments_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
         if (
             $request->location_id &&
             $request->doctor_id
@@ -955,9 +952,6 @@ class AppointmentsController extends Controller
      */
     public function createConsultingAppointment(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('appointments_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
         if (
             $request->location_id &&
             $request->doctor_id
@@ -1707,7 +1701,6 @@ class AppointmentsController extends Controller
             // Only check for rescheduling if scheduled_date is provided in request
             if ($request->has('scheduled_date') && $request->scheduled_date && $appointment->scheduled_date != $request->scheduled_date) {
                 $appointment_data['converted_by'] = Auth::user()->id;
-                Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
                 $isRescheduled = true;
             }
             
