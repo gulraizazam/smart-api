@@ -201,7 +201,7 @@ class NotificationService
 
         // Also notify branch managers of that branch
         if ($branchId) {
-            $branchManagers = $this->getBranchManagers($branchId, $accountId);
+            $branchManagers = $this->getBranchManagers((int) $branchId, $accountId);
             foreach ($branchManagers as $bm) {
                 if (in_array($bm->id, $notifiedIds, true)) continue;
                 $this->notify(
@@ -223,7 +223,7 @@ class NotificationService
     {
         if (!$expense->for_branch_id) return;
 
-        $branchManagers = $this->getBranchManagers($expense->for_branch_id, $accountId);
+        $branchManagers = $this->getBranchManagers((int) $expense->for_branch_id, $accountId);
 
         foreach ($branchManagers as $bm) {
             if ($bm->id === $expense->created_by) continue;
@@ -250,7 +250,7 @@ class NotificationService
 
         $notifiedIds = [];
         foreach ($pools as $pool) {
-            $branchManagers = $this->getBranchManagers($pool->location_id, $accountId);
+            $branchManagers = $this->getBranchManagers((int) $pool->location_id, $accountId);
             $direction = ($pool->id === $fromPoolId) ? 'out of' : 'into';
 
             foreach ($branchManagers as $bm) {
