@@ -1114,9 +1114,6 @@ class AppointmentsController extends Controller
      */
     public function edit(int $id): \Illuminate\Http\JsonResponse
     {
-        if (! Gate::allows('appointments_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
         $locationsids = [];
         $doctorids = [];
         $reverse_process = false;
