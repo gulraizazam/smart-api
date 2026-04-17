@@ -8,6 +8,7 @@ use App\Exceptions\ServiceException;
 use App\Helpers\Filters;
 use App\Helpers\ServiceHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Service\BundleImpactRequest;
 use App\Http\Requests\Service\SaveSortOrderRequest;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
@@ -177,6 +178,27 @@ final class ServicesController extends Controller
             return $service
                 ? $this->successResponse('Record has been updated successfully.')
                 : $this->failResponse('Something went wrong, please try again later.');
+        } catch (ServiceException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * Preview which ServiceBundles would be re-priced if this service's price changes.
+     * Returns an empty list when the service has no bundles or the price is unchanged.
+     */
+    public function bundleImpact(BundleImpactRequest $request, int $id): JsonResponse
+    {
+        try {
+            $affected = $this->serviceService->previewServiceBundleImpact(
+                $id,
+                (float) $request->validated('new_price'),
+                Auth::user()->account_id,
+            );
+
+            return $this->successResponse('Record found', ['affected' => $affected]);
         } catch (ServiceException $e) {
             return $this->failResponse($e->getMessage());
         } catch (\Exception $e) {
