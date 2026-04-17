@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Service;
 
 use App\Exceptions\ServiceException;
+use App\Helpers\ServiceBundleHelper;
 use App\Helpers\ServiceHelper;
 use App\Models\Appointments;
 use App\Models\AuditTrails;
@@ -311,6 +312,8 @@ final class ServiceService
                AND deleted_at IS NULL',
             [$newServicePrice, $userId, $now, $service->id, $accountId],
         );
+
+        ServiceBundleHelper::clearCache();
     }
 
     /**
