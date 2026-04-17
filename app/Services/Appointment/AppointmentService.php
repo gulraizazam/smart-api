@@ -4,30 +4,39 @@ declare(strict_types=1);
 
 namespace App\Services\Appointment;
 
-use App\Exceptions\AppointmentException;
-use App\Helpers\AppointmentHelper;
-use App\Helpers\ActivityLogger;
-use App\Helpers\GeneralFunctions;
-use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
 use App\Enums\AppointmentType;
-use App\Models\AppointmentsDailyStats;
+use App\Exceptions\AppointmentException;
+use App\Helpers\ActivityLogger;
+use App\Helpers\AppointmentHelper;
+use App\Helpers\GeneralFunctions;
+use App\Helpers\Widgets\AppointmentCheckesWidget;
 use App\Models\Activity;
+use App\Models\Appointments;
+use App\Models\AppointmentsDailyStats;
+use App\Models\AppointmentStatuses;
 use App\Models\AuditTrails;
-use App\Models\Patients;
-use App\Models\Locations;
-use App\Models\Services;
 use App\Models\Leads;
+use App\Models\LeadsServices;
+use App\Models\LeadStatuses;
+use App\Models\Locations;
+use App\Models\Patients;
+use App\Models\ResourceHasRotaDays;
+use App\Models\Resources;
+use App\Models\Services;
 use App\Models\User;
+use App\Services\MetaConversionApiService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class AppointmentService
 {
     protected ?int $account_id = null;
+
     protected ?int $user_id = null;
 
     public function __construct()
@@ -38,22 +47,24 @@ class AppointmentService
     protected function getAccountId(): int
     {
         if ($this->account_id === null) {
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 throw new \Exception('User must be authenticated to use AppointmentService');
             }
             $this->account_id = (int) Auth::user()->account_id;
         }
+
         return $this->account_id;
     }
 
     protected function getUserId(): int
     {
         if ($this->user_id === null) {
-            if (!Auth::check()) {
+            if (! Auth::check()) {
                 throw new \Exception('User must be authenticated to use AppointmentService');
             }
             $this->user_id = (int) Auth::id();
         }
+
         return $this->user_id;
     }
 
@@ -69,7 +80,7 @@ class AppointmentService
             'lead',
             'user',
             'user_converted_by',
-            'user_updated_by'
+            'user_updated_by',
         ])->where('account_id', $this->getAccountId());
 
         if ($appointmentTypeId) {
@@ -88,55 +99,55 @@ class AppointmentService
 
     protected function applyFilters(Builder $query, array $filters): Builder
     {
-        if (!empty($filters['patient_id'])) {
+        if (! empty($filters['patient_id'])) {
             $query->where('patient_id', $filters['patient_id']);
         }
 
-        if (!empty($filters['phone'])) {
+        if (! empty($filters['phone'])) {
             $phone = GeneralFunctions::cleanNumber($filters['phone']);
             $query->whereHas('patient', function ($q) use ($phone) {
                 $q->where('phone', 'like', "%{$phone}%");
             });
         }
 
-        if (!empty($filters['location_id'])) {
+        if (! empty($filters['location_id'])) {
             $query->where('location_id', $filters['location_id']);
         }
 
-        if (!empty($filters['doctor_id'])) {
+        if (! empty($filters['doctor_id'])) {
             $query->where('doctor_id', $filters['doctor_id']);
         }
 
-        if (!empty($filters['service_id'])) {
+        if (! empty($filters['service_id'])) {
             $query->where('service_id', $filters['service_id']);
         }
 
-        if (!empty($filters['appointment_status_id'])) {
+        if (! empty($filters['appointment_status_id'])) {
             $query->where('appointment_status_id', $filters['appointment_status_id']);
         }
 
-        if (!empty($filters['scheduled_date_from'])) {
+        if (! empty($filters['scheduled_date_from'])) {
             $query->where('scheduled_date', '>=', $filters['scheduled_date_from']);
         }
 
-        if (!empty($filters['scheduled_date_to'])) {
+        if (! empty($filters['scheduled_date_to'])) {
             $query->where('scheduled_date', '<=', $filters['scheduled_date_to']);
         }
 
-        if (!empty($filters['created_date_from'])) {
+        if (! empty($filters['created_date_from'])) {
             $query->whereDate('created_at', '>=', $filters['created_date_from']);
         }
 
-        if (!empty($filters['created_date_to'])) {
+        if (! empty($filters['created_date_to'])) {
             $query->whereDate('created_at', '<=', $filters['created_date_to']);
         }
 
         if (isset($filters['scheduled']) && $filters['scheduled'] === true) {
             $query->whereNotNull('scheduled_date')
-                  ->whereNotNull('scheduled_time');
+                ->whereNotNull('scheduled_time');
         } elseif (isset($filters['scheduled']) && $filters['scheduled'] === false) {
             $query->whereNull('scheduled_date')
-                  ->whereNull('scheduled_time');
+                ->whereNull('scheduled_time');
         }
 
         return $query;
@@ -146,18 +157,18 @@ class AppointmentService
     {
         DB::beginTransaction();
         try {
-            if (!isset($data['appointment_type_id'])) {
+            if (! isset($data['appointment_type_id'])) {
                 throw AppointmentException::invalidData('Appointment type is required.');
             }
-            
-            if (!isset($data['appointment_status_id'])) {
+
+            if (! isset($data['appointment_status_id'])) {
                 throw AppointmentException::invalidData('Appointment status is required.');
             }
-            
-            if (!isset($data['location_id'])) {
+
+            if (! isset($data['location_id'])) {
                 throw AppointmentException::invalidData('Location is required.');
             }
-            
+
             $this->validateAppointmentData($data);
 
             // Clean up empty lead_id and patient_id (sent as empty strings from form)
@@ -173,9 +184,9 @@ class AppointmentService
             if (isset($data['lead_id']) && isset($data['phone'])) {
                 $lead = Leads::find($data['lead_id']);
                 if ($lead) {
-                    $submittedPhone = \App\Helpers\GeneralFunctions::cleanNumber($data['phone']);
-                    $leadPhone = \App\Helpers\GeneralFunctions::cleanNumber($lead->phone ?? '');
-                    
+                    $submittedPhone = GeneralFunctions::cleanNumber($data['phone']);
+                    $leadPhone = GeneralFunctions::cleanNumber($lead->phone ?? '');
+
                     // If phone numbers don't match, this is a new patient - clear lead_id and patient_id
                     if ($submittedPhone !== $leadPhone) {
                         \Log::info('Phone mismatch detected - treating as new patient', [
@@ -191,9 +202,9 @@ class AppointmentService
 
             // If creating new patient (either explicitly via checkbox OR when no lead_id exists but phone is provided)
             // This handles the case where user enters a new phone number without selecting an existing lead
-            $shouldCreateNewPatient = (isset($data['new_patient']) && $data['new_patient'] == 1 && !isset($data['lead_id'])) 
-                || (!isset($data['lead_id']) && isset($data['phone']) && !empty($data['phone']));
-            
+            $shouldCreateNewPatient = (isset($data['new_patient']) && $data['new_patient'] == 1 && ! isset($data['lead_id']))
+                || (! isset($data['lead_id']) && isset($data['phone']) && ! empty($data['phone']));
+
             if ($shouldCreateNewPatient) {
                 // Step 1: Create patient/user record
                 $patientData = [
@@ -204,19 +215,19 @@ class AppointmentService
                     'referred_by' => $data['referred_by'] ?? null,
                     'account_id' => $this->getAccountId(),
                     'user_type_id' => 3, // Patient user type
-                    'password' => \Hash::make(\Illuminate\Support\Str::random(16)),
+                    'password' => \Hash::make(Str::random(16)),
                     'active' => 1,
                 ];
-                
+
                 $patient = User::create($patientData);
-                if (!$patient) {
+                if (! $patient) {
                     throw AppointmentException::invalidData('Failed to create patient.');
                 }
-                
+
                 // Step 2: Create lead with patient_id
                 $accountId = Auth::user()->account_id ?? 1;
                 $userId = Auth::id();
-                
+
                 $leadData = [
                     'patient_id' => $patient->id,
                     'name' => $data['name'] ?? null,
@@ -232,50 +243,49 @@ class AppointmentService
                     'lead_status_id' => null,
                     'lead_source_id' => null,
                 ];
-                
+
                 // Get location details for region and city
                 if (isset($data['location_id'])) {
-                    $location = \App\Models\Locations::find($data['location_id']);
+                    $location = Locations::find($data['location_id']);
                     if ($location) {
                         $leadData['region_id'] = $location->region_id;
                         $leadData['city_id'] = $location->city_id;
                     }
                 }
-                
+
                 // Get 'Booked' lead status
-                $bookedStatus = \App\Models\LeadStatuses::where('account_id', $accountId)
+                $bookedStatus = LeadStatuses::where('account_id', $accountId)
                     ->where('name', 'Booked')
                     ->first();
-                
-                if (!$bookedStatus) {
+
+                if (! $bookedStatus) {
                     // Fallback to default status if 'Booked' not found
-                    $bookedStatus = \App\Models\LeadStatuses::where('account_id', $accountId)
+                    $bookedStatus = LeadStatuses::where('account_id', $accountId)
                         ->where('is_default', 1)
                         ->first();
                 }
-                
+
                 if ($bookedStatus) {
                     $leadData['lead_status_id'] = $bookedStatus->id;
                 }
-                
+
                 // Create lead record
                 \Log::info('Creating lead with data:', $leadData);
                 $lead = Leads::create($leadData);
-                if (!$lead) {
+                if (! $lead) {
                     throw AppointmentException::invalidData('Failed to create lead for new patient.');
                 }
-                
-                
+
                 // Create lead service entry if service_id is provided
                 if (isset($data['service_id'])) {
-                    \App\Models\LeadsServices::create([
+                    LeadsServices::create([
                         'lead_id' => $lead->id,
                         'service_id' => $data['service_id'],
                         'account_id' => $accountId,
                         'status' => 1,
                     ]);
                 }
-                
+
                 // Step 3: Set lead_id and patient_id for appointment
                 $data['lead_id'] = $lead->id;
                 $data['patient_id'] = $patient->id;
@@ -285,22 +295,22 @@ class AppointmentService
 
             if (isset($data['lead_id'])) {
                 $lead = Leads::find($data['lead_id']);
-                if (!$lead) {
+                if (! $lead) {
                     throw AppointmentException::leadNotFound();
                 }
-                
+
                 // Set patient_id from lead if not already set
-                if (!isset($appointmentData['patient_id']) || !$appointmentData['patient_id']) {
+                if (! isset($appointmentData['patient_id']) || ! $appointmentData['patient_id']) {
                     $appointmentData['patient_id'] = $lead->patient_id;
                 }
-                
+
                 // Set name from lead if not already set
-                if (!isset($appointmentData['name']) || !$appointmentData['name']) {
+                if (! isset($appointmentData['name']) || ! $appointmentData['name']) {
                     $appointmentData['name'] = $lead->name;
                 }
-                
+
                 // If lead doesn't have patient_id, we need to create a patient
-                if (!$lead->patient_id) {
+                if (! $lead->patient_id) {
                     $patientData = [
                         'name' => $lead->name ?? $data['name'] ?? null,
                         'phone' => $lead->phone ?? $data['phone'] ?? null,
@@ -309,18 +319,18 @@ class AppointmentService
                         'referred_by' => $lead->referred_by ?? $data['referred_by'] ?? null,
                         'account_id' => $this->getAccountId(),
                         'user_type_id' => 3, // Patient user type
-                        'password' => \Hash::make(\Illuminate\Support\Str::random(16)),
+                        'password' => \Hash::make(Str::random(16)),
                         'active' => 1,
                     ];
-                    
+
                     $patient = User::create($patientData);
-                    if (!$patient) {
+                    if (! $patient) {
                         throw AppointmentException::invalidData('Failed to create patient for lead.');
                     }
-                    
+
                     // Update lead with patient_id
                     $lead->update(['patient_id' => $patient->id]);
-                    
+
                     // Set patient_id in appointment data
                     $appointmentData['patient_id'] = $patient->id;
                 }
@@ -328,7 +338,7 @@ class AppointmentService
 
             if (isset($data['patient_id'])) {
                 $patient = User::find($data['patient_id']);
-                if (!$patient) {
+                if (! $patient) {
                     throw AppointmentException::patientNotFound();
                 }
             }
@@ -344,7 +354,7 @@ class AppointmentService
                     ->where('doctor_has_locations.is_allocated', 1)
                     ->exists();
 
-                if (!$hasAllServices) {
+                if (! $hasAllServices) {
                     // If not all services, check for specific service
                     $hasService = \DB::table('doctor_has_locations')
                         ->where('user_id', $appointmentData['doctor_id'])
@@ -353,10 +363,10 @@ class AppointmentService
                         ->where('is_allocated', 1)
                         ->exists();
 
-                    if (!$hasService) {
+                    if (! $hasService) {
                         // Check if the service is a child and its parent is assigned to the doctor
-                        $service = \App\Models\Services::find($appointmentData['service_id']);
-                        
+                        $service = Services::find($appointmentData['service_id']);
+
                         if ($service && $service->parent_id) {
                             // Service has a parent, check if parent is assigned to doctor
                             $hasParentService = \DB::table('doctor_has_locations')
@@ -365,8 +375,8 @@ class AppointmentService
                                 ->where('service_id', $service->parent_id)
                                 ->where('is_allocated', 1)
                                 ->exists();
-                            
-                            if (!$hasParentService) {
+
+                            if (! $hasParentService) {
                                 throw AppointmentException::invalidData('This doctor does not have the required service or its parent service allocated for this location.');
                             }
                         } else {
@@ -393,7 +403,7 @@ class AppointmentService
 
             $appointment = Appointments::create($appointmentData);
 
-            if (!$appointment) {
+            if (! $appointment) {
                 throw AppointmentException::creationFailed();
             }
 
@@ -411,7 +421,7 @@ class AppointmentService
             // Handle lead status update and activity logging if lead_id is present
             if (isset($data['lead_id'])) {
                 $lead = Leads::find($data['lead_id']);
-                
+
                 if ($lead) {
                     // Check if consultation service is different from lead service
                     if (isset($appointment->service_id) && $lead->service_id != $appointment->service_id) {
@@ -419,68 +429,68 @@ class AppointmentService
                         $lead->update([
                             'service_id' => $appointment->service_id,
                             'updated_by' => $this->getUserId(),
-                            'updated_at' => Carbon::now()
+                            'updated_at' => Carbon::now(),
                         ]);
-                        
+
                         // Create new lead_services record for the new service
-                        $existingLeadService = \App\Models\LeadsServices::where([
+                        $existingLeadService = LeadsServices::where([
                             'lead_id' => $lead->id,
-                            'service_id' => $appointment->service_id
+                            'service_id' => $appointment->service_id,
                         ])->first();
-                        
-                        if (!$existingLeadService) {
+
+                        if (! $existingLeadService) {
                             // Set all previous lead_services records to inactive before creating new one
-                            \App\Models\LeadsServices::where('lead_id', $lead->id)
+                            LeadsServices::where('lead_id', $lead->id)
                                 ->update([
                                     'status' => 0,
-                                    'updated_at' => Carbon::now()
+                                    'updated_at' => Carbon::now(),
                                 ]);
-                            
+
                             // Get 'Booked' status to set in lead_services
-                            $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
+                            $bookedStatus = LeadStatuses::where('account_id', $this->getAccountId())
                                 ->where('name', 'Booked')
                                 ->first();
-                            
+
                             // Create new active lead_services record
-                            \App\Models\LeadsServices::create([
+                            LeadsServices::create([
                                 'lead_id' => $lead->id,
                                 'service_id' => $appointment->service_id,
                                 'account_id' => $this->getAccountId(),
                                 'lead_status_id' => $bookedStatus?->id,
                                 'status' => 1,
                                 'created_at' => Carbon::now(),
-                                'updated_at' => Carbon::now()
+                                'updated_at' => Carbon::now(),
                             ]);
                         }
                     }
-                    
+
                     // Get 'Booked' lead status
-                    $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
+                    $bookedStatus = LeadStatuses::where('account_id', $this->getAccountId())
                         ->where('name', 'Booked')
                         ->first();
-                    
+
                     if ($bookedStatus) {
                         if ($lead->lead_status_id != $bookedStatus->id) {
                             // Update lead status to Booked
                             $lead->update([
                                 'lead_status_id' => $bookedStatus->id,
                                 'updated_by' => $this->getUserId(),
-                                'updated_at' => Carbon::now()
+                                'updated_at' => Carbon::now(),
                             ]);
                         }
-                        
+
                         // Update lead_status_id in lead_services for this service
                         if (isset($appointment->service_id)) {
-                            \App\Models\LeadsServices::where([
+                            LeadsServices::where([
                                 'lead_id' => $lead->id,
-                                'service_id' => $appointment->service_id
+                                'service_id' => $appointment->service_id,
                             ])->update([
                                 'lead_status_id' => $bookedStatus->id,
-                                'updated_at' => Carbon::now()
+                                'updated_at' => Carbon::now(),
                             ]);
                         }
                     }
-                    
+
                     // Send Meta CAPI event for booked status
                     \Log::info('Sending Meta CAPI booked event', [
                         'lead_id' => $lead->id,
@@ -489,7 +499,7 @@ class AppointmentService
                         'email' => $lead->email,
                     ]);
                     try {
-                        $metaService = new \App\Services\MetaConversionApiService();
+                        $metaService = new MetaConversionApiService;
                         $metaService->sendLeadStatus(
                             $lead->phone,
                             'booked',
@@ -504,17 +514,17 @@ class AppointmentService
                         // argument values (lead phone numbers, emails) into
                         // the log line. Use file/line instead so PII does
                         // not land in storage/logs/laravel.log.
-                        \Log::error('Meta CAPI booked event failed: ' . $e->getMessage(), [
+                        \Log::error('Meta CAPI booked event failed: '.$e->getMessage(), [
                             'lead_id' => $lead->id,
-                            'file'    => $e->getFile(),
-                            'line'    => $e->getLine(),
+                            'file' => $e->getFile(),
+                            'line' => $e->getLine(),
                         ]);
                     }
-                    
+
                     // Get related data for activity logging
-                    $location = \App\Models\Locations::with('city')->find($appointment->location_id);
-                    $service = \App\Models\Services::find($appointment->service_id);
-                    
+                    $location = Locations::with('city')->find($appointment->location_id);
+                    $service = Services::find($appointment->service_id);
+
                     // Log lead booked activity
                     ActivityLogger::logLeadBooked($lead, $appointment, $location, $service);
                 }
@@ -523,14 +533,14 @@ class AppointmentService
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
-            
+
             $appointment->load([
                 'appointment_type',
                 'appointment_status',
                 'service',
                 'location',
                 'doctor',
-                'patient'
+                'patient',
             ]);
 
             return $appointment;
@@ -546,10 +556,10 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->getAccountId()
+                'account_id' => $this->getAccountId(),
             ])->first();
 
-            if (!$appointment) {
+            if (! $appointment) {
                 throw AppointmentException::notFound();
             }
 
@@ -574,7 +584,7 @@ class AppointmentService
                     ->where('doctor_has_locations.is_allocated', 1)
                     ->exists();
 
-                if (!$hasAllServices) {
+                if (! $hasAllServices) {
                     // If not all services, check for specific service
                     $hasService = \DB::table('doctor_has_locations')
                         ->where('user_id', $doctorId)
@@ -583,10 +593,10 @@ class AppointmentService
                         ->where('is_allocated', 1)
                         ->exists();
 
-                    if (!$hasService) {
+                    if (! $hasService) {
                         // Check if the service is a child and its parent is assigned to the doctor
-                        $service = \App\Models\Services::find($serviceId);
-                        
+                        $service = Services::find($serviceId);
+
                         if ($service && $service->parent_id) {
                             // Service has a parent, check if parent is assigned to doctor
                             $hasParentService = \DB::table('doctor_has_locations')
@@ -595,8 +605,8 @@ class AppointmentService
                                 ->where('service_id', $service->parent_id)
                                 ->where('is_allocated', 1)
                                 ->exists();
-                            
-                            if (!$hasParentService) {
+
+                            if (! $hasParentService) {
                                 throw AppointmentException::invalidData('This doctor does not have the required service or its parent service allocated for this location.');
                             }
                         } else {
@@ -648,13 +658,14 @@ class AppointmentService
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
+
             return $appointment->fresh([
                 'appointment_type',
                 'appointment_status',
                 'service',
                 'location',
                 'doctor',
-                'patient'
+                'patient',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -668,10 +679,10 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->getAccountId()
+                'account_id' => $this->getAccountId(),
             ])->first();
 
-            if (!$appointment) {
+            if (! $appointment) {
                 throw AppointmentException::notFound();
             }
 
@@ -690,17 +701,10 @@ class AppointmentService
             $appointment->update([
                 'deleted_by' => $this->getUserId(),
                 'arrived_at' => null,
-                'converted_at' => null
+                'converted_at' => null,
             ]);
 
             $appointment->delete();
-
-            Activity::where('appointment_id', $id)->update([
-                'deleted_by' => $this->getUserId(),
-                'action' => 'deleted',
-                'deleted_date' => Carbon::now()->format('Y-m-d'),
-                'updated_at' => Carbon::now()
-            ]);
 
             AuditTrails::deleteEventLogger(
                 Appointments::$_table,
@@ -713,6 +717,7 @@ class AppointmentService
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
+
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
@@ -726,15 +731,15 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->getAccountId()
+                'account_id' => $this->getAccountId(),
             ])->first();
 
-            if (!$appointment) {
+            if (! $appointment) {
                 throw AppointmentException::notFound();
             }
 
             $status = AppointmentStatuses::find($data['appointment_status_id']);
-            if (!$status) {
+            if (! $status) {
                 throw AppointmentException::invalidStatus();
             }
 
@@ -742,7 +747,7 @@ class AppointmentService
                 'appointment_status_id' => $data['appointment_status_id'],
                 'base_appointment_status_id' => $status->base_appointment_status_id ?? $data['appointment_status_id'],
                 'updated_by' => $this->getUserId(),
-                'updated_at' => Carbon::now()
+                'updated_at' => Carbon::now(),
             ];
 
             if (isset($data['reason'])) {
@@ -773,6 +778,7 @@ class AppointmentService
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
+
             return $appointment->fresh(['appointment_status', 'appointment_status_base']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -789,16 +795,16 @@ class AppointmentService
             'location',
             'doctor',
             'patient',
-            'resource'
+            'resource',
         ])->whereNotNull('scheduled_date')
-        ->where('appointment_type_id',1)
-          ->whereNotNull('scheduled_time');
+            ->where('appointment_type_id', 1)
+            ->whereNotNull('scheduled_time');
 
         $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
-            $query->where(function($q) use ($cancelledStatus) {
+            $query->where(function ($q) use ($cancelledStatus) {
                 $q->where('appointment_status_id', '!=', $cancelledStatus->id)
-                  ->orWhereNull('appointment_status_id');
+                    ->orWhereNull('appointment_status_id');
             });
         }
 
@@ -815,16 +821,16 @@ class AppointmentService
             'service',
             'location',
             'doctor',
-            'patient'
+            'patient',
         ])->where('account_id', $this->getAccountId())
-          ->whereNull('scheduled_date')
-          ->whereNull('scheduled_time');
+            ->whereNull('scheduled_date')
+            ->whereNull('scheduled_time');
 
         $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
-            $query->where(function($q) use ($cancelledStatus) {
+            $query->where(function ($q) use ($cancelledStatus) {
                 $q->where('appointment_status_id', '!=', $cancelledStatus->id)
-                  ->orWhereNull('appointment_status_id');
+                    ->orWhereNull('appointment_status_id');
             });
         }
 
@@ -838,19 +844,19 @@ class AppointmentService
         DB::beginTransaction();
         try {
             $accountId = $this->getAccountId();
-            
+
             // Find appointment by ID, allowing for NULL account_id or matching account_id
             $appointment = Appointments::where('id', $id)
-                ->where(function($query) use ($accountId) {
+                ->where(function ($query) use ($accountId) {
                     $query->where('account_id', $accountId)
-                          ->orWhereNull('account_id');
+                        ->orWhereNull('account_id');
                 })
                 ->first();
 
-            if (!$appointment) {
+            if (! $appointment) {
                 throw AppointmentException::notFound();
             }
-            
+
             // If appointment has NULL account_id, set it to current user's account
             if ($appointment->account_id === null) {
                 $appointment->account_id = $accountId;
@@ -865,7 +871,7 @@ class AppointmentService
             // Validate doctor has service allocated at location
             $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
             $locationId = $data['location_id'] ?? $appointment->location_id;
-            
+
             // Check if doctor has "all services" assigned at this location
             $hasAllServices = \DB::table('doctor_has_locations')
                 ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
@@ -875,7 +881,7 @@ class AppointmentService
                 ->where('doctor_has_locations.is_allocated', 1)
                 ->exists();
 
-            if (!$hasAllServices) {
+            if (! $hasAllServices) {
                 // If not all services, check for specific service
                 $hasService = \DB::table('doctor_has_locations')
                     ->where('user_id', $doctorId)
@@ -884,7 +890,7 @@ class AppointmentService
                     ->where('is_allocated', 1)
                     ->exists();
 
-                if (!$hasService) {
+                if (! $hasService) {
                     throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
                 }
             }
@@ -905,7 +911,7 @@ class AppointmentService
 
             $updateData = array_merge($scheduleData, [
                 'updated_by' => $this->getUserId(),
-                'updated_at' => Carbon::now()
+                'updated_at' => Carbon::now(),
             ]);
 
             if (isset($data['doctor_id'])) {
@@ -922,23 +928,23 @@ class AppointmentService
             $resolvedLocationId = $data['location_id'] ?? $appointment->location_id;
 
             if ($resolvedDoctorId && $resolvedDate) {
-                $resource = \App\Models\Resources::where([
+                $resource = Resources::where([
                     'external_id' => $resolvedDoctorId,
-                    'resource_type_id' => \Illuminate\Support\Facades\Config::get('constants.resource_doctor_type_id'),
+                    'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
                     'account_id' => $accountId,
                 ])->first();
 
                 if ($resource) {
                     $updateData['resource_id'] = $resource->id;
 
-                    $rotaDay = \App\Models\ResourceHasRotaDays::getSingleDayRotaWithResourceID(
+                    $rotaDay = ResourceHasRotaDays::getSingleDayRotaWithResourceID(
                         $resource->id,
                         $resolvedDate,
                         $accountId,
                         $resolvedLocationId
                     );
 
-                    if (!empty($rotaDay)) {
+                    if (! empty($rotaDay)) {
                         $updateData['resource_has_rota_day_id'] = $rotaDay['id'];
                     }
                 }
@@ -953,6 +959,7 @@ class AppointmentService
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
+
             return $appointment->fresh(['doctor', 'resource', 'location']);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -979,13 +986,13 @@ class AppointmentService
             'sms_logs',
             'packageadvance',
             'packages',
-            'hasInvoices'
+            'hasInvoices',
         ])->where([
             'id' => $id,
-            'account_id' => $this->getAccountId()
+            'account_id' => $this->getAccountId(),
         ])->first();
 
-        if (!$appointment) {
+        if (! $appointment) {
             throw AppointmentException::notFound();
         }
 
@@ -996,21 +1003,21 @@ class AppointmentService
     {
         if (isset($data['location_id'])) {
             $location = Locations::find($data['location_id']);
-            if (!$location) {
+            if (! $location) {
                 throw AppointmentException::invalidLocation();
             }
         }
 
         if (isset($data['doctor_id'])) {
             $doctor = User::find($data['doctor_id']);
-            if (!$doctor) {
+            if (! $doctor) {
                 throw AppointmentException::invalidDoctor();
             }
         }
 
         if (isset($data['service_id'])) {
             $service = Services::find($data['service_id']);
-            if (!$service) {
+            if (! $service) {
                 throw AppointmentException::invalidService();
             }
         }
@@ -1030,42 +1037,43 @@ class AppointmentService
             'scheduled_time' => $data['scheduled_time'] ?? null,
             'start' => $data['start'] ?? null,
         ]);
-        
-        $object = new \stdClass();
-        
+
+        $object = new \stdClass;
+
         // If we have scheduled_time but no scheduled_date, extract date from start
-        if (!isset($data['scheduled_date']) && isset($data['start'])) {
-            $data['scheduled_date'] = \Carbon\Carbon::parse($data['start'])->format('Y-m-d');
+        if (! isset($data['scheduled_date']) && isset($data['start'])) {
+            $data['scheduled_date'] = Carbon::parse($data['start'])->format('Y-m-d');
             \Log::info('Extracted scheduled_date from start', ['scheduled_date' => $data['scheduled_date']]);
         }
-        
+
         // Build start datetime from scheduled_date and scheduled_time
         if (isset($data['scheduled_date']) && isset($data['scheduled_time'])) {
-            $object->start = $data['scheduled_date'].'T'.\Carbon\Carbon::parse($data['scheduled_time'])->format('H:i:s');
+            $object->start = $data['scheduled_date'].'T'.Carbon::parse($data['scheduled_time'])->format('H:i:s');
             \Log::info('Using scheduled_date and scheduled_time', ['object_start' => $object->start]);
         } elseif (isset($data['start'])) {
             $object->start = $data['start'];
             \Log::info('Using start parameter', ['object_start' => $object->start]);
         } else {
             \Log::info('No time to validate, returning');
+
             return; // No time to validate
         }
-        
+
         $object->city_id = $data['city_id'] ?? '';
         $object->doctor_id = $data['doctor_id'] ?? null;
         $object->location_id = $data['location_id'] ?? null;
         $object->appointment_type = 'consulting';
-        
-        $rota = \App\Helpers\Widgets\AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
-        
-        if (!$rota['status']) {
+
+        $rota = AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+
+        if (! $rota['status']) {
             throw AppointmentException::invalidData($rota['message'] ?? 'Doctor rota is not available for the selected time.');
         }
     }
 
     public function getAppointmentStatistics(array $filters = []): array
     {
-        $cacheKey = "appointment_stats_{$this->getAccountId()}_" . md5(json_encode($filters));
+        $cacheKey = "appointment_stats_{$this->getAccountId()}_".md5(json_encode($filters));
 
         return Cache::remember($cacheKey, 300, function () use ($filters) {
             $query = Appointments::where('account_id', $this->getAccountId());
@@ -1078,7 +1086,7 @@ class AppointmentService
                 'today' => (clone $query)->whereDate('scheduled_date', Carbon::today())->count(),
                 'this_week' => (clone $query)->whereBetween('scheduled_date', [
                     Carbon::now()->startOfWeek(),
-                    Carbon::now()->endOfWeek()
+                    Carbon::now()->endOfWeek(),
                 ])->count(),
                 'this_month' => (clone $query)->whereBetween('scheduled_date', [
                     Carbon::now()->startOfMonth(),
