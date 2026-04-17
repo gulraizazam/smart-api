@@ -355,24 +355,26 @@ class GeneralFunctions
     }
     public static function ServicesTreeMachineType(): array
     {
+        $accountId = Auth::user()->account_id;
 
+        $services = Services::where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })
+            ->where('account_id', $accountId)
+            ->where('slug', '!=', 'all')
+            ->orderBy('name')
+            ->get();
 
-        $filename = 'services';
-
-        $query = Services::with(['children' => function ($q) {
-            $q->where('active', 1)->orderBy('name');
-        }])
-            ->where(['parent_id' => 0])
-            ->where('slug', '!=', 'all');
-        $services = $query->get();
         $mergedServices = [];
-        foreach ($services as $key => $service) {
-
-            $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
+        foreach ($services as $service) {
+            $children = Services::where('parent_id', $service->id)
+                ->where('account_id', $accountId)
+                ->where('active', 1)
+                ->orderBy('name')
+                ->get();
 
             $mergedServices[] = $service->toArray();
-            $children = $children->toArray();
-            foreach ($children as $child) {
+            foreach ($children->toArray() as $child) {
                 $mergedServices[] = $child;
             }
         }
