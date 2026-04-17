@@ -94,10 +94,10 @@ class MyHrmController extends Controller
             if ($validated['duration_type'] === 'custom') {
                 $shiftHours = $leaveService->resolveShiftHours($user->id);
                 if ($shiftHours === null) {
-                    return $this->errorResponse('Custom hours leave requires a shift duration on your profile. Please contact HR.');
+                    return $this->errorResponse('By-hours leave requires a shift duration on your profile. Please contact HR.');
                 }
                 if ((float) $validated['custom_hours'] >= $shiftHours) {
-                    return $this->errorResponse('Custom hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
+                    return $this->errorResponse('Hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
                 }
             }
 
@@ -164,10 +164,10 @@ class MyHrmController extends Controller
             if ($validated['duration_type'] === 'custom') {
                 $shiftHours = $leaveService->resolveShiftHours($user->id);
                 if ($shiftHours === null) {
-                    return $this->errorResponse('Custom hours leave requires a shift duration on your profile. Please contact HR.');
+                    return $this->errorResponse('By-hours leave requires a shift duration on your profile. Please contact HR.');
                 }
                 if ((float) $validated['custom_hours'] >= $shiftHours) {
-                    return $this->errorResponse('Custom hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
+                    return $this->errorResponse('Hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
                 }
             }
 
