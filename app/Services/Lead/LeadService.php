@@ -4,37 +4,37 @@ declare(strict_types=1);
 
 namespace App\Services\Lead;
 
-use App\Models\Leads;
-use App\Models\Cities;
-use App\Models\Services;
-use App\Models\Locations;
-use App\Models\LeadSources;
-use App\Models\LeadStatuses;
-use App\Models\LeadComments;
-use App\Models\LeadsServices;
-use App\Models\User;
-use App\Models\Regions;
-use App\Models\Settings;
-use App\Models\Patients;
-use App\Models\AuditTrails;
-use App\Models\AppointmentStatuses;
-use App\Models\Telecomprovidernumber;
+use App\Exceptions\LeadException;
 use App\Helpers\ACL;
-use App\Helpers\Filters;
 use App\Helpers\ActivityLogger;
-use App\Helpers\GeneralFunctions;
+use App\Helpers\Filters;
+use App\Helpers\Widgets\LocationsWidget;
+use App\Models\Activity;
+use App\Models\AppointmentStatuses;
+use App\Models\AuditTrails;
+use App\Models\Cities;
+use App\Models\LeadComments;
+use App\Models\Leads;
+use App\Models\LeadSources;
+use App\Models\LeadsServices;
+use App\Models\LeadStatuses;
+use App\Models\Locations;
+use App\Models\Patients;
+use App\Models\Regions;
+use App\Models\Services;
+use App\Models\Settings;
+use App\Models\Telecomprovidernumber;
+use App\Models\User;
 use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Phone\PhoneFormattingService;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Exceptions\LeadException;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Builder;
-use Carbon\Carbon;
 
 class LeadService
 {
@@ -81,14 +81,14 @@ class LeadService
     ): Builder {
         $query = Leads::where(function (Builder $q) use ($userCities): void {
             $q->whereIn('leads.city_id', $userCities)
-              ->orWhereNull('leads.city_id');
+                ->orWhereNull('leads.city_id');
         });
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $query->where($where);
         }
 
-        if (!empty($whereService)) {
+        if (! empty($whereService)) {
             $query->whereExists(function ($subquery) use ($whereService): void {
                 $subquery->select(DB::raw(1))
                     ->from('leads_services')
@@ -113,20 +113,20 @@ class LeadService
         $query = Leads::with([
             'lead_service' => function ($q): void {
                 $q->select('id', 'lead_id', 'service_id', 'child_service_id', 'status')
-                  ->with(['service:id,name', 'childservice:id,name']);
+                    ->with(['service:id,name', 'childservice:id,name']);
             },
             'city:id,name',
             'towns:id,name',
         ])->where(function (Builder $q) use ($userCities): void {
             $q->whereIn('leads.city_id', $userCities)
-              ->orWhereNull('leads.city_id');
+                ->orWhereNull('leads.city_id');
         });
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $query->where($where);
         }
 
-        if (!empty($whereService)) {
+        if (! empty($whereService)) {
             $query->whereExists(function ($subquery) use ($whereService): void {
                 $subquery->select(DB::raw(1))
                     ->from('leads_services')
@@ -146,7 +146,8 @@ class LeadService
         $accountId = Auth::user()->account_id;
         $userId = Auth::id();
 
-        $cacheKey = "lead_filters_{$accountId}";
+        // Per-user key: ACL::getUserCities/Centres/Regions vary by user within an account.
+        $cacheKey = "lead_filters_user_{$userId}";
 
         $filterValues = Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId): array {
             $junkStatus = $this->getJunkLeadStatus($accountId);
@@ -195,6 +196,7 @@ class LeadService
                 if ($existingLead) {
                     throw LeadException::phoneAlreadyExists($data['phone']);
                 }
+
                 return $this->createNewLead($data, $accountId, $userId);
             }
 
@@ -208,7 +210,7 @@ class LeadService
             $data['lead_status_id'] = $this->getDefaultLeadStatus($accountId)?->id;
         }
 
-        if (!empty($data['city_id'])) {
+        if (! empty($data['city_id'])) {
             $data['region_id'] = $this->getRegionFromCity((int) $data['city_id']);
         }
 
@@ -257,7 +259,7 @@ class LeadService
                 $this->validateStatusChange($lead);
             }
 
-            if (!empty($data['service_id'])) {
+            if (! empty($data['service_id'])) {
                 $this->updateLeadServices($id, $data);
             }
 
@@ -267,7 +269,7 @@ class LeadService
 
             $lead->update($data);
 
-            if (!empty($data['phone']) && !empty($data['name'])) {
+            if (! empty($data['phone']) && ! empty($data['name'])) {
                 PatientSearchService::patientNameUpdate($data['phone'], $data['name']);
             }
 
@@ -321,12 +323,13 @@ class LeadService
     {
         $lead = Leads::where('account_id', Auth::user()->account_id)->findOrFail($id);
         $lead->update(['active' => $status]);
+
         return $lead;
     }
 
     protected function validateStatusChange(Leads $lead): void
     {
-        if (!$lead->lead_status_id) {
+        if (! $lead->lead_status_id) {
             return;
         }
 
@@ -343,7 +346,7 @@ class LeadService
 
     protected function updateLeadServices(int $leadId, array $data): void
     {
-        if (!empty($data['old_service'])) {
+        if (! empty($data['old_service'])) {
             LeadsServices::where([
                 'lead_id' => $leadId,
                 'service_id' => $data['old_service'],
@@ -353,7 +356,7 @@ class LeadService
 
         $childServices = $data['child_service_id'] ?? [];
 
-        if (!empty($childServices)) {
+        if (! empty($childServices)) {
             foreach ($childServices as $childServiceId) {
                 $leadService = LeadsServices::updateOrCreate([
                     'lead_id' => $leadId,
@@ -382,7 +385,7 @@ class LeadService
     public function createLeadService(int $leadId, array $data, int $accountId): LeadsServices
     {
         $openStatus = $this->getDefaultLeadStatus($accountId);
-        $metaLeadId = !empty($data['meta_lead_id']) ? trim($data['meta_lead_id']) : null;
+        $metaLeadId = ! empty($data['meta_lead_id']) ? trim($data['meta_lead_id']) : null;
 
         $leadService = LeadsServices::create([
             'lead_id' => $leadId,
@@ -465,7 +468,7 @@ class LeadService
     {
         $lead = $this->getLeadForEdit($id);
 
-        if (!$lead) {
+        if (! $lead) {
             return null;
         }
 
@@ -495,17 +498,28 @@ class LeadService
     public function getFormLookupData(): array
     {
         $accountId = Auth::user()->account_id;
+        $userId = Auth::id();
 
-        return Cache::remember("lead_form_lookup_{$accountId}", self::CACHE_TTL, fn(): array => [
-                'cities' => Cities::getActiveSortedFeatured(ACL::getUserCities()),
-                'lead_sources' => LeadSources::getActiveSorted(),
-                'lead_statuses' => LeadStatuses::getLeadStatuses(),
-                'services' => Services::where([
-                    'slug' => 'custom',
-                    'active' => 1,
-                ])->rootServices()->pluck('name', 'id'),
-                'gender' => Config::get('constants.gender_array'),
-            ]);
+        $accountData = Cache::remember("lead_form_lookup_{$accountId}", self::CACHE_TTL, fn (): array => [
+            'lead_sources' => LeadSources::getActiveSorted(),
+            'lead_statuses' => LeadStatuses::getLeadStatuses(),
+            'services' => Services::where([
+                'slug' => 'custom',
+                'active' => 1,
+            ])->rootServices()->pluck('name', 'id'),
+            'gender' => Config::get('constants.gender_array'),
+        ]);
+
+        // Cities depend on ACL::getUserCities() which is per-user; caching them under the
+        // account key leaked one user's allowed cities to another (and served an empty
+        // list to everyone if the first caller had no featured cities in their ACL).
+        $accountData['cities'] = Cache::remember(
+            "lead_form_lookup_cities_user_{$userId}",
+            self::CACHE_TTL,
+            fn () => Cities::getActiveSortedFeatured(ACL::getUserCities()),
+        );
+
+        return $accountData;
     }
 
     // =========================================================================
@@ -516,7 +530,7 @@ class LeadService
     {
         $lead = Leads::find($leadId);
 
-        if (!$lead) {
+        if (! $lead) {
             throw LeadException::notFound($leadId);
         }
 
@@ -556,7 +570,7 @@ class LeadService
     {
         $leadStatus = LeadStatuses::find($statusId);
 
-        if (!$leadStatus) {
+        if (! $leadStatus) {
             return null;
         }
 
@@ -581,7 +595,7 @@ class LeadService
     // Child Services
     // =========================================================================
 
-    public function getChildServices(int $serviceId): \Illuminate\Support\Collection
+    public function getChildServices(int $serviceId): Collection
     {
         return Services::where([
             'parent_id' => $serviceId,
@@ -648,9 +662,10 @@ class LeadService
             ])->select('name', 'id', 'phone')->get();
 
             if ($leads->isNotEmpty()) {
-                if (!$canViewContact) {
+                if (! $canViewContact) {
                     $leads->each(fn ($lead) => $lead->phone = '');
                 }
+
                 return $leads;
             }
         }
@@ -679,17 +694,18 @@ class LeadService
             ->get()
             ->unique('phone');
 
-        if (!$canViewContact) {
+        if (! $canViewContact) {
             $results->each(fn ($lead) => $lead->phone = '');
         }
+
         return $results;
     }
 
     public function searchByPhone(string $phone, int $accountId): Collection
     {
         // Blanket deny: a phone-prefix lookup has no legitimate use without contact permission.
-        if (!Gate::allows('contact')) {
-            return new Collection();
+        if (! Gate::allows('contact')) {
+            return new Collection;
         }
 
         return Leads::where([
@@ -697,9 +713,9 @@ class LeadService
             ['account_id', '=', $accountId],
             ['phone', 'LIKE', "%{$phone}%"],
         ])
-        ->select('name', 'id', 'phone')
-        ->limit(50)
-        ->get();
+            ->select('name', 'id', 'phone')
+            ->limit(50)
+            ->get();
     }
 
     public function searchLeads(string $search, int $accountId): Collection
@@ -735,20 +751,22 @@ class LeadService
 
             if (strlen($phone) < 10 || strlen($phone) > 12) {
                 $stats['invalid_phones'][] = $row['phone'] ?? '';
+
                 continue;
             }
 
             $serviceKey = strtolower(trim($row['service'] ?? ''));
             $serviceData = $lookupData['services'][$serviceKey] ?? null;
 
-            if (!$serviceData && !empty($serviceKey)) {
-                if (!in_array($row['service'], $stats['invalid_services'], true)) {
+            if (! $serviceData && ! empty($serviceKey)) {
+                if (! in_array($row['service'], $stats['invalid_services'], true)) {
                     $stats['invalid_services'][] = $row['service'];
                 }
+
                 continue;
             }
 
-            if (!$serviceData) {
+            if (! $serviceData) {
                 continue;
             }
 
@@ -756,7 +774,7 @@ class LeadService
             $row['_service_id'] = $serviceData['id'];
             $row['_child_service_id'] = null;
 
-            if (!empty($row['treatment'])) {
+            if (! empty($row['treatment'])) {
                 $treatmentKey = strtolower(trim($row['treatment']));
                 $row['_child_service_id'] = $lookupData['child_services'][$serviceData['id']][$treatmentKey] ?? null;
             }
@@ -794,7 +812,7 @@ class LeadService
                 'region_id' => $lookupData['regions'][$cityKey] ?? null,
                 'lead_source_id' => $lookupData['lead_sources'][strtolower(trim($row['lead_source'] ?? ''))] ?? Config::get('constants.lead_source_social_media'),
                 'location_id' => $lookupData['locations'][strtolower(trim($row['centre'] ?? ''))] ?? null,
-                'meta_lead_id' => !empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
+                'meta_lead_id' => ! empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
                 'account_id' => $accountId,
                 'updated_by' => $userId,
                 'converted_by' => $userId,
@@ -807,7 +825,7 @@ class LeadService
                 $phoneToLeadId[$phone] = $existingLead->id;
 
                 if ($options['update_records']) {
-                    if (!$options['skip_lead_statuses']) {
+                    if (! $options['skip_lead_statuses']) {
                         $leadData['lead_status_id'] = $leadStatusId;
                     }
                     $leadsToUpdate[$existingLead->id] = $leadData;
@@ -820,7 +838,7 @@ class LeadService
                         'location_id' => $leadData['location_id'],
                         'meta_lead_id' => $leadData['meta_lead_id'],
                     ];
-                    if (!$options['skip_lead_statuses']) {
+                    if (! $options['skip_lead_statuses']) {
                         $leadsToUpdate[$existingLead->id]['lead_status_id'] = $leadStatusId;
                     }
                     $stats['updated']++;
@@ -838,12 +856,12 @@ class LeadService
             ->pluck('name', 'id')
             ->toArray();
         $locationsLookup = Locations::with('city')
-            ->whereIn('id', array_filter(array_unique(array_map(fn($r) => $lookupData['locations'][strtolower(trim($r['centre'] ?? ''))] ?? null, $validRows))))
+            ->whereIn('id', array_filter(array_unique(array_map(fn ($r) => $lookupData['locations'][strtolower(trim($r['centre'] ?? ''))] ?? null, $validRows))))
             ->get()
             ->keyBy('id');
 
         return DB::transaction(function () use ($leadsToCreate, $leadsToUpdate, $validRows, $phoneToLeadId, $defaultStatusId, $now, $stats, $accountId, $userId, $servicesLookup, $locationsLookup, $lookupData): array {
-            if (!empty($leadsToCreate)) {
+            if (! empty($leadsToCreate)) {
                 foreach (array_chunk($leadsToCreate, 500, true) as $chunk) {
                     Leads::insert(array_values($chunk));
                 }
@@ -855,7 +873,7 @@ class LeadService
                 }
             }
 
-            if (!empty($leadsToUpdate)) {
+            if (! empty($leadsToUpdate)) {
                 foreach ($leadsToUpdate as $leadId => $data) {
                     Leads::where('id', $leadId)->update($data);
                 }
@@ -868,7 +886,7 @@ class LeadService
                 $phone = $row['_phone_clean'];
                 $leadId = $phoneToLeadId[$phone] ?? null;
 
-                if (!$leadId) {
+                if (! $leadId) {
                     continue;
                 }
 
@@ -877,7 +895,7 @@ class LeadService
                     'lead_id' => $leadId,
                     'service_id' => $row['_service_id'],
                     'child_service_id' => $row['_child_service_id'],
-                    'meta_lead_id' => !empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
+                    'meta_lead_id' => ! empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
                     'status' => 1,
                     'lead_status_id' => $defaultStatusId,
                     'created_at' => $now,
@@ -885,11 +903,11 @@ class LeadService
                 ];
             }
 
-            if (!empty($leadIdsToDeactivate)) {
+            if (! empty($leadIdsToDeactivate)) {
                 LeadsServices::whereIn('lead_id', $leadIdsToDeactivate)->update(['status' => 0]);
             }
 
-            if (!empty($leadServicesToCreate)) {
+            if (! empty($leadServicesToCreate)) {
                 foreach (array_chunk($leadServicesToCreate, 500) as $chunk) {
                     LeadsServices::insert($chunk);
                 }
@@ -919,7 +937,7 @@ class LeadService
             $phone = $row['_phone_clean'];
             $leadId = $phoneToLeadId[$phone] ?? null;
 
-            if (!$leadId) {
+            if (! $leadId) {
                 continue;
             }
 
@@ -930,10 +948,10 @@ class LeadService
 
             if ($locationId && isset($locationsLookup[$locationId])) {
                 $loc = $locationsLookup[$locationId];
-                $locationName = ($loc->city->name ?? '') . '-' . ($loc->name ?? '');
+                $locationName = ($loc->city->name ?? '').'-'.($loc->name ?? '');
             }
 
-            $description = '<span class="highlight">' . e($creatorName) . '</span> created a <span class="highlight-orange">' . e($serviceName ?: 'Service') . '</span> lead for <span class="highlight-orange">' . e($patientName) . '</span>' . ($locationName ? ' in <span class="highlight">' . e($locationName) . '</span>' : '');
+            $description = '<span class="highlight">'.e($creatorName).'</span> created a <span class="highlight-orange">'.e($serviceName ?: 'Service').'</span> lead for <span class="highlight-orange">'.e($patientName).'</span>'.($locationName ? ' in <span class="highlight">'.e($locationName).'</span>' : '');
 
             $activitiesToCreate[] = [
                 'account_id' => $accountId,
@@ -955,9 +973,9 @@ class LeadService
             ];
         }
 
-        if (!empty($activitiesToCreate)) {
+        if (! empty($activitiesToCreate)) {
             foreach (array_chunk($activitiesToCreate, 500) as $chunk) {
-                \App\Models\Activity::insert($chunk);
+                Activity::insert($chunk);
             }
         }
     }
@@ -976,12 +994,12 @@ class LeadService
 
             $leadSources = LeadSources::where('account_id', $accountId)
                 ->pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+                ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
                 ->toArray();
 
             $leadStatuses = LeadStatuses::where('account_id', $accountId)
                 ->pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+                ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
                 ->toArray();
 
             $services = Services::where('account_id', $accountId)->get();
@@ -1000,7 +1018,7 @@ class LeadService
 
             $locations = Locations::where('account_id', $accountId)
                 ->pluck('id', 'name')
-                ->mapWithKeys(fn($id, $name) => [strtolower(trim($name)) => $id])
+                ->mapWithKeys(fn ($id, $name) => [strtolower(trim($name)) => $id])
                 ->toArray();
 
             return [
@@ -1028,7 +1046,7 @@ class LeadService
     {
         return $this->buildExportQuery($filters)
             ->with([
-                'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
+                'lead_service' => fn ($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
                 'city:id,name',
                 'towns:id,name',
                 'region:id,name',
@@ -1042,7 +1060,7 @@ class LeadService
     {
         $where = [];
 
-        if (!empty($filters['created_at'])) {
+        if (! empty($filters['created_at'])) {
             $dateRange = explode(' - ', $filters['created_at']);
             $startDate = date('Y-m-d H:i:s', strtotime($dateRange[0]));
             $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 0)->format('Y-m-d H:i:s');
@@ -1068,22 +1086,22 @@ class LeadService
             }
         }
 
-        if (!empty($filters['name'])) {
-            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+        if (! empty($filters['name'])) {
+            $where[] = ['name', 'like', '%'.$filters['name'].'%'];
         }
 
         $userCities = ACL::getUserCities();
         $query = Leads::forAccount()->forCities($userCities);
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $query->where($where);
         }
 
         $serviceId = $filters['service_id'] ?? null;
         if ($serviceId) {
-            $query->with(['lead_service' => fn($q) => $q->where(['service_id' => $serviceId, 'status' => 1])->whereNotNull('service_id')]);
+            $query->with(['lead_service' => fn ($q) => $q->where(['service_id' => $serviceId, 'status' => 1])->whereNotNull('service_id')]);
         } else {
-            $query->with(['lead_service' => fn($q) => $q->where('status', 1)->whereNotNull('service_id')]);
+            $query->with(['lead_service' => fn ($q) => $q->where('status', 1)->whereNotNull('service_id')]);
         }
 
         return $query->select([
@@ -1107,7 +1125,7 @@ class LeadService
             'account_id' => $accountId,
         ])->first();
 
-        if (!$lead) {
+        if (! $lead) {
             return null;
         }
 
@@ -1135,6 +1153,7 @@ class LeadService
     public function sendSmsToLead(int $id): array
     {
         $lead = Leads::findOrFail($id);
+
         return $this->sendSMS($lead->id, $lead->phone);
     }
 
@@ -1143,9 +1162,9 @@ class LeadService
         return ['status' => true];
     }
 
-    public function prepareSMSContent(int|null $leadId, string $smsContent): string
+    public function prepareSMSContent(?int $leadId, string $smsContent): string
     {
-        if (!$leadId) {
+        if (! $leadId) {
             return $smsContent;
         }
 
@@ -1155,7 +1174,7 @@ class LeadService
         }
 
         $lead = Leads::with(['city', 'lead_source', 'lead_status'])->find($leadId);
-        if (!$lead) {
+        if (! $lead) {
             return $smsContent;
         }
 
@@ -1193,13 +1212,13 @@ class LeadService
             'account_id' => Auth::user()->account_id,
         ])->first();
 
-        if (!$lead) {
+        if (! $lead) {
             return ['status' => false, 'message' => 'Lead not found.'];
         }
 
         $openStatus = $this->getDefaultLeadStatus(Auth::user()->account_id);
 
-        if (!$openStatus) {
+        if (! $openStatus) {
             return ['status' => false, 'message' => 'Open status not found.'];
         }
 
@@ -1224,7 +1243,7 @@ class LeadService
         $city = Cities::find($cityId);
         $lead = Leads::find($leadId);
 
-        if (!$lead || !$city) {
+        if (! $lead || ! $city) {
             return null;
         }
 
@@ -1246,7 +1265,7 @@ class LeadService
         $data['status'] = 0;
         $data['patient_id'] = 0;
 
-        if (!$hasManagePermission || empty($requestData['phone']) || !empty($requestData['lead_id'])) {
+        if (! $hasManagePermission || empty($requestData['phone']) || ! empty($requestData['lead_id'])) {
             return $data;
         }
 
@@ -1257,7 +1276,7 @@ class LeadService
         $phone = PhoneFormattingService::cleanNumber($phone);
         $patient = Patients::getByPhone($phone, Auth::user()->account_id, $requestData['patient_id'] ?? null);
 
-        if (!$patient) {
+        if (! $patient) {
             $data['status'] = 1;
             $data['service_id'] = $requestData['service_id'] ?? null;
             $data['phone'] = $requestData['phone'] ?? null;
@@ -1319,7 +1338,7 @@ class LeadService
             ->unique()
             ->toArray();
 
-        if (!empty($parentIds)) {
+        if (! empty($parentIds)) {
             $parentStatuses = LeadStatuses::whereIn('id', $parentIds)
                 ->select('id', 'name', 'parent_id')
                 ->get()
@@ -1351,10 +1370,11 @@ class LeadService
                 LeadsServices::create($data);
 
                 AuditTrails::addEventLogger('leads', 'create', $data, Leads::getFillableFields(), $record);
+
                 return $record;
             }
 
-            if (!empty($data['city_id'])) {
+            if (! empty($data['city_id'])) {
                 $city = Cities::find($data['city_id']);
                 $data['region_id'] = $city?->region_id;
             }
@@ -1364,7 +1384,7 @@ class LeadService
                 'account_id' => $accountId,
             ])->first();
 
-            if (!$existingLead) {
+            if (! $existingLead) {
                 $record = Leads::create($data);
             } else {
                 $openStatus = $this->getDefaultLeadStatus($accountId);
@@ -1378,6 +1398,7 @@ class LeadService
             }
 
             AuditTrails::addEventLogger('leads', 'create', $data, Leads::getFillableFields(), $record);
+
             return $record;
         });
     }
@@ -1386,13 +1407,13 @@ class LeadService
     {
         return DB::transaction(function () use ($id, $data, $isAppointment): ?Leads {
             $record = Leads::find($id);
-            if (!$record) {
+            if (! $record) {
                 return null;
             }
 
             $oldData = $isAppointment ? $record->toArray() : [];
 
-            if (!empty($data['city_id'])) {
+            if (! empty($data['city_id'])) {
                 $city = Cities::find($data['city_id']);
                 $data['region_id'] = $city?->region_id;
             }
@@ -1401,6 +1422,7 @@ class LeadService
             $record->update($data);
 
             AuditTrails::editEventLogger('leads', 'Edit', $data, Leads::getFillableFields(), $oldData, $record);
+
             return $record;
         });
     }
@@ -1414,22 +1436,22 @@ class LeadService
         $query = $this->buildReportBaseQuery($filters);
         $this->applyReportFilters($query, $filters);
 
-        if (!empty($filters['age_group_range'])) {
+        if (! empty($filters['age_group_range'])) {
             $ageRange = explode(':', $filters['age_group_range']);
             $from = Carbon::now()->subYears((int) $ageRange[1])->toDateString();
             $to = Carbon::now()->subYears((int) $ageRange[0])->toDateString();
             $query->whereBetween('users.dob', [$from, $to]);
         }
 
-        if (!empty($filters['telecomprovider_id'])) {
+        if (! empty($filters['telecomprovider_id'])) {
             $providers = Telecomprovidernumber::whereIn('id', $filters['telecomprovider_id'])->get();
-            $prefixes = $providers->pluck('pre_fix')->map(fn($p) => ltrim($p, '0'))->toArray();
+            $prefixes = $providers->pluck('pre_fix')->map(fn ($p) => ltrim($p, '0'))->toArray();
 
-            if (!empty($prefixes)) {
+            if (! empty($prefixes)) {
                 $query->where(function ($q) use ($prefixes): void {
                     foreach ($prefixes as $i => $prefix) {
                         $method = $i === 0 ? 'where' : 'orWhere';
-                        $q->$method('users.phone', 'like', $prefix . '%');
+                        $q->$method('users.phone', 'like', $prefix.'%');
                     }
                 });
             }
@@ -1467,10 +1489,10 @@ class LeadService
     {
         $query = $this->buildReportBaseQuery($filters);
 
-        if (!empty($filters['region_id'])) {
+        if (! empty($filters['region_id'])) {
             $query->where('leads.region_id', $filters['region_id']);
         }
-        if (!empty($filters['city_id'])) {
+        if (! empty($filters['city_id'])) {
             $query->where('leads.city_id', $filters['city_id']);
         }
 
@@ -1526,7 +1548,7 @@ class LeadService
                 ->whereDate('appointments.created_at', '>', $endDate)
                 ->exists();
 
-            if (!$hasFollowUp) {
+            if (! $hasFollowUp) {
                 return true;
             }
 
@@ -1555,8 +1577,8 @@ class LeadService
                 $query->whereIn('leads.city_id', ACL::getUserCities())
                     ->orWhereNull('leads.city_id');
             })
-            ->when($startDate, fn(Builder $q) => $q->whereDate($dateColumn, '>=', $startDate))
-            ->when($endDate, fn(Builder $q) => $q->whereDate($dateColumn, '<=', $endDate));
+            ->when($startDate, fn (Builder $q) => $q->whereDate($dateColumn, '>=', $startDate))
+            ->when($endDate, fn (Builder $q) => $q->whereDate($dateColumn, '<=', $endDate));
     }
 
     protected function applyReportFilters(Builder $query, array $filters): void
@@ -1580,16 +1602,16 @@ class LeadService
         ];
 
         foreach ($filterMap as $key => $column) {
-            if (!empty($filters[$key])) {
+            if (! empty($filters[$key])) {
                 $query->where($column, $filters[$key]);
             }
         }
 
-        if (!empty($filters['email'])) {
-            $query->where('users.email', 'like', '%' . $filters['email'] . '%');
+        if (! empty($filters['email'])) {
+            $query->where('users.email', 'like', '%'.$filters['email'].'%');
         }
-        if (!empty($filters['phone'])) {
-            $query->where('users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($filters['phone']) . '%');
+        if (! empty($filters['phone'])) {
+            $query->where('users.phone', 'like', '%'.PhoneFormattingService::cleanNumber($filters['phone']).'%');
         }
     }
 
@@ -1599,7 +1621,7 @@ class LeadService
 
     public function getDefaultLeadStatus(int $accountId): ?LeadStatuses
     {
-        return Cache::remember("default_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("default_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_default' => 1,
         ])->first());
@@ -1607,7 +1629,7 @@ class LeadService
 
     public function getJunkLeadStatus(int $accountId): ?LeadStatuses
     {
-        return Cache::remember("junk_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("junk_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_junk' => 1,
         ])->first());
@@ -1615,7 +1637,7 @@ class LeadService
 
     public function getConvertedLeadStatus(int $accountId): ?LeadStatuses
     {
-        return Cache::remember("converted_lead_status_{$accountId}", self::CACHE_TTL, fn(): ?LeadStatuses => LeadStatuses::where([
+        return Cache::remember("converted_lead_status_{$accountId}", self::CACHE_TTL, fn (): ?LeadStatuses => LeadStatuses::where([
             'account_id' => $accountId,
             'is_converted' => 1,
         ])->first());
@@ -1624,9 +1646,11 @@ class LeadService
     public function clearCache(): void
     {
         $accountId = Auth::user()->account_id;
+        $userId = Auth::id();
         $keys = [
             "lead_form_lookup_{$accountId}",
-            "lead_filters_{$accountId}",
+            "lead_form_lookup_cities_user_{$userId}",
+            "lead_filters_user_{$userId}",
             "default_lead_status_{$accountId}",
             "junk_lead_status_{$accountId}",
             "converted_lead_status_{$accountId}",
@@ -1710,7 +1734,7 @@ class LeadService
 
         if (hasFilter($filters, $key)) {
             $value = $cleanNumber ? PhoneFormattingService::cleanNumber($filters[$key]) : $filters[$key];
-            $where[] = [$column, $operator, $prefix . $value . $suffix];
+            $where[] = [$column, $operator, $prefix.$value.$suffix];
             Filters::put($userId, $filename, $key, $value);
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, $key);
@@ -1718,7 +1742,7 @@ class LeadService
             $storedValue = Filters::get($userId, $filename, $key);
             if ($storedValue) {
                 $value = $cleanNumber ? PhoneFormattingService::cleanNumber($storedValue) : $storedValue;
-                $where[] = [$column, $operator, $prefix . $value . $suffix];
+                $where[] = [$column, $operator, $prefix.$value.$suffix];
             }
         }
 
@@ -1767,7 +1791,7 @@ class LeadService
 
     protected function parseDateRange(?string $dateRange): array
     {
-        if (!$dateRange) {
+        if (! $dateRange) {
             return [null, null];
         }
 
