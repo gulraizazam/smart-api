@@ -20,6 +20,7 @@ class EmployeeDetail extends BaseModel
         'reporting_manager_id',
         'hire_date',
         'employment_type',
+        'shift_hours',
         'salary',
         'bank_name',
         'bank_account_number',
@@ -37,6 +38,7 @@ class EmployeeDetail extends BaseModel
             'hire_date' => 'date',
             'employment_type' => EmploymentType::class,
             'salary' => 'decimal:2',
+            'shift_hours' => 'decimal:2',
             'bank_account_number' => 'encrypted',
         ];
     }

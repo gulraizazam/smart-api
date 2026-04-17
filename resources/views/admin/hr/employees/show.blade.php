@@ -76,6 +76,7 @@
                                     <tr><td class="font-weight-bold text-muted">Designation</td><td>{{ $detail?->designation?->name ?? '—' }}</td></tr>
                                     <tr><td class="font-weight-bold text-muted">Hire Date</td><td>{{ $detail?->hire_date ? $detail->hire_date->format('d M Y') : '—' }}</td></tr>
                                     <tr><td class="font-weight-bold text-muted">Employment Type</td><td>{{ $detail?->employment_type?->label() ?? '—' }}</td></tr>
+                                    <tr><td class="font-weight-bold text-muted">Shift Hours</td><td>{{ $detail?->shift_hours !== null ? rtrim(rtrim((string) $detail->shift_hours, '0'), '.') . ' hrs' : '—' }}</td></tr>
                                     <tr><td class="font-weight-bold text-muted">Reporting Manager</td><td>{{ $detail?->reportingManager?->name ?? '—' }}</td></tr>
                                 </table>
                             </div>

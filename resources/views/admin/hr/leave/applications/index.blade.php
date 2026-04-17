@@ -105,7 +105,16 @@
             { field: 'leave_type', title: 'Type', width: 100, sortable: false },
             { field: 'start_date', title: 'From', width: 100, sortable: false },
             { field: 'end_date', title: 'To', width: 100, sortable: false },
-            { field: 'total_days', title: 'Days', width: 60, sortable: false },
+            {
+                field: 'total_days', title: 'Days', width: 80, sortable: false,
+                template: function (data) {
+                    var html = data.total_days;
+                    if (data.hours_display) {
+                        html += '<span class="d-block text-muted font-size-xs">' + data.hours_display + '</span>';
+                    }
+                    return html;
+                }
+            },
             { field: 'duration_type', title: 'Duration', width: 80, sortable: false },
             {
                 field: 'status', title: 'Status', width: 90, sortable: false,

@@ -1,24 +1,22 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use App\Helpers\GeneralFunctions;
-use App\Helpers\NodesTree;
+use App\Helpers\ActivityLogger;
 use App\Helpers\AppointmentHelper;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;use Illuminate\Database\Eloquent\Relations\HasOne;
-
-use Illuminate\Support\Facades\Cache;use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 
 class Appointments extends Model
 {
@@ -30,8 +28,8 @@ class Appointments extends Model
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
-        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from','deleted_by',
-        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by'
+        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from', 'deleted_by',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
     ];
 
     protected $table = 'appointments';
@@ -40,8 +38,6 @@ class Appointments extends Model
 
     /**
      * used in event
-     *
-     * @var string
      */
     public string $__table = 'appointments';
 
@@ -55,8 +51,6 @@ class Appointments extends Model
 
     /**
      * used in events
-     *
-     * @var array
      */
     public array $__fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
@@ -93,20 +87,20 @@ class Appointments extends Model
             'location.city',
             'doctor',
             'patient',
-            'lead'
+            'lead',
         ]);
     }
 
     public function scopeScheduled($query): Builder
     {
         return $query->whereNotNull('scheduled_date')
-                     ->whereNotNull('scheduled_time');
+            ->whereNotNull('scheduled_time');
     }
 
     public function scopeNonScheduled($query): Builder
     {
         return $query->whereNull('scheduled_date')
-                     ->whereNull('scheduled_time');
+            ->whereNull('scheduled_time');
     }
 
     public function scopeByAccount($query, $account_id): Builder
@@ -143,11 +137,12 @@ class Appointments extends Model
     {
         $cancelledStatus = AppointmentHelper::getCancelledStatus($account_id);
         if ($cancelledStatus) {
-            return $query->where(function($q) use ($cancelledStatus) {
+            return $query->where(function ($q) use ($cancelledStatus) {
                 $q->where('appointment_status_id', '!=', $cancelledStatus->id)
-                  ->orWhereNull('appointment_status_id');
+                    ->orWhereNull('appointment_status_id');
             });
         }
+
         return $query;
     }
 
@@ -372,10 +367,11 @@ class Appointments extends Model
     {
         return $this->hasMany(Invoices::class, 'appointment_id');
     }
+
     public function invoice() // clearer
-{
-    return $this->hasOne(Invoices::class, 'appointment_id');
-}
+    {
+        return $this->hasOne(Invoices::class, 'appointment_id');
+    }
 
     /**
      * Prepare SMS Contnet for Delivery
@@ -444,7 +440,7 @@ class Appointments extends Model
         $query = self::scheduled()
             ->excludeCancelled($account_id)
             ->withRelations();
- 
+
         if ($appointment_type_id) {
             $query->byType($appointment_type_id);
         }
@@ -461,10 +457,10 @@ class Appointments extends Model
             $query->byLocation($request->location_id);
         }
 
-        if ($request->doctor_id && !$skip_doctor) {
+        if ($request->doctor_id && ! $skip_doctor) {
             $query->where('doctor_id', $request->doctor_id);
         }
-        
+
         if ($request->machine_id) {
             $query->where('resource_id', $request->machine_id);
         }
@@ -475,14 +471,14 @@ class Appointments extends Model
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $appointment_data, $account_id)
     {
         $appointment_data['account_id'] = $account_id;
         $appointment_data['updated_at'] = Carbon::now();
-        
+
         if (isset($appointment_data['reschedule']) && $appointment_data['reschedule'] == 1) {
             $appointment_data['converted_by'] = Auth::id();
         } else {
@@ -500,7 +496,7 @@ class Appointments extends Model
 
         $record = self::byAccount($account_id)->find($id);
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -513,7 +509,7 @@ class Appointments extends Model
     /**
      * Get Node Services
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function getNodeServices($serviceId, $account_id, $drop_down = false, $remove_spaces = false)
@@ -570,22 +566,21 @@ class Appointments extends Model
                 'message' => "Consultation or Treatment can't be deleted when invoice generated.",
             ];
         }
-        
+
         // Log deletion activity before deleting
         $patient = Patients::find($appointment->patient_id);
         $location = Locations::with('city')->find($appointment->location_id);
         $service = Services::find($appointment->service_id);
-        \App\Helpers\ActivityLogger::logAppointmentDeleted($appointment, $patient, $location, $service);
-        
-        AppointmentsDailyStats::where('appointment_id',$id)->delete();
+        ActivityLogger::logAppointmentDeleted($appointment, $patient, $location, $service);
+
+        AppointmentsDailyStats::where('appointment_id', $id)->delete();
         $appointment->whereId($id)->update([
             'deleted_by' => Auth::id(),
             'arrived_at' => null,
-            'converted_at' => null
+            'converted_at' => null,
         ]);
         $appointment->delete();
-        Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
-        //log request for delete for audit trail
+        // log request for delete for audit trail
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
         return [
@@ -593,6 +588,7 @@ class Appointments extends Model
             'message' => 'Record has been deleted successfully.',
         ];
     }
+
     public function feedback(): HasOne
     {
         return $this->hasOne(Feedback::class, 'appointment_id');
@@ -602,11 +598,12 @@ class Appointments extends Model
     {
         return $this->belongsTo(Resources::class, 'resource_id')->withTrashed();
     }
+
     /**
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     protected static function isChildExists($id, $account_id)
     {
@@ -616,7 +613,7 @@ class Appointments extends Model
     /**
      * change scheduled_date format
      *
-     * @param $time
+     * @param  $time
      * @return string
      */
     /*public function getScheduledTimeAttribute($time, $format = 'h:i A') { //h:ia

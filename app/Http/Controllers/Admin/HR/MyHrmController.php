@@ -59,11 +59,14 @@ class MyHrmController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $shiftHours = app(LeaveService::class)->resolveShiftHours($user->id);
+
         return view('admin.hr.my.leaves', compact(
             'leaveTypes',
             'balances',
             'applications',
             'fiscalYear',
+            'shiftHours',
         ));
     }
 
@@ -77,15 +80,26 @@ class MyHrmController extends Controller
                 'leave_type_id' => ['required', "exists:leave_types,id,account_id,{$accountId}"],
                 'start_date' => ['required', 'date'],
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-                'duration_type' => ['required', 'in:full,half,short'],
+                'duration_type' => ['required', 'in:full,half,short,custom'],
+                'custom_hours' => ['nullable', 'required_if:duration_type,custom', 'numeric', 'gt:0'],
                 'reason' => ['required', 'string', 'max:1000'],
             ]);
 
-            if (in_array($validated['duration_type'], ['half', 'short'])) {
+            $leaveService = app(LeaveService::class);
+
+            if (in_array($validated['duration_type'], ['half', 'short', 'custom'], true)) {
                 $validated['end_date'] = $validated['start_date'];
             }
 
-            $leaveService = app(LeaveService::class);
+            if ($validated['duration_type'] === 'custom') {
+                $shiftHours = $leaveService->resolveShiftHours($user->id);
+                if ($shiftHours === null) {
+                    return $this->errorResponse('By-hours leave requires a shift duration on your profile. Please contact HR.');
+                }
+                if ((float) $validated['custom_hours'] >= $shiftHours) {
+                    return $this->errorResponse('Hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
+                }
+            }
 
             if ($leaveService->hasOverlap($user->id, $validated['start_date'], $validated['end_date'])) {
                 return $this->errorResponse('You already have a leave application for these dates.');
@@ -136,15 +150,26 @@ class MyHrmController extends Controller
                 'leave_type_id' => ['required', "exists:leave_types,id,account_id,{$accountId}"],
                 'start_date' => ['required', 'date'],
                 'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-                'duration_type' => ['required', 'in:full,half,short'],
+                'duration_type' => ['required', 'in:full,half,short,custom'],
+                'custom_hours' => ['nullable', 'required_if:duration_type,custom', 'numeric', 'gt:0'],
                 'reason' => ['required', 'string', 'max:1000'],
             ]);
 
-            if (in_array($validated['duration_type'], ['half', 'short'])) {
+            $leaveService = app(LeaveService::class);
+
+            if (in_array($validated['duration_type'], ['half', 'short', 'custom'], true)) {
                 $validated['end_date'] = $validated['start_date'];
             }
 
-            $leaveService = app(LeaveService::class);
+            if ($validated['duration_type'] === 'custom') {
+                $shiftHours = $leaveService->resolveShiftHours($user->id);
+                if ($shiftHours === null) {
+                    return $this->errorResponse('By-hours leave requires a shift duration on your profile. Please contact HR.');
+                }
+                if ((float) $validated['custom_hours'] >= $shiftHours) {
+                    return $this->errorResponse('Hours must be less than your shift hours (' . $shiftHours . '). Use Full Day instead.');
+                }
+            }
 
             if ($leaveService->hasOverlap($user->id, $validated['start_date'], $validated['end_date'], $leaveApplication->id)) {
                 return $this->errorResponse('You already have a leave application for these dates.');
