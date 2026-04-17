@@ -432,9 +432,9 @@ class PackageAdvances extends BaseModel
         return true;
     }
 
-    public static function deletefinaceRecord(Request $request): ?bool
+    public static function deletefinaceRecord(int $packageAdvanceId): ?bool
     {
-        $advance = self::withTrashed()->findOrFail($request->package_advance_id);
+        $advance = self::withTrashed()->findOrFail($packageAdvanceId);
         $advance->delete();
 
         AuditTrails::softDeleteEventLogger(
@@ -442,7 +442,7 @@ class PackageAdvances extends BaseModel
             'delete',
             $advance->toArray(),
             self::$_fillable,
-            $request->package_advance_id,
+            $packageAdvanceId,
         );
 
         return true;

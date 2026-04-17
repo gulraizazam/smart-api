@@ -3535,7 +3535,7 @@ final class PlanService
         ])->sum('cash_amount');
 
         if ($getPackageUseAmount <= $getPackageUnusedAmountExceptEdit) {
-            $record = PackageAdvances::deletefinaceRecord((object) $data);
+            $record = PackageAdvances::deletefinaceRecord((int) $data['package_advance_id']);
             $cashReceiveRemain = number_format(sanitize_money($data['cash_receveive_remain']) + $packageadvanceinfo->cash_amount);
 
             // Sync plan_invoices table - soft delete the corresponding plan_invoice
