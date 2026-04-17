@@ -47,7 +47,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
      * @return mixed
      */
 
-    public function invoice(int $id): View
+    public function invoice(int $id): View|JsonResponse
     {
 
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
@@ -549,7 +549,7 @@ class AppointmentInvoiceController extends AppointmentBaseController
         ]);
     }
 
-    public function displayInvoiceAppointment(int $id): View
+    public function displayInvoiceAppointment(int $id): View|JsonResponse
     {
         if (! Gate::allows('appointments_invoice_display')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);

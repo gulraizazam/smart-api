@@ -219,7 +219,8 @@
       "Bash(/c/laragon/bin/mysql/mysql-8.0.30-winx64/bin/mysql.exe -u root crm -e \"SELECT location_id, COUNT\\(*\\) as cnt FROM packages WHERE deleted_at IS NULL GROUP BY location_id ORDER BY cnt DESC LIMIT 20;\")",
       "Bash(awk -F: '$0 ~ /function savePackagesService/{start=$1} start && $2 ~ /^    \\\\}/{print \"savePackagesService ends at line\", $1; exit}')",
       "Bash(awk 'NR>=1457 && NR<=1612 && /^        }/' app/Services/Plan/PlanDiscountService.php)",
-      "Bash(awk -F: '$1>=1455 && $1<=1620')"
+      "Bash(awk -F: '$1>=1455 && $1<=1620')",
+      "Bash(git log *)"
     ]
   }
 }
