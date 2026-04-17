@@ -37,6 +37,7 @@ use App\Policies\AppointmentPolicy;
 use App\Policies\CashFlowPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\LeadPolicy;
+use App\Policies\ManagementDashboardPolicy;
 use App\Policies\MembershipPolicy;
 use App\Policies\PatientPolicy;
 use App\Policies\PlanPolicy;
@@ -281,6 +282,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Services::class, ServicePolicy::class);
         Gate::policy(Membership::class, MembershipPolicy::class);
         Gate::policy(CashFlowPolicy::class, CashFlowPolicy::class);
+        Gate::policy(ManagementDashboardPolicy::class, ManagementDashboardPolicy::class);
 
         Gate::before(fn ($user, $ability) => $user->hasRole('Super-Admin') ? true : null);
     }

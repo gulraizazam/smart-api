@@ -1,10 +1,13 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Models\Locations;
+use App\Services\Dashboard\Support\SalesLedgerQuery;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -59,7 +62,7 @@ class dashboardreport
 
         foreach ($locationIds as $locationId) {
             $location = $locations->get($locationId);
-            if (!$location) {
+            if (! $location) {
                 continue;
             }
 
@@ -69,7 +72,7 @@ class dashboardreport
             if ($balance > 0) {
                 $cityName = $location->city->name ?? '';
                 $reportData[$locationId] = [
-                    $cityName . ' - ' . $location->name,
+                    $cityName.' - '.$location->name,
                     $balance,
                 ];
                 $total += $balance;
@@ -91,7 +94,7 @@ class dashboardreport
         // Extract location IDs from array keys or Collection
         $locationIds = match (true) {
             is_array($locationInformation) => array_keys($locationInformation),
-            $locationInformation instanceof \Illuminate\Support\Collection => $locationInformation->keys()->all(),
+            $locationInformation instanceof Collection => $locationInformation->keys()->all(),
             default => (array) $locationInformation,
         };
 
@@ -134,7 +137,7 @@ class dashboardreport
 
         foreach ($locationIds as $locationId) {
             $location = $locations->get($locationId);
-            if (!$location) {
+            if (! $location) {
                 continue;
             }
 
@@ -143,7 +146,7 @@ class dashboardreport
             if ($balance > 0) {
                 $cityName = $location->city->name ?? '';
                 $reportData[] = [
-                    $cityName . ' - ' . $location->name,
+                    $cityName.' - '.$location->name,
                     $balance,
                 ];
                 $total += $balance;
@@ -154,7 +157,9 @@ class dashboardreport
     }
 
     /**
-     * Collection total across all centres — single aggregate query.
+     * Collection total across all centres. Delegates to the canonical
+     * SalesLedgerQuery helper so the home page and Management Dashboard
+     * always report the same figure from the same SQL.
      */
     public static function collectionbycenter(
         array $locationIds,
@@ -162,57 +167,43 @@ class dashboardreport
         string $period,
         mixed $request = null,
     ): array {
-        if (empty($locationIds)) {
+        if (empty($locationIds) || $accountId === null) {
             return [0];
         }
 
         [$startDate, $endDate] = self::resolveDateRange($period);
 
-        $result = DB::table('package_advances as pa')
-            ->join('payment_modes as pm', 'pa.payment_mode_id', '=', 'pm.id')
+        $sales = SalesLedgerQuery::forRange(
+            accountId: (int) $accountId,
+            startDate: $startDate->format('Y-m-d'),
+            endDate: $endDate->copy()->subDay()->format('Y-m-d'),
+        )
             ->whereIn('pa.location_id', $locationIds)
-            ->where('pa.account_id', $accountId)
-            ->where('pa.created_at', '>=', $startDate)
-            ->where('pa.created_at', '<', $endDate)
-            ->where('pa.is_adjustment', 0)
-            ->where('pa.is_tax', 0)
-            ->where('pa.is_cancel', 0)
-            ->where('pa.cash_amount', '!=', 0)
-            ->whereNull('pa.deleted_at')
-            ->select(
-                DB::raw("SUM(CASE
-                    WHEN pa.cash_flow = 'in' AND pm.name IN ('Cash','Card','Bank/Wire Transfer')
-                    THEN pa.cash_amount ELSE 0 END) as revenue"),
-                DB::raw("SUM(CASE
-                    WHEN pa.cash_flow = 'out' AND pa.is_refund = 1
-                    THEN pa.cash_amount ELSE 0 END) as refunds"),
-            )
-            ->first();
+            ->selectRaw(SalesLedgerQuery::netCollectionSelectRaw().' AS sales')
+            ->value('sales');
 
-        $total = (float) ($result?->revenue ?? 0) - (float) ($result?->refunds ?? 0);
-
-        return [$total];
+        return [(float) ($sales ?? 0)];
     }
 
     /**
      * Resolve period string to [startDate, endDate] for range queries.
      * Returns Carbon instances for >= start AND < end (exclusive end).
      *
-     * @return array{0: \Carbon\Carbon, 1: \Carbon\Carbon}
+     * @return array{0: Carbon, 1: Carbon}
      */
     private static function resolveDateRange(string $period): array
     {
         return match ($period) {
-            'today'     => [Carbon::today(), Carbon::tomorrow()],
+            'today' => [Carbon::today(), Carbon::tomorrow()],
             'yesterday' => [Carbon::yesterday(), Carbon::today()],
             'last7day', 'last7days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::tomorrow()],
-            'week'      => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
+            'week' => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
             'thisMonth' => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()->addDay()],
             'lastMonth', 'lastmonth' => [
                 Carbon::now()->subMonthNoOverflow()->startOfMonth(),
                 Carbon::now()->subMonthNoOverflow()->endOfMonth()->addDay(),
             ],
-            default     => [Carbon::today(), Carbon::tomorrow()],
+            default => [Carbon::today(), Carbon::tomorrow()],
         };
     }
 }

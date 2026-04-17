@@ -11,6 +11,7 @@ use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -183,10 +184,11 @@ class Patients extends BaseModel
 
     public function scopeSearchByPhone(Builder $query, ?string $phone): Builder
     {
-        if (!$phone) {
+        if (! $phone) {
             return $query;
         }
         $cleanPhone = GeneralFunctions::cleanNumber($phone);
+
         return $query->where('phone', 'like', "%{$cleanPhone}%");
     }
 
@@ -201,12 +203,12 @@ class Patients extends BaseModel
     |--------------------------------------------------------------------------
     */
 
-    public static function getAll(int $accountId): \Illuminate\Database\Eloquent\Collection
+    public static function getAll(int $accountId): Collection
     {
         return self::patientsOnly()->active()->forAccount($accountId)->get();
     }
 
-    public static function getActiveOnly(int|array|false $patientId = false): \Illuminate\Database\Eloquent\Collection
+    public static function getActiveOnly(int|array|false $patientId = false): Collection
     {
         $query = self::patientsOnly()->active();
 
@@ -233,7 +235,7 @@ class Patients extends BaseModel
         $canViewContact = Gate::allows('contact');
 
         [$scopeSql, $scopeBindings] = PatientAccessScope::rawClause('users.id');
-        $cacheKey = "patient_search_{$accountId}_" . PatientAccessScope::cacheSuffix() . '_' . md5($name);
+        $cacheKey = "patient_search_{$accountId}_".PatientAccessScope::cacheSuffix().'_'.md5($name);
 
         $rows = Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
             $cleaned = strtr($name, [' ' => '', '-' => '', '+' => '', 'C-' => '', 'c-' => '']);
@@ -255,7 +257,7 @@ class Patients extends BaseModel
                      END, id DESC
                      LIMIT 10",
                     array_merge(
-                        [$accountId, $phone, $phone . '%', $cleaned, $cleaned . '%', $cleaned, $cleaned . '%'],
+                        [$accountId, $phone, $phone.'%', $cleaned, $cleaned.'%', $cleaned, $cleaned.'%'],
                         $scopeBindings,
                         [$phone, $cleaned, $cleaned]
                     )
@@ -278,7 +280,7 @@ class Patients extends BaseModel
                  WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
                    {$scopeSql}
                  ORDER BY id DESC LIMIT 10",
-                array_merge([$accountId, $escaped . '%'], $scopeBindings)
+                array_merge([$accountId, $escaped.'%'], $scopeBindings)
             );
 
             return self::decryptCnicColumn($rows);
@@ -290,7 +292,7 @@ class Patients extends BaseModel
         // lookup is still allowed at the query layer so the consultant can
         // find a patient by typing their number — the property is removed
         // entirely (not masked) so callers receive no phone key at all.
-        if (!$canViewContact) {
+        if (! $canViewContact) {
             foreach ($rows as $row) {
                 unset($row->phone);
             }
@@ -327,7 +329,7 @@ class Patients extends BaseModel
         return $rows;
     }
 
-    public static function getPatientidAjaxOrder(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
+    public static function getPatientidAjaxOrder(string $name, int $accountId): Collection
     {
         $canViewContact = Gate::allows('contact');
         $users = collect();
@@ -353,7 +355,7 @@ class Patients extends BaseModel
             PatientAccessScope::applyTo($query);
 
             $users = is_numeric($phoneNumeric)
-                ? $query->where('phone', 'LIKE', '%' . GeneralFunctions::cleanNumber($search) . '%')
+                ? $query->where('phone', 'LIKE', '%'.GeneralFunctions::cleanNumber($search).'%')
                     ->select('name', 'id', 'phone')->get()
                 : $query->where('name', 'LIKE', "%{$search}%")
                     ->select('name', 'id', 'phone')->get();
@@ -381,13 +383,14 @@ class Patients extends BaseModel
         return $users;
     }
 
-    public static function getPatientidAjax(string $name, int $accountId): \Illuminate\Database\Eloquent\Collection
+    public static function getPatientidAjax(string $name, int $accountId): Collection
     {
         $canViewContact = Gate::allows('contact');
-        $hidePhone = static function (\Illuminate\Database\Eloquent\Collection $users) use ($canViewContact): \Illuminate\Database\Eloquent\Collection {
+        $hidePhone = static function (Collection $users) use ($canViewContact): Collection {
             if (! $canViewContact) {
                 $users->each(fn ($user) => $user->makeHidden('phone'));
             }
+
             return $users;
         };
 
@@ -396,6 +399,7 @@ class Patients extends BaseModel
             $query = self::patientsOnly()->active()->forAccount($accountId)
                 ->where('id', $cleanId);
             PatientAccessScope::applyTo($query);
+
             return $hidePhone($query->select('name', 'id', 'phone')->get());
         }
 
@@ -417,6 +421,7 @@ class Patients extends BaseModel
 
         if (is_numeric($phoneNumeric)) {
             $phone = GeneralFunctions::cleanNumber($search);
+
             return $hidePhone($query->where('phone', 'LIKE', "%{$phone}%")
                 ->select('name', 'id', 'phone')->get());
         }
@@ -425,17 +430,18 @@ class Patients extends BaseModel
             ->select('name', 'id', 'phone')->get());
     }
 
-    public static function getPatientPhoneAjax(string $phone, int $accountId): \Illuminate\Database\Eloquent\Collection
+    public static function getPatientPhoneAjax(string $phone, int $accountId): Collection
     {
         // Phone-prefix lookup is meaningless — and leaks enumeration signal —
         // when the caller cannot view contact numbers. Deny outright.
-        if (!Gate::allows('contact')) {
-            return new \Illuminate\Database\Eloquent\Collection();
+        if (! Gate::allows('contact')) {
+            return new Collection;
         }
 
         $query = self::patientsOnly()->active()->forAccount($accountId)
             ->where('phone', 'LIKE', "%{$phone}%");
         PatientAccessScope::applyTo($query);
+
         return $query->select('name', 'id', 'phone')->get();
     }
 
@@ -496,7 +502,7 @@ class Patients extends BaseModel
         }
 
         $record = self::find($id);
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -511,7 +517,7 @@ class Patients extends BaseModel
     {
         $patient = self::getData($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
