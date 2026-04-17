@@ -77,7 +77,14 @@
                                                     , {{ $app->start_date->format('Y') }}
                                                 @endif
                                             </td>
-                                            <td>{{ $app->total_days }}</td>
+                                            <td>
+                                                {{ $app->total_days }}
+                                                @if($app->duration_type->value === 'custom' && $app->custom_hours)
+                                                    <span class="text-muted font-size-xs d-block">{{ rtrim(rtrim((string) $app->custom_hours, '0'), '.') }} hrs</span>
+                                                @elseif(in_array($app->duration_type->value, ['half','short'], true) && $app->shift_hours_snapshot)
+                                                    <span class="text-muted font-size-xs d-block">{{ rtrim(rtrim(number_format((float) $app->total_days * (float) $app->shift_hours_snapshot, 2), '0'), '.') }} hrs</span>
+                                                @endif
+                                            </td>
                                             <td><span class="label label-light-primary label-inline">{{ $app->duration_type->label() }}</span></td>
                                             <td class="text-truncate" style="max-width:180px;" title="{{ $app->reason }}">{{ $app->reason }}</td>
                                             <td><span class="label {{ $app->status->badgeClass() }} label-inline">{{ $app->status->label() }}</span></td>
@@ -88,6 +95,7 @@
                                                         data-id="{{ $app->id }}"
                                                         data-leave-type="{{ $app->leave_type_id }}"
                                                         data-duration="{{ $app->duration_type->value }}"
+                                                        data-custom-hours="{{ $app->custom_hours }}"
                                                         data-start="{{ $app->start_date->format('Y-m-d') }}"
                                                         data-end="{{ $app->end_date->format('Y-m-d') }}"
                                                         data-reason="{{ e($app->reason) }}"
@@ -132,6 +140,11 @@
                                         @endif
                                         <span class="mx-1">&middot;</span>
                                         {{ $app->total_days }} {{ $app->total_days == 1 ? 'day' : 'days' }}
+                                        @if($app->duration_type->value === 'custom' && $app->custom_hours)
+                                            <span class="text-muted">({{ rtrim(rtrim((string) $app->custom_hours, '0'), '.') }} hrs)</span>
+                                        @elseif(in_array($app->duration_type->value, ['half','short'], true) && $app->shift_hours_snapshot)
+                                            <span class="text-muted">({{ rtrim(rtrim(number_format((float) $app->total_days * (float) $app->shift_hours_snapshot, 2), '0'), '.') }} hrs)</span>
+                                        @endif
                                     </div>
                                     @if($app->reason)
                                         <div class="font-size-sm text-dark-50 mb-2">{{ Str::limit($app->reason, 100) }}</div>
@@ -144,6 +157,7 @@
                                                     data-id="{{ $app->id }}"
                                                     data-leave-type="{{ $app->leave_type_id }}"
                                                     data-duration="{{ $app->duration_type->value }}"
+                                                    data-custom-hours="{{ $app->custom_hours }}"
                                                     data-start="{{ $app->start_date->format('Y-m-d') }}"
                                                     data-end="{{ $app->end_date->format('Y-m-d') }}"
                                                     data-reason="{{ e($app->reason) }}">
@@ -180,7 +194,8 @@
                 <div class="modal-body">
                     <form id="form_apply_leave" method="post" action="{{ route('admin.hr.my.leaves.apply') }}"
                           data-apply-url="{{ route('admin.hr.my.leaves.apply') }}"
-                          data-update-url="{{ route('admin.hr.my.leaves.update', ':id') }}">
+                          data-update-url="{{ route('admin.hr.my.leaves.update', ':id') }}"
+                          data-shift-hours="{{ $shiftHours ?? '' }}">
                         @csrf
                         <input type="hidden" id="leave_edit_id" value="">
                         <div class="form-group">
@@ -204,7 +219,20 @@
                                 <label class="btn btn-outline-primary btn-sm mb-0 leave-dur-btn">
                                     <input type="radio" name="duration_type" value="short" class="d-none"> Short Leave
                                 </label>
+                                @if(!empty($shiftHours))
+                                <label class="btn btn-outline-primary btn-sm mb-0 leave-dur-btn">
+                                    <input type="radio" name="duration_type" value="custom" class="d-none"> Custom Hours
+                                </label>
+                                @endif
                             </div>
+                            @if(!empty($shiftHours))
+                                <span class="form-text text-muted font-size-xs mt-1">Your shift is {{ rtrim(rtrim((string) $shiftHours, '0'), '.') }} hours.</span>
+                            @endif
+                        </div>
+                        <div class="form-group" id="custom_hours_group" style="display:none;">
+                            <label class="font-weight-bold font-size-sm mb-1">Hours <span class="text-danger">*</span></label>
+                            <input type="number" step="0.25" min="0.25" name="custom_hours" id="leave_custom_hours" class="form-control" placeholder="e.g. 3">
+                            <span class="form-text text-muted font-size-xs">Less than your shift hours ({{ rtrim(rtrim((string) ($shiftHours ?? ''), '0'), '.') }}). Single day only.</span>
                         </div>
                         <div class="form-group">
                             <label class="font-weight-bold font-size-sm mb-1">Start Date <span class="text-danger">*</span></label>
@@ -259,24 +287,56 @@
                 $(this).find('input[type="radio"]').prop('checked', true).trigger('change');
             });
 
+            var shiftHours = parseFloat($('#form_apply_leave').data('shift-hours')) || 0;
+
             $('input[name="duration_type"]').on('change', function () {
                 var val = $(this).val();
                 if (val === 'full') {
                     $('#end_date_group').show();
                     $('#leave_end_date').prop('required', true);
                     $('#total_days_row').show();
+                    $('#custom_hours_group').hide();
+                    $('#leave_custom_hours').prop('required', false);
                 } else {
                     $('#end_date_group').hide();
                     $('#leave_end_date').prop('required', false).val('');
-                    $('#total_days_row').hide();
+                    $('#total_days_row').show();
+                    if (val === 'custom') {
+                        $('#custom_hours_group').show();
+                        $('#leave_custom_hours').prop('required', true);
+                    } else {
+                        $('#custom_hours_group').hide();
+                        $('#leave_custom_hours').prop('required', false);
+                    }
                 }
                 calcDays();
             });
 
+            function formatDays(d) {
+                return (Math.round(d * 100) / 100).toString();
+            }
+
             function calcDays() {
                 var durationType = $('input[name="duration_type"]:checked').val();
-                if (durationType === 'half') { $('#total_days_display').val('0.5'); return; }
-                if (durationType === 'short') { $('#total_days_display').val('0.25'); return; }
+                if (durationType === 'half') {
+                    var hrs = shiftHours ? ' (' + formatDays(shiftHours * 0.5) + ' hrs)' : '';
+                    $('#total_days_display').val('0.5' + hrs);
+                    return;
+                }
+                if (durationType === 'short') {
+                    var hrsS = shiftHours ? ' (' + formatDays(shiftHours * 0.25) + ' hrs)' : '';
+                    $('#total_days_display').val('0.25' + hrsS);
+                    return;
+                }
+                if (durationType === 'custom') {
+                    var h = parseFloat($('#leave_custom_hours').val());
+                    if (shiftHours > 0 && h > 0) {
+                        $('#total_days_display').val(formatDays(h / shiftHours) + ' (' + h + ' hrs)');
+                    } else {
+                        $('#total_days_display').val('0');
+                    }
+                    return;
+                }
 
                 var start = $('#leave_start_date').val();
                 var end = $('#leave_end_date').val();
@@ -289,7 +349,7 @@
                 }
             }
 
-            $('#leave_start_date, #leave_end_date').on('change', calcDays);
+            $('#leave_start_date, #leave_end_date, #leave_custom_hours').on('change input', calcDays);
 
             // Edit leave — populate modal
             $(document).on('click', '.btn-edit-leave', function () {
@@ -313,15 +373,24 @@
                     }
                 });
 
-                // Show/hide end date based on duration
+                // Show/hide end date + custom hours based on duration
                 if (dur === 'full') {
                     $('#end_date_group').show();
                     $('#leave_end_date').prop('required', true);
                     $('#total_days_row').show();
+                    $('#custom_hours_group').hide();
+                    $('#leave_custom_hours').prop('required', false).val('');
                 } else {
                     $('#end_date_group').hide();
                     $('#leave_end_date').prop('required', false);
-                    $('#total_days_row').hide();
+                    $('#total_days_row').show();
+                    if (dur === 'custom') {
+                        $('#custom_hours_group').show();
+                        $('#leave_custom_hours').prop('required', true).val(btn.data('custom-hours') || '');
+                    } else {
+                        $('#custom_hours_group').hide();
+                        $('#leave_custom_hours').prop('required', false).val('');
+                    }
                 }
 
                 // Set dates and reason
@@ -346,6 +415,8 @@
                 $('#end_date_group').show();
                 $('#leave_end_date').prop('required', true);
                 $('#total_days_row').show();
+                $('#custom_hours_group').hide();
+                $('#leave_custom_hours').prop('required', false).val('');
                 $('#total_days_display').val('0');
             });
 
@@ -365,7 +436,7 @@
 
                 var data = form.serializeArray();
                 var durationType = data.find(function (d) { return d.name === 'duration_type'; });
-                if (durationType && (durationType.value === 'half' || durationType.value === 'short')) {
+                if (durationType && ['half', 'short', 'custom'].indexOf(durationType.value) !== -1) {
                     var startDate = data.find(function (d) { return d.name === 'start_date'; });
                     var endDate = data.find(function (d) { return d.name === 'end_date'; });
                     if (endDate) {

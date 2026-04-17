@@ -96,6 +96,7 @@ class EmployeeController extends Controller
                 'reporting_manager_id' => ['nullable', "exists:users,id,account_id,{$accountId}"],
                 'hire_date' => ['nullable', 'date'],
                 'employment_type' => ['nullable', 'in:full_time,part_time,contract'],
+                'shift_hours' => ['nullable', 'numeric', 'gt:0', 'lte:24'],
                 'salary' => ['nullable', 'numeric', 'min:0'],
                 'bank_name' => ['nullable', 'string', 'max:255'],
                 'bank_account_number' => ['nullable', 'string', 'max:255'],
