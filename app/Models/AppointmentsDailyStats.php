@@ -16,6 +16,7 @@ class AppointmentsDailyStats extends Model
         'user_id',
         'appointment_id',
         'appointment_status_id',
+        'scheduled_date',
         'cron_current_date',
     ];
 
