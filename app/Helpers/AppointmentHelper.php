@@ -44,8 +44,14 @@ class AppointmentHelper
         }
 
         if ($appointment->scheduled_date && $appointment->scheduled_time) {
-            $smsContent = str_replace('##appointment_date##', Carbon::parse($appointment->scheduled_date)->format('l, F d, Y'), $smsContent);
-            $smsContent = str_replace('##appointment_time##', Carbon::parse($appointment->scheduled_time)->format('h:i A'), $smsContent);
+            $scheduledDate = $appointment->scheduled_date instanceof \DateTimeInterface
+                ? $appointment->scheduled_date->format('l, F d, Y')
+                : Carbon::parse($appointment->scheduled_date)->format('l, F d, Y');
+            $scheduledTime = $appointment->scheduled_time instanceof \DateTimeInterface
+                ? $appointment->scheduled_time->format('h:i A')
+                : Carbon::parse($appointment->scheduled_time)->format('h:i A');
+            $smsContent = str_replace('##appointment_date##', $scheduledDate, $smsContent);
+            $smsContent = str_replace('##appointment_time##', $scheduledTime, $smsContent);
         }
 
         if ($service) {

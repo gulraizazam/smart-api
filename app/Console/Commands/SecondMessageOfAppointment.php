@@ -96,103 +96,72 @@ class SecondMessageOfAppointment extends Command
                    
                 if ($smsLog) {
                     continue;
-
                 }
-                $account = Accounts::first();
-                /**
-                 * Dispatch Second sms job
-                 */
-                // $job = (new SecondSmsJob([
-                //     'account_id' => $account->id,
-                //     'appointment_id' => $appointment->appointment_id,
-                //     'phone' => $appointment->phone,
-                //     'log_type' => $log_type,
-                // ]))->delay(Carbon::now()->addSeconds(2));
-                // dispatch($job);
 
+                try {
+                    $account = Accounts::first();
 
-               
+                    if ($appointment->appointment_type_id === AppointmentType::Consultancy->value) {
+                        if ($appointment->consultancy_type == 'virtual') {
+                            $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms', $account->id);
+                        } else {
+                            $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id);
+                        }
+                    } else {
+                        $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $account->id);
+                    }
 
+                    if (! $SMSTemplate) {
+                        continue;
+                    }
 
-            if ($appointment->appointment_type_id === AppointmentType::Consultancy->value) {
-              
-                // SEND SMS for Appointment Booked
-                if ($appointment->consultancy_type == 'virtual') {
-                  
-                    $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms',$account->id); // 'second-sms' for virtual consultancy SMS
-                } else {
-                    
-                    $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id); // 'second-sms' for Appointment SMS
+                    $preparedText = Appointments::prepareSMSContent($appointment->appointment_id, $SMSTemplate->content);
+
+                    $setting = Settings::whereSlug('sys-current-sms-operator')->first();
+                    $UserOperatorSettings = UserOperatorSettings::getRecord($account->id, $setting->data);
+
+                    if ($setting->data == 1) {
+                        $SMSObj = [
+                            'username' => $UserOperatorSettings->username,
+                            'password' => $UserOperatorSettings->password,
+                            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                            'text' => $preparedText,
+                            'mask' => $UserOperatorSettings->mask,
+                            'test_mode' => $UserOperatorSettings->test_mode,
+                        ];
+                        $response = TelenorSMSAPI::SendSMS($SMSObj);
+                    } else {
+                        $SMSObj = [
+                            'username' => $UserOperatorSettings->username,
+                            'password' => $UserOperatorSettings->password,
+                            'from' => $UserOperatorSettings->mask,
+                            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                            'text' => $preparedText,
+                            'test_mode' => $UserOperatorSettings->test_mode,
+                        ];
+                        $response = JazzSMSAPI::SendSMS($SMSObj);
+                    }
+
+                    $SMSLog = array_merge($SMSObj, $response);
+                    $SMSLog['appointment_id'] = $appointment->appointment_id;
+                    $SMSLog['created_by'] = 1;
+                    $SMSLog['log_type'] = $log_type;
+                    if ($setting->data == 2) {
+                        $SMSLog['mask'] = $SMSObj['from'];
+                    }
+                    SMSLogs::create($SMSLog);
+                } catch (\Throwable $e) {
+                    Log::error('SecondMessageOfAppointment SMS failed', [
+                        'appointment_id' => $appointment->appointment_id,
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                    ]);
                 }
-            } else {
-                
-                // SEND SMS for Appointment Booked
-                $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
-               
             }
-
-
-            if (! $SMSTemplate) {
-                // SMS template not found, skip this appointment
-                continue;
-            }
-            $preparedText = Appointments::prepareSMSContent($appointment->appointment_id, $SMSTemplate->content);
-
-            $setting = Settings::whereSlug('sys-current-sms-operator')->first();
-
-            $UserOperatorSettings = UserOperatorSettings::getRecord($account->id, $setting->data);
-           
-            if ($setting->data == 1) {
-                $SMSObj = [
-                    'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
-                    'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                   
-                    'text' => $preparedText,
-                    'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
-                    'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                ];
-
-                $response = TelenorSMSAPI::SendSMS($SMSObj);
-                
-            } else {
-                $SMSObj = [
-                    'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
-                    'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    'from' => $UserOperatorSettings->mask,
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                    'text' => $preparedText,
-                    'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                ];
-                
-                $response = JazzSMSAPI::SendSMS($SMSObj);
-            }
-          
-            $SMSLog = array_merge($SMSObj, $response);
-            $SMSLog['appointment_id'] = $appointment->appointment_id;
-            $SMSLog['created_by'] = 1;
-            $SMSLog['log_type'] = $log_type;
-            if ($setting->data == 2) {
-                $SMSLog['mask'] = $SMSObj['from'];
-            }
-                SMSLogs::create($SMSLog);
-
-          
-
-
-            }
-            return true;
-            try {
-                Log::info(json_encode($appointment));
-            } catch (\Exception $e) {
-                Log::info(json_encode('lOG-XCEPTION: '.$e));
-            }
-
-            Log::info('Second sms sent finally ');
-        }else{
-           
-           echo "no Apt found";
         }
+
+        return self::SUCCESS;
     }
 
     /*
