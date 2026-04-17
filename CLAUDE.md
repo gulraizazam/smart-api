@@ -147,6 +147,9 @@ A task is "done" only when **all** of the following are true:
 - No dead code, commented-out blocks, unused imports, orphan routes/views/jobs.
 - Comments explain *why*, not *what*. Default: no comments.
 - No speculative abstraction — abstract on the third real repetition.
+- **Single source of truth per domain operation.** Every business operation (booking an appointment, recording a payment, cancelling a treatment, adjusting stock, etc.) lives in exactly one Action/Service class. Controllers, jobs, commands, console tasks, and tests call that class — they never re-implement the logic inline or copy it into another module. Duplication of business logic across call sites is a review blocker.
+- **One action = one class, not one god service.** Prefer small single-purpose classes (`BookAppointmentAction`, `RecordPaymentAction`, `CancelTreatmentAction`) over fat services with many unrelated methods. Each action has one public entry point (`execute()` / `handle()` / `__invoke()`), constructor-injected dependencies, and its own Feature test. A class that accumulates unrelated responsibilities gets split, not extended.
+- **Shared helpers belong in the right seam.** Cross-cutting concerns go in their named home: formatting → Resources/Presenters, validation → Form Requests, authorization → Policies, query building → Eloquent scopes or dedicated Query classes, external calls → dedicated Client classes. Don't invent `Helpers::doStuff()` bags.
 
 ## Deprecation hygiene
 

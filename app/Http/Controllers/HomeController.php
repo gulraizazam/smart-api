@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Helpers\DashboardHelper;
@@ -10,23 +11,33 @@ use App\Models\User;
 use App\Services\Dashboard\DashboardRevenueService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
     private const ADMIN_ROLES = ['Administrator', 'Super-Admin', 'Head of Operations', 'Finance', 'HRM'];
+
     private const CSR_ROLES = ['CSR Supervisor', 'Social Lead', 'CSR'];
+
     private const DOCTOR_ROLES = ['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant'];
+
     private const EXCLUDED_CENTRES = ['All South Region', 'All Central Region', 'All Centres'];
 
     public function __construct(
         private readonly DashboardRevenueService $revenueService,
     ) {}
 
-    public function index(Request $request): View|\Illuminate\Http\RedirectResponse
+    public function index(Request $request): View|RedirectResponse
     {
         $user = Auth::user();
+
+        // Management-role users land on their purpose-built dashboard. Keeps
+        // admins (who have the perm but not the role) on the default home.
+        if ($user->can('management_dashboard.view') && $user->hasRole('Management')) {
+            return redirect()->route('admin.management_dashboard.overview');
+        }
 
         if ($user->can('doctor_dashboard') && $user->hasAnyRole(self::DOCTOR_ROLES)) {
             return redirect()->route('admin.doctor_dashboard');
@@ -52,18 +63,18 @@ class HomeController extends Controller
             : collect();
 
         return view('admin.home', [
-            'today'              => $dateTimeInfo['today'],
-            'startWeek'          => $dateTimeInfo['startWeek'],
-            'month'              => $dateTimeInfo['month'],
-            'currentTime'        => $dateTimeInfo['currentTime'],
-            'location_id'        => $userCentres,
-            'requestType'        => $request->type ?? 'today',
-            'centres'            => $centres,
-            'firstCentre'        => $centres->first(),
-            'isAdmin'            => $isAdmin,
-            'isCSRRole'          => $isCSRRole,
+            'today' => $dateTimeInfo['today'],
+            'startWeek' => $dateTimeInfo['startWeek'],
+            'month' => $dateTimeInfo['month'],
+            'currentTime' => $dateTimeInfo['currentTime'],
+            'location_id' => $userCentres,
+            'requestType' => $request->type ?? 'today',
+            'centres' => $centres,
+            'firstCentre' => $centres->first(),
+            'isAdmin' => $isAdmin,
+            'isCSRRole' => $isCSRRole,
             'hasMultipleCentres' => $isAdmin || $centres->count() > 1,
-            'csrUsers'           => $csrUsers,
+            'csrUsers' => $csrUsers,
         ]);
     }
 
@@ -72,7 +83,7 @@ class HomeController extends Controller
         $result = $this->revenueService->getMyCollectionByCentre($request->type ?? '', $request);
 
         return $this->successResponse('pie chart data', [
-            'pie'   => $result['data'],
+            'pie' => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
@@ -82,7 +93,7 @@ class HomeController extends Controller
         $result = $this->revenueService->getMyRevenueByCentre($request->type ?? '', $request);
 
         return $this->successResponse('Bar chart data', [
-            'pie'   => $result['data'],
+            'pie' => $result['data'],
             'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
@@ -96,9 +107,9 @@ class HomeController extends Controller
         );
 
         return $this->successResponse('service data', [
-            'pie'    => $result['data'],
+            'pie' => $result['data'],
             'colors' => $result['colors'],
-            'total'  => number_format($result['total'] ?? 0, 2),
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 }

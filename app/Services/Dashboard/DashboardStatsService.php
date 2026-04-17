@@ -1,27 +1,41 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\Dashboard;
 
 use App\Helpers\DashboardHelper;
-use App\Models\Appointments;
 use App\Models\Leads;
+use App\Services\Dashboard\Support\AppointmentCountsQuery;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
+/**
+ * Home-page stats service. Since the rule definitions for consultations
+ * and treatments are shared with the Management Dashboard, this class now
+ * delegates the actual counting to Dashboard\Support\AppointmentCountsQuery
+ * (single source of truth). Response shapes are preserved byte-identical so
+ * the /admin/home frontend is unaffected.
+ *
+ * Once /admin/home is retired, this class and its callers can be deleted
+ * straight through — the helpers continue serving the Management Dashboard.
+ */
 class DashboardStatsService
 {
     /**
-     * Get consultancies AND treatments in a single query (was 2 separate queries).
-     * Returns combined array with all_consultancies, done_consultancies, all_treatments, done_treatments.
+     * Get consultancies AND treatments. Now two helper calls instead of one
+     * combined query — the marginal extra round-trip is deliberate: the
+     * combined-query version required two parallel SUM expressions over
+     * different status sets, which isn't generalisable. We keep response
+     * shape identical.
      */
     public function getAppointmentStats(
         string $startDate,
         string $endDate,
         array $userCentres,
     ): array {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return [
                 'all_consultancies' => null,
                 'done_consultancies' => null,
@@ -30,37 +44,14 @@ class DashboardStatsService
             ];
         }
 
-        $consultancyTypeId = (int) config('constants.appointment_type_consultancy');
-        $treatmentTypeId = (int) config('constants.appointment_type_service');
-        $arrivedStatusIds = DashboardHelper::getArrivedAndConvertedStatusIds();
-        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
-
-        $statusPlaceholders = implode(',', array_fill(0, count($arrivedStatusIds), '?'));
-        $bindings = [...$arrivedStatusIds, $arrivedStatusId];
-
-        $results = Appointments::query()
-            ->whereIn('appointment_type_id', [$consultancyTypeId, $treatmentTypeId])
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->whereIn('location_id', $userCentres)
-            ->select(
-                'appointment_type_id',
-                DB::raw('COUNT(*) as all_count'),
-                DB::raw("SUM(CASE WHEN appointment_status_id IN ({$statusPlaceholders}) THEN 1 ELSE 0 END) as done_arrived_converted"),
-                DB::raw('SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_arrived_only'),
-            )
-            ->addBinding($bindings, 'select')
-            ->groupBy('appointment_type_id')
-            ->get()
-            ->keyBy('appointment_type_id');
-
-        $consultancy = $results->get($consultancyTypeId);
-        $treatment = $results->get($treatmentTypeId);
+        $consultancy = $this->countConsultancies($startDate, $endDate, $userCentres);
+        $treatment = $this->countTreatments($startDate, $endDate, $userCentres);
 
         return [
-            'all_consultancies'  => $consultancy?->all_count ?? 0,
-            'done_consultancies' => $consultancy?->done_arrived_converted ?? 0,
-            'all_treatments'     => $treatment?->all_count ?? 0,
-            'done_treatments'    => $treatment?->done_arrived_only ?? 0,
+            'all_consultancies' => $consultancy['all_count'],
+            'done_consultancies' => $consultancy['done_count'],
+            'all_treatments' => $treatment['all_count'],
+            'done_treatments' => $treatment['done_count'],
         ];
     }
 
@@ -73,27 +64,20 @@ class DashboardStatsService
         ?array $userCentres = null,
         ?array $statusIds = null,
     ): array {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return ['all_consultancies' => null, 'done_consultancies' => null];
         }
 
-        $userCentres ??= DashboardHelper::getUserCentres();
-        $statusIds ??= DashboardHelper::getArrivedAndConvertedStatusIds();
-
-        $statusPlaceholders = implode(',', array_fill(0, count($statusIds), '?'));
-        $counts = Appointments::query()
-            ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->whereIn('location_id', $userCentres)
-            ->selectRaw(
-                "COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN ({$statusPlaceholders}) THEN 1 ELSE 0 END) as done_count"
-            )
-            ->addBinding($statusIds, 'select')
-            ->first();
+        $counts = $this->countConsultancies(
+            $startDate,
+            $endDate,
+            $userCentres ?? DashboardHelper::getUserCentres(),
+            $statusIds,
+        );
 
         return [
-            'all_consultancies'  => $counts?->all_count ?? 0,
-            'done_consultancies' => $counts?->done_count ?? 0,
+            'all_consultancies' => $counts['all_count'],
+            'done_consultancies' => $counts['done_count'],
         ];
     }
 
@@ -105,32 +89,25 @@ class DashboardStatsService
         string $endDate,
         ?array $userCentres = null,
     ): array {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return ['all_treatments' => null, 'done_treatments' => null];
         }
 
-        $userCentres ??= DashboardHelper::getUserCentres();
-        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
-
-        $counts = Appointments::query()
-            ->where('appointment_type_id', config('constants.appointment_type_service'))
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->whereIn('location_id', $userCentres)
-            ->selectRaw(
-                'COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_count',
-                [$arrivedStatusId],
-            )
-            ->first();
+        $counts = $this->countTreatments(
+            $startDate,
+            $endDate,
+            $userCentres ?? DashboardHelper::getUserCentres(),
+        );
 
         return [
-            'all_treatments'  => $counts?->all_count ?? 0,
-            'done_treatments' => $counts?->done_count ?? 0,
+            'all_treatments' => $counts['all_count'],
+            'done_treatments' => $counts['done_count'],
         ];
     }
 
     public function getLeads(string $startDate, string $endDate): array
     {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return ['leads' => 0, 'totalLeads' => 0];
         }
 
@@ -148,8 +125,8 @@ class DashboardStatsService
 
         return [
             'leads' => $baseQuery()
-                ->where('leads.created_at', '>=', $startDate . ' 00:00:00')
-                ->where('leads.created_at', '<=', $endDate . ' 23:59:59')
+                ->where('leads.created_at', '>=', $startDate.' 00:00:00')
+                ->where('leads.created_at', '<=', $endDate.' 23:59:59')
                 ->count(),
             'totalLeads' => $baseQuery()->count(),
         ];
@@ -166,6 +143,44 @@ class DashboardStatsService
             $this->getConsultancies($startDate, $endDate, $userCentres),
             $this->getTreatments($startDate, $endDate, $userCentres),
             $this->getLeads($startDate, $endDate),
+        );
+    }
+
+    /**
+     * @param  list<int>|null  $qualifyingStatusIds
+     * @return array{all_count: int, done_count: int}
+     */
+    private function countConsultancies(
+        string $startDate,
+        string $endDate,
+        array $userCentres,
+        ?array $qualifyingStatusIds = null,
+    ): array {
+        return AppointmentCountsQuery::forType(
+            accountId: (int) (Auth::user()->account_id ?? 0),
+            locationIds: array_values(array_map('intval', $userCentres)),
+            appointmentTypeId: (int) Config::get('constants.appointment_type_consultancy'),
+            qualifyingStatusIds: $qualifyingStatusIds ?? DashboardHelper::getArrivedAndConvertedStatusIds(),
+            startDate: $startDate,
+            endDate: $endDate,
+        );
+    }
+
+    /**
+     * @return array{all_count: int, done_count: int}
+     */
+    private function countTreatments(
+        string $startDate,
+        string $endDate,
+        array $userCentres,
+    ): array {
+        return AppointmentCountsQuery::forType(
+            accountId: (int) (Auth::user()->account_id ?? 0),
+            locationIds: array_values(array_map('intval', $userCentres)),
+            appointmentTypeId: (int) Config::get('constants.appointment_type_service'),
+            qualifyingStatusIds: [DashboardHelper::getArrivedStatusId()],
+            startDate: $startDate,
+            endDate: $endDate,
         );
     }
 }
