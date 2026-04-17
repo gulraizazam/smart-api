@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Service;
 
 use App\Exceptions\ServiceException;
+use App\Helpers\ServiceBundleHelper;
 use App\Helpers\ServiceHelper;
 use App\Models\Appointments;
 use App\Models\AuditTrails;
@@ -249,6 +250,110 @@ final class ServiceService
     }
 
     /**
+<<<<<<< Updated upstream
+=======
+     * Re-price every ServiceBundle whose service price just changed,
+     * and log one history row per affected bundle.
+     *
+     * Sold package lines are untouched — they snapshot price at sale time.
+     */
+    private function cascadeServiceBundlePricing(
+        Services $service,
+        float $oldServicePrice,
+        int $accountId,
+        int $userId,
+    ): void {
+        $newServicePrice = (float) $service->price;
+
+        $bundles = ServiceBundle::where('service_id', $service->id)
+            ->where('account_id', $accountId)
+            ->get(['id', 'sessions', 'discount_percentage', 'price']);
+
+        if ($bundles->isEmpty()) {
+            return;
+        }
+
+        $now = Carbon::now();
+        $history = [];
+
+        foreach ($bundles as $bundle) {
+            $history[] = [
+                'service_bundle_id'   => $bundle->id,
+                'service_id'          => $service->id,
+                'sessions'            => $bundle->sessions,
+                'discount_percentage' => $bundle->discount_percentage,
+                'old_service_price'   => $oldServicePrice,
+                'new_service_price'   => $newServicePrice,
+                'old_bundle_price'    => (float) $bundle->price,
+                'new_bundle_price'    => self::computeBundlePrice(
+                    $newServicePrice,
+                    (int) $bundle->sessions,
+                    (float) ($bundle->discount_percentage ?? 0),
+                ),
+                'changed_by'          => $userId,
+                'account_id'          => $accountId,
+                'created_at'          => $now,
+            ];
+        }
+
+        ServiceBundlePriceHistory::insert($history);
+
+        DB::update(
+            'UPDATE service_bundles
+             SET price = ROUND(? * sessions * (1 - IFNULL(discount_percentage, 0) / 100)),
+                 updated_by = ?,
+                 updated_at = ?
+             WHERE service_id = ?
+               AND account_id = ?
+               AND deleted_at IS NULL',
+            [$newServicePrice, $userId, $now, $service->id, $accountId],
+        );
+
+        ServiceBundleHelper::clearCache();
+    }
+
+    /**
+     * Preview the bundle price changes that would result from a given new service price.
+     * Returns an empty array if the service has no bundles.
+     *
+     * @return array<int, array{service_bundle_id:int, sessions:int, discount_percentage:float, old_bundle_price:float, new_bundle_price:float}>
+     */
+    public function previewServiceBundleImpact(int $serviceId, float $newServicePrice, int $accountId): array
+    {
+        $service = Services::where('id', $serviceId)->forAccount($accountId)->first();
+
+        if (! $service) {
+            throw ServiceException::notFound($serviceId);
+        }
+
+        if ((float) $service->price === $newServicePrice) {
+            return [];
+        }
+
+        $bundles = ServiceBundle::where('service_id', $serviceId)
+            ->where('account_id', $accountId)
+            ->get(['id', 'sessions', 'discount_percentage', 'price']);
+
+        return $bundles->map(fn (ServiceBundle $bundle): array => [
+            'service_bundle_id'   => (int) $bundle->id,
+            'sessions'            => (int) $bundle->sessions,
+            'discount_percentage' => (float) ($bundle->discount_percentage ?? 0),
+            'old_bundle_price'    => (float) $bundle->price,
+            'new_bundle_price'    => self::computeBundlePrice(
+                $newServicePrice,
+                (int) $bundle->sessions,
+                (float) ($bundle->discount_percentage ?? 0),
+            ),
+        ])->values()->all();
+    }
+
+    private static function computeBundlePrice(float $servicePrice, int $sessions, float $discountPercentage): float
+    {
+        return (float) round($servicePrice * $sessions * (1 - $discountPercentage / 100));
+    }
+
+    /**
+>>>>>>> Stashed changes
      * Delete a service after dependency checks.
      *
      * @return array{status: bool, message: string}
