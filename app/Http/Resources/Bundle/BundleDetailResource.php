@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Bundle;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,11 +22,7 @@ final class BundleDetailResource extends JsonResource
         if ($bundle !== null) {
             $rawCreated = $bundle->getRawOriginal('created_at');
             $bundle = $bundle->toArray();
-            $bundle['created_at'] = $rawCreated
-                ? Carbon::parse((string) $rawCreated, 'UTC')
-                    ->setTimezone(config('app.timezone'))
-                    ->format('M j, Y g:i A')
-                : null;
+            $bundle['created_at'] = $rawCreated !== null ? (string) $rawCreated : null;
         }
 
         return [
