@@ -27,6 +27,7 @@ use App\Models\Telecomprovidernumber;
 use App\Models\User;
 use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Phone\PhoneFormattingService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -38,6 +39,8 @@ use Illuminate\Support\Facades\Gate;
 
 class LeadService
 {
+    use ParsesDateRange;
+
     protected const CACHE_TTL = 3600; // 1 hour
 
     protected ?array $lookupCache = null;
@@ -1787,19 +1790,5 @@ class LeadService
         Filters::put($userId, $filename, 'order', $order);
 
         return [$orderBy, $order];
-    }
-
-    protected function parseDateRange(?string $dateRange): array
-    {
-        if (! $dateRange) {
-            return [null, null];
-        }
-
-        $parts = explode(' - ', $dateRange);
-
-        return [
-            date('Y-m-d', strtotime($parts[0])),
-            date('Y-m-d', strtotime($parts[1] ?? $parts[0])),
-        ];
     }
 }

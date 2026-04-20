@@ -1,16 +1,19 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\CashFlow;
 
 use App\Enums\RequestStatus;
 use App\Enums\VendorTransactionStatus;
 use App\Enums\VendorTransactionType;
 use App\Exceptions\CashflowException;
+use App\Helpers\CashflowHelper;
 use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Vendor;
 use App\Models\CashFlow\VendorRequest;
 use App\Models\CashFlow\VendorTransaction;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +30,7 @@ class VendorService
     /**
      * Get all vendors for account (paginated).
      */
-    public function getVendors(int $accountId, array $filters = [], int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getVendors(int $accountId, array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
         $query = Vendor::forAccount($accountId)
             ->with('creator:id,name');
@@ -40,7 +43,7 @@ class VendorService
             default => $query->orderBy('name'),
         };
 
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
@@ -70,7 +73,7 @@ class VendorService
             'address' => $data['address'] ?? null,
             'payment_terms' => $data['payment_terms'] ?? 'upfront',
             'category' => $data['category'] ?? null,
-            'category_id' => !empty($data['category_id']) ? (int) $data['category_id'] : null,
+            'category_id' => ! empty($data['category_id']) ? (int) $data['category_id'] : null,
             'opening_balance' => $data['opening_balance'] ?? 0,
             'cached_balance' => $data['opening_balance'] ?? 0,
             'is_active' => 1,
@@ -87,6 +90,7 @@ class VendorService
         );
 
         $this->clearCache($accountId);
+
         return $vendor;
     }
 
@@ -108,7 +112,7 @@ class VendorService
 
         // Coerce category_id: empty string → null
         if (array_key_exists('category_id', $updateData)) {
-            $updateData['category_id'] = !empty($updateData['category_id']) ? (int) $updateData['category_id'] : null;
+            $updateData['category_id'] = ! empty($updateData['category_id']) ? (int) $updateData['category_id'] : null;
         }
 
         // If opening_balance changed, adjust cached_balance by the same delta
@@ -132,6 +136,7 @@ class VendorService
         );
 
         $this->clearCache($accountId);
+
         return $vendor->fresh();
     }
 
@@ -151,7 +156,7 @@ class VendorService
 
         $monthStart = now()->startOfMonth()->toDateString();
         $monthEnd = now()->toDateString();
-        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+        $dateExpr = 'COALESCE(transaction_date, DATE(created_at))';
 
         // Combined opening balance at start of month (same logic as per-vendor ledger):
         // sum(opening_balance) + pre-month purchases - pre-month payments
@@ -178,7 +183,7 @@ class VendorService
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
-        if (!empty($params['purchase_status'])) {
+        if (! empty($params['purchase_status'])) {
             $purchaseQuery->where('status', $params['purchase_status']);
         }
 
@@ -191,14 +196,14 @@ class VendorService
             ->with(['vendor:id,name', 'expense:id,description,expense_date,attachment_url', 'creator:id,name', 'forBranch:id,name'])
             ->orderByRaw("{$dateExpr} DESC, created_at DESC");
 
-        if (!empty($params['payment_vendor_id'])) {
+        if (! empty($params['payment_vendor_id'])) {
             $paymentQuery->where('vendor_id', $params['payment_vendor_id']);
         }
 
         $recentPayments = $paymentQuery->paginate($perPage, ['*'], 'payment_page', $paymentPage);
 
         // Active vendors list for the payment vendor filter dropdown
-        $activeVendors = $vendors->map(fn($v) => ['id' => $v->id, 'name' => $v->name])->sortBy('name')->values();
+        $activeVendors = $vendors->map(fn ($v) => ['id' => $v->id, 'name' => $v->name])->sortBy('name')->values();
 
         return [
             'total_opening_balance' => round((float) $totalOpeningBalance, 2),
@@ -222,11 +227,9 @@ class VendorService
     {
         $vendor = Vendor::forAccount($accountId)->findOrFail($vendorId);
 
-        // Default to current month when no date range provided
-        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? now()->toDateString();
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
 
-        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+        $dateExpr = 'COALESCE(transaction_date, DATE(created_at))';
 
         // Compute opening balance at period start:
         // vendor.opening_balance + SUM(delivered purchases before date_from) - SUM(payments before date_from)
@@ -252,11 +255,11 @@ class VendorService
             $query->whereRaw("{$dateExpr} <= ?", [$dateTo]);
         }
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
@@ -292,7 +295,7 @@ class VendorService
                 ->where('vendor_id', $vendorId)
                 ->whereRaw("{$dateExpr} >= ?", [$dateFrom])
                 ->whereRaw("{$dateExpr} <= ?", [$dateTo]);
-            if (!empty($filters['type'])) {
+            if (! empty($filters['type'])) {
                 $newerTxs->where('type', $filters['type']);
             }
             $newerTxs = $newerTxs->orderByRaw("{$dateExpr} DESC, created_at DESC")
@@ -313,11 +316,13 @@ class VendorService
             // Ordered purchases don't affect balance — show null running_balance for them
             if ($tx->type === VendorTransactionType::Purchase && $tx->status !== VendorTransactionStatus::Delivered) {
                 $arr['running_balance'] = null;
+
                 return $arr;
             }
             $arr['running_balance'] = round($runBal, 2);
             // Move backwards: undo this transaction to get balance before it
             $runBal -= ($tx->type === VendorTransactionType::Purchase) ? (float) $tx->amount : -(float) $tx->amount;
+
             return $arr;
         });
         $transactions->setCollection($items);
@@ -357,7 +362,7 @@ class VendorService
 
         DB::transaction(function () use ($tx, $attachmentUrl) {
             $tx->update([
-                'status'         => VendorTransactionStatus::Delivered,
+                'status' => VendorTransactionStatus::Delivered,
                 'attachment_url' => $attachmentUrl ?: $tx->attachment_url,
             ]);
             // Ordered purchases were excluded from balance at create time — add now
@@ -375,6 +380,7 @@ class VendorService
         );
 
         $this->clearCache($accountId);
+
         return $tx->fresh();
     }
 
@@ -402,7 +408,7 @@ class VendorService
             }
 
             // Handle branch/general
-            if (!empty($data['is_for_general'])) {
+            if (! empty($data['is_for_general'])) {
                 $updateData['for_branch_id'] = null;
                 $updateData['is_for_general'] = 1;
             } elseif (isset($data['for_branch_id'])) {
@@ -419,10 +425,10 @@ class VendorService
                 $oldDelivered = ($oldStatus === VendorTransactionStatus::Delivered);
                 $newDelivered = ($newStatus === VendorTransactionStatus::Delivered);
 
-                if (!$oldDelivered && $newDelivered) {
+                if (! $oldDelivered && $newDelivered) {
                     // ordered → delivered: add full new amount to balance
                     DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $newAmount);
-                } elseif ($oldDelivered && !$newDelivered) {
+                } elseif ($oldDelivered && ! $newDelivered) {
                     // delivered → ordered: remove old amount from balance
                     DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->decrement('cached_balance', $oldAmount);
                 } elseif ($oldDelivered && $newDelivered && $oldAmount != $newAmount) {
@@ -459,6 +465,7 @@ class VendorService
         );
 
         $this->clearCache($accountId);
+
         return $tx;
     }
 
@@ -508,7 +515,7 @@ class VendorService
 
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
-        $dateExpr = "COALESCE(transaction_date, DATE(created_at))";
+        $dateExpr = 'COALESCE(transaction_date, DATE(created_at))';
 
         // Opening balance at period start
         $prePeriod = VendorTransaction::forAccount($accountId)
@@ -536,7 +543,7 @@ class VendorService
             $query->whereRaw("{$dateExpr} <= ?", [$dateTo]);
         }
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
@@ -594,8 +601,8 @@ class VendorService
                 'reference_no' => $data['reference_no'] ?? null,
                 'attachment_url' => $data['attachment_url'] ?? null,
                 'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
-                'for_branch_id' => !empty($data['is_for_general']) ? null : ($data['for_branch_id'] ?? null),
-                'is_for_general' => !empty($data['is_for_general']) ? 1 : 0,
+                'for_branch_id' => ! empty($data['is_for_general']) ? null : ($data['for_branch_id'] ?? null),
+                'is_for_general' => ! empty($data['is_for_general']) ? 1 : 0,
                 'created_by' => Auth::id(),
             ]);
         });
@@ -609,6 +616,7 @@ class VendorService
         );
 
         $this->clearCache($accountId);
+
         return $transaction;
     }
 
@@ -617,7 +625,7 @@ class VendorService
     /**
      * Get vendor requests.
      */
-    public function getVendorRequests(int $accountId, ?string $status = null, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getVendorRequests(int $accountId, ?string $status = null, int $perPage = 25): LengthAwarePaginator
     {
         $query = VendorRequest::forAccount($accountId)
             ->with('requester:id,name')
@@ -636,18 +644,18 @@ class VendorService
     public function createVendorRequest(array $data, int $accountId): VendorRequest
     {
         $request = VendorRequest::create([
-            'account_id'     => $accountId,
-            'name'           => $data['name'],
+            'account_id' => $accountId,
+            'name' => $data['name'],
             'contact_person' => $data['contact_person'] ?? null,
-            'phone'          => $data['phone'] ?? null,
-            'email'          => $data['email'] ?? null,
-            'payment_terms'  => $data['payment_terms'] ?? null,
-            'category_id'    => $data['category_id'] ?? null,
-            'opening_balance'=> $data['opening_balance'] ?? 0,
-            'address'        => $data['address'] ?? null,
-            'note'           => $data['notes'] ?? ($data['note'] ?? null),
-            'requested_by'   => Auth::id(),
-            'status'         => RequestStatus::Pending,
+            'phone' => $data['phone'] ?? null,
+            'email' => $data['email'] ?? null,
+            'payment_terms' => $data['payment_terms'] ?? null,
+            'category_id' => $data['category_id'] ?? null,
+            'opening_balance' => $data['opening_balance'] ?? 0,
+            'address' => $data['address'] ?? null,
+            'note' => $data['notes'] ?? ($data['note'] ?? null),
+            'requested_by' => Auth::id(),
+            'status' => RequestStatus::Pending,
         ]);
 
         $this->auditService->log(
@@ -680,15 +688,15 @@ class VendorService
 
         return DB::transaction(function () use ($vendorRequest, $accountId) {
             $vendor = $this->createVendor([
-                'name'            => $vendorRequest->name,
-                'contact_person'  => $vendorRequest->contact_person,
-                'phone'           => $vendorRequest->phone,
-                'email'           => $vendorRequest->email,
-                'payment_terms'   => $vendorRequest->payment_terms ?? 'upfront',
-                'category_id'     => $vendorRequest->category_id,
+                'name' => $vendorRequest->name,
+                'contact_person' => $vendorRequest->contact_person,
+                'phone' => $vendorRequest->phone,
+                'email' => $vendorRequest->email,
+                'payment_terms' => $vendorRequest->payment_terms ?? 'upfront',
+                'category_id' => $vendorRequest->category_id,
                 'opening_balance' => $vendorRequest->opening_balance ?? 0,
-                'address'         => $vendorRequest->address,
-                'notes'           => 'Created from vendor request #' . $vendorRequest->id . ($vendorRequest->note ? "\n" . $vendorRequest->note : ''),
+                'address' => $vendorRequest->address,
+                'notes' => 'Created from vendor request #'.$vendorRequest->id.($vendorRequest->note ? "\n".$vendorRequest->note : ''),
             ], $accountId);
 
             $vendorRequest->update([
