@@ -96,8 +96,8 @@ class GeneralSalesReportRequest extends FormRequest
             $locationCom = Explode_Multi_select::explode($locationCom);
         }
 
-        // Filter out empty values (from "All" option)
-        $filtered = array_filter($locationCom, fn ($val) => $val !== '' && $val !== null);
+        // Filter out empty values (legacy "All" sentinel was '') and the new 'all' keyword
+        $filtered = array_filter($locationCom, fn ($val) => $val !== '' && $val !== null && $val !== 'all');
 
         // If no specific locations selected, use all user centres
         if (empty($filtered)) {
@@ -111,7 +111,9 @@ class GeneralSalesReportRequest extends FormRequest
 
     /**
      * Resolve location IDs from the location_id field (used by summary, collection, etc.).
-     * Can be array or single value.
+     * Can be array or single value. Returns null when the user intended "all" —
+     * downstream callers that need a concrete list should fall back to
+     * ACL::getUserCentres() themselves.
      */
     public function resolvedLocationIds(): ?array
     {
@@ -122,9 +124,13 @@ class GeneralSalesReportRequest extends FormRequest
         }
 
         if (is_array($locationId)) {
-            $filtered = array_filter($locationId, fn ($val) => $val !== '' && $val !== null);
+            $filtered = array_filter($locationId, fn ($val) => $val !== '' && $val !== null && $val !== 'all');
 
             return empty($filtered) ? null : array_values($filtered);
+        }
+
+        if ($locationId === 'all') {
+            return null;
         }
 
         return [$locationId];

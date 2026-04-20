@@ -47,7 +47,8 @@
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centres:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="centre_id" name="centre_id[]" multiple data-placeholder="All (select to filter)" style="width: 100%;">
+                                            <select class="form-control select2" id="centre_id" name="centre_id[]" multiple style="width: 100%;">
+                                                <option value="all" selected>All Centres</option>
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach

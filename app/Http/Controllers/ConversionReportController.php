@@ -13,6 +13,29 @@ use Illuminate\Support\Facades\Auth;
 
 class ConversionReportController extends Controller
 {
+    /**
+     * Strip the "all" sentinel from a centre filter submission and fall back to
+     * the user's permitted centres when the result is empty. Accepts either a
+     * scalar or an array of ids (strings/ints), returns an int[].
+     *
+     * @return int[]
+     */
+    private function normaliseCentreFilter(mixed $raw): array
+    {
+        $ids = empty($raw)
+            ? []
+            : array_values(array_filter(
+                array_map('intval', (array) $raw),
+                fn (int $id): bool => $id > 0,
+            ));
+
+        if (empty($ids)) {
+            $ids = array_map('intval', ACL::getUserCentres());
+        }
+
+        return $ids;
+    }
+
     public function index(): \Illuminate\View\View
     {
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
@@ -45,7 +68,12 @@ class ConversionReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        [$report_data, $locationData, $maxConversion, $minConversion, $CategoryConversionData, $arrival_to_conversion_ratio, $average_client_coversion, $conversionsByPatient, $total_conversion, $total_arrival, $avg_cxlient_valu] = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+
+        $payload = $request->all();
+        $payload['location_id'] = $this->normaliseCentreFilter($payload['location_id'] ?? null);
+        $payload['location_id_com'] = $this->normaliseCentreFilter($payload['location_id_com'] ?? null);
+
+        [$report_data, $locationData, $maxConversion, $minConversion, $CategoryConversionData, $arrival_to_conversion_ratio, $average_client_coversion, $conversionsByPatient, $total_conversion, $total_arrival, $avg_cxlient_valu] = Finanaces::LoadConversionReport($payload, Auth::user()->account_id);
 
         return view('admin.reports.conversion_report', compact(
             'report_data', 'locationData', 'maxConversion', 'minConversion',
