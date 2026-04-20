@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exports;
 
+use App\Helpers\ACL;
 use App\Services\Reports\MembershipReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -34,13 +35,16 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
         $rawLocation = $this->request->location_id;
         $locationIds = !empty($rawLocation)
             ? array_values(array_filter(array_map('intval', (array) $rawLocation), fn (int $id): bool => $id > 0))
-            : null;
+            : [];
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', ACL::getUserCentres());
+        }
         $membershipTypeId = ($this->request->membership_type_id !== null && $this->request->membership_type_id !== '')
             ? $this->request->membership_type_id
             : null;
 
         return $this->reportService->generate(
-            locationIds: empty($locationIds) ? null : $locationIds,
+            locationIds: $locationIds,
             membershipTypeId: $membershipTypeId,
             startDate: $startDate,
             endDate: $endDate,

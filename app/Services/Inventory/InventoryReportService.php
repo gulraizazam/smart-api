@@ -359,6 +359,9 @@ class InventoryReportService
 
         // Get filters
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
+        if (empty($centreIds)) {
+            $centreIds = array_map('intval', ACL::getUserCentres());
+        }
         $brandId = $params['brand_id'] ?? null;
 
         $query = Stock::select(
@@ -371,10 +374,8 @@ class InventoryReportService
         ->join('locations', 'stocks.location_id', '=', 'locations.id')
         ->where('stocks.stock_type', 'in');
 
-        // Apply location filter if provided
-        if (!empty($centreIds)) {
-            $query->whereIn('stocks.location_id', $centreIds);
-        }
+        // Apply location filter (falls back to user's permitted centres when none selected)
+        $query->whereIn('stocks.location_id', $centreIds);
 
         // Apply brand filter if provided
         if ($brandId !== null && $brandId !== '') {
@@ -396,15 +397,16 @@ class InventoryReportService
         $dates = explode(' - ', $params['date_range']);
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        // Get filters
+        // Get filters (falls back to user's permitted centres when none selected)
         $locationIds = $this->resolveCentreIds($params['location_id'] ?? null);
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', ACL::getUserCentres());
+        }
 
         // Build query
         $query = Order::query()
             ->with(['orderDetails.product', 'location']) // Include related models
-            ->when(!empty($locationIds), function ($q) use ($locationIds) {
-                $q->whereIn('location_id', $locationIds);
-            })
+            ->whereIn('location_id', $locationIds)
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('order_date', [$startDate, $endDate]);
             });
