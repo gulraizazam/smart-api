@@ -8,6 +8,7 @@ use App\Helpers\ActivityLogRenderer;
 use App\Models\Activity;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Pagination\Cursor;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -51,8 +52,13 @@ class ActivityLogService
                 $tag = trim($m[1]);
             }
 
+            $rawTs = $activity->updated_at ?? $activity->created_at;
+            $localTs = $rawTs
+                ? Carbon::parse((string) $rawTs, 'UTC')->setTimezone(config('app.timezone'))->format('Y-m-d H:i:s')
+                : '';
+
             yield [
-                'created_at' => (string) ($activity->created_at ?? ''),
+                'created_at' => $localTs,
                 'tag' => $tag,
                 'activity_type' => (string) ($activity->activity_type ?? ''),
                 'actor' => (string) ($activity->user->name ?? ''),
@@ -246,12 +252,14 @@ class ActivityLogService
                 $description = self::appendActor($activity, $description);
             }
 
+            $local = Carbon::parse((string) $timestamp, 'UTC')->setTimezone(config('app.timezone'));
+
             $data[] = [
                 'type' => $activity->activity_type ?? $activity->action ?? 'unknown',
                 'description' => $description,
                 'created_at' => $timestamp,
-                'time_formatted' => date('M j, Y g:i A', strtotime($timestamp)),
-                'time_short' => date('m-d-Y H:i', strtotime($timestamp)),
+                'time_formatted' => $local->format('M j, Y g:i A'),
+                'time_short' => $local->format('m-d-Y H:i'),
             ];
         }
 
