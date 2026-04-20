@@ -31,10 +31,12 @@ class ArrivedNotConvertedController extends Controller
 
     public function reportLoad(ArrivedNotConvertedRequest $request): View
     {
+        $locationIds = $request->locationIds() ?? array_map('intval', ACL::getUserCentres());
+
         $patients = $this->reportService->generate(
             startDate: $request->startDate(),
             endDate: $request->endDate(),
-            locationIds: $request->locationIds(),
+            locationIds: $locationIds,
             doctorId: $request->doctorId(),
             serviceId: $request->serviceId(),
         );

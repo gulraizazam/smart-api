@@ -41,7 +41,10 @@ class MembershipReportsController extends Controller
 
         $locationIds = hasFilter($filters, 'location_id')
             ? array_values(array_filter(array_map('intval', (array) $filters['location_id']), fn (int $id): bool => $id > 0))
-            : null;
+            : [];
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', ACL::getUserCentres());
+        }
         $membershipTypeId = hasFilter($filters, 'membership_type_id') ? $filters['membership_type_id'] : null;
 
         $startDate = null;
@@ -54,7 +57,7 @@ class MembershipReportsController extends Controller
         }
 
         return $this->reportService->generate(
-            locationIds: empty($locationIds) ? null : $locationIds,
+            locationIds: $locationIds,
             membershipTypeId: $membershipTypeId,
             startDate: $startDate,
             endDate: $endDate,

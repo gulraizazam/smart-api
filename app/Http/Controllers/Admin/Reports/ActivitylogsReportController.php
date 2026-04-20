@@ -155,14 +155,17 @@ class ActivitylogsReportController extends Controller
         if (! empty($validated['user_id'])) {
             $filters['user_id'] = $validated['user_id'];
         }
-        if (! empty($validated['location_id'])) {
-            $locationIds = array_values(array_filter(
+        $locationIds = !empty($validated['location_id'])
+            ? array_values(array_filter(
                 array_map('intval', (array) $validated['location_id']),
                 fn (int $id): bool => $id > 0,
-            ));
-            if (!empty($locationIds)) {
-                $filters['location_id'] = $locationIds;
-            }
+            ))
+            : [];
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', \App\Helpers\ACL::getUserCentres());
+        }
+        if (!empty($locationIds)) {
+            $filters['location_id'] = $locationIds;
         }
         if (! empty($validated['activity_type']) && $validated['activity_type'] !== 'all') {
             $filters['activity_type'] = $validated['activity_type'];

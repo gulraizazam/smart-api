@@ -17,6 +17,29 @@ class UpsellingReportController extends Controller
     ) {
     }
 
+    /**
+     * Normalise the incoming `centre_id` filter into a clean int[]. Empty input
+     * falls back to the user's permitted centres so "no selection" means
+     * "everywhere I can see" rather than "nowhere".
+     *
+     * @return int[]
+     */
+    private function resolveCentreIds(mixed $raw): array
+    {
+        $ids = empty($raw)
+            ? []
+            : array_values(array_filter(
+                array_map('intval', (array) $raw),
+                fn (int $id): bool => $id > 0,
+            ));
+
+        if (empty($ids)) {
+            $ids = array_map('intval', ACL::getUserCentres());
+        }
+
+        return $ids;
+    }
+
     public function index(): \Illuminate\View\View
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
@@ -34,11 +57,11 @@ class UpsellingReportController extends Controller
     public function loadUpsellingReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|array|min:1',
+            'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationIds = array_map('intval', (array) $request->centre_id);
+        $locationIds = $this->resolveCentreIds($request->input('centre_id'));
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -119,11 +142,11 @@ class UpsellingReportController extends Controller
     public function loadConsultantRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|array|min:1',
+            'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationIds = array_map('intval', (array) $request->centre_id);
+        $locationIds = $this->resolveCentreIds($request->input('centre_id'));
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -306,11 +329,11 @@ class UpsellingReportController extends Controller
     public function loadDoctorRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|array|min:1',
+            'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationIds = array_map('intval', (array) $request->centre_id);
+        $locationIds = $this->resolveCentreIds($request->input('centre_id'));
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));

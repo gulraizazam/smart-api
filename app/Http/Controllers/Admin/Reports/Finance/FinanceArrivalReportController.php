@@ -272,11 +272,10 @@ class FinanceArrivalReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
         $centerIds = $this->normaliseLocationIds($request->input('centre_id'));
-        $doctorId = $request->input('doctor_id');
-
         if (empty($centerIds)) {
-            abort(422, 'At least one centre must be selected for the incentive report.');
+            $centerIds = array_values(array_map('intval', ACL::getUserCentres()));
         }
+        $doctorId = $request->input('doctor_id');
 
         // Step 1: Calculate total revenue in the given date range from package_advances
         $totalRevenueQuery = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
