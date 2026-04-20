@@ -200,7 +200,7 @@
 
                                 <div>
                                     <div class="al-field-label">Centre</div>
-                                    {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, ['id' => 'location_id', 'class' => 'form-control select2']) !!}
+                                    {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, ['id' => 'location_id', 'class' => 'form-control select2', 'multiple' => 'multiple', 'data-placeholder' => 'All centres', 'style' => 'width: 100%;']) !!}
                                 </div>
 
                                 <div>

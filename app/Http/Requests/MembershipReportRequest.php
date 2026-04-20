@@ -16,17 +16,27 @@ class MembershipReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'location_id'        => 'nullable|integer',
+            'location_id'        => 'nullable|array',
+            'location_id.*'      => 'integer|exists:locations,id',
             'membership_type_id' => 'nullable|string',
             'date_range'         => 'nullable|string',
         ];
     }
 
-    public function locationId(): ?int
+    /**
+     * @return int[]|null
+     */
+    public function locationIds(): ?array
     {
         $value = $this->input('location_id');
 
-        return $value ? (int) $value : null;
+        if (empty($value)) {
+            return null;
+        }
+
+        $ids = array_values(array_filter(array_map('intval', (array) $value), fn (int $id): bool => $id > 0));
+
+        return empty($ids) ? null : $ids;
     }
 
     public function membershipTypeId(): ?string

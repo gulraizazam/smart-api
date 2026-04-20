@@ -18,7 +18,8 @@ class AppointmentsReportRequest extends FormRequest
         return [
             'date_range'  => 'required|string',
             'time'        => 'required|integer|in:10,20,30',
-            'centre_id'   => 'nullable|integer',
+            'centre_id'   => 'nullable|array',
+            'centre_id.*' => 'integer|exists:locations,id',
             'created_by'  => 'nullable|integer',
         ];
     }
@@ -42,11 +43,18 @@ class AppointmentsReportRequest extends FormRequest
         return (int) $this->input('time');
     }
 
-    public function centreId(): ?int
+    /**
+     * @return int[]|null
+     */
+    public function centreIds(): ?array
     {
         $value = $this->input('centre_id');
 
-        return $value ? (int) $value : null;
+        if (empty($value)) {
+            return null;
+        }
+
+        return array_map('intval', (array) $value);
     }
 
     public function createdBy(): ?int

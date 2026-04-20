@@ -791,8 +791,12 @@ class GeneralFunctions
 
     public static function PatientFollowUpReport(array $data, array $where): array
     {
-        $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
-        $centerIds = array_map('intval', $center_id);
+        $rawCentres = $data['location_id'] ?? null;
+        $center_id = !empty($rawCentres) ? (array) $rawCentres : ACL::getUserCentres();
+        $centerIds = array_values(array_filter(array_map('intval', $center_id), fn (int $id): bool => $id > 0));
+        if (empty($centerIds)) {
+            $centerIds = array_map('intval', ACL::getUserCentres());
+        }
         $centerPlaceholders = implode(',', array_fill(0, count($centerIds), '?'));
         $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
         $today = Carbon::now()->format('Y-m-d');
@@ -874,8 +878,12 @@ class GeneralFunctions
     }
     public static function LoadPatientFollowUpReportMonthly(array $data, array $where): array
     {
-        $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
-        $centerIds = array_map('intval', $center_id);
+        $rawCentres = $data['location_id'] ?? null;
+        $center_id = !empty($rawCentres) ? (array) $rawCentres : ACL::getUserCentres();
+        $centerIds = array_values(array_filter(array_map('intval', $center_id), fn (int $id): bool => $id > 0));
+        if (empty($centerIds)) {
+            $centerIds = array_map('intval', ACL::getUserCentres());
+        }
         $centerPlaceholders = implode(',', array_fill(0, count($centerIds), '?'));
         $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
         $today = Carbon::now()->format('Y-m-d');

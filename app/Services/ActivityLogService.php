@@ -129,7 +129,7 @@ class ActivityLogService
         }
 
         if (! empty($filters['location_id'])) {
-            $query->where('centre_id', $filters['location_id']);
+            $query->whereIn('centre_id', (array) $filters['location_id']);
         }
 
         if (! empty($filters['activity_type']) && $filters['activity_type'] !== 'all') {

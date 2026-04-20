@@ -34,15 +34,16 @@ class UpsellingReportController extends Controller
     public function loadUpsellingReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|integer|exists:locations,id',
+            'centre_id' => 'required|array|min:1',
+            'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationId = (int) $request->centre_id;
+        $locationIds = array_map('intval', (array) $request->centre_id);
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-        $data = $this->upsellingService->getDoctorUpsellingData($locationId, $startDate, $endDate);
+        $data = $this->upsellingService->getDoctorUpsellingData($locationIds, $startDate, $endDate);
 
         if (empty($data)) {
             return response()->json([
@@ -66,7 +67,7 @@ class UpsellingReportController extends Controller
         $allSellerIds = collect($data)->pluck('doctor_id')->toArray();
 
         session(['upselling_filters' => [
-            'location_id' => $locationId,
+            'location_ids' => $locationIds,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'all_seller_ids' => $allSellerIds
@@ -85,7 +86,7 @@ class UpsellingReportController extends Controller
 
         $data = $this->upsellingService->getDoctorUpsellingDetailData(
             (int) $doctorId,
-            (int) $filters['location_id'],
+            (array) $filters['location_ids'],
             $filters['start_date'],
             $filters['end_date']
         );
@@ -103,7 +104,7 @@ class UpsellingReportController extends Controller
 
         $data = $this->upsellingService->getDoctorConsultantBreakdownData(
             (int) $doctorId,
-            (int) $filters['location_id'],
+            (array) $filters['location_ids'],
             $filters['start_date'],
             $filters['end_date']
         );
@@ -118,15 +119,16 @@ class UpsellingReportController extends Controller
     public function loadConsultantRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|integer|exists:locations,id',
+            'centre_id' => 'required|array|min:1',
+            'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationId = (int) $request->centre_id;
+        $locationIds = array_map('intval', (array) $request->centre_id);
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-        $result = $this->upsellingService->getConsultantRevenueReportData($locationId, $startDate, $endDate);
+        $result = $this->upsellingService->getConsultantRevenueReportData($locationIds, $startDate, $endDate);
 
         if ($result['empty']) {
             return response()->json([
@@ -140,7 +142,7 @@ class UpsellingReportController extends Controller
 
         // Store filters in session for detail view
         session(['consultant_revenue_filters' => [
-            'location_id' => $locationId,
+            'location_ids' => $locationIds,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'consultant_ids' => $result['consultant_ids'],
@@ -304,15 +306,16 @@ class UpsellingReportController extends Controller
     public function loadDoctorRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'centre_id' => 'required|integer|exists:locations,id',
+            'centre_id' => 'required|array|min:1',
+            'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
-        $locationId = (int) $request->centre_id;
+        $locationIds = array_map('intval', (array) $request->centre_id);
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-        $result = $this->upsellingService->getDoctorRevenueReportData($locationId, $startDate, $endDate);
+        $result = $this->upsellingService->getDoctorRevenueReportData($locationIds, $startDate, $endDate);
 
         if ($result['empty']) {
             return response()->json([
@@ -326,7 +329,7 @@ class UpsellingReportController extends Controller
 
         // Store filters in session for detail view
         session(['doctor_revenue_filters' => [
-            'location_id' => $locationId,
+            'location_ids' => $locationIds,
             'start_date' => $startDate,
             'end_date' => $endDate,
             'doctor_ids' => $result['doctor_ids']

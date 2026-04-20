@@ -25,6 +25,24 @@ use Illuminate\Support\Facades\Gate;
 class FinanceArrivalReportController extends Controller
 {
     /**
+     * Normalise a centre/location filter input (scalar, array, or empty) into
+     * a clean int[] or empty array meaning "no filter".
+     *
+     * @return int[]
+     */
+    private function normaliseLocationIds(mixed $raw): array
+    {
+        if ($raw === null || $raw === '' || $raw === [] || $raw === '0') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map('intval', (array) $raw),
+            fn (int $id): bool => $id > 0,
+        ));
+    }
+
+    /**
      * @deprecated Moved to App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController
      */
 
@@ -41,9 +59,8 @@ class FinanceArrivalReportController extends Controller
     public function LoadDailyArrival(Request $request): \Illuminate\View\View
     {
         $where = [];
-        if ($request->location_id && $request->location_id) {
-            $where[] = [['appointments.location_id' => $request->location_id]];
-        }
+        $locationIds = $this->normaliseLocationIds($request->input('location_id'));
+        // Bound apply of the centre filter is handled below via when()+whereIn().
         if ($request->service_id && $request->service_id != '') {
             $where[] = [['appointments.service_id' => $request->service_id]];
         }
@@ -77,6 +94,9 @@ class FinanceArrivalReportController extends Controller
         if (count($where)) {
             $resultQuery->where($where);
         }
+        if (!empty($locationIds)) {
+            $resultQuery->whereIn('appointments.location_id', $locationIds);
+        }
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->orderBy('appointments.created_at', 'DESC')
             ->get();
@@ -88,7 +108,8 @@ class FinanceArrivalReportController extends Controller
         $convertedStatusId = $convertedStatus?->id;
         $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
 
-        $arrived = Appointments::whereIn('appointments.location_id', ACL::getUserCentres())
+        $arrivedCentres = !empty($locationIds) ? $locationIds : ACL::getUserCentres();
+        $arrived = Appointments::whereIn('appointments.location_id', $arrivedCentres)
             ->whereIn('base_appointment_status_id', $statusIds)
             ->when($request->date_from, fn($q) => $q->where('scheduled_date', '>=', $request->date_from))
             ->when($request->date_to, fn($q) => $q->where('scheduled_date', '<=', $request->date_to))
@@ -124,7 +145,8 @@ class FinanceArrivalReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        $locations = $request->location_id == null ? ACL::getUserCentres() : [$request->location_id];
+        $locationIds = $this->normaliseLocationIds($request->input('location_id'));
+        $locations = empty($locationIds) ? ACL::getUserCentres() : $locationIds;
 
         if ($request->created_by && $request->created_by != null) {
             $where[] = [['user_id' => $request->created_by]];
@@ -227,7 +249,9 @@ class FinanceArrivalReportController extends Controller
             ->get();
 
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
+        $centre = empty($locationIds)
+            ? 'All centres'
+            : Locations::whereIn('id', $locationIds)->pluck('name')->implode(', ');
 
         return view('admin.reports.staff_wise_arrived', compact('Appointments', 'user', 'centre', 'start_date', 'end_date'));
     }
@@ -247,10 +271,15 @@ class FinanceArrivalReportController extends Controller
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-        $centerId = $request->input('centre_id');
+        $centerIds = $this->normaliseLocationIds($request->input('centre_id'));
         $doctorId = $request->input('doctor_id');
+
+        if (empty($centerIds)) {
+            abort(422, 'At least one centre must be selected for the incentive report.');
+        }
+
         // Step 1: Calculate total revenue in the given date range from package_advances
-        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+        $totalRevenueQuery = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
                         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
 
@@ -261,14 +290,14 @@ class FinanceArrivalReportController extends Controller
                 $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
             }
             $totalRevenuewithRefund = $totalRevenueQuery->sum('package_advances.cash_amount');
-            $totalRefund = PackageAdvances::where('package_advances.location_id', $centerId)
+            $totalRefund = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
                         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'out')
                         ->where('cash_amount', '>', 0)
                         ->where('is_refund', 1)
                         ->sum('cash_amount');
                         $totalRevenue = $totalRevenuewithRefund - $totalRefund;
-            $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+            $monthWiseRevenueQuery = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
                 ->where('cash_flow', 'in')
                 ->where('cash_amount', '>', 0)
                 ->where('is_refund', 0)
@@ -287,7 +316,7 @@ class FinanceArrivalReportController extends Controller
             ->where('cash_flow', '=', 'in')
             ->where('cash_amount', '>', 0)
             ->where('is_refund', 0)
-            ->where('location_id', '=', $centerId)
+            ->whereIn('location_id', $centerIds)
             ->groupBy('appointment_id')
             ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
             ->pluck('appointment_id');
@@ -297,7 +326,7 @@ class FinanceArrivalReportController extends Controller
                 ->where('cash_amount', '>', 0)
 
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('location_id', '=', $centerId)
+                ->whereIn('location_id', $centerIds)
                 ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
                     $query->select('id')
                         ->from('appointments')
@@ -309,7 +338,7 @@ class FinanceArrivalReportController extends Controller
                 $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
                     ->where('cash_amount', '>', 0)
                     ->where('is_refund', 0)
-                    ->where('location_id', '=', $centerId)
+                    ->whereIn('location_id', $centerIds)
                     ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                     ->whereIn('appointment_id', function ($query) use ($doctorId) {
                         $query->select('id')
@@ -329,7 +358,7 @@ class FinanceArrivalReportController extends Controller
         ->join('users', 'users.id', '=', 'appointments.patient_id')
         ->where('package_advances.cash_flow', '=', 'in')
         ->where('package_advances.cash_amount', '>', 0)
-        ->where('package_advances.location_id', '=', $centerId)
+        ->whereIn('package_advances.location_id', $centerIds)
         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
         ->where('appointments.doctor_id', '=', $doctorId)
         ->get();

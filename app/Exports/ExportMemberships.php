@@ -31,13 +31,16 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
             $endDate = date('Y-m-d', strtotime($parts[1]));
         }
 
-        $locationId = $this->request->location_id ? (int) $this->request->location_id : null;
+        $rawLocation = $this->request->location_id;
+        $locationIds = !empty($rawLocation)
+            ? array_values(array_filter(array_map('intval', (array) $rawLocation), fn (int $id): bool => $id > 0))
+            : null;
         $membershipTypeId = ($this->request->membership_type_id !== null && $this->request->membership_type_id !== '')
             ? $this->request->membership_type_id
             : null;
 
         return $this->reportService->generate(
-            locationId: $locationId,
+            locationIds: empty($locationIds) ? null : $locationIds,
             membershipTypeId: $membershipTypeId,
             startDate: $startDate,
             endDate: $endDate,

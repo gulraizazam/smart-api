@@ -28,10 +28,17 @@ class InventoryReportsController extends Controller
     {
 
         $validated = $request->validate([
-            'centre_id' => 'nullable|integer|exists:locations,id',
+            'centre_id' => 'nullable|array',
+            'centre_id.*' => 'integer|exists:locations,id',
         ]);
 
         $params = $request->all();
+        if (isset($params['centre_id'])) {
+            $params['centre_id'] = array_values(array_filter(
+                array_map('intval', (array) $params['centre_id']),
+                fn (int $id): bool => $id > 0,
+            ));
+        }
 
         if ($request->report_type == "stock_report") {
             $result = $this->service->loadStockReport($params);
@@ -70,7 +77,8 @@ class InventoryReportsController extends Controller
     {
         // Validate filters
         $request->validate([
-            'location_id' => 'nullable|exists:locations,id',
+            'location_id' => 'nullable|array',
+            'location_id.*' => 'exists:locations,id',
         ]);
 
         $result = $this->service->getSalesReportData($request->all());
