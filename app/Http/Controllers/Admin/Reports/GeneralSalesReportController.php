@@ -38,7 +38,7 @@ class GeneralSalesReportController extends Controller
 
             // If no locations and medium is web, return empty view
             $locationCom = $request->input('location_id_com', []);
-            $hasLocations = is_array($locationCom) && count(array_filter($locationCom, fn ($v) => $v !== '' && $v !== null)) > 0;
+            $hasLocations = is_array($locationCom) && count(array_filter($locationCom, fn ($v) => $v !== '' && $v !== null && $v !== 'all')) > 0;
 
             if ($mediumType === MediumType::Web && ! $hasLocations) {
                 // No locations selected for web view — use all user centres via resolvedLocationComIds

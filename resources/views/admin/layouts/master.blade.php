@@ -142,6 +142,7 @@
     @stack('datatable-js')
     <script src="{{ asset('assets/js/pages/crud/ktdatatable/advanced/row-details.js') }}"></script>
     <script src="{{ asset('assets/js/pages/crud/forms/widgets/select2.js') }}"></script>
+    <script src="{{ asset('assets/js/reports/centre-multiselect.js') }}"></script>
     <!--end::Page Scripts-->
     @include('admin.partials.messages', ['toastr' => true])
     @stack('js')
