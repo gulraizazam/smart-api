@@ -1,19 +1,18 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\CashFlow;
 
 use App\Enums\ExpenseStatus;
 use App\Enums\VendorTransactionType;
 use App\Helpers\CashflowHelper;
 use App\Models\CashFlow\CashPool;
-use App\Models\CashFlow\CashTransfer;
 use App\Models\CashFlow\Expense;
 use App\Models\CashFlow\StaffAdvance;
 use App\Models\CashFlow\StaffReturn;
 use App\Models\CashFlow\Vendor;
-use App\Models\CashFlow\VendorRequest;
-use App\Models\CashFlow\CategoryRequest;
+use App\Models\CashFlow\VendorTransaction;
 use App\Models\Order;
 use App\Models\PackageAdvances;
 use Carbon\Carbon;
@@ -30,8 +29,7 @@ class DashboardService
      */
     public function getDashboardData(int $accountId, array $filters = []): array
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? Carbon::now()->toDateString();
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
         $branchId = $filters['branch_id'] ?? null;
 
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
@@ -61,13 +59,13 @@ class DashboardService
      */
     public function getSummaryCards(int $accountId, ?string $goLiveDate = null): array
     {
-        $monthStart  = Carbon::now()->startOfMonth()->toDateString();
-        $today       = Carbon::now()->toDateString();
+        $monthStart = Carbon::now()->startOfMonth()->toDateString();
+        $today = Carbon::now()->toDateString();
         $lastDayPrev = Carbon::now()->startOfMonth()->subDay()->toDateString(); // last day of previous month
 
         // Opening balance: pool opening balances + everything from go-live up to end of last month
         $openingBalance = (float) CashPool::forAccount($accountId)->sum('opening_balance');
-        $openingDate    = $lastDayPrev;
+        $openingDate = $lastDayPrev;
 
         if ($goLiveDate && $lastDayPrev >= $goLiveDate) {
             // Patient payments (net of refunds) from go-live to end of last month
@@ -152,18 +150,18 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
             ->sum('amount');
 
-        $totalInflows  = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
+        $totalInflows = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
         $totalOutflows = $expenses + ($advances - $returns);
-        $netCashFlow   = $totalInflows - $totalOutflows;
+        $netCashFlow = $totalInflows - $totalOutflows;
         $closingBalance = $openingBalance + $netCashFlow;
 
         return [
-            'opening_balance'  => round($openingBalance, 2),
-            'opening_date'     => $openingDate,
-            'inflows'          => round($totalInflows, 2),
-            'outflows'         => round($totalOutflows, 2),
-            'net'              => round($netCashFlow, 2),
-            'closing_balance'  => round($closingBalance, 2),
+            'opening_balance' => round($openingBalance, 2),
+            'opening_date' => $openingDate,
+            'inflows' => round($totalInflows, 2),
+            'outflows' => round($totalOutflows, 2),
+            'net' => round($netCashFlow, 2),
+            'closing_balance' => round($closingBalance, 2),
         ];
     }
 
@@ -192,7 +190,7 @@ class DashboardService
                     ->where('order_type', 'sale')
                     ->where('payment_mode', 1)
                     ->whereIn('location_id', $locationIds)
-                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->selectRaw('location_id, SUM(total_price) as total')
                     ->groupBy('location_id')
                     ->pluck('total', 'location_id');
@@ -202,7 +200,7 @@ class DashboardService
                     ->where('order_type', 'refund')
                     ->where('payment_mode', 1)
                     ->whereIn('location_id', $locationIds)
-                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->selectRaw('location_id, SUM(total_price) as total')
                     ->groupBy('location_id')
                     ->pluck('total', 'location_id');
@@ -220,13 +218,13 @@ class DashboardService
                 $nonCashSales = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'sale')
                     ->where('payment_mode', '!=', 1)
-                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->sum('total_price');
 
                 $nonCashRefunds = (float) Order::where('account_id', $accountId)
                     ->where('order_type', 'refund')
                     ->where('payment_mode', '!=', 1)
-                    ->where('created_at', '>=', $goLiveDate . ' 00:00:00')
+                    ->where('created_at', '>=', $goLiveDate.' 00:00:00')
                     ->sum('total_price');
 
                 $nonCashNet = $nonCashSales - $nonCashRefunds;
@@ -332,7 +330,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $inventoryQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+            $inventoryQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
         }
 
         if ($branchId) {
@@ -351,7 +349,7 @@ class DashboardService
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
 
         if ($goLiveDate) {
-            $inventoryRefundQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+            $inventoryRefundQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
         }
 
         if ($branchId) {
@@ -513,15 +511,19 @@ class DashboardService
         $results = [];
         foreach ($vendors as $vendor) {
             $days = $termDays[$vendor->payment_terms] ?? null;
-            if ($days === null || $days === 0) continue;
+            if ($days === null || $days === 0) {
+                continue;
+            }
 
             // Find the latest unpaid purchase transaction date
-            $lastPurchase = \App\Models\CashFlow\VendorTransaction::where('vendor_id', $vendor->id)
+            $lastPurchase = VendorTransaction::where('vendor_id', $vendor->id)
                 ->where('type', VendorTransactionType::Purchase)
                 ->orderByDesc('created_at')
                 ->value('created_at');
 
-            if (!$lastPurchase) continue;
+            if (! $lastPurchase) {
+                continue;
+            }
 
             $dueDate = Carbon::parse($lastPurchase)->addDays($days);
             $daysUntilDue = (int) Carbon::now()->diffInDays($dueDate, false);
@@ -541,7 +543,7 @@ class DashboardService
         }
 
         // Sort by days_until_due ascending (most urgent first)
-        usort($results, fn($a, $b) => $a['days_until_due'] <=> $b['days_until_due']);
+        usort($results, fn ($a, $b) => $a['days_until_due'] <=> $b['days_until_due']);
 
         return array_slice($results, 0, 10);
     }
@@ -646,7 +648,9 @@ class DashboardService
             $expenseAmt = (float) ($staffExpenses[$adv->user_id] ?? 0);
             $outstanding = (float) $adv->total_advances - $expenseAmt - $returnAmt;
 
-            if ($outstanding <= 0) continue;
+            if ($outstanding <= 0) {
+                continue;
+            }
 
             $lastDate = $lastAdvanceDates[$adv->user_id] ?? null;
             $daysSince = $lastDate ? (int) Carbon::parse($lastDate)->diffInDays(Carbon::now()) : 0;
@@ -911,7 +915,7 @@ class DashboardService
             ->where('order_type', 'sale');
 
         if ($goLiveDate) {
-            $inventorySalesQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+            $inventorySalesQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
         }
 
         if ($branchId) {
@@ -925,7 +929,7 @@ class DashboardService
             ->where('order_type', 'refund');
 
         if ($goLiveDate) {
-            $inventoryRefundsQuery->where('created_at', '>=', $goLiveDate . ' 00:00:00');
+            $inventoryRefundsQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
         }
 
         if ($branchId) {
