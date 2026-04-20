@@ -22,6 +22,23 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryReportService
 {
+    /**
+     * Normalise a centre/location filter input into a clean int[] (or empty array when no filter).
+     *
+     * @return int[]
+     */
+    private function resolveCentreIds(mixed $raw): array
+    {
+        if ($raw === null || $raw === '' || $raw === [] || $raw === '0') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map('intval', (array) $raw),
+            fn (int $id): bool => $id > 0,
+        ));
+    }
+
     public function getReportResultData(int $accountId): array
     {
         $centres = Locations::getAllRecordsDictionary($accountId, 'custom', 'id', 'desc', ACL::getUserCentres());
@@ -104,14 +121,14 @@ class InventoryReportService
 
     public function loadStockReport(array $params): array
     {
-        $locationId = $params['centre_id'] ?? null;
+        $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
         $brandId = $params['brand_id'] ?? null;
         $dates = explode(' - ', $params['date_range']);
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
         // Get location IDs for filtering
-        $locationIds = $locationId ? [$locationId] : ACL::getUserCentres();
+        $locationIds = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
 
         // Load products with their inventories at specified locations
         $products = Product::with([
@@ -187,7 +204,8 @@ class InventoryReportService
 
     public function loadDoctorSalesReport(array $params): array
     {
-        $locationId = $params['centre_id'] ? [$params['centre_id']] : ACL::getUserCentres();
+        $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
+        $locationId = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
         $dates = explode(' - ', $params['date_range']);
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -233,7 +251,7 @@ class InventoryReportService
         // Fetch orders based on doctor IDs and the date range (if provided)
         $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
             ->whereIn('prescribed_by', $doctorIds)
-            ->where('location_id', $locationId)
+            ->whereIn('location_id', is_array($locationId) ? $locationId : [$locationId])
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('orders.created_at', [$startDate, $endDate]);
             });
@@ -285,7 +303,8 @@ class InventoryReportService
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         // Get filters
-        $locationId = $params['centre_id'] ? [$params['centre_id']] : ACL::getUserCentres();
+        $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
+        $locationId = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
 
         // Build query
         $query = Order::query()
@@ -339,7 +358,7 @@ class InventoryReportService
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
         // Get filters
-        $locationId = $params['centre_id'] ?? null;
+        $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
         $brandId = $params['brand_id'] ?? null;
 
         $query = Stock::select(
@@ -353,8 +372,8 @@ class InventoryReportService
         ->where('stocks.stock_type', 'in');
 
         // Apply location filter if provided
-        if ($locationId !== null && $locationId !== '') {
-            $query->where('stocks.location_id', $locationId);
+        if (!empty($centreIds)) {
+            $query->whereIn('stocks.location_id', $centreIds);
         }
 
         // Apply brand filter if provided
@@ -378,13 +397,13 @@ class InventoryReportService
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         // Get filters
-        $locationId = $params['location_id'] ?? null;
+        $locationIds = $this->resolveCentreIds($params['location_id'] ?? null);
 
         // Build query
         $query = Order::query()
             ->with(['orderDetails.product', 'location']) // Include related models
-            ->when($locationId, function ($q) use ($locationId) {
-                $q->where('location_id', $locationId);
+            ->when(!empty($locationIds), function ($q) use ($locationIds) {
+                $q->whereIn('location_id', $locationIds);
             })
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('order_date', [$startDate, $endDate]);

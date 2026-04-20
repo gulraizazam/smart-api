@@ -38,9 +38,8 @@
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
                                         <div class="form-group col-md-4 sn-select @if($errors->has('centre_id')) has-error @endif" id="locations">
-                                            {!! Form::label('centre_id', 'Centre:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="centre_id" name="centre_id">
-                                                <option value="">All Centres</option>
+                                            {!! Form::label('centre_id', 'Centres:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="centre_id" name="centre_id[]" multiple data-placeholder="All (select to filter)" style="width: 100%;">
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach

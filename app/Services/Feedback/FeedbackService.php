@@ -155,47 +155,52 @@ class FeedbackService
     // Report
     // =========================================================================
 
+    /**
+     * @param int[]|null $locationIds
+     */
     public function getReportData(
-        ?int $locationId,
+        ?array $locationIds,
         ?int $doctorId,
         ?int $serviceId,
         string $dateRange,
     ): Collection|array {
         [$startDate, $endDate] = $this->parseDateRange($dateRange);
 
+        $hasLocation = !empty($locationIds);
+
         $baseQuery = Feedback::query()
-            ->when($locationId, fn (Builder $q) => $q->where('location_id', $locationId))
+            ->when($hasLocation, fn (Builder $q) => $q->whereIn('location_id', $locationIds))
             ->when($serviceId, fn (Builder $q) => $q->where('service_id', $serviceId))
             ->when($doctorId, fn (Builder $q) => $q->where('doctor_id', $doctorId))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         return match (true) {
             // CASE 7: All three filters
-            $locationId !== null && $doctorId !== null && $serviceId !== null
-                => $this->reportAllFilters($locationId, $doctorId, $serviceId, $startDate, $endDate),
+            $hasLocation && $doctorId !== null && $serviceId !== null
+                => $this->reportAllFilters($locationIds, $doctorId, $serviceId, $startDate, $endDate),
 
             // CASE 6: service + doctor (no location)
-            $serviceId !== null && $doctorId !== null && $locationId === null
+            $serviceId !== null && $doctorId !== null && !$hasLocation
                 => $this->reportSingleResult($baseQuery, ['doctor_id', 'service_id'], ['doctor', 'service']),
 
             // CASE 4: location + doctor (no service)
-            $locationId !== null && $doctorId !== null && $serviceId === null
+            $hasLocation && $doctorId !== null && $serviceId === null
                 => $this->reportGroupedBy($baseQuery, 'service_id', ['service', 'doctor']),
 
             // CASE 5: location + service (no doctor)
-            $locationId !== null && $serviceId !== null && $doctorId === null
+            $hasLocation && $serviceId !== null && $doctorId === null
                 => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // CASE 1: Only centre
-            $locationId !== null && $serviceId === null && $doctorId === null
+            $hasLocation && $serviceId === null && $doctorId === null
                 => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // CASE 2: Only doctor
-            $doctorId !== null && $serviceId === null && $locationId === null
+            $doctorId !== null && $serviceId === null && !$hasLocation
                 => $this->reportGroupedBy($baseQuery, 'service_id', ['service']),
 
             // CASE 3: Only service
-            $serviceId !== null && $doctorId === null && $locationId === null
+            $serviceId !== null && $doctorId === null && !$hasLocation
                 => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // Default: group by doctor
@@ -322,14 +327,17 @@ class FeedbackService
         return $record ? [$record] : [];
     }
 
+    /**
+     * @param int[] $locationIds
+     */
     private function reportAllFilters(
-        int $locationId,
+        array $locationIds,
         int $doctorId,
         int $serviceId,
         string $startDate,
         string $endDate,
     ): array {
-        $feedback = Feedback::where('location_id', $locationId)
+        $feedback = Feedback::whereIn('location_id', $locationIds)
             ->where('doctor_id', $doctorId)
             ->where('service_id', $serviceId)
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -381,7 +389,10 @@ class FeedbackService
         ];
     }
 
-    public function getFutureTreatmentsData(?string $centreId, ?string $serviceId): array
+    /**
+     * @param int[]|null $centreIds
+     */
+    public function getFutureTreatmentsData(?array $centreIds, ?string $serviceId): array
     {
         $startDate = \Illuminate\Support\Carbon::today()->startOfDay();
         $endDate = \Illuminate\Support\Carbon::today()->addDays(6)->endOfDay();
@@ -399,6 +410,8 @@ class FeedbackService
             $serviceIds = array_merge($serviceIds, $childServices);
         }
 
+        $hasCentre = !empty($centreIds);
+
         $appointments = \Illuminate\Support\Facades\DB::table('appointments')
             ->join('users', 'appointments.patient_id', '=', 'users.id')
             ->join('services', 'appointments.service_id', '=', 'services.id')
@@ -406,7 +419,7 @@ class FeedbackService
             ->where('appointments.appointment_type_id', 2)
             ->where('appointments.appointment_status_id', 1)
             ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
-            ->when($centreId, fn ($query) => $query->where('appointments.location_id', $centreId))
+            ->when($hasCentre, fn ($query) => $query->whereIn('appointments.location_id', $centreIds))
             ->when(!empty($serviceIds), fn ($query) => $query->whereIn('appointments.service_id', $serviceIds))
             ->select(
                 'users.name as patient_name',
@@ -422,7 +435,7 @@ class FeedbackService
             'filters' => [
                 'start_date' => $startDate->format('d M Y'),
                 'end_date' => $endDate->format('d M Y'),
-                'centre_id' => $centreId,
+                'centre_id' => $centreIds,
                 'service_id' => $serviceId,
             ],
         ];

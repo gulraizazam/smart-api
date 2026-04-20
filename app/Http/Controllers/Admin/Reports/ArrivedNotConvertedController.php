@@ -34,7 +34,7 @@ class ArrivedNotConvertedController extends Controller
         $patients = $this->reportService->generate(
             startDate: $request->startDate(),
             endDate: $request->endDate(),
-            locationId: $request->locationId(),
+            locationIds: $request->locationIds(),
             doctorId: $request->doctorId(),
             serviceId: $request->serviceId(),
         );

@@ -16,10 +16,11 @@ class ArrivedNotConvertedRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date_range'  => 'required|string',
-            'location_id' => 'nullable|integer',
-            'doctor_id'   => 'nullable|integer',
-            'service_id'  => 'nullable|integer',
+            'date_range'    => 'required|string',
+            'location_id'   => 'nullable|array',
+            'location_id.*' => 'integer|exists:locations,id',
+            'doctor_id'     => 'nullable|integer',
+            'service_id'    => 'nullable|integer',
         ];
     }
 
@@ -37,11 +38,18 @@ class ArrivedNotConvertedRequest extends FormRequest
         return date('Y-m-d', strtotime($parts[1]));
     }
 
-    public function locationId(): ?int
+    /**
+     * @return int[]|null
+     */
+    public function locationIds(): ?array
     {
         $value = $this->input('location_id');
 
-        return $value ? (int) $value : null;
+        if (empty($value)) {
+            return null;
+        }
+
+        return array_map('intval', (array) $value);
     }
 
     public function doctorId(): ?int
