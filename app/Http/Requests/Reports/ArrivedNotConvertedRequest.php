@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Reports;
 
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ArrivedNotConvertedRequest extends FormRequest
 {
+    use ParsesDateRange;
+
     public function authorize(): bool
     {
         return true;
@@ -16,26 +19,22 @@ class ArrivedNotConvertedRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date_range'    => 'required|string',
-            'location_id'   => 'nullable|array',
+            'date_range' => 'required|string',
+            'location_id' => 'nullable|array',
             'location_id.*' => 'integer|exists:locations,id',
-            'doctor_id'     => 'nullable|integer',
-            'service_id'    => 'nullable|integer',
+            'doctor_id' => 'nullable|integer',
+            'service_id' => 'nullable|integer',
         ];
     }
 
     public function startDate(): string
     {
-        $parts = explode(' - ', $this->input('date_range'));
-
-        return date('Y-m-d', strtotime($parts[0]));
+        return self::parseDateRange($this->input('date_range'))[0];
     }
 
     public function endDate(): string
     {
-        $parts = explode(' - ', $this->input('date_range'));
-
-        return date('Y-m-d', strtotime($parts[1]));
+        return self::parseDateRange($this->input('date_range'))[1];
     }
 
     /**

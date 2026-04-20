@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
@@ -8,11 +9,15 @@ use App\Models\Locations;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\Finanaces;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class ConversionReportController extends Controller
 {
+    use ParsesDateRange;
+
     /**
      * Strip the "all" sentinel from a centre filter submission and fall back to
      * the user's permitted centres when the result is empty. Accepts either a
@@ -36,7 +41,7 @@ class ConversionReportController extends Controller
         return $ids;
     }
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
         $employees = User::getAllActiveEmployeeRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
@@ -54,20 +59,11 @@ class ConversionReportController extends Controller
         return view('admin.reports.conversion', compact('services', 'users', 'operators', 'locations', 'locations_com'));
     }
 
-
-
-    public function LoadConversionReport(Request $request): \Illuminate\View\View
+    public function LoadConversionReport(Request $request): View
     {
         ini_set('memory_limit', '-1');
         set_time_limit(0);
-        if ($request->date_range) {
-            $date_range = explode(' - ', $request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->date_range);
 
         $payload = $request->all();
         $payload['location_id'] = $this->normaliseCentreFilter($payload['location_id'] ?? null);

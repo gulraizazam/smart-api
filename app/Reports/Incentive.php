@@ -1,17 +1,21 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\User;
 use DB;
 
 class Incentive
 {
+    use ParsesDateRange;
+
     /**
      * Report for calculating Incentive
      *
@@ -22,14 +26,7 @@ class Incentive
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['location_id']) && $data['location_id']) {
             if ($data['search_type'] == 'doctor_id') {
                 $users = User::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
@@ -52,7 +49,7 @@ class Incentive
                     ['role_id', '=', $data['role_id']],
                     ['user_id', '=', $user['id']],
                 ])->get();
-                if (!empty($userrole)) {
+                if (! empty($userrole)) {
                     $userrolearray[] = $user;
                 }
             }
@@ -119,14 +116,7 @@ class Incentive
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['location_id']) && $data['location_id']) {
             if ($data['search_type'] == 'doctor_id') {
                 $users = User::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
@@ -150,7 +140,7 @@ class Incentive
                     ['role_id', '=', $data['role_id']],
                     ['user_id', '=', $user['id']],
                 ])->get();
-                if (!empty($userrole)) {
+                if (! empty($userrole)) {
                     $userrolearray[] = $user;
                 }
             }
@@ -229,14 +219,7 @@ class Incentive
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['location_id']) && $data['location_id']) {
             $users = User::join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
                 ->where('user_has_locations.location_id', '=', $data['location_id'])
@@ -302,14 +285,7 @@ class Incentive
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['location_id']) && $data['location_id']) {
             $users = User::join('doctor_has_locations', 'users.id', '=', 'doctor_has_locations.user_id')
                 ->where('doctor_has_locations.location_id', '=', $data['location_id'])

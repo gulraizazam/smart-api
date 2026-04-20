@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Helpers\ACL;
@@ -18,6 +19,7 @@ use App\Models\Packages;
 use App\Models\Services;
 use App\Models\StaffTargets;
 use App\Models\StaffTargetServices;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\User;
 use Auth;
 use Carbon\Carbon;
@@ -26,6 +28,8 @@ use DB;
 
 class Operations
 {
+    use ParsesDateRange;
+
     /*
      * Center target report
      */
@@ -325,13 +329,14 @@ class Operations
             $clientIds = $patientIdsByLocation[$location['id']] ?? [];
             if (empty($clientIds)) {
                 unset($locationclient[$location['id']]);
+
                 continue;
             }
 
             $clients = [];
             foreach ($clientIds as $patientId) {
                 $patient = $patientMap->get($patientId);
-                if (!$patient) {
+                if (! $patient) {
                     continue;
                 }
                 $clients[] = [
@@ -346,7 +351,7 @@ class Operations
             }
 
             // Sort by Revenue descending (replaces O(n²) bubble sort).
-            usort($clients, fn($a, $b) => $b['Revenue'] <=> $a['Revenue']);
+            usort($clients, fn ($a, $b) => $b['Revenue'] <=> $a['Revenue']);
 
             $locationclient[$location['id']]['clients'] = $clients;
         }
@@ -437,14 +442,7 @@ class Operations
         $where = [];
         $practit_where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -617,6 +615,7 @@ class Operations
             $direct = (float) ($directSums[$appointment->id] ?? 0);
             if ($direct > 0) {
                 $count++;
+
                 continue;
             }
             $child = (float) ($childSums[$appointment->id] ?? 0);
@@ -640,14 +639,7 @@ class Operations
         $where = [];
         $practit_where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -749,14 +741,7 @@ class Operations
     /** @deprecated Called via App\Services\Reports\Operations\DarReport. */
     public static function dar_report($data, $account_id)
     {
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
             $where[] = [
@@ -778,14 +763,14 @@ class Operations
         // appointment_type, doctor, service, appointment_status_base,
         // appointment_status, location). At 1000 rows that's ~7000 queries.
         $appointment_info = Appointments::with([
-                'patient:id,name',
-                'appointment_type:id,name,slug',
-                'doctor:id,name',
-                'service:id,name',
-                'appointment_status_base:id,name',
-                'appointment_status:id,name,is_arrived,is_converted',
-                'location:id,name',
-            ])
+            'patient:id,name',
+            'appointment_type:id,name,slug',
+            'doctor:id,name',
+            'service:id,name',
+            'appointment_status_base:id,name',
+            'appointment_status:id,name,is_arrived,is_converted',
+            'location:id,name',
+        ])
             ->where($where)
             ->whereNotNull('scheduled_date')
             ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
@@ -841,14 +826,7 @@ class Operations
     /** @deprecated Called via App\Services\Reports\Operations\WalkingReport. */
     public static function walking_report($data, $account_id)
     {
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
             $where[] = [
                 'appointment_type_id',
@@ -868,14 +846,14 @@ class Operations
         // 7 lazy-load queries per row (patient/type/doctor/service/status_base/
         // status/location).
         $appointment_info = Appointments::with([
-                'patient:id,name',
-                'appointment_type:id,name,slug',
-                'doctor:id,name',
-                'service:id,name',
-                'appointment_status_base:id,name',
-                'appointment_status:id,name,is_arrived,is_converted',
-                'location:id,name',
-            ])
+            'patient:id,name',
+            'appointment_type:id,name,slug',
+            'doctor:id,name',
+            'service:id,name',
+            'appointment_status_base:id,name',
+            'appointment_status:id,name,is_arrived,is_converted',
+            'location:id,name',
+        ])
             ->where($where)
             ->when($location_ids, fn ($q) => $q->whereIn('location_id', $location_ids))
             ->whereIn('created_by', GeneralFunctions::getFDM($location_ids))
@@ -928,14 +906,7 @@ class Operations
     /** @deprecated Called via App\Services\Reports\Operations\AgentReport. */
     public static function agent_report($data, $account_id)
     {
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['appointment_type_id']) && $data['appointment_type_id']) {
             $where[] = [
                 'appointment_type_id',
@@ -1007,14 +978,7 @@ class Operations
     public static function complimentoryreport($data, $account_id)
     {
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $where[] = [
             'account_id',
@@ -1108,7 +1072,7 @@ class Operations
                 [$where],
                 ['location_id', '=', $location->id],
             ])->get();
-            if (!empty($staff_target)) {
+            if (! empty($staff_target)) {
                 $location_staff[$location->id] = [
                     'id' => $location->id,
                     'location' => $location->name,
@@ -1120,7 +1084,7 @@ class Operations
                 $monthEnd = $monthStart->copy()->addMonth();
                 foreach ($staff_target as $staff) {
                     $staff_target_service = StaffTargetServices::where('staff_target_id', '=', $staff->id)->get();
-                    if (!empty($staff_target_service)) {
+                    if (! empty($staff_target_service)) {
                         foreach ($staff_target_service as $staffservice) {
                             $appointmentinformtion = count(Appointments::join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
                                 ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
@@ -1133,7 +1097,7 @@ class Operations
                                 ->get());
                             $d = cal_days_in_month(CAL_GREGORIAN, $data['month'], $data['year']);
 
-                            $date = \Carbon\Carbon::now();
+                            $date = Carbon::now();
                             $curentmonth = $date->month;
                             $currentyear = $date->year;
 

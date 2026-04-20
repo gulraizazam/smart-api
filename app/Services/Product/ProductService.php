@@ -5,23 +5,23 @@ declare(strict_types=1);
 namespace App\Services\Product;
 
 use App\Helpers\ACL;
-use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Models\Brand;
-use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\Locations;
+use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductDetail;
 use App\Models\Purchase;
 use App\Models\PurchaseDetail;
-use App\Models\RoleHasUsers;
 use App\Models\Stock;
 use App\Models\TransferProduct;
 use App\Models\User;
-use App\Models\UserHasLocations;
 use App\Models\Warehouse;
-use Carbon\Carbon;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +30,8 @@ use Spatie\Activitylog\Models\Activity;
 
 class ProductService
 {
+    use ParsesDateRange;
+
     // ---------------------------------------------------------------
     // Datatable
     // ---------------------------------------------------------------
@@ -62,7 +64,7 @@ class ProductService
     /**
      * Transform product records for datatable display.
      */
-    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $products, array $brands): \Illuminate\Support\Collection
+    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $products, array $brands): Collection
     {
         return collect($products)->map(function ($product) use ($brands) {
             $product->brand_id = (array_key_exists($product->brand_id, $brands)) ? $brands[$product->brand_id]->name : 'N/A';
@@ -92,11 +94,11 @@ class ProductService
         $originalSlug = $slug;
         $counter = 1;
         while (Product::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $counter;
+            $slug = $originalSlug.'-'.$counter;
             $counter++;
         }
 
-        $product = new Product();
+        $product = new Product;
         $product->name = $data['name'];
         $product->slug = $slug;
         $product->account_id = $accountId;
@@ -144,7 +146,7 @@ class ProductService
 
         if (
             TransferProduct::where(['product_id' => $id, 'account_id' => $accountId])->orWhere(['child_product_id' => $id])->exists() ||
-            \App\Models\OrderDetail::where(['product_id' => $id, 'account_id' => $accountId])->exists()
+            OrderDetail::where(['product_id' => $id, 'account_id' => $accountId])->exists()
         ) {
             return ['status' => false, 'message' => 'Child records exist, unable to delete resource'];
         }
@@ -228,7 +230,7 @@ class ProductService
     {
         $accountId = Auth::user()->account_id;
 
-        $request = new \Illuminate\Http\Request($data);
+        $request = new Request($data);
         $productDetail = ProductDetail::createRecord($request, $accountId, $productId);
 
         if (! $productDetail) {
@@ -241,13 +243,13 @@ class ProductService
 
         $inventory->update(['quantity' => $inventory->quantity + $data['quantity']]);
 
-        $purchase = new Purchase();
+        $purchase = new Purchase;
         $purchase->items = $data['total_purchase_price'];
         $purchase->account_id = $accountId;
         $purchase->total_price = $data['quantity'];
         $purchase->save();
 
-        $purchaseDetail = new PurchaseDetail();
+        $purchaseDetail = new PurchaseDetail;
         $purchaseDetail->product_id = $productId;
         $purchaseDetail->purchase_id = $purchase->id;
         $purchaseDetail->purchase_price = $data['purchase_price'];
@@ -308,7 +310,7 @@ class ProductService
     public function transferProduct(array $data): array
     {
         return DB::transaction(function () use ($data) {
-            $request = new \Illuminate\Http\Request($data);
+            $request = new Request($data);
             $request['type'] = 'product_transfer_create';
             $request['message'] = 'Product transfer';
 
@@ -360,7 +362,7 @@ class ProductService
             if ($updateInventory) {
                 $updateInventory->update(['quantity' => $updateInventory->quantity + $data['quantity']]);
             } else {
-                $inventory = new Inventory();
+                $inventory = new Inventory;
                 $inventory->product_id = $data['product_id'];
 
                 if ($data['to_warehouse_id'] ?? null) {
@@ -382,7 +384,7 @@ class ProductService
     // Logs
     // ---------------------------------------------------------------
 
-    public function getActivityLogs(int $productId): \Illuminate\Support\Collection
+    public function getActivityLogs(int $productId): Collection
     {
         $productsLogs = Activity::where(['subject_id' => $productId, 'log_name' => 'product'])
             ->orWhere(['properties->attributes->product_id' => $productId])
@@ -506,7 +508,7 @@ class ProductService
     public function saveAllocation(array $data): void
     {
         DB::transaction(function () use ($data) {
-            $inventory = new Inventory();
+            $inventory = new Inventory;
             $inventory->product_id = $data['product_id'];
             $inventory->location_id = $data['location_id'];
             $inventory->is_saleable = 1;
@@ -514,7 +516,7 @@ class ProductService
             $inventory->sale_price = $data['sale_price'];
             $inventory->save();
 
-            $stock = new Stock();
+            $stock = new Stock;
             $stock->account_id = 1;
             $stock->product_id = $data['product_id'];
             $stock->quantity = $data['quantity'];
@@ -547,7 +549,7 @@ class ProductService
     public function searchProducts(string $search): \Illuminate\Database\Eloquent\Collection
     {
         return Product::where('account_id', Auth::user()->account_id)
-            ->where('name', 'like', '%' . $search . '%')
+            ->where('name', 'like', '%'.$search.'%')
             ->select('id', 'name')
             ->limit(20)
             ->get();
@@ -631,12 +633,12 @@ class ProductService
     // Private helpers
     // ---------------------------------------------------------------
 
-    private function buildFilteredQuery(array $params): \Illuminate\Database\Eloquent\Builder
+    private function buildFilteredQuery(array $params): Builder
     {
         $where = $this->buildWhereConditions($params);
 
         return Product::query()
-            ->when(!empty($where), fn ($q) => $q->where($where));
+            ->when(! empty($where), fn ($q) => $q->where($where));
     }
 
     private function buildWhereConditions(array $params): array
@@ -650,14 +652,12 @@ class ProductService
 
         $filters = $params['filters'] ?? [];
 
-        if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        }
+        [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if (! empty($filters['name'])) {
-            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            $where[] = ['name', 'like', '%'.$filters['name'].'%'];
         }
         if (! empty($filters['product_type'])) {
             $where[][] = ['product_type' => $filters['product_type']];

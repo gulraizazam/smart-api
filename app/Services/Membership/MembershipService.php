@@ -20,7 +20,9 @@ use App\Models\RoleHasUsers;
 use App\Models\StudentVerification;
 use App\Models\User;
 use App\Models\UserHasLocations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -31,6 +33,8 @@ use Rap2hpoutre\FastExcel\FastExcel;
 
 final class MembershipService
 {
+    use ParsesDateRange;
+
     // ── Lookups ──────────────────────────────────────────
 
     public function getMembershipById(int $id): ?Membership
@@ -45,7 +49,7 @@ final class MembershipService
 
     public function isCodeAvailable(string $code): bool
     {
-        return !Membership::where('code', $code)->exists();
+        return ! Membership::where('code', $code)->exists();
     }
 
     public function isCodeAssigned(string $code): bool
@@ -57,12 +61,12 @@ final class MembershipService
     {
         $cacheKey = "patient_active_membership_{$patientId}";
 
-        return Cache::remember($cacheKey, 300, fn() => Membership::with(['membershipType'])
-                ->where('patient_id', $patientId)
-                ->active()
-                ->notExpired()
-                ->orderByDesc('assigned_at')
-                ->first());
+        return Cache::remember($cacheKey, 300, fn () => Membership::with(['membershipType'])
+            ->where('patient_id', $patientId)
+            ->active()
+            ->notExpired()
+            ->orderByDesc('assigned_at')
+            ->first());
     }
 
     public function getPatientMembershipHistory(int $patientId): Collection
@@ -112,11 +116,11 @@ final class MembershipService
 
     public function getEditFormData(int $id): array
     {
-        $membership      = Membership::findOrFail($id);
+        $membership = Membership::findOrFail($id);
         $membershipTypes = MembershipType::parentsOnly()->active()->pluck('name', 'id');
 
         return [
-            'membership'     => $membership,
+            'membership' => $membership,
             'membershipType' => $membershipTypes,
         ];
     }
@@ -127,19 +131,19 @@ final class MembershipService
     {
         DB::beginTransaction();
         try {
-            if (!$this->isCodeAvailable($data['code'])) {
+            if (! $this->isCodeAvailable($data['code'])) {
                 throw new MembershipException("Membership code '{$data['code']}' already exists.");
             }
 
             $membershipType = MembershipType::findOrFail($data['membership_type_id']);
 
-            if (!$membershipType->active) {
+            if (! $membershipType->active) {
                 throw new MembershipException('Cannot create membership for inactive membership type.');
             }
 
             $data['created_by'] = Auth::id();
             $data['account_id'] = Auth::user()->account_id;
-            $data['active']     = true;
+            $data['active'] = true;
 
             $membership = Membership::create($data);
 
@@ -147,16 +151,16 @@ final class MembershipService
 
             Log::info('Membership code created', [
                 'membership_id' => $membership->id,
-                'code'          => $membership->code,
-                'type'          => $membershipType->name,
-                'created_by'    => Auth::id(),
+                'code' => $membership->code,
+                'type' => $membershipType->name,
+                'created_by' => Auth::id(),
             ]);
 
             return $membership;
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Failed to create membership', ['error' => $e->getMessage()]);
-            throw new MembershipException('Failed to create membership: ' . $e->getMessage());
+            throw new MembershipException('Failed to create membership: '.$e->getMessage());
         }
     }
 
@@ -177,7 +181,7 @@ final class MembershipService
 
             Log::info('Membership updated', [
                 'membership_id' => $membership->id,
-                'updated_by'    => Auth::id(),
+                'updated_by' => Auth::id(),
             ]);
 
             return $membership->fresh(['membershipType', 'patient']);
@@ -185,9 +189,9 @@ final class MembershipService
             DB::rollBack();
             Log::error('Failed to update membership', [
                 'membership_id' => $id,
-                'error'          => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
-            throw new MembershipException('Failed to update membership: ' . $e->getMessage());
+            throw new MembershipException('Failed to update membership: '.$e->getMessage());
         }
     }
 
@@ -198,7 +202,7 @@ final class MembershipService
 
         Log::info('Membership deleted', [
             'membership_id' => $id,
-            'deleted_by'    => Auth::id(),
+            'deleted_by' => Auth::id(),
         ]);
 
         return true;
@@ -212,7 +216,7 @@ final class MembershipService
 
         if ($status === 1) {
             $membershipType = MembershipType::find($membership->membership_type_id);
-            if (!$membershipType?->active) {
+            if (! $membershipType?->active) {
                 return false;
             }
         }
@@ -232,19 +236,19 @@ final class MembershipService
     {
         $membership = Membership::where('patient_id', $patientId)->first();
 
-        if (!$membership) {
+        if (! $membership) {
             throw new MembershipException('Membership not found');
         }
 
         $isInactiveAndExpired = $membership->end_date < now()->format('Y-m-d');
 
-        if (!$isInactiveAndExpired) {
+        if (! $isInactiveAndExpired) {
             $this->ensureNoRestrictedServices($patientId);
         }
 
         $membershipCode = $membership->code;
-        $isReferral     = $membership->is_referral;
-        $patient        = Patients::find($patientId);
+        $isReferral = $membership->is_referral;
+        $patient = Patients::find($patientId);
         $membershipType = $membership->membershipType;
 
         $membership->update([
@@ -255,7 +259,7 @@ final class MembershipService
         ]);
 
         $cancelledReferrals = 0;
-        if (!$isReferral) {
+        if (! $isReferral) {
             $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                 ->where('is_referral', true)
                 ->update([
@@ -274,7 +278,7 @@ final class MembershipService
 
         $message = 'Membership cancelled successfully';
         if ($cancelledReferrals > 0) {
-            $message .= ' along with ' . $cancelledReferrals . ' associated referral(s)';
+            $message .= ' along with '.$cancelledReferrals.' associated referral(s)';
         }
 
         return ['message' => $message];
@@ -282,36 +286,37 @@ final class MembershipService
 
     // ── Upload / Import ─────────────────────────────────
 
-    public function uploadMemberships(\Illuminate\Http\UploadedFile $file): void
+    public function uploadMemberships(UploadedFile $file): void
     {
-        $collections = (new FastExcel())->import($file);
+        $collections = (new FastExcel)->import($file);
 
         $rows = $collections->map(function ($collection) {
             $data = [];
             foreach ($collection as $key => $value) {
-                $convertedKey        = strtolower(str_replace(' ', '_', trim($key)));
+                $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
                 $data[$convertedKey] = $value;
             }
+
             return $data;
         });
 
         foreach ($rows as $row) {
-            if (empty($row['code']) || !strlen((string) $row['code'])) {
+            if (empty($row['code']) || ! strlen((string) $row['code'])) {
                 continue;
             }
 
             $membershipTypeId = MembershipType::where('name', $row['membership_type'])->value('id');
 
-            if (!$membershipTypeId) {
+            if (! $membershipTypeId) {
                 continue;
             }
 
             Membership::updateOrCreate(
                 ['code' => $row['code']],
                 [
-                    'code'               => $row['code'],
+                    'code' => $row['code'],
                     'membership_type_id' => $membershipTypeId,
-                    'created_by'         => Auth::id(),
+                    'created_by' => Auth::id(),
                 ],
             );
         }
@@ -343,8 +348,8 @@ final class MembershipService
             ->pluck('user_id')
             ->toArray();
 
-        $fdmRole     = DB::table('roles')->where('name', 'FDM')->first();
-        $fdmUserIds  = [];
+        $fdmRole = DB::table('roles')->where('name', 'FDM')->first();
+        $fdmUserIds = [];
 
         if ($fdmRole) {
             $roleUserIds = RoleHasUsers::where('role_id', $fdmRole->id)
@@ -366,7 +371,7 @@ final class MembershipService
     public function getStudentVerificationDetails(int $membershipId): array
     {
         $membership = Membership::with('membershipType')->findOrFail($membershipId);
-        $patient    = User::findOrFail($membership->patient_id);
+        $patient = User::findOrFail($membership->patient_id);
 
         $studentVerification = StudentVerification::where('membership_id', $membershipId)
             ->orWhere(function ($query) use ($membership) {
@@ -376,35 +381,35 @@ final class MembershipService
             ->first();
 
         $documents = [];
-        if ($studentVerification && !empty($studentVerification->document_paths)) {
+        if ($studentVerification && ! empty($studentVerification->document_paths)) {
             $documents = $studentVerification->document_paths;
         }
 
         $serviceUsage = $this->buildServiceUsageData($membership, $patient);
 
         return [
-            'membership'   => [
-                'id'         => $membership->id,
-                'code'       => $membership->code,
-                'type'       => $membership->membershipType?->name ?? 'N/A',
+            'membership' => [
+                'id' => $membership->id,
+                'code' => $membership->code,
+                'type' => $membership->membershipType?->name ?? 'N/A',
                 'start_date' => $membership->start_date,
-                'end_date'   => $membership->end_date,
-                'status'     => $membership->active ? 'Active' : 'Expired',
+                'end_date' => $membership->end_date,
+                'status' => $membership->active ? 'Active' : 'Expired',
             ],
-            'patient'      => [
-                'id'        => $patient->id,
-                'unique_id' => 'C-' . $patient->id,
-                'name'      => $patient->name,
-                'email'     => $patient->email,
-                'phone'     => $patient->phone,
+            'patient' => [
+                'id' => $patient->id,
+                'unique_id' => 'C-'.$patient->id,
+                'name' => $patient->name,
+                'email' => $patient->email,
+                'phone' => $patient->phone,
             ],
             'verification' => $studentVerification ? [
-                'id'           => $studentVerification->id,
-                'status'       => $studentVerification->status,
+                'id' => $studentVerification->id,
+                'status' => $studentVerification->status,
                 'submitted_at' => $studentVerification->submitted_at?->format('M d, Y h:i A'),
-                'reviewed_at'  => $studentVerification->reviewed_at?->format('M d, Y h:i A'),
+                'reviewed_at' => $studentVerification->reviewed_at?->format('M d, Y h:i A'),
             ] : null,
-            'documents'    => $documents,
+            'documents' => $documents,
             'service_usage' => $serviceUsage,
         ];
     }
@@ -413,14 +418,14 @@ final class MembershipService
 
     public function getDatatableData(array $rawFilters, bool $applyFilter): array
     {
-        $filters     = getFilters($rawFilters);
-        $where       = $this->buildFilters($filters, $applyFilter);
+        $filters = getFilters($rawFilters);
+        $where = $this->buildFilters($filters, $applyFilter);
         $userCentres = ACL::getUserCentres();
 
         return [
-            'where'       => $where,
-            'total'       => $this->countRecords($where, $filters, $applyFilter, $userCentres),
-            'filters'     => $filters,
+            'where' => $where,
+            'total' => $this->countRecords($where, $filters, $applyFilter, $userCentres),
+            'filters' => $filters,
             'userCentres' => $userCentres,
         ];
     }
@@ -442,7 +447,7 @@ final class MembershipService
         $this->applySpecialFilters($query, $filters, $applyFilter);
         $this->applyCentreAccess($query, $userCentres);
 
-        if (!Gate::allows('view_inactive_machine_types')) {
+        if (! Gate::allows('view_inactive_machine_types')) {
             $query->where('memberships.active', true);
         }
 
@@ -456,10 +461,10 @@ final class MembershipService
     {
         $accountId = Auth::user()->account_id;
 
-        $users           = User::getAllRecords($accountId)->pluck('name', 'id');
+        $users = User::getAllRecords($accountId)->pluck('name', 'id');
         $membershipTypes = MembershipType::active()->pluck('name', 'id');
-        $locations       = Locations::getActiveSorted(ACL::getUserCentres());
-        $soldByUsers     = User::where('account_id', $accountId)
+        $locations = Locations::getActiveSorted(ACL::getUserCentres());
+        $soldByUsers = User::where('account_id', $accountId)
             ->where('active', 1)
             ->whereIn('user_type_id', [
                 config('constants.doctor_user_id'),
@@ -469,11 +474,11 @@ final class MembershipService
             ->pluck('name', 'id');
 
         return [
-            'status'       => config('constants.status'),
-            'users'        => $users,
+            'status' => config('constants.status'),
+            'users' => $users,
             'membershipType' => $membershipTypes,
-            'locations'    => $locations,
-            'soldByUsers'  => $soldByUsers,
+            'locations' => $locations,
+            'soldByUsers' => $soldByUsers,
         ];
     }
 
@@ -482,14 +487,14 @@ final class MembershipService
         $userId = Auth::id();
 
         return [
-            'patient_id'         => Filters::get($userId, 'memberships', 'patient_id'),
-            'code'               => Filters::get($userId, 'memberships', 'code'),
+            'patient_id' => Filters::get($userId, 'memberships', 'patient_id'),
+            'code' => Filters::get($userId, 'memberships', 'code'),
             'membership_type_id' => Filters::get($userId, 'memberships', 'membership_type_id'),
-            'status'             => Filters::get($userId, 'memberships', 'status'),
-            'location_id'        => Filters::get($userId, 'memberships', 'location_id'),
-            'sold_by'            => Filters::get($userId, 'memberships', 'sold_by'),
-            'assigned_at'        => Filters::get($userId, 'memberships', 'assigned_at'),
-            'created_by'         => Filters::get($userId, 'memberships', 'created_by'),
+            'status' => Filters::get($userId, 'memberships', 'status'),
+            'location_id' => Filters::get($userId, 'memberships', 'location_id'),
+            'sold_by' => Filters::get($userId, 'memberships', 'sold_by'),
+            'assigned_at' => Filters::get($userId, 'memberships', 'assigned_at'),
+            'created_by' => Filters::get($userId, 'memberships', 'created_by'),
         ];
     }
 
@@ -521,10 +526,10 @@ final class MembershipService
     {
         $cacheKey = "membership_type_{$membershipTypeId}_available_codes";
 
-        return Cache::remember($cacheKey, 1800, fn() => Membership::where('membership_type_id', $membershipTypeId)
-                ->unassigned()
-                ->active()
-                ->count());
+        return Cache::remember($cacheKey, 1800, fn () => Membership::where('membership_type_id', $membershipTypeId)
+            ->unassigned()
+            ->active()
+            ->count());
     }
 
     public function getAssignedCodesCount(int $membershipTypeId): int
@@ -574,9 +579,9 @@ final class MembershipService
 
         if (empty($membershipTypeDiscountIds)) {
             return [
-                'total_services'       => 0,
+                'total_services' => 0,
                 'total_discount_saved' => 0,
-                'services'             => [],
+                'services' => [],
             ];
         }
 
@@ -585,28 +590,28 @@ final class MembershipService
             ->with(['bundle', 'package', 'discount', 'packageservice'])
             ->get();
 
-        $serviceUsage        = [];
+        $serviceUsage = [];
         $totalDiscountAmount = 0;
 
         foreach ($usedServices as $service) {
-            $serviceName    = $service->bundle?->name ?? 'Unknown Service';
-            $discountSaved  = $service->service_price - $service->tax_including_price;
+            $serviceName = $service->bundle?->name ?? 'Unknown Service';
+            $discountSaved = $service->service_price - $service->tax_including_price;
             $packageService = $service->packageservice->first();
-            $isConsumed     = $packageService ? (bool) $packageService->is_consumed : false;
-            $consumedAt     = $packageService?->consumed_at
+            $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;
+            $consumedAt = $packageService?->consumed_at
                 ? Carbon::parse($packageService->consumed_at)->format('d/m/y')
                 : null;
 
             $serviceUsage[] = [
-                'service_name'  => $serviceName,
+                'service_name' => $serviceName,
                 'service_price' => $service->service_price,
                 'discount_amount' => $service->discount_price ?? 0,
                 'discount_type' => $service->discount_type,
-                'net_amount'    => $service->tax_including_price,
-                'plan_id'       => $service->package_id,
-                'plan_date'     => $service->package?->created_at->format('M d, Y'),
-                'is_consumed'   => $isConsumed,
-                'consumed_at'   => $consumedAt,
+                'net_amount' => $service->tax_including_price,
+                'plan_id' => $service->package_id,
+                'plan_date' => $service->package?->created_at->format('M d, Y'),
+                'is_consumed' => $isConsumed,
+                'consumed_at' => $consumedAt,
             ];
 
             if ($discountSaved > 0) {
@@ -615,15 +620,15 @@ final class MembershipService
         }
 
         return [
-            'total_services'       => count($serviceUsage),
+            'total_services' => count($serviceUsage),
             'total_discount_saved' => $totalDiscountAmount,
-            'services'             => $serviceUsage,
+            'services' => $serviceUsage,
         ];
     }
 
     private function buildFilters(array $filters, bool $applyFilter): array
     {
-        $where  = [];
+        $where = [];
         $userId = Auth::id();
 
         // Code filter
@@ -673,7 +678,7 @@ final class MembershipService
         $isLike = $operator === 'like';
 
         if (hasFilter($filters, $filterKey)) {
-            $value = $isLike ? '%' . $filters[$filterKey] . '%' : $filters[$filterKey];
+            $value = $isLike ? '%'.$filters[$filterKey].'%' : $filters[$filterKey];
             $where[] = [$column, $operator, $value];
             Filters::put($userId, 'memberships', $filterKey, $filters[$filterKey]);
         } elseif ($applyFilter) {
@@ -681,7 +686,7 @@ final class MembershipService
         } else {
             $saved = Filters::get($userId, 'memberships', $filterKey);
             if ($saved !== null) {
-                $value = $isLike ? '%' . $saved . '%' : $saved;
+                $value = $isLike ? '%'.$saved.'%' : $saved;
                 $where[] = [$column, $operator, $value];
             }
         }
@@ -729,8 +734,8 @@ final class MembershipService
                     $where[] = ['memberships.end_date', '>=', now()->format('Y-m-d')];
                 })(),
                 'inactive' => $where[] = ['memberships.patient_id', '=', null],
-                'expired'  => $where[] = ['memberships.end_date', '<', now()->format('Y-m-d')],
-                default    => null,
+                'expired' => $where[] = ['memberships.end_date', '<', now()->format('Y-m-d')],
+                default => null,
             };
         }
     }
@@ -749,10 +754,7 @@ final class MembershipService
         }
 
         if ($dateRange) {
-            $parts         = explode(' - ', $dateRange);
-            $startDateTime = date('Y-m-d 00:00:00', strtotime($parts[0]));
-            $endDateTime = Carbon::parse($parts[1])->setTime(23, 59, 59)->format('Y-m-d H:i:s');
-
+            [$startDateTime, $endDateTime] = self::parseDateRangeWithTimeBounds($dateRange);
             $where[] = ['memberships.assigned_at', '>=', $startDateTime];
             $where[] = ['memberships.assigned_at', '<=', $endDateTime];
         }
@@ -789,7 +791,7 @@ final class MembershipService
     {
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
 
-        if (!empty($userCentres)) {
+        if (! empty($userCentres)) {
             if ($isSuperAdmin) {
                 $query->where(function ($q) use ($userCentres) {
                     $q->whereNull('memberships.patient_id')
@@ -809,14 +811,14 @@ final class MembershipService
                             ->whereIn('appointments.location_id', $userCentres);
                     });
             }
-        } elseif (!$isSuperAdmin) {
+        } elseif (! $isSuperAdmin) {
             $query->whereNotNull('memberships.patient_id');
         }
     }
 
     private function getPatientIdFilter(array $filters, bool $applyFilter): ?array
     {
-        $userId   = Auth::id();
+        $userId = Auth::id();
         $patientId = null;
 
         if (hasFilter($filters, 'patient_id')) {
@@ -833,12 +835,12 @@ final class MembershipService
 
     private function getLocationFilter(array $filters, bool $applyFilter): ?array
     {
-        $userId     = Auth::id();
+        $userId = Auth::id();
         $locationId = null;
 
         if (hasFilter($filters, 'location_id')) {
             $locationId = $filters['location_id'];
-        } elseif (!$applyFilter) {
+        } elseif (! $applyFilter) {
             $locationId = Filters::get($userId, 'memberships', 'location_id');
         }
 
@@ -860,7 +862,7 @@ final class MembershipService
 
         if (hasFilter($filters, 'sold_by')) {
             $soldBy = $filters['sold_by'];
-        } elseif (!$applyFilter) {
+        } elseif (! $applyFilter) {
             $soldBy = Filters::get($userId, 'memberships', 'sold_by');
         }
 
@@ -907,14 +909,14 @@ final class MembershipService
                 : $query->whereIn('memberships.id', $soldByFilter);
         }
 
-        if (!Gate::allows('view_inactive_centres')) {
+        if (! Gate::allows('view_inactive_centres')) {
             $query->where('memberships.active', true);
         }
 
         // Centre access for count
         $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
 
-        if (!empty($userCentres)) {
+        if (! empty($userCentres)) {
             if ($isSuperAdmin) {
                 $query->where(function ($q) use ($userCentres) {
                     $q->whereNull('memberships.patient_id')
@@ -934,7 +936,7 @@ final class MembershipService
                             ->whereIn('appointments.location_id', $userCentres);
                     });
             }
-        } elseif (!$isSuperAdmin) {
+        } elseif (! $isSuperAdmin) {
             $query->whereNotNull('memberships.patient_id');
         }
 

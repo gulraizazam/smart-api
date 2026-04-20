@@ -296,15 +296,11 @@ class FeedbackService
      */
     private function parseReportDateRange(string $dateRange): array
     {
-        [$startDate, $endDate] = $this->parseDateRange($dateRange);
-
-        $today = date('Y-m-d');
+        [$startDate, $endDate] = self::excludeTodayFromRange(self::parseDateRange($dateRange));
 
         return [
             $startDate.' 00:00:00',
-            $endDate >= $today
-                ? date('Y-m-d 23:59:59', strtotime('yesterday'))
-                : $endDate.' 23:59:59',
+            $endDate.' 23:59:59',
         ];
     }
 

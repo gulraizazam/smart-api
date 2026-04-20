@@ -6,12 +6,15 @@ namespace App\Http\Requests\Reports;
 
 use App\Helpers\ACL;
 use App\Helpers\Explode_Multi_select;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Services\Reports\Enums\MediumType;
 use App\Services\Reports\Enums\ReportType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class GeneralSalesReportRequest extends FormRequest
 {
+    use ParsesDateRange;
+
     public function authorize(): bool
     {
         return true;
@@ -22,23 +25,23 @@ class GeneralSalesReportRequest extends FormRequest
         $reportTypes = implode(',', array_column(ReportType::cases(), 'value'));
 
         return [
-            'report_type'        => "required|in:{$reportTypes}",
-            'date_range'         => 'nullable|string',
-            'medium_type'        => 'nullable|in:web,print,pdf,excel',
-            'location_id'        => 'nullable',
-            'location_id_com'    => 'nullable|array',
-            'location_id_com.*'  => 'nullable',
-            'region_id'          => 'nullable',
-            'city_id'            => 'nullable',
-            'service_id'         => 'nullable',
-            'doctor_id'          => 'nullable',
-            'patient_id'         => 'nullable',
-            'user_id'            => 'nullable',
+            'report_type' => "required|in:{$reportTypes}",
+            'date_range' => 'nullable|string',
+            'medium_type' => 'nullable|in:web,print,pdf,excel',
+            'location_id' => 'nullable',
+            'location_id_com' => 'nullable|array',
+            'location_id_com.*' => 'nullable',
+            'region_id' => 'nullable',
+            'city_id' => 'nullable',
+            'service_id' => 'nullable',
+            'doctor_id' => 'nullable',
+            'patient_id' => 'nullable',
+            'user_id' => 'nullable',
             'appointment_type_id' => 'nullable',
-            'gender_id'          => 'nullable|string',
-            'discount_id'        => 'nullable',
-            'machine_id'         => 'nullable',
-            'converted'          => 'nullable|string',
+            'gender_id' => 'nullable|string',
+            'discount_id' => 'nullable',
+            'machine_id' => 'nullable',
+            'converted' => 'nullable|string',
         ];
     }
 
@@ -54,24 +57,12 @@ class GeneralSalesReportRequest extends FormRequest
 
     public function startDate(): ?string
     {
-        if ($this->date_range) {
-            $parts = explode(' - ', $this->date_range);
-
-            return date('Y-m-d', strtotime($parts[0]));
-        }
-
-        return null;
+        return self::parseDateRange($this->date_range)[0];
     }
 
     public function endDate(): ?string
     {
-        if ($this->date_range) {
-            $parts = explode(' - ', $this->date_range);
-
-            return date('Y-m-d', strtotime($parts[1]));
-        }
-
-        return null;
+        return self::parseDateRange($this->date_range)[1];
     }
 
     /**

@@ -10,9 +10,8 @@ use App\Helpers\GeneralFunctions;
 use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
 use App\Models\Accounts;
-use App\Models\DoctorHasLocations;
 use App\Models\Discounts;
-use App\Models\Inventory;
+use App\Models\DoctorHasLocations;
 use App\Models\Locations;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -28,14 +27,19 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\Warehouse;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class OrderService
 {
+    use ParsesDateRange;
+
     // ---------------------------------------------------------------
     // Order Datatable
     // ---------------------------------------------------------------
@@ -58,7 +62,7 @@ class OrderService
     /**
      * Transform order records for datatable display.
      */
-    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $orders, array $centres): \Illuminate\Support\Collection
+    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $orders, array $centres): Collection
     {
         return collect($orders)->map(function ($order) use ($centres) {
             $order->order_have = ($order->location_id !== null && array_key_exists($order->location_id, $centres))
@@ -77,7 +81,7 @@ class OrderService
     public function getRefundDatatableCount(array $params): int
     {
         return OrderRefund::getTotalRecords(
-            new \Illuminate\Http\Request($params['request_data'] ?? []),
+            new Request($params['request_data'] ?? []),
             Auth::user()->account_id,
             $params['apply_filter'] ?? false,
             'refund',
@@ -87,7 +91,7 @@ class OrderService
     public function getRefundDatatableRecords(array $params): \Illuminate\Database\Eloquent\Collection
     {
         return OrderRefund::getRecords(
-            new \Illuminate\Http\Request($params['request_data'] ?? []),
+            new Request($params['request_data'] ?? []),
             $params['offset'] ?? 0,
             $params['limit'] ?? 30,
             Auth::user()->account_id,
@@ -99,7 +103,7 @@ class OrderService
     /**
      * Transform refund records for datatable display.
      */
-    public function transformRefundsForDatatable(\Illuminate\Database\Eloquent\Collection $orders, array $centres, array $warehouse): \Illuminate\Support\Collection
+    public function transformRefundsForDatatable(\Illuminate\Database\Eloquent\Collection $orders, array $centres, array $warehouse): Collection
     {
         return collect($orders)->map(function ($order) use ($warehouse, $centres) {
             $order->order_have = ($order->location_id !== null)
@@ -216,7 +220,7 @@ class OrderService
             $productName = $product?->name ?? 'Product';
 
             if ($availableQuantity < $quantity) {
-                return $productName . ' quantity is out of stock (Available: ' . $availableQuantity . ')';
+                return $productName.' quantity is out of stock (Available: '.$availableQuantity.')';
             }
         }
 
@@ -228,7 +232,7 @@ class OrderService
      */
     public function createOrder(array $data): ?Order
     {
-        $request = new \Illuminate\Http\Request($data);
+        $request = new Request($data);
         $accountId = Auth::user()->account_id;
         $products = array_combine($data['product_id'], $data['quantity']);
 
@@ -301,7 +305,7 @@ class OrderService
             return ['success' => false, 'message' => 'You do not have refunded any product.'];
         }
 
-        $request = new \Illuminate\Http\Request($data);
+        $request = new Request($data);
         $orderRefund = OrderRefund::refund($orderId, $request);
 
         if ($orderRefund) {
@@ -487,14 +491,14 @@ class OrderService
     // Private helpers
     // ---------------------------------------------------------------
 
-    private function buildOrderQuery(array $params): \Illuminate\Database\Eloquent\Builder
+    private function buildOrderQuery(array $params): Builder
     {
         $where = $this->buildOrderWhereConditions($params);
         $productId = $this->resolveProductFilter($params);
 
         return Order::query()
-            ->when(!empty($where), fn ($q) => $q->where($where))
-            ->when($productId !== null && !empty($productId), fn ($q) => $q->whereHas('orderDetail.product', fn ($q) => $q->whereIn('id', $productId)))
+            ->when(! empty($where), fn ($q) => $q->where($where))
+            ->when($productId !== null && ! empty($productId), fn ($q) => $q->whereHas('orderDetail.product', fn ($q) => $q->whereIn('id', $productId)))
             ->where(fn ($query) => $query->whereIn('location_id', ACL::getUserCentres()))
             ->where('order_type', 'sale');
     }
@@ -508,12 +512,9 @@ class OrderService
             return $where;
         }
 
-        if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateString = new \DateTime($dateRange[1]);
-            $endDateString->setTime(23, 59, 0);
-        }
+        [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if (hasFilter($filters, 'order_id')) {
             $where[][] = ['id' => $filters['order_id']];
@@ -536,9 +537,9 @@ class OrderService
         if (hasFilter($filters, 'updated_by')) {
             $where[][] = ['updated_by' => $filters['updated_by']];
         }
-        if (isset($startDateTime, $endDateString)) {
+        if (isset($startDateTime, $endDateTime)) {
             $where[] = ['created_at', '>=', $startDateTime];
-            $where[] = ['created_at', '<=', $endDateString->format('Y-m-d H:i:s')];
+            $where[] = ['created_at', '<=', $endDateTime];
         }
 
         return $where;
@@ -549,7 +550,7 @@ class OrderService
         $requestData = $params['request_data'] ?? [];
 
         if (! empty($requestData['query']['search']['product_id'])) {
-            return Product::where('name', 'like', '%' . $requestData['query']['search']['product_id'] . '%')
+            return Product::where('name', 'like', '%'.$requestData['query']['search']['product_id'].'%')
                 ->pluck('id')->toArray();
         }
 

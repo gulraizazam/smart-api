@@ -11,6 +11,7 @@ use App\Models\Services;
 use App\Models\User;
 use App\Services\Dashboard\DashboardChartService;
 use App\Services\Dashboard\DashboardRevenueService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,8 @@ use Illuminate\View\View;
 
 class DashboardReportsController extends Controller
 {
+    use ParsesDateRange;
+
     public function __construct(
         protected readonly DashboardRevenueService $revenueService,
         protected readonly DashboardChartService $chartService,
@@ -125,14 +128,7 @@ class DashboardReportsController extends Controller
 
     public function loadFollowUpReport(Request $request): View
     {
-        $startDate = null;
-        $endDate = null;
-
-        if ($request->date_range) {
-            $dateRange = explode(' - ', $request->date_range);
-            $startDate = date('Y-m-d', strtotime($dateRange[0]));
-            $endDate = date('Y-m-d', strtotime($dateRange[1]));
-        }
+        [$startDate, $endDate] = $this->parseDateRange($request->date_range);
 
         $where = [];
         if ($startDate && $endDate) {

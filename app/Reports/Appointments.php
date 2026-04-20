@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Enums\AppointmentType;
@@ -8,16 +9,20 @@ use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointmentimage;
 use App\Models\AppointmentStatuses;
+use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Measurement;
 use App\Models\Medical;
 use App\Models\Patients;
 use App\Models\Services;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use DB;
 use Illuminate\Support\Facades\Auth;
 
 class Appointments
 {
+    use ParsesDateRange;
+
     /**
      * Generate General Report
      *
@@ -28,23 +33,9 @@ class Appointments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -119,23 +110,9 @@ class Appointments
     {
 
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['patient_id'] = $data['patient_id'];
@@ -228,23 +205,9 @@ class Appointments
     {
 
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -339,23 +302,9 @@ class Appointments
     public static function getEmployeeAppointmentSummaryReport($data, $filters, $account_id)
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -441,14 +390,7 @@ class Appointments
     public static function getAppointmentSummaryByServiceReport($data, $filters, $account_id)
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -551,14 +493,7 @@ class Appointments
         $where = [];
         $ids = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
         }
@@ -699,7 +634,7 @@ class Appointments
                         // the filter map — matches prior behavior of returning
                         // null and crashing the page on ->id access.
                         $app_status = $filters['appointment_statuses'][$status] ?? null;
-                        if (!$app_status) {
+                        if (! $app_status) {
                             continue;
                         }
 
@@ -726,23 +661,9 @@ class Appointments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -927,14 +848,7 @@ class Appointments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];
@@ -1034,7 +948,7 @@ class Appointments
                 'referred_by' => ($appointment->patient->referred_by != null) ? $appointment->patient->referredBy->name : '',
             ];
 
-            if (\App\Models\Invoices::where('appointment_id', '=', $appointment->id)->where('invoice_status_id', '=', $invoice->id)->exists()) {
+            if (Invoices::where('appointment_id', '=', $appointment->id)->where('invoice_status_id', '=', $invoice->id)->exists()) {
                 $reportData[$appointment->id]['invoice'] = 'Yes';
             } else {
                 $reportData[$appointment->id]['invoice'] = 'No';
@@ -1087,23 +1001,9 @@ class Appointments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
-        if (isset($data['scheduled_date']) && $data['scheduled_date']) {
-            $scheduled_date = explode(' - ', $data['scheduled_date']);
-            $start_scheduled_date = date('Y-m-d', strtotime($scheduled_date[0]));
-            $end_scheduled_date = date('Y-m-d', strtotime($scheduled_date[1]));
-        } else {
-            $start_scheduled_date = null;
-            $end_scheduled_date = null;
-        }
+        [$start_scheduled_date, $end_scheduled_date] = self::parseDateRange($data['scheduled_date'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['appointments.patient_id'] = $data['patient_id'];

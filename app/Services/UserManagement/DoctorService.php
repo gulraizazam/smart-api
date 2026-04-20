@@ -1,12 +1,12 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\UserManagement;
 
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
-use App\Services\Phone\PhoneFormattingService;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Models\AuditTrails;
@@ -18,7 +18,8 @@ use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Models\UserTypes;
-use Carbon\Carbon;
+use App\Services\Phone\PhoneFormattingService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
@@ -27,6 +28,8 @@ use Spatie\Permission\Models\Role;
 
 class DoctorService
 {
+    use ParsesDateRange;
+
     private const FILTER_KEY = 'doctors';
 
     public function getDatatableData(array $params): array
@@ -40,7 +43,7 @@ class DoctorService
             ->where('users.user_type_id', Config::get('constants.practitioner_id'))
             ->where('users.account_id', $user->account_id)
             ->where('users.resource_type_id', 2)
-            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1));
+            ->when(! $canViewInactive, fn ($q) => $q->where('users.active', 1));
 
         foreach ($where as $condition) {
             $baseQuery->where($condition[0], $condition[1], $condition[2]);
@@ -71,13 +74,13 @@ class DoctorService
         $where = $this->addFilter($where, $params, 'email', 'users.email', 'like', $userId, $applyFilter);
 
         // Phone filter (needs number cleaning)
-        if (!empty($params['phone'])) {
-            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($params['phone']) . '%'];
+        if (! empty($params['phone'])) {
+            $where[] = ['users.phone', 'like', '%'.PhoneFormattingService::cleanNumber($params['phone']).'%'];
             Filters::put($userId, self::FILTER_KEY, 'phone', $params['phone']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'phone');
         } elseif ($storedPhone = Filters::get($userId, self::FILTER_KEY, 'phone')) {
-            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($storedPhone) . '%'];
+            $where[] = ['users.phone', 'like', '%'.PhoneFormattingService::cleanNumber($storedPhone).'%'];
         }
 
         $where = $this->addFilter($where, $params, 'gender', 'users.gender', '=', $userId, $applyFilter);
@@ -97,10 +100,10 @@ class DoctorService
         }
 
         // Date range filter
-        if (!empty($params['created_at'])) {
-            $dateRange = explode(' - ', $params['created_at']);
-            $where[] = ['users.created_at', '>=', Carbon::parse($dateRange[0])->startOfDay()];
-            $where[] = ['users.created_at', '<=', Carbon::parse($dateRange[1])->endOfDay()];
+        if (! empty($params['created_at'])) {
+            [$fromDay, $toDay] = self::parseDateRangeAsCarbonDay($params['created_at']);
+            $where[] = ['users.created_at', '>=', $fromDay];
+            $where[] = ['users.created_at', '<=', $toDay];
             Filters::put($userId, self::FILTER_KEY, 'created_at', $params['created_at']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'created_at');
@@ -111,7 +114,7 @@ class DoctorService
 
     private function addFilter(array $where, array $params, string $key, string $column, string $operator, int $userId, bool $applyFilter): array
     {
-        if (!empty($params[$key])) {
+        if (! empty($params[$key])) {
             $value = $operator === 'like' ? "%{$params[$key]}%" : $params[$key];
             $where[] = [$column, $operator, $value];
             Filters::put($userId, self::FILTER_KEY, $key, $params[$key]);
@@ -135,7 +138,7 @@ class DoctorService
             'name' => $user->name,
             'email' => $user->email,
             'phone' => GeneralFunctions::contactStatus($user->phone),
-            'gender' => config('constants.gender_array.' . $user->gender),
+            'gender' => config('constants.gender_array.'.$user->gender),
             'roles' => $user->user_roles()->pluck('name')->all(),
             'active' => $user->active,
             'status' => $user->active,
@@ -177,7 +180,7 @@ class DoctorService
     {
         $accountId = Auth::user()->account_id;
 
-        $doctor = new \stdClass();
+        $doctor = new \stdClass;
         $doctor->gender = null;
         $doctor->phone = null;
 
@@ -192,7 +195,7 @@ class DoctorService
             ->get()
             ->pluck('full_address', 'id');
 
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, $accountId, true, true);
         $parentGroups->toList($parentGroups, -1);
@@ -215,7 +218,7 @@ class DoctorService
             ->where('account_id', $accountId)
             ->first();
 
-        if (!$doctor) {
+        if (! $doctor) {
             return null;
         }
 
@@ -224,7 +227,7 @@ class DoctorService
             ->pluck('name', 'id');
         $userstype->prepend('Select a User Type', '');
 
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, $accountId, true, true);
         $parentGroups->toList($parentGroups, -1);
@@ -258,13 +261,13 @@ class DoctorService
         $user = User::create($data);
         AuditTrails::addEventLogger('users', 'create', $data, ['name', 'email', 'phone', 'gender', 'user_type_id', 'resource_type_id', 'account_id', 'active'], $user);
 
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
         // Assign roles
         $roles = $data['roles'] ?? [];
-        if (!empty($roles)) {
+        if (! empty($roles)) {
             $user->assignRole(Role::whereIn('id', $roles)->get());
 
             foreach ($roles as $roleId) {
@@ -309,7 +312,7 @@ class DoctorService
         $roles = $data['roles'] ?? [];
         $user->syncRoles(Role::whereIn('id', $roles)->get());
 
-        if (!empty($roles) && is_array($roles)) {
+        if (! empty($roles) && is_array($roles)) {
             $user->role_has_users()->forceDelete();
 
             foreach ($roles as $roleId) {
@@ -346,7 +349,7 @@ class DoctorService
         }
 
         $user = User::find($id);
-        if (!$user) {
+        if (! $user) {
             return ['status' => false, 'message' => 'Record not found.'];
         }
 
@@ -361,7 +364,7 @@ class DoctorService
         $deleted = 0;
 
         User::whereIn('id', $ids)->each(function (User $user) use ($accountId, &$deleted): void {
-            if (!User::isExists($user->id, $accountId)) {
+            if (! User::isExists($user->id, $accountId)) {
                 $user->delete();
                 $deleted++;
             }
@@ -374,7 +377,7 @@ class DoctorService
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -387,7 +390,7 @@ class DoctorService
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -489,7 +492,7 @@ class DoctorService
             'message' => 'Success',
             'data' => [
                 'record' => $record,
-                'record_location_name' => $record->location->city->name . '-' . $record->location->name,
+                'record_location_name' => $record->location->city->name.'-'.$record->location->name,
                 'record_service_name' => $record->service->name,
             ],
         ];
@@ -506,7 +509,7 @@ class DoctorService
     {
         $doctorService = DoctorHasLocations::find($id);
 
-        if (!$doctorService) {
+        if (! $doctorService) {
             return false;
         }
 
