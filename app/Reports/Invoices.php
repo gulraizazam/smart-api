@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Enums\AppointmentType;
@@ -16,12 +17,16 @@ use App\Models\Packages;
 use App\Models\PackageService;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class Invoices
 {
+    use ParsesDateRange;
+
     /**
      * Generate Account sales Report
      *
@@ -33,14 +38,7 @@ class Invoices
 
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['invoices.patient_id'] = $data['patient_id'];
         }
@@ -97,14 +95,7 @@ class Invoices
 
         $where = [];
         $flag = 0;
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['invoices.patient_id'] = $data['patient_id'];
         }
@@ -226,6 +217,7 @@ class Invoices
      * Generate Daily Employee Stats
      *
      * @deprecated Use App\Services\Reports\Revenue\DailyEmployeeStatsReport instead.
+     *
      * @param  (mixed)  $request
      * @return (mixed)
      */
@@ -233,14 +225,7 @@ class Invoices
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['invoices.patient_id'] = $data['patient_id'];
         }
@@ -290,7 +275,7 @@ class Invoices
             foreach ($records as $record) {
 
                 $doctor = User::find($record->doctor_id, ['id', 'name']);
-                if($doctor){
+                if ($doctor) {
                     if (! in_array($record->doctor_id, $doctor_Array, true)) {
 
                         $reportdata[$doctor->id] = [
@@ -298,11 +283,10 @@ class Invoices
                             'name' => $doctor->name,
                             'records' => [],
                         ];
-    
+
                         $doctor_Array[] = $doctor->id;
                     }
                 }
-                
 
                 $service = Services::find($record->service_id, ['id', 'name']);
 
@@ -339,14 +323,7 @@ class Invoices
     public static function getSalesbyServiceCategory($data, $filters = [])
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['invoices.patient_id'] = $data['patient_id'];
         }
@@ -394,7 +371,7 @@ class Invoices
 
                 $services = self::getNodeServices($serviceshead->id, Auth::user()->account_id, true, true);
 
-                if (!empty($services)) {
+                if (! empty($services)) {
                     if (isset($data['service_id']) && $data['service_id']) {
                         $serviceinfo = Services::find($data['service_id']);
                         foreach ($services as $se) {
@@ -478,13 +455,13 @@ class Invoices
     /**
      * Get Node Services
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function getNodeServices($serviceId, $account_id, $drop_down = false, $remove_spaces = false)
     {
 
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id);
         $parentGroups->toList($parentGroups, -1);
@@ -523,14 +500,7 @@ class Invoices
 
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where['invoices.patient_id'] = $data['patient_id'];
         }
@@ -585,14 +555,7 @@ class Invoices
     public static function collectionbyservice($data, $account_id)
     {
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $where = [];
 
@@ -644,7 +607,7 @@ class Invoices
                     ['account_id', '=', $account_id],
                     ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
-            if (!empty($packagesadvances)) {
+            if (! empty($packagesadvances)) {
 
                 if ($packagesadvances) {
 
@@ -709,7 +672,7 @@ class Invoices
                                                     ['is_consumed', '=', '1'],
                                                     ['package_id', '=', $packageinfo->id],
                                                 ])->whereNotNull('package_services.package_id')->get();
-                                            if (!empty($total_consume_service)) {
+                                            if (! empty($total_consume_service)) {
                                                 $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
                                                     ->whereDate('updated_at', '<=', $end_date)
                                                     ->where([
@@ -728,7 +691,7 @@ class Invoices
                                                 $total_consume = 0;
                                             }
 
-                                            if (!empty($total_consume_service)) {
+                                            if (! empty($total_consume_service)) {
 
                                                 $package_services = PackageService::whereIn('id', $total_consume_packageservice_ids)
                                                     ->where('package_id', '=', $packageinfo->id)->whereNotNull('package_id')->get();

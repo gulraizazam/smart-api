@@ -1,13 +1,16 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Helpers\ACL;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\Regions;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\User;
 use Auth;
 use Carbon\Carbon;
@@ -15,6 +18,8 @@ use DB;
 
 class Revenue
 {
+    use ParsesDateRange;
+
     /**
      * Revenue Breakup Report
      *
@@ -24,14 +29,7 @@ class Revenue
     public static function RevenueBreakup($data, $account_id)
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $start = Carbon::parse($start_date);
         $end = Carbon::parse($end_date);
@@ -84,7 +82,7 @@ class Revenue
                 ['slug', '=', 'custom'],
             ])->get();
 
-            if (!empty($centersinfo)) {
+            if (! empty($centersinfo)) {
                 foreach ($centersinfo as $location) {
                     $revenuebreakup[$key]['centers'][$location->id] = [
                         'id' => $location->id,
@@ -101,16 +99,16 @@ class Revenue
                         $checkedsum = 0;
                         foreach ($servicesinfo as $service) {
 
-                            /*Need to Finilize the users id*/
+                            /* Need to Finilize the users id */
                             $users = DB::table('role_has_users')->where($where)->select('user_id')->get()->toArray();
                             $userids = [];
                             foreach ($users as $user) {
                                 $userids[] = $user->user_id;
                             }
-                            /*End to finilize the user id*/
+                            /* End to finilize the user id */
 
-                            if (!empty($userids)) {
-                                $revenueservicesum = \App\Models\Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                            if (! empty($userids)) {
+                                $revenueservicesum = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                                     ->whereDate('invoices.created_at', '=', $start->format('Y-m-d'))
                                     ->where([
                                         ['invoices.location_id', '=', $location->id],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Exports;
 
 use App\Helpers\ACL;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Services\Reports\MembershipReportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -14,8 +15,10 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class ExportMemberships implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ExportMemberships implements FromCollection, WithEvents, WithHeadings, WithMapping
 {
+    use ParsesDateRange;
+
     public function __construct(
         private readonly MembershipReportService $reportService,
         private readonly Request $request,
@@ -23,17 +26,10 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function collection(): Collection
     {
-        $startDate = null;
-        $endDate = null;
-
-        if ($this->request->date_range && $this->request->date_range !== '') {
-            $parts = explode(' - ', $this->request->date_range);
-            $startDate = date('Y-m-d', strtotime($parts[0]));
-            $endDate = date('Y-m-d', strtotime($parts[1]));
-        }
+        [$startDate, $endDate] = self::parseDateRange($this->request->date_range ?: null);
 
         $rawLocation = $this->request->location_id;
-        $locationIds = !empty($rawLocation)
+        $locationIds = ! empty($rawLocation)
             ? array_values(array_filter(array_map('intval', (array) $rawLocation), fn (int $id): bool => $id > 0))
             : [];
         if (empty($locationIds)) {

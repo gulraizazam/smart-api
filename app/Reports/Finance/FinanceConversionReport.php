@@ -4,21 +4,25 @@ declare(strict_types=1);
 
 namespace App\Reports\Finance;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Models\Packages;
-use App\Models\Locations;
-use App\Models\Appointments;
-use App\Models\AppointmentTypes;
 use App\Helpers\GeneralFunctions;
+use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
+use App\Models\AppointmentTypes;
 use App\Models\DoctorHasLocations;
-use App\Services\Conversion\ConversionService;
-use Illuminate\Support\Facades\DB;
-use App\Models\PackageAdvances;
 use App\Models\InvoiceDetails;
+use App\Models\Locations;
+use App\Models\PackageAdvances;
+use App\Models\Packages;
+use App\Services\Conversion\ConversionService;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class FinanceConversionReport
 {
+    use ParsesDateRange;
+
     /**
      * @deprecated Use App\Services\Reports\Revenue\ConversionReport instead.
      */
@@ -26,14 +30,7 @@ class FinanceConversionReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['region_id']) && $data['region_id']) {
             $where[] = [
@@ -124,7 +121,7 @@ class FinanceConversionReport
         $locationData = [];
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (!in_array($appointment->id, $appointmentss, true)) {
+                if (! in_array($appointment->id, $appointmentss, true)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -136,7 +133,7 @@ class FinanceConversionReport
                         'region' => $appointment->region->name,
                         'city' => $appointment->city->name,
                         'centre' => $appointment->location->name,
-                        'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
+                        'doi' => Carbon::parse($appointment->created_at)->format('M d Y'),
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
@@ -158,7 +155,7 @@ class FinanceConversionReport
                         ->where('cash_amount', '>', 0)
                         ->get();
 
-                    if (!empty($packagesadvances)) {
+                    if (! empty($packagesadvances)) {
 
                         $check = 0;
 
@@ -177,7 +174,7 @@ class FinanceConversionReport
 
                             foreach ($packagesadvances as $packagesadvance) {
 
-                                $child = \App\Reports\Finance\FinanceStaffReport::genericfunctionforstaffwiserevenue($packagesadvance);
+                                $child = FinanceStaffReport::genericfunctionforstaffwiserevenue($packagesadvance);
 
                                 if ($child) {
                                     $revenue_in += $child['revenue'] ? $child['revenue'] : 0;
@@ -215,10 +212,10 @@ class FinanceConversionReport
                     }
                 }
             }
-            /*case 1 end*/
+            /* case 1 end */
         }
 
-        /*case 2 start*/
+        /* case 2 start */
         $records = Appointments::with('location:id,name')
             ->join('appointments as appoint_2', 'appointments.id', '=', 'appoint_2.appointment_id')
             ->join('package_advances', 'appoint_2.id', '=', 'package_advances.appointment_id')
@@ -250,7 +247,7 @@ class FinanceConversionReport
                         ->whereDate('created_at', '<=', $end_date)
                         ->get();
 
-                    if (!empty($packageadvance_info)) {
+                    if (! empty($packageadvance_info)) {
 
                         $check = 0;
 
@@ -266,7 +263,7 @@ class FinanceConversionReport
                         }
                         if ($check == 1) {
                             foreach ($packageadvance_info as $packagesadvance) {
-                                $child = \App\Reports\Finance\FinanceStaffReport::genericfunctionforstaffwiserevenue($packagesadvance);
+                                $child = FinanceStaffReport::genericfunctionforstaffwiserevenue($packagesadvance);
                                 if ($child) {
                                     $revenue_in += $child['revenue'] ? $child['revenue'] : 0;
                                     $out += $child['refund_out'] ? $child['refund_out'] : 0;
@@ -285,7 +282,7 @@ class FinanceConversionReport
                     $status = false;
                 }
 
-                if (!in_array($appointment->id, $appointmentss2, true)) {
+                if (! in_array($appointment->id, $appointmentss2, true)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -297,7 +294,7 @@ class FinanceConversionReport
                         'region' => $appointment->region->name,
                         'city' => $appointment->city->name,
                         'centre' => $appointment->location->name,
-                        'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
+                        'doi' => Carbon::parse($appointment->created_at)->format('M d Y'),
                         'converted' => '',
                         'conversion_spend' => '',
                         'conversion_date' => '',
@@ -365,31 +362,24 @@ class FinanceConversionReport
         $data['location_id'] = ($data['location_id'][0] == null) ? 'all' : $data['location_id'];
         $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $extraWhere = [];
-        if (!empty($data['service_id'])) {
+        if (! empty($data['service_id'])) {
             $extraWhere[] = ['appointments.service_id', '=', $data['service_id']];
         }
 
         // Use is_allocated=1 to match dashboard logic
         $consultants = DoctorHasLocations::where('is_allocated', 1)
             ->whereIn('location_id', $locations)
-            ->when(!empty($data['doctor_id']), fn ($query) => $query->where('user_id', $data['doctor_id']))
+            ->when(! empty($data['doctor_id']), fn ($query) => $query->where('user_id', $data['doctor_id']))
             ->distinct('user_id')
             ->pluck('user_id')
             ->toArray();
 
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => $account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => $account_id, 'is_converted' => 1])->first();
+        $arrivedStatus = AppointmentStatuses::where(['account_id' => $account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = AppointmentStatuses::where(['account_id' => $account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : config('constants.appointment_status_arrived');
         $convertedStatusId = $convertedStatus?->id;
 
@@ -427,7 +417,7 @@ class FinanceConversionReport
         }
 
         // Total arrived appointments (for conversion ratio)
-        $filterDoctorIds = !empty($data['doctor_id']) ? $consultants : null;
+        $filterDoctorIds = ! empty($data['doctor_id']) ? $consultants : null;
         $total_appointments = $conversionService->getTotalArrivedCount(
             $locations, $arrivedStatusId, $convertedStatusId, $start_date, $end_date, $filterDoctorIds, $extraWhere
         );
@@ -480,7 +470,7 @@ class FinanceConversionReport
         // Add categories with conversions but no arrivals
         $processedCategories = $total_arrived_appointments->pluck('name')->toArray();
         foreach ($new_array as $category_name => $category_data) {
-            if (!in_array($category_name, $processedCategories, true)) {
+            if (! in_array($category_name, $processedCategories, true)) {
                 $returnCategoryData[] = [
                     'service' => $category_name,
                     'total_arrival' => 0,
@@ -506,9 +496,9 @@ class FinanceConversionReport
         } else {
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', "!=", "")->groupBy('patient_id')
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
             ->map(fn ($items) => $items->sum('conversion_spend'));
-        if (!empty($conversionsByPatient)) {
+        if (! empty($conversionsByPatient)) {
             $avg_cxlient_value = $conversionsByPatient->sum() / count($conversionsByPatient);
         } else {
             $avg_cxlient_value = 0;
@@ -525,7 +515,7 @@ class FinanceConversionReport
             $conversionsByPatient,
             $converted_Records,
             array_sum($total_apts),
-            $avg_cxlient_value
+            $avg_cxlient_value,
         ];
     }
 
@@ -556,14 +546,7 @@ class FinanceConversionReport
         $reportdata = [];
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['region_id']) && $data['region_id']) {
             /*
@@ -643,14 +626,7 @@ class FinanceConversionReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -687,7 +663,7 @@ class FinanceConversionReport
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'patient' => $packagerow->user->name,
-                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'total_price' => $packagerow->total_price,
                 'is_refund' => $packagerow->is_refund ? 'Yes' : 'NO',

@@ -1,30 +1,31 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\Filters;
 use App\Models\Concerns\GuardsTenantBoundary;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Support\SafeFilename;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
 
 class Warehouse extends Model
 {
-    use HasFactory;
     use GuardsTenantBoundary;
+    use HasFactory;
+    use ParsesDateRange;
 
     protected $fillable = ['name', 'manager_name', 'manager_phone', 'account_id',  'address', 'google_map', 'city_id', 'active', 'created_at', 'updated_at', 'image_src'];
 
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getData($id)
@@ -37,7 +38,7 @@ class Warehouse extends Model
 
     public static function getBulkData($id)
     {
-        if (!is_array($id)) {
+        if (! is_array($id)) {
             $id = [$id];
         }
 
@@ -61,9 +62,9 @@ class Warehouse extends Model
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -79,8 +80,8 @@ class Warehouse extends Model
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function lead_sources_filters($request, $account_id, $apply_filter)
@@ -88,17 +89,12 @@ class Warehouse extends Model
         $where = [];
 
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if (hasFilter($filters, 'name')) {
-            $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            $where[] = ['name', 'like', '%'.$filters['name'].'%'];
             Filters::put(Auth::user()->id, 'warehouse', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
@@ -108,7 +104,7 @@ class Warehouse extends Model
                     $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'name') . '%',
+                        '%'.Filters::get(Auth::user()->id, 'warehouse', 'name').'%',
                     ];
                 }
             }
@@ -117,7 +113,7 @@ class Warehouse extends Model
             $where[] = [
                 'manager_name',
                 'like',
-                '%' . $filters['manager_name'] . '%',
+                '%'.$filters['manager_name'].'%',
             ];
             Filters::put(Auth::user()->id, 'warehouse', 'manager_name', $filters['manager_name']);
         } else {
@@ -128,7 +124,7 @@ class Warehouse extends Model
                     $where[] = [
                         'manager_name',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'manager_name') . '%',
+                        '%'.Filters::get(Auth::user()->id, 'warehouse', 'manager_name').'%',
                     ];
                 }
             }
@@ -137,7 +133,7 @@ class Warehouse extends Model
             $where[] = [
                 'manager_phone',
                 'like',
-                '%' . $filters['manager_phone'] . '%',
+                '%'.$filters['manager_phone'].'%',
             ];
             Filters::put(Auth::user()->id, 'warehouse', 'manager_phone', $filters['manager_phone']);
         } else {
@@ -148,7 +144,7 @@ class Warehouse extends Model
                     $where[] = [
                         'manager_phone',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, 'warehouse', 'manager_phone') . '%',
+                        '%'.Filters::get(Auth::user()->id, 'warehouse', 'manager_phone').'%',
                     ];
                 }
             }
@@ -198,7 +194,7 @@ class Warehouse extends Model
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
@@ -210,14 +206,14 @@ class Warehouse extends Model
         $data['active'] = 1;
         // Set Region ID
         $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
-        //Set Image
+        // Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to a public storage path.
-                $fileName = time() . '-' . SafeFilename::sanitize(
+                $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
                     ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
                 );
@@ -243,7 +239,7 @@ class Warehouse extends Model
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
@@ -253,14 +249,14 @@ class Warehouse extends Model
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        //Set Image
+        // Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
                 // Filename hardening — sanitise the browser-supplied
                 // basename before joining it to a public storage path.
-                $fileName = time() . '-' . SafeFilename::sanitize(
+                $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
                     ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
                 );
@@ -273,11 +269,12 @@ class Warehouse extends Model
             'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
         $record->update($data);
+
         return $record;
     }
 
@@ -291,13 +288,13 @@ class Warehouse extends Model
     {
         $warehouse = Warehouse::getData($id);
 
-        if (!$warehouse) {
+        if (! $warehouse) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
             ];
         }
-        if (!Warehouse::isChildExists($warehouse->id, Auth::user()->account_id)) {
+        if (! Warehouse::isChildExists($warehouse->id, Auth::user()->account_id)) {
             $warehouse->delete();
 
             $role = Role::findByName('Super-Admin');
@@ -305,7 +302,8 @@ class Warehouse extends Model
 
             UserHasWarehouse::where(['user_id' => $user->user_id, 'warehouse_id' => $warehouse->id])->delete();
         } else {
-            $warehouse->update(['active'=>0]);
+            $warehouse->update(['active' => 0]);
+
             return [
                 'status' => false,
                 'message' => 'Warehouse Deactivated Successfully!',
@@ -322,7 +320,7 @@ class Warehouse extends Model
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {
@@ -337,12 +335,12 @@ class Warehouse extends Model
     /**
      * Get All Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id, $locationids = false)
     {
-        if ($locationids && !is_array($locationids)) {
+        if ($locationids && ! is_array($locationids)) {
             $locationids = [$locationids];
         }
         if ($locationids) {
@@ -354,10 +352,11 @@ class Warehouse extends Model
     {
         $warehouse = Warehouse::getData($id);
 
-        if (!$warehouse) {
+        if (! $warehouse) {
             return false;
         }
         $record = $warehouse->update(['active' => $status]);
+
         return $record;
     }
 }

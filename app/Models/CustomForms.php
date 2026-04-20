@@ -1,20 +1,24 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
 
 class CustomForms extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'name', 'description', 'form_type', 'content', 'active', 'sort_number', 'created_by', 'updated_by', 'created_at', 'updated_at', 'custom_form_type'];
@@ -85,7 +89,7 @@ class CustomForms extends BaseModel
 
     public function form_fields(): HasMany
     {
-        //return $this->hasMany(CustomFormFields::class, 'user_form_id')->where([ ['field_type', '!=', config("constants.custom_form.field_types.title")]])->orderBy(self::sort_field, 'asc');
+        // return $this->hasMany(CustomFormFields::class, 'user_form_id')->where([ ['field_type', '!=', config("constants.custom_form.field_types.title")]])->orderBy(self::sort_field, 'asc');
         return $this->hasMany(CustomFormFields::class, 'user_form_id')->orderBy(self::sort_field, 'asc');
     }
 
@@ -167,7 +171,7 @@ class CustomForms extends BaseModel
      * Get Total Records
      *
      * @param  bool  $account_id
-     * @return  (mixed)
+     * @return (mixed)
      */
     public static function getAllForms($account_id = false)
     {
@@ -193,7 +197,7 @@ class CustomForms extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -201,13 +205,13 @@ class CustomForms extends BaseModel
         $where = self::custom_forms_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_custom_forms')) {
+            if (Gate::allows('view_inactive_custom_forms')) {
                 return self::where($where)->count();
             } else {
                 return self::where('active', 1)->where($where)->count();
             }
         } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_custom_forms')) {
+            if (Gate::allows('view_inactive_custom_forms')) {
                 return self::count();
             } else {
                 return self::where('active', 1)->count();
@@ -219,9 +223,9 @@ class CustomForms extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -257,14 +261,14 @@ class CustomForms extends BaseModel
             }
         }
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_custom_forms')) {
+            if (Gate::allows('view_inactive_custom_forms')) {
                 return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
             } else {
                 return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
             }
 
         } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_custom_forms')) {
+            if (Gate::allows('view_inactive_custom_forms')) {
                 return self::limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
             } else {
                 return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
@@ -275,9 +279,9 @@ class CustomForms extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
+     * @param  (bool)  $apply_filter
      * @return (mixed)
      */
     public static function custom_forms_filters($request, $account_id, $apply_filter)
@@ -285,14 +289,9 @@ class CustomForms extends BaseModel
         $where = [];
 
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($account_id) {
             $where[] = [
@@ -397,7 +396,7 @@ class CustomForms extends BaseModel
     /**
      * Get All Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -408,7 +407,7 @@ class CustomForms extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createForm($account_id, $data)
@@ -422,6 +421,7 @@ class CustomForms extends BaseModel
         $data['created_by'] = Auth::id();
         $record = self::create($data);
         $record->update([self::sort_field => $record->id]);
+
         //        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
         return $record;
     }
@@ -429,7 +429,7 @@ class CustomForms extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id, $user_id)
@@ -443,6 +443,7 @@ class CustomForms extends BaseModel
         $data['created_by'] = $user_id;
         $record = self::create($data);
         $record->update([self::sort_field => $record->id]);
+
         //        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
         return $record;
     }
@@ -450,7 +451,7 @@ class CustomForms extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id, $user_id)
@@ -479,6 +480,7 @@ class CustomForms extends BaseModel
 
         $data['updated_by'] = $user_id;
         $record->update($data);
+
         //        AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
         return $record;
     }
@@ -487,7 +489,7 @@ class CustomForms extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {

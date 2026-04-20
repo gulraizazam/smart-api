@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Reports\Finance;
 
-use Config;
-use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Models\Packages;
+use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
-use App\Models\PackageBundles;
 use App\Models\PackageAdvances;
+use App\Models\PackageBundles;
+use App\Models\Packages;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Carbon\Carbon;
+use Config;
 
 class FinanceLedgerReport
 {
+    use ParsesDateRange;
+
     /**
      * Customer Payment Ledger Report
      *
@@ -24,14 +28,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
@@ -107,7 +104,7 @@ class FinanceLedgerReport
                     $records[] = [
                         'patient_id' => $packagesadvances->patient_id,
                         'patient' => $packagesadvances->user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
+                        'phone' => GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
                         'centre' => $packagesadvances->location->name,
                         'transtype' => $transtype,
                         'cash_in' => $cash_in,
@@ -132,14 +129,7 @@ class FinanceLedgerReport
     public static function customertreatmentpackageledger($data, $account_id)
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -169,7 +159,7 @@ class FinanceLedgerReport
         // by package_id. Replaces the previous N+1 (one query per package).
         $packageIds = $packageinfo->pluck('id')->all();
         $advancesByPackage = collect();
-        if (!empty($packageIds)) {
+        if (! empty($packageIds)) {
             $advancesByPackage = PackageAdvances::with(['user:id,name,phone'])
                 ->whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
@@ -186,7 +176,7 @@ class FinanceLedgerReport
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'patient' => $packagerow->user->name,
-                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'total_price' => $packagerow->total_price,
                 'children' => [],
@@ -240,7 +230,7 @@ class FinanceLedgerReport
                         $records = [
                             'patient_id' => $packagesadvances->patient_id,
                             'patient' => $packagesadvances->user->name,
-                            'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
+                            'phone' => GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
                             'transtype' => $transtype,
                             'cash_in' => $cash_in,
                             'cash_out' => $cash_out,
@@ -270,14 +260,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -308,7 +291,7 @@ class FinanceLedgerReport
         // package). Per-package aggregations are now computed in PHP.
         $packageIds = $packageinfo->pluck('id')->all();
         $advancesByPackage = collect();
-        if (!empty($packageIds)) {
+        if (! empty($packageIds)) {
             $advancesByPackage = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
                 ->whereIn('package_id', $packageIds)
@@ -323,7 +306,7 @@ class FinanceLedgerReport
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'patient' => $packagerow->user->name,
-                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'total_price' => $packagerow->total_price,
                 'is_refund' => $packagerow->is_refund ? 'Yes' : 'NO',
@@ -393,14 +376,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -432,7 +408,7 @@ class FinanceLedgerReport
         // (sum + get) — at 1000 appointments that was 2000+ queries.
         $appointmentIds = $appointmentinfo->pluck('id')->all();
         $advancesByAppointment = collect();
-        if (!empty($appointmentIds)) {
+        if (! empty($appointmentIds)) {
             $advancesByAppointment = PackageAdvances::whereDate('package_advances.created_at', '>=', $start_date)
                 ->whereDate('package_advances.created_at', '<=', $end_date)
                 ->whereIn('appointment_id', $appointmentIds)
@@ -459,9 +435,9 @@ class FinanceLedgerReport
                     'id' => $appointment->id,
                     'patient_id' => $appointment->patient_id,
                     'patient_name' => $appointment->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                     'email' => $appointment->patient->email,
-                    'schedule' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor' => (array_key_exists($appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($appointment->city_id, $filters['cities'])) ? $filters['cities'][$appointment->city_id]->name : '',
                     'location' => (array_key_exists($appointment->location_id, $filters['locations'])) ? $filters['locations'][$appointment->location_id]->name : '',
@@ -510,14 +486,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -554,7 +523,7 @@ class FinanceLedgerReport
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'patient' => $packagerow->user->name,
-                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'is_refund' => $packagerow->is_refund ? 'Yes' : 'NO',
                 'total_price' => '',
@@ -589,14 +558,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'appointments.patient_id',
@@ -628,14 +590,14 @@ class FinanceLedgerReport
         $count = 0;
         if ($package_advances) {
             foreach ($package_advances as $packageadvance) {
-                if (!in_array($packageadvance->appointment->id, $appointmentids, true)) {
+                if (! in_array($packageadvance->appointment->id, $appointmentids, true)) {
                     $appointmentrefund[$packageadvance->appointment->id] = [
                         'id' => $packageadvance->appointment->id,
                         'patient_id' => $packageadvance->appointment->patient_id,
                         'patient_name' => $packageadvance->appointment->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packageadvance->appointment->patient->phone),
+                        'phone' => GeneralFunctions::prepareNumber4Call($packageadvance->appointment->patient->phone),
                         'email' => $packageadvance->appointment->patient->email,
-                        'schedule' => ($packageadvance->appointment->scheduled_date) ? \Carbon\Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
+                        'schedule' => ($packageadvance->appointment->scheduled_date) ? Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
                         'service' => (array_key_exists($packageadvance->appointment->service_id, $filters['services'])) ? $filters['services'][$packageadvance->appointment->service_id]->name : '',
                         'doctor' => (array_key_exists($packageadvance->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$packageadvance->appointment->doctor_id]->name : '',
                         'city' => (array_key_exists($packageadvance->appointment->city_id, $filters['cities'])) ? $filters['cities'][$packageadvance->appointment->city_id]->name : '',
@@ -663,14 +625,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -726,7 +681,7 @@ class FinanceLedgerReport
                     'patient_id' => $packagerow->patient_id,
                     'id' => $refunds->id,
                     'patient' => $packagerow->user->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                    'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                     'location' => $packagerow->location->name,
                     'cash_flow' => $refunds->cash_flow,
                     'refund_note' => $refunds->refund_note,
@@ -749,14 +704,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'appointments.patient_id',
@@ -799,7 +747,7 @@ class FinanceLedgerReport
 
         foreach ($package_advances as $refunds) {
 
-            if (!in_array($refunds->appointment->id, $appointmentids, true)) {
+            if (! in_array($refunds->appointment->id, $appointmentids, true)) {
 
                 $appointmentrefund[$refunds->appointment->id] = [
                     'id' => $refunds->appointment->id,
@@ -812,9 +760,9 @@ class FinanceLedgerReport
                     'id' => $refunds->id,
                     'patient_id' => $refunds->appointment->patient_id,
                     'patient_name' => $refunds->appointment->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
+                    'phone' => GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -832,9 +780,9 @@ class FinanceLedgerReport
                     'id' => $refunds->id,
                     'patient_id' => $refunds->appointment->patient_id,
                     'patient_name' => $refunds->appointment->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
+                    'phone' => GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -860,14 +808,7 @@ class FinanceLedgerReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'packages.patient_id',
@@ -909,7 +850,7 @@ class FinanceLedgerReport
                 'id' => $packagerow->id,
                 'name' => $packagerow->name,
                 'patient' => $packagerow->user->name,
-                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
+                'phone' => GeneralFunctions::prepareNumber4Call($packagerow->user->phone),
                 'location' => $packagerow->location->name,
                 'is_refund' => $packagerow->is_refund ? 'Yes' : 'NO',
                 'orignal_price' => '',

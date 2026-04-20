@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Inventory;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\Brand;
 use App\Models\DoctorHasLocations;
@@ -17,11 +16,14 @@ use App\Models\Stock;
 use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\Warehouse;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class InventoryReportService
 {
+    use ParsesDateRange;
+
     /**
      * Normalise a centre/location filter input into a clean int[] (or empty array when no filter).
      *
@@ -53,17 +55,10 @@ class InventoryReportService
     public function getStockReportResult(array $requestData): array
     {
         $where = [];
-        if (isset($requestData['date_range'])) {
-            $date_range = explode(' - ', $requestData['date_range']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter($requestData['date_range'] ?? null);
 
         if (isset($requestData['name'])) {
-            $where[] = ['name', 'like', '%' . $requestData['name'] . '%'];
+            $where[] = ['name', 'like', '%'.$requestData['name'].'%'];
         }
         if (isset($requestData['location_type']) && isset($requestData['location'])) {
             if ($requestData['location_type'] == 'branch') {
@@ -94,11 +89,12 @@ class InventoryReportService
         $products = collect($products)->map(function ($product) use ($centres, $warehouse) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
             $product->available_stock = $product->getAvailableStockAttribute();
-            $product->order_quantity = $product['order']->filter(fn($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
-                ->sum(fn($order) => $order['orderDetail']['quantity']);
-            $product->order_sale_price = $product['order']->filter(fn($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
-                ->sum(fn($order) => $order['orderDetail']['sale_price']);
+            $product->order_quantity = $product['order']->filter(fn ($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
+                ->sum(fn ($order) => $order['orderDetail']['quantity']);
+            $product->order_sale_price = $product['order']->filter(fn ($order) => $order['order_type'] === 'sale' && $order['refund_order_id'] == null)
+                ->sum(fn ($order) => $order['orderDetail']['sale_price']);
             $product->location = ($product->location_id != null) ? ((array_key_exists($product->location_id, $centres)) ? $centres[$product->location_id]->name : 'N/A') : ((array_key_exists($product->warehouse_id, $warehouse)) ? $warehouse[$product->warehouse_id]->name : 'N/A');
+
             return $product;
         });
 
@@ -123,26 +119,24 @@ class InventoryReportService
     {
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
         $brandId = $params['brand_id'] ?? null;
-        $dates = explode(' - ', $params['date_range']);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
 
         // Get location IDs for filtering
-        $locationIds = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
+        $locationIds = ! empty($centreIds) ? $centreIds : ACL::getUserCentres();
 
         // Load products with their inventories at specified locations
         $products = Product::with([
             'inventories' => function ($query) use ($locationIds) {
                 $query->whereIn('location_id', $locationIds);
-            }
+            },
         ])
-        ->whereHas('inventories', function ($query) use ($locationIds, $brandId) {
-            $query->whereIn('location_id', $locationIds);
-        })
-        ->when($brandId, function ($query) use ($brandId) {
-            $query->where('brand_id', $brandId);
-        })
-        ->get();
+            ->whereHas('inventories', function ($query) use ($locationIds) {
+                $query->whereIn('location_id', $locationIds);
+            })
+            ->when($brandId, function ($query) use ($brandId) {
+                $query->where('brand_id', $brandId);
+            })
+            ->get();
 
         // Process the product data for the report
         $report = $products->map(function ($product) use ($locationIds, $startDate, $endDate) {
@@ -205,10 +199,8 @@ class InventoryReportService
     public function loadDoctorSalesReport(array $params): array
     {
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
-        $locationId = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
-        $dates = explode(' - ', $params['date_range']);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        $locationId = ! empty($centreIds) ? $centreIds : ACL::getUserCentres();
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
         $doctorId = $params['doctor_id'] ?? null;
 
         // If a specific doctorId is provided, use it; otherwise, fetch all doctors for the location
@@ -263,13 +255,13 @@ class InventoryReportService
             $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
 
             // Process each order detail to calculate sales data
-            $productSales = $doctorOrders->flatMap(fn($order) => $order->orderDetail->map(fn($detail) => [
-                        'product_id' => $detail->product_id,
-                        'product_name' => $detail->product->name ?? 'Unknown Product',
-                        'total_quantity' => $detail->quantity,
-                        'subtotal' => $detail->quantity * ($detail->sale_price ?? $detail->product->sale_price ?? 0),
-                        'order_date' => $order->created_at->format('d M Y'), // Adding order date
-                    ]))->groupBy('product_id')->map(function ($orderDetails) {
+            $productSales = $doctorOrders->flatMap(fn ($order) => $order->orderDetail->map(fn ($detail) => [
+                'product_id' => $detail->product_id,
+                'product_name' => $detail->product->name ?? 'Unknown Product',
+                'total_quantity' => $detail->quantity,
+                'subtotal' => $detail->quantity * ($detail->sale_price ?? $detail->product->sale_price ?? 0),
+                'order_date' => $order->created_at->format('d M Y'), // Adding order date
+            ]))->groupBy('product_id')->map(function ($orderDetails) {
                 $firstDetail = $orderDetails->first();
 
                 return [
@@ -299,12 +291,10 @@ class InventoryReportService
 
     public function loadSalesReport(array $params): array
     {
-        $dates = explode(' - ', $params['date_range']);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
         // Get filters
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
-        $locationId = !empty($centreIds) ? $centreIds : ACL::getUserCentres();
+        $locationId = ! empty($centreIds) ? $centreIds : ACL::getUserCentres();
 
         // Build query
         $query = Order::query()
@@ -324,6 +314,7 @@ class InventoryReportService
             $totalRevenue = $order->orderDetail->sum(fn ($detail) => $detail->quantity * $detail->sale_price);
             $productNames = $order->orderDetail->map(fn ($detail) => $detail->product->name ?? 'N/A')->unique()->join(', '); // Join multiple product names if needed
             $quantity = $order->orderDetail->map(fn ($detail) => $detail->quantity ?? 'N/A')->join(', '); // No unique() to avoid filtering out duplicate quantities
+
             return [
                 'order_id' => $order->id,
                 'location_name' => $order->centre->name ?? 'N/A',
@@ -353,9 +344,7 @@ class InventoryReportService
 
     public function loadAdditionReport(array $params): array
     {
-        $dates = explode(' - ', $params['date_range']);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
 
         // Get filters
         $centreIds = $this->resolveCentreIds($params['centre_id'] ?? null);
@@ -370,9 +359,9 @@ class InventoryReportService
             'stocks.quantity',
             'stocks.created_at'
         )
-        ->join('products', 'stocks.product_id', '=', 'products.id')
-        ->join('locations', 'stocks.location_id', '=', 'locations.id')
-        ->where('stocks.stock_type', 'in');
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->join('locations', 'stocks.location_id', '=', 'locations.id')
+            ->where('stocks.stock_type', 'in');
 
         // Apply location filter (falls back to user's permitted centres when none selected)
         $query->whereIn('stocks.location_id', $centreIds);
@@ -383,7 +372,7 @@ class InventoryReportService
         }
 
         // Apply date range filter
-        if (!empty($startDate) && !empty($endDate)) {
+        if (! empty($startDate) && ! empty($endDate)) {
             $query->whereBetween('stocks.created_at', [$startDate, $endDate]);
         }
 
@@ -394,9 +383,7 @@ class InventoryReportService
 
     public function getSalesReportData(array $params): array
     {
-        $dates = explode(' - ', $params['date_range']);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($params['date_range']);
         // Get filters (falls back to user's permitted centres when none selected)
         $locationIds = $this->resolveCentreIds($params['location_id'] ?? null);
         if (empty($locationIds)) {

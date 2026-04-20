@@ -6,16 +6,22 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
 use App\Models\Locations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Services\Upselling\UpsellingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class UpsellingReportController extends Controller
 {
+    use ParsesDateRange;
+
     public function __construct(
         private readonly UpsellingService $upsellingService
-    ) {
-    }
+    ) {}
 
     /**
      * Normalise the incoming `centre_id` filter into a clean int[]. Empty input
@@ -40,21 +46,21 @@ class UpsellingReportController extends Controller
         return $ids;
     }
 
-    public function index(): \Illuminate\View\View
+    public function index(): View
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
         return view('admin.reports.upselling', compact('locations'));
     }
 
-    public function consultantRevenueReport(): \Illuminate\View\View
+    public function consultantRevenueReport(): View
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
         return view('admin.reports.consultant_revenue', compact('locations'));
     }
 
-    public function loadUpsellingReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
+    public function loadUpsellingReport(Request $request): View|JsonResponse
     {
         $request->validate([
             'centre_id' => 'nullable|array',
@@ -62,9 +68,7 @@ class UpsellingReportController extends Controller
         ]);
 
         $locationIds = $this->resolveCentreIds($request->input('centre_id'));
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($request->input('date_range'));
 
         $data = $this->upsellingService->getDoctorUpsellingData($locationIds, $startDate, $endDate);
 
@@ -79,7 +83,8 @@ class UpsellingReportController extends Controller
         // Map to total_sold_amount for blade template compatibility
         $reportData = collect($data)->map(function ($item) {
             $item = (object) $item;
-            return (object)[
+
+            return (object) [
                 'doctor_id' => $item->doctor_id,
                 'doctor_name' => $item->doctor_name,
                 'total_sold_amount' => $item->total_upselling_amount,
@@ -93,17 +98,17 @@ class UpsellingReportController extends Controller
             'location_ids' => $locationIds,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'all_seller_ids' => $allSellerIds
+            'all_seller_ids' => $allSellerIds,
         ]]);
 
         return view('admin.reports.upsellingReport', compact('reportData'));
     }
 
-    public function doctorUpsellingDetail(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function doctorUpsellingDetail(int $doctorId): View|RedirectResponse
     {
         $filters = session('upselling_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please reload the report.');
         }
 
@@ -117,11 +122,11 @@ class UpsellingReportController extends Controller
         return view('admin.reports.doctorUpsellingDetail', $data);
     }
 
-    public function doctorConsultantBreakdown(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function doctorConsultantBreakdown(int $doctorId): View|RedirectResponse
     {
         $filters = session('upselling_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please generate the report again.');
         }
 
@@ -139,7 +144,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantSellerDetail', $data);
     }
 
-    public function loadConsultantRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
+    public function loadConsultantRevenueReport(Request $request): View|JsonResponse
     {
         $request->validate([
             'centre_id' => 'nullable|array',
@@ -147,9 +152,7 @@ class UpsellingReportController extends Controller
         ]);
 
         $locationIds = $this->resolveCentreIds($request->input('centre_id'));
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($request->input('date_range'));
 
         $result = $this->upsellingService->getConsultantRevenueReportData($locationIds, $startDate, $endDate);
 
@@ -169,17 +172,17 @@ class UpsellingReportController extends Controller
             'start_date' => $startDate,
             'end_date' => $endDate,
             'consultant_ids' => $result['consultant_ids'],
-            'all_seller_ids' => $result['all_seller_ids']
+            'all_seller_ids' => $result['all_seller_ids'],
         ]]);
 
         return view('admin.reports.consultantRevenueReport', compact('reportData'));
     }
 
-    public function consultantRevenueDetail(int $consultantId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function consultantRevenueDetail(int $consultantId): View|RedirectResponse
     {
         $filters = session('consultant_revenue_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please reload the report.');
         }
 
@@ -188,7 +191,7 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantRevenueDetail', $data);
     }
 
-    public function getDoctorUpsellingData(Request $request): \Illuminate\Http\JsonResponse
+    public function getDoctorUpsellingData(Request $request): JsonResponse
     {
         try {
             $centreId = $request->centre_id;
@@ -205,7 +208,7 @@ class UpsellingReportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Doctor Upselling Data Error: ' . $e->getMessage());
+            \Log::error('Doctor Upselling Data Error: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -215,11 +218,11 @@ class UpsellingReportController extends Controller
         }
     }
 
-    public function doctorConsultantBreakdown1(int $sellerId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function doctorConsultantBreakdown1(int $sellerId): View|RedirectResponse
     {
         $filters = session('upselling_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please reload the report.');
         }
 
@@ -232,11 +235,11 @@ class UpsellingReportController extends Controller
         return view('admin.reports.doctorConsultantBreakdown', $data);
     }
 
-    public function consultantSellerDetail(int $consultantId, int $sellerId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function consultantSellerDetail(int $consultantId, int $sellerId): View|RedirectResponse
     {
         $filters = session('upselling_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please reload the report.');
         }
 
@@ -253,14 +256,14 @@ class UpsellingReportController extends Controller
         return view('admin.reports.consultantSellerDetail', $data);
     }
 
-    public function downloadDoctorUpsellingExcel(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse|\Illuminate\Http\RedirectResponse
+    public function downloadDoctorUpsellingExcel(Request $request): BinaryFileResponse|RedirectResponse
     {
         try {
             $period = $request->period ?: 'september2025';
 
             $result = $this->upsellingService->getAllCentreUpsellingDataForExcel($period);
 
-            $fileName = 'Doctor_Upselling_Report_' . $result['currentPeriod']['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+            $fileName = 'Doctor_Upselling_Report_'.$result['currentPeriod']['label'].'_'.now()->format('Y-m-d_H-i-s').'.xlsx';
 
             $tempFile = $this->upsellingService->generateExcelFile(
                 $result['allCentreData'],
@@ -273,12 +276,13 @@ class UpsellingReportController extends Controller
             ])->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
-            \Log::error('Doctor Upselling Excel Download Error: ' . $e->getMessage());
+            \Log::error('Doctor Upselling Excel Download Error: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Error generating Excel file.');
         }
     }
 
-    public function getDoctorPaymentBasedUpsellingData(Request $request): \Illuminate\Http\JsonResponse
+    public function getDoctorPaymentBasedUpsellingData(Request $request): JsonResponse
     {
         try {
             $centreId = $request->centre_id;
@@ -301,7 +305,7 @@ class UpsellingReportController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Doctor Payment-Based Upselling Data Error: ' . $e->getMessage());
+            \Log::error('Doctor Payment-Based Upselling Data Error: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -314,7 +318,7 @@ class UpsellingReportController extends Controller
     /**
      * Display the Doctor Revenue Report page
      */
-    public function doctorRevenueReport(): \Illuminate\View\View
+    public function doctorRevenueReport(): View
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
 
@@ -326,7 +330,7 @@ class UpsellingReportController extends Controller
      * Flow: package_advances (cash_flow='in', cash_amount > 0) -> packages -> appointments -> doctors
      * Date filter applied to package_advances.created_at
      */
-    public function loadDoctorRevenueReport(Request $request): \Illuminate\View\View|\Illuminate\Http\JsonResponse
+    public function loadDoctorRevenueReport(Request $request): View|JsonResponse
     {
         $request->validate([
             'centre_id' => 'nullable|array',
@@ -334,9 +338,7 @@ class UpsellingReportController extends Controller
         ]);
 
         $locationIds = $this->resolveCentreIds($request->input('centre_id'));
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($request->input('date_range'));
 
         $result = $this->upsellingService->getDoctorRevenueReportData($locationIds, $startDate, $endDate);
 
@@ -355,7 +357,7 @@ class UpsellingReportController extends Controller
             'location_ids' => $locationIds,
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'doctor_ids' => $result['doctor_ids']
+            'doctor_ids' => $result['doctor_ids'],
         ]]);
 
         return view('admin.reports.doctorRevenueReport', compact('reportData'));
@@ -364,11 +366,11 @@ class UpsellingReportController extends Controller
     /**
      * Doctor Revenue Detail - shows individual payments for a specific doctor
      */
-    public function doctorRevenueDetail(int $doctorId): \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+    public function doctorRevenueDetail(int $doctorId): View|RedirectResponse
     {
         $filters = session('doctor_revenue_filters');
 
-        if (!$filters) {
+        if (! $filters) {
             return redirect()->back()->with('error', 'Session expired. Please reload the report.');
         }
 
