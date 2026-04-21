@@ -1,17 +1,21 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Reports;
 
 use App\Helpers\ACL;
 use App\Models\Appointments;
 use App\Models\InvoiceStatuses;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\User;
 use Config;
 use Illuminate\Database\Eloquent\Collection;
 
 class Treatments
 {
+    use ParsesDateRange;
+
     /**
      * Generate General Report
      *
@@ -23,14 +27,7 @@ class Treatments
 
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -77,14 +74,7 @@ class Treatments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -131,14 +121,7 @@ class Treatments
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',

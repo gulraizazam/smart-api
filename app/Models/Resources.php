@@ -1,24 +1,26 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use Illuminate\Http\Request;use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-
-use Illuminate\Support\Facades\DB;use Illuminate\Database\Eloquent\Relations\HasOne;
-
-use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\ResourceHasRota;
-use App\Models\ResourceHasRotaDays;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class Resources extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $fillable = ['name', 'active', 'account_id', 'resource_type_id', 'external_id', 'machine_type_id', 'created_at', 'updated_at', 'location_id'];
@@ -121,7 +123,7 @@ class Resources extends BaseModel
     }
 
     /**
-     * @param  Request  $request (doctor_id, started_time, end_time)
+     * @param  Request  $request  (doctor_id, started_time, end_time)
      * @return bool
      */
     public static function checkDoctorAvailbility(Request $request)
@@ -132,13 +134,13 @@ class Resources extends BaseModel
             && $request->get('end')
         ) {
 
-            $data['started_time'] = \Carbon\Carbon::parse($request->get('start'))->format('Y-m-d H:i:s');
-            $data['ended_time'] = \Carbon\Carbon::parse($request->get('end'))->format('Y-m-d H:i:s');
+            $data['started_time'] = Carbon::parse($request->get('start'))->format('Y-m-d H:i:s');
+            $data['ended_time'] = Carbon::parse($request->get('end'))->format('Y-m-d H:i:s');
         } else {
             return false;
         }
-        $start_for_break_check = \Carbon\Carbon::parse($request->get('start'))->format('H:i');
-        $end_for_break_check = \Carbon\Carbon::parse($request->get('end'))->format('H:i');
+        $start_for_break_check = Carbon::parse($request->get('start'))->format('H:i');
+        $end_for_break_check = Carbon::parse($request->get('end'))->format('H:i');
 
         $record = self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
             ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
@@ -180,13 +182,13 @@ class Resources extends BaseModel
         $data['started_time'] = $start;
         $data['ended_time'] = $end;
 
-        $start_for_break_check = \Carbon\Carbon::parse($start)->format('H:i');
-        $end_for_break_check = \Carbon\Carbon::parse($end)->format('H:i');
+        $start_for_break_check = Carbon::parse($start)->format('H:i');
+        $end_for_break_check = Carbon::parse($end)->format('H:i');
 
-        $record = self::join("resource_has_rota", "resources.id", "=", "resource_has_rota.resource_id")
-            ->join("resource_has_rota_days", "resource_has_rota.id", "=", "resource_has_rota_id")
-            ->where(["resources.external_id" => $doctor_id])
-            ->where("resource_has_rota_days.start_timestamp", "<=", $data["started_time"])
+        $record = self::join('resource_has_rota', 'resources.id', '=', 'resource_has_rota.resource_id')
+            ->join('resource_has_rota_days', 'resource_has_rota.id', '=', 'resource_has_rota_id')
+            ->where(['resources.external_id' => $doctor_id])
+            ->where('resource_has_rota_days.start_timestamp', '<=', $data['started_time'])
             ->first();
 
         if ($record) {
@@ -220,7 +222,7 @@ class Resources extends BaseModel
     /**
      * is Room has rota in this time slot
      *
-     * @param  Request  $request (resource_id, started_time, end_time
+     * @param  Request  $request  (resource_id, started_time, end_time
      * @return bool
      */
     public static function checkRoomAvailbility(Request $request)
@@ -230,8 +232,8 @@ class Resources extends BaseModel
             && $request->get('start')
             && $request->get('end')
         ) {
-            $data["started_time"] = \Carbon\Carbon::parse($request->get("start"))->format("Y-m-d H:i:s");
-            $data["ended_time"] = \Carbon\Carbon::parse($request->get("end"))->format("Y-m-d H:i:s");
+            $data['started_time'] = Carbon::parse($request->get('start'))->format('Y-m-d H:i:s');
+            $data['ended_time'] = Carbon::parse($request->get('end'))->format('Y-m-d H:i:s');
         } else {
             return false;
         }
@@ -252,7 +254,7 @@ class Resources extends BaseModel
     /**
      * is Room has rota in this time slot
      *
-     * @param  Request  $request (resource_id, started_time, end_time
+     * @param  Request  $request  (resource_id, started_time, end_time
      * @return bool
      */
     public static function checkingRoomAvailbility($resource_id, $start, $end)
@@ -262,8 +264,8 @@ class Resources extends BaseModel
             && $start
             && $end
         ) {
-            $data["started_time"] = \Carbon\Carbon::parse($start)->format("Y-m-d H:i:s");
-            $data["ended_time"] = \Carbon\Carbon::parse($end)->format("Y-m-d H:i:s");
+            $data['started_time'] = Carbon::parse($start)->format('Y-m-d H:i:s');
+            $data['ended_time'] = Carbon::parse($end)->format('Y-m-d H:i:s');
         } else {
             return false;
         }
@@ -285,13 +287,14 @@ class Resources extends BaseModel
     public static function getDoctorWithRotas($location_id, $doctor_id, $start_date, $end_date)
     {
         $where = [];
-        $where[] = array("external_id", "=", $doctor_id);
-        $where[] = array("resource_type_id", "=", self::getResourceType("doctor"));
-        $where[] = array("account_id", "=", Auth::user()->account_id);
-        return self::where($where)->with(["resource_rota", "doctor_rotas" => function ($query) use ($location_id, $start_date, $end_date) {
-            $query->whereBetween("resource_has_rota_days.date", [$start_date, $end_date]);
-            $query->where(["resource_has_rota.location_id" => $location_id]);
-            $query->where(["resource_has_rota.active" => '1']);
+        $where[] = ['external_id', '=', $doctor_id];
+        $where[] = ['resource_type_id', '=', self::getResourceType('doctor')];
+        $where[] = ['account_id', '=', Auth::user()->account_id];
+
+        return self::where($where)->with(['resource_rota', 'doctor_rotas' => function ($query) use ($location_id, $start_date, $end_date) {
+            $query->whereBetween('resource_has_rota_days.date', [$start_date, $end_date]);
+            $query->where(['resource_has_rota.location_id' => $location_id]);
+            $query->where(['resource_has_rota.active' => '1']);
         }])->get();
     }
 
@@ -457,10 +460,10 @@ class Resources extends BaseModel
      */
     public static function getActiveSorted($skip_ids = false, $include_ids = false)
     {
-        if ($skip_ids && !is_array($skip_ids)) {
+        if ($skip_ids && ! is_array($skip_ids)) {
             $skip_ids = [$skip_ids];
         }
-        if ($include_ids && !is_array($include_ids)) {
+        if ($include_ids && ! is_array($include_ids)) {
             $include_ids = [$include_ids];
         }
 
@@ -478,7 +481,7 @@ class Resources extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -501,9 +504,9 @@ class Resources extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -529,7 +532,7 @@ class Resources extends BaseModel
             }
         }
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")) {
+            if (Gate::allows('view_inactive_resources')) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->where($where)
                     ->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
@@ -547,7 +550,7 @@ class Resources extends BaseModel
                     ->get();
             }
         } else {
-            if (\Illuminate\Support\Facades\Gate::allows("view_inactive_resources")) {
+            if (Gate::allows('view_inactive_resources')) {
                 return Resources::with(['location.city', 'resource_types', 'MachineType'])->whereIn('location_id', ACL::getUserCentres())
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
@@ -570,73 +573,68 @@ class Resources extends BaseModel
 
         $filename = 'resources';
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($account_id) {
-            $where[] = array(['account_id' => $account_id]);
+            $where[] = [['account_id' => $account_id]];
             Filters::put(Auth::user()->id, 'resources', 'account_id', $account_id);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'account_id');
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'account_id')) {
-                    $where[] = array(['account_id' => Filters::get(Auth::user()->id, 'resources', 'account_id')]);
+                    $where[] = [['account_id' => Filters::get(Auth::user()->id, 'resources', 'account_id')]];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = ['name', 'like', '%' . $filters['name'] . '%',];
+            $where[] = ['name', 'like', '%'.$filters['name'].'%'];
             Filters::put(Auth::user()->id, 'resources', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'name');
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'name')) {
-                    $where[] = ['name', 'like', '%' . Filters::get(Auth::user()->id, 'resources', 'name') . '%',];
+                    $where[] = ['name', 'like', '%'.Filters::get(Auth::user()->id, 'resources', 'name').'%'];
                 }
             }
         }
         if (hasFilter($filters, 'resource_type_id')) {
-            $where[] = array(['resource_type_id' => $filters['resource_type_id']]);
+            $where[] = [['resource_type_id' => $filters['resource_type_id']]];
             Filters::put(Auth::user()->id, 'resources', 'resource_type_id', $filters['resource_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'resource_type_id');
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'resource_type_id')) {
-                    $where[] = array(['resource_type_id' => Filters::get(Auth::user()->id, 'resources', 'resource_type_id')]);
+                    $where[] = [['resource_type_id' => Filters::get(Auth::user()->id, 'resources', 'resource_type_id')]];
                 }
             }
         }
         if (hasFilter($filters, 'location_id')) {
-            $where[] = array(['location_id' => $filters['location_id']]);
+            $where[] = [['location_id' => $filters['location_id']]];
             Filters::put(Auth::user()->id, 'resources', 'location_id', $filters['location_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'location_id');
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'location_id')) {
-                    $where[] = array(['location_id' => Filters::get(Auth::user()->id, 'resources', 'location_id')]);
+                    $where[] = [['location_id' => Filters::get(Auth::user()->id, 'resources', 'location_id')]];
                 }
             }
         }
 
         if (hasFilter($filters, 'machine_type_id')) {
-            $where[] = array(['machine_type_id' => $filters['machine_type_id']]);
+            $where[] = [['machine_type_id' => $filters['machine_type_id']]];
             Filters::put(Auth::user()->id, 'resources', 'machine_type_id', $filters['machine_type_id']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'resources', 'machine_type_id');
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'machine_type_id')) {
-                    $where[] = array(['machine_type_id' => Filters::get(Auth::user()->id, 'resources', 'machine_type_id')]);
+                    $where[] = [['machine_type_id' => Filters::get(Auth::user()->id, 'resources', 'machine_type_id')]];
                 }
             }
         }
@@ -656,7 +654,7 @@ class Resources extends BaseModel
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(['resources.active' => $filters['status']]);
+            $where[] = [['resources.active' => $filters['status']]];
             Filters::put(Auth::user()->id, 'resources', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -664,7 +662,7 @@ class Resources extends BaseModel
             } else {
                 if (Filters::get(Auth::user()->id, 'resources', 'status') == 0 || Filters::get(Auth::user()->id, 'resources', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'resources', 'status') != null) {
-                        $where[] = array(['resources.active' => Filters::get(Auth::user()->id, 'resources', 'status')]);
+                        $where[] = [['resources.active' => Filters::get(Auth::user()->id, 'resources', 'status')]];
                     }
                 }
             }
@@ -676,7 +674,7 @@ class Resources extends BaseModel
     /**
      * Get All Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -687,7 +685,7 @@ class Resources extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
@@ -717,7 +715,7 @@ class Resources extends BaseModel
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             flash('Resource not found.')->error()->important();
 
             return redirect()->route('admin.resources.index');
@@ -743,7 +741,7 @@ class Resources extends BaseModel
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             return false;
         }
 
@@ -765,7 +763,7 @@ class Resources extends BaseModel
 
         $resource = Resources::getData($id);
 
-        if (!$resource) {
+        if (! $resource) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -794,7 +792,7 @@ class Resources extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
@@ -812,7 +810,7 @@ class Resources extends BaseModel
             'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -827,7 +825,7 @@ class Resources extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {

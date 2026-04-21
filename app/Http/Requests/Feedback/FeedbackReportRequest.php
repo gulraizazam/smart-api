@@ -17,7 +17,8 @@ class FeedbackReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'centre_id' => ['nullable', 'integer', 'exists:locations,id'],
+            'centre_id' => ['nullable', 'array'],
+            'centre_id.*' => ['integer', 'exists:locations,id'],
             'doctor_id' => ['nullable', 'integer', 'exists:users,id'],
             'service_id' => ['nullable', 'integer', 'exists:services,id'],
             'date_range' => ['required', 'string', 'regex:/^.+\s-\s.+$/'],

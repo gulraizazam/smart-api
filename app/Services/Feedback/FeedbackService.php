@@ -14,13 +14,18 @@ use App\Models\Locations;
 use App\Models\Patients;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class FeedbackService
 {
+    use ParsesDateRange;
+
     private const FILTER_KEY = 'feedbacks';
 
     private const TREATMENT_APPOINTMENT_TYPE = 2;
@@ -155,48 +160,46 @@ class FeedbackService
     // Report
     // =========================================================================
 
+    /**
+     * @param  int[]|null  $locationIds
+     */
     public function getReportData(
-        ?int $locationId,
+        ?array $locationIds,
         ?int $doctorId,
         ?int $serviceId,
         string $dateRange,
     ): Collection|array {
-        [$startDate, $endDate] = $this->parseDateRange($dateRange);
+        [$startDate, $endDate] = $this->parseReportDateRange($dateRange);
+
+        $hasLocation = ! empty($locationIds);
 
         $baseQuery = Feedback::query()
-            ->when($locationId, fn (Builder $q) => $q->where('location_id', $locationId))
+            ->when($hasLocation, fn (Builder $q) => $q->whereIn('location_id', $locationIds))
             ->when($serviceId, fn (Builder $q) => $q->where('service_id', $serviceId))
             ->when($doctorId, fn (Builder $q) => $q->where('doctor_id', $doctorId))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         return match (true) {
             // CASE 7: All three filters
-            $locationId !== null && $doctorId !== null && $serviceId !== null
-                => $this->reportAllFilters($locationId, $doctorId, $serviceId, $startDate, $endDate),
+            $hasLocation && $doctorId !== null && $serviceId !== null => $this->reportAllFilters($locationIds, $doctorId, $serviceId, $startDate, $endDate),
 
             // CASE 6: service + doctor (no location)
-            $serviceId !== null && $doctorId !== null && $locationId === null
-                => $this->reportSingleResult($baseQuery, ['doctor_id', 'service_id'], ['doctor', 'service']),
+            $serviceId !== null && $doctorId !== null && ! $hasLocation => $this->reportSingleResult($baseQuery, ['doctor_id', 'service_id'], ['doctor', 'service']),
 
             // CASE 4: location + doctor (no service)
-            $locationId !== null && $doctorId !== null && $serviceId === null
-                => $this->reportGroupedBy($baseQuery, 'service_id', ['service', 'doctor']),
+            $hasLocation && $doctorId !== null && $serviceId === null => $this->reportGroupedBy($baseQuery, 'service_id', ['service', 'doctor']),
 
             // CASE 5: location + service (no doctor)
-            $locationId !== null && $serviceId !== null && $doctorId === null
-                => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
+            $hasLocation && $serviceId !== null && $doctorId === null => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // CASE 1: Only centre
-            $locationId !== null && $serviceId === null && $doctorId === null
-                => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
+            $hasLocation && $serviceId === null && $doctorId === null => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // CASE 2: Only doctor
-            $doctorId !== null && $serviceId === null && $locationId === null
-                => $this->reportGroupedBy($baseQuery, 'service_id', ['service']),
+            $doctorId !== null && $serviceId === null && ! $hasLocation => $this->reportGroupedBy($baseQuery, 'service_id', ['service']),
 
             // CASE 3: Only service
-            $serviceId !== null && $doctorId === null && $locationId === null
-                => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
+            $serviceId !== null && $doctorId === null && ! $hasLocation => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
 
             // Default: group by doctor
             default => $this->reportGroupedBy($baseQuery, 'doctor_id', ['doctor']),
@@ -253,7 +256,7 @@ class FeedbackService
         $query = Feedback::with(['location', 'patient', 'doctor', 'service', 'treatment', 'creator'])
             ->whereIn('feedback.location_id', ACL::getUserCentres());
 
-        if (!empty($whereConditions)) {
+        if (! empty($whereConditions)) {
             $query->where($whereConditions);
         }
 
@@ -286,20 +289,19 @@ class FeedbackService
     // Private: Report Helpers
     // =========================================================================
 
-    private function parseDateRange(string $dateRange): array
+    /**
+     * Produce the [start, end] datetime pair for a feedback report window.
+     * Dashboard reports always exclude the current day (and anything later),
+     * so an end date at or after today is clamped to yesterday 23:59:59.
+     */
+    private function parseReportDateRange(string $dateRange): array
     {
-        $dates = explode(' - ', $dateRange);
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        [$startDate, $endDate] = self::excludeTodayFromRange(self::parseDateRange($dateRange));
 
-        $endDateParsed = date('Y-m-d', strtotime($dates[1]));
-        $today = date('Y-m-d');
-
-        // Always exclude today to match dashboard behavior
-        $endDate = $endDateParsed >= $today
-            ? date('Y-m-d 23:59:59', strtotime('yesterday'))
-            : date('Y-m-d 23:59:59', strtotime($dates[1]));
-
-        return [$startDate, $endDate];
+        return [
+            $startDate.' 00:00:00',
+            $endDate.' 23:59:59',
+        ];
     }
 
     private function reportGroupedBy(Builder $query, string $groupField, array $relations): Collection
@@ -322,14 +324,17 @@ class FeedbackService
         return $record ? [$record] : [];
     }
 
+    /**
+     * @param  int[]  $locationIds
+     */
     private function reportAllFilters(
-        int $locationId,
+        array $locationIds,
         int $doctorId,
         int $serviceId,
         string $startDate,
         string $endDate,
     ): array {
-        $feedback = Feedback::where('location_id', $locationId)
+        $feedback = Feedback::whereIn('location_id', $locationIds)
             ->where('doctor_id', $doctorId)
             ->where('service_id', $serviceId)
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -381,16 +386,19 @@ class FeedbackService
         ];
     }
 
-    public function getFutureTreatmentsData(?string $centreId, ?string $serviceId): array
+    /**
+     * @param  int[]|null  $centreIds
+     */
+    public function getFutureTreatmentsData(?array $centreIds, ?string $serviceId): array
     {
-        $startDate = \Illuminate\Support\Carbon::today()->startOfDay();
-        $endDate = \Illuminate\Support\Carbon::today()->addDays(6)->endOfDay();
+        $startDate = Carbon::today()->startOfDay();
+        $endDate = Carbon::today()->addDays(6)->endOfDay();
 
         $serviceIds = [];
         if ($serviceId) {
             $serviceIds[] = $serviceId;
 
-            $childServices = \Illuminate\Support\Facades\DB::table('services')
+            $childServices = DB::table('services')
                 ->where('parent_id', $serviceId)
                 ->where('active', 1)
                 ->pluck('id')
@@ -399,15 +407,17 @@ class FeedbackService
             $serviceIds = array_merge($serviceIds, $childServices);
         }
 
-        $appointments = \Illuminate\Support\Facades\DB::table('appointments')
+        $hasCentre = ! empty($centreIds);
+
+        $appointments = DB::table('appointments')
             ->join('users', 'appointments.patient_id', '=', 'users.id')
             ->join('services', 'appointments.service_id', '=', 'services.id')
             ->join('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
             ->where('appointments.appointment_type_id', 2)
             ->where('appointments.appointment_status_id', 1)
             ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
-            ->when($centreId, fn ($query) => $query->where('appointments.location_id', $centreId))
-            ->when(!empty($serviceIds), fn ($query) => $query->whereIn('appointments.service_id', $serviceIds))
+            ->when($hasCentre, fn ($query) => $query->whereIn('appointments.location_id', $centreIds))
+            ->when(! empty($serviceIds), fn ($query) => $query->whereIn('appointments.service_id', $serviceIds))
             ->select(
                 'users.name as patient_name',
                 'services.name as service_name',
@@ -422,7 +432,7 @@ class FeedbackService
             'filters' => [
                 'start_date' => $startDate->format('d M Y'),
                 'end_date' => $endDate->format('d M Y'),
-                'centre_id' => $centreId,
+                'centre_id' => $centreIds,
                 'service_id' => $serviceId,
             ],
         ];

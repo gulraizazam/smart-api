@@ -10,25 +10,48 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TaxCalculationReportRequest;
 use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
+use App\Models\AppointmentStatuses;
+use App\Models\Cities;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\RoleHasUsers;
 use App\Models\Services;
-use App\Models\Cities;
 use App\Models\User;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 
 class FinanceArrivalReportController extends Controller
 {
+    use ParsesDateRange;
+
+    /**
+     * Normalise a centre/location filter input (scalar, array, or empty) into
+     * a clean int[] or empty array meaning "no filter".
+     *
+     * @return int[]
+     */
+    private function normaliseLocationIds(mixed $raw): array
+    {
+        if ($raw === null || $raw === '' || $raw === [] || $raw === '0') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map('intval', (array) $raw),
+            fn (int $id): bool => $id > 0,
+        ));
+    }
+
     /**
      * @deprecated Moved to App\Http\Controllers\Admin\Reports\ArrivedNotConvertedController
      */
-
-    public function DailyArrival(): \Illuminate\View\View
+    public function DailyArrival(): View
     {
         $services = Services::where(['parent_id' => 0])->whereNotIn('slug', ['all'])->get();
         $cities = Cities::getActiveOnly(false, Auth::user()->account_id)->pluck('full_name', 'id');
@@ -38,12 +61,11 @@ class FinanceArrivalReportController extends Controller
         return view('admin.reports.dailyarrival', compact('services', 'cities', 'locations', 'Users'));
     }
 
-    public function LoadDailyArrival(Request $request): \Illuminate\View\View
+    public function LoadDailyArrival(Request $request): View
     {
         $where = [];
-        if ($request->location_id && $request->location_id) {
-            $where[] = [['appointments.location_id' => $request->location_id]];
-        }
+        $locationIds = $this->normaliseLocationIds($request->input('location_id'));
+        // Bound apply of the centre filter is handled below via when()+whereIn().
         if ($request->service_id && $request->service_id != '') {
             $where[] = [['appointments.service_id' => $request->service_id]];
         }
@@ -77,27 +99,31 @@ class FinanceArrivalReportController extends Controller
         if (count($where)) {
             $resultQuery->where($where);
         }
+        if (! empty($locationIds)) {
+            $resultQuery->whereIn('appointments.location_id', $locationIds);
+        }
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->orderBy('appointments.created_at', 'DESC')
             ->get();
 
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
         $convertedStatusId = $convertedStatus?->id;
         $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
 
-        $arrived = Appointments::whereIn('appointments.location_id', ACL::getUserCentres())
+        $arrivedCentres = ! empty($locationIds) ? $locationIds : ACL::getUserCentres();
+        $arrived = Appointments::whereIn('appointments.location_id', $arrivedCentres)
             ->whereIn('base_appointment_status_id', $statusIds)
-            ->when($request->date_from, fn($q) => $q->where('scheduled_date', '>=', $request->date_from))
-            ->when($request->date_to, fn($q) => $q->where('scheduled_date', '<=', $request->date_to))
+            ->when($request->date_from, fn ($q) => $q->where('scheduled_date', '>=', $request->date_from))
+            ->when($request->date_to, fn ($q) => $q->where('scheduled_date', '<=', $request->date_to))
             ->count();
 
         return view('admin.reports.daily_arrived', compact('arrived'));
     }
 
-    public function staffWiseArrival(): \Illuminate\View\View
+    public function staffWiseArrival(): View
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
         $Users = User::getAllRecords(Auth::user()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
@@ -105,26 +131,21 @@ class FinanceArrivalReportController extends Controller
         return view('admin.reports.staffwisearrival', compact('locations', 'Users'));
     }
 
-    public function doctorWiseConversion(): \Illuminate\View\View
+    public function doctorWiseConversion(): View
     {
 
         $Users = User::getAllRecords(Auth::user()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
+
         return view('admin.reports.doctorwiseconversion', compact('Users', 'locations'));
     }
 
-    public function staffWiseArrivalReport(Request $request): \Illuminate\View\View
+    public function staffWiseArrivalReport(Request $request): View
     {
         $where = [];
-        if (isset($request->date_range) && $request->date_range) {
-            $date_range = explode(' - ', $request->date_range);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        $locations = $request->location_id == null ? ACL::getUserCentres() : [$request->location_id];
+        [$start_date, $end_date] = $this->parseDateRange($request->date_range);
+        $locationIds = $this->normaliseLocationIds($request->input('location_id'));
+        $locations = empty($locationIds) ? ACL::getUserCentres() : $locationIds;
 
         if ($request->created_by && $request->created_by != null) {
             $where[] = [['user_id' => $request->created_by]];
@@ -135,8 +156,8 @@ class FinanceArrivalReportController extends Controller
         $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id')->toArray();
 
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
         $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
         $arrivedStatusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
@@ -158,7 +179,7 @@ class FinanceArrivalReportController extends Controller
         $groupedByAppointment = [];
         foreach ($allRecords as $record) {
             $appointmentId = $record->appointment_id;
-            if (!isset($groupedByAppointment[$appointmentId])) {
+            if (! isset($groupedByAppointment[$appointmentId])) {
                 $groupedByAppointment[$appointmentId] = [];
             }
             $groupedByAppointment[$appointmentId][] = $record;
@@ -188,7 +209,7 @@ class FinanceArrivalReportController extends Controller
                     if (in_array($record->appointment_status_id, $arrivedStatusIds, true)) {
                         $hasArrived = true;
                         // Check if this is a walk-in (created by FDM user)
-                        if (!empty($fdm_users) && in_array($record->user_id, $fdm_users, true)) {
+                        if (! empty($fdm_users) && in_array($record->user_id, $fdm_users, true)) {
                             $isWalkin = true;
                         }
                         break;
@@ -227,77 +248,80 @@ class FinanceArrivalReportController extends Controller
             ->get();
 
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
+        $centre = empty($locationIds)
+            ? 'All centres'
+            : Locations::whereIn('id', $locationIds)->pluck('name')->implode(', ');
 
         return view('admin.reports.staff_wise_arrived', compact('Appointments', 'user', 'centre', 'start_date', 'end_date'));
     }
 
-    public function doctorWiseConversionReport(Request $request): \Illuminate\View\View
+    public function doctorWiseConversionReport(Request $request): View
     {
         // This is a placeholder; the original file has no doctorWiseConversionReport method body beyond doctorWiseConversion view
         $Users = User::getAllRecords(Auth::user()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::user()->account_id);
+
         return view('admin.reports.doctorwiseconversion', compact('Users', 'locations'));
     }
 
-    public function loadIncentiveReport(Request $request): \Illuminate\View\View
+    public function loadIncentiveReport(Request $request): View
     {
-        // Parse the date range input
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        [$startDate, $endDate] = $this->parseDateRangeWithTimeBounds($request->input('date_range'));
 
-        $centerId = $request->input('centre_id');
+        $centerIds = $this->normaliseLocationIds($request->input('centre_id'));
+        if (empty($centerIds)) {
+            $centerIds = array_values(array_map('intval', ACL::getUserCentres()));
+        }
         $doctorId = $request->input('doctor_id');
-        // Step 1: Calculate total revenue in the given date range from package_advances
-        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-                        ->where('cash_flow', 'in')
 
-                        ->where('cash_amount', '>', 0)
-                        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
-                       // ->sum('cash_amount');
-            if($doctorId) {
-                $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
-            }
-            $totalRevenuewithRefund = $totalRevenueQuery->sum('package_advances.cash_amount');
-            $totalRefund = PackageAdvances::where('package_advances.location_id', $centerId)
-                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-                        ->where('cash_flow', 'out')
-                        ->where('cash_amount', '>', 0)
-                        ->where('is_refund', 1)
-                        ->sum('cash_amount');
-                        $totalRevenue = $totalRevenuewithRefund - $totalRefund;
-            $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-                ->where('cash_flow', 'in')
-                ->where('cash_amount', '>', 0)
-                ->where('is_refund', 0)
-                ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-                ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
-                ->select(
-                    \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
-                    \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
-                )
-                ->groupBy('revenue_month')
-                ->orderBy('revenue_month');
+        // Step 1: Calculate total revenue in the given date range from package_advances
+        $totalRevenueQuery = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
+            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
+        // ->sum('cash_amount');
+        if ($doctorId) {
+            $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
+        }
+        $totalRevenuewithRefund = $totalRevenueQuery->sum('package_advances.cash_amount');
+        $totalRefund = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
+            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+            ->where('cash_flow', 'out')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 1)
+            ->sum('cash_amount');
+        $totalRevenue = $totalRevenuewithRefund - $totalRefund;
+        $monthWiseRevenueQuery = PackageAdvances::whereIn('package_advances.location_id', $centerIds)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 0)
+            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
+            ->select(
+                \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+                \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
+            )
+            ->groupBy('revenue_month')
+            ->orderBy('revenue_month');
 
         if ($doctorId) {
             // Apply doctor filter if doctor_id is provided
             $appointmentsInRange = PackageAdvances::select('appointment_id', DB::raw('MIN(created_at) as first_payment_date'))
-            ->where('cash_flow', '=', 'in')
-            ->where('cash_amount', '>', 0)
-            ->where('is_refund', 0)
-            ->where('location_id', '=', $centerId)
-            ->groupBy('appointment_id')
-            ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
-            ->pluck('appointment_id');
+                ->where('cash_flow', '=', 'in')
+                ->where('cash_amount', '>', 0)
+                ->where('is_refund', 0)
+                ->whereIn('location_id', $centerIds)
+                ->groupBy('appointment_id')
+                ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
+                ->pluck('appointment_id');
 
             // Step 2: Sum `cash_amount` for appointments where all payments fall within the specified date range.
             $totalCashAmount = PackageAdvances::where('cash_flow', '=', 'in')
                 ->where('cash_amount', '>', 0)
 
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('location_id', '=', $centerId)
+                ->whereIn('location_id', $centerIds)
                 ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
                     $query->select('id')
                         ->from('appointments')
@@ -306,35 +330,36 @@ class FinanceArrivalReportController extends Controller
                         ->whereIn('id', $appointmentsInRange);
                 })
                 ->sum('cash_amount');
-                $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
-                    ->where('cash_amount', '>', 0)
-                    ->where('is_refund', 0)
-                    ->where('location_id', '=', $centerId)
-                    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-                    ->whereIn('appointment_id', function ($query) use ($doctorId) {
-                        $query->select('id')
-                            ->from('appointments')
-                            ->where('doctor_id', '=', $doctorId);
-                    })
-                    ->sum('cash_amount');
-          $diff = $totalDoctorRevenue - $totalCashAmount;
-          $patients = PackageAdvances::select(
-            'appointments.patient_id',
-            'appointments.scheduled_date',
-            'users.name as patient_name',
-            'package_advances.created_at as payment_date',
-            'package_advances.cash_amount'
-        )
-        ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
-        ->join('users', 'users.id', '=', 'appointments.patient_id')
-        ->where('package_advances.cash_flow', '=', 'in')
-        ->where('package_advances.cash_amount', '>', 0)
-        ->where('package_advances.location_id', '=', $centerId)
-        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-        ->where('appointments.doctor_id', '=', $doctorId)
-        ->get();
+            $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
+                ->where('cash_amount', '>', 0)
+                ->where('is_refund', 0)
+                ->whereIn('location_id', $centerIds)
+                ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                ->whereIn('appointment_id', function ($query) use ($doctorId) {
+                    $query->select('id')
+                        ->from('appointments')
+                        ->where('doctor_id', '=', $doctorId);
+                })
+                ->sum('cash_amount');
+            $diff = $totalDoctorRevenue - $totalCashAmount;
+            $patients = PackageAdvances::select(
+                'appointments.patient_id',
+                'appointments.scheduled_date',
+                'users.name as patient_name',
+                'package_advances.created_at as payment_date',
+                'package_advances.cash_amount'
+            )
+                ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
+                ->join('users', 'users.id', '=', 'appointments.patient_id')
+                ->where('package_advances.cash_flow', '=', 'in')
+                ->where('package_advances.cash_amount', '>', 0)
+                ->whereIn('package_advances.location_id', $centerIds)
+                ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                ->where('appointments.doctor_id', '=', $doctorId)
+                ->get();
+
             // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff','patients'));
+            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue', 'diff', 'patients'));
 
         } else {
             // No doctor filter, continue as usual
@@ -348,9 +373,9 @@ class FinanceArrivalReportController extends Controller
     /**
      * Display Tax Calculation Report filter page.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function taxCalculationReport(): \Illuminate\View\View
+    public function taxCalculationReport(): View
     {
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
@@ -361,16 +386,14 @@ class FinanceArrivalReportController extends Controller
     /**
      * Load Tax Calculation Report data.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
-    public function taxCalculationReportLoad(TaxCalculationReportRequest $request): \Illuminate\View\View
+    public function taxCalculationReportLoad(TaxCalculationReportRequest $request): View
     {
 
         // Parse date range
-        $date_range = explode(' - ', $request->get('date_range'));
-        $start_date = date('Y-m-d', strtotime($date_range[0]));
-        $end_date = date('Y-m-d', strtotime($date_range[1]));
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         // Get filter parameters
         $location_id = $request->get('location_id');
@@ -411,6 +434,7 @@ class FinanceArrivalReportController extends Controller
                     'cash_taxable',
                     'consultation_amount'
                 ));
+
                 return $pdf->stream('tax-calculation-report.pdf');
             case 'excel':
                 // TODO: Implement Excel export

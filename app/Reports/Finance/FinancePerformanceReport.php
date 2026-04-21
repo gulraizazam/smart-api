@@ -8,9 +8,12 @@ use App\Helpers\ACL;
 use App\Models\Appointments;
 use App\Models\AppointmentTypes;
 use App\Models\Locations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 
 class FinancePerformanceReport
 {
+    use ParsesDateRange;
+
     /**
      * Centre performance stats by revenue
      *
@@ -20,14 +23,7 @@ class FinancePerformanceReport
     public static function centerperformancestatsbyrevenue($data, $filters = [])
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -80,7 +76,7 @@ class FinancePerformanceReport
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (!in_array($recod->location_id, $created_byArray, true)) {
+                if (! in_array($recod->location_id, $created_byArray, true)) {
                     $created_byArray[] = $recod->location_id;
                     $locationinfo = Locations::where('id', '=', $recod->location_id)->first();
                     $data[$recod->location_id] = [
@@ -108,14 +104,7 @@ class FinancePerformanceReport
     public static function centerperformancestatsbyservices($data, $filters = [])
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -168,7 +157,7 @@ class FinancePerformanceReport
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (!in_array($recod->appointment_type_id, $created_byArray, true)) {
+                if (! in_array($recod->appointment_type_id, $created_byArray, true)) {
                     $created_byArray[] = $recod->appointment_type_id;
                     $appointmenttype = AppointmentTypes::find($recod->appointment_type_id);
                     $data[$recod->appointment_type_id] = [

@@ -8,22 +8,23 @@ use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
 use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
 use App\Helpers\PatientAccessScope;
-use App\Services\Phone\PhoneFormattingService;
 use App\Models\Activity;
 use App\Models\Appointments;
 use App\Models\AuditTrails;
 use App\Models\Documents;
+use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\Membership;
 use App\Models\MembershipType;
-use App\Models\PackageVouchers;
 use App\Models\Packages;
+use App\Models\PackageVouchers;
 use App\Models\PatientNote;
 use App\Models\Patients;
 use App\Models\UserVouchers;
 use App\Services\ActivityLogService;
+use App\Services\Phone\PhoneFormattingService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -33,19 +34,29 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class PatientService
 {
+    use ParsesDateRange;
+
     private const FILTER_KEY = 'patients';
+
     private const CACHE_TTL = 300;
+
     private const MEMBERSHIP_TYPES_CACHE_KEY = 'active_membership_types';
+
     // Round 4 C3 — files now live under storage/app/patient_image/ (the 'local'
     // disk), NOT storage/app/public/patient_image/. The public/storage symlink
     // therefore no longer exposes them; reads must go through the authenticated
     // PatientFileController route.
     private const STORAGE_PATH = 'patient_image';
+
     private const STORAGE_DIR = 'patient_image';
+
     private const MAX_REFERRALS_PER_CODE = 2;
+
     private const GOLD_MEMBERSHIP_NAME = 'gold membership';
 
     private const AUDIT_FILLABLE = [
@@ -124,7 +135,7 @@ class PatientService
             ->where('user_type_id', Config::get('constants.patient_id'))
             ->where('account_id', $accountId);
 
-        if (!Gate::allows('view_inactive_patients')) {
+        if (! Gate::allows('view_inactive_patients')) {
             $query->where('active', 1);
         }
 
@@ -139,7 +150,7 @@ class PatientService
                     ->whereColumn('appointments.patient_id', 'users.id')
                     ->where('appointments.doctor_id', $user->id);
             });
-        } elseif (!empty($userCentres)) {
+        } elseif (! empty($userCentres)) {
             $query->whereExists(function ($sub) use ($userCentres): void {
                 $sub->select(DB::raw(1))
                     ->from('appointments')
@@ -166,7 +177,7 @@ class PatientService
     private function applyOptimizedFilters(Builder $query, array $filters, bool $applyFilter, int $userId): void
     {
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'patient_id', function ($q, $value): void {
-            $q->where('id', 'like', '%' . PatientSearchService::patientSearch($value) . '%');
+            $q->where('id', 'like', '%'.PatientSearchService::patientSearch($value).'%');
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'name', function ($q, $value): void {
@@ -178,7 +189,7 @@ class PatientService
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'phone', function ($q, $value): void {
-            $q->where('phone', 'like', '%' . PhoneFormattingService::cleanNumber($value) . '%');
+            $q->where('phone', 'like', '%'.PhoneFormattingService::cleanNumber($value).'%');
         });
 
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'status', function ($q, $value): void {
@@ -188,11 +199,7 @@ class PatientService
         });
 
         if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $query->whereBetween('created_at', [
-                date('Y-m-d 00:00:00', strtotime($dateRange[0])),
-                date('Y-m-d 23:59:59', strtotime($dateRange[1])),
-            ]);
+            $query->whereBetween('created_at', self::parseDateRangeWithTimeBounds($filters['created_at']));
             Filters::put($userId, self::FILTER_KEY, 'created_at', $filters['created_at']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'created_at');
@@ -270,7 +277,7 @@ class PatientService
         // legacy column on users). Stamp a random hash so the row can be
         // inserted; if a patient ever needs login access, the password
         // reset flow rotates this value.
-        $data['password'] = \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(40));
+        $data['password'] = Hash::make(Str::random(40));
 
         $existingPatient = Patients::where([
             'phone' => $data['phone'],
@@ -316,7 +323,7 @@ class PatientService
 
         $patient = $this->updatePatientRecord($id, $data);
 
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Something went wrong, please try again later.'];
         }
 
@@ -332,7 +339,7 @@ class PatientService
 
         $fieldChanges = $this->detectFieldChanges($oldValues, $data);
 
-        if (!empty($fieldChanges)) {
+        if (! empty($fieldChanges)) {
             ActivityLogger::logPatientUpdated($patient, $fieldChanges);
         }
 
@@ -344,12 +351,13 @@ class PatientService
         $accountId = Auth::user()->account_id;
         $patient = $this->findPatient($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
         if ($this->hasChildRecords($id, $accountId)) {
             $childList = implode(', ', Patients::getChildRecordsDetails($id, $accountId));
+
             return ['status' => false, 'message' => "Cannot delete patient. Related records exist: {$childList}"];
         }
 
@@ -367,12 +375,12 @@ class PatientService
         $skippedPatients = [];
 
         foreach ($patients as $patient) {
-            if (!$this->hasChildRecords($patient->id, $accountId)) {
+            if (! $this->hasChildRecords($patient->id, $accountId)) {
                 $patient->delete();
                 $deletedCount++;
             } else {
                 $childDetails = Patients::getChildRecordsDetails($patient->id, $accountId);
-                $skippedPatients[] = "C-{$patient->id} ({$patient->name}): " . implode(', ', $childDetails);
+                $skippedPatients[] = "C-{$patient->id} ({$patient->name}): ".implode(', ', $childDetails);
             }
         }
 
@@ -383,11 +391,11 @@ class PatientService
             ],
             $deletedCount > 0 => [
                 'status' => true,
-                'message' => "{$deletedCount} patient(s) deleted. Skipped " . count($skippedPatients) . " patient(s) with related records: " . implode('; ', $skippedPatients),
+                'message' => "{$deletedCount} patient(s) deleted. Skipped ".count($skippedPatients).' patient(s) with related records: '.implode('; ', $skippedPatients),
             ],
             default => [
                 'status' => false,
-                'message' => 'Cannot delete patient(s). Related records exist: ' . implode('; ', $skippedPatients),
+                'message' => 'Cannot delete patient(s). Related records exist: '.implode('; ', $skippedPatients),
             ],
         };
     }
@@ -396,7 +404,7 @@ class PatientService
     {
         $patient = $this->findPatient($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
@@ -422,7 +430,7 @@ class PatientService
     {
         $patient = $this->findPatient($id);
 
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -448,7 +456,7 @@ class PatientService
     {
         $patient = $this->findPatient($patientId);
 
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -458,27 +466,27 @@ class PatientService
         return [
             'appointments' => $patient->appointments()
                 ->where('account_id', $accountId)
-                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->when(! empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
                 ->count(),
             'consultations' => $patient->appointments()
                 ->where('account_id', $accountId)
                 ->where('appointment_type_id', 1)
-                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->when(! empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
                 ->count(),
             'treatments' => $patient->appointments()
                 ->where('account_id', $accountId)
                 ->where('appointment_type_id', 2)
-                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->when(! empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
                 ->count(),
             'vouchers' => UserVouchers::where('user_id', $patientId)->count(),
             'documents' => $patient->documents()->count(),
             'plans' => $patient->packages()
                 ->where('account_id', $accountId)
-                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->when(! empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
                 ->count(),
             'invoices' => $patient->invoices()
                 ->where('account_id', $accountId)
-                ->when(!empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
+                ->when(! empty($userCentres), fn ($q) => $q->whereIn('location_id', $userCentres))
                 ->count(),
             'refunds' => DB::table('package_advances')->where('patient_id', $patientId)->where('is_refund', 1)->count(),
             'activity_logs' => Activity::where('patient_id', $patientId)->whereNotNull('description')->count(),
@@ -503,7 +511,7 @@ class PatientService
             ->whereNull('patient_id')
             ->first();
 
-        if (!$membership) {
+        if (! $membership) {
             return ['status' => false, 'message' => 'Membership is inactive or already assigned to a patient.'];
         }
 
@@ -542,12 +550,12 @@ class PatientService
             ->where('active', 1)
             ->first();
 
-        if (!$membership) {
+        if (! $membership) {
             return ['status' => false, 'message' => 'Invalid membership code or membership is inactive.'];
         }
 
         $patient = Patients::find($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.'];
         }
 
@@ -559,12 +567,12 @@ class PatientService
             return ['status' => false, 'message' => 'This membership code is not assigned to any patient, so referral cannot be added.'];
         }
 
-        if (!$membership->membershipType) {
+        if (! $membership->membershipType) {
             return ['status' => false, 'message' => 'Membership type not found.'];
         }
 
         if (strtolower(trim($membership->membershipType->name)) !== self::GOLD_MEMBERSHIP_NAME) {
-            return ['status' => false, 'message' => 'Referrals can only be created for Gold Membership type. Current membership type: ' . $membership->membershipType->name];
+            return ['status' => false, 'message' => 'Referrals can only be created for Gold Membership type. Current membership type: '.$membership->membershipType->name];
         }
 
         if ($membership->patient_id != $patientId && Carbon::parse($membership->end_date)->isPast()) {
@@ -573,7 +581,7 @@ class PatientService
 
         $existingReferrals = Membership::where('code', $membershipCode)->where('is_referral', 1)->count();
         if ($existingReferrals >= self::MAX_REFERRALS_PER_CODE) {
-            return ['status' => false, 'message' => 'Maximum of ' . self::MAX_REFERRALS_PER_CODE . ' referrals allowed per membership code. Limit reached.'];
+            return ['status' => false, 'message' => 'Maximum of '.self::MAX_REFERRALS_PER_CODE.' referrals allowed per membership code. Limit reached.'];
         }
 
         $referral = Membership::create([
@@ -605,7 +613,7 @@ class PatientService
     {
         $patient = $this->findPatient($patientId);
 
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
@@ -647,6 +655,7 @@ class PatientService
             }
 
             $phone = PhoneFormattingService::cleanNumber($originalSearch);
+
             return (clone $baseQuery)
                 ->where(fn ($q) => $q->where('id', 'LIKE', "%{$numericValue}%")->orWhere('phone', 'LIKE', "%{$phone}%"))
                 ->select('name', 'id', 'phone')
@@ -673,7 +682,7 @@ class PatientService
     {
         $patient = $this->findPatient($patientId);
 
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -690,7 +699,7 @@ class PatientService
     {
         $patient = $this->findPatient($patientId);
 
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -709,7 +718,7 @@ class PatientService
             'patient' => $patient->name,
             'activity_type' => 'note_added',
             'action' => 'added',
-            'description' => '<span class="highlight">' . e(Auth::user()->name) . '</span> added a note for <span class="highlight-orange">' . e($patient->name) . '</span>',
+            'description' => '<span class="highlight">'.e(Auth::user()->name).'</span> added a note for <span class="highlight-orange">'.e($patient->name).'</span>',
             'created_by' => Auth::id(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -721,16 +730,16 @@ class PatientService
     public function updateNote(int $patientId, int $noteId, string $noteText, bool $canManage): array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
         }
 
         $note = PatientNote::where('id', $noteId)->where('patient_id', $patientId)->first();
-        if (!$note) {
+        if (! $note) {
             return ['status' => false, 'message' => 'Note not found.', 'code' => 404];
         }
 
-        if (!$canManage && $note->created_by !== Auth::id()) {
+        if (! $canManage && $note->created_by !== Auth::id()) {
             return ['status' => false, 'message' => 'You can only edit notes you created.', 'code' => 403];
         }
 
@@ -743,16 +752,16 @@ class PatientService
     public function deleteNote(int $patientId, int $noteId, bool $canManage): array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
         }
 
         $note = PatientNote::where('id', $noteId)->where('patient_id', $patientId)->first();
-        if (!$note) {
+        if (! $note) {
             return ['status' => false, 'message' => 'Note not found.', 'code' => 404];
         }
 
-        if (!$canManage && $note->created_by !== Auth::id()) {
+        if (! $canManage && $note->created_by !== Auth::id()) {
             return ['status' => false, 'message' => 'You can only delete notes you created.', 'code' => 403];
         }
 
@@ -764,16 +773,16 @@ class PatientService
     public function togglePinNote(int $patientId, int $noteId): array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
         }
 
         $note = PatientNote::where('id', $noteId)->where('patient_id', $patientId)->first();
-        if (!$note) {
+        if (! $note) {
             return ['status' => false, 'message' => 'Note not found.', 'code' => 404];
         }
 
-        $note->update(['is_pinned' => !$note->is_pinned]);
+        $note->update(['is_pinned' => ! $note->is_pinned]);
 
         return [
             'status' => true,
@@ -791,13 +800,13 @@ class PatientService
     public function uploadDocument(int $patientId, UploadedFile $file, string $documentType): array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
         }
 
         $originalName = $file->getClientOriginalName();
         $fileName = $this->storeUploadedFile($file);
-        $path = self::STORAGE_DIR . '/' . $fileName;
+        $path = self::STORAGE_DIR.'/'.$fileName;
 
         $document = Documents::create([
             'name' => $originalName,
@@ -816,12 +825,12 @@ class PatientService
     public function updateDocument(int $patientId, int $documentId, string $documentType, ?UploadedFile $file = null): array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return ['status' => false, 'message' => 'Patient not found.', 'code' => 404];
         }
 
         $document = Documents::where('id', $documentId)->where('user_id', $patient->id)->first();
-        if (!$document) {
+        if (! $document) {
             return ['status' => false, 'message' => 'Document not found.', 'code' => 404];
         }
 
@@ -830,7 +839,7 @@ class PatientService
         if ($file) {
             $this->deleteOldFile($document->url);
             $fileName = $this->storeUploadedFile($file);
-            $document->url = self::STORAGE_DIR . '/' . $fileName;
+            $document->url = self::STORAGE_DIR.'/'.$fileName;
         }
 
         $document->save();
@@ -851,7 +860,7 @@ class PatientService
     public function getActivityHistory(int $patientId): ?array
     {
         $patient = $this->findPatient($patientId);
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -862,7 +871,7 @@ class PatientService
     {
         $userVoucher = UserVouchers::with(['user', 'voucher'])->find($userVoucherId);
 
-        if (!$userVoucher) {
+        if (! $userVoucher) {
             return ['status' => false, 'message' => 'Voucher not found.', 'code' => 404];
         }
 
@@ -947,7 +956,7 @@ class PatientService
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-        $paidStatusId = \App\Models\InvoiceStatuses::where('slug', 'paid')->value('id');
+        $paidStatusId = InvoiceStatuses::where('slug', 'paid')->value('id');
 
         $appointments = DB::table('appointments')
             ->select([
@@ -1082,13 +1091,14 @@ class PatientService
     {
         $record = Patients::create($data);
         AuditTrails::addEventLogger('users', 'create', $data, self::AUDIT_FILLABLE, $record);
+
         return $record;
     }
 
     private function updatePatientRecord(int $id, array $data): ?Patients
     {
         $patient = Patients::find($id);
-        if (!$patient) {
+        if (! $patient) {
             return null;
         }
 
@@ -1126,14 +1136,14 @@ class PatientService
     {
         $ext = strtolower($file->getClientOriginalExtension() ?: ($file->guessExtension() ?: ''));
 
-        if (!in_array($ext, self::ALLOWED_UPLOAD_EXTENSIONS, true)) {
-            throw new \InvalidArgumentException('File type not allowed. Allowed: ' . implode(', ', self::ALLOWED_UPLOAD_EXTENSIONS));
+        if (! in_array($ext, self::ALLOWED_UPLOAD_EXTENSIONS, true)) {
+            throw new \InvalidArgumentException('File type not allowed. Allowed: '.implode(', ', self::ALLOWED_UPLOAD_EXTENSIONS));
         }
 
-        $fileName = time() . '_' . uniqid() . '.' . $ext;
+        $fileName = time().'_'.uniqid().'.'.$ext;
 
-        $storagePath = storage_path('app/' . self::STORAGE_PATH);
-        if (!file_exists($storagePath)) {
+        $storagePath = storage_path('app/'.self::STORAGE_PATH);
+        if (! file_exists($storagePath)) {
             mkdir($storagePath, 0755, true);
         }
 
@@ -1149,10 +1159,11 @@ class PatientService
         // back to the legacy location for any rows that still reference the
         // old path (the migration moved physical files but pre-existing
         // documents.url values are unchanged in shape).
-        foreach (['app/' . $relativePath, 'app/public/' . $relativePath] as $candidate) {
+        foreach (['app/'.$relativePath, 'app/public/'.$relativePath] as $candidate) {
             $oldFilePath = storage_path($candidate);
             if (file_exists($oldFilePath)) {
                 @unlink($oldFilePath);
+
                 return;
             }
         }

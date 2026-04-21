@@ -5,24 +5,29 @@ declare(strict_types=1);
 namespace App\Services\TransferProduct;
 
 use App\Helpers\ACL;
-use App\Helpers\GeneralFunctions;
 use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\Locations;
 use App\Models\Product;
 use App\Models\ProductDetail;
 use App\Models\RoleHasUsers;
-use App\Models\Stock;
 use App\Models\TransferProduct;
 use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\Warehouse;
+use App\Services\Product\ProductService;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class TransferProductService
 {
+    use ParsesDateRange;
+
     // ---------------------------------------------------------------
     // Datatable
     // ---------------------------------------------------------------
@@ -44,7 +49,7 @@ class TransferProductService
     /**
      * Transform transfer product records for datatable display.
      */
-    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $transfers): \Illuminate\Support\Collection
+    public function transformForDatatable(\Illuminate\Database\Eloquent\Collection $transfers): Collection
     {
         $fromCentres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
         $toCentres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
@@ -109,10 +114,10 @@ class TransferProductService
     public function validateTransfer(array $data, bool $isUpdate = false): ?array
     {
         if ($isUpdate) {
-            $stockCheck = \App\Services\Product\ProductService::stockC($data['product_id']);
+            $stockCheck = ProductService::stockC($data['product_id']);
         } else {
-            $request = new \Illuminate\Http\Request($data);
-            $stockCheck = \App\Services\Product\ProductService::inventoryCheck($request);
+            $request = new Request($data);
+            $stockCheck = ProductService::inventoryCheck($request);
         }
 
         if ($stockCheck < $data['quantity']) {
@@ -152,7 +157,7 @@ class TransferProductService
         $data['type'] = 'product_transfer_create';
         $data['message'] = 'Transfer Product create';
 
-        $request = new \Illuminate\Http\Request($data);
+        $request = new Request($data);
         $accountId = Auth::user()->account_id;
 
         $transferResult = TransferProduct::createRecord($request, $accountId);
@@ -198,7 +203,7 @@ class TransferProductService
         if ($updateInventory) {
             $updateInventory->update(['quantity' => $updateInventory->quantity + $data['quantity']]);
         } else {
-            $inventory = new Inventory();
+            $inventory = new Inventory;
             $inventory->product_id = $data['product_id'];
 
             if (! empty($data['to_warehouse_id'])) {
@@ -225,7 +230,7 @@ class TransferProductService
         $data['type'] = 'product_transfer_update';
         $data['message'] = 'Transfer Product update';
 
-        $request = new \Illuminate\Http\Request($data);
+        $request = new Request($data);
         $accountId = Auth::user()->account_id;
 
         $transferResult = TransferProduct::updateRecord($id, $request, $accountId);
@@ -261,7 +266,7 @@ class TransferProductService
 
     public function getProductsWithDoctors(array $params): array
     {
-        $request = new \Illuminate\Http\Request($params);
+        $request = new Request($params);
         $products = Product::getProductsAjax($request, Auth::user()->account_id);
 
         $fromId = $params['from_id'] ?? null;
@@ -291,7 +296,7 @@ class TransferProductService
 
     public function getTransferProducts(array $params): array
     {
-        $request = new \Illuminate\Http\Request($params);
+        $request = new Request($params);
         $products = Product::getTransferProductsAjax($request, Auth::user()->account_id);
 
         if (! empty($params['location_id'])) {
@@ -342,24 +347,21 @@ class TransferProductService
     // Private helpers
     // ---------------------------------------------------------------
 
-    private function buildFilteredQuery(array $params): \Illuminate\Database\Eloquent\Builder
+    private function buildFilteredQuery(array $params): Builder
     {
         $filters = $params['filters'] ?? [];
         $where = [];
 
         $productId = null;
         if (! empty($filters['name'])) {
-            $productId = Product::where('name', 'like', '%' . $filters['name'] . '%')->pluck('id');
+            $productId = Product::where('name', 'like', '%'.$filters['name'].'%')->pluck('id');
         }
 
         // Date filter
         if (! empty($filters['created_at'])) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateString = new \DateTime($dateRange[1]);
-            $endDateString->setTime(23, 59, 0);
+            [$startDateTime, $endDateTime] = self::parseDateRangeForFilter($filters['created_at']);
             $where[] = ['created_at', '>=', $startDateTime];
-            $where[] = ['created_at', '<=', $endDateString->format('Y-m-d H:i:s')];
+            $where[] = ['created_at', '<=', $endDateTime];
         }
 
         // Location filters
@@ -379,7 +381,7 @@ class TransferProductService
         }
 
         return TransferProduct::query()
-            ->when(!empty($where), fn ($q) => $q->where($where))
+            ->when(! empty($where), fn ($q) => $q->where($where))
             ->when($productId !== null, fn ($q) => $q->whereIn('product_id', $productId))
             ->where(fn ($query) => $query->whereIn('from_location_id', ACL::getUserCentres()));
     }

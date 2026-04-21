@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;use Illuminate\Database\Eloquent\Relations\HasOne;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Product extends BaseModel
 {
-    use  HasFactory;
+    use HasFactory;
+    use ParsesDateRange;
 
-    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by','sku'];
+    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by', 'sku'];
 
     protected $table = 'products';
 
@@ -29,15 +30,12 @@ class Product extends BaseModel
 
     protected static $recordEvents = ['created', 'updated', 'deleted'];
 
-
     // Customize the log description (optional)
     protected static $logDescriptionForEvent = [
         'created' => 'Product has been created',
         'updated' => 'Product has been updated',
         'deleted' => 'Product has been deleted',
     ];
-
-   
 
     // public function productDetail()
     // {
@@ -48,10 +46,12 @@ class Product extends BaseModel
     {
         return $this->hasMany(Stock::class);
     }
+
     public function order(): HasMany
     {
         return $this->hasMany(Order::class)->with('orderDetail');
     }
+
     public function orderDetails(): HasMany
     {
         return $this->hasMany(OrderDetail::class); // A product has many order details
@@ -110,12 +110,12 @@ class Product extends BaseModel
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::select('products.*')
-            ->where($where)
-            ->orderBy('products.name', 'asc')
-            ->limit($iDisplayLength)->offset($iDisplayStart)->get();
+                ->where($where)
+                ->orderBy('products.name', 'asc')
+                ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
             return self::select('products.*')
-            ->orderBy('products.name', 'asc')
+                ->orderBy('products.name', 'asc')
             // ->where(function ($query) {
             //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
             //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
@@ -135,18 +135,13 @@ class Product extends BaseModel
     {
         $where = [];
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($search) {
             if (hasFilter($filters, 'name')) {
-                $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+                $where[] = ['name', 'like', '%'.$filters['name'].'%'];
             }
             if (hasFilter($filters, 'product_type')) {
                 $where[][] = ['product_type' => $filters['product_type']];
@@ -180,54 +175,51 @@ class Product extends BaseModel
     //  */
     public static function createRecord($request, $account_id)
     {
-        if (!is_array($request)) {
+        if (! is_array($request)) {
             $data = $request->all();
         } else {
             $data = $request;
         }
-       
+
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
-        
+
         // Generate unique slug from name
         $slug = Str::slug($data['name']);
         $originalSlug = $slug;
         $counter = 1;
         while (self::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $counter;
+            $slug = $originalSlug.'-'.$counter;
             $counter++;
         }
-        
-        $product = new Product();
-        $product->name =  $data['name'];
+
+        $product = new Product;
+        $product->name = $data['name'];
         $product->slug = $slug;
-        $product->account_id =  $data['account_id'];
-        $product->brand_id =  $data['brand_id'];
-        $product->sale_price =  $data['sale_price'];
-        $product->sku =  $data['sku'];
+        $product->account_id = $data['account_id'];
+        $product->brand_id = $data['brand_id'];
+        $product->sale_price = $data['sale_price'];
+        $product->sku = $data['sku'];
         $product->product_type = 'for_sale';
         $product->created_by = Auth::user()->id;
         $product->save();
 
-       
+        //      $subjectModel = self::find($product->id);
 
-
-    //      $subjectModel = self::find($product->id);
-        
-          return $product;
-     }
+        return $product;
+    }
 
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        
-        if (!is_array($request)) {
+
+        if (! is_array($request)) {
             $data = $request->all();
         } else {
             $data = $request;
@@ -240,17 +232,16 @@ class Product extends BaseModel
             'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
-         $record->update($data);
+        $record->update($data);
 
-    //     $subjectModel = self::find($id);
-       
+        //     $subjectModel = self::find($id);
 
-         return $record;
-     }
+        return $record;
+    }
 
     // /**
     //  * Delete Record
@@ -261,7 +252,7 @@ class Product extends BaseModel
     public static function DeleteRecord($id, $data = null)
     {
         $product = self::getData($id);
-        if (!$product) {
+        if (! $product) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -273,7 +264,7 @@ class Product extends BaseModel
         $record = $product->delete();
 
         $subjectModel = $product;
-       
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
@@ -291,6 +282,7 @@ class Product extends BaseModel
         ) {
             return true;
         }
+
         return false;
     }
 
@@ -301,13 +293,13 @@ class Product extends BaseModel
         if (isset($request->from_id)) {
             // Use same calculation logic as inventory report (stocks table)
             $location_id = $request->from_id;
-            
+
             // Get products that have inventory at this location
             $productIds = DB::table('inventories')
                 ->where('location_id', $location_id)
                 ->distinct()
                 ->pluck('product_id');
-            
+
             $products = DB::table('products')
                 ->whereIn('products.id', $productIds)
                 ->where('products.status', '1')
@@ -315,9 +307,9 @@ class Product extends BaseModel
                 ->when($request->type == 'order', fn ($q) => $q->where('products.product_type', 'for_sale'))
                 ->orderBy('products.name', 'asc')
                 ->get();
-            
+
             $result = collect();
-            
+
             foreach ($products as $product) {
                 // Calculate available quantity: stocks(IN) - order_details(sales)
                 $totalAdditions = DB::table('stocks')
@@ -325,29 +317,29 @@ class Product extends BaseModel
                     ->where('location_id', $location_id)
                     ->where('stock_type', 'in')
                     ->sum('quantity');
-                
+
                 $totalSales = DB::table('order_details')
                     ->join('orders', 'orders.id', '=', 'order_details.order_id')
                     ->where('order_details.product_id', $product->id)
                     ->where('orders.location_id', $location_id)
                     ->sum('order_details.quantity');
-                
+
                 $totalAvailable = $totalAdditions - $totalSales;
-                
+
                 if ($totalAvailable <= 0) {
                     continue;
                 }
-                
+
                 // Get first inventory for price (ignore inventory quantity)
                 $inventory = DB::table('inventories')
                     ->where('product_id', $product->id)
                     ->where('location_id', $location_id)
                     ->orderBy('created_at', 'desc')
                     ->first();
-                
+
                 $salePrice = $inventory ? ($inventory->sale_price ?? $product->sale_price) : $product->sale_price;
-                
-                $result->push((object)[
+
+                $result->push((object) [
                     'inventory_id' => $inventory?->id,
                     'id' => $product->id,
                     'name' => $product->name,
@@ -358,63 +350,63 @@ class Product extends BaseModel
                     'inventory_date' => $inventory?->created_at,
                 ]);
             }
-        
+
             return $result->values();
-        } else if (isset($request->product_id)) {
-            return self::join('inventories','products.id','inventories.product_id')->where([
+        } elseif (isset($request->product_id)) {
+            return self::join('inventories', 'products.id', 'inventories.product_id')->where([
                 ['products.status', '=', '1'],
                 ['products.account_id', '=', $account_id],
                 ['products.id', $request->product_id],
             ])->when($request->type == 'order', fn ($q) => $q->where(['product_type' => 'for_sale']))->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
-        } else if ($request['request_from'] == 'order') {
-            return self::join('inventories','products.id','inventories.product_id')->where([
+        } elseif ($request['request_from'] == 'order') {
+            return self::join('inventories', 'products.id', 'inventories.product_id')->where([
                 ['products.status', '=', '1'],
                 ['products.account_id', '=', $account_id],
-                [$request['from_key'], $request['from_id']]
+                [$request['from_key'], $request['from_id']],
             ])->when(isset($request->type) && $request->type == 'order', fn ($q) => $q->where(['product_type' => 'for_sale']))->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
         }
     }
 
-    public static function  getTransferProductsAjax($request, $account_id)
+    public static function getTransferProductsAjax($request, $account_id)
     {
-       if($request->location_id){
-        $inventories = Inventory::where([
-            'location_id' => $request->location_id,
-            'product_id' => $request->product_id
-        ])->get();
-        
-        // Calculate the total available quantity across all inventories
-        $totalAvailableQuantity = $inventories->sum('quantity');
-        
-        // Calculate the total quantity sold
-        $totalSoldQuantity = DB::table('order_details')
-            ->join('orders', 'order_details.order_id', '=', 'orders.id')
-            ->where('order_details.product_id', $request->product_id)
-            ->where('orders.location_id', $request->location_id)
-            ->sum('order_details.quantity');
-        
-        // Calculate the updated total quantity
-        $updatedQuantity = max(0, $totalAvailableQuantity - $totalSoldQuantity);
-        
-        // Set the updated quantity in the first inventory object
-        $primaryInventory = $inventories->first();
-        if ($primaryInventory) {
-            $primaryInventory->quantity = $updatedQuantity;
+        if ($request->location_id) {
+            $inventories = Inventory::where([
+                'location_id' => $request->location_id,
+                'product_id' => $request->product_id,
+            ])->get();
+
+            // Calculate the total available quantity across all inventories
+            $totalAvailableQuantity = $inventories->sum('quantity');
+
+            // Calculate the total quantity sold
+            $totalSoldQuantity = DB::table('order_details')
+                ->join('orders', 'order_details.order_id', '=', 'orders.id')
+                ->where('order_details.product_id', $request->product_id)
+                ->where('orders.location_id', $request->location_id)
+                ->sum('order_details.quantity');
+
+            // Calculate the updated total quantity
+            $updatedQuantity = max(0, $totalAvailableQuantity - $totalSoldQuantity);
+
+            // Set the updated quantity in the first inventory object
+            $primaryInventory = $inventories->first();
+            if ($primaryInventory) {
+                $primaryInventory->quantity = $updatedQuantity;
+            }
+
+            // Return the updated inventory object
+            return $primaryInventory;
+
+        } else {
+            $inventory = Inventory::where([
+                'warehouse_id' => $request->warehouse_id, 'product_id' => $request->product_id])
+                ->first();
         }
-        
-        // Return the updated inventory object
-        return $primaryInventory;
-            
-       }else{
-        $inventory = Inventory::where([
-            'warehouse_id' => $request->warehouse_id,'product_id' => $request->product_id])
-           ->first();
-       }
-       
+
         return $inventory;
 
-
     }
+
     // /**
     //  * Get All Records
     //  *
@@ -436,7 +428,7 @@ class Product extends BaseModel
     {
         $product = self::getData($id);
 
-        if (!$product) {
+        if (! $product) {
 
             return false;
         }
@@ -455,10 +447,9 @@ class Product extends BaseModel
     {
         return $this->hasOne(self::class, 'id', 'parent_id');
     }
-    public function inventories(): \Illuminate\Database\Eloquent\Relations\HasMany
+
+    public function inventories(): HasMany
     {
         return $this->hasMany(Inventory::class, 'product_id');
     }
-    
-   
 }

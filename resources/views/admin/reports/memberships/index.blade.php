@@ -59,9 +59,9 @@
                             <div class="col-lg-12 col-xl-12">
                                 <div class="row align-items-center">
                                     <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif" id="locations">
-                                        {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
-                                        <select class="form-control select2" id="location_id" name="service_id">
-                                            <option value="">Select Centre</option>
+                                        {!! Form::label('location_id', 'Centres:', ['class' => 'control-label']) !!}
+                                        <select class="form-control select2" id="location_id" name="location_id[]" multiple style="width: 100%;">
+                                            <option value="all" selected>All Centres</option>
                                             @foreach($locations as $key=>$location)
                                             <option value="{{$key}}">{{$location}}</option>
                                             @endforeach

@@ -65,18 +65,12 @@
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
-                                            {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="location_id" name="service_id">
-                                                @if(Auth::user()->hasRole('FDM'))
-                                                    @foreach($locations as $location)
-                                                        <option value="{{$location->id}}">{{$location->name}}</option>
-                                                    @endforeach
-                                                @else
-                                                    <option value="">Select</option>
-                                                    @foreach($locations as $location)
-                                                        <option value="{{$location->id}}">{{$location->name}}</option>
-                                                    @endforeach
-                                                @endif
+                                            {!! Form::label('location_id', 'Centres:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="location_id" name="location_id[]" multiple style="width: 100%;">
+                                                <option value="all" @if(!Auth::user()->hasRole('FDM')) selected @endif>All Centres</option>
+                                                @foreach($locations as $location)
+                                                    <option value="{{$location->id}}" @if(Auth::user()->hasRole('FDM')) selected @endif>{{$location->name}}</option>
+                                                @endforeach
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>

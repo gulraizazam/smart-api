@@ -1,17 +1,19 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Centertarget extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $fillable = ['account_id', 'month', 'year', 'working_days', 'created_at', 'updated_at', 'deleted_at'];
@@ -33,7 +35,7 @@ class Centertarget extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -46,9 +48,9 @@ class Centertarget extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $filters = [])
@@ -93,22 +95,17 @@ class Centertarget extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
+     * @param  (bool)  $apply_filter
      * @return (mixed)
      */
     public static function centertarget_filters($request, $account_id, $apply_filter, $filters = [])
     {
         $where = [];
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($account_id) {
             $where[] = [
@@ -191,7 +188,7 @@ class Centertarget extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
@@ -203,7 +200,7 @@ class Centertarget extends BaseModel
 
         $record = self::create($data);
 
-        //log request for Create for Audit Trail
+        // log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         foreach ($data['target_amount'] as $key => $amount) {
@@ -216,7 +213,7 @@ class Centertarget extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
