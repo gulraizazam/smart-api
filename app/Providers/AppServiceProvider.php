@@ -57,6 +57,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Passport\Passport;
 use Spatie\Permission\Events\PermissionAttached;
 use Spatie\Permission\Events\PermissionDetached;
 use Spatie\Permission\Events\RoleAttached;
@@ -81,11 +82,26 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureRateLimiting();
         $this->configureAuthorization();
+        $this->configurePassport();
         $this->ensurePermissionCacheHealth();
         $this->registerObservers();
         $this->registerAuditEventListeners();
         $this->registerAuthEventListeners();
         $this->registerObservedModels();
+    }
+
+    /**
+     * Passport runs alongside Sanctum during the staged SPA migration.
+     * Password grant issues short-lived access tokens + 30-day refresh
+     * tokens for /api/v2/auth/login. Personal access tokens are capped
+     * at 6 months per CLAUDE.md's finite-TTL rule.
+     */
+    private function configurePassport(): void
+    {
+        Passport::enablePasswordGrant();
+        Passport::tokensExpireIn(now()->addMinutes(15));
+        Passport::refreshTokensExpireIn(now()->addDays(30));
+        Passport::personalAccessTokensExpireIn(now()->addMonths(6));
     }
 
     /**
