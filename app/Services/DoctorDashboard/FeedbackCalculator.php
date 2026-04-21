@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Services\DoctorDashboard;
 
 use App\Models\Feedback;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Support\Facades\DB;
 
 class FeedbackCalculator
 {
+    use ParsesDateRange;
+
     /**
      * Calculate average feedback score for a doctor in a date range.
      * Rating scale: 1-10, stored per treatment/procedure.
@@ -32,7 +35,7 @@ class FeedbackCalculator
     /**
      * Calculate feedback scores for multiple doctors (benchmark).
      *
-     * @param array<int> $doctorIds
+     * @param  array<int>  $doctorIds
      * @return array<int, float> [doctorId => avg_rating]
      */
     public function calculateForDoctors(array $doctorIds, string $startDate, string $endDate): array
@@ -74,7 +77,7 @@ class FeedbackCalculator
             ->orderByDesc('avg_rating')
             ->first();
 
-        if (!$result) {
+        if (! $result) {
             return null;
         }
 
@@ -87,14 +90,13 @@ class FeedbackCalculator
     }
 
     /**
-     * Adjust end date to exclude today's data.
+     * Adjust end date to exclude today's data. Thin wrapper around the
+     * shared {@see ParsesDateRange::excludeTodayFromRange()} helper so
+     * the feedback chart / report / lifetime calculator all clamp the
+     * same way.
      */
     private function excludeToday(string $endDate): string
     {
-        $today = now()->format('Y-m-d');
-
-        return $endDate >= $today
-            ? now()->subDay()->format('Y-m-d')
-            : $endDate;
+        return self::excludeTodayFromRange([null, $endDate])[1];
     }
 }

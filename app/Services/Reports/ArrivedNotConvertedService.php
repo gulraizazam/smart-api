@@ -17,10 +17,13 @@ class ArrivedNotConvertedService
      * Finds patients with arrived/converted consultation appointments
      * who have zero cash inflow (package_advances.cash_amount sum < 1).
      */
+    /**
+     * @param int[]|null $locationIds
+     */
     public function generate(
         string $startDate,
         string $endDate,
-        ?int $locationId = null,
+        ?array $locationIds = null,
         ?int $doctorId = null,
         ?int $serviceId = null,
     ): Collection {
@@ -34,7 +37,7 @@ class ArrivedNotConvertedService
             ->where('appointment_type_id', 1)
             ->whereIn('appointment_status_id', $statusIds)
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->when($locationId, fn ($q, $id) => $q->where('location_id', $id))
+            ->when(!empty($locationIds), fn ($q) => $q->whereIn('location_id', $locationIds))
             ->when($doctorId, fn ($q, $id) => $q->where('doctor_id', $id))
             ->when($serviceId, fn ($q, $id) => $q->where('service_id', $id))
             ->groupBy('patient_id');

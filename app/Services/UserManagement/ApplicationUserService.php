@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Services\UserManagement;
 
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
-use App\Services\Phone\PhoneFormattingService;
 use App\Http\Resources\User\ApplicationUserResource;
 use App\Models\AuditTrails;
 use App\Models\Locations;
@@ -17,16 +15,19 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserHasWarehouse;
 use App\Models\Warehouse;
-use Carbon\Carbon;
+use App\Services\Phone\PhoneFormattingService;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Role;
 
 class ApplicationUserService
 {
+    use ParsesDateRange;
+
     private const FILTER_KEY = 'users';
 
     public function getDatatableData(array $params): array
@@ -44,7 +45,7 @@ class ApplicationUserService
             ])
             ->where('users.email', '!=', config('constants.super_admin_email', 'superadmin@redsignal.net'))
             ->where('users.account_id', $user->account_id)
-            ->when(!$canViewInactive, fn ($q) => $q->where('users.active', 1));
+            ->when(! $canViewInactive, fn ($q) => $q->where('users.active', 1));
 
         foreach ($where as $condition) {
             $baseQuery->where($condition[0], $condition[1], $condition[2]);
@@ -75,14 +76,14 @@ class ApplicationUserService
         $where = $this->addFilter($where, $params, 'name', 'users.name', 'like', $userId, $applyFilter);
         $where = $this->addFilter($where, $params, 'email', 'users.email', 'like', $userId, $applyFilter);
 
-        if (!empty($params['phone'])) {
+        if (! empty($params['phone'])) {
             $phone = PhoneFormattingService::cleanNumber($params['phone']);
             $where[] = ['users.phone', 'like', "%{$phone}%"];
             Filters::put($userId, self::FILTER_KEY, 'phone', $params['phone']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'phone');
         } elseif ($storedPhone = Filters::get($userId, self::FILTER_KEY, 'phone')) {
-            $where[] = ['users.phone', 'like', '%' . PhoneFormattingService::cleanNumber($storedPhone) . '%'];
+            $where[] = ['users.phone', 'like', '%'.PhoneFormattingService::cleanNumber($storedPhone).'%'];
         }
 
         $where = $this->addFilter($where, $params, 'gender', 'users.gender', '=', $userId, $applyFilter);
@@ -101,10 +102,10 @@ class ApplicationUserService
             }
         }
 
-        if (!empty($params['created_at'])) {
-            $dateRange = explode(' - ', $params['created_at']);
-            $where[] = ['users.created_at', '>=', Carbon::parse($dateRange[0])->startOfDay()];
-            $where[] = ['users.created_at', '<=', Carbon::parse($dateRange[1])->endOfDay()];
+        if (! empty($params['created_at'])) {
+            [$fromDay, $toDay] = self::parseDateRangeAsCarbonDay($params['created_at']);
+            $where[] = ['users.created_at', '>=', $fromDay];
+            $where[] = ['users.created_at', '<=', $toDay];
             Filters::put($userId, self::FILTER_KEY, 'created_at', $params['created_at']);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'created_at');
@@ -115,7 +116,7 @@ class ApplicationUserService
 
     private function addFilter(array $where, array $params, string $key, string $column, string $operator, int $userId, bool $applyFilter): array
     {
-        if (!empty($params[$key])) {
+        if (! empty($params[$key])) {
             $value = $operator === 'like' ? "%{$params[$key]}%" : $params[$key];
             $where[] = [$column, $operator, $value];
             Filters::put($userId, self::FILTER_KEY, $key, $params[$key]);
@@ -211,16 +212,16 @@ class ApplicationUserService
         AuditTrails::addEventLogger('users', 'create', $userData, User::$_fillable ?? [], $user);
 
         $roles = $data['roles'] ?? [];
-        if (!empty($roles)) {
+        if (! empty($roles)) {
             $user->assignRole(Role::whereIn('id', $roles)->get());
             $this->syncRoleHasUsers($user, $roles);
         }
 
-        if (!empty($data['centers'])) {
+        if (! empty($data['centers'])) {
             $this->syncUserLocations($user, $data['centers']);
         }
 
-        if (!empty($data['warehouse'])) {
+        if (! empty($data['warehouse'])) {
             $this->syncUserWarehouses($user, $data['warehouse']);
         }
 
@@ -232,7 +233,7 @@ class ApplicationUserService
         $accountId = Auth::user()->account_id;
         $user = $this->findByAccountId($id, $accountId);
 
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
@@ -274,19 +275,19 @@ class ApplicationUserService
         AuditTrails::editEventLogger('users', 'Edit', $userData, User::$_fillable ?? [], $oldData, $id);
 
         $roles = $data['roles'] ?? [];
-        if (!empty($roles)) {
+        if (! empty($roles)) {
             $user->syncRoles(Role::whereIn('id', $roles)->get());
             $user->role_has_users()->forceDelete();
             $this->syncRoleHasUsers($user, $roles);
         }
 
-        if (!empty($data['centers'])) {
+        if (! empty($data['centers'])) {
             $user->user_has_locations()->forceDelete();
             $this->syncUserLocations($user, $data['centers']);
         }
 
         $user->user_has_warehouse()->delete();
-        if (!empty($data['warehouse'])) {
+        if (! empty($data['warehouse'])) {
             $this->syncUserWarehouses($user, $data['warehouse']);
         }
 
@@ -297,7 +298,7 @@ class ApplicationUserService
     {
         $user = $this->findByAccountId($id);
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -311,7 +312,7 @@ class ApplicationUserService
     {
         $user = $this->findByAccountId($id);
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -329,7 +330,7 @@ class ApplicationUserService
     {
         $user = $this->findByAccountId($id);
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -386,7 +387,7 @@ class ApplicationUserService
     {
         $query = Warehouse::where('active', 1);
 
-        if (!in_array('all', $warehouseIds, true)) {
+        if (! in_array('all', $warehouseIds, true)) {
             $query->whereIn('id', $warehouseIds);
         }
 

@@ -6,38 +6,37 @@ namespace App\Http\Controllers\Admin\Reports\Finance;
 
 use App\Helpers\ACL;
 use App\Http\Controllers\Controller;
+use App\Models\AppointmentStatuses;
 use App\Models\Locations;
 use App\Models\Services;
 use App\Reports\Finanaces;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class FinancePlanReportController extends Controller
 {
+    use ParsesDateRange;
+
     /**
      * Consume Revenie of plan Report.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function consumeplanrevenuereport(Request $request): \Illuminate\View\View
+    public function consumeplanrevenuereport(Request $request): View
     {
-        if (!Gate::allows('finance_general_revenue_reports_consume_plan_revenue_report')) {
+        if (! Gate::allows('finance_general_revenue_reports_consume_plan_revenue_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
         $reportData = Finanaces::consumeplanrevenue($request->all(), Auth::user()->account_id);
 
         switch ($request->get('medium_type')) {
@@ -70,19 +69,19 @@ class FinancePlanReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function consumeplanrevenueExcel($reportData, $start_date, $end_date): mixed
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -110,53 +109,45 @@ class FinancePlanReportController extends Controller
 
         foreach ($reportData as $reportRow) {
 
-            $activeSheet->setCellValue('A' . $counter, $reportRow['plan_id']);
-            $activeSheet->setCellValue('B' . $counter, $reportRow['service']);
-            $activeSheet->setCellValue('C' . $counter, $reportRow['location']);
-            $activeSheet->setCellValue('D' . $counter, number_format($reportRow['service_price']));
-            $activeSheet->setCellValue('E' . $counter, $reportRow['disocunt_name'] ? $reportRow['disocunt_name'] : '-');
-            $activeSheet->setCellValue('F' . $counter, $reportRow['discount_type'] ? $reportRow['discount_type'] : '-');
-            $activeSheet->setCellValue('G' . $counter, $reportRow['discount_amount'] ? number_format($reportRow['discount_amount']) : '-');
-            $activeSheet->setCellValue('H' . $counter, number_format($reportRow['amount']));
-            $activeSheet->setCellValue('I' . $counter, $reportRow['tax'] . '%');
-            $activeSheet->setCellValue('J' . $counter, $reportRow['is_exclusive'] == 1 ? number_format($reportRow['tax_value']) : number_format($reportRow['tax_amount'] - $reportRow['amount']));
-            $activeSheet->setCellValue('K' . $counter, number_format($reportRow['tax_amount']));
-            $activeSheet->setCellValue('L' . $counter, $reportRow['is_exclusive'] == 1 ? 'Yes' : 'No');
+            $activeSheet->setCellValue('A'.$counter, $reportRow['plan_id']);
+            $activeSheet->setCellValue('B'.$counter, $reportRow['service']);
+            $activeSheet->setCellValue('C'.$counter, $reportRow['location']);
+            $activeSheet->setCellValue('D'.$counter, number_format($reportRow['service_price']));
+            $activeSheet->setCellValue('E'.$counter, $reportRow['disocunt_name'] ? $reportRow['disocunt_name'] : '-');
+            $activeSheet->setCellValue('F'.$counter, $reportRow['discount_type'] ? $reportRow['discount_type'] : '-');
+            $activeSheet->setCellValue('G'.$counter, $reportRow['discount_amount'] ? number_format($reportRow['discount_amount']) : '-');
+            $activeSheet->setCellValue('H'.$counter, number_format($reportRow['amount']));
+            $activeSheet->setCellValue('I'.$counter, $reportRow['tax'].'%');
+            $activeSheet->setCellValue('J'.$counter, $reportRow['is_exclusive'] == 1 ? number_format($reportRow['tax_value']) : number_format($reportRow['tax_amount'] - $reportRow['amount']));
+            $activeSheet->setCellValue('K'.$counter, number_format($reportRow['tax_amount']));
+            $activeSheet->setCellValue('L'.$counter, $reportRow['is_exclusive'] == 1 ? 'Yes' : 'No');
             $counter++;
 
             $amount_t += $reportRow['amount'];
             $tax_price_t += $reportRow['is_exclusive'] == 1 ? $reportRow['tax_value'] : $reportRow['tax_amount'] - $reportRow['amount'];
             $total_amount_t += $reportRow['tax_amount'];
         }
-        $activeSheet->setCellValue('A' . $counter, '');
+        $activeSheet->setCellValue('A'.$counter, '');
         $counter++;
 
-        $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-        $activeSheet->setCellValue('H' . $counter, number_format($amount_t))->getStyle('H' . $counter)->getFont()->setBold(true);
-        $activeSheet->setCellValue('J' . $counter, number_format($tax_price_t))->getStyle('J' . $counter)->getFont()->setBold(true);
-        $activeSheet->setCellValue('K' . $counter, number_format($total_amount_t))->getStyle('K' . $counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('A'.$counter, 'Total')->getStyle('A'.$counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('H'.$counter, number_format($amount_t))->getStyle('H'.$counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('J'.$counter, number_format($tax_price_t))->getStyle('J'.$counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('K'.$counter, number_format($total_amount_t))->getStyle('K'.$counter)->getFont()->setBold(true);
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'Consume Plan Revenue' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Consume Plan Revenue'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
     /** @deprecated Moved to App\Services\Reports\Revenue\ServicesSoldReport. Called via GeneralSalesReportController. */
-    public function serviceSoldreport(Request $request): \Illuminate\View\View
+    public function serviceSoldreport(Request $request): View
     {
-        // Handle date range
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
-            $end_date = date('Y-m-d 23:59:59', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRangeWithTimeBounds($request->get('date_range'));
 
         // Determine locations
-        $locationId = (!empty($request->location_id) && $request->location_id[0] !== null)
+        $locationId = (! empty($request->location_id) && $request->location_id[0] !== null)
             ? $request->location_id
             : ACL::getUserCentres();
 
@@ -164,8 +155,8 @@ class FinancePlanReportController extends Controller
         $serviceId = $request->service_id;
 
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = AppointmentStatuses::where(['account_id' => Auth::user()->account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
         $convertedStatusId = $convertedStatus?->id;
         $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
@@ -175,7 +166,7 @@ class FinancePlanReportController extends Controller
             ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 2)
             ->whereIn('appointments.appointment_status_id', $statusIds)
-            ->when(!$isAllCentres, fn ($query) => $query->whereIn('appointments.location_id', $locationId))
+            ->when(! $isAllCentres, fn ($query) => $query->whereIn('appointments.location_id', $locationId))
             ->when($start_date && $end_date, fn ($query) => $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]))
             ->when($serviceId, fn ($query) => $query->where('appointments.service_id', $serviceId));
 
@@ -198,10 +189,10 @@ class FinancePlanReportController extends Controller
         // Summary stats
         $grouped = $isAllCentres
             ? $soldServices
-            : $soldServices->groupBy('service_id')->map(fn($group) => (object)[
-                    'service_id' => $group->first()->service_id,
-                    'total_sold' => $group->sum('total_sold')
-                ]);
+            : $soldServices->groupBy('service_id')->map(fn ($group) => (object) [
+                'service_id' => $group->first()->service_id,
+                'total_sold' => $group->sum('total_sold'),
+            ]);
 
         $mostSold = $grouped->sortByDesc('total_sold')->first();
         $leastSold = $grouped->sortBy('total_sold')->first();

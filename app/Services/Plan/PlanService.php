@@ -49,6 +49,7 @@ use App\Models\UserOperatorSettings;
 use App\Models\UserVouchers;
 use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -62,6 +63,8 @@ use Illuminate\Support\Str;
 
 final class PlanService
 {
+    use ParsesDateRange;
+
     private const CACHE_TTL = 3600;
 
     public function __construct(
@@ -1256,10 +1259,10 @@ final class PlanService
     private function addDateRangeFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            if (count($dateRange) === 2) {
-                $where[] = ['packages.created_at', '>=', Carbon::parse($dateRange[0])->startOfDay()];
-                $where[] = ['packages.created_at', '<=', Carbon::parse($dateRange[1])->endOfDay()];
+            if (str_contains($filters['created_at'], ' - ')) {
+                [$fromDay, $toDay] = self::parseDateRangeAsCarbonDay($filters['created_at']);
+                $where[] = ['packages.created_at', '>=', $fromDay];
+                $where[] = ['packages.created_at', '<=', $toDay];
                 Filters::put($userId, $filename, 'created_at', $filters['created_at']);
             }
         } elseif ($applyFilter) {

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\CashFlow;
 
 use App\Helpers\CashflowHelper;
@@ -26,8 +27,7 @@ class ReportService
      */
     public function cashFlowStatement(int $accountId, array $filters): array
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? Carbon::now()->toDateString();
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
         $branchId = $filters['branch_id'] ?? null;
         $poolId = $filters['pool_id'] ?? null;
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
@@ -95,8 +95,7 @@ class ReportService
      */
     public function branchComparison(int $accountId, array $filters): array
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? Carbon::now()->toDateString();
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
         $goLiveDate = $this->settingService->getGoLiveDate($accountId);
 
         $branches = CashflowHelper::getActiveBranches($accountId);
@@ -239,8 +238,11 @@ class ReportService
             $daysSince = $adv->last_advance ? Carbon::parse($adv->last_advance)->diffInDays(Carbon::now()) : 0;
 
             $aging = 'green';
-            if ($daysSince > $agingDays * 2) $aging = 'red';
-            elseif ($daysSince > $agingDays) $aging = 'amber';
+            if ($daysSince > $agingDays * 2) {
+                $aging = 'red';
+            } elseif ($daysSince > $agingDays) {
+                $aging = 'amber';
+            }
 
             $result[] = [
                 'user_id' => $adv->user_id,
@@ -276,7 +278,9 @@ class ReportService
             ->whereNull('voided_at')
             ->where('status', '!=', 'rejected')
             ->whereBetween('expense_date', [$dateFrom, $dateTo]);
-        if ($poolId) $expenseQuery->where('paid_from_pool_id', $poolId);
+        if ($poolId) {
+            $expenseQuery->where('paid_from_pool_id', $poolId);
+        }
 
         $expenses = $expenseQuery
             ->select('expense_date as date', 'paid_from_pool_id as pool_id', DB::raw('SUM(amount) as total'))
@@ -284,6 +288,7 @@ class ReportService
             ->get()
             ->map(function ($r) use ($poolNames) {
                 $r->pool_name = $poolNames[$r->pool_id] ?? 'Unknown';
+
                 return $r;
             });
 
@@ -291,7 +296,9 @@ class ReportService
         $tOutQuery = CashTransfer::forAccount($accountId)
             ->whereNull('voided_at')
             ->whereBetween('transfer_date', [$dateFrom, $dateTo]);
-        if ($poolId) $tOutQuery->where('from_pool_id', $poolId);
+        if ($poolId) {
+            $tOutQuery->where('from_pool_id', $poolId);
+        }
 
         $tOut = $tOutQuery
             ->select('transfer_date as date', 'from_pool_id as pool_id', DB::raw('SUM(amount) as total'))
@@ -299,6 +306,7 @@ class ReportService
             ->get()
             ->map(function ($r) use ($poolNames) {
                 $r->pool_name = $poolNames[$r->pool_id] ?? 'Unknown';
+
                 return $r;
             });
 
@@ -306,7 +314,9 @@ class ReportService
         $tInQuery = CashTransfer::forAccount($accountId)
             ->whereNull('voided_at')
             ->whereBetween('transfer_date', [$dateFrom, $dateTo]);
-        if ($poolId) $tInQuery->where('to_pool_id', $poolId);
+        if ($poolId) {
+            $tInQuery->where('to_pool_id', $poolId);
+        }
 
         $tIn = $tInQuery
             ->select('transfer_date as date', 'to_pool_id as pool_id', DB::raw('SUM(amount) as total'))
@@ -314,6 +324,7 @@ class ReportService
             ->get()
             ->map(function ($r) use ($poolNames) {
                 $r->pool_name = $poolNames[$r->pool_id] ?? 'Unknown';
+
                 return $r;
             });
 
@@ -322,7 +333,9 @@ class ReportService
             ->whereNull('deleted_at')
             ->whereNull('voided_at')
             ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
-        if ($poolId) $advQuery->where('pool_id', $poolId);
+        if ($poolId) {
+            $advQuery->where('pool_id', $poolId);
+        }
 
         $staffAdv = $advQuery
             ->select(DB::raw('DATE(created_at) as date'), 'pool_id', DB::raw('SUM(amount) as total'))
@@ -330,6 +343,7 @@ class ReportService
             ->get()
             ->map(function ($r) use ($poolNames) {
                 $r->pool_name = $poolNames[$r->pool_id] ?? 'Unknown';
+
                 return $r;
             });
 
@@ -346,15 +360,14 @@ class ReportService
      */
     public function transferLog(int $accountId, array $filters): array
     {
-        $dateFrom = $filters['date_from'] ?? Carbon::now()->startOfMonth()->toDateString();
-        $dateTo = $filters['date_to'] ?? Carbon::now()->toDateString();
+        [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
 
         $query = CashTransfer::forAccount($accountId)
             ->whereBetween('transfer_date', [$dateFrom, $dateTo])
             ->with(['fromPool:id,name', 'toPool:id,name', 'creator:id,name'])
             ->orderByDesc('transfer_date');
 
-        if (!empty($filters['pool_id'])) {
+        if (! empty($filters['pool_id'])) {
             $pid = $filters['pool_id'];
             $query->where(function ($q) use ($pid) {
                 $q->where('from_pool_id', $pid)->orWhere('to_pool_id', $pid);
@@ -364,6 +377,7 @@ class ReportService
         return $query->get()->map(function ($t) {
             $arr = $t->toArray();
             $arr['is_voided'] = $t->isVoided();
+
             return $arr;
         })->toArray();
     }
@@ -378,10 +392,10 @@ class ReportService
             ->with(['category:id,name', 'paidFromPool:id,name', 'vendor:id,name', 'creator:id,name', 'forBranch:id,name'])
             ->orderByDesc('created_at');
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->where('expense_date', '>=', $filters['date_from']);
         }
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->where('expense_date', '<=', $filters['date_to']);
         }
 
@@ -414,8 +428,12 @@ class ReportService
         foreach ($vendors as $vendor) {
             $lastDate = $lastActivity[$vendor->id] ?? null;
 
-            if ($lastDate && $lastDate >= $cutoffDate) continue; // Active vendor
-            if (!$lastDate) $lastDate = $vendor->updated_at?->toDateString(); // Never had activity
+            if ($lastDate && $lastDate >= $cutoffDate) {
+                continue;
+            } // Active vendor
+            if (! $lastDate) {
+                $lastDate = $vendor->updated_at?->toDateString();
+            } // Never had activity
 
             $daysSince = $lastDate ? Carbon::parse($lastDate)->diffInDays(Carbon::now()) : null;
 
@@ -440,14 +458,22 @@ class ReportService
     {
         // Pool opening balances
         $poolQuery = CashPool::forAccount($accountId);
-        if ($poolId) $poolQuery->where('id', $poolId);
-        if ($branchId) $poolQuery->where('location_id', $branchId);
+        if ($poolId) {
+            $poolQuery->where('id', $poolId);
+        }
+        if ($branchId) {
+            $poolQuery->where('location_id', $branchId);
+        }
         $openingBalances = (float) $poolQuery->sum('opening_balance');
 
         // Resolve pool IDs for transfer filtering
         $poolIdsQuery = CashPool::forAccount($accountId);
-        if ($poolId) $poolIdsQuery->where('id', $poolId);
-        if ($branchId) $poolIdsQuery->where('location_id', $branchId);
+        if ($poolId) {
+            $poolIdsQuery->where('id', $poolId);
+        }
+        if ($branchId) {
+            $poolIdsQuery->where('location_id', $branchId);
+        }
         $poolIds = $poolIdsQuery->pluck('id')->toArray();
 
         // Inflows before dateFrom
@@ -457,8 +483,12 @@ class ReportService
             ->whereNull('deleted_at')
             ->where(DB::raw('DATE(created_at)'), '<', $dateFrom);
 
-        if ($goLiveDate) $inflowQuery->where('created_at', '>=', $goLiveDate);
-        if ($branchId) $inflowQuery->where('location_id', $branchId);
+        if ($goLiveDate) {
+            $inflowQuery->where('created_at', '>=', $goLiveDate);
+        }
+        if ($branchId) {
+            $inflowQuery->where('location_id', $branchId);
+        }
 
         $priorInflows = (float) $inflowQuery->sum('cash_amount');
 
@@ -468,8 +498,12 @@ class ReportService
             ->where('status', '!=', 'rejected')
             ->where('expense_date', '<', $dateFrom);
 
-        if ($branchId) $outflowQuery->where('for_branch_id', $branchId);
-        if ($poolId) $outflowQuery->where('paid_from_pool_id', $poolId);
+        if ($branchId) {
+            $outflowQuery->where('for_branch_id', $branchId);
+        }
+        if ($poolId) {
+            $outflowQuery->where('paid_from_pool_id', $poolId);
+        }
 
         $priorOutflows = (float) $outflowQuery->sum('amount');
 
@@ -490,7 +524,7 @@ class ReportService
         // Transfers before dateFrom (non-voided)
         $priorTransfersOut = 0;
         $priorTransfersIn = 0;
-        if (!empty($poolIds)) {
+        if (! empty($poolIds)) {
             $priorTransfersOut = (float) CashTransfer::forAccount($accountId)
                 ->whereNull('voided_at')
                 ->whereIn('from_pool_id', $poolIds)
@@ -516,8 +550,12 @@ class ReportService
             ->whereBetween(DB::raw('DATE(package_advances.created_at)'), [$dateFrom, $dateTo])
             ->join('payment_modes', 'package_advances.payment_mode_id', '=', 'payment_modes.id');
 
-        if ($goLiveDate) $query->where('package_advances.created_at', '>=', $goLiveDate);
-        if ($branchId) $query->where('package_advances.location_id', $branchId);
+        if ($goLiveDate) {
+            $query->where('package_advances.created_at', '>=', $goLiveDate);
+        }
+        if ($branchId) {
+            $query->where('package_advances.location_id', $branchId);
+        }
 
         return $query
             ->select('payment_modes.name as method', DB::raw('SUM(package_advances.cash_amount) as total'), DB::raw('COUNT(*) as count'))
@@ -534,8 +572,12 @@ class ReportService
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
             ->join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id');
 
-        if ($branchId) $query->where('expenses.for_branch_id', $branchId);
-        if ($poolId) $query->where('expenses.paid_from_pool_id', $poolId);
+        if ($branchId) {
+            $query->where('expenses.for_branch_id', $branchId);
+        }
+        if ($poolId) {
+            $query->where('expenses.paid_from_pool_id', $poolId);
+        }
 
         return $query
             ->select('expense_categories.name as category', DB::raw('SUM(expenses.amount) as total'), DB::raw('COUNT(*) as count'))
@@ -562,9 +604,13 @@ class ReportService
             ->whereBetween('transfer_date', [$dateFrom, $dateTo]);
 
         if ($direction === 'in') {
-            if ($poolId) $query->where('to_pool_id', $poolId);
+            if ($poolId) {
+                $query->where('to_pool_id', $poolId);
+            }
         } else {
-            if ($poolId) $query->where('from_pool_id', $poolId);
+            if ($poolId) {
+                $query->where('from_pool_id', $poolId);
+            }
         }
 
         return (float) $query->sum('amount');

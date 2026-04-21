@@ -94,20 +94,14 @@ Route::get('reports/csr-dashboard', CsrDashboardController::class)->name('report
 Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
 Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
 Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
-Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
-Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
 // MIGRATED TO API: /api/dashboard/unattended-payments
 // Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
 // MIGRATED TO API: /api/dashboard/overdue-treatments
 // Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
-Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
 Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
 Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
-Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
-Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
 // MIGRATED TO API: /api/dashboard/doctor-upselling-data
 // Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
-Route::get('dashboard/doctore_wise_upselling', [DashboardReportsController::class, 'DoctoreWiseUpselling'])->name('dashboard.doctor_wise_upselling');
 Route::get('dashboard/feedback/view/{id}', [DashboardReportsController::class, 'viewFeedback'])->name('feedback.view');
 Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'allDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
 Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'followUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');

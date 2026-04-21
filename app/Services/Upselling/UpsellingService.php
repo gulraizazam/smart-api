@@ -31,14 +31,17 @@ class UpsellingService
     /**
      * Get doctor upselling data for a centre and date range.
      *
-     * @param string|int $centreId  Location ID or 'all'
+     * @param string|int|array $centreId  Location ID, array of IDs, or 'all'
      * @param string $startDate     Y-m-d H:i:s
      * @param string $endDate       Y-m-d H:i:s
      * @return array Collection of objects with doctor_id, doctor_name, total_upselling_amount
      */
-    public function getDoctorUpsellingData(string|int $centreId, string $startDate, string $endDate): array
+    public function getDoctorUpsellingData(string|int|array $centreId, string $startDate, string $endDate): array
     {
         $userLocations = ACL::getUserCentres();
+
+        $isAll = $centreId === 'all';
+        $locationFilter = $isAll ? $userLocations : (is_array($centreId) ? array_map('intval', $centreId) : [(int) $centreId]);
 
         // Get users with doctor/consultant roles
         $roleHasUsers = User::select('users.id')
@@ -55,12 +58,11 @@ class UpsellingService
             ->join('user_has_locations', 'users.id', '=', 'user_has_locations.user_id')
             ->where('roles.name', 'FDM')
             ->where('model_has_roles.model_type', 'App\\Models\\User')
-            ->when($centreId !== 'all', fn ($q) => $q->where('user_has_locations.location_id', $centreId))
+            ->when(!$isAll, fn ($q) => $q->whereIn('user_has_locations.location_id', $locationFilter))
             ->distinct()
             ->pluck('id');
 
         // Get doctors for the location(s)
-        $locationFilter = $centreId === 'all' ? $userLocations : [$centreId];
         $doctorIds = DB::table('doctor_has_locations')
             ->whereIn('location_id', $locationFilter)
             ->whereIn('user_id', $roleHasUsers)
@@ -154,8 +156,10 @@ class UpsellingService
 
     /**
      * Get detailed package services for a specific doctor's upselling.
+     *
+     * @param int[] $locationIds
      */
-    public function getDoctorUpsellingDetailData(int $doctorId, int $locationId, string $startDate, string $endDate): array
+    public function getDoctorUpsellingDetailData(int $doctorId, array $locationIds, string $startDate, string $endDate): array
     {
         // Get doctor name
         $doctorName = User::find($doctorId)?->name ?? 'Unknown Doctor';
@@ -166,7 +170,7 @@ class UpsellingService
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->join('services', 'package_services.service_id', '=', 'services.id')
             ->where('package_services.sold_by', $doctorId)
-            ->where('packages.location_id', $locationId)
+            ->whereIn('packages.location_id', $locationIds)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by')
             ->where(function($query) {
@@ -201,8 +205,10 @@ class UpsellingService
 
     /**
      * Get consultant breakdown data for a specific doctor.
+     *
+     * @param int[] $locationIds
      */
-    public function getDoctorConsultantBreakdownData(int $doctorId, int $locationId, string $startDate, string $endDate): array
+    public function getDoctorConsultantBreakdownData(int $doctorId, array $locationIds, string $startDate, string $endDate): array
     {
         // Get the doctor information
         $doctor = User::find($doctorId);
@@ -219,7 +225,7 @@ class UpsellingService
             ->where('package_services.sold_by', $doctorId)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by')
-            ->where('packages.location_id', $locationId)
+            ->whereIn('packages.location_id', $locationIds)
             // Exclude self-consultation sales
             ->where(function($query) use ($doctorId) {
                 $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
@@ -244,8 +250,12 @@ class UpsellingService
             return $item;
         });
 
-        // Get location name
-        $location = DB::table('locations')->where('id', $locationId)->first();
+        // Get location names (may be multiple when multiple centres were selected)
+        $locations = DB::table('locations')->whereIn('id', $locationIds)->get();
+        $location = (object) [
+            'id' => $locations->pluck('id')->implode(','),
+            'name' => $locations->pluck('name')->implode(', '),
+        ];
 
         return [
             'doctor' => $doctor,
@@ -259,17 +269,21 @@ class UpsellingService
 
     /**
      * Get consultant revenue report data.
+     *
+     * @param int|int[] $locationId  Single location ID (legacy) or array of IDs
      */
-    public function getConsultantRevenueReportData(int $locationId, string $startDate, string $endDate): array
+    public function getConsultantRevenueReportData(int|array $locationId, string $startDate, string $endDate): array
     {
+        $locationIds = is_array($locationId) ? array_map('intval', $locationId) : [(int) $locationId];
+
         // Step 1: Get only Consultant and Lifestyle Consultant users who are active
         $consultantUserIds = User::whereHas('roles', function($query) {
             $query->where('name', 'Consultant')->orWhere('name', 'Lifestyle Consultant');
         })->where('active', 1)->pluck('id');
 
-        // Step 2: Get consultants assigned to the specific location
+        // Step 2: Get consultants assigned to the specific location(s)
         $consultantIds = DB::table('doctor_has_locations')
-            ->where('location_id', $locationId)
+            ->whereIn('location_id', $locationIds)
             ->whereIn('user_id', $consultantUserIds)
             ->distinct()
             ->pluck('user_id');
@@ -286,8 +300,8 @@ class UpsellingService
         $fdmUserIds = User::whereHas('roles', function ($q) {
                 $q->where('name', 'FDM');
             })
-            ->whereHas('user_has_locations', function ($q) use ($locationId) {
-                $q->where('location_id', $locationId);
+            ->whereHas('user_has_locations', function ($q) use ($locationIds) {
+                $q->whereIn('location_id', $locationIds);
             })
             ->pluck('id');
 
@@ -301,7 +315,7 @@ class UpsellingService
             ->whereIn('appointments.doctor_id', $consultantIds)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by')
-            ->where('packages.location_id', $locationId)
+            ->whereIn('packages.location_id', $locationIds)
             // Exclude self-consultation sales
             ->where(function($query) {
                 $query->where('appointments.appointment_type_id', '!=', AppointmentType::Consultancy->value)
@@ -418,6 +432,8 @@ class UpsellingService
      */
     public function getConsultantRevenueDetailData(int $consultantId, array $filters): array
     {
+        $locationIds = (array) ($filters['location_ids'] ?? [$filters['location_id'] ?? 0]);
+
         $reportQuery = PackageService::query()
             ->join('users', 'package_services.sold_by', '=', 'users.id')
             ->join('packages', 'package_services.package_id', '=', 'packages.id')
@@ -425,7 +441,7 @@ class UpsellingService
             ->join('services', 'package_services.service_id', '=', 'services.id')
             ->where('package_services.sold_by', $consultantId)
             ->whereIn('package_services.sold_by', $filters['consultant_ids'])
-            ->where('packages.location_id', $filters['location_id'])
+            ->whereIn('packages.location_id', $locationIds)
             ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNotNull('sold_by');
 
@@ -487,7 +503,7 @@ class UpsellingService
             ->join('packages', 'package_services.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->where('package_services.sold_by', $sellerId)
-            ->where('packages.location_id', $filters['location_id'])
+            ->whereIn('packages.location_id', (array) ($filters['location_ids'] ?? [$filters['location_id'] ?? 0]))
             ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNotNull('sold_by')
             ->select(
@@ -673,7 +689,7 @@ class UpsellingService
             ->where('package_services.sold_by', $sellerId)
             ->where("appointments.{$doctorColumn}", $consultantId)
             ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
-            ->where('packages.location_id', $filters['location_id'])
+            ->whereIn('packages.location_id', (array) ($filters['location_ids'] ?? [$filters['location_id'] ?? 0]))
             ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNotNull('sold_by');
 
@@ -1140,16 +1156,20 @@ class UpsellingService
 
     /**
      * Get doctor revenue report data.
+     *
+     * @param int|int[] $locationId
      */
-    public function getDoctorRevenueReportData(int $locationId, string $startDate, string $endDate): array
+    public function getDoctorRevenueReportData(int|array $locationId, string $startDate, string $endDate): array
     {
+        $locationIds = is_array($locationId) ? array_map('intval', $locationId) : [(int) $locationId];
+
         // Get all doctors assigned to this location (including inactive)
         $doctorUserIds = User::whereHas('roles', function($query) {
             $query->whereIn('name', ['Aesthetic Doctor', 'Consultant', 'Lifestyle Consultant']);
         })->pluck('id');
 
         $doctorIds = DB::table('doctor_has_locations')
-            ->where('location_id', $locationId)
+            ->whereIn('location_id', $locationIds)
             ->whereIn('user_id', $doctorUserIds)
             ->distinct()
             ->pluck('user_id');
@@ -1167,7 +1187,7 @@ class UpsellingService
             ->where('package_advances.is_adjustment', 0)
             ->where('package_advances.is_tax', 0)
             ->where('package_advances.is_cancel', 0)
-            ->where('package_advances.location_id', $locationId)
+            ->whereIn('package_advances.location_id', $locationIds)
             ->whereBetween('package_advances.created_at', [$startDate, $endDate])
             ->whereNull('package_advances.deleted_at')
             ->groupBy('appointments.doctor_id')
@@ -1185,7 +1205,7 @@ class UpsellingService
             ->where('package_advances.cash_flow', 'out')
             ->where('package_advances.is_refund', 1)
             ->where('package_advances.is_tax', 0)
-            ->where('package_advances.location_id', $locationId)
+            ->whereIn('package_advances.location_id', $locationIds)
             ->whereBetween('package_advances.created_at', [$startDate, $endDate])
             ->whereNull('package_advances.deleted_at')
             ->groupBy('appointments.doctor_id')
@@ -1256,6 +1276,8 @@ class UpsellingService
      */
     public function getDoctorRevenueDetailData(int $doctorId, array $filters): array
     {
+        $locationIds = (array) ($filters['location_ids'] ?? [$filters['location_id'] ?? 0]);
+
         // Get doctor name
         if ($doctorId == 0) {
             $doctorName = 'Unassigned (No Doctor)';
@@ -1275,7 +1297,7 @@ class UpsellingService
             ->where('package_advances.is_adjustment', 0)
             ->where('package_advances.is_tax', 0)
             ->where('package_advances.is_cancel', 0)
-            ->where('package_advances.location_id', $filters['location_id'])
+            ->whereIn('package_advances.location_id', $locationIds)
             ->whereBetween('package_advances.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNull('package_advances.deleted_at');
 
@@ -1309,7 +1331,7 @@ class UpsellingService
             ->where('package_advances.cash_flow', 'out')
             ->where('package_advances.is_refund', 1)
             ->where('package_advances.is_tax', 0)
-            ->where('package_advances.location_id', $filters['location_id'])
+            ->whereIn('package_advances.location_id', $locationIds)
             ->whereBetween('package_advances.created_at', [$filters['start_date'], $filters['end_date']])
             ->whereNull('package_advances.deleted_at');
 

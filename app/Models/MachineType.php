@@ -1,19 +1,22 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Gate;
 
 class MachineType extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $fillable = ['name', 'active', 'account_id', 'created_at', 'updated_at', 'deleted_at'];
@@ -60,7 +63,7 @@ class MachineType extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -68,7 +71,7 @@ class MachineType extends BaseModel
         $where = self::machinetype_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
+            if (Gate::allows('view_inactive_machine_types')) {
                 return count(DB::table('machine_types')
                     ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
                     ->where($where)
@@ -87,7 +90,7 @@ class MachineType extends BaseModel
                     ->get());
             }
         } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
+            if (Gate::allows('view_inactive_machine_types')) {
                 return count(DB::table('machine_types')
                     ->leftJoin('machine_type_has_services', 'machine_types.id', '=', 'machine_type_has_services.machine_type_id')
                     ->whereNull('deleted_at')
@@ -109,16 +112,16 @@ class MachineType extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $orderBy = 'created_at';
         $order = 'desc';
-        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
+        if (Gate::allows('view_inactive_machine_types')) {
             return self::with('services')->Filters($request, $account_id, $apply_filter)
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
@@ -136,14 +139,9 @@ class MachineType extends BaseModel
     public function scopeFilters($query, $request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
         if ($account_id) {
             $query = $query->where('account_id', $account_id);
             Filters::put(Auth::user()->id, 'machinetypes', 'account_id', $account_id);
@@ -158,14 +156,14 @@ class MachineType extends BaseModel
         }
 
         if (hasFilter($filters, 'name')) {
-            $query = $query->where('name', 'like', '%' . $filters['name'] . '%');
+            $query = $query->where('name', 'like', '%'.$filters['name'].'%');
             Filters::put(Auth::user()->id, 'machinetypes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'machinetypes', 'name');
             } else {
                 if (Filters::get(Auth::user()->id, 'machinetypes', 'name')) {
-                    $query = $query->where('name', 'like', '%' . Filters::get(Auth::user()->id, 'machinetypes', 'name') . '%');
+                    $query = $query->where('name', 'like', '%'.Filters::get(Auth::user()->id, 'machinetypes', 'name').'%');
                 }
             }
         }
@@ -224,14 +222,9 @@ class MachineType extends BaseModel
     {
         $where = [];
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($account_id) {
             $where[] = [
@@ -257,7 +250,7 @@ class MachineType extends BaseModel
             $where[] = [
                 'machine_types.name',
                 'like',
-                '%' . $filters['name'] . '%',
+                '%'.$filters['name'].'%',
             ];
             Filters::put(Auth::user()->id, 'machinetypes', 'name', $filters['name']);
         } else {
@@ -268,7 +261,7 @@ class MachineType extends BaseModel
                     $where[] = [
                         'machine_types.name',
                         'like',
-                        '%' . Filters::get(Auth::user()->id, 'machinetypes', 'name') . '%',
+                        '%'.Filters::get(Auth::user()->id, 'machinetypes', 'name').'%',
                     ];
                 }
             }
@@ -341,7 +334,7 @@ class MachineType extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
@@ -360,7 +353,7 @@ class MachineType extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
@@ -376,7 +369,7 @@ class MachineType extends BaseModel
             'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -397,7 +390,7 @@ class MachineType extends BaseModel
     {
         $machinetype = MachineType::getData($id);
 
-        if (!$machinetype) {
+        if (! $machinetype) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $machinetype->update(['active' => 0]);
@@ -415,7 +408,7 @@ class MachineType extends BaseModel
     public static function activeRecord($id)
     {
         $machinetype = MachineType::getData($id);
-        if (!$machinetype) {
+        if (! $machinetype) {
             return collect(['status' => true, 'message' => 'Resource not found.']);
         }
         $record = $machinetype->update(['active' => 1]);
@@ -433,7 +426,7 @@ class MachineType extends BaseModel
     public static function deleteRecord($id)
     {
         $machinetype = MachineType::getData($id);
-        if (!$machinetype) {
+        if (! $machinetype) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -450,7 +443,7 @@ class MachineType extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {

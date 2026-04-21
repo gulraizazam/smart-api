@@ -8,7 +8,8 @@ use App\Enums\PlanType;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
-use Carbon\Carbon;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Gate;
 
 class Packages extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $table = 'packages';
@@ -62,14 +64,14 @@ class Packages extends BaseModel
     protected function casts(): array
     {
         return [
-            'total_price'  => 'float',
-            'active'       => 'boolean',
+            'total_price' => 'float',
+            'active' => 'boolean',
             'is_exclusive' => 'boolean',
-            'is_refund'    => 'boolean',
-            'plan_type'    => PlanType::class,
-            'created_at'   => 'datetime',
-            'updated_at'   => 'datetime',
-            'deleted_at'   => 'datetime',
+            'is_refund' => 'boolean',
+            'plan_type' => PlanType::class,
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -145,7 +147,7 @@ class Packages extends BaseModel
     {
         $package = self::getData($id);
 
-        if (!$package) {
+        if (! $package) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
@@ -159,7 +161,7 @@ class Packages extends BaseModel
     {
         $package = self::getData($id);
 
-        if (!$package) {
+        if (! $package) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
@@ -173,7 +175,7 @@ class Packages extends BaseModel
     {
         $package = self::getData($id);
 
-        if (!$package) {
+        if (! $package) {
             return ['status' => false, 'message' => 'Resource not found.'];
         }
 
@@ -199,10 +201,10 @@ class Packages extends BaseModel
     {
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
 
-        $query = self::when(!empty($where), fn ($q) => $q->where($where))
+        $query = self::when(! empty($where), fn ($q) => $q->where($where))
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
@@ -217,17 +219,17 @@ class Packages extends BaseModel
         int|string|false $id,
         bool $applyFilter,
         string $filename,
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'updated_at', 'DESC');
 
-        $query = self::when(!empty($where), fn ($q) => $q->where($where))
+        $query = self::when(! empty($where), fn ($q) => $q->where($where))
             ->whereIn('location_id', ACL::getUserCentres())
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order);
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
@@ -240,14 +242,9 @@ class Packages extends BaseModel
         $filters = getFilters($request->all());
         $applyFilter = checkFilters($filters, $filename);
 
-        $startDateTime = null;
-        $endDateTime = null;
-
-        if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        }
+        [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         $userId = Auth::id();
 

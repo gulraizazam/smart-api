@@ -9,16 +9,19 @@ use App\Helpers\ACL;
 use App\Http\Requests\MembershipReportRequest;
 use App\Models\Locations;
 use App\Models\MembershipType;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Services\Reports\MembershipReportService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MembershipReportsController extends Controller
 {
+    use ParsesDateRange;
+
     public function __construct(
         private readonly MembershipReportService $reportService,
     ) {}
@@ -39,20 +42,20 @@ class MembershipReportsController extends Controller
     {
         $filters = getFilters($request->all());
 
-        $locationId = hasFilter($filters, 'location_id') ? (int) $filters['location_id'] : null;
+        $locationIds = hasFilter($filters, 'location_id')
+            ? array_values(array_filter(array_map('intval', (array) $filters['location_id']), fn (int $id): bool => $id > 0))
+            : [];
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', ACL::getUserCentres());
+        }
         $membershipTypeId = hasFilter($filters, 'membership_type_id') ? $filters['membership_type_id'] : null;
 
-        $startDate = null;
-        $endDate = null;
-
-        if (hasFilter($filters, 'date_range')) {
-            $parts = explode(' - ', $filters['date_range']);
-            $startDate = date('Y-m-d', strtotime($parts[0]));
-            $endDate = date('Y-m-d', strtotime($parts[1]));
-        }
+        [$startDate, $endDate] = self::parseDateRange(
+            hasFilter($filters, 'date_range') ? $filters['date_range'] : null
+        );
 
         return $this->reportService->generate(
-            locationId: $locationId,
+            locationIds: $locationIds,
             membershipTypeId: $membershipTypeId,
             startDate: $startDate,
             endDate: $endDate,

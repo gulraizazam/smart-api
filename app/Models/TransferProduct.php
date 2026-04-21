@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Http\Request;
-use App\Models\ProductDetail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;use Illuminate\Database\Eloquent\Relations\HasOne;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TransferProduct extends BaseModel
 {
     use HasFactory;
+    use ParsesDateRange;
 
     protected $fillable = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date', 'created_by', 'updated_by'];
 
@@ -30,9 +29,7 @@ class TransferProduct extends BaseModel
 
     protected static $logName = 'transfer_product';
 
-    
-
-    public function transferProductItem(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function transferProductItem(): HasMany
     {
         return $this->hasMany(TransferProductItems::class, 'transfer_product_id');
     }
@@ -55,7 +52,7 @@ class TransferProduct extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
@@ -65,7 +62,7 @@ class TransferProduct extends BaseModel
         $product_id = [];
         if ($request['query'] != null) {
             if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->pluck('id');
+                $product_id = Product::where('name', 'like', '%'.$request['query']['search']['name'].'%')->pluck('id');
             }
         }
         if (count($where)) {
@@ -84,9 +81,9 @@ class TransferProduct extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -96,7 +93,7 @@ class TransferProduct extends BaseModel
 
         if ($request['query'] != null) {
             if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->pluck('id');
+                $product_id = Product::where('name', 'like', '%'.$request['query']['search']['name'].'%')->pluck('id');
             }
         }
         if (count($where)) {
@@ -117,22 +114,17 @@ class TransferProduct extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function lead_sources_filters($request, $account_id, $search = false)
     {
         $where = [];
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($search) {
             if (hasFilter($filters, 'location_from') && hasFilter($filters, 'transfer_from')) {
@@ -161,33 +153,33 @@ class TransferProduct extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
     {
-       
+
         $data = $request->all();
-        
+
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
 
         $record = null;
         $message = null;
         $parent_product_id = $request->product_id;
-       
+
         if ($request->product_type_option_from == 'in_warehouse') {
-            $from_key = "warehouse_id";
+            $from_key = 'warehouse_id';
             $from_value = $request->from_warehouse_id;
         } else {
-            $from_key = "location_id";
+            $from_key = 'location_id';
             $from_value = $request->from_location_id;
         }
         if ($request->product_type_option_to == 'in_warehouse') {
-            $to_key = "warehouse_id";
+            $to_key = 'warehouse_id';
             $to_value = $request->to_warehouse_id;
         } else {
-            $to_key = "location_id";
+            $to_key = 'location_id';
             $to_value = $request->to_location_id;
         }
         $product = Product::where(['id' => $parent_product_id])->first();
@@ -200,7 +192,7 @@ class TransferProduct extends BaseModel
             } else {
                 $data2['type'] = $request['type'];
                 $data2['message'] = $request['message'];
-                //$product = Product::createRecord($data2, $account_id);
+                // $product = Product::createRecord($data2, $account_id);
             }
             $data['child_product_id'] = $product->id;
             $data2['child_product_id'] = $product->id;
@@ -208,26 +200,26 @@ class TransferProduct extends BaseModel
             $record = self::create($data);
 
             $subjectModel = self::find($record->id);
-           
+
             $data2['transfer_id'] = $record->id;
             $data2['type'] = $request['type'];
             $data2['message'] = $request['message'];
             $data2['quantity'] = $data['quantity'];
         } else {
-            $message = "Out of stock";
+            $message = 'Out of stock';
         }
 
         return [
             'record' => $record,
             'data' => $data2,
-            'message' => $message
+            'message' => $message,
         ];
     }
 
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
@@ -272,14 +264,15 @@ class TransferProduct extends BaseModel
 
         $record = self::where(['id' => $id])->first();
         $subjectModel = self::find($record->id);
-       
+
         $data2['product_detail_id'] = $record->product_detail_id;
         $data2['type'] = $request['type'];
         $data2['message'] = $request['message'];
+
         return [
             'record' => $record,
             'data' => $data2,
-            'message' => $message
+            'message' => $message,
         ];
     }
 
@@ -296,7 +289,7 @@ class TransferProduct extends BaseModel
             $transfer_product = self::getData($id);
             $child_product_check = TransferProduct::where(['child_product_id' => $transfer_product->child_product_id])->count();
 
-            if (!$transfer_product) {
+            if (! $transfer_product) {
                 return collect(['status' => false, 'message' => 'Resource not found.']);
             }
             // Check if child records exists or not, If exist then disallow to delete it.
@@ -322,6 +315,7 @@ class TransferProduct extends BaseModel
             }
         } catch (\Exception $e) {
             DB::rollback();
+
             // Handle the exception (e.g., log it or return an error response)
             return collect(['status' => false, 'message' => $e->getMessage()]);
         }
@@ -331,7 +325,7 @@ class TransferProduct extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {
@@ -340,6 +334,7 @@ class TransferProduct extends BaseModel
         if ($order_detail || $product_details) {
             return true;
         }
+
         return false;
     }
 
@@ -366,7 +361,7 @@ class TransferProduct extends BaseModel
     /**
      * Get All Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id)
@@ -384,7 +379,7 @@ class TransferProduct extends BaseModel
     {
         $product = self::getData($id);
 
-        if (!$product) {
+        if (! $product) {
 
             return false;
         }
@@ -408,8 +403,9 @@ class TransferProduct extends BaseModel
     {
         $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
         $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
-       
+
         $transfer_product = TransferProduct::where(['id' => $id])->first();
+
         return ($transfer_product->to_location_id != null) ? ((array_key_exists($transfer_product->to_location_id, $centres)) ? $centres[$transfer_product->to_location_id]->name : 'N/A') : ((array_key_exists($transfer_product->to_warehouse_id, $warehouse)) ? $warehouse[$transfer_product->to_warehouse_id]->name : 'N/A');
     }
 
@@ -418,6 +414,7 @@ class TransferProduct extends BaseModel
         $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
         $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
         $transfer_product = TransferProduct::where(['id' => $id])->first();
+
         return ($transfer_product->from_location_id != null) ? ((array_key_exists($transfer_product->from_location_id, $centres)) ? $centres[$transfer_product->from_location_id]->name : 'N/A') : ((array_key_exists($transfer_product->from_warehouse_id, $warehouse)) ? $warehouse[$transfer_product->from_warehouse_id]->name : 'N/A');
     }
 }

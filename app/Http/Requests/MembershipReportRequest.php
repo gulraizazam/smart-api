@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MembershipReportRequest extends FormRequest
 {
+    use ParsesDateRange;
+
     public function authorize(): bool
     {
         return true;
@@ -16,17 +19,27 @@ class MembershipReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'location_id'        => 'nullable|integer',
+            'location_id' => 'nullable|array',
+            'location_id.*' => 'integer|exists:locations,id',
             'membership_type_id' => 'nullable|string',
-            'date_range'         => 'nullable|string',
+            'date_range' => 'nullable|string',
         ];
     }
 
-    public function locationId(): ?int
+    /**
+     * @return int[]|null
+     */
+    public function locationIds(): ?array
     {
         $value = $this->input('location_id');
 
-        return $value ? (int) $value : null;
+        if (empty($value)) {
+            return null;
+        }
+
+        $ids = array_values(array_filter(array_map('intval', (array) $value), fn (int $id): bool => $id > 0));
+
+        return empty($ids) ? null : $ids;
     }
 
     public function membershipTypeId(): ?string
@@ -38,23 +51,11 @@ class MembershipReportRequest extends FormRequest
 
     public function startDate(): ?string
     {
-        if ($this->date_range) {
-            $parts = explode(' - ', $this->date_range);
-
-            return date('Y-m-d', strtotime($parts[0]));
-        }
-
-        return null;
+        return self::parseDateRange($this->date_range)[0];
     }
 
     public function endDate(): ?string
     {
-        if ($this->date_range) {
-            $parts = explode(' - ', $this->date_range);
-
-            return date('Y-m-d', strtotime($parts[1]));
-        }
-
-        return null;
+        return self::parseDateRange($this->date_range)[1];
     }
 }

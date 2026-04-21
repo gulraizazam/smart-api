@@ -33,11 +33,13 @@ class AppointmentsReportController extends Controller
 
     public function reportLoad(AppointmentsReportRequest $request): View
     {
+        $centreIds = $request->centreIds() ?? array_map('intval', ACL::getUserCentres());
+
         $appointments = $this->reportService->generate(
             startDate: $request->startDate(),
             endDate: $request->endDate(),
             timeInterval: $request->timeInterval(),
-            centreId: $request->centreId(),
+            centreIds: $centreIds,
             createdBy: $request->createdBy(),
         );
 

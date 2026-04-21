@@ -8,6 +8,7 @@ use App\Helpers\ACL;
 use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Models\Appointments;
+use App\Models\Discounts;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\MembershipType;
@@ -17,31 +18,33 @@ use App\Models\RoleHasUsers;
 use App\Models\StudentVerification;
 use App\Models\User;
 use App\Models\UserHasLocations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 
 class AdminMembershipService
 {
+    use ParsesDateRange;
+
     // ── Datatable Filters ───────────────────────────────
 
     public function buildFiltersWhere(Request $request, mixed $accountId, bool $applyFilter): array
     {
         $filters = getFilters($request->all());
-        $where   = [];
+        $where = [];
 
         // Code filter
         if (hasFilter($filters, 'code')) {
-            $where[] = ['memberships.code', 'like', '%' . $filters['code'] . '%'];
+            $where[] = ['memberships.code', 'like', '%'.$filters['code'].'%'];
             Filters::put(Auth::user()->id, 'memberships', 'code', $filters['code']);
         } else {
             if ($applyFilter) {
                 Filters::forget(Auth::user()->id, 'memberships', 'code');
             } elseif ($saved = Filters::get(Auth::user()->id, 'memberships', 'code')) {
-                $where[] = ['memberships.code', 'like', '%' . $saved . '%'];
+                $where[] = ['memberships.code', 'like', '%'.$saved.'%'];
             }
         }
 
@@ -131,23 +134,17 @@ class AdminMembershipService
 
         // Assigned at date range filter
         if (hasFilter($filters, 'assigned_at')) {
-            $dateRange        = explode(' - ', $filters['assigned_at']);
-            $startDateTime    = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
-            $endDateObj       = new \DateTime($dateRange[1]);
-            $endDateObj->setTime(23, 59, 59);
+            [$startDateTime, $endDateTime] = self::parseDateRangeWithTimeBounds($filters['assigned_at']);
             $where[] = ['memberships.assigned_at', '>=', $startDateTime];
-            $where[] = ['memberships.assigned_at', '<=', $endDateObj->format('Y-m-d H:i:s')];
+            $where[] = ['memberships.assigned_at', '<=', $endDateTime];
             Filters::put(Auth::user()->id, 'memberships', 'assigned_at', $filters['assigned_at']);
         } else {
             if ($applyFilter) {
                 Filters::forget(Auth::user()->id, 'memberships', 'assigned_at');
             } elseif ($saved = Filters::get(Auth::user()->id, 'memberships', 'assigned_at')) {
-                $dateRange     = explode(' - ', $saved);
-                $startDateTime = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
-                $endDateObj    = new \DateTime($dateRange[1]);
-                $endDateObj->setTime(23, 59, 59);
+                [$startDateTime, $endDateTime] = self::parseDateRangeWithTimeBounds($saved);
                 $where[] = ['memberships.assigned_at', '>=', $startDateTime];
-                $where[] = ['memberships.assigned_at', '<=', $endDateObj->format('Y-m-d H:i:s')];
+                $where[] = ['memberships.assigned_at', '<=', $endDateTime];
             }
         }
 
@@ -159,7 +156,7 @@ class AdminMembershipService
      */
     public function getPatientIdFilter(Request $request, bool $applyFilter): ?array
     {
-        $filters   = getFilters($request->all());
+        $filters = getFilters($request->all());
         $patientId = null;
 
         if (hasFilter($filters, 'patient_id')) {
@@ -185,7 +182,7 @@ class AdminMembershipService
      */
     public function getLocationFilter(Request $request, bool $applyFilter): ?array
     {
-        $filters    = getFilters($request->all());
+        $filters = getFilters($request->all());
         $locationId = null;
 
         if (hasFilter($filters, 'location_id')) {
@@ -211,7 +208,7 @@ class AdminMembershipService
     public function getSoldByFilter(Request $request, bool $applyFilter): ?array
     {
         $filters = getFilters($request->all());
-        $soldBy  = null;
+        $soldBy = null;
 
         if (hasFilter($filters, 'sold_by')) {
             $soldBy = $filters['sold_by'];
@@ -237,9 +234,9 @@ class AdminMembershipService
      */
     public function getTotalRecords(Request $request, mixed $accountId, bool $applyFilter): int
     {
-        $where       = $this->buildFiltersWhere($request, $accountId, $applyFilter);
+        $where = $this->buildFiltersWhere($request, $accountId, $applyFilter);
         $userCentres = ACL::getUserCentres();
-        $query       = DB::table('memberships');
+        $query = DB::table('memberships');
 
         if (count($where)) {
             $query->where($where);
@@ -282,21 +279,21 @@ class AdminMembershipService
             if ($isSuperAdmin) {
                 $query->where(function ($q) use ($userCentres) {
                     $q->whereNull('memberships.patient_id')
-                      ->orWhereExists(function ($sub) use ($userCentres) {
-                          $sub->select(DB::raw(1))
-                              ->from('appointments')
-                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                              ->whereIn('appointments.location_id', $userCentres);
-                      });
+                        ->orWhereExists(function ($sub) use ($userCentres) {
+                            $sub->select(DB::raw(1))
+                                ->from('appointments')
+                                ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                                ->whereIn('appointments.location_id', $userCentres);
+                        });
                 });
             } else {
                 $query->whereNotNull('memberships.patient_id')
-                      ->whereExists(function ($sub) use ($userCentres) {
-                          $sub->select(DB::raw(1))
-                              ->from('appointments')
-                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                              ->whereIn('appointments.location_id', $userCentres);
-                      });
+                    ->whereExists(function ($sub) use ($userCentres) {
+                        $sub->select(DB::raw(1))
+                            ->from('appointments')
+                            ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                            ->whereIn('appointments.location_id', $userCentres);
+                    });
             }
         } elseif (! $isSuperAdmin) {
             $query->whereNotNull('memberships.patient_id');
@@ -310,9 +307,9 @@ class AdminMembershipService
      */
     public function getRecords(Request $request, int $start, int $length, mixed $accountId, bool $applyFilter): mixed
     {
-        $where       = $this->buildFiltersWhere($request, $accountId, $applyFilter);
+        $where = $this->buildFiltersWhere($request, $accountId, $applyFilter);
         $userCentres = ACL::getUserCentres();
-        $query       = Membership::with('membershiptype');
+        $query = Membership::with('membershiptype');
 
         if (count($where)) {
             $query->where($where);
@@ -355,21 +352,21 @@ class AdminMembershipService
             if ($isSuperAdmin) {
                 $query->where(function ($q) use ($userCentres) {
                     $q->whereNull('memberships.patient_id')
-                      ->orWhereExists(function ($sub) use ($userCentres) {
-                          $sub->select(DB::raw(1))
-                              ->from('appointments')
-                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                              ->whereIn('appointments.location_id', $userCentres);
-                      });
+                        ->orWhereExists(function ($sub) use ($userCentres) {
+                            $sub->select(DB::raw(1))
+                                ->from('appointments')
+                                ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                                ->whereIn('appointments.location_id', $userCentres);
+                        });
                 });
             } else {
                 $query->whereNotNull('memberships.patient_id')
-                      ->whereExists(function ($sub) use ($userCentres) {
-                          $sub->select(DB::raw(1))
-                              ->from('appointments')
-                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                              ->whereIn('appointments.location_id', $userCentres);
-                      });
+                    ->whereExists(function ($sub) use ($userCentres) {
+                        $sub->select(DB::raw(1))
+                            ->from('appointments')
+                            ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                            ->whereIn('appointments.location_id', $userCentres);
+                    });
             }
         } elseif (! $isSuperAdmin) {
             $query->whereNotNull('memberships.patient_id');
@@ -451,14 +448,14 @@ class AdminMembershipService
         }
 
         $membershipCode = $membership->code;
-        $isReferral     = $membership->is_referral;
-        $patient        = Patients::find($patientId);
+        $isReferral = $membership->is_referral;
+        $patient = Patients::find($patientId);
         $membershipType = $membership->membershipType;
 
         $membership->update([
-            'patient_id'  => null,
-            'start_date'  => null,
-            'end_date'    => null,
+            'patient_id' => null,
+            'start_date' => null,
+            'end_date' => null,
             'assigned_at' => null,
         ]);
 
@@ -468,9 +465,9 @@ class AdminMembershipService
             $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                 ->where('is_referral', 1)
                 ->update([
-                    'patient_id'  => null,
-                    'start_date'  => null,
-                    'end_date'    => null,
+                    'patient_id' => null,
+                    'start_date' => null,
+                    'end_date' => null,
                     'assigned_at' => null,
                 ]);
         }
@@ -481,7 +478,7 @@ class AdminMembershipService
 
         $message = 'Membership cancelled successfully';
         if ($cancelledReferrals > 0) {
-            $message .= ' along with ' . $cancelledReferrals . ' associated referral(s)';
+            $message .= ' along with '.$cancelledReferrals.' associated referral(s)';
         }
 
         return ['success' => true, 'message' => $message];
@@ -501,7 +498,7 @@ class AdminMembershipService
                 ->pluck('name', 'id');
         }
 
-        $doctorIds       = DoctorHasLocations::where('location_id', $locationId)
+        $doctorIds = DoctorHasLocations::where('location_id', $locationId)
             ->where('is_allocated', 1)
             ->pluck('user_id')
             ->toArray();
@@ -510,7 +507,7 @@ class AdminMembershipService
             ->pluck('user_id')
             ->toArray();
 
-        $fdmRole    = DB::table('roles')->where('name', 'FDM')->first();
+        $fdmRole = DB::table('roles')->where('name', 'FDM')->first();
         $fdmUserIds = [];
         if ($fdmRole) {
             $roleHasUsers = RoleHasUsers::where('role_id', $fdmRole->id)
@@ -532,12 +529,12 @@ class AdminMembershipService
     public function getStudentVerificationDetails(int $membershipId): array
     {
         $membership = Membership::with('membershipType')->findOrFail($membershipId);
-        $patient    = User::findOrFail($membership->patient_id);
+        $patient = User::findOrFail($membership->patient_id);
 
         $studentVerification = StudentVerification::where('membership_id', $membershipId)
             ->orWhere(function ($query) use ($membership) {
                 $query->where('patient_id', $membership->patient_id)
-                      ->where('membership_type_id', $membership->membership_type_id);
+                    ->where('membership_type_id', $membership->membership_type_id);
             })
             ->first();
 
@@ -546,7 +543,7 @@ class AdminMembershipService
             $documents = $studentVerification->document_paths;
         }
 
-        $membershipTypeDiscountIds = \App\Models\Discounts::where('customer_type_id', $membership->membership_type_id)
+        $membershipTypeDiscountIds = Discounts::where('customer_type_id', $membership->membership_type_id)
             ->pluck('id')
             ->toArray();
 
@@ -558,29 +555,29 @@ class AdminMembershipService
                 ->get();
         }
 
-        $serviceUsage        = [];
+        $serviceUsage = [];
         $totalDiscountAmount = 0;
 
         foreach ($usedServices as $service) {
-            $serviceName  = $service->bundle?->name ?? 'Unknown Service';
+            $serviceName = $service->bundle?->name ?? 'Unknown Service';
             $discountSaved = $service->service_price - $service->tax_including_price;
 
             $packageService = $service->packageservice->first();
-            $isConsumed     = $packageService ? (bool) $packageService->is_consumed : false;
-            $consumedAt     = $packageService && $packageService->consumed_at
+            $isConsumed = $packageService ? (bool) $packageService->is_consumed : false;
+            $consumedAt = $packageService && $packageService->consumed_at
                 ? Carbon::parse($packageService->consumed_at)->format('d/m/y')
                 : null;
 
             $serviceUsage[] = [
-                'service_name'   => $serviceName,
-                'service_price'  => $service->service_price,
+                'service_name' => $serviceName,
+                'service_price' => $service->service_price,
                 'discount_amount' => $service->discount_price ?? 0,
-                'discount_type'  => $service->discount_type,
-                'net_amount'     => $service->tax_including_price,
-                'plan_id'        => $service->package_id,
-                'plan_date'      => $service->package ? $service->package->created_at->format('M d, Y') : null,
-                'is_consumed'    => $isConsumed,
-                'consumed_at'    => $consumedAt,
+                'discount_type' => $service->discount_type,
+                'net_amount' => $service->tax_including_price,
+                'plan_id' => $service->package_id,
+                'plan_date' => $service->package ? $service->package->created_at->format('M d, Y') : null,
+                'is_consumed' => $isConsumed,
+                'consumed_at' => $consumedAt,
             ];
 
             if ($discountSaved > 0) {
@@ -590,35 +587,35 @@ class AdminMembershipService
 
         return [
             'membership' => [
-                'id'         => $membership->id,
-                'code'       => $membership->code,
-                'type'       => $membership->membershipType->name ?? 'N/A',
+                'id' => $membership->id,
+                'code' => $membership->code,
+                'type' => $membership->membershipType->name ?? 'N/A',
                 'start_date' => $membership->start_date,
-                'end_date'   => $membership->end_date,
-                'status'     => $membership->active ? 'Active' : 'Expired',
+                'end_date' => $membership->end_date,
+                'status' => $membership->active ? 'Active' : 'Expired',
             ],
             'patient' => [
-                'id'        => $patient->id,
-                'unique_id' => 'C-' . $patient->id,
-                'name'      => $patient->name,
-                'email'     => $patient->email,
-                'phone'     => $patient->phone,
+                'id' => $patient->id,
+                'unique_id' => 'C-'.$patient->id,
+                'name' => $patient->name,
+                'email' => $patient->email,
+                'phone' => $patient->phone,
             ],
             'verification' => $studentVerification ? [
-                'id'           => $studentVerification->id,
-                'status'       => $studentVerification->status,
+                'id' => $studentVerification->id,
+                'status' => $studentVerification->status,
                 'submitted_at' => $studentVerification->submitted_at
                     ? $studentVerification->submitted_at->format('M d, Y h:i A')
                     : null,
-                'reviewed_at'  => $studentVerification->reviewed_at
+                'reviewed_at' => $studentVerification->reviewed_at
                     ? $studentVerification->reviewed_at->format('M d, Y h:i A')
                     : null,
             ] : null,
-            'documents'     => $documents,
+            'documents' => $documents,
             'service_usage' => [
-                'total_services'     => count($serviceUsage),
+                'total_services' => count($serviceUsage),
                 'total_discount_saved' => $totalDiscountAmount,
-                'services'           => $serviceUsage,
+                'services' => $serviceUsage,
             ],
         ];
     }
