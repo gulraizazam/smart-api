@@ -70,7 +70,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'cnic', 'main_account', 'gender',
-        'dob', 'address', 'commission', 'can_perform_consultation',
+        'dob', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'account_id',
         'active', 'select_all', 'is_advance_eligible', 'hr_managed',
     ];
@@ -83,7 +83,7 @@ class User extends Authenticatable
      */
     protected static array $_fillable = [
         'name', 'email', 'phone', 'main_account', 'gender',
-        'dob', 'address', 'commission', 'can_perform_consultation',
+        'dob', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all',
     ];
 
