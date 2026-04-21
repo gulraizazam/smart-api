@@ -26,7 +26,6 @@ class PatientDetailResource extends JsonResource
             'gender_label' => Gender::tryFrom((int) ($this->resource->getAttributes()['gender'] ?? 0))?->label() ?? 'N/A',
             'cnic' => $this->cnic,
             'dob' => $this->dob?->format('Y-m-d'),
-            'address' => $this->address,
             'referred_by' => $this->referred_by,
             'active' => $this->active,
             'image_url' => $this->image_src
