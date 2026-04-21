@@ -7,6 +7,7 @@ namespace App\Helpers;
 use App\Models\Leads;
 use App\Models\LeadsServices;
 use App\Models\LeadStatuses;
+use App\Services\Phone\PhoneFormattingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -21,7 +22,7 @@ class LeadHelper
             return '***********';
         }
 
-        return GeneralFunctions::prepareNumber4Call($phone);
+        return PhoneFormattingService::prepareNumber4Call($phone);
     }
 
     public static function getGenderLabel(int $genderId): string
@@ -139,7 +140,7 @@ class LeadHelper
 
     public static function isValidPhone(string $phone): bool
     {
-        $cleanPhone = GeneralFunctions::cleanNumber($phone);
+        $cleanPhone = PhoneFormattingService::cleanNumber($phone);
         $length = strlen($cleanPhone);
 
         return $length >= 10 && $length <= 13;
@@ -149,7 +150,7 @@ class LeadHelper
     {
         $accountId ??= Auth::user()->account_id;
 
-        return Leads::where('phone', GeneralFunctions::cleanNumber($phone))
+        return Leads::where('phone', PhoneFormattingService::cleanNumber($phone))
             ->where('account_id', $accountId)
             ->exists();
     }
@@ -158,7 +159,7 @@ class LeadHelper
     {
         $accountId ??= Auth::user()->account_id;
 
-        return Leads::where('phone', GeneralFunctions::cleanNumber($phone))
+        return Leads::where('phone', PhoneFormattingService::cleanNumber($phone))
             ->where('account_id', $accountId)
             ->orderByDesc('id')
             ->first();

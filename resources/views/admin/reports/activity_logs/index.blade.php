@@ -248,7 +248,13 @@
 
                                 <div>
                                     <div class="al-field-label">Centre</div>
-                                    {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, ['id' => 'location_id', 'class' => 'form-control select2']) !!}
+                                    @php($isFdm = Auth::user()->hasRole('FDM'))
+                                    <select name="location_id[]" id="location_id" class="form-control select2" multiple style="width: 100%;">
+                                        <option value="all" @if(!$isFdm) selected @endif>All Centres</option>
+                                        @foreach($locations as $locId => $locName)
+                                            <option value="{{ $locId }}" @if($isFdm) selected @endif>{{ $locName }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
 
                                 <div>

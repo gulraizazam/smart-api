@@ -1,23 +1,27 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\Support\SafeFilename;
+use Database\Factories\LocationFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\SoftDeletes;use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class Locations extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     /**
@@ -27,17 +31,17 @@ class Locations extends BaseModel
      * so without this hint the framework looks for `LocationsFactory` and
      * fails. Used by tests via Locations::factory().
      */
-    protected static function newFactory(): \Database\Factories\LocationFactory
+    protected static function newFactory(): LocationFactory
     {
-        return \Database\Factories\LocationFactory::new();
+        return LocationFactory::new();
     }
 
     protected static function booted(): void
     {
         $clearCache = function (self $model): void {
-            $pattern = 'locations_active_sorted_' . $model->account_id;
-            Cache::forget($pattern . '_name_all');
-            Cache::forget('locations_dict_' . $model->account_id . '_0_0_0_all');
+            $pattern = 'locations_active_sorted_'.$model->account_id;
+            Cache::forget($pattern.'_name_all');
+            Cache::forget('locations_dict_'.$model->account_id.'_0_0_0_all');
         };
         static::saved($clearCache);
         static::deleted($clearCache);
@@ -154,7 +158,7 @@ class Locations extends BaseModel
     protected function fullAddress(): Attribute
     {
         return Attribute::make(
-            get: fn (): string => ucfirst($this->city->name ?? '') . ' - ' . ucfirst($this->name ?? ''),
+            get: fn (): string => ucfirst($this->city->name ?? '').' - '.ucfirst($this->name ?? ''),
         );
     }
 
@@ -176,7 +180,7 @@ class Locations extends BaseModel
             $locationId = [$locationId];
         }
         $accountId = Auth::user()->account_id;
-        $cacheKey = 'locations_active_sorted_' . $accountId . '_' . $name . '_' . ($locationId ? md5(serialize($locationId)) : 'all');
+        $cacheKey = 'locations_active_sorted_'.$accountId.'_'.$name.'_'.($locationId ? md5(serialize($locationId)) : 'all');
 
         return Cache::remember($cacheKey, 3600, function () use ($locationId, $name, $accountId) {
             $query = self::where([
@@ -301,14 +305,14 @@ class Locations extends BaseModel
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = self::locations_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
+            if (Gate::allows('view_inactive_centres')) {
                 return count(DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
@@ -332,7 +336,7 @@ class Locations extends BaseModel
     /**
      * Get Total Records for target
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords_target(Request $request, $account_id = false, $apply_filter = false)
@@ -352,9 +356,9 @@ class Locations extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -394,7 +398,7 @@ class Locations extends BaseModel
             }
         }
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
+            if (Gate::allows('view_inactive_centres')) {
                 return DB::table('locations')
                     ->leftJoin('service_has_locations', 'locations.id', '=', 'service_has_locations.location_id')
                     ->where($where)
@@ -421,9 +425,9 @@ class Locations extends BaseModel
     /**
      * Get Records target
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords_target(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
@@ -445,23 +449,18 @@ class Locations extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
+     * @param  (bool)  $apply_filter
      * @return (mixed)
      */
     public static function locations_filters($request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
 
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         $where = [];
         if ($account_id) {
@@ -634,7 +633,7 @@ class Locations extends BaseModel
                 Filters::forget(Auth::user()->id, 'locations', 'created_at');
             } else {
                 if (Filters::get(Auth::user()->id, 'locations', 'created_at')) {
-                    $where[] = ['locations.created_at','>=',Filters::get(Auth::user()->id, 'locations', 'created_at')];
+                    $where[] = ['locations.created_at', '>=', Filters::get(Auth::user()->id, 'locations', 'created_at')];
                 }
             }
         }
@@ -674,9 +673,9 @@ class Locations extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
-     * @param  (boolean)  $apply_filter
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
+     * @param  (bool)  $apply_filter
      * @return (mixed)
      */
     public static function staff_target_location_filters($request, $account_id, $apply_filter)
@@ -775,7 +774,7 @@ class Locations extends BaseModel
     /**
      * Get All Records with Dictionary
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getAllRecordsDictionary($account_id, $get_slug = false, $order_by = false, $order = false, $locationids = false)
@@ -783,7 +782,7 @@ class Locations extends BaseModel
         if ($locationids && ! is_array($locationids)) {
             $locationids = [$locationids];
         }
-        $cacheKey = 'locations_dict_' . $account_id . '_' . ($get_slug ?: '0') . '_' . ($order_by ?: '0') . '_' . ($order ?: '0') . '_' . ($locationids ? md5(serialize($locationids)) : 'all');
+        $cacheKey = 'locations_dict_'.$account_id.'_'.($get_slug ?: '0').'_'.($order_by ?: '0').'_'.($order ?: '0').'_'.($locationids ? md5(serialize($locationids)) : 'all');
 
         return Cache::remember($cacheKey, 3600, function () use ($account_id, $get_slug, $order_by, $order, $locationids) {
             $query = self::where('account_id', '=', $account_id);
@@ -804,8 +803,8 @@ class Locations extends BaseModel
     /**
      * Get All Records by City
      *
-     * @param  (int)  $cityId City's ID
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $cityId  City's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getActiveRecordsByCity($cityId, $locationId, $account_id)
@@ -836,7 +835,7 @@ class Locations extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
@@ -846,7 +845,7 @@ class Locations extends BaseModel
         $data['account_id'] = $account_id;
         // Set Region ID
         $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
-        //Set Image
+        // Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
@@ -864,7 +863,7 @@ class Locations extends BaseModel
 
         $record = self::create($data);
         $record->update(['sort_no' => $record->id]);
-        //log request for Create for Audit Trail
+        // log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         return $record;
@@ -957,7 +956,7 @@ class Locations extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
@@ -977,7 +976,7 @@ class Locations extends BaseModel
         } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
-        //Set Image
+        // Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
@@ -1012,7 +1011,7 @@ class Locations extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {

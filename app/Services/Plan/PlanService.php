@@ -49,6 +49,7 @@ use App\Models\UserOperatorSettings;
 use App\Models\UserVouchers;
 use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -62,6 +63,8 @@ use Illuminate\Support\Str;
 
 final class PlanService
 {
+    use ParsesDateRange;
+
     private const CACHE_TTL = 3600;
 
     public function __construct(
@@ -755,6 +758,20 @@ final class PlanService
                 ->where('package_id', $packageId)
                 ->get();
 
+            // Normalize bundle relationship for source_type='service_bundle' rows:
+            // bundle_id references service_bundles.id, so the `bundle` relation is null.
+            // Expose the underlying service as `bundle` with name "{qty}x {service_name}"
+            // so existing JS consumers (edit-bundle.js, create-membership.js) that read
+            // packagebundle.bundle.name keep working without changes.
+            $packageBundles->each(function ($pb) {
+                if ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
+                    $displayService = $pb->serviceBundle->service->replicate();
+                    $displayService->id = $pb->serviceBundle->service->id;
+                    $displayService->name = $pb->qty.'x '.$pb->serviceBundle->service->name;
+                    $pb->setRelation('bundle', $displayService);
+                }
+            });
+
             $packageServices = PackageService::with('service', 'soldBy')
                 ->where('package_id', $packageId)
                 ->get();
@@ -864,6 +881,14 @@ final class PlanService
             $packageBundles->each(function ($pb) {
                 if ($pb->source_type === 'service' && $pb->service) {
                     $pb->setRelation('bundle', $pb->service);
+                } elseif ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
+                    // bundle_id references service_bundles.id; expose the underlying
+                    // service as `bundle` with name "{qty}x {service_name}" so existing
+                    // JS consumers (which read packagebundle.bundle.name) work unchanged.
+                    $displayService = $pb->serviceBundle->service->replicate();
+                    $displayService->id = $pb->serviceBundle->service->id;
+                    $displayService->name = $pb->qty.'x '.$pb->serviceBundle->service->name;
+                    $pb->setRelation('bundle', $displayService);
                 } elseif (! $pb->source_type && $pb->service && ! $pb->membership_type_id) {
                     $children = $pb->packageservice;
                     if ($children?->count() === 1 && $children->first()->service_id == $pb->bundle_id) {
@@ -1234,10 +1259,10 @@ final class PlanService
     private function addDateRangeFilter(array &$where, array $filters, int|string $userId, string $filename, bool $applyFilter): void
     {
         if ($this->hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            if (count($dateRange) === 2) {
-                $where[] = ['packages.created_at', '>=', Carbon::parse($dateRange[0])->startOfDay()];
-                $where[] = ['packages.created_at', '<=', Carbon::parse($dateRange[1])->endOfDay()];
+            if (str_contains($filters['created_at'], ' - ')) {
+                [$fromDay, $toDay] = self::parseDateRangeAsCarbonDay($filters['created_at']);
+                $where[] = ['packages.created_at', '>=', $fromDay];
+                $where[] = ['packages.created_at', '<=', $toDay];
                 Filters::put($userId, $filename, 'created_at', $filters['created_at']);
             }
         } elseif ($applyFilter) {

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Helpers;
 
 use App\Models\CashFlow\CashPool;
@@ -10,6 +11,8 @@ use App\Models\CashFlow\Vendor;
 use App\Models\Locations;
 use App\Models\PaymentModes;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
@@ -20,12 +23,12 @@ class CashflowHelper
     /**
      * Get active branches (locations) the current user has access to.
      */
-    public static function getUserBranches(?int $userId = null): \Illuminate\Support\Collection
+    public static function getUserBranches(?int $userId = null): Collection
     {
         $userId = $userId ?? Auth::id();
         $user = User::with('user_has_locations')->find($userId);
 
-        if (!$user) {
+        if (! $user) {
             return collect();
         }
 
@@ -48,7 +51,7 @@ class CashflowHelper
     /**
      * Get all active branches for an account (cached).
      */
-    public static function getActiveBranches(int $accountId): \Illuminate\Support\Collection
+    public static function getActiveBranches(int $accountId): Collection
     {
         return Cache::remember(
             "cashflow_branches_{$accountId}",
@@ -64,7 +67,7 @@ class CashflowHelper
     /**
      * Get active cash pools for an account (cached).
      */
-    public static function getActivePools(int $accountId): \Illuminate\Support\Collection
+    public static function getActivePools(int $accountId): Collection
     {
         return Cache::remember(
             "cashflow_pools_{$accountId}",
@@ -81,7 +84,7 @@ class CashflowHelper
     /**
      * Get active expense categories for an account (cached).
      */
-    public static function getActiveCategories(int $accountId): \Illuminate\Support\Collection
+    public static function getActiveCategories(int $accountId): Collection
     {
         return Cache::remember(
             "cashflow_categories_{$accountId}",
@@ -96,7 +99,7 @@ class CashflowHelper
     /**
      * Get active vendors for an account (cached).
      */
-    public static function getActiveVendors(int $accountId): \Illuminate\Support\Collection
+    public static function getActiveVendors(int $accountId): Collection
     {
         return Cache::remember(
             "cashflow_vendors_{$accountId}",
@@ -111,15 +114,15 @@ class CashflowHelper
     /**
      * Get active payment modes (reusing existing CRM model).
      */
-    public static function getActivePaymentModes(): \Illuminate\Support\Collection
+    public static function getActivePaymentModes(): Collection
     {
-        return PaymentModes::getActiveOnly()->filter(fn($mode) => (int) $mode->payment_type !== 6)->values();
+        return PaymentModes::getActiveOnly()->filter(fn ($mode) => (int) $mode->payment_type !== 6)->values();
     }
 
     /**
      * Get advance-eligible staff for an account.
      */
-    public static function getAdvanceEligibleStaff(int $accountId): \Illuminate\Support\Collection
+    public static function getAdvanceEligibleStaff(int $accountId): Collection
     {
         return User::where('account_id', $accountId)
             ->where('active', 1)
@@ -130,11 +133,29 @@ class CashflowHelper
     }
 
     /**
+     * Resolve the [from, to] pair for cashflow report filters. Defaults to
+     * the current month (start-of-month → today) when either filter key
+     * is absent. Matches the convention used across DashboardService,
+     * ReportService, and VendorService.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{0: string, 1: string}
+     */
+    public static function defaultDateRange(array $filters): array
+    {
+        return [
+            $filters['date_from'] ?? Carbon::now()->startOfMonth()->toDateString(),
+            $filters['date_to'] ?? Carbon::now()->toDateString(),
+        ];
+    }
+
+    /**
      * Check if a date falls within a locked period.
      */
     public static function isDateInLockedPeriod(string $date, int $accountId): bool
     {
-        $carbon = \Carbon\Carbon::parse($date);
+        $carbon = Carbon::parse($date);
+
         return PeriodLock::isLocked($accountId, $carbon->month, $carbon->year);
     }
 
@@ -144,6 +165,7 @@ class CashflowHelper
     public static function userCanAccessBranch(int $branchId, ?int $userId = null): bool
     {
         $branches = self::getUserBranches($userId);
+
         return $branches->contains('id', $branchId);
     }
 
@@ -164,6 +186,6 @@ class CashflowHelper
      */
     public static function formatCurrency($amount): string
     {
-        return 'PKR ' . number_format((float) $amount, 2);
+        return 'PKR '.number_format((float) $amount, 2);
     }
 }

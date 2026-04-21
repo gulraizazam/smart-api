@@ -9,16 +9,20 @@ use App\Enums\CashFlow;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Services\PatientManagement\PatientSearchService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 
 class PackageAdvances extends BaseModel
 {
+    use ParsesDateRange;
     use SoftDeletes;
 
     protected $table = 'package_advances';
@@ -80,15 +84,15 @@ class PackageAdvances extends BaseModel
     {
         return [
             'cash_amount' => 'float',
-            'active'      => 'boolean',
-            'is_cancel'   => 'boolean',
-            'is_tax'      => 'boolean',
+            'active' => 'boolean',
+            'is_cancel' => 'boolean',
+            'is_tax' => 'boolean',
             'is_setteled' => 'boolean',
-            'is_refund'   => 'boolean',
+            'is_refund' => 'boolean',
             'is_adjustment' => 'boolean',
-            'created_at'  => 'datetime',
-            'updated_at'  => 'datetime',
-            'deleted_at'  => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -138,7 +142,7 @@ class PackageAdvances extends BaseModel
 
     public static function createRecord(array $data, object $parentData): self
     {
-        $record = new self();
+        $record = new self;
         $record->cash_flow = CashFlow::In->value;
         $record->cash_amount = $data['cash_amount'];
         $record->account_id = Auth::user()->account_id;
@@ -203,8 +207,8 @@ class PackageAdvances extends BaseModel
 
             if ($newPackageServices > 0) {
                 $latestArrivedAppointment = Appointments::where([
-                    'patient_id'                => $data['patient_id'],
-                    'appointment_type_id'       => AppointmentType::Consultancy->value,
+                    'patient_id' => $data['patient_id'],
+                    'appointment_type_id' => AppointmentType::Consultancy->value,
                     'base_appointment_status_id' => $arrivedStatus->id,
                 ])
                     ->where('updated_at', '>', $packageCreatedAt)
@@ -217,7 +221,7 @@ class PackageAdvances extends BaseModel
             }
         }
 
-        $record = new self();
+        $record = new self;
         $record->cash_flow = CashFlow::In->value;
         $record->cash_amount = $data['cash_amount'];
         $record->account_id = Auth::user()->account_id;
@@ -247,8 +251,8 @@ class PackageAdvances extends BaseModel
 
         $data = [
             'payment_mode_id' => $input['payment_mode_id'],
-            'created_at'      => $input['created_at'] . ' ' . Carbon::now()->toTimeString(),
-            'updated_at'      => now(),
+            'created_at' => $input['created_at'].' '.Carbon::now()->toTimeString(),
+            'updated_at' => now(),
         ];
 
         if ($amountStatus) {
@@ -256,11 +260,11 @@ class PackageAdvances extends BaseModel
         }
 
         $record = self::where([
-            'id'         => $input['package_advances_id'],
+            'id' => $input['package_advances_id'],
             'account_id' => $accountId,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -301,21 +305,21 @@ class PackageAdvances extends BaseModel
 
         try {
             $package = Packages::find($packageId);
-            if (!$package?->appointment_id) {
+            if (! $package?->appointment_id) {
                 return;
             }
 
             $appointment = Appointments::find($package->appointment_id);
-            if (!$appointment?->lead_id) {
+            if (! $appointment?->lead_id) {
                 return;
             }
 
             $convertedStatus = LeadStatuses::where([
-                'account_id'   => $accountId,
+                'account_id' => $accountId,
                 'is_converted' => 1,
             ])->first();
 
-            if (!$convertedStatus) {
+            if (! $convertedStatus) {
                 return;
             }
 
@@ -326,7 +330,7 @@ class PackageAdvances extends BaseModel
                 ->where('service_id', $appointment->service_id)
                 ->update(['lead_status_id' => $convertedStatus->id]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to update lead status to converted: ' . $e->getMessage());
+            Log::error('Failed to update lead status to converted: '.$e->getMessage());
         }
     }
 
@@ -336,7 +340,7 @@ class PackageAdvances extends BaseModel
     protected static function createPlanInvoice(self $packageAdvance): void
     {
         try {
-            if ($packageAdvance->cash_flow !== CashFlow::In->value || !$packageAdvance->package_id) {
+            if ($packageAdvance->cash_flow !== CashFlow::In->value || ! $packageAdvance->package_id) {
                 return;
             }
 
@@ -346,24 +350,24 @@ class PackageAdvances extends BaseModel
             );
 
             PlanInvoice::create([
-                'invoice_number'     => $invoiceNumber,
-                'total_price'        => $packageAdvance->cash_amount,
-                'account_id'         => $packageAdvance->account_id,
-                'patient_id'         => $packageAdvance->patient_id,
-                'created_by'         => $packageAdvance->created_by,
-                'location_id'        => $packageAdvance->location_id,
-                'payment_mode_id'    => $packageAdvance->payment_mode_id,
-                'active'             => 1,
-                'package_id'         => $packageAdvance->package_id,
+                'invoice_number' => $invoiceNumber,
+                'total_price' => $packageAdvance->cash_amount,
+                'account_id' => $packageAdvance->account_id,
+                'patient_id' => $packageAdvance->patient_id,
+                'created_by' => $packageAdvance->created_by,
+                'location_id' => $packageAdvance->location_id,
+                'payment_mode_id' => $packageAdvance->payment_mode_id,
+                'active' => 1,
+                'package_id' => $packageAdvance->package_id,
                 'package_advance_id' => $packageAdvance->id,
-                'invoice_type'       => 'exempt',
-                'created_at'         => $packageAdvance->created_at,
-                'updated_at'         => now(),
+                'invoice_type' => 'exempt',
+                'created_at' => $packageAdvance->created_at,
+                'updated_at' => now(),
             ]);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Failed to create plan_invoice for package_advance', [
+            Log::error('Failed to create plan_invoice for package_advance', [
                 'package_advance_id' => $packageAdvance->id ?? null,
-                'error'              => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -383,8 +387,9 @@ class PackageAdvances extends BaseModel
     {
         $advance = self::getData($id);
 
-        if (!$advance) {
+        if (! $advance) {
             flash('Resource not found.')->error()->important();
+
             return false;
         }
 
@@ -399,8 +404,9 @@ class PackageAdvances extends BaseModel
     {
         $advance = self::getData($id);
 
-        if (!$advance) {
+        if (! $advance) {
             flash('Resource not found.')->error()->important();
+
             return false;
         }
 
@@ -415,13 +421,15 @@ class PackageAdvances extends BaseModel
     {
         $advance = self::getData($id);
 
-        if (!$advance) {
+        if (! $advance) {
             flash('Resource not found.')->error()->important();
+
             return false;
         }
 
         if (self::isChildExists($id, Auth::user()->account_id)) {
             flash('Child records exist, unable to delete resource')->error()->important();
+
             return false;
         }
 
@@ -452,7 +460,7 @@ class PackageAdvances extends BaseModel
     {
         $record = self::where(['id' => $id, 'account_id' => $accountId])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -473,7 +481,7 @@ class PackageAdvances extends BaseModel
     {
         $where = self::filters_packageAdvances($request, $accountId, $id, $applyFilter, $filename);
 
-        return self::when(!empty($where), fn ($q) => $q->where($where))
+        return self::when(! empty($where), fn ($q) => $q->where($where))
             ->where('cash_amount', '!=', 0)
             ->count();
     }
@@ -486,11 +494,11 @@ class PackageAdvances extends BaseModel
         int|false $id,
         bool $applyFilter,
         string $filename,
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         [$orderBy, $order] = getSortBy($request, 'created_at', 'DESC');
         $where = self::filters_packageAdvances($request, $accountId, $id, $applyFilter, $filename);
 
-        return self::when(!empty($where), fn ($q) => $q->where($where))
+        return self::when(! empty($where), fn ($q) => $q->where($where))
             ->where('cash_amount', '!=', 0)
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
@@ -504,14 +512,9 @@ class PackageAdvances extends BaseModel
         $filters = getFilters($request->all());
         $userId = Auth::id();
 
-        $startDateTime = null;
-        $endDateTime = null;
-
-        if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDateTime = Carbon::parse($dateRange[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        }
+        [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($id !== false) {
             $where[] = ['patient_id', '=', $id];
@@ -599,7 +602,7 @@ class PackageAdvances extends BaseModel
         int|false $id,
         bool $applyFilter,
         string $filename,
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         $where = self::filters($request, $accountId, $id, $applyFilter, $filename);
         [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
@@ -610,19 +613,19 @@ class PackageAdvances extends BaseModel
         // The aliased patient_id/location_id/package_id columns from the SELECT
         // expose foreign keys that Eloquent's eager loader can resolve.
         $query = self::with(['user', 'location.city', 'package'])
-            ->when(!empty($where), fn ($q) => $q->where($where))
+            ->when(! empty($where), fn ($q) => $q->where($where))
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
         return $query->select('package_id',
-                DB::raw('MIN(id) as id'),
-                DB::raw('MIN(patient_id) as patient_id'),
-                DB::raw('MIN(location_id) as location_id'),
-                DB::raw('MAX(created_at) as created_at'))
+            DB::raw('MIN(id) as id'),
+            DB::raw('MIN(patient_id) as patient_id'),
+            DB::raw('MIN(location_id) as location_id'),
+            DB::raw('MAX(created_at) as created_at'))
             ->groupBy('package_id')
             ->orderByDesc(DB::raw('MAX(created_at)'))
             ->limit($iDisplayLength)
@@ -638,23 +641,23 @@ class PackageAdvances extends BaseModel
         int $patientId,
         bool $applyFilter,
         string $filename,
-    ): \Illuminate\Database\Eloquent\Collection {
+    ): Collection {
         $where = self::filters($request, $accountId, $patientId, $applyFilter, $filename);
 
         $query = self::with(['user', 'location.city', 'package'])
-            ->when(!empty($where), fn ($q) => $q->where($where))
+            ->when(! empty($where), fn ($q) => $q->where($where))
             ->where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
         return $query->select('package_id',
-                DB::raw('MIN(id) as id'),
-                DB::raw('MIN(patient_id) as patient_id'),
-                DB::raw('MIN(location_id) as location_id'),
-                DB::raw('MAX(created_at) as created_at'))
+            DB::raw('MIN(id) as id'),
+            DB::raw('MIN(patient_id) as patient_id'),
+            DB::raw('MIN(location_id) as location_id'),
+            DB::raw('MAX(created_at) as created_at'))
             ->groupBy('package_id')
             ->orderByDesc(DB::raw('MAX(created_at)'))
             ->limit($iDisplayLength)
@@ -674,11 +677,11 @@ class PackageAdvances extends BaseModel
         $query = Packages::where('is_refund', 1)
             ->whereIn('location_id', ACL::getUserCentres());
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $query->where($where);
         }
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
@@ -696,11 +699,11 @@ class PackageAdvances extends BaseModel
 
         $query = Packages::whereIn('location_id', ACL::getUserCentres());
 
-        if (!empty($where)) {
+        if (! empty($where)) {
             $query->where($where)->where('is_refund', 1);
         }
 
-        if (!Gate::allows('view_inactive_plans')) {
+        if (! Gate::allows('view_inactive_plans')) {
             $query->where('active', 1);
         }
 
@@ -760,21 +763,21 @@ class PackageAdvances extends BaseModel
         }
 
         if (hasFilter($filters, 'created_from')) {
-            $where[] = ['created_at', '>=', $filters['created_from'] . ' 00:00:00'];
-            Filters::put($userId, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
+            $where[] = ['created_at', '>=', $filters['created_from'].' 00:00:00'];
+            Filters::put($userId, $filename, 'created_from', $filters['created_from'].' 00:00:00');
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, 'created_from');
         } elseif ($cached = Filters::get($userId, $filename, 'created_from')) {
-            $where[] = ['created_at', '>=', $cached . ' 00:00:00'];
+            $where[] = ['created_at', '>=', $cached.' 00:00:00'];
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = ['created_at', '<=', $filters['created_to'] . ' 23:59:59'];
-            Filters::put($userId, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
+            $where[] = ['created_at', '<=', $filters['created_to'].' 23:59:59'];
+            Filters::put($userId, $filename, 'created_to', $filters['created_to'].' 23:59:59');
         } elseif ($applyFilter) {
             Filters::forget($userId, $filename, 'created_to');
         } elseif ($cached = Filters::get($userId, $filename, 'created_to')) {
-            $where[] = ['created_at', '<=', $cached . ' 23:59:59'];
+            $where[] = ['created_at', '<=', $cached.' 23:59:59'];
         }
 
         if (hasFilter($filters, 'location_id')) {

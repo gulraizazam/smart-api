@@ -97,12 +97,15 @@ class GeneralSalesReportService
     {
         $locationId = $data['location_id'] ?? null;
 
-        if ($locationId === null || $locationId === '' || $locationId === []) {
+        if ($locationId === null || $locationId === '' || $locationId === [] || $locationId === 'all') {
             return null;
         }
 
         if (is_array($locationId)) {
-            $filtered = array_filter($locationId, fn ($val) => $val !== '' && $val !== null);
+            $filtered = array_filter(
+                $locationId,
+                fn ($val) => $val !== '' && $val !== null && $val !== 'all',
+            );
 
             return empty($filtered) ? null : array_values($filtered);
         }

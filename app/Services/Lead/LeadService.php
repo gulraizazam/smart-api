@@ -27,6 +27,7 @@ use App\Models\Telecomprovidernumber;
 use App\Models\User;
 use App\Services\PatientManagement\PatientSearchService;
 use App\Services\Phone\PhoneFormattingService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -38,6 +39,8 @@ use Illuminate\Support\Facades\Gate;
 
 class LeadService
 {
+    use ParsesDateRange;
+
     protected const CACHE_TTL = 3600; // 1 hour
 
     protected ?array $lookupCache = null;
@@ -1061,9 +1064,7 @@ class LeadService
         $where = [];
 
         if (! empty($filters['created_at'])) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDate = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 0)->format('Y-m-d H:i:s');
+            [$startDate, $endDate] = self::parseDateRangeForFilter($filters['created_at']);
             $where[] = ['created_at', '>=', $startDate];
             $where[] = ['created_at', '<=', $endDate];
         }
@@ -1704,9 +1705,7 @@ class LeadService
         }
 
         if (hasFilter($filters, 'created_at')) {
-            $dateRange = explode(' - ', $filters['created_at']);
-            $startDate = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDate = (new \DateTime($dateRange[1]))->setTime(23, 59, 0)->format('Y-m-d H:i:s');
+            [$startDate, $endDate] = self::parseDateRangeForFilter($filters['created_at']);
             $where[] = ['leads.created_at', '>=', $startDate];
             $where[] = ['leads.created_at', '<=', $endDate];
             Filters::put($userId, $filename, 'created_at', $filters['created_at']);
@@ -1787,19 +1786,5 @@ class LeadService
         Filters::put($userId, $filename, 'order', $order);
 
         return [$orderBy, $order];
-    }
-
-    protected function parseDateRange(?string $dateRange): array
-    {
-        if (! $dateRange) {
-            return [null, null];
-        }
-
-        $parts = explode(' - ', $dateRange);
-
-        return [
-            date('Y-m-d', strtotime($parts[0])),
-            date('Y-m-d', strtotime($parts[1] ?? $parts[0])),
-        ];
     }
 }

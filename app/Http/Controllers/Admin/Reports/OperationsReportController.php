@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin\Reports;
 
 use App;
@@ -19,30 +20,35 @@ use App\Models\Services;
 use App\Models\User;
 use App\Reports\Finanaces;
 use App\Reports\Operations;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class OperationsReportController extends Controller
 {
+    use ParsesDateRange;
+
     /**
      * Display a listing filter for finanace report.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function report(): \Illuminate\View\View
+    public function report(): View
     {
         if (! Gate::allows('operations_reports_manage')) {
             return abort(401);
         }
         $allserviceslug = Services::where('slug', '=', 'all')->first();
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
@@ -91,7 +97,7 @@ class OperationsReportController extends Controller
     /*
      * Function for load days
      */
-    public function loaddayarray(Request $request): \Illuminate\Http\JsonResponse
+    public function loaddayarray(Request $request): JsonResponse
     {
 
         $days = cal_days_in_month(CAL_GREGORIAN, $request->month, $request->year);
@@ -106,7 +112,7 @@ class OperationsReportController extends Controller
     /**
      * Center target report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function centertargetreport(Request $request): mixed
     {
@@ -150,13 +156,13 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function centretargetreportExcel($reportData, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -208,7 +214,7 @@ class OperationsReportController extends Controller
             $activeSheet->setCellValue('G'.$counter, number_format(($monthly_achived_total / $monthly_target_total) * 100, 2).'%')->getStyle('G'.$counter)->getFont()->setBold(true);
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'CenterTargetReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'CenterTargetReport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -217,7 +223,7 @@ class OperationsReportController extends Controller
     /**
      * Company Health Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function companyHealth(Request $request): mixed
     {
@@ -269,12 +275,12 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $month
      * @param  (mixed)  $year
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function companyHealthExcel($reportData, $month, $year, $start_date, $end_date, $remaining_days, $regions, $account): mixed
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -291,8 +297,8 @@ class OperationsReportController extends Controller
         if (count($regions)) {
             foreach ($regions as $region) {
                 $activeSheet->setCellValue('D'.$counter, $account->name)->getStyle('D'.$counter++)->getFont()->setBold(true);
-                $activeSheet->setCellValue('D'.$counter, 'Health of the Company for Month of '.\Carbon\Carbon::parse($start_date)->format('M, Y'))->getStyle('D'.$counter++)->getFont()->setBold(true);
-                $activeSheet->setCellValue('D'.$counter, 'Region Wise Monthly Target '.\Carbon\Carbon::parse($start_date)->format('M, Y'))->getStyle('D'.$counter++)->getFont()->setBold(true);
+                $activeSheet->setCellValue('D'.$counter, 'Health of the Company for Month of '.Carbon::parse($start_date)->format('M, Y'))->getStyle('D'.$counter++)->getFont()->setBold(true);
+                $activeSheet->setCellValue('D'.$counter, 'Region Wise Monthly Target '.Carbon::parse($start_date)->format('M, Y'))->getStyle('D'.$counter++)->getFont()->setBold(true);
                 $activeSheet->setCellValue('D'.$counter, $region['region_name'])->getStyle('D'.$counter++)->getFont()->setBold(true);
                 $activeSheet->setCellValue('D'.$counter, $remaining_days.' Days Remaining ')->getStyle('D'.$counter++)->getFont()->setBold(true);
 
@@ -351,7 +357,7 @@ class OperationsReportController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'CompanyHealthReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'CompanyHealthReport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -360,7 +366,7 @@ class OperationsReportController extends Controller
     /**
      * Company Health Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function Highestpayingclients(Request $request): mixed
     {
@@ -368,14 +374,7 @@ class OperationsReportController extends Controller
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
         $filters['regions'] = Regions::getAll(Auth::user()->account_id, 'custom', 'name', 'asc')->getDictionary();
@@ -414,20 +413,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function highestpaidclientExcel($reportData, $filters, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -469,7 +468,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'Higest Paid Client'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Higest Paid Client'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -478,7 +477,7 @@ class OperationsReportController extends Controller
     /**
      * List of Clients who claimed refunds
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function Listofrefundsforacertainperioddatebased(Request $request): mixed
     {
@@ -486,18 +485,11 @@ class OperationsReportController extends Controller
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
         if ($request->type) {
             if ($request->type == 'plan') {
 
-                /*Becasue These both report are same so we same method*/
+                /* Becasue These both report are same so we same method */
                 $reportData = Finanaces::ListofClientswhoclaimedrefundsdaywise($request->all(), Auth::user()->account_id);
 
                 switch ($request->get('medium_type')) {
@@ -569,20 +561,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function ListofClientswhoclaimedrefundsdaysbaseExcel($reportData, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -619,7 +611,7 @@ class OperationsReportController extends Controller
                     $activeSheet->setCellValue('C'.$counter, $reportRow['location'])->getStyle('C'.$counter)->getFont();
                     $activeSheet->setCellValue('D'.$counter, $reportRow['refund_note'])->getStyle('D'.$counter)->getFont();
                     $activeSheet->setCellValue('E'.$counter, number_format($reportRow['cash_amount'], 2))->getStyle('E'.$counter)->getFont();
-                    $activeSheet->setCellValue('F'.$counter, ($reportRow['created_at']) ? \Carbon\Carbon::parse($reportRow['created_at'], null)->format('M j, Y') : '-')->getStyle('F'.$counter)->getFont();
+                    $activeSheet->setCellValue('F'.$counter, ($reportRow['created_at']) ? Carbon::parse($reportRow['created_at'], null)->format('M j, Y') : '-')->getStyle('F'.$counter)->getFont();
                     $counter++;
                 }
                 $grefund += $trefund;
@@ -636,7 +628,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'List of client who claimed refund days base against plans'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'List of client who claimed refund days base against plans'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -649,20 +641,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function ListofClientswhoclaimedrefundsdaybasenonplansExcel($reportData, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -709,7 +701,7 @@ class OperationsReportController extends Controller
                     $activeSheet->setCellValue('H'.$counter, $reportRow['location'])->getStyle('H'.$counter)->getFont();
                     $activeSheet->setCellValue('I'.$counter, $reportRow['refund_note'])->getStyle('I'.$counter)->getFont();
                     $activeSheet->setCellValue('J'.$counter, number_format($reportRow['cash_amount'], 2))->getStyle('J'.$counter)->getFont();
-                    $activeSheet->setCellValue('K'.$counter, ($reportRow['created_at']) ? \Carbon\Carbon::parse($reportRow['created_at'], null)->format('M j, Y') : '-')->getStyle('K'.$counter)->getFont();
+                    $activeSheet->setCellValue('K'.$counter, ($reportRow['created_at']) ? Carbon::parse($reportRow['created_at'], null)->format('M j, Y') : '-')->getStyle('K'.$counter)->getFont();
                     $counter++;
                 }
                 $grefund += $trefund;
@@ -726,7 +718,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'List of client who claimed refund day base against non plans'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'List of client who claimed refund day base against non plans'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -735,7 +727,7 @@ class OperationsReportController extends Controller
     /**
      * List of service that can be offer as complimentory
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function ListofservicesthatCANbeofferedComplimentary(Request $request): mixed
     {
@@ -743,14 +735,7 @@ class OperationsReportController extends Controller
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $reportData = Operations::listofservicecanoffercomplimentory($request->all(), Auth::user()->account_id);
 
@@ -784,20 +769,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function listofservicethatcanbeofferascomplimentoryExcel($reportData, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -827,7 +812,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'List of servies that can be offer as complimentory'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'List of servies that can be offer as complimentory'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -836,21 +821,14 @@ class OperationsReportController extends Controller
     /**
      * List of service that can not be offer as complimentory
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function ListofservicesthatCANnotbeofferedComplimentary(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_List_of_services_that_CAN_not_be_offered_Complimentary')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $reportData = Operations::listofservicecannotoffercomplimentory($request->all(), Auth::user()->account_id);
 
@@ -884,20 +862,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function listofservicethatcannotbeofferascomplimentoryExcel($reportData, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -927,7 +905,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'List of servies that can not be offer as complimentory'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'List of servies that can not be offer as complimentory'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -936,21 +914,14 @@ class OperationsReportController extends Controller
     /**
      * Conversion report for consultancy
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function conversionreportconsultancy(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_conversion_report_consultancy')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
         $reportData = Operations::conversionreportconsultancy($request->all(), Auth::user()->account_id);
         switch ($request->get('medium_type')) {
             case 'web':
@@ -982,13 +953,13 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function conversionreportconsultancyExcel($reportData, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1057,7 +1028,7 @@ class OperationsReportController extends Controller
             $counter++;
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'Conversion Report For Consultancy'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Conversion Report For Consultancy'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
@@ -1065,21 +1036,14 @@ class OperationsReportController extends Controller
     /**
      * Conversion report for Treatments
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function conversionreportTreatment(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_conversion_report_treatment')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $reportData = Operations::conversionreporttreatment($request->all(), Auth::user()->account_id);
 
@@ -1113,13 +1077,13 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function conversionreporttreatmentExcel($reportData, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1176,7 +1140,7 @@ class OperationsReportController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'Conversion Report For Treatment'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Conversion Report For Treatment'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1185,7 +1149,7 @@ class OperationsReportController extends Controller
     /**
      * DAR Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     /** @deprecated Moved to App\Services\Reports\Operations\DarReport. */
 
@@ -1198,21 +1162,14 @@ class OperationsReportController extends Controller
     /**
      * DAR Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function complimentoryreport(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_complimentory_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
         //        $filters['users'] = User::get()->getDictionary();
         $filters['users'] = User::getAllRecords(Auth::user()->account_id)->getDictionary();
         $filters['cities'] = Cities::getAllRecordsDictionary(Auth::user()->account_id);
@@ -1263,13 +1220,13 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function complimentorytreatmentexcel($reportData, $start_date, $end_date, $filters): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1315,8 +1272,8 @@ class OperationsReportController extends Controller
                 $activeSheet->setCellValue('G'.$counter, csv_safe($filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name))->getStyle('G'.$counter)->getFont();
                 $activeSheet->setCellValue('H'.$counter, csv_safe($filters['doctors'][$reportRow->doctor_id]->name))->getStyle('H'.$counter)->getFont();
                 $activeSheet->setCellValue('I'.$counter, csv_safe($filters['services'][$reportRow->service_id]->name))->getStyle('I'.$counter)->getFont();
-                $activeSheet->setCellValue('J'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('J'.$counter)->getFont();
-                $activeSheet->setCellValue('K'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-')->getStyle('K'.$counter)->getFont();
+                $activeSheet->setCellValue('J'.$counter, Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('J'.$counter)->getFont();
+                $activeSheet->setCellValue('K'.$counter, ($reportRow->scheduled_date) ? Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-')->getStyle('K'.$counter)->getFont();
                 $activeSheet->setCellValue('L'.$counter, csv_safe($reportRow->invoices))->getStyle('L'.$counter)->getFont();
                 $counter++;
             }
@@ -1325,7 +1282,7 @@ class OperationsReportController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'Complimentory Treatment'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Complimentory Treatment'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1334,21 +1291,14 @@ class OperationsReportController extends Controller
     /**
      * DTR report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function dtrreport(Request $request): mixed
     {
         if (! Gate::allows('operations_reports_dtr_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
         $filters['doctors'] = Doctors::getAll(Auth::user()->account_id)->getDictionary();
         $filters['services'] = Services::getAllRecordsDictionary(Auth::user()->account_id);
         $reportData = Operations::dtrreport($request->all(), Auth::user()->account_id, $filters);
@@ -1383,20 +1333,20 @@ class OperationsReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $year
      * @param  (mixed)  $month
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function dtrreportExcel($reportData, $month, $year): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'For the month of '.\Carbon\Carbon::createFromDate($year, $month, 1)->format('M Y'));
+        $activeSheet->setCellValue('B1', 'For the month of '.Carbon::createFromDate($year, $month, 1)->format('M Y'));
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -1468,7 +1418,7 @@ class OperationsReportController extends Controller
 
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'DTR Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'DTR Report'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 

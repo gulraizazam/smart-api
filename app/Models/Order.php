@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Order extends BaseModel
 {
     use HasFactory;
+    use ParsesDateRange;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status','quantity','prescribed_by','employee_id','discount'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status', 'quantity', 'prescribed_by', 'employee_id', 'discount'];
 
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false, $order_type = 'sale')
@@ -31,7 +32,7 @@ class Order extends BaseModel
         $product_id = [];
         if ($request['query'] != null) {
             if ($request['query']['search']['product_id'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['product_id'] . '%')->pluck('id')->toArray();
+                $product_id = Product::where('name', 'like', '%'.$request['query']['search']['product_id'].'%')->pluck('id')->toArray();
             }
         }
 
@@ -49,7 +50,7 @@ class Order extends BaseModel
         } else {
             return self::where(function ($query) {
                 $query->whereIn('location_id', ACL::getUserCentres());
-                    
+
             })
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
@@ -63,9 +64,9 @@ class Order extends BaseModel
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $order_type = 'sale')
@@ -74,12 +75,12 @@ class Order extends BaseModel
         $product_id = [];
         if ($request['query'] != null) {
             if ($request['query']['search']['product_id'] != null) {
-                $product_id = Product::where('name', 'like', '%' . $request['query']['search']['product_id'] . '%')->pluck('id');
+                $product_id = Product::where('name', 'like', '%'.$request['query']['search']['product_id'].'%')->pluck('id');
             }
         }
 
         if (count($where)) {
-            
+
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
@@ -102,7 +103,7 @@ class Order extends BaseModel
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres());
                 })
-               
+
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
@@ -110,22 +111,17 @@ class Order extends BaseModel
     /**
      * Get filters
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  Request  $request
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function general_filters($request, $account_id, $search = false, $filter_flag = false)
     {
         $where = [];
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($filters) {
             if (hasFilter($filters, 'order_id')) {
@@ -137,7 +133,7 @@ class Order extends BaseModel
             if (hasFilter($filters, 'location_type')) {
                 if ($filters['location_type'] == 'branch') {
                     $where[][] = ['location_id' => $filters['location']];
-                } else if ($filters['location_type'] == 'warehouse') {
+                } elseif ($filters['location_type'] == 'warehouse') {
                     $where[][] = ['warehouse_id' => $filters['location']];
                 } else {
                     Filters::forget(Auth::user()->id, 'location', 'name');
@@ -154,30 +150,31 @@ class Order extends BaseModel
                 $where[] = ['created_at', '<=', $end_date_time];
             }
         }
+
         return $where;
     }
 
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
-    public static function createRecord($request, $account_id,$products)
+    public static function createRecord($request, $account_id, $products)
     {
         $data = $request->all();
-        if(isset($data['name']) && isset($data['phone']) && $data['phone'] !=""){
+        if (isset($data['name']) && isset($data['phone']) && $data['phone'] != '') {
             $patient = Patients::where(['phone' => $data['phone']])->first();
-            if(!$patient){
+            if (! $patient) {
                 $newPatient = Patients::create([
-                    'name'=>$data['name'],
-                    'phone'=>$data['phone'],
+                    'name' => $data['name'],
+                    'phone' => $data['phone'],
                 ]);
                 $data['patient_id'] = $newPatient->id;
-            }else{
-                $data['patient_id'] =$patient->id;
+            } else {
+                $data['patient_id'] = $patient->id;
             }
-           
+
         }
         $productTotals = [];
         // Iterate through the arrays
@@ -190,7 +187,7 @@ class Order extends BaseModel
             // Store the total in the result array, using the product ID as the key
             $productTotals[$productId] = $total;
         }
-       
+
         $location_id = $data['location_id'];
         // Set Account ID
         unset($data['location_id']);
@@ -199,21 +196,21 @@ class Order extends BaseModel
         $data['created_by'] = Auth::id();
         $data['total_price'] = $request->grand_total;
         $data['status'] = 1;
-       
-        $record = new Order();
+
+        $record = new Order;
         $record->account_id = $account_id;
-        $record->patient_id = $data['patient_id'] ?$data['patient_id']: $data['employee_id'];
+        $record->patient_id = $data['patient_id'] ? $data['patient_id'] : $data['employee_id'];
         $record->total_price = $data['total_price'];
         $record->created_by = Auth::id();
         $record->location_id = $data['location_id'];
         $record->payment_mode = $data['payment_mode'];
-       $record->quantity = array_sum($products);
-       $record->prescribed_by = $data['doctor_id'];
-       $record->employee_id = $data['employee_id'] ?? null;
-       $record->discount = $data['discount'] ?? 0;
+        $record->quantity = array_sum($products);
+        $record->prescribed_by = $data['doctor_id'];
+        $record->employee_id = $data['employee_id'] ?? null;
+        $record->discount = $data['discount'] ?? 0;
         $record->save();
-        //$record = self::create($data);
-        
+        // $record = self::create($data);
+
         return $record;
     }
 
@@ -241,8 +238,8 @@ class Order extends BaseModel
     public static function DeleteRecord($id)
     {
         $order = self::getData($id);
-        
-        if (!$order) {
+
+        if (! $order) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         if ($order->order_type == 'refund') {
@@ -258,7 +255,7 @@ class Order extends BaseModel
                 $order_detail->update([
                     'quantity' => $order_detail->quantity + $quantity,
                 ]);
-               
+
             }
         }
 
@@ -267,27 +264,25 @@ class Order extends BaseModel
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = OrderDetail::where('order_id', $id)->get();
-        if (!$detail_records->isEmpty()) {
+        if (! $detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
                 $inventory = Inventory::where('product_id', $detail_record->product_id)
-                ->where('location_id',$order->location_id)->first();
-                $updated_quantity = $inventory->quantity+$detail_record->quantity;
-                $inventory->update(['quantity'=>$updated_quantity]);
+                    ->where('location_id', $order->location_id)->first();
+                $updated_quantity = $inventory->quantity + $detail_record->quantity;
+                $inventory->update(['quantity' => $updated_quantity]);
                 $detail_record->delete();
-                
+
             }
-           
+
         }
         $stock_records = Stock::where('order_id', $id)->get();
-        if (!$stock_records->isEmpty()) {
+        if (! $stock_records->isEmpty()) {
             foreach ($stock_records as $stock_record) {
                 $stock_record->delete();
             }
         }
-       
-       
-        $record = $order->delete();
 
+        $record = $order->delete();
 
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
@@ -295,7 +290,7 @@ class Order extends BaseModel
     public static function refund($id, $request)
     {
         $old_order = self::withSum('orderDetail', 'quantity')->find($id);
-        $refund_order = self::where("refund_order_id",  $old_order->id)->first();
+        $refund_order = self::where('refund_order_id', $old_order->id)->first();
         $productTotals = [];
         // Iterate through the arrays
         for ($i = 0; $i < count($request['product_id']); $i++) {
@@ -342,6 +337,7 @@ class Order extends BaseModel
 
             return $refund;
         }
+
         return false;
     }
 
@@ -367,7 +363,7 @@ class Order extends BaseModel
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {
@@ -398,10 +394,12 @@ class Order extends BaseModel
 
         return $record;
     }
+
     public function centre(): BelongsTo
     {
         return $this->belongsTo(Locations::class, 'location_id');
     }
+
     public function doctor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'prescribed_by');

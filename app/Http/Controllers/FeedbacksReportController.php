@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ACL;
 use App\Http\Requests\Feedback\FeedbackReportRequest;
 use App\Services\Feedback\FeedbackService;
 use Illuminate\Contracts\View\View;
@@ -39,12 +40,17 @@ class FeedbacksReportController extends Controller
     {
         $validated = $request->validated();
 
-        $locationId = !empty($validated['centre_id']) ? (int) $validated['centre_id'] : null;
+        $locationIds = !empty($validated['centre_id'])
+            ? array_values(array_filter(array_map('intval', (array) $validated['centre_id']), fn (int $id): bool => $id > 0))
+            : [];
+        if (empty($locationIds)) {
+            $locationIds = array_map('intval', ACL::getUserCentres());
+        }
         $doctorId = !empty($validated['doctor_id']) ? (int) $validated['doctor_id'] : null;
         $serviceId = !empty($validated['service_id']) ? (int) $validated['service_id'] : null;
 
         $result = $this->feedbackService->getReportData(
-            locationId: $locationId,
+            locationIds: $locationIds,
             doctorId: $doctorId,
             serviceId: $serviceId,
             dateRange: $validated['date_range'],
@@ -65,8 +71,16 @@ class FeedbacksReportController extends Controller
 
     public function loadFutureTreatmentsReport(Request $request): View
     {
+        $centreIds = $request->input('centre_id');
+        $centreIds = empty($centreIds)
+            ? []
+            : array_values(array_filter(array_map('intval', (array) $centreIds), fn (int $id): bool => $id > 0));
+        if (empty($centreIds)) {
+            $centreIds = array_map('intval', ACL::getUserCentres());
+        }
+
         $result = $this->feedbackService->getFutureTreatmentsData(
-            $request->input('centre_id'),
+            $centreIds,
             $request->input('service_id'),
         );
 
