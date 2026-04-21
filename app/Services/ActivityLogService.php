@@ -148,14 +148,28 @@ class ActivityLogService
             $query->where('created_by', $filters['user_id']);
         }
 
-        // Freetext search across the stored description. LIKE with a leading
-        // wildcard is unindexed, but description is short (varchar 2000) and
-        // the other filters (account_id, created_at range) pre-narrow the
-        // scan to a manageable window. Escape % and _ to avoid operator
-        // injection from the search term itself.
+        // Freetext search — routed to clear-text columns only. The
+        // `description` column is encrypted at rest (EncryptedLegacy cast
+        // on Activity model), so a LIKE against it would only match the
+        // 397k pre-encryption rows and silently miss new writes. Instead
+        // we search:
+        //   activities.patient   (stored patient name)
+        //   activities.service   (stored service name)
+        //   activities.action    (event verb)
+        //   users.name via created_by relation (actor)
+        // Each already narrows well under the outer account_id + date scan.
         if (! empty($filters['search'])) {
             $escaped = addcslashes((string) $filters['search'], '%_\\');
-            $query->where('description', 'like', '%'.$escaped.'%');
+            $needle = '%'.$escaped.'%';
+
+            $query->where(function ($q) use ($needle): void {
+                $q->where('patient', 'like', $needle)
+                    ->orWhere('service', 'like', $needle)
+                    ->orWhere('action', 'like', $needle)
+                    ->orWhereHas('user', function ($uq) use ($needle): void {
+                        $uq->where('name', 'like', $needle);
+                    });
+            });
         }
 
         // Amount range — financial events carry `amount` as decimal/string

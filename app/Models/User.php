@@ -234,6 +234,16 @@ class User extends Authenticatable
         return $this->hasMany(DoctorHasLocations::class, 'user_id');
     }
 
+    /**
+     * Branches this user can see in the Management Dashboard.
+     * Empty collection = company-wide visibility (per ResourceScopeResolver).
+     */
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Locations::class, 'user_branches', 'user_id', 'location_id')
+            ->withTimestamps();
+    }
+
     public function leads(): HasMany
     {
         return $this->hasMany(Leads::class, 'created_by');

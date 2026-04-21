@@ -1,9 +1,9 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\Conversion;
 
-use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\Invoices;
@@ -17,12 +17,12 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Shared Conversion Service
- * 
+ *
  * Single source of truth for conversion calculations used by:
  * - Dashboard API (/api/dashboard/doctor-wise-conversion)
  * - Reports (/admin/reports/load_conversion_report)
  * - Doctor Dashboard KPI (/api/doctor-dashboard/kpis)
- * 
+ *
  * A consultation is "converted" when ALL of these are true:
  * 1. Appointment is a consultation (appointment_type_id = 1)
  * 2. Appointment status is arrived or converted
@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\DB;
  * NOTE: The consultation's scheduled_date does NOT need to be within the report range.
  * A consultation from a prior month is counted as converted if its first payment falls
  * within the report range. This means converted count can exceed total arrived count.
- * 
+ *
  * Conversion spend = sum of (revenue_in - refund_out) via genericfunctionforstaffwiserevenue
  * for all payments from invoice date within the report date range.
  */
@@ -42,15 +42,15 @@ class ConversionService
 {
     /**
      * Get validated conversions for given appointments.
-     * 
+     *
      * This is the CORE method that all endpoints must use.
      * Returns per-appointment conversion data including spend.
      *
-     * @param Collection $convertedAppointments Appointment models (pre-filtered by status, type, payment existence)
-     * @param string $startDate Y-m-d
-     * @param string $endDate Y-m-d
-     * @param bool $includeDetails Whether to include patient/doctor/service detail info (for reports)
-     * @param bool $canViewContact Whether to mask phone numbers
+     * @param  Collection  $convertedAppointments  Appointment models (pre-filtered by status, type, payment existence)
+     * @param  string  $startDate  Y-m-d
+     * @param  string  $endDate  Y-m-d
+     * @param  bool  $includeDetails  Whether to include patient/doctor/service detail info (for reports)
+     * @param  bool  $canViewContact  Whether to mask phone numbers
      * @return array ['conversions' => [...], 'by_doctor' => [...], 'by_service' => [...], 'total_spend' => float]
      */
     public function getValidatedConversions(
@@ -72,7 +72,7 @@ class ConversionService
             ->orderBy('created_at', 'asc')
             ->get()
             ->groupBy('appointment_id')
-            ->map(fn($group) => $group->first());
+            ->map(fn ($group) => $group->first());
 
         // Get ALL packages per appointment (not keyBy which loses duplicates)
         $allPackages = Packages::whereIn('appointment_id', $appointmentIds)->get()->groupBy('appointment_id');
@@ -84,7 +84,7 @@ class ConversionService
         // Bulk fetch package services existence (min created_at per bundle)
         $allBundleIds = $packageBundles->flatten()->pluck('id')->toArray();
         $packageServicesExist = [];
-        if (!empty($allBundleIds)) {
+        if (! empty($allBundleIds)) {
             $packageServicesExist = PackageService::whereIn('package_bundle_id', $allBundleIds)
                 ->select('package_bundle_id', DB::raw('MIN(created_at) as min_created_at'))
                 ->groupBy('package_bundle_id')
@@ -106,8 +106,8 @@ class ConversionService
         $allPackageAdvances = PackageAdvances::whereIn('package_id', $allPackageIds)
             ->where('cash_amount', '>', 0)
             ->whereNull('deleted_at')
-            ->where('created_at', '>=', $startDate . ' 00:00:00')
-            ->where('created_at', '<=', $endDate . ' 23:59:59')
+            ->where('created_at', '>=', $startDate.' 00:00:00')
+            ->where('created_at', '<=', $endDate.' 23:59:59')
             ->get()
             ->groupBy('package_id');
 
@@ -148,10 +148,11 @@ class ConversionService
 
             // Step 1: Get invoice
             $invoice = $invoices->get($appointment->id);
-            if (!$invoice) {
+            if (! $invoice) {
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -163,6 +164,7 @@ class ConversionService
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -180,10 +182,11 @@ class ConversionService
                     }
                 }
             }
-            if (!$hasServiceAfterInvoice) {
+            if (! $hasServiceAfterInvoice) {
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -195,7 +198,7 @@ class ConversionService
                 foreach ($payments as $fp) {
                     $fpDate = Carbon::parse($fp->created_at)->format('Y-m-d');
                     if ($fpDate >= $invoiceDate) {
-                        if (!$earliestPayment || $fp->created_at < $earliestPayment->created_at) {
+                        if (! $earliestPayment || $fp->created_at < $earliestPayment->created_at) {
                             $earliestPayment = $fp;
                         }
                         break; // first qualifying payment for this package found
@@ -203,10 +206,11 @@ class ConversionService
                 }
             }
 
-            if (!$earliestPayment) {
+            if (! $earliestPayment) {
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -216,6 +220,7 @@ class ConversionService
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -226,7 +231,7 @@ class ConversionService
 
             foreach ($packageIds as $pkgId) {
                 $advances = $allPackageAdvances->get($pkgId, collect())
-                    ->filter(fn($pa) => Carbon::parse($pa->created_at)->format('Y-m-d') >= $invoiceDate);
+                    ->filter(fn ($pa) => Carbon::parse($pa->created_at)->format('Y-m-d') >= $invoiceDate);
 
                 foreach ($advances as $advance) {
                     $hasAdvances = true;
@@ -238,10 +243,11 @@ class ConversionService
                 }
             }
 
-            if (!$hasAdvances) {
+            if (! $hasAdvances) {
                 if ($includeDetails) {
                     $conversions[$appointment->id] = $detailInfo;
                 }
+
                 continue;
             }
 
@@ -250,7 +256,7 @@ class ConversionService
 
             // Track by doctor
             $doctorId = $appointment->doctor_id;
-            if (!isset($byDoctor[$doctorId])) {
+            if (! isset($byDoctor[$doctorId])) {
                 $byDoctor[$doctorId] = ['count' => 0, 'spend' => 0];
             }
             $byDoctor[$doctorId]['count']++;
@@ -259,7 +265,7 @@ class ConversionService
             // Track by service
             $serviceId = $appointment->service_id ?? ($appointment->service->id ?? 0);
             $serviceName = $appointment->service->name ?? '';
-            if (!isset($byService[$serviceId])) {
+            if (! isset($byService[$serviceId])) {
                 $byService[$serviceId] = ['name' => $serviceName, 'count' => 0, 'spend' => 0];
             }
             $byService[$serviceId]['count']++;
@@ -288,20 +294,211 @@ class ConversionService
     }
 
     /**
+     * Bucket validated conversions by first-payment month across a multi-
+     * month window. Single bulk pass — avoids the Nx-month × M-doctor blow-up
+     * you get calling calculateForDoctor() once per month.
+     *
+     * Each bucket's spend matches what the Conversion Report would show if
+     * run for just that month: spend per conversion is truncated to the end
+     * of the conversion's first-payment month (advances after that don't
+     * count in the month that "claimed" the conversion).
+     *
+     * @param  list<int>  $doctorIds
+     * @param  list<int>  $locations
+     * @return array<string, array{converted: int, spend: float}> keyed by Y-m
+     */
+    public function monthlySeriesForScope(
+        int $accountId,
+        array $doctorIds,
+        array $locations,
+        string $startDate,
+        string $endDate,
+    ): array {
+        if ($doctorIds === [] || $locations === []) {
+            return [];
+        }
+
+        $arrivedStatusId = $this->getArrivedStatusId($accountId);
+        $convertedStatusId = $this->getConvertedStatusId($accountId);
+        if (! $arrivedStatusId) {
+            return [];
+        }
+        $statusIds = array_filter([$arrivedStatusId, $convertedStatusId]);
+
+        // Distinct candidate appointment IDs — consultations with ≥1 payment
+        // in the window. Raw query to avoid Eloquent hydration.
+        $appointmentIds = DB::table('appointments')
+            ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->where('appointments.appointment_type_id', 1)
+            ->whereIn('appointments.appointment_status_id', $statusIds)
+            ->whereIn('appointments.doctor_id', $doctorIds)
+            ->whereIn('appointments.location_id', $locations)
+            ->where('appointments.scheduled_date', '<=', $endDate)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->whereBetween('package_advances.created_at', [$startDate.' 00:00:00', $endDate.' 23:59:59'])
+            ->distinct()
+            ->pluck('appointments.id')
+            ->map(static fn ($id): int => (int) $id)
+            ->all();
+
+        if ($appointmentIds === []) {
+            return [];
+        }
+
+        // Earliest invoice per appointment.
+        $invoices = DB::table('invoices')
+            ->whereIn('appointment_id', $appointmentIds)
+            ->whereNull('deleted_at')
+            ->select('appointment_id', DB::raw('MIN(created_at) as created_at'))
+            ->groupBy('appointment_id')
+            ->pluck('created_at', 'appointment_id')
+            ->all();
+
+        $packageRows = DB::table('packages')
+            ->whereIn('appointment_id', $appointmentIds)
+            ->select('id', 'appointment_id')
+            ->get();
+
+        $packagesByAppointment = [];
+        $allPackageIds = [];
+        foreach ($packageRows as $pkg) {
+            $packagesByAppointment[(int) $pkg->appointment_id][] = (int) $pkg->id;
+            $allPackageIds[] = (int) $pkg->id;
+        }
+        if ($allPackageIds === []) {
+            return [];
+        }
+
+        // Per-package earliest bundle→service created_at. One join query.
+        $earliestServicePerPackage = DB::table('package_bundles as pb')
+            ->join('package_services as ps', 'ps.package_bundle_id', '=', 'pb.id')
+            ->whereIn('pb.package_id', $allPackageIds)
+            ->select('pb.package_id', DB::raw('MIN(ps.created_at) as min_created_at'))
+            ->groupBy('pb.package_id')
+            ->pluck('min_created_at', 'package_id')
+            ->all();
+
+        // All qualifying payments in window — narrow columns, no relations.
+        $advanceRows = DB::table('package_advances')
+            ->whereIn('package_id', $allPackageIds)
+            ->where('cash_amount', '>', 0)
+            ->whereNull('deleted_at')
+            ->whereBetween('created_at', [$startDate.' 00:00:00', $endDate.' 23:59:59'])
+            ->select('package_id', 'created_at', 'cash_amount', 'cash_flow', 'is_adjustment', 'is_tax', 'is_cancel', 'is_refund')
+            ->get();
+
+        $advancesByPackage = [];
+        foreach ($advanceRows as $row) {
+            $advancesByPackage[(int) $row->package_id][] = $row;
+        }
+
+        $buckets = [];
+
+        foreach ($appointmentIds as $appointmentId) {
+            $invoiceCreatedAt = $invoices[$appointmentId] ?? null;
+            if (! $invoiceCreatedAt) {
+                continue;
+            }
+            $invoiceDate = substr((string) $invoiceCreatedAt, 0, 10);
+
+            $packageIds = $packagesByAppointment[$appointmentId] ?? [];
+            if ($packageIds === []) {
+                continue;
+            }
+
+            // Step 3: package service exists on/after invoice date (any package).
+            $hasServiceAfterInvoice = false;
+            foreach ($packageIds as $pkgId) {
+                $minServiceAt = $earliestServicePerPackage[$pkgId] ?? null;
+                if ($minServiceAt !== null && substr((string) $minServiceAt, 0, 10) >= $invoiceDate) {
+                    $hasServiceAfterInvoice = true;
+                    break;
+                }
+            }
+            if (! $hasServiceAfterInvoice) {
+                continue;
+            }
+
+            // Step 4: earliest payment on/after invoice date, cash_flow='in'.
+            $earliestPaymentAt = null;
+            foreach ($packageIds as $pkgId) {
+                foreach ($advancesByPackage[$pkgId] ?? [] as $row) {
+                    if ($row->cash_flow !== 'in') {
+                        continue;
+                    }
+                    $rowDate = substr((string) $row->created_at, 0, 10);
+                    if ($rowDate < $invoiceDate) {
+                        continue;
+                    }
+                    if ($earliestPaymentAt === null || $row->created_at < $earliestPaymentAt) {
+                        $earliestPaymentAt = $row->created_at;
+                    }
+                }
+            }
+            if ($earliestPaymentAt === null) {
+                continue;
+            }
+
+            $fpDate = substr((string) $earliestPaymentAt, 0, 10);
+            if ($fpDate < $startDate || $fpDate > $endDate) {
+                continue;
+            }
+
+            $bucketKey = substr($fpDate, 0, 7);
+            $fpMonthEnd = Carbon::parse($earliestPaymentAt)->endOfMonth()->format('Y-m-d');
+
+            // Step 6: sum spend from invoice date through end of first-payment
+            // month. Inline revenue/refund classification — no helper call,
+            // no relation load.
+            $revenueIn = 0.0;
+            $refundOut = 0.0;
+            $hasAdvances = false;
+            foreach ($packageIds as $pkgId) {
+                foreach ($advancesByPackage[$pkgId] ?? [] as $row) {
+                    $rowDate = substr((string) $row->created_at, 0, 10);
+                    if ($rowDate < $invoiceDate || $rowDate > $fpMonthEnd) {
+                        continue;
+                    }
+                    $hasAdvances = true;
+                    $amount = (float) $row->cash_amount;
+                    if ($row->cash_flow === 'in'
+                        && (int) $row->is_adjustment === 0
+                        && (int) $row->is_tax === 0
+                        && (int) $row->is_cancel === 0
+                    ) {
+                        $revenueIn += $amount;
+                    } elseif ($row->cash_flow === 'out' && (int) $row->is_refund === 1) {
+                        $refundOut += $amount;
+                    }
+                }
+            }
+            if (! $hasAdvances) {
+                continue;
+            }
+
+            $actual = $revenueIn - $refundOut;
+            if (! isset($buckets[$bucketKey])) {
+                $buckets[$bucketKey] = ['converted' => 0, 'spend' => 0.0];
+            }
+            $buckets[$bucketKey]['converted']++;
+            $buckets[$bucketKey]['spend'] += $actual;
+        }
+
+        return $buckets;
+    }
+
+    /**
      * Fetch candidate converted appointments (pre-filter).
-     * 
+     *
      * Gets all arrived/converted consultations that have at least one payment
      * in the date range. This is the initial candidate set before full validation.
      *
-     * @param array $consultantIds Doctor IDs
-     * @param array $locations Location IDs
-     * @param int $arrivedStatusId
-     * @param int|null $convertedStatusId
-     * @param string $startDate Y-m-d
-     * @param string $endDate Y-m-d
-     * @param array $extraWhere Additional where conditions
-     * @param array $eagerLoad Relations to eager load
-     * @return Collection
+     * @param  array  $consultantIds  Doctor IDs
+     * @param  array  $locations  Location IDs
+     * @param  string  $startDate  Y-m-d
+     * @param  string  $endDate  Y-m-d
+     * @param  array  $extraWhere  Additional where conditions
+     * @param  array  $eagerLoad  Relations to eager load
      */
     public function fetchCandidateAppointments(
         array $consultantIds,
@@ -324,8 +521,8 @@ class ConversionService
             ->whereIn('appointments.location_id', $locations)
             ->where('appointments.scheduled_date', '<=', $endDate)
             ->where('package_advances.cash_amount', '>', 0)
-            ->where('package_advances.created_at', '>=', $startDate . ' 00:00:00')
-            ->where('package_advances.created_at', '<=', $endDate . ' 23:59:59')
+            ->where('package_advances.created_at', '>=', $startDate.' 00:00:00')
+            ->where('package_advances.created_at', '<=', $endDate.' 23:59:59')
             ->select('appointments.*');
 
         foreach ($extraWhere as $condition) {
@@ -338,14 +535,7 @@ class ConversionService
     /**
      * Get total arrived appointments count (for conversion rate denominator).
      *
-     * @param array $locations
-     * @param int $arrivedStatusId
-     * @param int|null $convertedStatusId
-     * @param string $startDate
-     * @param string $endDate
-     * @param array|null $doctorIds If null, don't filter by doctor
-     * @param array $extraWhere
-     * @return int
+     * @param  array|null  $doctorIds  If null, don't filter by doctor
      */
     public function getTotalArrivedCount(
         array $locations,
@@ -378,13 +568,6 @@ class ConversionService
     /**
      * Get total arrived appointments grouped by doctor.
      *
-     * @param array $locations
-     * @param int $arrivedStatusId
-     * @param int|null $convertedStatusId
-     * @param string $startDate
-     * @param string $endDate
-     * @param array|null $doctorIds
-     * @param array $extraWhere
      * @return array [doctor_id => count]
      */
     public function getTotalArrivedByDoctor(
@@ -419,15 +602,6 @@ class ConversionService
 
     /**
      * Get total arrived appointments grouped by service.
-     *
-     * @param array $consultantIds
-     * @param array $locations
-     * @param int $arrivedStatusId
-     * @param int|null $convertedStatusId
-     * @param string $startDate
-     * @param string $endDate
-     * @param array $extraWhere
-     * @return Collection
      */
     public function getTotalArrivedByService(
         array $consultantIds,
@@ -460,10 +634,8 @@ class ConversionService
      * Calculate conversion for a single doctor (used by Doctor Dashboard KPI).
      * Uses the same validated logic as the other endpoints.
      *
-     * @param int $doctorId
-     * @param string $startDate Y-m-d
-     * @param string $endDate Y-m-d
-     * @param int $accountId
+     * @param  string  $startDate  Y-m-d
+     * @param  string  $endDate  Y-m-d
      * @return array ['total_arrived' => int, 'total_converted' => int, 'conversion_rate' => float, 'total_spend' => float, 'avg_client_value' => float]
      */
     public function calculateForDoctor(int $doctorId, string $startDate, string $endDate, int $accountId): array
@@ -471,7 +643,7 @@ class ConversionService
         $arrivedStatusId = $this->getArrivedStatusId($accountId);
         $convertedStatusId = $this->getConvertedStatusId($accountId);
 
-        if (!$arrivedStatusId) {
+        if (! $arrivedStatusId) {
             return $this->emptyDoctorResult();
         }
 
@@ -542,6 +714,7 @@ class ConversionService
             ->where('account_id', $accountId)
             ->where('is_arrived', 1)
             ->first();
+
         return $status ? (int) $status->id : null;
     }
 
@@ -554,12 +727,10 @@ class ConversionService
             ->where('account_id', $accountId)
             ->where('is_converted', 1)
             ->first();
+
         return $status ? (int) $status->id : null;
     }
 
-    /**
-     * @return array
-     */
     private function emptyResult(): array
     {
         return [
@@ -570,9 +741,6 @@ class ConversionService
         ];
     }
 
-    /**
-     * @return array
-     */
     private function emptyDoctorResult(): array
     {
         return [
