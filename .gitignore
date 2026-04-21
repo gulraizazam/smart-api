@@ -27,3 +27,4 @@ composer.json
 /.vscode
 server.php
 .sql
+.claude/settings.local.json

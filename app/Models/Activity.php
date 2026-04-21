@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\EncryptedLegacy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -50,6 +51,16 @@ class Activity extends Model
             'created_by' => 'integer',
             'patient_id' => 'integer',
             'centre_id' => 'integer',
+            // HIPAA §164.312(a)(2)(iv): encrypt at rest. EncryptedLegacy is
+            // forward-compatible with the 397k existing plaintext rows — on
+            // read, a failed decrypt falls back to returning the raw value.
+            // New writes from this point forward are AES-256-CBC/HMAC.
+            //
+            // IMPORTANT: description-text LIKE search is no longer reliable
+            // (encrypted envelopes don't contain the search term). The
+            // ActivityLogService search has been re-routed to clear-text
+            // columns: patient, service, action, and the user.name relation.
+            'description' => EncryptedLegacy::class,
         ];
     }
 

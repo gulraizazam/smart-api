@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Services\Dashboard;
 
 use App\Enums\DashboardPeriod;
@@ -10,6 +11,7 @@ use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\Services;
 use App\Reports\dashboardreport;
+use App\Services\Dashboard\Support\RevenueInvoiceQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +33,7 @@ class DashboardRevenueService
         ?string $period = 'today',
         ?Request $request = null,
     ): array {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return ['collection' => null, 'todaycollection' => []];
         }
 
@@ -53,31 +55,31 @@ class DashboardRevenueService
         ?string $startDate = null,
         ?string $endDate = null,
     ): array {
-        if (!Gate::allows('dashboard_states')) {
+        if (! Gate::allows('dashboard_states')) {
             return ['revenue' => 0.0];
         }
 
-        $userCentres ??= DashboardHelper::getUserCentres();
-        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-
-        if (!$startDate || !$endDate) {
+        if (! $startDate || ! $endDate) {
             [$startDate, $endDate] = DashboardPeriod::Today->dateRange();
         }
 
-        $revenue = Invoices::query()
-            ->whereIn('location_id', $userCentres)
-            ->where('invoice_status_id', $invoiceStatusId)
-            ->whereBetween('created_at', ["{$startDate} 00:00:00", "{$endDate} 23:59:59"])
-            ->sum('total_price');
+        // Delegates to the canonical paid-invoice aggregate. Management
+        // Dashboard consumes the same helper so the two never drift.
+        $revenue = RevenueInvoiceQuery::paidTotal(
+            accountId: (int) (Auth::user()->account_id ?? 0),
+            locationIds: array_values(array_map('intval', $userCentres ?? DashboardHelper::getUserCentres())),
+            startDate: $startDate,
+            endDate: $endDate,
+        );
 
-        return ['revenue' => (float) ($revenue ?? 0)];
+        return ['revenue' => $revenue];
     }
 
     public function getCollectionByCentre(string $type = '', ?Request $request = null): array
     {
         $data = self::EMPTY_PERIODS;
 
-        if (!Gate::allows('dashboard_collection_by_centre')) {
+        if (! Gate::allows('dashboard_collection_by_centre')) {
             return ['data' => $data, 'total' => 0];
         }
 
@@ -101,7 +103,7 @@ class DashboardRevenueService
     {
         $data = self::EMPTY_PERIODS;
 
-        if (!Gate::allows('dashboard_my_collection_by_centre')) {
+        if (! Gate::allows('dashboard_my_collection_by_centre')) {
             return ['data' => $data, 'total' => 0];
         }
 
@@ -147,7 +149,7 @@ class DashboardRevenueService
         $dataKey = $period->value;
         $emptyResult = ['data' => [], 'total' => 0, 'colors' => []];
 
-        if (!Gate::allows('dashboard_revenue_by_service')) {
+        if (! Gate::allows('dashboard_revenue_by_service')) {
             return $emptyResult;
         }
 
@@ -185,7 +187,9 @@ class DashboardRevenueService
 
         foreach ($records as $record) {
             $service = $services->get($record->service_id);
-            if (!$service) continue;
+            if (! $service) {
+                continue;
+            }
 
             $parent = $service->parent ?? $service;
             $grouped[$parent->id] ??= ['name' => $parent->name, 'total' => 0, 'color' => $parent->color];
@@ -211,7 +215,7 @@ class DashboardRevenueService
         $dataKey = $period->value;
         $emptyResult = ['data' => [], 'total' => 0, 'colors' => []];
 
-        if (!Gate::allows($permission)) {
+        if (! Gate::allows($permission)) {
             return $emptyResult;
         }
 
@@ -248,7 +252,9 @@ class DashboardRevenueService
 
         foreach ($records as $record) {
             $service = $services->get($record->service_id);
-            if (!$service) continue;
+            if (! $service) {
+                continue;
+            }
 
             $chartData[] = [$service->name, (int) $record->total_price];
             $colors[] = $service->color;
@@ -268,8 +274,8 @@ class DashboardRevenueService
 
         $parentServices = Services::where([
             'account_id' => $accountId,
-            'active'     => '1',
-            'parent_id'  => '0',
+            'active' => '1',
+            'parent_id' => '0',
         ])->get();
 
         if ($parentServices->isEmpty()) {
@@ -344,7 +350,7 @@ class DashboardRevenueService
     ): array {
         $empty = ['data' => self::CHART_HEADER, 'total' => 0];
 
-        if (!Gate::allows($permission)) {
+        if (! Gate::allows($permission)) {
             return $empty;
         }
 

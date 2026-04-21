@@ -48,18 +48,17 @@
 .act-tag--fuchsia { background: #fae8ff; color: #86198f; }
 .act-tag--lime    { background: #ecfccb; color: #3f6212; }
 
-/* The timeline message cell — prevent wrapping so the single-line format
-   stays on one line. Narrow viewports scroll horizontally within the row. */
-.timeline-content > .act-message,
-.timeline-content {
-    overflow: hidden;
-}
-
+/* The timeline message cell — keep the compact format on one line on
+   desktop; allow natural wrapping on mobile (no scroll track, no
+   horizontal overflow). */
 .timeline-content {
     white-space: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    scrollbar-width: none; /* Firefox — no track line */
+}
+.timeline-content::-webkit-scrollbar {
+    display: none; /* Chrome/Safari — no track line */
 }
 
 @media (max-width: 768px) {
@@ -71,5 +70,8 @@
 
     .timeline-content {
         font-size: 0.92rem;
+        white-space: normal;       /* wrap naturally on narrow screens */
+        overflow-x: visible;       /* no scroll track */
+        word-break: break-word;
     }
 }
