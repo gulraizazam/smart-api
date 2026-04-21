@@ -758,17 +758,26 @@ final class PlanService
                 ->where('package_id', $packageId)
                 ->get();
 
-            // Normalize bundle relationship for source_type='service_bundle' rows:
-            // bundle_id references service_bundles.id, so the `bundle` relation is null.
-            // Expose the underlying service as `bundle` with name "{qty}x {service_name}"
-            // so existing JS consumers (edit-bundle.js, create-membership.js) that read
-            // packagebundle.bundle.name keep working without changes.
+            // Normalize bundle relationship so JS consumers that read
+            // packagebundle.bundle.name keep working across all source types:
+            //  - 'service'        → bundle_id references services.id; expose the service as bundle
+            //  - 'service_bundle' → bundle_id references service_bundles.id; expose its service
+            //                       as bundle with name "{qty}x {service_name}"
+            //  - null (legacy)    → single-child rows where child service_id == bundle_id are
+            //                       really service-type records; fall through to the service
             $packageBundles->each(function ($pb) {
-                if ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
+                if ($pb->source_type === 'service' && $pb->service) {
+                    $pb->setRelation('bundle', $pb->service);
+                } elseif ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
                     $displayService = $pb->serviceBundle->service->replicate();
                     $displayService->id = $pb->serviceBundle->service->id;
                     $displayService->name = $pb->qty.'x '.$pb->serviceBundle->service->name;
                     $pb->setRelation('bundle', $displayService);
+                } elseif (! $pb->source_type && $pb->service && ! $pb->membership_type_id) {
+                    $children = $pb->packageservice;
+                    if ($children?->count() === 1 && $children->first()->service_id == $pb->bundle_id) {
+                        $pb->setRelation('bundle', $pb->service);
+                    }
                 }
             });
 
