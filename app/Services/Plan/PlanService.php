@@ -741,6 +741,67 @@ final class PlanService
     // ──────────────────────────────────────────────────
 
     /**
+     * Hydrate `bundle` and `service` relations on package_bundle rows
+     * with a sensible display service, so JS / Blade consumers always
+     * find a name regardless of source_type value or broken references.
+     *
+     * Resolution order for the display service:
+     *   1. source_type='bundle'         → keep `bundle` as-is (Bundles record)
+     *   2. source_type='membership'     → keep `membershipType` as-is
+     *   3. source_type='service_bundle' → clone serviceBundle.service and prefix name with "{qty}x "
+     *   4. $pb->service populated       → use it (covers source_type='service' and legacy rows)
+     *   5. $pb->bundle populated        → use its name (legacy rows where bundle still exists)
+     *   6. first child package_service  → last-resort fallback for rows whose bundle_id
+     *                                     no longer resolves (hard-deleted service, mis-set
+     *                                     source_type, etc.)
+     *
+     * Both `bundle` and `service` relations are populated so every JS
+     * consumer (some read .bundle.name, some read .service.name) works.
+     * Relations that are already populated are never overwritten.
+     */
+    public function normalizeBundleDisplayRelations(Collection $packageBundles): void
+    {
+        foreach ($packageBundles as $pb) {
+            if ($pb->source_type === 'bundle' && $pb->bundle) {
+                continue;
+            }
+            if ($pb->source_type === 'membership' && $pb->membershipType) {
+                continue;
+            }
+
+            $displayService = null;
+
+            if ($pb->source_type === 'service_bundle' && $pb->serviceBundle?->service) {
+                $src = $pb->serviceBundle->service;
+                $displayService = $src->replicate();
+                $displayService->id = $src->id;
+                $displayService->name = $pb->qty.'x '.$src->name;
+            } elseif ($pb->service) {
+                $displayService = $pb->service;
+            } elseif ($pb->bundle) {
+                $displayService = new Services(['name' => $pb->bundle->name]);
+                $displayService->id = $pb->bundle->id;
+            } else {
+                $firstChild = $pb->packageservice?->first();
+                if ($firstChild?->service) {
+                    $displayService = $firstChild->service;
+                }
+            }
+
+            if (! $displayService) {
+                continue;
+            }
+
+            if (! $pb->bundle) {
+                $pb->setRelation('bundle', $displayService);
+            }
+            if (! $pb->service) {
+                $pb->setRelation('service', $displayService);
+            }
+        }
+    }
+
+    /**
      * @throws PlanException
      */
     public function getEditFormData(int|string $packageId): array
@@ -754,32 +815,11 @@ final class PlanService
             // on the plan edit screen.
             $totalPrice = (float) PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
 
-            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.soldBy'])
+            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.service', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
-            // Normalize bundle relationship so JS consumers that read
-            // packagebundle.bundle.name keep working across all source types:
-            //  - 'service'        → bundle_id references services.id; expose the service as bundle
-            //  - 'service_bundle' → bundle_id references service_bundles.id; expose its service
-            //                       as bundle with name "{qty}x {service_name}"
-            //  - null (legacy)    → single-child rows where child service_id == bundle_id are
-            //                       really service-type records; fall through to the service
-            $packageBundles->each(function ($pb) {
-                if ($pb->source_type === 'service' && $pb->service) {
-                    $pb->setRelation('bundle', $pb->service);
-                } elseif ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
-                    $displayService = $pb->serviceBundle->service->replicate();
-                    $displayService->id = $pb->serviceBundle->service->id;
-                    $displayService->name = $pb->qty.'x '.$pb->serviceBundle->service->name;
-                    $pb->setRelation('bundle', $displayService);
-                } elseif (! $pb->source_type && $pb->service && ! $pb->membership_type_id) {
-                    $children = $pb->packageservice;
-                    if ($children?->count() === 1 && $children->first()->service_id == $pb->bundle_id) {
-                        $pb->setRelation('bundle', $pb->service);
-                    }
-                }
-            });
+            $this->normalizeBundleDisplayRelations($packageBundles);
 
             $packageServices = PackageService::with('service', 'soldBy')
                 ->where('package_id', $packageId)
@@ -882,29 +922,11 @@ final class PlanService
             $package = Packages::with('user', 'location')->find($packageId)
                 ?? throw PlanException::notFound($packageId);
 
-            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.soldBy'])
+            $packageBundles = PackageBundles::with(['bundle', 'service', 'discount', 'membershipType', 'serviceBundle.service', 'packageservice.service', 'packageservice.soldBy'])
                 ->where('package_id', $packageId)
                 ->get();
 
-            // Normalize bundle relationship based on source_type
-            $packageBundles->each(function ($pb) {
-                if ($pb->source_type === 'service' && $pb->service) {
-                    $pb->setRelation('bundle', $pb->service);
-                } elseif ($pb->source_type === 'service_bundle' && $pb->serviceBundle && $pb->serviceBundle->service) {
-                    // bundle_id references service_bundles.id; expose the underlying
-                    // service as `bundle` with name "{qty}x {service_name}" so existing
-                    // JS consumers (which read packagebundle.bundle.name) work unchanged.
-                    $displayService = $pb->serviceBundle->service->replicate();
-                    $displayService->id = $pb->serviceBundle->service->id;
-                    $displayService->name = $pb->qty.'x '.$pb->serviceBundle->service->name;
-                    $pb->setRelation('bundle', $displayService);
-                } elseif (! $pb->source_type && $pb->service && ! $pb->membership_type_id) {
-                    $children = $pb->packageservice;
-                    if ($children?->count() === 1 && $children->first()->service_id == $pb->bundle_id) {
-                        $pb->setRelation('bundle', $pb->service);
-                    }
-                }
-            });
+            $this->normalizeBundleDisplayRelations($packageBundles);
 
             $packageServices = PackageService::with('service', 'soldBy')
                 ->where('package_id', $packageId)
