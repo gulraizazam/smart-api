@@ -1,12 +1,14 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Helpers;
 
 use App\Models\Cities;
 use App\Models\DoctorHasLocations;
 use App\Models\Locations;
 use App\Models\Regions;
+use Closure;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 
@@ -17,33 +19,24 @@ class ACL
      */
     public static function getUserCentres(): array
     {
-        static $cachedLocations = [];
-        $userId = Auth::id();
+        return self::memoPerUser('centres', static function (): array {
+            $user = Auth::user();
 
-        if (isset($cachedLocations[$userId])) {
-            return $cachedLocations[$userId];
-        }
+            $locations = match (true) {
+                $user->id === 1 => Locations::where('active', 1)
+                    ->where('name', '!=', 'All Centres')
+                    ->pluck('id'),
 
-        $user = Auth::user();
-
-        $locations = match (true) {
-            $user->id === 1 => Locations::where('active', 1)
-                ->where('name', '!=', 'All Centres')
-                ->pluck('id'),
-
-            $user->user_type_id == Config::get('constants.practitioner_id') =>
-                DoctorHasLocations::where('user_id', $user->id)
+                $user->user_type_id == Config::get('constants.practitioner_id') => DoctorHasLocations::where('user_id', $user->id)
                     ->where('is_allocated', 1)
                     ->distinct()
                     ->pluck('location_id'),
 
-            default => $user->user_has_locations()->pluck('location_id'),
-        };
+                default => $user->user_has_locations()->pluck('location_id'),
+            };
 
-        $result = self::expandAllCentres($locations?->toArray() ?? [], (int) $user->account_id);
-        $cachedLocations[$userId] = $result;
-
-        return $result;
+            return self::expandAllCentres($locations?->toArray() ?? [], (int) $user->account_id);
+        });
     }
 
     public static function getUserWarehouse(): array
@@ -58,26 +51,18 @@ class ACL
      */
     public static function getUserRegions(): array
     {
-        static $cachedRegions = [];
-        $userId = Auth::id();
+        return self::memoPerUser('regions', static function (): array {
+            $user = Auth::user();
+            $accountId = $user->account_id;
 
-        if (isset($cachedRegions[$userId])) {
-            return $cachedRegions[$userId];
-        }
+            $regions = $user->id === 1
+                ? Regions::where('account_id', $accountId)->pluck('id')
+                : Regions::whereIn('id', Cities::getActiveOnly(self::getUserCities(), $accountId)->pluck('region_id'))
+                    ->where('account_id', $accountId)
+                    ->pluck('id');
 
-        $user = Auth::user();
-        $accountId = $user->account_id;
-
-        $regions = $user->id === 1
-            ? Regions::where('account_id', $accountId)->pluck('id')
-            : Regions::whereIn('id', Cities::getActiveOnly(self::getUserCities(), $accountId)->pluck('region_id'))
-                ->where('account_id', $accountId)
-                ->pluck('id');
-
-        $result = $regions?->toArray() ?? [];
-        $cachedRegions[$userId] = $result;
-
-        return $result;
+            return $regions?->toArray() ?? [];
+        });
     }
 
     /**
@@ -85,42 +70,55 @@ class ACL
      */
     public static function getUserCities(): array
     {
-        static $cachedCities = [];
-        $userId = Auth::id();
+        return self::memoPerUser('cities', static function (): array {
+            $user = Auth::user();
+            $accountId = $user->account_id;
 
-        if (isset($cachedCities[$userId])) {
-            return $cachedCities[$userId];
-        }
+            $cities = match (true) {
+                $user->id === 1 => Cities::where('account_id', $accountId)->pluck('id'),
 
-        $user = Auth::user();
-        $accountId = $user->account_id;
-
-        $cities = match (true) {
-            $user->id === 1 => Cities::where('account_id', $accountId)->pluck('id'),
-
-            $user->user_type_id == Config::get('constants.practitioner_id') =>
-                Locations::whereIn('id',
+                $user->user_type_id == Config::get('constants.practitioner_id') => Locations::whereIn('id',
                     DoctorHasLocations::where('user_id', $user->id)
                         ->where('is_allocated', 1)
                         ->distinct()
                         ->pluck('location_id')
                 )
-                ->where('account_id', $accountId)
-                ->pluck('city_id'),
+                    ->where('account_id', $accountId)
+                    ->pluck('city_id'),
 
-            default => Locations::whereIn(
-                'id',
-                self::expandAllCentres(
-                    $user->user_has_locations()->pluck('location_id')->toArray(),
-                    (int) $accountId,
-                ),
-            )
-                ->where('account_id', $accountId)
-                ->pluck('city_id'),
-        };
+                default => Locations::whereIn(
+                    'id',
+                    self::expandAllCentres(
+                        $user->user_has_locations()->pluck('location_id')->toArray(),
+                        (int) $accountId,
+                    ),
+                )
+                    ->where('account_id', $accountId)
+                    ->pluck('city_id'),
+            };
 
-        $result = $cities?->toArray() ?? [];
-        $cachedCities[$userId] = $result;
+            return $cities?->toArray() ?? [];
+        });
+    }
+
+    /**
+     * Per-request, per-user memoization for the getUser* lookups above.
+     * Preserves the original `static $cachedX` semantics (results live for
+     * the lifetime of the PHP process) while removing the copy-pasted
+     * skeleton from each caller. Keyed by ($key, Auth::id()) so distinct
+     * lookups and distinct users don't collide.
+     */
+    private static function memoPerUser(string $key, Closure $loader): array
+    {
+        static $cache = [];
+        $userId = Auth::id();
+
+        if (isset($cache[$key][$userId])) {
+            return $cache[$key][$userId];
+        }
+
+        $result = $loader();
+        $cache[$key][$userId] = $result;
 
         return $result;
     }
@@ -139,7 +137,7 @@ class ACL
 
         $normalized = array_map('intval', $locationIds);
 
-        if ($allCentresId === 0 || !in_array($allCentresId, $normalized, true)) {
+        if ($allCentresId === 0 || ! in_array($allCentresId, $normalized, true)) {
             return $normalized;
         }
 

@@ -5,21 +5,26 @@ declare(strict_types=1);
 namespace App\Reports\Finance;
 
 use App\Enums\AppointmentType;
-use Config;
-use Carbon\Carbon;
-use App\Models\User;
 use App\Helpers\ACL;
-use App\Models\Packages;
-use App\Models\Locations;
-use App\Models\Resources;
-use App\Models\MachineType;
-use App\Models\Appointments;
-use App\Models\PackageService;
-use App\Models\PackageAdvances;
+use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\AppointmentEditWidget;
+use App\Models\Appointments;
+use App\Models\Invoices;
+use App\Models\Locations;
+use App\Models\MachineType;
+use App\Models\PackageAdvances;
+use App\Models\Packages;
+use App\Models\PackageService;
+use App\Models\Resources;
+use App\Models\User;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use Carbon\Carbon;
+use Config;
 
 class FinanceStaffReport
 {
+    use ParsesDateRange;
+
     /**
      * Staff Wise Revenue Report
      *
@@ -30,14 +35,7 @@ class FinanceStaffReport
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         if (isset($data['location_id']) && $data['location_id']) {
             $location_info = Locations::where([
@@ -62,7 +60,7 @@ class FinanceStaffReport
 
         $report = [];
 
-        /*case 1*/
+        /* case 1 */
         $revenue_plan_information = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
             ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
             ->whereDate('package_advances.created_at', '>=', $start_date)
@@ -88,7 +86,7 @@ class FinanceStaffReport
 
             foreach ($revenue_plan_information as $revenueinformation) {
                 $loc = $locationsMap[$revenueinformation->location_id] ?? null;
-                if (!in_array($revenueinformation->location_id, $locations, true) && $loc) {
+                if (! in_array($revenueinformation->location_id, $locations, true) && $loc) {
                     $report[$revenueinformation->location_id] = [
                         'centre' => $loc->name,
                         'city' => $loc->city->name,
@@ -99,7 +97,7 @@ class FinanceStaffReport
                     $locations[] = $revenueinformation->location_id;
                 }
 
-                if (!in_array($revenueinformation->doctor_id, $doctors, true) && $loc) {
+                if (! in_array($revenueinformation->doctor_id, $doctors, true) && $loc) {
                     $report[$revenueinformation->location_id]['doctor_info'][$revenueinformation->doctor_id] = [
                         'doctor' => $doctorsMap[$revenueinformation->doctor_id] ?? '',
                         'centre' => $loc->name,
@@ -119,9 +117,9 @@ class FinanceStaffReport
                 }
             }
         }
-        /*end*/
+        /* end */
 
-        /*case 2*/
+        /* case 2 */
         $revenue_treatment_information = Appointments::join('package_advances', 'appointments.id', '=', 'package_advances.appointment_id')
             ->whereDate('package_advances.created_at', '>=', $start_date)
             ->whereDate('package_advances.created_at', '<=', $end_date)
@@ -153,13 +151,13 @@ class FinanceStaffReport
             foreach ($revenue_treatment_information as $revenueinformation_treat) {
 
                 $link_doctor_id = $linkedAppointments[$revenueinformation_treat->appointmentlinkid] ?? null;
-                if (!$link_doctor_id) {
+                if (! $link_doctor_id) {
                     continue;
                 }
                 $loc = $locationsMap[$link_doctor_id->location_id] ?? null;
                 $docName = $doctorsMap[$link_doctor_id->doctor_id] ?? '';
 
-                if (!in_array($link_doctor_id->location_id, $locations_2, true) && $loc) {
+                if (! in_array($link_doctor_id->location_id, $locations_2, true) && $loc) {
                     $report[$link_doctor_id->location_id] = [
                         'centre' => $loc->name,
                         'city' => $loc->city->name,
@@ -174,7 +172,7 @@ class FinanceStaffReport
                     $report[$link_doctor_id->location_id]['region'] = $loc->region->name;
                 }
 
-                if (!in_array($link_doctor_id->doctor_id, $doctors_2, true) && $loc) {
+                if (! in_array($link_doctor_id->doctor_id, $doctors_2, true) && $loc) {
                     $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id] = [
                         'doctor' => $docName,
                         'centre' => $loc->name,
@@ -204,7 +202,7 @@ class FinanceStaffReport
         foreach ($report as $location_id => $data) {
             foreach ($data['doctor_info'] as $doctor_id => $value) {
 
-                if (!isset($value['doctor'])) {
+                if (! isset($value['doctor'])) {
 
                     $loc = $locationsMap[$location_id] ?? null;
 
@@ -216,12 +214,13 @@ class FinanceStaffReport
                         'doctor_revenue' => $report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'],
                     ];
                 }
-                if (!array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || empty($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'])) {
+                if (! array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || empty($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'])) {
                     unset($report[$location_id]['doctor_info'][$doctor_id]);
                 }
             }
         }
-        /*end*/
+
+        /* end */
         return $report;
     }
 
@@ -277,7 +276,7 @@ class FinanceStaffReport
                 }
                 $report_data = [
                     'patient' => $packagesadvance->user->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
+                    'phone' => GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                     'transtype' => $transtype,
                     'payment_mode_id' => $packagesadvance->payment_mode_id,
                     'cash_flow' => $packagesadvance->cash_flow,
@@ -301,14 +300,7 @@ class FinanceStaffReport
     public static function partnercollectionreport($data, $account_id)
     {
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $where = [];
 
@@ -361,7 +353,7 @@ class FinanceStaffReport
                     ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
 
-            if (!empty($packagesadvances)) {
+            if (! empty($packagesadvances)) {
 
                 $report_data[$location->id] = [
                     'id' => $location->id,
@@ -409,7 +401,7 @@ class FinanceStaffReport
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (!in_array($resourceinfor->machine_type_id, $machines, true)) {
+                                        if (! in_array($resourceinfor->machine_type_id, $machines, true)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
@@ -422,7 +414,7 @@ class FinanceStaffReport
                                             $machines[] = $resourceinfor->machine_type_id;
                                         }
 
-                                        $package_tax_info = \App\Models\Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                                        $package_tax_info = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                                             ->where('invoices.appointment_id', '=', $packagesadvance->appointment_id)
                                             ->where('tax_including_price', '=', $packagesadvance->cash_amount)
                                             ->select('invoice_details.tax_exclusive_serviceprice', 'invoice_details.is_exclusive', 'invoice_details.tax_price', 'invoice_details.tax_including_price')
@@ -447,7 +439,7 @@ class FinanceStaffReport
                                     }
                                 } else {
 
-                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -462,7 +454,7 @@ class FinanceStaffReport
                                                 ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->get();
 
-                                        if (!empty($total_consume_service)) {
+                                        if (! empty($total_consume_service)) {
                                             $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
                                                 ->whereDate('updated_at', '<=', $end_date)
                                                 ->where([
@@ -479,11 +471,11 @@ class FinanceStaffReport
                                             $total_consume = 0;
                                         }
 
-                                        $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo, $total_consume_packageservice_ids); //$package_machine
+                                        $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo, $total_consume_packageservice_ids); // $package_machine
 
-                                        $machine_type_count = count($machine_types); //$package_machine_count
+                                        $machine_type_count = count($machine_types); // $package_machine_count
 
-                                        if (!empty($total_consume_service)) {
+                                        if (! empty($total_consume_service)) {
 
                                             $package_info_consume = PackageAdvances::whereDate('created_at', '>=', $start_date)
                                                 ->whereDate('created_at', '<=', $end_date)
@@ -519,11 +511,11 @@ class FinanceStaffReport
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
 
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
-                                                                    $package_tax_info = \App\Models\Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                                                                    $package_tax_info = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                                                                         ->where('invoices.appointment_id', '=', $consume_package->appointment_id)
                                                                         ->select('invoice_details.tax_exclusive_serviceprice', 'invoice_details.is_exclusive', 'invoice_details.tax_price', 'invoice_details.tax_including_price')->first();
 
@@ -535,7 +527,7 @@ class FinanceStaffReport
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (!in_array($resource_info->machine_type_id, $machines, true)) {
+                                                                    if (! in_array($resource_info->machine_type_id, $machines, true)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
@@ -584,7 +576,7 @@ class FinanceStaffReport
                                                 }
                                             }
 
-                                            if (!in_array($machine_type->id, $machines, true)) {
+                                            if (! in_array($machine_type->id, $machines, true)) {
 
                                                 $report_data[$location->id]['machine'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
@@ -641,7 +633,7 @@ class FinanceStaffReport
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (!in_array($resourceinfo->machine_type_id, $machines, true)) {
+                                    if (! in_array($resourceinfo->machine_type_id, $machines, true)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
@@ -667,7 +659,7 @@ class FinanceStaffReport
 
                                     $packageinfo = Packages::find($packagesadvance->package_id);
 
-                                    $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); //$package_machine
+                                    $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); // $package_machine
 
                                     $package_service_ids = [];
 
@@ -688,7 +680,7 @@ class FinanceStaffReport
                                             }
                                         }
 
-                                        if (!in_array($machine_type->id, $machines, true)) {
+                                        if (! in_array($machine_type->id, $machines, true)) {
 
                                             $report_data[$location->id]['machine'][$machine_type->id] = [
                                                 'id' => $machine_type->id,
@@ -739,14 +731,7 @@ class FinanceStaffReport
      */
     public static function machinewisecollectionreport($data, $account_id)
     {
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
 
         $where = [];
 
@@ -799,7 +784,7 @@ class FinanceStaffReport
                     ['location_id', '=', $location->id],
                 ])->orderBy('created_at', 'asc')->get();
 
-            if (!empty($packagesadvances)) {
+            if (! empty($packagesadvances)) {
 
                 $report_data[$location->id] = [
                     'id' => $location->id,
@@ -842,7 +827,7 @@ class FinanceStaffReport
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (!in_array($resourceinfor->machine_type_id, $machines, true)) {
+                                        if (! in_array($resourceinfor->machine_type_id, $machines, true)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
@@ -864,7 +849,7 @@ class FinanceStaffReport
                                         ];
                                     }
                                 } else {
-                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -877,7 +862,7 @@ class FinanceStaffReport
                                                 ['package_id', '=', $packageinfo->id],
                                             ])->whereNotNull('package_id')->get();
 
-                                        if (!empty($total_consume_service)) {
+                                        if (! empty($total_consume_service)) {
                                             $total_consume_packageservice_ids = PackageService::whereDate('updated_at', '>=', $start_date)
                                                 ->whereDate('updated_at', '<=', $end_date)
                                                 ->where([
@@ -894,11 +879,11 @@ class FinanceStaffReport
                                             $total_consume = 0;
                                         }
 
-                                        $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo, $total_consume_packageservice_ids); //$package_machine
+                                        $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo, $total_consume_packageservice_ids); // $package_machine
 
-                                        $machine_type_count = count($machine_types); //$package_machine_count
+                                        $machine_type_count = count($machine_types); // $package_machine_count
 
-                                        if (!empty($total_consume_service)) {
+                                        if (! empty($total_consume_service)) {
                                             $package_info_consume = PackageAdvances::whereDate('created_at', '>=', $start_date)
                                                 ->whereDate('created_at', '<=', $end_date)
                                                 ->where([
@@ -932,7 +917,7 @@ class FinanceStaffReport
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
                                                                     $coun++;
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
@@ -947,7 +932,7 @@ class FinanceStaffReport
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (!in_array($resource_info->machine_type_id, $machines, true)) {
+                                                                    if (! in_array($resource_info->machine_type_id, $machines, true)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
@@ -995,7 +980,7 @@ class FinanceStaffReport
                                                 }
                                             }
 
-                                            if (!in_array($machine_type->id, $machines, true)) {
+                                            if (! in_array($machine_type->id, $machines, true)) {
 
                                                 $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
@@ -1037,7 +1022,7 @@ class FinanceStaffReport
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (!in_array($resourceinfo->machine_type_id, $machines, true)) {
+                                    if (! in_array($resourceinfo->machine_type_id, $machines, true)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
@@ -1062,7 +1047,7 @@ class FinanceStaffReport
 
                                     $packageinfo = Packages::find($packagesadvance->package_id);
 
-                                    $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); //$package_machine
+                                    $machine_types = AppointmentEditWidget::LoadMachineType_machinewisecollection_report($packageinfo); // $package_machine
 
                                     $package_service_ids = [];
 
@@ -1074,7 +1059,7 @@ class FinanceStaffReport
                                             }
                                         }
 
-                                        if (!in_array($machine_type->id, $machines, true)) {
+                                        if (! in_array($machine_type->id, $machines, true)) {
 
                                             $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                 'id' => $machine_type->id,

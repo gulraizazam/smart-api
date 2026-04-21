@@ -6,35 +6,33 @@ namespace App\Http\Controllers\Admin\Reports\Finance;
 
 use App\Http\Controllers\Controller;
 use App\Reports\Finanaces;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class FinanceStaffReportController extends Controller
 {
+    use ParsesDateRange;
+
     /**
      * Patner Collection Report.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function partnercollectionreport(Request $request): \Illuminate\View\View
+    public function partnercollectionreport(Request $request): View
     {
-        if (!Gate::allows('finance_general_revenue_reports_partner_collection_report')) {
+        if (! Gate::allows('finance_general_revenue_reports_partner_collection_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $reportData = Finanaces::partnercollectionreport($request->all(), Auth::user()->account_id);
         $count = 0;
@@ -79,20 +77,20 @@ class FinanceStaffReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function partnercollectionreportExcel($reportData, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -119,28 +117,28 @@ class FinanceStaffReportController extends Controller
             $machinenet_in_g = 0;
             $machinetotal_out_g = 0;
             foreach ($reportData as $reportlocation) {
-                $activeSheet->setCellValue('A' . $counter, $reportlocation['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, $reportlocation['region'])->getStyle('B' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('C' . $counter, $reportlocation['city'])->getStyle('C' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, $reportlocation['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('B'.$counter, $reportlocation['region'])->getStyle('B'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('C'.$counter, $reportlocation['city'])->getStyle('C'.$counter)->getFont()->setBold(true);
                 $counter++;
                 $machineamount_in_t = 0;
                 $machinetax_in_t = 0;
                 $machinenet_in_t = 0;
                 $machinetotal_out_t = 0;
                 foreach ($reportlocation['machine'] as $reportmachine) {
-                    $activeSheet->setCellValue('D' . $counter, $reportmachine['name'])->getStyle('D' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('D'.$counter, $reportmachine['name'])->getStyle('D'.$counter)->getFont()->setBold(true);
                     $counter++;
                     $machineamount_in = 0;
                     $machinetax_in = 0;
                     $machinenet_in = 0;
                     $machinetotal_out = 0;
                     foreach ($reportmachine['transaction'] as $paymentrecord) {
-                        $activeSheet->setCellValue('E' . $counter, $paymentrecord['name']);
-                        $activeSheet->setCellValue('F' . $counter, $paymentrecord['flow']);
-                        $activeSheet->setCellValue('G' . $counter, $paymentrecord['amount'] ? number_format($paymentrecord['amount'], 2) : '');
-                        $activeSheet->setCellValue('H' . $counter, $paymentrecord['tax'] ? number_format($paymentrecord['tax'], 2) : '');
-                        $activeSheet->setCellValue('I' . $counter, $paymentrecord['net_amount'] ? number_format($paymentrecord['net_amount'], 2) : '');
-                        $activeSheet->setCellValue('J' . $counter, $paymentrecord['amount_out'] ? number_format($paymentrecord['amount_out'], 2) : '');
+                        $activeSheet->setCellValue('E'.$counter, $paymentrecord['name']);
+                        $activeSheet->setCellValue('F'.$counter, $paymentrecord['flow']);
+                        $activeSheet->setCellValue('G'.$counter, $paymentrecord['amount'] ? number_format($paymentrecord['amount'], 2) : '');
+                        $activeSheet->setCellValue('H'.$counter, $paymentrecord['tax'] ? number_format($paymentrecord['tax'], 2) : '');
+                        $activeSheet->setCellValue('I'.$counter, $paymentrecord['net_amount'] ? number_format($paymentrecord['net_amount'], 2) : '');
+                        $activeSheet->setCellValue('J'.$counter, $paymentrecord['amount_out'] ? number_format($paymentrecord['amount_out'], 2) : '');
 
                         $machineamount_in += $paymentrecord['amount'] ? $paymentrecord['amount'] : 0;
                         $machinetax_in += $paymentrecord['tax'] ? $paymentrecord['tax'] : 0;
@@ -159,45 +157,45 @@ class FinanceStaffReportController extends Controller
 
                         $counter++;
                     }
-                    $activeSheet->setCellValue('D' . $counter, 'Total')->getStyle('D' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('D'.$counter, 'Total')->getStyle('D'.$counter)->getFont()->setBold(true);
 
-                    $activeSheet->setCellValue('G' . $counter, number_format($machineamount_in, 2))->getStyle('G' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('H' . $counter, number_format($machinetax_in, 2))->getStyle('H' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('G'.$counter, number_format($machineamount_in, 2))->getStyle('G'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('H'.$counter, number_format($machinetax_in, 2))->getStyle('H'.$counter)->getFont()->setBold(true);
 
-                    $activeSheet->setCellValue('I' . $counter, number_format($machinenet_in, 2))->getStyle('I' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('J' . $counter, number_format($machinetotal_out, 2))->getStyle('J' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('K' . $counter, number_format($machineamount_in - $machinetotal_out, 2))->getStyle('K' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('I'.$counter, number_format($machinenet_in, 2))->getStyle('I'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('J'.$counter, number_format($machinetotal_out, 2))->getStyle('J'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('K'.$counter, number_format($machineamount_in - $machinetotal_out, 2))->getStyle('K'.$counter)->getFont()->setBold(true);
                     $counter++;
 
-                    $activeSheet->setCellValue('A' . $counter, '');
+                    $activeSheet->setCellValue('A'.$counter, '');
                     $counter++;
                 }
-                $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, 'Total')->getStyle('A'.$counter)->getFont()->setBold(true);
 
-                $activeSheet->setCellValue('G' . $counter, number_format($machineamount_in_t, 2))->getStyle('G' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('H' . $counter, number_format($machinetax_in_t, 2))->getStyle('H' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('G'.$counter, number_format($machineamount_in_t, 2))->getStyle('G'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('H'.$counter, number_format($machinetax_in_t, 2))->getStyle('H'.$counter)->getFont()->setBold(true);
 
-                $activeSheet->setCellValue('I' . $counter, number_format($machinenet_in_t, 2))->getStyle('I' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('J' . $counter, number_format($machinetotal_out_t, 2))->getStyle('J' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('K' . $counter, number_format($machineamount_in_t - $machinetotal_out_t, 2))->getStyle('K' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('I'.$counter, number_format($machinenet_in_t, 2))->getStyle('I'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('J'.$counter, number_format($machinetotal_out_t, 2))->getStyle('J'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('K'.$counter, number_format($machineamount_in_t - $machinetotal_out_t, 2))->getStyle('K'.$counter)->getFont()->setBold(true);
                 $counter++;
             }
 
-            $activeSheet->setCellValue('A' . $counter, 'Grand Total')->getStyle('A' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, 'Grand Total')->getStyle('A'.$counter)->getFont()->setBold(true);
 
-            $activeSheet->setCellValue('G' . $counter, number_format($machineamount_in_g, 2))->getStyle('G' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('H' . $counter, number_format($machinetax_in_g, 2))->getStyle('H' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('G'.$counter, number_format($machineamount_in_g, 2))->getStyle('G'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('H'.$counter, number_format($machinetax_in_g, 2))->getStyle('H'.$counter)->getFont()->setBold(true);
 
-            $activeSheet->setCellValue('I' . $counter, number_format($machinenet_in_g, 2))->getStyle('I' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('J' . $counter, number_format($machinetotal_out_g, 2))->getStyle('J' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('K' . $counter, number_format($machineamount_in_g - $machinetotal_out_g, 2))->getStyle('K' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('I'.$counter, number_format($machinenet_in_g, 2))->getStyle('I'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('J'.$counter, number_format($machinetotal_out_g, 2))->getStyle('J'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('K'.$counter, number_format($machineamount_in_g - $machinetotal_out_g, 2))->getStyle('K'.$counter)->getFont()->setBold(true);
             $counter++;
         }
-        $activeSheet->setCellValue('A' . $counter, '');
+        $activeSheet->setCellValue('A'.$counter, '');
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'partnercollectionreport' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'partnercollectionreport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
@@ -205,22 +203,15 @@ class FinanceStaffReportController extends Controller
     /**
      * Staff wise Report.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function staffwiserevenue(Request $request): \Illuminate\View\View
+    public function staffwiserevenue(Request $request): View
     {
 
-        if (!Gate::allows('finance_general_revenue_reports_staff_wise_revenue')) {
+        if (! Gate::allows('finance_general_revenue_reports_staff_wise_revenue')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $report_data = Finanaces::staffwiserevenue($request->all(), Auth::user()->account_id);
 
@@ -252,20 +243,20 @@ class FinanceStaffReportController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function staffwiserevenuereportexcel($reportData, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -289,9 +280,9 @@ class FinanceStaffReportController extends Controller
 
             foreach ($reportData as $reportlocation) {
 
-                $activeSheet->setCellValue('A' . $counter, $reportlocation['centre']);
-                $activeSheet->setCellValue('B' . $counter, $reportlocation['city']);
-                $activeSheet->setCellValue('C' . $counter, $reportlocation['region']);
+                $activeSheet->setCellValue('A'.$counter, $reportlocation['centre']);
+                $activeSheet->setCellValue('B'.$counter, $reportlocation['city']);
+                $activeSheet->setCellValue('C'.$counter, $reportlocation['region']);
 
                 $counter++;
 
@@ -301,7 +292,7 @@ class FinanceStaffReportController extends Controller
 
                 foreach ($reportlocation['doctor_info'] as $reportdoctor) {
 
-                    $activeSheet->setCellValue('D' . $counter, $reportdoctor['doctor']);
+                    $activeSheet->setCellValue('D'.$counter, $reportdoctor['doctor']);
                     $counter++;
 
                     $doctor_revenue_total = 0;
@@ -315,41 +306,41 @@ class FinanceStaffReportController extends Controller
                         $centre_revenue_total += $reportrevenue['revenue'] ? $reportrevenue['revenue'] : 0;
                         $centre_refund_total += $reportrevenue['refund_out'] ? $reportrevenue['refund_out'] : 0;
 
-                        $activeSheet->setCellValue('E' . $counter, $reportrevenue['created_at'] ? \Carbon\Carbon::parse($reportrevenue['created_at'], null)->format('M j, Y') : '');
-                        $activeSheet->setCellValue('F' . $counter, $reportrevenue['revenue'] ? number_format($reportrevenue['revenue'], 2) : '');
-                        $activeSheet->setCellValue('G' . $counter, $reportrevenue['refund_out'] ? number_format($reportrevenue['refund_out'], 2) : '');
+                        $activeSheet->setCellValue('E'.$counter, $reportrevenue['created_at'] ? Carbon::parse($reportrevenue['created_at'], null)->format('M j, Y') : '');
+                        $activeSheet->setCellValue('F'.$counter, $reportrevenue['revenue'] ? number_format($reportrevenue['revenue'], 2) : '');
+                        $activeSheet->setCellValue('G'.$counter, $reportrevenue['refund_out'] ? number_format($reportrevenue['refund_out'], 2) : '');
                         $counter++;
 
-                        $activeSheet->setCellValue('A' . $counter, '');
+                        $activeSheet->setCellValue('A'.$counter, '');
                         $counter++;
                     }
 
                     $doctor_total = $doctor_revenue_total - $doctor_refund_total;
-                    $activeSheet->setCellValue('D' . $counter, 'Total')->getStyle('D' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('H' . $counter, $doctor_total ? number_format($doctor_total, 2) : 0)->getStyle('H' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('D'.$counter, 'Total')->getStyle('D'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('H'.$counter, $doctor_total ? number_format($doctor_total, 2) : 0)->getStyle('H'.$counter)->getFont()->setBold(true);
                     $counter++;
 
                     $activeSheet->setCellValue('A4', '');
                     $counter++;
                 }
                 $centre_total = $centre_revenue_total - $centre_refund_total;
-                $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('H' . $counter, $centre_total ? number_format($centre_total, 2) : 0)->getStyle('H' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, 'Total')->getStyle('A'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('H'.$counter, $centre_total ? number_format($centre_total, 2) : 0)->getStyle('H'.$counter)->getFont()->setBold(true);
                 $counter++;
 
                 $activeSheet->setCellValue('A4', '');
                 $counter++;
             }
             $grandtotal += $centre_total ? $centre_total : '';
-            $activeSheet->setCellValue('A' . $counter, 'Grand Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('H' . $counter, $grandtotal ? number_format($grandtotal, 2) : 0)->getStyle('H' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, 'Grand Total')->getStyle('A'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('H'.$counter, $grandtotal ? number_format($grandtotal, 2) : 0)->getStyle('H'.$counter)->getFont()->setBold(true);
             $counter++;
         }
-        $activeSheet->setCellValue('A' . $counter, '');
+        $activeSheet->setCellValue('A'.$counter, '');
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'staffwiserevenue' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'staffwiserevenue'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }

@@ -16,8 +16,11 @@ class MembershipReportService
      * Finds packages that contain membership card services (Gold/Student),
      * then maps each to a user row with membership details.
      */
+    /**
+     * @param int[]|null $locationIds
+     */
     public function generate(
-        ?int $locationId,
+        ?array $locationIds,
         ?string $membershipTypeId,
         ?string $startDate,
         ?string $endDate,
@@ -35,7 +38,7 @@ class MembershipReportService
             'user.membership.membershipType:id,name',
         ])
             ->whereHas('packageservice', fn ($q) => $q->whereIn('service_id', $serviceIds))
-            ->when($locationId, fn ($q) => $q->where('packages.location_id', $locationId))
+            ->when(!empty($locationIds), fn ($q) => $q->whereIn('packages.location_id', $locationIds))
             ->when($membershipTypeId !== null, function ($q) use ($membershipTypeId) {
                 if ($membershipTypeId === 'no_membership') {
                     $q->whereDoesntHave('user.membership');

@@ -11,39 +11,43 @@ use App\Helpers\DoctorDashboardHelper;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Http\Resources\Treatment\TreatmentDatatableResource;
-use App\Services\PatientManagement\PatientSearchService;
 use App\Jobs\IndexSingleAppointmentJob;
 use App\Models\Appointments;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Cities;
 use App\Models\Doctors;
-use App\Models\DoctorHasServices;
-use App\Models\InvoiceStatuses;
 use App\Models\Invoices;
+use App\Models\InvoiceStatuses;
 use App\Models\Leads;
-use App\Models\LeadStatuses;
 use App\Models\LeadsServices;
+use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\MachineTypeHasServices;
 use App\Models\Patients;
 use App\Models\Regions;
-use App\Models\Resources;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
+use App\Models\Resources;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\Appointment\AppointmentService;
+use App\Services\PatientManagement\PatientSearchService;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 
 final class TreatmentService
 {
+    use ParsesDateRange;
+
     private const CACHE_TTL = 3600;
+
     private const FILTER_KEY = 'treatments';
 
     // ──────────────────────────────────────────────────
@@ -57,13 +61,13 @@ final class TreatmentService
      */
     public function getDatatableData(array $requestAll, ?int $patientId = null): array
     {
-        $filters  = $this->processFilters($requestAll);
-        $orderBy  = $filters['order_by'];
-        $order    = $filters['order'];
+        $filters = $this->processFilters($requestAll);
+        $orderBy = $filters['order_by'];
+        $order = $filters['order'];
 
         $treatmentTypeId = $this->getTreatmentTypeId();
-        $baseConditions  = $this->buildBaseConditions($filters, $patientId);
-        $totalRecords    = $this->getRecordsCount($baseConditions, $filters, $treatmentTypeId);
+        $baseConditions = $this->buildBaseConditions($filters, $patientId);
+        $totalRecords = $this->getRecordsCount($baseConditions, $filters, $treatmentTypeId);
 
         [$perPage, $offset, $pages, $page] = getPaginationElement(
             request(),
@@ -81,21 +85,21 @@ final class TreatmentService
         );
 
         $lookupData = $this->getLookupData();
-        $data       = $this->transformAppointments($appointments, $lookupData);
+        $data = $this->transformAppointments($appointments, $lookupData);
 
         return [
-            'data'           => $data,
-            'meta'           => [
-                'field'   => $orderBy,
-                'page'    => $page,
-                'pages'   => $pages,
+            'data' => $data,
+            'meta' => [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
                 'perpage' => $perPage,
-                'total'   => $totalRecords,
-                'sort'    => $order,
+                'total' => $totalRecords,
+                'sort' => $order,
             ],
             'active_filters' => Filters::all(Auth::id(), self::FILTER_KEY),
-            'filter_values'  => $this->getFilterValues(),
-            'permissions'    => $this->getPermissions(),
+            'filter_values' => $this->getFilterValues(),
+            'permissions' => $this->getPermissions(),
         ];
     }
 
@@ -108,7 +112,7 @@ final class TreatmentService
      */
     public function store(array $validated): array
     {
-        $user      = Auth::user();
+        $user = Auth::user();
         $accountId = (int) $user->account_id;
 
         $service = Services::find($validated['service_id'])
@@ -124,7 +128,7 @@ final class TreatmentService
                 (int) $validated['location_id'],
             );
 
-        if (!$resourceId) {
+        if (! $resourceId) {
             throw TreatmentException::invalidData(
                 'Machine not found. Please select a valid machine or ensure the location has an available machine for this service.',
             );
@@ -156,7 +160,7 @@ final class TreatmentService
             $appointmentData,
         );
 
-        if (!$rotaValidation['valid']) {
+        if (! $rotaValidation['valid']) {
             throw TreatmentException::invalidData($rotaValidation['message']);
         }
 
@@ -174,10 +178,10 @@ final class TreatmentService
                 $this->handleLeadServices($lead, $validated, $appointment);
             }
 
-            if (!empty($appointmentData['name'])) {
+            if (! empty($appointmentData['name'])) {
                 Appointments::where('patient_id', $appointmentData['patient_id'])
                     ->update([
-                        'name'       => $appointmentData['name'],
+                        'name' => $appointmentData['name'],
                         'updated_at' => $appointmentData['updated_at'],
                     ]);
             }
@@ -194,14 +198,14 @@ final class TreatmentService
             }
 
             dispatch(new IndexSingleAppointmentJob([
-                'account_id'     => $accountId,
+                'account_id' => $accountId,
                 'appointment_id' => $appointment->id,
             ]));
 
             return [
                 'success' => true,
                 'message' => 'Treatment has been created successfully.',
-                'id'      => $appointment->id,
+                'id' => $appointment->id,
             ];
         });
     }
@@ -232,7 +236,7 @@ final class TreatmentService
         }
 
         $doctorAvailable = Resources::checkDoctorAvailbility(request());
-        if (!$doctorAvailable) {
+        if (! $doctorAvailable) {
             throw TreatmentException::doctorUnavailable('Doctor is not available for this time slot.');
         }
 
@@ -245,41 +249,41 @@ final class TreatmentService
         }
 
         $data = $validated;
-        $data['first_scheduled_count']     = $appointment->first_scheduled_count;
-        $data['scheduled_at_count']        = $appointment->scheduled_at_count;
-        $data['reschedule']                = 1;
-        $data['resource_has_rota_day_id']  = $doctorRota['resource_has_rota_day_id'];
-        $data['resource_id']               = !empty($validated['resourceId'])
+        $data['first_scheduled_count'] = $appointment->first_scheduled_count;
+        $data['scheduled_at_count'] = $appointment->scheduled_at_count;
+        $data['reschedule'] = 1;
+        $data['resource_has_rota_day_id'] = $doctorRota['resource_has_rota_day_id'];
+        $data['resource_id'] = ! empty($validated['resourceId'])
             ? $validated['resourceId']
             : $appointment->resource_id;
 
         return DB::transaction(function () use ($data, $appointment, $accountId): array {
             $record = Appointments::updateServiceRecord($data['id'], $data, $accountId);
-            if (!$record) {
+            if (! $record) {
                 throw TreatmentException::operationFailed('Failed to update appointment.');
             }
 
             $defaultStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
             if ($defaultStatus) {
                 $record->update([
-                    'appointment_status_id'           => $defaultStatus->id,
-                    'base_appointment_status_id'      => $defaultStatus->id,
+                    'appointment_status_id' => $defaultStatus->id,
+                    'base_appointment_status_id' => $defaultStatus->id,
                     'appointment_status_allow_message' => $defaultStatus->allow_message,
-                    'send_message'                    => 1,
+                    'send_message' => 1,
                 ]);
             }
 
             ActivityLogger::saveAppointmentLogs('rescheduled', 'Treatment', $record);
 
             dispatch(new IndexSingleAppointmentJob([
-                'account_id'     => $accountId,
+                'account_id' => $accountId,
                 'appointment_id' => $appointment->id,
             ]));
 
             return [
                 'success' => true,
                 'message' => 'Treatment rescheduled successfully.',
-                'id'      => $appointment->id,
+                'id' => $appointment->id,
             ];
         });
     }
@@ -293,11 +297,11 @@ final class TreatmentService
      */
     public function checkPatientLastTreatment(array $validated): array
     {
-        $patientId              = (int) $validated['patient_id'];
-        $serviceId              = (int) $validated['service_id'];
-        $locationId             = (int) $validated['location_id'];
-        $excludeAppointmentId   = $validated['exclude_appointment_id'] ?? null;
-        $startDateTime          = $validated['start'] ?? null;
+        $patientId = (int) $validated['patient_id'];
+        $serviceId = (int) $validated['service_id'];
+        $locationId = (int) $validated['location_id'];
+        $excludeAppointmentId = $validated['exclude_appointment_id'] ?? null;
+        $startDateTime = $validated['start'] ?? null;
 
         $arrivedStatusId = $this->getArrivedStatusId();
 
@@ -316,16 +320,16 @@ final class TreatmentService
 
         $lastTreatment = $query->first();
 
-        if (!$lastTreatment?->doctor_id) {
+        if (! $lastTreatment?->doctor_id) {
             return ['last_treatment' => null];
         }
 
         $doctor = User::find($lastTreatment->doctor_id);
-        if (!$doctor?->active) {
+        if (! $doctor?->active) {
             return ['last_treatment' => null];
         }
 
-        if (!$this->checkDoctorAllocation($lastTreatment->doctor_id, $locationId, $serviceId)) {
+        if (! $this->checkDoctorAllocation($lastTreatment->doctor_id, $locationId, $serviceId)) {
             return ['last_treatment' => null];
         }
 
@@ -337,13 +341,13 @@ final class TreatmentService
 
         return [
             'last_treatment' => [
-                'id'              => $lastTreatment->id,
-                'doctor_id'       => $lastTreatment->doctor_id,
-                'doctor_name'     => $lastTreatment->doctor->name ?? 'Unknown',
-                'service_id'      => $lastTreatment->service_id,
-                'service_name'    => $lastTreatment->service->name ?? 'Unknown',
-                'scheduled_date'  => $lastTreatment->scheduled_date,
-                'scheduled_time'  => $lastTreatment->scheduled_time,
+                'id' => $lastTreatment->id,
+                'doctor_id' => $lastTreatment->doctor_id,
+                'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
+                'service_id' => $lastTreatment->service_id,
+                'service_name' => $lastTreatment->service->name ?? 'Unknown',
+                'scheduled_date' => $lastTreatment->scheduled_date,
+                'scheduled_time' => $lastTreatment->scheduled_time,
                 'has_doctor_rota' => $hasDoctorRota,
             ],
             'can_edit_doctor' => Gate::allows('can_edit_doctor'),
@@ -398,20 +402,20 @@ final class TreatmentService
 
         $user = Auth::user();
         $permissions = [
-            'can_edit_doctor'   => !$isArrivedOrConverted || ($user?->can('can_edit_doctor') ?? false),
-            'can_edit_service'  => !$isArrivedOrConverted || ($user?->can('can_edit_service') ?? false),
-            'can_edit_schedule' => !$isArrivedOrConverted || ($user?->can('can_edit_schedule') ?? false),
+            'can_edit_doctor' => ! $isArrivedOrConverted || ($user?->can('can_edit_doctor') ?? false),
+            'can_edit_service' => ! $isArrivedOrConverted || ($user?->can('can_edit_service') ?? false),
+            'can_edit_schedule' => ! $isArrivedOrConverted || ($user?->can('can_edit_schedule') ?? false),
         ];
 
         return [
-            'appointment'             => $appointmentData,
-            'services'                => $services,
-            'doctors'                 => $doctors,
-            'resourceRotaDay'         => $resourceRotaDay,
-            'machineRotaDay'          => $machineRotaDay,
-            'biggerTime'              => $biggerTime,
-            'smallerTime'             => $smallerTime,
-            'permissions'             => $permissions,
+            'appointment' => $appointmentData,
+            'services' => $services,
+            'doctors' => $doctors,
+            'resourceRotaDay' => $resourceRotaDay,
+            'machineRotaDay' => $machineRotaDay,
+            'biggerTime' => $biggerTime,
+            'smallerTime' => $smallerTime,
+            'permissions' => $permissions,
             'is_arrived_or_converted' => $isArrivedOrConverted,
         ];
     }
@@ -421,16 +425,16 @@ final class TreatmentService
     //  (secondary API — /api/treatment/*)
     // ──────────────────────────────────────────────────
 
-    public function getTreatmentList(array $filters): \Illuminate\Database\Eloquent\Builder
+    public function getTreatmentList(array $filters): Builder
     {
-        $service = app(\App\Services\Appointment\AppointmentService::class);
+        $service = app(AppointmentService::class);
 
         return $service->getAppointmentsList($filters, $this->getTreatmentTypeId());
     }
 
     public function getScheduledTreatments(array $filters): mixed
     {
-        $service = app(\App\Services\Appointment\AppointmentService::class);
+        $service = app(AppointmentService::class);
         $filters['appointment_type_id'] = $this->getTreatmentTypeId();
 
         return $service->getScheduledAppointments($filters);
@@ -438,7 +442,7 @@ final class TreatmentService
 
     public function getNonScheduledTreatments(array $filters): mixed
     {
-        $service = app(\App\Services\Appointment\AppointmentService::class);
+        $service = app(AppointmentService::class);
         $filters['appointment_type_id'] = $this->getTreatmentTypeId();
 
         return $service->getNonScheduledAppointments($filters);
@@ -446,7 +450,7 @@ final class TreatmentService
 
     public function getTreatmentStatistics(array $filters = []): mixed
     {
-        $service = app(\App\Services\Appointment\AppointmentService::class);
+        $service = app(AppointmentService::class);
         $filters['appointment_type_id'] = $this->getTreatmentTypeId();
 
         return $service->getAppointmentStatistics($filters);
@@ -459,13 +463,13 @@ final class TreatmentService
     public function getAvailableResources(int $locationId, ?int $serviceId = null): mixed
     {
         $accountId = (int) Auth::user()->account_id;
-        $cacheKey  = "treatment_resources_{$accountId}_{$locationId}_{$serviceId}";
+        $cacheKey = "treatment_resources_{$accountId}_{$locationId}_{$serviceId}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL / 2, function () use ($accountId, $locationId, $serviceId) {
             $query = Resources::where([
-                'account_id'  => $accountId,
+                'account_id' => $accountId,
                 'location_id' => $locationId,
-                'active'      => 1,
+                'active' => 1,
             ]);
 
             if ($serviceId) {
@@ -479,13 +483,13 @@ final class TreatmentService
     public function getServicesByLocation(int $locationId): mixed
     {
         $accountId = (int) Auth::user()->account_id;
-        $cacheKey  = "treatment_services_location_{$accountId}_{$locationId}";
+        $cacheKey = "treatment_services_location_{$accountId}_{$locationId}";
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, fn() => Services::whereHas('locations', fn ($q) => $q->where('location_id', $locationId))
-                ->where('account_id', $accountId)
-                ->where('active', 1)
-                ->orderBy('name')
-                ->get());
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => Services::whereHas('locations', fn ($q) => $q->where('location_id', $locationId))
+            ->where('account_id', $accountId)
+            ->where('active', 1)
+            ->orderBy('name')
+            ->get());
     }
 
     // ──────────────────────────────────────────────────
@@ -496,7 +500,7 @@ final class TreatmentService
     {
         $accountId = (int) Auth::user()->account_id;
         Cache::forget("treatment_lookup_data_{$accountId}");
-        Cache::forget("treatment_filter_values_{$accountId}_" . md5(json_encode(ACL::getUserCentres())));
+        Cache::forget("treatment_filter_values_{$accountId}_".md5(json_encode(ACL::getUserCentres())));
         Cache::forget('paid_invoice_status');
     }
 
@@ -509,28 +513,23 @@ final class TreatmentService
      */
     private function processFilters(array $requestAll): array
     {
-        $userId  = (int) Auth::id();
+        $userId = (int) Auth::id();
         $filters = getFilters($requestAll);
 
         if (isset($requestAll['sort'])) {
             [$orderBy, $order] = getSortBy(request(), 'appointments.created_at', 'DESC', 'appointments');
         } else {
             $orderBy = 'appointments.created_at';
-            $order   = 'desc';
+            $order = 'desc';
         }
 
         Filters::put($userId, self::FILTER_KEY, 'order_by', $orderBy);
         Filters::put($userId, self::FILTER_KEY, 'order', $order);
 
-        $startDateTime = null;
-        $endDateTime   = null;
-
+        [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
         if (hasFilter($filters, 'created_at')) {
-            $dateRange     = explode(' - ', $filters['created_at']);
-            $startDateTime = date('Y-m-d H:i:s', strtotime($dateRange[0]));
-            $endDate       = new \DateTime($dateRange[1]);
-            $endDate->setTime(23, 59, 0);
-            $endDateTime = $endDate->format('Y-m-d H:i:s');
             Filters::put($userId, self::FILTER_KEY, 'created_at', $filters['created_at']);
         }
 
@@ -544,9 +543,9 @@ final class TreatmentService
             if (hasFilter($filters, $key)) {
                 $value = match ($key) {
                     'patient_id' => PatientSearchService::patientSearch($filters[$key]),
-                    'date_from'  => $filters[$key] . ' 00:00:00',
-                    'date_to'    => $filters[$key] . ' 23:59:59',
-                    default      => $filters[$key],
+                    'date_from' => $filters[$key].' 00:00:00',
+                    'date_to' => $filters[$key].' 23:59:59',
+                    default => $filters[$key],
                 };
                 Filters::put($userId, self::FILTER_KEY, $key, $value);
             }
@@ -557,10 +556,10 @@ final class TreatmentService
         }
 
         return array_merge($filters, [
-            'order_by'        => $orderBy,
-            'order'           => $order,
+            'order_by' => $orderBy,
+            'order' => $order,
             'start_date_time' => $startDateTime,
-            'end_date_time'   => $endDateTime,
+            'end_date_time' => $endDateTime,
         ]);
     }
 
@@ -584,34 +583,34 @@ final class TreatmentService
         }
 
         $directFilterMap = [
-            'phone'              => ['users.phone', 'like'],
-            'doctor_id'          => ['doctor_id', '='],
-            'region_id'          => ['region_id', '='],
-            'city_id'            => ['city_id', '='],
-            'created_by'         => ['appointments.created_by', '='],
-            'converted_by'       => ['appointments.converted_by', '='],
-            'updated_by'         => ['appointments.updated_by', '='],
+            'phone' => ['users.phone', 'like'],
+            'doctor_id' => ['doctor_id', '='],
+            'region_id' => ['region_id', '='],
+            'city_id' => ['city_id', '='],
+            'created_by' => ['appointments.created_by', '='],
+            'converted_by' => ['appointments.converted_by', '='],
+            'updated_by' => ['appointments.updated_by', '='],
             'appointment_type_id' => ['appointments.appointment_type_id', '='],
-            'consultancy_type'   => ['appointments.consultancy_type', '='],
+            'consultancy_type' => ['appointments.consultancy_type', '='],
         ];
 
         foreach ($directFilterMap as $filterKey => [$column, $operator]) {
             if (hasFilter($filters, $filterKey)) {
-                $value = $operator === 'like' ? '%' . $filters[$filterKey] . '%' : $filters[$filterKey];
+                $value = $operator === 'like' ? '%'.$filters[$filterKey].'%' : $filters[$filterKey];
                 $where[] = [$column, $operator, $value];
             }
         }
 
         if (hasFilter($filters, 'date_from')) {
-            $where[] = ['appointments.scheduled_date', '>=', $filters['date_from'] . ' 00:00:00'];
+            $where[] = ['appointments.scheduled_date', '>=', $filters['date_from'].' 00:00:00'];
         }
         if (hasFilter($filters, 'date_to')) {
-            $where[] = ['appointments.scheduled_date', '<=', $filters['date_to'] . ' 23:59:59'];
+            $where[] = ['appointments.scheduled_date', '<=', $filters['date_to'].' 23:59:59'];
         }
-        if (!empty($filters['start_date_time'])) {
+        if (! empty($filters['start_date_time'])) {
             $where[] = ['appointments.created_at', '>=', $filters['start_date_time']];
         }
-        if (!empty($filters['end_date_time'])) {
+        if (! empty($filters['end_date_time'])) {
             $where[] = ['appointments.created_at', '<=', $filters['end_date_time']];
         }
 
@@ -623,16 +622,16 @@ final class TreatmentService
      */
     private function getStatusIdsForFilter(array $filters): array
     {
-        if (!hasFilter($filters, 'appointment_status_id')) {
+        if (! hasFilter($filters, 'appointment_status_id')) {
             return [];
         }
 
-        $accountId      = (int) Auth::user()->account_id;
+        $accountId = (int) Auth::user()->account_id;
         $selectedStatus = AppointmentStatuses::find($filters['appointment_status_id']);
 
         if ($selectedStatus?->is_arrived == 1) {
             $convertedStatus = AppointmentStatuses::where([
-                'account_id'   => $accountId,
+                'account_id' => $accountId,
                 'is_converted' => 1,
             ])->first();
 
@@ -649,14 +648,14 @@ final class TreatmentService
      */
     private function getServiceIdsForFilter(array $filters): array
     {
-        if (!hasFilter($filters, 'service_id')) {
+        if (! hasFilter($filters, 'service_id')) {
             return [];
         }
 
         $serviceId = GeneralFunctions::getServiceId($filters['service_id']);
-        $service   = Services::find($serviceId);
+        $service = Services::find($serviceId);
 
-        if (!$service) {
+        if (! $service) {
             return [];
         }
 
@@ -671,7 +670,7 @@ final class TreatmentService
 
     private function getRecordsCount(array $where, array $filters, int $treatmentTypeId): int
     {
-        if (!Gate::allows('treatments_manage')) {
+        if (! Gate::allows('treatments_manage')) {
             return 0;
         }
 
@@ -720,8 +719,8 @@ final class TreatmentService
 
         if (hasFilter($filters, 'name')) {
             $query->where(fn ($q) => $q
-                ->where('users.name', 'like', '%' . $filters['name'] . '%')
-                ->orWhere('appointments.name', 'like', '%' . $filters['name'] . '%'));
+                ->where('users.name', 'like', '%'.$filters['name'].'%')
+                ->orWhere('appointments.name', 'like', '%'.$filters['name'].'%'));
         }
 
         if ($orderBy === 'name') {
@@ -774,12 +773,12 @@ final class TreatmentService
      */
     private function transformAppointments(EloquentCollection $appointments, array $lookupData): array
     {
-        $canViewContact     = Gate::allows('contact');
-        $regions            = $lookupData['regions'];
-        $users              = $lookupData['users'];
+        $canViewContact = Gate::allows('contact');
+        $regions = $lookupData['regions'];
+        $users = $lookupData['users'];
         $appointmentStatuses = $lookupData['appointment_statuses'];
-        $unscheduledStatus  = $lookupData['unscheduled_status'];
-        $cancelledStatus    = $lookupData['cancelled_status'];
+        $unscheduledStatus = $lookupData['unscheduled_status'];
+        $cancelledStatus = $lookupData['cancelled_status'];
 
         return $appointments->map(function ($appointment) use (
             $canViewContact,
@@ -815,11 +814,11 @@ final class TreatmentService
         $accountId = (int) Auth::user()->account_id;
 
         return Cache::remember("treatment_lookup_data_{$accountId}", self::CACHE_TTL, fn () => [
-            'regions'              => Regions::getAllRecordsDictionary($accountId),
-            'users'                => User::getAllRecords($accountId)->getDictionary(),
+            'regions' => Regions::getAllRecordsDictionary($accountId),
+            'users' => User::getAllRecords($accountId)->getDictionary(),
             'appointment_statuses' => AppointmentStatuses::getAllRecordsDictionary($accountId),
-            'unscheduled_status'   => AppointmentStatuses::getUnScheduledStatusOnly($accountId, ['id']),
-            'cancelled_status'     => AppointmentStatuses::getCancelledStatusOnly($accountId),
+            'unscheduled_status' => AppointmentStatuses::getUnScheduledStatusOnly($accountId, ['id']),
+            'cancelled_status' => AppointmentStatuses::getCancelledStatusOnly($accountId),
         ]);
     }
 
@@ -829,21 +828,21 @@ final class TreatmentService
     private function getFilterValues(): array
     {
         $accountId = (int) Auth::user()->account_id;
-        $cacheKey  = "treatment_filter_values_{$accountId}_" . md5(json_encode(ACL::getUserCentres()));
+        $cacheKey = "treatment_filter_values_{$accountId}_".md5(json_encode(ACL::getUserCentres()));
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($accountId): array {
             $appointmentStatuses = AppointmentStatuses::getAllParentRecords($accountId);
 
             return [
-                'cities'               => Cities::getActiveSortedFeatured(ACL::getUserCities()),
-                'regions'              => Regions::getActiveSorted(ACL::getUserRegions()),
-                'users'                => User::getAllRecords($accountId)->pluck('name', 'id'),
-                'doctors'              => Doctors::getActiveOnly(ACL::getUserCentres()),
-                'locations'            => Locations::getActiveSorted(ACL::getUserCentres()),
-                'services'             => GeneralFunctions::ServicesTreeList(),
+                'cities' => Cities::getActiveSortedFeatured(ACL::getUserCities()),
+                'regions' => Regions::getActiveSorted(ACL::getUserRegions()),
+                'users' => User::getAllRecords($accountId)->pluck('name', 'id'),
+                'doctors' => Doctors::getActiveOnly(ACL::getUserCentres()),
+                'locations' => Locations::getActiveSorted(ACL::getUserCentres()),
+                'services' => GeneralFunctions::ServicesTreeList(),
                 'appointment_statuses' => $appointmentStatuses?->pluck('name', 'id') ?? collect(),
-                'appointment_types'    => $this->getAppointmentTypes(),
-                'consultancy_types'    => config('constants.consultancy_type_array'),
+                'appointment_types' => $this->getAppointmentTypes(),
+                'consultancy_types' => config('constants.consultancy_type_array'),
             ];
         });
     }
@@ -851,13 +850,13 @@ final class TreatmentService
     private function getAppointmentTypes(): mixed
     {
         $canConsultancy = Gate::allows('consultations_manage');
-        $canServices    = Gate::allows('treatments_manage');
+        $canServices = Gate::allows('treatments_manage');
 
         return match (true) {
             $canConsultancy && $canServices => AppointmentTypes::pluck('name', 'id'),
-            $canConsultancy                => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
-            $canServices                   => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
-            default                        => collect(),
+            $canConsultancy => AppointmentTypes::where('slug', 'consultancy')->pluck('name', 'id'),
+            $canServices => AppointmentTypes::where('slug', 'treatment')->pluck('name', 'id'),
+            default => collect(),
         };
     }
 
@@ -869,26 +868,26 @@ final class TreatmentService
         $canManage = Gate::allows('treatments_services');
 
         return [
-            'edit'               => $canManage && Gate::allows('appointments_edit'),
-            'consultancy'        => Gate::allows('consultations_manage'),
-            'treatment'          => Gate::allows('treatments_manage'),
-            'delete'             => $canManage && Gate::allows('appointments_destroy'),
-            'active'             => $canManage && Gate::allows('appointments_active'),
-            'inactive'           => $canManage && Gate::allows('appointments_inactive'),
-            'create'             => $canManage && Gate::allows('appointments_create'),
-            'log'                => Gate::allows('appointments_log'),
-            'status'             => $canManage && Gate::allows('treatments_appointment_status'),
-            'schedule_edit'      => $canManage && Gate::allows('update_treatment_schedule'),
-            'invoice'            => Gate::allows('appointments_invoice'),
-            'invoice_display'    => Gate::allows('appointments_invoice_display'),
-            'image_manage'       => Gate::allows('appointments_image_manage'),
+            'edit' => $canManage && Gate::allows('appointments_edit'),
+            'consultancy' => Gate::allows('consultations_manage'),
+            'treatment' => Gate::allows('treatments_manage'),
+            'delete' => $canManage && Gate::allows('appointments_destroy'),
+            'active' => $canManage && Gate::allows('appointments_active'),
+            'inactive' => $canManage && Gate::allows('appointments_inactive'),
+            'create' => $canManage && Gate::allows('appointments_create'),
+            'log' => Gate::allows('appointments_log'),
+            'status' => $canManage && Gate::allows('treatments_appointment_status'),
+            'schedule_edit' => $canManage && Gate::allows('update_treatment_schedule'),
+            'invoice' => Gate::allows('appointments_invoice'),
+            'invoice_display' => Gate::allows('appointments_invoice_display'),
+            'image_manage' => Gate::allows('appointments_image_manage'),
             'measurement_manage' => Gate::allows('appointments_measurement_manage'),
             'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
-            'plans_create'       => $canManage && Gate::allows('appointments_plans_create'),
-            'patient_card'       => Gate::allows('appointments_patient_card'),
-            'contact'            => Gate::allows('contact'),
-            'add_feedback'       => $canManage && Gate::allows('feedbacks_create'),
-            'can_edit_doctor'    => $canManage && Gate::allows('can_edit_doctor'),
+            'plans_create' => $canManage && Gate::allows('appointments_plans_create'),
+            'patient_card' => Gate::allows('appointments_patient_card'),
+            'contact' => Gate::allows('contact'),
+            'add_feedback' => $canManage && Gate::allows('feedbacks_create'),
+            'can_edit_doctor' => $canManage && Gate::allows('can_edit_doctor'),
         ];
     }
 
@@ -899,8 +898,7 @@ final class TreatmentService
 
     private function getPaidInvoiceStatus(): ?InvoiceStatuses
     {
-        return Cache::remember('paid_invoice_status', self::CACHE_TTL, fn () =>
-            InvoiceStatuses::where('slug', 'paid')->first()
+        return Cache::remember('paid_invoice_status', self::CACHE_TTL, fn () => InvoiceStatuses::where('slug', 'paid')->first()
         );
     }
 
@@ -908,8 +906,7 @@ final class TreatmentService
     {
         $accountId = (int) Auth::user()->account_id;
 
-        return (int) Cache::remember("arrived_status_id_{$accountId}", self::CACHE_TTL, fn () =>
-            AppointmentStatuses::where(['account_id' => $accountId, 'is_arrived' => 1])->value('id')
+        return (int) Cache::remember("arrived_status_id_{$accountId}", self::CACHE_TTL, fn () => AppointmentStatuses::where(['account_id' => $accountId, 'is_arrived' => 1])->value('id')
         );
     }
 
@@ -981,26 +978,26 @@ final class TreatmentService
         $user = Auth::user();
 
         $data = $validated;
-        $data['account_id']          = $accountId;
-        $data['created_by']          = $user->id;
-        $data['consultancy_type']    = 'treatment';
+        $data['account_id'] = $accountId;
+        $data['created_by'] = $user->id;
+        $data['consultancy_type'] = 'treatment';
         $data['appointment_type_id'] = $this->getTreatmentTypeId();
-        $data['city_id']             = $location->city_id;
-        $data['region_id']           = $location->region_id;
-        $data['base_service_id']     = $baseServiceId;
-        $data['resource_id']         = $resourceId;
-        $data['user_type_id']        = 3;
-        $data['created_at']          = Filters::getCurrentTimeStamp();
-        $data['updated_at']          = Filters::getCurrentTimeStamp();
+        $data['city_id'] = $location->city_id;
+        $data['region_id'] = $location->region_id;
+        $data['base_service_id'] = $baseServiceId;
+        $data['resource_id'] = $resourceId;
+        $data['user_type_id'] = 3;
+        $data['created_at'] = Filters::getCurrentTimeStamp();
+        $data['updated_at'] = Filters::getCurrentTimeStamp();
 
         $appointmentStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
         if ($appointmentStatus) {
-            $data['appointment_status_id']           = $appointmentStatus->id;
-            $data['base_appointment_status_id']      = $appointmentStatus->id;
+            $data['appointment_status_id'] = $appointmentStatus->id;
+            $data['base_appointment_status_id'] = $appointmentStatus->id;
             $data['appointment_status_allow_message'] = $appointmentStatus->allow_message;
         } else {
-            $data['appointment_status_id']           = null;
-            $data['base_appointment_status_id']      = null;
+            $data['appointment_status_id'] = null;
+            $data['base_appointment_status_id'] = null;
             $data['appointment_status_allow_message'] = 0;
         }
 
@@ -1017,12 +1014,12 @@ final class TreatmentService
         array $appointmentData,
     ): array {
         $start = $validated['start'] ?? null;
-        if (!$start) {
+        if (! $start) {
             return ['valid' => true, 'data' => [], 'message' => ''];
         }
 
         $serviceDuration = $service->duration ?? '00:30';
-        $durationParts   = explode(':', $serviceDuration);
+        $durationParts = explode(':', $serviceDuration);
         $end = (count($durationParts) >= 2)
             ? Carbon::parse($start)->addHours((int) $durationParts[0])->addMinutes((int) $durationParts[1])
             : Carbon::parse($start)->addMinutes(30);
@@ -1030,10 +1027,10 @@ final class TreatmentService
         $startFormatted = Carbon::parse($start)->format('Y-m-d H:i:s');
 
         $doctorId = $validated['doctor_id'];
-        if (!Resources::checkingDoctorAvailbility($doctorId, $startFormatted, $end)) {
+        if (! Resources::checkingDoctorAvailbility($doctorId, $startFormatted, $end)) {
             return [
-                'valid'   => false,
-                'data'    => [],
+                'valid' => false,
+                'data' => [],
                 'message' => 'Doctor is not available. Appointment cannot be scheduled.',
             ];
         }
@@ -1043,7 +1040,7 @@ final class TreatmentService
         $resourceDoctor = Resources::where('external_id', $doctorId)->first();
         if ($resourceDoctor) {
             $doctorRota = Resources::getResourceRotaHasDay($start, $resourceDoctor->id);
-            if (!empty($doctorRota['resource_has_rota_day_id'])) {
+            if (! empty($doctorRota['resource_has_rota_day_id'])) {
                 $data['resource_has_rota_day_id'] = $doctorRota['resource_has_rota_day_id'];
             }
         }
@@ -1051,10 +1048,10 @@ final class TreatmentService
         $scheduledTime = $validated['scheduled_time']
             ?? Carbon::parse($start)->format('H:i:s');
 
-        $data['scheduled_date']       = Carbon::parse($start)->format('Y-m-d');
+        $data['scheduled_date'] = Carbon::parse($start)->format('Y-m-d');
         $data['first_scheduled_date'] = Carbon::parse($start)->format('Y-m-d');
         $data['first_scheduled_count'] = 1;
-        $data['scheduled_time']       = Carbon::parse($scheduledTime)->format('H:i:s');
+        $data['scheduled_time'] = Carbon::parse($scheduledTime)->format('H:i:s');
         $data['first_scheduled_time'] = Carbon::parse($scheduledTime)->format('H:i:s');
 
         return ['valid' => true, 'data' => $data, 'message' => ''];
@@ -1063,7 +1060,7 @@ final class TreatmentService
     private function handleLead(array $validated, array $appointmentData, int $accountId): ?Leads
     {
         $phone = $appointmentData['phone'];
-        $lead  = Leads::where('phone', $phone)->orderByDesc('id')->first();
+        $lead = Leads::where('phone', $phone)->orderByDesc('id')->first();
 
         if ($lead) {
             return $lead;
@@ -1073,15 +1070,15 @@ final class TreatmentService
 
         $defaultBookedStatus = LeadStatuses::where([
             'account_id' => $accountId,
-            'is_booked'  => 1,
+            'is_booked' => 1,
         ])->first();
 
-        $leadData                   = $appointmentData;
+        $leadData = $appointmentData;
         $leadData['lead_status_id'] = $defaultBookedStatus?->id ?? config('constants.lead_status_booked');
-        $leadData['created_at']     = Filters::getCurrentTimeStamp();
-        $leadData['updated_at']     = Filters::getCurrentTimeStamp();
-        $leadData['location_id']    = $validated['location_id'];
-        $leadData['gender']         = $patient?->gender;
+        $leadData['created_at'] = Filters::getCurrentTimeStamp();
+        $leadData['updated_at'] = Filters::getCurrentTimeStamp();
+        $leadData['location_id'] = $validated['location_id'];
+        $leadData['gender'] = $patient?->gender;
 
         return Leads::updateOrCreate(
             ['phone' => $phone, 'account_id' => $accountId],
@@ -1091,20 +1088,20 @@ final class TreatmentService
 
     private function handleLeadServices(Leads $lead, array $validated, Appointments $appointment): void
     {
-        $serviceId     = $validated['service_id'];
+        $serviceId = $validated['service_id'];
         $baseServiceId = $validated['base_service_id'] ?? $appointment->base_service_id;
 
         LeadsServices::where('lead_id', $lead->id)->update(['status' => 0]);
 
         LeadsServices::updateOrCreate(
             [
-                'lead_id'    => $lead->id,
+                'lead_id' => $lead->id,
                 'service_id' => $baseServiceId ?? $serviceId,
             ],
             [
                 'child_service_id' => $serviceId,
-                'treatment_id'     => $appointment->id,
-                'status'           => 1,
+                'treatment_id' => $appointment->id,
+                'status' => 1,
             ],
         );
     }
@@ -1119,8 +1116,8 @@ final class TreatmentService
         $status = $unscheduledStatus ?: AppointmentStatuses::getADefaultStatusOnly($accountId);
 
         $appointment->update([
-            'appointment_status_id'           => $status?->id,
-            'base_appointment_status_id'      => $status?->id,
+            'appointment_status_id' => $status?->id,
+            'base_appointment_status_id' => $status?->id,
             'appointment_status_allow_message' => 0,
         ]);
     }
@@ -1152,7 +1149,7 @@ final class TreatmentService
     {
         $doctors = Doctors::getActiveOnly($locationId, $accountId);
 
-        if (!$doctors || $doctors->isEmpty()) {
+        if (! $doctors || $doctors->isEmpty()) {
             return collect();
         }
 
@@ -1187,7 +1184,7 @@ final class TreatmentService
 
     private function checkDoctorRotaForDateTime(int $doctorId, int $locationId, ?string $startDateTime): bool
     {
-        if (!$startDateTime) {
+        if (! $startDateTime) {
             return false;
         }
 
@@ -1212,7 +1209,7 @@ final class TreatmentService
         ])->first();
 
         $convertedStatus = AppointmentStatuses::where([
-            'account_id'   => $accountId,
+            'account_id' => $accountId,
             'is_converted' => 1,
         ])->first();
 

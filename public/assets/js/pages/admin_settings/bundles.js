@@ -177,13 +177,7 @@ function setDetailData(response) {
     $('#detail_price').text(parseFloat(bundle.price || 0).toFixed(2));
     var savings = parseFloat(bundle.services_price || 0) - parseFloat(bundle.price || 0);
     $('#detail_you_save').text(savings > 0 ? savings.toFixed(2) : '-');
-    if (bundle.created_at) {
-        var date = new Date(bundle.created_at);
-        $('#detail_created_at').text(date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) + ' ' +
-            date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
-    } else {
-        $('#detail_created_at').text('-');
-    }
+    $('#detail_created_at').text(bundle.created_at || '-');
     $('.DETAIL_SERVICES').remove();
     Object.entries(relationships).forEach(function (value) {
         var svc = bundle_services[value[1].service_id];

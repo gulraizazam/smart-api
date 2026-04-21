@@ -87,7 +87,12 @@
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                  id="location_id_E">
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
+                                                <select name="location_id[]" id="location_id" class="form-control select2 sn-select" multiple style="width: 100%;">
+                                                    <option value="all" selected>All Centres</option>
+                                                    @foreach($locations as $locId => $locName)
+                                                        <option value="{{ $locId }}">{{ $locName }}</option>
+                                                    @endforeach
+                                                </select>
                                                 <span id="location_id_handler"></span>
                                             </div>
                                            

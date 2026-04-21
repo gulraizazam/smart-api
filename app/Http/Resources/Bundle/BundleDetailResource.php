@@ -17,9 +17,16 @@ final class BundleDetailResource extends JsonResource
     public function toArray(Request $request): array
     {
         $data = $this->resource;
+        $bundle = $data['bundle'] ?? null;
+
+        if ($bundle !== null) {
+            $rawCreated = $bundle->getRawOriginal('created_at');
+            $bundle = $bundle->toArray();
+            $bundle['created_at'] = $rawCreated !== null ? (string) $rawCreated : null;
+        }
 
         return [
-            'bundle'          => $data['bundle'] ?? null,
+            'bundle'          => $bundle,
             'bundle_services' => $data['bundle_services'] ?? collect(),
             'relationships'   => $data['relationships'] ?? collect(),
         ];

@@ -17,22 +17,18 @@ use App\Models\AppointmentTypes;
 use App\Models\Locations;
 use App\Models\Regions;
 use App\Models\Telecomprovidernumber;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use App\User;
 
 class Staff
 {
+    use ParsesDateRange;
+
     public static function staffReports($data)
     {
         $where = [];
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['user_id']) && $data['user_id']) {
             $where[] = [
                 'users.id',
@@ -68,8 +64,7 @@ class Staff
         $resultQuery = $users->with(['user_has_locations', 'doctorhaslocation', 'doctorhaslocation.location']);
 
         if (isset($data['region_id']) && $data['region_id']) {
-            $regionObj = Regions::where('id', $data['region_id'])->with(['locations' => function ($query) {
-            }])->first(['id', 'name'])->toArray();
+            $regionObj = Regions::where('id', $data['region_id'])->with(['locations' => function ($query) {}])->first(['id', 'name'])->toArray();
             $locationsList = [];
             foreach ($regionObj['locations'] as $region) {
                 $locationsList[] = $region['id'];
@@ -85,7 +80,7 @@ class Staff
             });
         }
         if (isset($data['telecomprovider_id']) && $data['telecomprovider_id']) {
-            //$telecomprovider = Telecomprovidernumber::whereIn('id',$data['telecomprovider_id'])->get();
+            // $telecomprovider = Telecomprovidernumber::whereIn('id',$data['telecomprovider_id'])->get();
             $telecomprovider = Telecomprovidernumber::whereIn('id', $data['telecomprovider_id'])->get();
 
             $newPrefix = [];
@@ -119,14 +114,7 @@ class Staff
     public static function centerStaffPerformanceStatsByRevenue($data, $filters = [])
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -198,7 +186,7 @@ class Staff
                         $data[$record->location_id]['records'][$record->doctor_id]['region'] = (array_key_exists($locationinfo->region_id, $filters['regions'])) ? $filters['regions'][$record->region_id]->name : '';
                         $data[$record->location_id]['records'][$record->doctor_id]['city'] = (array_key_exists($locationinfo->city_id, $filters['cities'])) ? $filters['cities'][$record->city_id]->name : '';
                     }
-                    //$data[$record->location_id]['records'][$record->id] = $record;
+                    // $data[$record->location_id]['records'][$record->id] = $record;
                     $data[$record->location_id]['records'][$record->doctor_id]['appointments'][$record->id] = $record;
                 } else {
                     if (! isset($data[$record->location_id]['records'][$record->doctor_id]['doctor_id'])) {
@@ -210,11 +198,12 @@ class Staff
                         $data[$record->location_id]['records'][$record->doctor_id]['region'] = (array_key_exists($locationinfo->region_id, $filters['regions'])) ? $filters['regions'][$record->region_id]->name : '';
                         $data[$record->location_id]['records'][$record->doctor_id]['city'] = (array_key_exists($locationinfo->city_id, $filters['cities'])) ? $filters['cities'][$record->city_id]->name : '';
                     }
-                    //$data[$record->location_id]['records'][$record->id] = $record;
+                    // $data[$record->location_id]['records'][$record->id] = $record;
                     $data[$record->location_id]['records'][$record->doctor_id]['appointments'][$record->id] = $record;
                 }
             }
         }
+
         return $data;
     }
 
@@ -227,14 +216,7 @@ class Staff
     public static function centerPerformanceStatsByServices($data, $filters = [])
     {
         $where = [];
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = self::parseDateRange($data['date_range'] ?? null);
         if (isset($data['patient_id']) && $data['patient_id']) {
             $where[] = [
                 'patient_id',
@@ -297,7 +279,7 @@ class Staff
                     $data[$record->appointment_type_id] = [
                         'name' => $appointmenttype->name,
                     ];
-                    //$data[$record->appointment_type_id]['records'][$record->id] = $record;
+                    // $data[$record->appointment_type_id]['records'][$record->id] = $record;
                     $data[$record->appointment_type_id]['records'][$record->doctor->id]['doctor_id'] = $record->doctor->id;
                     $data[$record->appointment_type_id]['records'][$record->doctor_id]['name'] = $record->doctor->name;
                     $data[$record->appointment_type_id]['records'][$record->doctor_id]['email'] = $record->doctor->email;
@@ -306,7 +288,7 @@ class Staff
                     $data[$record->appointment_type_id]['records'][$record->doctor_id]['city'] = (array_key_exists($locationinfo->city_id, $filters['cities'])) ? $filters['cities'][$record->city_id]->name : '';
                     $data[$record->appointment_type_id]['records'][$record->doctor->id]['appointments'][$record->id] = $record;
                 } else {
-                    //$data[$record->appointment_type_id]['records'][$record->doctor->id][$record->id] = $record;
+                    // $data[$record->appointment_type_id]['records'][$record->doctor->id][$record->id] = $record;
                     $data[$record->appointment_type_id]['records'][$record->doctor->id]['doctor_id'] = $record->doctor->id;
                     $data[$record->appointment_type_id]['records'][$record->doctor_id]['name'] = $record->doctor->name;
                     $data[$record->appointment_type_id]['records'][$record->doctor_id]['email'] = $record->doctor->email;

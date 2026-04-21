@@ -334,6 +334,8 @@
                             echo $packagebundles->service->name;
                         } elseif ($packagebundles->source_type === 'bundle' && $packagebundles->bundle) {
                             echo $packagebundles->bundle->name;
+                        } elseif ($packagebundles->source_type === 'service_bundle' && $packagebundles->serviceBundle && $packagebundles->serviceBundle->service) {
+                            echo $packagebundles->qty . 'x ' . $packagebundles->serviceBundle->service->name;
                         } elseif ($packagebundles->source_type === 'membership' && $packagebundles->membershipType) {
                             echo $packagebundles->membershipType->name;
                         } elseif ($packagebundles->service && $packagebundles->service->name) {

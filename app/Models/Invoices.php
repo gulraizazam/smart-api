@@ -1,30 +1,32 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Models;
 
-use DB;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Models\Concerns\GuardsTenantBoundary;
 use App\Helpers\Filters;
+use App\Models\Concerns\GuardsTenantBoundary;
 use App\Services\PatientManagement\PatientSearchService;
-use Illuminate\Http\Request;
+use App\Services\Reports\Concerns\ParsesDateRange;
+use DB;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasOne;use Illuminate\Database\Eloquent\Relations\HasMany;
-
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class Invoices extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
     use GuardsTenantBoundary;
+    use HasFactory;
+    use ParsesDateRange;
+    use SoftDeletes;
 
-    protected $fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id','is_settlement', 'package_id'];
+    protected $fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id', 'is_settlement', 'package_id'];
 
     protected static array $_fillable = ['total_price', 'account_id', 'patient_id', 'appointment_id', 'invoice_status_id', 'active', 'is_exclusive', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'location_id', 'doctor_id'];
 
@@ -32,13 +34,13 @@ class Invoices extends Model
 
     protected static string $_table = 'invoices';
 
-    /*Get the invoice status data*/
+    /* Get the invoice status data */
     public function invoicestatus(): BelongsTo
     {
         return $this->belongsTo(InvoiceStatuses::class, 'invoice_status_id')->withTrashed();
     }
 
-    /*Get the user data*/
+    /* Get the user data */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'patient_id')->withTrashed();
@@ -56,7 +58,7 @@ class Invoices extends Model
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return (mixed)
      */
     public static function createRecord($data)
@@ -119,7 +121,7 @@ class Invoices extends Model
     /**
      * Get Total Records
      *
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getTotalRecords(Request $request, $account_id, $id, $apply_filter, $filename)
@@ -149,9 +151,9 @@ class Invoices extends Model
     /**
      * Get Records
      *
-     * @param  (int)  $iDisplayStart Start Index
-     * @param  (int)  $iDisplayLength Total Records Length
-     * @param  (int)  $account_id Current Organization's ID
+     * @param  (int)  $iDisplayStart  Start Index
+     * @param  (int)  $iDisplayLength  Total Records Length
+     * @param  (int)  $account_id  Current Organization's ID
      * @return (mixed)
      */
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $id, $apply_filter, $filename)
@@ -185,7 +187,7 @@ class Invoices extends Model
      * Check if child records exist
      *
      * @param  (int)  $id
-     * @return (boolean)
+     * @return (bool)
      */
     public static function isChildExists($id, $account_id)
     {
@@ -206,14 +208,9 @@ class Invoices extends Model
         $where = [];
 
         $filters = getFilters($request->all());
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_time = Carbon::parse($date_range[1])->setTime(23, 59, 0)->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        [$start_date_time, $end_date_time] = self::parseDateRangeForFilter(
+            hasFilter($filters, 'created_at') ? $filters['created_at'] : null
+        );
 
         if ($id != false) {
             $where[] = [

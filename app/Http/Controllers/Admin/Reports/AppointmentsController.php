@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin\Reports;
 
 use App;
@@ -17,19 +18,24 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\Appointments;
+use App\Services\Reports\Concerns\ParsesDateRange;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Excel;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AppointmentsController extends Controller
 {
-    public function report(): \Illuminate\View\View
+    use ParsesDateRange;
+
+    public function report(): View
     {
         if (! Gate::allows('appointment_reports_manage')) {
             return abort(401);
@@ -49,7 +55,7 @@ class AppointmentsController extends Controller
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         $locations->prepend('All', '');
 
-        $parentGroups = new NodesTree();
+        $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
         $parentGroups->build(0, Auth::user()->account_id);
         $parentGroups->toList($parentGroups, -1);
@@ -83,9 +89,9 @@ class AppointmentsController extends Controller
     /**
      * Load Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function reportLoad(Request $request): \Illuminate\View\View|\Illuminate\Http\Response|null
+    public function reportLoad(Request $request): View|Response|null
     {
         return match ($request->get('report_type')) {
             'general' => self::generalReport($request),
@@ -105,22 +111,15 @@ class AppointmentsController extends Controller
     /**
      * Load Clients by Appointment Status (Date Wise) Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function clientByAppointmentStatusReport(Request $request): \Illuminate\View\View
+    public function clientByAppointmentStatusReport(Request $request): View
     {
         if (! Gate::allows('appointment_reports_clients_by_appointment_status')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -164,12 +163,12 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date): void
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -261,7 +260,7 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'PatientByAppointmentStatus-DateWise'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'PatientByAppointmentStatus-DateWise'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
@@ -269,23 +268,16 @@ class AppointmentsController extends Controller
     /**
      * Load Appointment Summary by Status Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function appointmentSummaryByStatusReport(Request $request): \Illuminate\View\View
+    public function appointmentSummaryByStatusReport(Request $request): View
     {
 
         if (! Gate::allows('appointment_reports_summary_by_appointment_status')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -329,13 +321,13 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function appointmentSummaryByStatusReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -401,7 +393,7 @@ class AppointmentsController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByStatus'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByStatus'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -410,22 +402,15 @@ class AppointmentsController extends Controller
     /**
      * Load Appointment Summary by Service Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function appointmentSummaryByServiceReport(Request $request): \Illuminate\View\View
+    public function appointmentSummaryByServiceReport(Request $request): View
     {
         if (! Gate::allows('appointment_reports_summary_by_service')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -469,13 +454,13 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function appointmentSummaryByServiceReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -540,7 +525,7 @@ class AppointmentsController extends Controller
             $activeSheet->setCellValue('D'.$counter, number_format($grand_total))->getStyle('D'.$counter)->getFont()->setBold(true);
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByService'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByService'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -549,21 +534,14 @@ class AppointmentsController extends Controller
     /**
      * Load General Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function generalReport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_general_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -611,12 +589,12 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function AppointmentReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -664,7 +642,7 @@ class AppointmentsController extends Controller
                 $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
                 $activeSheet->setCellValue('B'.$counter, csv_safe($reportRow->patient->name));
                 $activeSheet->setCellValue('C'.$counter, csv_safe($reportRow->patient->email));
-                $activeSheet->setCellValue('D'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('D'.$counter, ($reportRow->scheduled_date) ? Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                 $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
                 $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
                 $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
@@ -672,7 +650,7 @@ class AppointmentsController extends Controller
                 $activeSheet->setCellValue('I'.$counter, csv_safe((array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : ''));
                 $activeSheet->setCellValue('J'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                 $activeSheet->setCellValue('K'.$counter, $consultancy_type);
-                $activeSheet->setCellValue('L'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('L'.$counter, Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
                 $activeSheet->setCellValue('M'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
                 $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
                 $activeSheet->setCellValue('O'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
@@ -681,7 +659,7 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'General Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'General Report'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -691,19 +669,12 @@ class AppointmentsController extends Controller
      * General report summary
      *
      */
-    public function generalReportSummary(Request $request): \Illuminate\View\View
+    public function generalReportSummary(Request $request): View
     {
         if (! Gate::allows('appointment_reports_general_summary_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -770,8 +741,8 @@ class AppointmentsController extends Controller
     public function GeneralReportsummaryExcel($reportData, $filters, $start_date, $end_date, $reportData2): void
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -821,7 +792,7 @@ class AppointmentsController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'General Report Summary'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'General Report Summary'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -830,23 +801,16 @@ class AppointmentsController extends Controller
     /**
      * Load Staff (Referred By) Appointment Schedule Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function staffReferredByAppointmentScheduleReport(Request $request): \Illuminate\View\View
+    public function staffReferredByAppointmentScheduleReport(Request $request): View
     {
 
         if (! Gate::allows('appointment_reports_referred_by_staff_appointment')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -908,13 +872,13 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function StaffReferredByAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -963,12 +927,12 @@ class AppointmentsController extends Controller
                     // controlled fields before they land in the XLSX.
                     $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
                     $activeSheet->setCellValue('B'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
-                    $activeSheet->setCellValue('C'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('B'.$counter);
+                    $activeSheet->setCellValue('C'.$counter, Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('B'.$counter);
                     $activeSheet->setCellValue('D'.$counter, csv_safe($reportRow->patient->name))->getStyle('C'.$counter)->getFont();
                     $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
                     $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
                     $activeSheet->setCellValue('G'.$counter, csv_safe($reportRow->patient->email));
-                    $activeSheet->setCellValue('H'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                    $activeSheet->setCellValue('H'.$counter, ($reportRow->scheduled_date) ? Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                     $activeSheet->setCellValue('I'.$counter, number_format($serviceprice, 2));
                     $activeSheet->setCellValue('J'.$counter, number_format($reportRow->Salestotal, 2));
                     $activeSheet->setCellValue('K'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
@@ -1006,7 +970,7 @@ class AppointmentsController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'StaffReferredByEmployeeReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'StaffReferredByEmployeeReport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1015,23 +979,16 @@ class AppointmentsController extends Controller
     /**
      * Load Staff Appointment Schedule Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function staffAppointmentScheduleReport(Request $request): \Illuminate\View\View
+    public function staffAppointmentScheduleReport(Request $request): View
     {
 
         if (! Gate::allows('appointment_reports_staff_appointment')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -1088,23 +1045,16 @@ class AppointmentsController extends Controller
     /**
      * Load Employee Appointment Summary Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function EmployeeAppointmentSummaryReport(Request $request): \Illuminate\View\View
+    public function EmployeeAppointmentSummaryReport(Request $request): View
     {
 
         if (! Gate::allows('appointment_reports_empolyee_summary')) {
             return abort(401);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -1163,13 +1113,13 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function employeeAppointmentSummary($reportData, $filters, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1202,7 +1152,7 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'EmployeeAppointmentSummaryReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'EmployeeAppointmentSummaryReport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1215,13 +1165,13 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $filters
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function StaffAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
 
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1283,12 +1233,12 @@ class AppointmentsController extends Controller
                     $activeSheet->setCellValue('B'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
                     $activeSheet->setCellValue('C'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
                     $activeSheet->setCellValue('D'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
-                    $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                    $activeSheet->setCellValue('E'.$counter, Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
                     $activeSheet->setCellValue('F'.$counter, csv_safe($reportRow->patient->name));
                     $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
                     $activeSheet->setCellValue('H'.$counter, csv_safe((array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : ''));
                     $activeSheet->setCellValue('I'.$counter, csv_safe($reportRow->patient->email));
-                    $activeSheet->setCellValue('J'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                    $activeSheet->setCellValue('J'.$counter, ($reportRow->scheduled_date) ? Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
                     $activeSheet->setCellValue('K'.$counter, number_format($serviceprice, 2));
                     $activeSheet->setCellValue('L'.$counter, number_format($reportRow->Salestotal, 2));
                     $activeSheet->setCellValue('M'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
@@ -1331,7 +1281,7 @@ class AppointmentsController extends Controller
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'DailyEmployeeStatsSummary'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'DailyEmployeeStatsSummary'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
@@ -1339,23 +1289,16 @@ class AppointmentsController extends Controller
     /**
      * Compliance Report
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
-    public function complianceReport(Request $request): \Illuminate\View\View
+    public function complianceReport(Request $request): View
     {
 
         if (! Gate::allows('appointment_reports_compliance_reports')) {
             abort(404);
         }
 
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $reportData = Appointments::complianceReport($request->all(), Auth::user()->account_id);
 
@@ -1390,12 +1333,12 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function complianceReportExcel($reportData, $start_date, $end_date): mixed
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1441,7 +1384,7 @@ class AppointmentsController extends Controller
                 $activeSheet->setCellValue('A'.$counter, $reportRow['id']);
                 $activeSheet->setCellValue('B'.$counter, $reportRow['client']);
                 $activeSheet->setCellValue('C'.$counter, $reportRow['email']);
-                $activeSheet->setCellValue('D'.$counter, ($reportRow['scheduled_date']) ? \Carbon\Carbon::parse($reportRow['scheduled_date'], null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow['scheduled_time'], null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('D'.$counter, ($reportRow['scheduled_date']) ? Carbon::parse($reportRow['scheduled_date'], null)->format('M j, Y').' at '.Carbon::parse($reportRow['scheduled_time'], null)->format('h:i A') : '-');
                 $activeSheet->setCellValue('E'.$counter, $reportRow['doctor']);
                 $activeSheet->setCellValue('F'.$counter, $reportRow['city']);
                 $activeSheet->setCellValue('G'.$counter, $reportRow['centre']);
@@ -1449,7 +1392,7 @@ class AppointmentsController extends Controller
                 $activeSheet->setCellValue('I'.$counter, $reportRow['status']);
                 $activeSheet->setCellValue('J'.$counter, $reportRow['type']);
                 $activeSheet->setCellValue('K'.$counter, $reportRow['consultancy_type']);
-                $activeSheet->setCellValue('L'.$counter, \Carbon\Carbon::parse($reportRow['created_at'])->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('L'.$counter, Carbon::parse($reportRow['created_at'])->format('M j, Y H:i A'));
                 $activeSheet->setCellValue('M'.$counter, $reportRow['created_by']);
                 $activeSheet->setCellValue('N'.$counter, $reportRow['converted_by']);
                 $activeSheet->setCellValue('O'.$counter, $reportRow['updated_by']);
@@ -1464,7 +1407,7 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'ComplianceReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'ComplianceReport'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1473,21 +1416,14 @@ class AppointmentsController extends Controller
     /**
      * Appointment rescheduled Count
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function rescheduledcountreport(Request $request): mixed
     {
         if (! Gate::allows('appointment_reports_rescheduled_count_report')) {
             return abort(401);
         }
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
+        [$start_date, $end_date] = $this->parseDateRange($request->get('date_range'));
 
         $filters = [];
 
@@ -1535,12 +1471,12 @@ class AppointmentsController extends Controller
      * @param  (mixed)  $reportData
      * @param  (mixed)  $start_date
      * @param  (mixed)  $end_date
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     private static function RescheduledcountreportExcel($reportData, $filters, $start_date, $end_date): mixed
     {
-        $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
-        $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
+        $spreadsheet = new Spreadsheet;  /* ----Spreadsheet object----- */
+        $Excel_writer = new Xlsx($spreadsheet);  /* ----- Excel (Xls) Object */
         $Excel_writer->setPreCalculateFormulas(false);
 
         $spreadsheet->setActiveSheetIndex(0);
@@ -1590,8 +1526,8 @@ class AppointmentsController extends Controller
                 // controlled fields before they land in the XLSX.
                 $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
                 $activeSheet->setCellValue('B'.$counter, csv_safe($reportRow->patient->name));
-                $activeSheet->setCellValue('C'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('D'.$counter, ($reportRow->first_scheduled_date) ? \Carbon\Carbon::parse($reportRow->first_scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->first_scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('C'.$counter, ($reportRow->scheduled_date) ? Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('D'.$counter, ($reportRow->first_scheduled_date) ? Carbon::parse($reportRow->first_scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($reportRow->first_scheduled_time, null)->format('h:i A') : '-');
                 $activeSheet->setCellValue('E'.$counter, csv_safe((array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : ''));
                 $activeSheet->setCellValue('F'.$counter, csv_safe((array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : ''));
                 $activeSheet->setCellValue('G'.$counter, csv_safe((array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : ''));
@@ -1600,7 +1536,7 @@ class AppointmentsController extends Controller
                 $activeSheet->setCellValue('J'.$counter, csv_safe((array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : ''));
                 $activeSheet->setCellValue('K'.$counter, $consultancy_type);
                 $activeSheet->setCellValue('L'.$counter, $reportRow->scheduled_at_count);
-                $activeSheet->setCellValue('M'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('M'.$counter, Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
                 $activeSheet->setCellValue('N'.$counter, csv_safe((array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : ''));
                 $activeSheet->setCellValue('O'.$counter, csv_safe((array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : ''));
                 $activeSheet->setCellValue('P'.$counter, csv_safe((array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : ''));
@@ -1609,7 +1545,7 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'Appointment Rescheduled Count Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Appointment Rescheduled Count Report'.'.xlsx"'); /* -- $filename is  xsl filename --- */
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 

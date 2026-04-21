@@ -136,7 +136,13 @@
 
                                         <div class="form-group col-md-3 sn-select">
                                             {!! Form::label('location_id', 'Centres*', ['class' => 'control-label']) !!}
-                                            {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
+                                            @php($isFdm = Auth::user()->hasRole('FDM'))
+                                            <select name="location_id[]" id="location_id" class="form-control select2 sn-select" multiple style="width: 100%;">
+                                                <option value="all" @if(!$isFdm) selected @endif>All Centres</option>
+                                                @foreach($locations as $locId => $locName)
+                                                    <option value="{{ $locId }}" @if($isFdm) selected @endif>{{ $locName }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
 
                                         <div class="form-group col-md-2 sn-select">

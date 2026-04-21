@@ -18,11 +18,14 @@ class AppointmentsReportService
      * where the first invoice was created within the given time interval (minutes)
      * from the appointment creation.
      */
+    /**
+     * @param int[]|null $centreIds
+     */
     public function generate(
         string $startDate,
         string $endDate,
         int $timeInterval,
-        ?int $centreId = null,
+        ?array $centreIds = null,
         ?int $createdBy = null,
     ): Collection {
         $statusIds = $this->getArrivedConvertedStatusIds();
@@ -41,7 +44,7 @@ class AppointmentsReportService
                     [$timeInterval]
                 );
             })
-            ->when($centreId, fn ($q, $id) => $q->where('location_id', $id))
+            ->when(!empty($centreIds), fn ($q) => $q->whereIn('location_id', $centreIds))
             ->when($createdBy, fn ($q, $id) => $q->where('created_by', $id))
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get();
