@@ -452,6 +452,45 @@ class PatientService
         ];
     }
 
+    /**
+     * Fetch the most recent appointment's location for a patient.
+     *
+     * Mirrors Admin\PatientsController::getLastAppointmentLocation — same
+     * query, same scoping, exposed for API consumers.
+     *
+     * @return array{location_id:int,location_name:?string,location_slug:?string,last_appointment_at:?string}|null
+     */
+    public function lastAppointmentLocation(int $patientId, ?string $appointmentType = null): ?array
+    {
+        $appointmentTypeId = match ($appointmentType) {
+            'consultancy' => Config::get('constants.consultancy_id'),
+            'treatment' => Config::get('constants.treatment_id'),
+            default => null,
+        };
+
+        $lastAppointment = Appointments::with('location:id,name,slug')
+            ->where('patient_id', $patientId)
+            ->where('account_id', Auth::user()->account_id)
+            ->when($appointmentTypeId, fn ($q) => $q->where('appointment_type_id', $appointmentTypeId))
+            ->orderByDesc('created_at')
+            ->first();
+
+        if (! $lastAppointment?->location_id) {
+            return null;
+        }
+
+        $location = $lastAppointment->location;
+
+        return [
+            'location_id' => (int) $lastAppointment->location_id,
+            'location_name' => $location?->getAttribute('name'),
+            'location_slug' => $location?->getAttribute('slug'),
+            'last_appointment_at' => $lastAppointment->created_at
+                ? Carbon::parse($lastAppointment->created_at)->utc()->toIso8601String()
+                : null,
+        ];
+    }
+
     public function getTabCounts(int $patientId): ?array
     {
         $patient = $this->findPatient($patientId);

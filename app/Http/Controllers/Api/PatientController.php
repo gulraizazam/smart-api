@@ -15,6 +15,7 @@ use App\Http\Requests\PatientRequest;
 use App\Http\Requests\PatientStatusRequest;
 use App\Http\Resources\Patient\PatientAppointmentResource;
 use App\Http\Resources\Patient\PatientDocumentResource;
+use App\Http\Resources\Patient\PatientLastAppointmentLocationResource;
 use App\Http\Resources\Patient\PatientNoteResource;
 use App\Services\PatientManagement\PatientService;
 use Exception;
@@ -194,6 +195,37 @@ class PatientController extends Controller
             return $counts
                 ? $this->success('Tab counts retrieved.', $counts)
                 : $this->notFound('Patient not found.');
+        } catch (Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Last Appointment Location
+    |--------------------------------------------------------------------------
+    */
+
+    public function lastAppointmentLocation(int $id, Request $request): JsonResponse
+    {
+        try {
+            if (! Gate::allows('patients_manage')) {
+                return $this->unauthorized();
+            }
+
+            $data = $this->patientService->lastAppointmentLocation(
+                $id,
+                $request->input('appointment_type'),
+            );
+
+            if ($data === null) {
+                return $this->respond(false, 'No previous appointment found.', null, 404);
+            }
+
+            return $this->success(
+                'Last appointment location retrieved.',
+                new PatientLastAppointmentLocationResource($data),
+            );
         } catch (Exception $e) {
             return $this->exceptionToResponse($e);
         }

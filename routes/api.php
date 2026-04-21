@@ -76,7 +76,25 @@ use App\Http\Controllers\Api\ScheduleController;
 
 Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])->middleware('throttle:5,1');
 
-Route::middleware('auth.common')->name('admin.')->group(function () {
+// v2 auth — Passport password grant. Runs alongside the Sanctum /api/login
+// during the staged migration. See app/Http/Controllers/Api/V2/AuthController.
+Route::prefix('v2/auth')->name('api.v2.auth.')->group(function (): void {
+    Route::post('login', [\App\Http\Controllers\Api\V2\AuthController::class, 'login'])
+        ->middleware('throttle:5,1')
+        ->name('login');
+    Route::post('refresh', [\App\Http\Controllers\Api\V2\AuthController::class, 'refresh'])
+        ->middleware('throttle:10,1')
+        ->name('refresh');
+    Route::post('logout', [\App\Http\Controllers\Api\V2\AuthController::class, 'logout'])
+        ->middleware('auth:api_passport')
+        ->name('logout');
+});
+
+// Staged Sanctum → Passport migration: auth.api.dual accepts session,
+// Passport, and Sanctum tokens. Strict superset of auth.common — every
+// existing caller keeps working; new Passport tokens from /api/v2/auth/login
+// also authenticate here.
+Route::middleware('auth.api.dual')->name('admin.')->group(function () {
     require __DIR__ . '/api/dashboard.php';
     require __DIR__ . '/api/admin-config.php';
     require __DIR__ . '/api/catalogue.php';
@@ -93,7 +111,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 // Meta Conversion API Routes
-Route::middleware('auth.common')->prefix('meta')->name('meta.')->group(function () {
+Route::middleware('auth.api.dual')->prefix('meta')->name('meta.')->group(function () {
     Route::post('test-connection', [\App\Http\Controllers\Admin\MetaConversionController::class, 'testConnection'])->name('test');
     Route::post('send-lead-status', [\App\Http\Controllers\Admin\MetaConversionController::class, 'sendLeadStatus'])->name('lead-status');
 });
