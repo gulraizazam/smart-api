@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./vendor/bin/phpstan analyse*)",
+      "Bash(vendor/bin/phpstan analyse*)",
+      "Bash(./vendor/bin/pint --test*)",
+      "Bash(./vendor/bin/phpunit*)",
+      "Bash(php -l *)",
+      "Bash(php artisan view:clear)",
+      "Bash(php artisan migrate:status)",
+      "Bash(php artisan route:list*)",
+      "Bash(php artisan optimize:clear)",
+      "Bash(php artisan cache:clear)",
+      "Bash(php artisan route:clear)",
+      "Bash(php artisan config:clear)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(claude doctor)"
+    ]
+  }
+}
