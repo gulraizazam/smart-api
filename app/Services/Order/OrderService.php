@@ -417,12 +417,20 @@ class OrderService
         return $users + $FDMUsers;
     }
 
-    public function getDoctorsForSales(int $locationId): array
+    public function getDoctorsForSales(int|array $locationId): array
     {
-        $doctors = DoctorHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+        $locationIds = array_values(array_filter(
+            array_map('intval', (array) $locationId),
+            fn (int $id): bool => $id > 0,
+        ));
+
+        if ($locationIds === []) {
+            return [];
+        }
+
+        $doctors = DoctorHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
         $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
 
-        $locationIds = [$locationId];
         $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
         $findRole = DB::table('roles')->where('name', 'FDM')->first();
         $roleHasUser = RoleHasUsers::where('role_id', $findRole->id)->pluck('user_id')->toArray();

@@ -61,9 +61,8 @@
                                              id="locations">
                                             {!! Form::label('location_id', 'Centres:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="centre_id" name="centre_id[]" multiple style="width: 100%;">
-                                                <option value="all" selected>All Centres</option>
                                                 @foreach($locations as $location)
-                                                <option value="{{$location->id}}">{{$location->name}}</option>
+                                                <option value="{{$location->id}}" selected>{{$location->name}}</option>
                                                 @endforeach
                                             </select>
                                             <span id="centre_id_handler"></span>
@@ -118,5 +117,26 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
+        <script>
+            (function () {
+                function refreshDoctorFilter() {
+                    if ($('#report_type').val() !== 'doctor_sales_report') {
+                        return;
+                    }
+                    var locationIds = $('#centre_id').val() || [];
+                    if (!locationIds.length) {
+                        $('#doctor_id_filter').html('<option value="">Select Doctor</option>').trigger('change.select2');
+                        return;
+                    }
+                    getEmployeesForSales(locationIds);
+                }
+
+                $(function () {
+                    $('#centre_id').on('change', refreshDoctorFilter);
+                    $('#report_type').on('change', refreshDoctorFilter);
+                    refreshDoctorFilter();
+                });
+            })();
+        </script>
     @endpush
 @endsection
