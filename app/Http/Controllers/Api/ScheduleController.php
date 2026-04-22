@@ -616,6 +616,10 @@ class ScheduleController extends Controller
             return $this->errorResponse('Resource and start date are required', 400);
         }
 
+        $resourceId = (int) $resourceId;
+        $locationId = $locationId !== null && $locationId !== '' ? (int) $locationId : null;
+        $accountId = (int) $accountId;
+
         // Parse dates to Y-m-d format (they may come in display format like "Mon, 16 Feb 2026")
         $startDateParsed = Carbon::parse($startDate)->format('Y-m-d');
         $repeatUntilParsed = $repeatUntil ? Carbon::parse($repeatUntil)->format('Y-m-d') : null;

@@ -189,6 +189,20 @@ class LeaveService
         return LeaveApplication::hasOverlap($userId, $startDate, $endDate, $excludeId);
     }
 
+    /**
+     * Return a LeaveApplication with the relationships the detail API needs,
+     * already loaded — reviewer, employee + employeeDetail.designation, and
+     * the leaveType. Single query, no N+1.
+     */
+    public function getDetail(LeaveApplication $application): LeaveApplication
+    {
+        return $application->load([
+            'user.employeeDetail.designation',
+            'leaveType',
+            'reviewer',
+        ]);
+    }
+
     public function getBalanceWarning(int $userId, int $leaveTypeId, float $requestedDays): ?string
     {
         $fiscalYear = self::currentFiscalYear();

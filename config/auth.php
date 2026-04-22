@@ -40,6 +40,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Passport guard. Runs alongside Sanctum during the staged migration:
+        // new endpoints can opt in via auth('api_passport'); existing /api/*
+        // routes stay on Sanctum until their owning module is migrated.
+        'api_passport' => [
+            'driver' => 'passport',
+            'provider' => 'users',
+        ],
     ],
 
     /*

@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class EmployeeService
 {
@@ -119,6 +121,7 @@ class EmployeeService
             'employeeDetail.reportingManager',
             'user_has_locations.location',
             'employeeDocuments' => fn ($q) => $q->orderByDesc('created_at'),
+            'employeeDocuments.uploader',
         ])
             ->where('account_id', Auth::user()->account_id)
             ->findOrFail($userId);
@@ -160,5 +163,87 @@ class EmployeeService
                 'region_id' => $location->region_id,
             ]);
         }
+    }
+
+    /**
+     * Create a new employee — User + EmployeeDetail + location assignment in one
+     * transaction. Returns the persisted User with relations eager-loaded so the
+     * caller can hand it straight to an EmployeeResource.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createEmployee(array $data, int $accountId): User
+    {
+        return DB::transaction(function () use ($data, $accountId) {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'phone' => $data['phone'] ?? '',
+                'cnic' => $data['cnic'] ?? null,
+                'dob' => $data['dob'] ?? null,
+                'gender' => $data['gender'] ?? null,
+                'address' => $data['address'] ?? null,
+                'user_type_id' => (int) ($data['user_type_id'] ?? 2),
+                'account_id' => $accountId,
+                'active' => 1,
+                'hr_managed' => 1,
+            ]);
+
+            EmployeeDetail::create([
+                'user_id' => $user->id,
+                'department_id' => $data['department_id'] ?? null,
+                'designation_id' => $data['designation_id'] ?? null,
+                'reporting_manager_id' => $data['reporting_manager_id'] ?? null,
+                'hire_date' => $data['hire_date'] ?? now()->toDateString(),
+                'employment_type' => $data['employment_type'] ?? null,
+                'shift_hours' => $data['shift_hours'] ?? null,
+                'salary' => $data['salary'] ?? null,
+                'bank_name' => $data['bank_name'] ?? null,
+                'bank_account_number' => $data['bank_account_number'] ?? null,
+                'tax_id' => $data['tax_id'] ?? null,
+                'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
+                'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
+                'emergency_contact_relation' => $data['emergency_contact_relation'] ?? null,
+                'account_id' => $accountId,
+                'created_by' => Auth::id(),
+            ]);
+
+            if (!empty($data['location_ids']) && is_array($data['location_ids'])) {
+                $this->syncLocations($user, $data['location_ids'], $accountId);
+            }
+
+            return $user;
+        });
+    }
+
+    /**
+     * Soft-delete an employee and their EmployeeDetail (if any) in one
+     * transaction. User tokens are revoked so the session/token cannot linger.
+     */
+    public function deleteEmployee(User $user): void
+    {
+        DB::transaction(function () use ($user): void {
+            if ($user->employeeDetail) {
+                $user->employeeDetail->delete();
+            }
+
+            // Revoke Sanctum tokens so a deleted employee's app session dies.
+            if (method_exists($user, 'tokens')) {
+                $user->tokens()->delete();
+            }
+
+            $user->delete();
+        });
+    }
+
+    /**
+     * Flip `users.active` to the supplied value. Returns the fresh User.
+     */
+    public function toggleStatus(User $user, int $status): User
+    {
+        $user->update(['active' => $status === 1 ? 1 : 0]);
+
+        return $user->fresh();
     }
 }

@@ -34,7 +34,7 @@ class RoleService
 
     public function getDatatableData(array $params): array
     {
-        $query = Role::query();
+        $query = Role::query()->withCount('users');
 
         if (!empty($params['name'])) {
             $query->where('name', 'LIKE', "%{$params['name']}%");

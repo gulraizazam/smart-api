@@ -16,6 +16,9 @@ use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\PatientsController;
 use App\Http\Controllers\Admin\UserVouchersController;
+use App\Http\Controllers\Api\Patient\CustomFormFeedbackController as ApiCustomFormFeedbackController;
+use App\Http\Controllers\Api\Patient\MeasurementHistoryController as ApiMeasurementHistoryController;
+use App\Http\Controllers\Api\Patient\MedicalHistoryController as ApiMedicalHistoryController;
 use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\PlansController as ApiPlansController;
 use App\Http\Controllers\Api\RefundsController as ApiRefundsController;
@@ -62,6 +65,8 @@ Route::prefix('patients')->name('patients.')->group(function () {
     Route::get('{id}/voucher-history/{userVoucherId}', [PatientController::class, 'getVoucherHistory'])->name('voucherHistory');
     // Tab counts
     Route::get('{id}/tab-counts', [PatientController::class, 'getTabCounts'])->name('tabCounts');
+    // Last appointment location (mirrors web /admin/patients/{id}/last-appointment-location)
+    Route::get('{id}/last-appointment-location', [PatientController::class, 'lastAppointmentLocation'])->name('lastAppointmentLocation');
     // Patient notes
     Route::get('{id}/notes', [PatientController::class, 'getNotes'])->name('notes');
     Route::post('{id}/notes', [PatientController::class, 'addNote'])->name('addNote');
@@ -71,12 +76,18 @@ Route::prefix('patients')->name('patients.')->group(function () {
 });
 Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
 Route::get('customformfeedbackspatient/addnewform/{id}', [PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
+// Fill a custom form for a patient (mirrors web customformfeedbackspatient/fill_form)
+Route::post('customformfeedbackspatient/fill', [ApiCustomFormFeedbackController::class, 'fill'])->name('customformfeedbackspatient.fill');
 
 /* Route start for patient medical history Forms */
 Route::post('medicalhistoryform/datatable/&{id}', [MedicalHistoryController::class, 'datatable'])->name('medicalhistoryform.datatable');
+// Fill a medical history form (mirrors web appointmentsmedical submit_form)
+Route::post('medicalhistoryform/{id}', [ApiMedicalHistoryController::class, 'fill'])->name('medicalhistoryform.fill');
 
 /* Route start for patient measurement history Forms */
 Route::post('measurementhistoryform/datatable/&{id}', [MeasurementHistoryController::class, 'datatable'])->name('measurementhistoryform.datatable');
+// Fill a measurement history form (mirrors web appointmentsmeasurement submit_form)
+Route::post('measurementhistoryform/{id}', [ApiMeasurementHistoryController::class, 'fill'])->name('measurementhistoryform.fill');
 
 Route::post('patients/documentdatatable/{id}', [PatientsController::class, 'documentdatatable'])->name('patients.documentdatatable');
 
@@ -105,6 +116,12 @@ Route::prefix('plans-optimized')->group(function () {
     Route::get('global/lookup-data', [ApiPlansController::class, 'getGlobalLookupData'])->name('plans.optimized.global.lookup');
 });
 /* Route end for patient package - NEW OPTIMIZED ROUTES */
+
+/* Patient-scoped plan audit log (mirrors web /admin/plans/log/{id}/{patient_id}/{type}) */
+Route::get('plans/{planId}/log/{patientId}/{type}', [ApiPlansController::class, 'planLog'])
+    ->whereNumber(['planId', 'patientId'])
+    ->where('type', '[A-Za-z_-]+')
+    ->name('plans.log');
 
 /* Route start for patient pakcage - OLD ROUTES (TO BE DEPRECATED) */
 Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
