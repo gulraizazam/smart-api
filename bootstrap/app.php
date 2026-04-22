@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\AuthenticateApiDual;
 use App\Http\Middleware\AuthenticateApiWeb;
 use App\Http\Middleware\CheckAccountStatus;
 use App\Http\Middleware\CheckIpRestriction;
@@ -66,6 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => RedirectIfAuthenticated::class,
             'checkAccount' => CheckAccountStatus::class,
             'auth.common' => AuthenticateApiWeb::class,
+            'auth.api.dual' => AuthenticateApiDual::class,
             'permission' => CheckPermission::class,
             'check.ip.restriction' => CheckIpRestriction::class,
         ]);

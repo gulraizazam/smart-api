@@ -40,12 +40,12 @@ class Patients extends BaseModel
 
     protected static array $_fillable = [
         'name', 'email', 'phone', 'main_account', 'gender',
-        'cnic', 'dob', 'address', 'referred_by', 'user_type_id',
+        'cnic', 'dob', 'referred_by', 'user_type_id',
     ];
 
     protected $fillable = [
         'name', 'email', 'password', 'remember_token', 'phone',
-        'main_account', 'gender', 'cnic', 'dob', 'address',
+        'main_account', 'gender', 'cnic', 'dob',
         'referred_by', 'active', 'user_type_id', 'resource_type_id',
         'account_id', 'created_by', 'image_src',
     ];
@@ -225,7 +225,7 @@ class Patients extends BaseModel
         // branch. Without this, `?search=` produces `name LIKE '%'` and
         // `?search=%` / `?search=_` collapse to wildcard scans, both of
         // which dump the 10 most-recent patients with PII (phone, cnic,
-        // email, dob, address). Cache is also bypassed for short input
+        // email, dob). Cache is also bypassed for short input
         // so attackers cannot bloat it with random short strings.
         $name = trim($name);
         if (strlen($name) < 2) {
@@ -247,7 +247,7 @@ class Patients extends BaseModel
                 }
 
                 $rows = DB::select(
-                    "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
+                    "SELECT DISTINCT name, id, phone, gender, cnic, email, dob
                      FROM users
                      WHERE user_type_id = 3 AND active = 1 AND account_id = ?
                        AND (phone = ? OR phone LIKE ? OR phone = ? OR phone LIKE ? OR id = ? OR id LIKE ?)
@@ -275,7 +275,7 @@ class Patients extends BaseModel
             $escaped = addcslashes($name, '\\%_');
 
             $rows = DB::select(
-                "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address
+                "SELECT DISTINCT name, id, phone, gender, cnic, email, dob
                  FROM users
                  WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
                    {$scopeSql}

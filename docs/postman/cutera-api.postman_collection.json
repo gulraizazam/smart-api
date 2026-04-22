@@ -1,0 +1,1797 @@
+{
+  "info": {
+    "_postman_id": "c7e01a3b-1b2e-4f4b-9e2b-cutera-api-0001",
+    "name": "Cutera API",
+    "description": "Backend API collection for the Cutera admin + mobile clients.\n\n## How to use\n\n1. Import this collection into Postman.\n2. Set `base_url` in **Collection Variables** (already defaults to `http://cutera-upgradation.test` for local dev).\n3. Run **Auth → Login** once with a real admin email/password — the post-response script stores `access_token` + `refresh_token` on the collection.\n4. Every other request inherits `Authorization: Bearer {{access_token}}` from collection-level auth.\n5. Access tokens expire in 15 minutes; run **Auth → Refresh** to rotate without re-entering credentials.\n\n## Scope\n\n- Auth (Passport password grant — v2)\n- Application Users (CRUD, status, password change)\n- Roles (CRUD + duplicate)\n- Permissions (CRUD + parent groups)\n\nMore modules will be appended as they're requested.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://cutera-upgradation.test",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Passport password-grant auth. Login stores access + refresh tokens on the collection so every other request authenticates automatically.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "auth", "login"]
+            },
+            "description": "Exchanges email + password for a Passport access/refresh pair. Rate-limited 5/min.\n\nResponse `data`: `{ access_token, refresh_token, expires_in, token_type, user }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "  console.log('Stored access + refresh tokens on collection.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "auth", "refresh"]
+            },
+            "description": "Rotates the access + refresh token pair. Rate-limited 10/min."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.data && json.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', json.data.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', json.data.refresh_token);",
+                  "  console.log('Refreshed access + refresh tokens.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "auth", "logout"]
+            },
+            "description": "Revokes the current access token and its refresh chain."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Application (staff/admin) users — CRUD, status toggle, password change.\n\n`/api/users/datatable` returns a DataTables-style payload outside the standard envelope; on the SPA side call `api.post(path, body, { raw: true })`.",
+      "item": [
+        {
+          "name": "List (datatable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"order\": [{ \"column\": 0, \"dir\": \"asc\" }]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "datatable"]
+            },
+            "description": "Paginated list with filters. Permission: `users_manage`."
+          }
+        },
+        {
+          "name": "Create — dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "create"]
+            },
+            "description": "Returns roles, locations, warehouses, user types needed to render the create form. Permission: `users_create`."
+          }
+        },
+        {
+          "name": "Create — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test.user@example.com\",\n  \"password\": \"Str0ng!Pass\",\n  \"phone\": \"+923001234567\",\n  \"gender\": 1,\n  \"roles\": [1],\n  \"centers\": [1],\n  \"warehouse\": [],\n  \"hr_managed\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Password must be 8+ chars with upper, lower, digit, and special char. Permission: `users_create`."
+          }
+        },
+        {
+          "name": "Edit — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/:user/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":user", "edit"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "User data + dropdowns for the edit form. Permission: `users_edit`."
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User (edited)\",\n  \"email\": \"test.user@example.com\",\n  \"phone\": \"+923001234567\",\n  \"gender\": 1,\n  \"roles\": [1],\n  \"centers\": [1],\n  \"warehouse\": [],\n  \"hr_managed\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/:user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":user"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "Full user update. `email`, `phone`, `gender` required on PUT/PATCH. Permission: `users_edit`."
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/:user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", ":user"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "Soft-delete user. Permission: `users_destroy`."
+          }
+        },
+        {
+          "name": "Toggle status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"status\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "status"]
+            },
+            "description": "Activate (status=1) or deactivate (status=0) a user. Permission: `users_active`."
+          }
+        },
+        {
+          "name": "Change password — fetch form",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/users/password/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "password", ":id"],
+              "variable": [{ "key": "id", "value": "1", "description": "Encrypted user id — obtain from a previous endpoint, not the raw integer in production." }]
+            },
+            "description": "Returns the encrypted id used by the PATCH below. Permission: `users_change_password`."
+          }
+        },
+        {
+          "name": "Change password — save",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{encrypted_user_id}}\",\n  \"password\": \"Str0ng!NewPass\",\n  \"password_confirmation\": \"Str0ng!NewPass\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "password"]
+            },
+            "description": "⚠️ Current known auth gap: no re-auth / current_password check. Permission: `users_change_password`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "description": "Role management — CRUD plus role duplication. `permission` in the body is an array of permission **names** (strings), not ids.",
+      "item": [
+        {
+          "name": "List (datatable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/roles/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", "datatable"]
+            },
+            "description": "Permission: `roles_manage`."
+          }
+        },
+        {
+          "name": "Create — dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/roles/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", "create"]
+            },
+            "description": "Permission tree + category mapping needed to render the role create/edit form. Permission: `roles_create`."
+          }
+        },
+        {
+          "name": "Create — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Floor Manager\",\n  \"commission\": 5,\n  \"permission\": [\"users_manage\", \"patients_manage\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/roles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles"]
+            },
+            "description": "`permission` is an array of permission NAMES. Permission: `roles_create`."
+          }
+        },
+        {
+          "name": "Edit — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/roles/:role/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", ":role", "edit"],
+              "variable": [{ "key": "role", "value": "1" }]
+            },
+            "description": "Permission: `roles_edit`."
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Floor Manager (edited)\",\n  \"commission\": 7.5,\n  \"permission\": [\"users_manage\", \"patients_manage\", \"roles_manage\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/roles/:role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", ":role"],
+              "variable": [{ "key": "role", "value": "1" }]
+            },
+            "description": "Permission: `roles_edit`."
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/roles/:role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", ":role"],
+              "variable": [{ "key": "role", "value": "1" }]
+            },
+            "description": "Permission: `roles_destroy`."
+          }
+        },
+        {
+          "name": "Duplicate — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/roles/:role/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", ":role", "duplicate"],
+              "variable": [{ "key": "role", "value": "1" }]
+            },
+            "description": "Prefill data for duplicating an existing role. Permission: `roles_duplicate`."
+          }
+        },
+        {
+          "name": "Duplicate — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Floor Manager (copy)\",\n  \"commission\": 5,\n  \"permission\": [\"users_manage\", \"patients_manage\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/roles/duplicate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "roles", "duplicate"]
+            },
+            "description": "Permission: `roles_duplicate`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "description": "Permission catalog management — CRUD plus a parent-group listing.\n\nNote: this module's FormRequest returns `{ status:false, message, errors }` on 422 (no `success` key). The SPA's api client already handles that fallback.",
+      "item": [
+        {
+          "name": "List (datatable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/permissions/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "datatable"]
+            },
+            "description": "Permission: `permissions_manage`."
+          }
+        },
+        {
+          "name": "Parent groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/parent-groups",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "parent-groups"]
+            },
+            "description": "Returns all root-level permission groups used to nest child permissions. Permission: `permissions_manage`."
+          }
+        },
+        {
+          "name": "Create — dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", "create"]
+            },
+            "description": "Permission: `permissions_manage`."
+          }
+        },
+        {
+          "name": "Create — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reports_export\",\n  \"title\": \"Export Reports\",\n  \"parent_id\": 0,\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions"]
+            },
+            "description": "`parent_id: 0` marks a root group. Permission: `permissions_manage`."
+          }
+        },
+        {
+          "name": "Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/:permission",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", ":permission"],
+              "variable": [{ "key": "permission", "value": "1" }]
+            },
+            "description": "Permission: `permissions_manage`."
+          }
+        },
+        {
+          "name": "Edit — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/:permission/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", ":permission", "edit"],
+              "variable": [{ "key": "permission", "value": "1" }]
+            },
+            "description": "Permission: `permissions_edit`."
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reports_export\",\n  \"title\": \"Export Reports (renamed)\",\n  \"parent_id\": 0,\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/permissions/:permission",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", ":permission"],
+              "variable": [{ "key": "permission", "value": "1" }]
+            },
+            "description": "Permission: `permissions_edit`."
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/permissions/:permission",
+              "host": ["{{base_url}}"],
+              "path": ["api", "permissions", ":permission"],
+              "variable": [{ "key": "permission", "value": "1" }]
+            },
+            "description": "Permission: `permissions_destroy`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "description": "Doctor management — Doctors are a User subtype (`user_type_id = 5`) with a parallel `resources` row (`resource_type_id = 2`) for rotation/scheduling. The API lives under `/api/doctors/*`. Dashboard endpoints under `/api/doctor-dashboard/*` are for the doctor's own KPI view (gated by role, not a dedicated permission). Lookup endpoints (`/api/appointments/load-*`, `/api/get-doctors*`) are used by appointment and sales flows to pick a doctor.",
+      "item": [
+        {
+          "name": "List (datatable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"order\": [{ \"column\": 0, \"dir\": \"asc\" }]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "datatable"]
+            },
+            "description": "Paginated doctor list. Filterable by name/email/phone/gender/role/status/date. Permission: `doctors_manage`."
+          }
+        },
+        {
+          "name": "Create — dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "create"]
+            },
+            "description": "Returns roles, locations, and service hierarchy needed to render the create form. Permission: `doctors_create`."
+          }
+        },
+        {
+          "name": "Create — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr Jane Doe\",\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"Str0ng!Pass\",\n  \"phone\": \"+923001234567\",\n  \"gender\": 2,\n  \"roles\": [5]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors"]
+            },
+            "description": "Creates a doctor (User with `user_type_id = 5` plus a Resources row). Password must be 8+ chars with upper, lower, digit, special char. Permission: `doctors_create`."
+          }
+        },
+        {
+          "name": "Edit — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/:doctor/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", ":doctor", "edit"],
+              "variable": [{ "key": "doctor", "value": "1", "description": "Doctor user id." }]
+            },
+            "description": "Returns the doctor + current location/service allocations + dropdown options for the edit form. Permission: `doctors_edit`."
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr Jane Doe (edited)\",\n  \"email\": \"jane.doe@example.com\",\n  \"phone\": \"+923001234567\",\n  \"gender\": 2,\n  \"roles\": [5]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/:doctor",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", ":doctor"],
+              "variable": [{ "key": "doctor", "value": "1" }]
+            },
+            "description": "Update doctor profile. `password` optional on update (omit to keep current). Permission: `doctors_edit`."
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/:doctor",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", ":doctor"],
+              "variable": [{ "key": "doctor", "value": "1" }]
+            },
+            "description": "Soft-delete doctor. Also drives the datatable bulk-delete action when the SPA sends an id array. Permission: `doctors_destroy`."
+          }
+        },
+        {
+          "name": "Toggle status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"status\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "status"]
+            },
+            "description": "Activate (`status=1`) or deactivate (`status=0`) a doctor. Two separate permissions — `doctors_active` for activation, `doctors_inactive` for deactivation."
+          }
+        },
+        {
+          "name": "Change password — fetch form",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/password/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "password", ":id"],
+              "variable": [{ "key": "id", "value": "1", "description": "Encrypted doctor id used by the PATCH below." }]
+            },
+            "description": "Returns the encrypted id used when saving the new password. Permission: `doctors_change_password`."
+          }
+        },
+        {
+          "name": "Change password — save",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{encrypted_doctor_id}}\",\n  \"password\": \"Str0ng!NewPass\",\n  \"password_confirmation\": \"Str0ng!NewPass\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "password"]
+            },
+            "description": "Same no-re-auth caveat as the users endpoint. Permission: `doctors_change_password`."
+          }
+        },
+        {
+          "name": "Allocation — list locations for doctor",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/locations/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "locations", ":id"],
+              "variable": [{ "key": "id", "value": "1", "description": "Doctor user id." }]
+            },
+            "description": "Returns the location allocation list (allocated + available locations with `is_allocated` flag). Permission: `doctors_allocate`."
+          }
+        },
+        {
+          "name": "Allocation — get services",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctors/get-service?doctor_id=1&location_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "get-service"],
+              "query": [
+                { "key": "doctor_id", "value": "1" },
+                { "key": "location_id", "value": "1" }
+              ]
+            },
+            "description": "Returns the service tree for a given doctor + location showing which services are allocated. Permission: `doctors_allocate`."
+          }
+        },
+        {
+          "name": "Allocation — save services",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctor_id\": 1,\n  \"location_id\": 1,\n  \"service_ids\": [101, 102, 103]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/save_service",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "save_service"]
+            },
+            "description": "Allocates services to a doctor for a location (persists to `doctor_has_locations` pivot). Permission: `doctors_allocate`."
+          }
+        },
+        {
+          "name": "Allocation — delete services",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctor_id\": 1,\n  \"location_id\": 1,\n  \"service_ids\": [101]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/doctors/delete_service",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctors", "delete_service"]
+            },
+            "description": "Unallocates services from a doctor for a location. Permission: `doctors_allocate`."
+          }
+        },
+        {
+          "name": "Dashboard — KPIs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctor-dashboard/kpis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctor-dashboard", "kpis"]
+            },
+            "description": "Doctor-facing KPI metrics for the signed-in doctor. Gated by role (`Aesthetic Doctor` / `Lifestyle Consultant`) — not a dedicated permission."
+          }
+        },
+        {
+          "name": "Dashboard — hero",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctor-dashboard/hero",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctor-dashboard", "hero"]
+            },
+            "description": "Hero summary section for the doctor dashboard."
+          }
+        },
+        {
+          "name": "Dashboard — appointments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctor-dashboard/appointments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctor-dashboard", "appointments"]
+            },
+            "description": "Today's appointments for the signed-in doctor."
+          }
+        },
+        {
+          "name": "Dashboard — benchmarks",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctor-dashboard/benchmarks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctor-dashboard", "benchmarks"]
+            },
+            "description": "Benchmark comparison data (⚠️ audit noted this method existence wasn't fully verified — may need backend confirmation)."
+          }
+        },
+        {
+          "name": "Lookup — simple list (id/name)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/doctor/list",
+              "host": ["{{base_url}}"],
+              "path": ["api", "doctor", "list"]
+            },
+            "description": "Minimal `{id, name}` list for dropdown pickers (admin-config)."
+          }
+        },
+        {
+          "name": "Lookup — doctors for appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1,\n  \"service_id\": 101,\n  \"date\": \"2026-04-22\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/load-doctors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "load-doctors"]
+            },
+            "description": "Doctors available for a given location/service/date — used by the appointment booking flow."
+          }
+        },
+        {
+          "name": "Lookup — consultant doctors",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/load-consultant-doctors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "load-consultant-doctors"]
+            },
+            "description": "Doctors with `can_perform_consultation = 1` for a location."
+          }
+        },
+        {
+          "name": "Lookup — doctor rota",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"doctor_id\": 1,\n  \"date\": \"2026-04-22\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/appointments/load-doctor-rota",
+              "host": ["{{base_url}}"],
+              "path": ["api", "appointments", "load-doctor-rota"]
+            },
+            "description": "Working hours / off days for a doctor on a given date."
+          }
+        },
+        {
+          "name": "Lookup — doctors for sales (orders)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/get-doctors-for-sales",
+              "host": ["{{base_url}}"],
+              "path": ["api", "get-doctors-for-sales"]
+            },
+            "description": "Doctor picker for the sales/orders flow."
+          }
+        },
+        {
+          "name": "Lookup — doctors (generic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/get-doctors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "get-doctors"]
+            },
+            "description": "Generic doctor list (orders module)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Types",
+      "description": "User-type catalog — the `user_types` row that the `users.user_type_id` FK points at. Seeded values include Doctor (5), Patient (3), etc. Full CRUD + an active/inactive split using PATCH-by-id (NOT the POST `/status` pattern used by users and doctors). Dropdown + doctor-list helpers for pickers elsewhere in the app.",
+      "item": [
+        {
+          "name": "List (datatable)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"order\": [{ \"column\": 0, \"dir\": \"asc\" }]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user_types/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "datatable"]
+            },
+            "description": "Paginated list. Permission: `user_types_manage`."
+          }
+        },
+        {
+          "name": "Create — dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "create"]
+            },
+            "description": "Dropdown / init data for the create form. Permission: `user_types_create`."
+          }
+        },
+        {
+          "name": "Create — submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Receptionist\",\n  \"type\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user_types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types"]
+            },
+            "description": "Permission: `user_types_create`."
+          }
+        },
+        {
+          "name": "Show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Permission: `user_types_manage`."
+          }
+        },
+        {
+          "name": "Edit — fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Permission: `user_types_edit`."
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Receptionist (edited)\",\n  \"type\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user_types/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Permission: `user_types_edit`."
+          }
+        },
+        {
+          "name": "Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Permission: `user_types_destroy`."
+          }
+        },
+        {
+          "name": "Activate",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/active/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "active", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Set `active = 1`. No body. Permission: `user_types_active`."
+          }
+        },
+        {
+          "name": "Inactivate",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/inactive/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "inactive", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Set `active = 0`. No body. Permission: `user_types_inactive`."
+          }
+        },
+        {
+          "name": "Dropdown list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/dropdown/list",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "dropdown", "list"]
+            },
+            "description": "Minimal `{id, name}` list of active user types for form dropdowns elsewhere in the app."
+          }
+        },
+        {
+          "name": "Doctor-only list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_types/doctor/list",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_types", "doctor", "list"]
+            },
+            "description": "Filtered list of user types that represent doctors (used by the Doctors module picker)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "HRM",
+      "description": "HRM module — employee management, leave mgmt, recruitment, notifications, self-service. Fiscal year is Jul–Jun (formatted `YYYY-YY`, e.g. `2025-26`). Leave durations are typed enums: Full=1.0, Half=0.5, Short=0.25.\n\n**Current API surface is limited**: 4 datatables + 1 calendar feed + 3 notification endpoints. Employee CRUD, leave approve/reject/cancel, recruitment CRUD, and self-service flows are web-only today (`/hr/*`) and need API wrappers. See the backlog in `docs/audits/` (coming) for the build list.",
+      "item": [
+        {
+          "name": "Employees — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"order\": [{ \"column\": 0, \"dir\": \"asc\" }],\n  \"name\": null,\n  \"designation\": null,\n  \"status\": null,\n  \"location_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", "datatable"]
+            },
+            "description": "Paginated employee list. Filters: `name`, `designation`, `status`, `location_id`. Permission: `hr_employees_view`."
+          }
+        },
+        {
+          "name": "Leave applications — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"status\": null,\n  \"leave_type\": null,\n  \"employee_name\": null,\n  \"date_from\": null,\n  \"date_to\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", "datatable"]
+            },
+            "description": "Paginated leave applications. Filters: `status`, `leave_type`, `employee_name`, `date_from`, `date_to`. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave balances — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"fiscal_year\": \"2025-26\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "datatable"]
+            },
+            "description": "Leave balance by employee for a fiscal year (`YYYY-YY` format — e.g. `2025-26`). Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Recruitment — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"status\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", "datatable"]
+            },
+            "description": "Paginated candidates. `status` enum: `scheduled, in_review, shortlisted, on_hold, offer, hired, offer_declined, rejected, blacklisted`. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Leave calendar — data feed",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/calendar-data?month=4&year=2026",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", "calendar-data"],
+              "query": [
+                { "key": "month", "value": "4" },
+                { "key": "year", "value": "2026" }
+              ]
+            },
+            "description": "Approved/pending leave events for the vis-timeline calendar. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Notifications — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "notifications"]
+            },
+            "description": "Signed-in user's recent HR notifications. Returns `{ notifications, unread_count }`. No permission gate — scoped to the current user."
+          }
+        },
+        {
+          "name": "Notifications — mark read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/notifications/:notification/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "notifications", ":notification", "read"],
+              "variable": [{ "key": "notification", "value": "1", "description": "HR notification id." }]
+            },
+            "description": "Marks a single notification read. Ownership enforced in the controller."
+          }
+        },
+        {
+          "name": "Notifications — mark all read",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/notifications/mark-all-read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "notifications", "mark-all-read"]
+            },
+            "description": "Marks every notification for the current user as read."
+          }
+        },
+        {
+          "name": "Employees — create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Employee\",\n  \"email\": \"alex@example.com\",\n  \"password\": \"Str0ng!Pass\",\n  \"phone\": \"+923001234567\",\n  \"dob\": \"1990-05-20\",\n  \"gender\": 1,\n  \"address\": \"123 Main St\",\n  \"department_id\": 1,\n  \"designation_id\": 1,\n  \"manager_id\": null,\n  \"hire_date\": \"2026-04-21\",\n  \"employment_type\": \"full_time\",\n  \"shift_hours\": 8,\n  \"salary\": 120000,\n  \"bank_name\": \"HBL\",\n  \"account_number\": \"1234567890\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+923009999999\",\n  \"emergency_contact_relation\": \"Spouse\",\n  \"location_ids\": [1]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees"]
+            },
+            "description": "Create employee (User + EmployeeDetail + location assignment in one transaction). Permission: `hr_employees_manage`. Returns `EmployeeResource` with 201."
+          }
+        },
+        {
+          "name": "Employees — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":user"],
+              "variable": [{ "key": "user", "value": "1", "description": "Employee (User) id." }]
+            },
+            "description": "Full employee profile with EmployeeDetail, documents, locations. Permission: `hr_employees_view`."
+          }
+        },
+        {
+          "name": "Employees — update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alex Employee (edited)\",\n  \"email\": \"alex@example.com\",\n  \"phone\": \"+923001234567\",\n  \"dob\": \"1990-05-20\",\n  \"gender\": 1,\n  \"address\": \"123 Main St\",\n  \"department_id\": 1,\n  \"designation_id\": 2,\n  \"manager_id\": null,\n  \"hire_date\": \"2026-04-21\",\n  \"employment_type\": \"full_time\",\n  \"shift_hours\": 8,\n  \"salary\": 130000,\n  \"bank_name\": \"HBL\",\n  \"account_number\": \"1234567890\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+923009999999\",\n  \"emergency_contact_relation\": \"Spouse\",\n  \"location_ids\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":user"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "Update employee. `password` omitted keeps current. Permission: `hr_employees_manage`."
+          }
+        },
+        {
+          "name": "Employees — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":user"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "Soft-delete employee. Also revokes the user's Sanctum tokens so any live session dies. Permission: `hr_employees_manage`."
+          }
+        },
+        {
+          "name": "Employees — toggle status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/employees/:user/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "employees", ":user", "status"],
+              "variable": [{ "key": "user", "value": "1" }]
+            },
+            "description": "Activate (`status=1`) or deactivate (`status=0`). Response: `{ id, active }`. Permission: `hr_employees_manage`."
+          }
+        },
+        {
+          "name": "Leave application — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/:leaveApplication",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", ":leaveApplication"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "Application detail with reviewer, notes, leave type, and employee. Access: the applicant OR anyone with `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave application — approve",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"review_notes\": \"Approved — have a good trip.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/:leaveApplication/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", ":leaveApplication", "approve"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "`review_notes` optional. Permission: `hr_leave_approve`."
+          }
+        },
+        {
+          "name": "Leave application — reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"review_notes\": \"Coverage already allocated that week.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/:leaveApplication/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", ":leaveApplication", "reject"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "`review_notes` **required** (max 1000). Permission: `hr_leave_approve`."
+          }
+        },
+        {
+          "name": "Leave application — cancel",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/:leaveApplication/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", ":leaveApplication", "cancel"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "Mirrors the web rule exactly: **pending** leave → applicant or `hr_leave_approve` can cancel; **approved** leave → only `hr_leave_approve` (not the applicant). Leave balance is refunded via the existing service."
+          }
+        },
+        {
+          "name": "My — profile show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "profile"]
+            },
+            "description": "Own profile (User + EmployeeDetail + locations + documents). No permission required — ownership via `Auth::id()`. Null-safe when no EmployeeDetail exists."
+          }
+        },
+        {
+          "name": "My — profile update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+923001234567\",\n  \"dob\": \"1990-05-20\",\n  \"gender\": 1,\n  \"address\": \"123 Main St\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+923009999999\",\n  \"emergency_contact_relation\": \"Spouse\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "profile"]
+            },
+            "description": "Allowlist-only: `phone`, `dob`, `gender`, `address`, emergency contact fields. Any other field (salary, department, manager, active) is silently dropped. If the user has no EmployeeDetail row, emergency-contact fields no-op (documented CUTERA-REVIEW)."
+          }
+        },
+        {
+          "name": "My — leaves (balances + applications)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/leaves",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "leaves"]
+            },
+            "description": "Own balances (current fiscal year, `YYYY-YY`) + applications + shift_hours in one response."
+          }
+        },
+        {
+          "name": "My — apply leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type_id\": 1,\n  \"start_date\": \"2026-05-10\",\n  \"end_date\": \"2026-05-12\",\n  \"duration\": \"full\",\n  \"reason\": \"Family event.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/leaves/apply",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "leaves", "apply"]
+            },
+            "description": "`duration` enum: `full` (1.0) / `half` (0.5) / `short` (0.25) / `custom` (requires `custom_hours`). Overlap-checked and balance-warned via the existing `LeaveService`. Returns `LeaveApplicationResource` (201)."
+          }
+        },
+        {
+          "name": "My — edit pending leave",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type_id\": 1,\n  \"start_date\": \"2026-05-11\",\n  \"end_date\": \"2026-05-13\",\n  \"duration\": \"full\",\n  \"reason\": \"Family event (dates shifted).\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/leaves/:leaveApplication",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "leaves", ":leaveApplication"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "Edit own pending leave. 403 if not the applicant, 422 if status != pending."
+          }
+        },
+        {
+          "name": "My — cancel pending leave",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/leaves/:leaveApplication/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "leaves", ":leaveApplication", "cancel"],
+              "variable": [{ "key": "leaveApplication", "value": "1" }]
+            },
+            "description": "Cancel own pending leave. Rejects approved leaves with 422 (that path is HR-only via `/leave-applications/{id}/cancel`)."
+          }
+        },
+        {
+          "name": "My — documents",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/my/documents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "my", "documents"]
+            },
+            "description": "Own employee documents with Google Drive upload status. Returns `EmployeeDocumentResource::collection`."
+          }
+        },
+        {
+          "name": "Departments — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments"]
+            },
+            "description": "Account-scoped departments ordered by name. Callers with `hr_departments_manage` also see inactive entries; without it only active rows are returned. Each row includes `designations_count` and `employees_count`. Permission: `hr_departments_view`."
+          }
+        },
+        {
+          "name": "Departments — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:department",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":department"],
+              "variable": [{ "key": "department", "value": "1" }]
+            },
+            "description": "Single department with counts. 404 if the department belongs to a different account. Permission: `hr_departments_view`."
+          }
+        },
+        {
+          "name": "Departments — create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operations\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments"]
+            },
+            "description": "Create a department. `name` is required and must be unique per account (excluding soft-deleted rows). `active` defaults to `true`. Permission: `hr_departments_manage`. Returns `DepartmentResource` (201)."
+          }
+        },
+        {
+          "name": "Departments — update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Operations (renamed)\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:department",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":department"],
+              "variable": [{ "key": "department", "value": "1" }]
+            },
+            "description": "Update department name / active flag. Cross-account updates return 404. Permission: `hr_departments_manage`."
+          }
+        },
+        {
+          "name": "Departments — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/departments/:department",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "departments", ":department"],
+              "variable": [{ "key": "department", "value": "1" }]
+            },
+            "description": "Soft-delete. Returns **409** if any employees are still assigned, or if designations exist under this department. Permission: `hr_departments_manage`."
+          }
+        },
+        {
+          "name": "Designations — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/designations?department_id=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "designations"],
+              "query": [
+                { "key": "department_id", "value": "", "description": "Optional filter — designations belonging to a specific department." }
+              ]
+            },
+            "description": "Account-scoped designations with their department eager-loaded. Callers with `hr_designations_manage` also see inactive entries; otherwise only active rows are returned. Permission: `hr_designations_view`."
+          }
+        },
+        {
+          "name": "Designations — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/designations/:designation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "designations", ":designation"],
+              "variable": [{ "key": "designation", "value": "1" }]
+            },
+            "description": "Single designation with its department. 404 if the designation belongs to a different account. Permission: `hr_designations_view`."
+          }
+        },
+        {
+          "name": "Designations — create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Aesthetician\",\n  \"department_id\": 1,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/designations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "designations"]
+            },
+            "description": "Create designation. `name` required and unique per account (excluding soft-deleted). `department_id` nullable but must belong to the caller's account. Permission: `hr_designations_manage`. Returns `DesignationResource` (201)."
+          }
+        },
+        {
+          "name": "Designations — update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Senior Aesthetician (renamed)\",\n  \"department_id\": 1,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/designations/:designation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "designations", ":designation"],
+              "variable": [{ "key": "designation", "value": "1" }]
+            },
+            "description": "Update designation. Cross-account updates return 404. Permission: `hr_designations_manage`."
+          }
+        },
+        {
+          "name": "Designations — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/designations/:designation",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "designations", ":designation"],
+              "variable": [{ "key": "designation", "value": "1" }]
+            },
+            "description": "Soft-delete. Returns **409** if any employees are currently assigned to this designation. Permission: `hr_designations_manage`."
+          }
+        },
+        {
+          "name": "Leave types — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-types"]
+            },
+            "description": "Active leave types. Callers with `hr_leave_manage` also see inactive entries. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave types — create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casual Leave\",\n  \"is_paid\": true,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-types",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-types"]
+            },
+            "description": "Create leave type. Permission: `hr_leave_manage`. Returns `LeaveTypeResource` (201)."
+          }
+        },
+        {
+          "name": "Leave types — update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casual Leave (renamed)\",\n  \"is_paid\": true,\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-types/:leaveType",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-types", ":leaveType"],
+              "variable": [{ "key": "leaveType", "value": "1" }]
+            },
+            "description": "Permission: `hr_leave_manage`."
+          }
+        },
+        {
+          "name": "Leave types — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-types/:leaveType",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-types", ":leaveType"],
+              "variable": [{ "key": "leaveType", "value": "1" }]
+            },
+            "description": "Soft-delete. Returns **409** if any `leave_applications` row references the type. Permission: `hr_leave_manage`."
+          }
+        }
+      ]
+    }
+  ]
+}

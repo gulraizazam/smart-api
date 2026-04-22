@@ -9,7 +9,9 @@ use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PlanDatatableRequest;
 use App\Http\Resources\Plan\PlanDatatableCollection;
+use App\Http\Resources\Plan\PlanLogResource;
 use App\Http\Resources\Plan\PlanStatisticsResource;
+use App\Services\Plan\PlanLogService;
 use App\Services\Plan\PlanService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +23,7 @@ final class PlansController extends Controller
 {
     public function __construct(
         private readonly PlanService $planService,
+        private readonly PlanLogService $planLogService,
     ) {}
 
     // ── Patient-scoped datatable ────────────────────────
@@ -95,6 +98,39 @@ final class PlansController extends Controller
             Log::error('Plans Statistics Error: ' . $e->getMessage());
 
             return $this->errorResponse('An error occurred while fetching statistics.', 500);
+        }
+    }
+
+    // ── Patient plan audit log ──────────────────────────
+
+    public function planLog(int|string $planId, int|string $patientId, string $type): JsonResponse
+    {
+        if (Gate::denies('patients_plan_log')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $result = $this->planLogService->buildPatientPlanLog((int) $planId, (int) $patientId);
+
+            return $this->successResponse('Record found.', [
+                'patient' => $result['patient'] ? [
+                    'id' => $result['patient']->id,
+                    'name' => $result['patient']->name,
+                ] : null,
+                'plan_id' => $result['plan_id'],
+                'type' => $type,
+                'finance_log' => PlanLogResource::collection(collect($result['finance_log'])->values()),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Plan Log Error', [
+                'message' => $e->getMessage(),
+                'plan_id' => $planId,
+                'patient_id' => $patientId,
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return $this->errorResponse('An error occurred while fetching plan log.', 500);
         }
     }
 

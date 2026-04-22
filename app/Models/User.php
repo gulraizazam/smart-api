@@ -25,6 +25,9 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
+    // Sanctum's HasApiTokens stays for the legacy /api/* endpoints and
+    // the live SPA. Passport's password grant runs through /oauth/token
+    // without touching this model — no Passport trait required here.
     use GuardsTenantBoundary, HasApiTokens, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     // Audit-log policy for this model lives in config/activity_log.php
@@ -70,7 +73,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'phone', 'cnic', 'main_account', 'gender',
-        'dob', 'address', 'commission', 'can_perform_consultation',
+        'dob', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'account_id',
         'active', 'select_all', 'is_advance_eligible', 'hr_managed',
     ];
@@ -83,7 +86,7 @@ class User extends Authenticatable
      */
     protected static array $_fillable = [
         'name', 'email', 'phone', 'main_account', 'gender',
-        'dob', 'address', 'commission', 'can_perform_consultation',
+        'dob', 'commission', 'can_perform_consultation',
         'user_type_id', 'resource_type_id', 'referred_by', 'active', 'select_all',
     ];
 

@@ -154,7 +154,8 @@
       "Bash(git log *)",
       "Bash(\"C:/laragon/www/cutera-upgradation/vendor/bin/pint\" app/Services/Lead/LeadService.php app/Helpers/LeadHelper.php)",
       "Bash(\"C:/laragon/www/cutera-upgradation/vendor/bin/pint\" app/Services/Appointment/AppointmentService.php app/Models/Appointments.php)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(php artisan migrate:*)"
     ]
   }
 }
