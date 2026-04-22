@@ -298,7 +298,7 @@ class PackagesController extends Controller
                         ]);
                     } else {
                         // Create new record
-                        $studentVerificationService->createVerificationRecord([
+                        $this->studentVerificationService->createVerificationRecord([
                             'patient_id' => $patientId,
                             'membership_id' => $membershipCodeId,
                             'membership_type_id' => $membershipTypeId ?: $packageBundle?->membership_type_id,
