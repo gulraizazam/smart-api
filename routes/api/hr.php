@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\HR\EmployeeController;
 use App\Http\Controllers\Api\HR\EmployeeDatatableController;
 use App\Http\Controllers\Api\HR\LeaveApplicationController;
 use App\Http\Controllers\Api\HR\LeaveApplicationDatatableController;
+use App\Http\Controllers\Api\HR\LeaveBalanceController;
 use App\Http\Controllers\Api\HR\LeaveBalanceDatatableController;
 use App\Http\Controllers\Api\HR\LeaveTypeController;
 use App\Http\Controllers\Api\HR\MyHrmController;
@@ -39,6 +40,11 @@ Route::prefix('hr')->name('hr.')->group(function () {
 
     // ── Leave Applications (REST actions) ──
     Route::prefix('leave-applications')->name('leave-applications.')->group(function () {
+        Route::get('/', [LeaveApplicationController::class, 'index'])->name('index');
+        Route::post('/', [LeaveApplicationController::class, 'store'])->name('store');
+        Route::get('summary', [LeaveApplicationController::class, 'summary'])->name('summary');
+        Route::get('calendar', [LeaveApplicationController::class, 'calendar'])->name('calendar');
+        Route::get('export', [LeaveApplicationController::class, 'export'])->name('export');
         Route::get('{leaveApplication}', [LeaveApplicationController::class, 'show'])->name('show');
         Route::post('{leaveApplication}/approve', [LeaveApplicationController::class, 'approve'])->name('approve');
         Route::post('{leaveApplication}/reject', [LeaveApplicationController::class, 'reject'])->name('reject');
@@ -79,6 +85,18 @@ Route::prefix('hr')->name('hr.')->group(function () {
         Route::get('{designation}', [DesignationController::class, 'show'])->name('show');
         Route::patch('{designation}', [DesignationController::class, 'update'])->name('update');
         Route::delete('{designation}', [DesignationController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── Leave Balances (gates applied in-controller to match the rest of /api/* HR) ──
+    Route::prefix('leave-balances')->name('leave-balances.')->group(function () {
+        Route::get('/', [LeaveBalanceController::class, 'index'])->name('index');
+        Route::get('matrix', [LeaveBalanceController::class, 'matrix'])->name('matrix');
+        Route::get('fiscal-year', [LeaveBalanceController::class, 'fiscalYear'])->name('fiscal-year');
+        Route::get('export', [LeaveBalanceController::class, 'export'])->name('export');
+        Route::get('employee/{user}', [LeaveBalanceController::class, 'forEmployee'])->name('for-employee');
+        Route::post('allocate', [LeaveBalanceController::class, 'allocate'])->name('allocate');
+        Route::post('bulk-allocate', [LeaveBalanceController::class, 'bulkAllocate'])->name('bulk-allocate');
+        Route::delete('{leaveBalance}', [LeaveBalanceController::class, 'destroy'])->name('destroy');
     });
 
     // ── Leave Types (gates applied in-controller to match the rest of /api/* HR) ──

@@ -1373,6 +1373,103 @@
           }
         },
         {
+          "name": "Leave applications — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications?status=&user_id=&leave_type_id=&date_from=&date_to=&search=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications"],
+              "query": [
+                { "key": "status", "value": "", "description": "Optional: `pending`, `approved`, `rejected`, `cancelled`." },
+                { "key": "user_id", "value": "", "description": "Admin-only filter. Non-admins are force-scoped to their own rows regardless." },
+                { "key": "leave_type_id", "value": "" },
+                { "key": "date_from", "value": "", "description": "ISO date (YYYY-MM-DD). Overlap-matched against start/end." },
+                { "key": "date_to", "value": "" },
+                { "key": "search", "value": "", "description": "Name search. Ignored for non-admin callers." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated leave applications with employee + designation + leave type + reviewer eager-loaded. Callers without `hr_leave_view` are auto-scoped to their own applications — no 403. Response: `{ items, meta }` where each item is a `LeaveApplicationResource`."
+          }
+        },
+        {
+          "name": "Leave applications — create (HR on-behalf)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"leave_type_id\": 1,\n  \"start_date\": \"2026-05-10\",\n  \"end_date\": \"2026-05-12\",\n  \"duration_type\": \"full\",\n  \"custom_hours\": null,\n  \"reason\": \"Applied on behalf — pre-planned vacation.\",\n  \"auto_approve\": false,\n  \"review_notes\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications"]
+            },
+            "description": "HR creates a leave application on behalf of an employee. Reuses `LeaveService::apply` so overlap / shift-hour / balance checks stay centralised. Returns **409** on overlapping dates. `auto_approve=true` approves immediately and increments the balance. `duration_type`: `full` | `half` | `short` | `custom` (requires `custom_hours > 0`). Permission: `hr_leave_approve`."
+          }
+        },
+        {
+          "name": "Leave applications — summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/summary?date_from=&date_to=&user_id=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", "summary"],
+              "query": [
+                { "key": "date_from", "value": "" },
+                { "key": "date_to", "value": "" },
+                { "key": "user_id", "value": "" }
+              ]
+            },
+            "description": "Status counts for dashboards and badges: `{ pending, approved, rejected, cancelled, total }`. Filters apply to `start_date` within the window. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave applications — calendar",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/calendar?month=&year=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", "calendar"],
+              "query": [
+                { "key": "month", "value": "", "description": "1–12. Defaults to the current month." },
+                { "key": "year", "value": "", "description": "2000–2100. Defaults to the current year." }
+              ]
+            },
+            "description": "Month-scoped pending + approved applications for a calendar grid. Returns `{ month, year, items[] }` where each item is `{ id, user_id, user_name, leave_type, status, start_date, end_date, total_days }`. Mobile-friendly shape — see `calendar-data` for the legacy Vis-timeline shape. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave applications — export (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/csv" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-applications/export?status=&user_id=&leave_type_id=&date_from=&date_to=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-applications", "export"],
+              "query": [
+                { "key": "status", "value": "" },
+                { "key": "user_id", "value": "" },
+                { "key": "leave_type_id", "value": "" },
+                { "key": "date_from", "value": "" },
+                { "key": "date_to", "value": "" }
+              ]
+            },
+            "description": "Streams a CSV named `leave_applications_{timestamp}.csv` with columns: ID, Employee, Leave Type, Start Date, End Date, Duration, Total Days, Status, Reason, Applied On. Uses `chunkById(500)` so it stays safe on production-sized tables. Permission: `hr_leave_view`."
+          }
+        },
+        {
           "name": "Leave application — show",
           "request": {
             "method": "GET",
@@ -1721,6 +1818,141 @@
               "variable": [{ "key": "designation", "value": "1" }]
             },
             "description": "Soft-delete. Returns **409** if any employees are currently assigned to this designation. Permission: `hr_designations_manage`."
+          }
+        },
+        {
+          "name": "Leave balances — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances?fiscal_year=&user_id=&leave_type_id=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances"],
+              "query": [
+                { "key": "fiscal_year", "value": "", "description": "Optional. Defaults to the current fiscal year (e.g. `2025-26`)." },
+                { "key": "user_id", "value": "", "description": "Optional. Admin-only filter — non-admins always see just their own rows." },
+                { "key": "leave_type_id", "value": "", "description": "Optional leave type filter." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated list of `leave_balances`, eager-loaded with `user` + `leave_type`. Callers without `hr_leave_manage` are force-scoped to their own `user_id`. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave balances — matrix",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/matrix?fiscal_year=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "matrix"],
+              "query": [
+                { "key": "fiscal_year", "value": "", "description": "Optional. Defaults to the current fiscal year." }
+              ]
+            },
+            "description": "Employee × leave-type matrix for the given fiscal year. Returns `{ fiscal_year, leave_types[], rows[] }` where each row is `{ user_id, user_name, balances[{leave_type_id, leave_type_name, allocated, used, remaining}] }`. Permission: `hr_leave_manage`."
+          }
+        },
+        {
+          "name": "Leave balances — fiscal year",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/fiscal-year",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "fiscal-year"]
+            },
+            "description": "Returns the current fiscal year string plus its `start_date` and `end_date` (Jul 1 → Jun 30). Convenience endpoint for mobile filter chips. Permission: `hr_leave_view`."
+          }
+        },
+        {
+          "name": "Leave balances — for employee",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/employee/:user?fiscal_year=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "employee", ":user"],
+              "variable": [{ "key": "user", "value": "1" }],
+              "query": [
+                { "key": "fiscal_year", "value": "", "description": "Optional. Defaults to the current fiscal year." }
+              ]
+            },
+            "description": "All balances for a single employee in a given fiscal year. A user can always request their own balances; otherwise `hr_leave_manage` is required. Cross-account `user_id` returns 404."
+          }
+        },
+        {
+          "name": "Leave balances — allocate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"leave_type_id\": 1,\n  \"allocated\": 12,\n  \"fiscal_year\": \"2025-26\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/allocate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "allocate"]
+            },
+            "description": "Upsert a single employee's allocation for the given leave type + fiscal year. Returns `LeaveBalanceResource`. `allocated` is 0–365. `fiscal_year` must match `YYYY-YY`. Permission: `hr_leave_manage`."
+          }
+        },
+        {
+          "name": "Leave balances — bulk allocate",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_ids\": [1, 2, 3],\n  \"leave_type_id\": 1,\n  \"allocated\": 12,\n  \"fiscal_year\": \"2025-26\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/bulk-allocate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "bulk-allocate"]
+            },
+            "description": "Upsert the same allocation across many employees. `user_ids` must be 1–500 distinct ids, each belonging to the caller's account. Response includes `allocated_count`. Permission: `hr_leave_manage`."
+          }
+        },
+        {
+          "name": "Leave balances — export (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/csv" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/export?fiscal_year=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", "export"],
+              "query": [
+                { "key": "fiscal_year", "value": "", "description": "Optional. Defaults to the current fiscal year." }
+              ]
+            },
+            "description": "Streams a CSV named `leave_balances_{fiscal_year}.csv` with one column per leave type × {Allocated, Used, Remaining}. Permission: `hr_leave_manage`."
+          }
+        },
+        {
+          "name": "Leave balances — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/leave-balances/:leaveBalance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "leave-balances", ":leaveBalance"],
+              "variable": [{ "key": "leaveBalance", "value": "1" }]
+            },
+            "description": "Hard-delete a balance row. Returns **409** if `used > 0` (leave has already been drawn against it — HR must reduce `allocated` via `allocate` instead). Cross-account rows return 404. Permission: `hr_leave_manage`."
           }
         },
         {
