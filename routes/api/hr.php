@@ -16,7 +16,14 @@ use App\Http\Controllers\Api\HR\MyHrmController;
 use App\Http\Controllers\Api\HR\RecruitmentDatatableController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('hr')->name('hr.')->group(function () {
+// Name prefix is `api.hr.` (full names become `admin.api.hr.*`) to avoid
+// collisions with the web-side `admin.hr.*` routes. Laravel's `route()`
+// helper resolves a duplicated name to the last-registered route — and
+// since routes/api.php loads after routes/web.php, identical names here
+// would silently hijack web-facing links (view/edit pages rendered as
+// raw JSON). Keep API route names under `api.hr.` so both sides resolve
+// to the right URL.
+Route::prefix('hr')->name('api.hr.')->group(function () {
 
     // ── Datatable Endpoints ──
     Route::post('employees/datatable', [EmployeeDatatableController::class, 'datatable'])->name('employees.datatable');
