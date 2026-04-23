@@ -71,7 +71,20 @@ class NodesTree
                 $where['active'] = 1;
             }
 
-            $group = Services::where($where)->first()->toArray();
+            // Guard against the caller having stricter filters than the
+            // parent query that produced this id (e.g., add_sub_groups()
+            // returns inactive rows but build() is recursed with
+            // $only_active=true). Also covers the case where a service was
+            // deleted/inactivated between queries. Treat as a skipped node.
+            $service = Services::where($where)->first();
+            if ($service === null) {
+                $this->id = 0;
+                $this->name = '';
+                $this->active = 0;
+
+                return;
+            }
+            $group = $service->toArray();
 
             $this->id = $group['id'];
             $this->name = $group['name'];
