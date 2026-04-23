@@ -54,7 +54,7 @@
                 $('#current-month-label').text(monthNames[month - 1] + ' ' + year);
 
                 $.ajax({
-                    url: '{{ route("admin.hr.leave-applications.calendar-data") }}',
+                    url: '{{ route("admin.api.hr.leave-applications.calendar-data") }}',
                     method: 'GET',
                     data: { month: month, year: year },
                     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},

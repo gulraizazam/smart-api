@@ -61,7 +61,7 @@
 
     @push('datatable-js')
     <script>
-        var table_url = '{{ route("admin.hr.employees.datatable") }}';
+        var table_url = '{{ route("admin.api.hr.employees.datatable") }}';
 
         var table_columns = [
             {
