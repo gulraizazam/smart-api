@@ -417,12 +417,24 @@ class OrderService
         return $users + $FDMUsers;
     }
 
-    public function getDoctorsForSales(int|array $locationId): array
+    public function getDoctorsForSales(int|array|string $locationId): array
     {
+        $raw = (array) $locationId;
+
+        // The centre multi-select uses 'all' as the "no filter" sentinel.
+        // When present (or the list is empty after normalising), fall back
+        // to every centre the caller can access — same semantics as the
+        // inventory/sales report services.
+        $wantsAll = in_array('all', $raw, true);
+
         $locationIds = array_values(array_filter(
-            array_map('intval', (array) $locationId),
+            array_map('intval', $raw),
             fn (int $id): bool => $id > 0,
         ));
+
+        if ($wantsAll || $locationIds === []) {
+            $locationIds = ACL::getUserCentres();
+        }
 
         if ($locationIds === []) {
             return [];

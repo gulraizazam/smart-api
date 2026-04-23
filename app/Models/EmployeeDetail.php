@@ -28,6 +28,7 @@ class EmployeeDetail extends BaseModel
         'emergency_contact_name',
         'emergency_contact_phone',
         'emergency_contact_relation',
+        'address',
         'account_id',
         'created_by',
     ];
