@@ -91,6 +91,7 @@
         'admin.hr.leave-applications.calendar' => 'people',
         'admin.hr.recruitment.index' => 'people',
         'admin.hr.recruitment.show' => 'people',
+        'admin.hr.reports.celebrations' => 'people',
         'admin.permissions.index' => 'people',
         'admin.roles.index' => 'people',
         'admin.roles.edit' => 'people',
@@ -856,6 +857,10 @@
                         @can('hr_recruitment_view')
                             <a href="{{ route('admin.hr.recruitment.index') }}"
                                class="cs-sub {{ $isActive(['admin.hr.recruitment.index']) }}"><span>Recruitment</span></a>
+                        @endcan
+                        @can('hr_employees_view')
+                            <a href="{{ route('admin.hr.reports.celebrations') }}"
+                               class="cs-sub {{ $isActive(['admin.hr.reports.celebrations']) }}"><span>Celebrations</span></a>
                         @endcan
                     @endif
 

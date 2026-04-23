@@ -62,7 +62,7 @@ class EmployeeResource extends JsonResource
             'gender_label' => $genderRaw !== null
                 ? (Gender::tryFrom((int) $genderRaw)?->label() ?? null)
                 : null,
-            'address' => $user->address ?? null,
+            'address' => $user->employeeDetail?->address,
             'active' => (int) $user->active,
             'hr_managed' => (int) $user->hr_managed,
             'user_type_id' => $user->user_type_id,
