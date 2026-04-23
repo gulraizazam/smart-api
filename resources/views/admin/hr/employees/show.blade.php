@@ -46,7 +46,7 @@
                                 <table class="table table-borderless table-sm mb-0">
                                     <tr><td class="font-weight-bold text-muted" style="width:140px">CNIC</td><td>{{ $employee->cnic ?? '—' }}</td></tr>
                                     <tr><td class="font-weight-bold text-muted">Date of Birth</td><td>{{ $employee->dob ? \Carbon\Carbon::parse($employee->dob)->format('d M Y') : '—' }}</td></tr>
-                                    <tr><td class="font-weight-bold text-muted">Address</td><td>{{ $employee->address ?? '—' }}</td></tr>
+                                    <tr><td class="font-weight-bold text-muted">Address</td><td>{{ $employee->employeeDetail?->address ?? '—' }}</td></tr>
                                     <tr><td class="font-weight-bold text-muted">Status</td><td>
                                         @if($employee->active)
                                             <span class="label label-lg label-light-success label-inline">Active</span>

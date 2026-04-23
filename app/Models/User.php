@@ -100,6 +100,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'dob' => 'date',
             'active' => 'integer',
             'commission' => 'decimal:2',
             'can_perform_consultation' => 'boolean',

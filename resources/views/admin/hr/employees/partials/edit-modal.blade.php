@@ -39,7 +39,7 @@
                         </div>
                         <div class="col-md-4 mb-4">
                             <label class="fw-bold fs-6 mb-2">Date of Birth</label>
-                            <input type="date" name="dob" class="form-control form-control-solid" value="{{ $employee->dob }}">
+                            <input type="date" name="dob" class="form-control form-control-solid" value="{{ $employee->dob?->format('Y-m-d') }}">
                         </div>
                         <div class="col-md-4 mb-4">
                             <label class="fw-bold fs-6 mb-2">Gender</label>
@@ -51,7 +51,7 @@
                         </div>
                         <div class="col-md-8 mb-4">
                             <label class="fw-bold fs-6 mb-2">Address</label>
-                            <input type="text" name="address" class="form-control form-control-solid" value="{{ $employee->address }}">
+                            <input type="text" name="address" class="form-control form-control-solid" value="{{ $detail?->address }}">
                         </div>
                     </div>
 

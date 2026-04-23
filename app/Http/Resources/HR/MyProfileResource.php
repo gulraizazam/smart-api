@@ -38,7 +38,7 @@ class MyProfileResource extends JsonResource
             'gender_label' => $genderRaw !== null
                 ? (Gender::tryFrom((int) $genderRaw)?->label() ?? null)
                 : null,
-            'address' => $user->address ?? null,
+            'address' => $detail?->address,
 
             'department' => $detail?->department ? [
                 'id' => $detail->department->id,
