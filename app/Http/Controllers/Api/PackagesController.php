@@ -4,380 +4,427 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
-use App\Helpers\ACL;
-use App\Http\Controllers\Admin\PackagesController as AdminPackagesController;
+use App\Exceptions\BundleException;
+use App\Helpers\BundleHelper;
+use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\PackageStatusRequest;
-use App\Http\Requests\Admin\ResendPackageSMSRequest;
-use App\Http\Resources\Package\PackageDetailResource;
-use App\Http\Resources\Package\PackageResource;
-use App\Http\Resources\Package\PackageSMSLogResource;
-use App\Models\Packages;
-use App\Models\SMSLogs;
-use App\Services\Plan\PlanService;
-use Carbon\Carbon;
+use App\Http\Requests\Bundle\StoreBundleRequest;
+use App\Http\Requests\Bundle\UpdateBundleRequest;
+use App\Http\Requests\Bundle\UpdateBundleStatusRequest;
+use App\Http\Resources\Bundle\BundleDatatableResource;
+use App\Http\Resources\Bundle\BundleDetailResource;
+use App\Http\Resources\Bundle\BundleFormDataResource;
+use App\Services\Bundle\BundleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 
 /**
- * Packages (Plans) REST API — read + lifecycle operations.
+ * Packages REST API.
  *
- * Create/update are intentionally **not** exposed here. The legacy
- * save/update flow spans half a dozen staged calls (service picker,
- * bundles, memberships, voucher reservation, grand-total calculation,
- * cash collection) and the final commit writes to Packages +
- * PackageBundles + PackageServices + Appointments + Invoices +
- * InvoiceDetails + PackageAdvances atomically. Porting that safely
- * requires extracting a dedicated `SavePlanAction`/`UpdatePlanAction`
- * first; wiring a single POST here without that prep would risk
- * half-written plans and broken cash balances.
+ * Schema note: in this system the UI label "Packages" maps to the
+ * `bundles` database table (the literal `packages` table holds patient
+ * plans — a different concept). Permission keys are `packages_*` and the
+ * canonical source of truth is `App\Services\Bundle\BundleService`. This
+ * controller is the UI-aligned alias of `Api\BundlesController`; both
+ * controllers wrap the same service so behaviour can't drift.
  *
- * This controller covers: list, show, plans (per-patient), status,
- * destroy, SMS logs, resend SMS.
+ * The parallel admin page is `/admin/bundles` (served by the bundles
+ * datatable + `BundleDatatableResource`). See
+ * `app/Http/Controllers/Api/BundlesController.php` for the sibling API.
  */
-class PackagesController extends Controller
+final class PackagesController extends Controller
 {
     public function __construct(
-        private readonly AdminPackagesController $adminController,
-        private readonly PlanService $planService,
+        private readonly BundleService $bundleService,
     ) {}
 
     /**
      * GET /api/packages
      *
-     * Paginated account-scoped list. Filters: `search` (patient search
-     * string or package id), `patient_id`, `location_id`, `status`,
-     * `created_from`, `created_to`, `per_page`.
+     * Paginated list. Accepts the same filters as the legacy
+     * bundles datatable — `name`, `price`, `total_services`, `status`,
+     * `created_from`, `created_to`, `startdate`, `enddate`, `per_page`.
      *
-     * Scoped by `ACL::getUserCentres()` just like the legacy datatable.
-     * `view_inactive_plans` controls whether deactivated plans are
-     * returned.
-     *
-     * Permission: `managePlans` (policy).
+     * Permission: `packages_manage`. Inactive rows are hidden unless
+     * `view_inactive_packages` is granted.
      */
     public function index(Request $request): JsonResponse
     {
+        if (! Gate::allows('packages_manage')) {
+            return $this->unauthorizedResponse();
+        }
+
         try {
-            if (! Gate::allows('managePlans', Packages::class)) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
+            $user = Auth::user();
+            $accountId = (int) $user->account_id;
+
+            $filters = getFilters($request->all());
+            $records = ['data' => []];
+
+            if (hasFilter($filters, 'delete')) {
+                $ids = array_filter(array_map('intval', explode(',', $filters['delete'])));
+                $this->bundleService->bulkDelete($ids, $accountId);
+                $records['status'] = true;
+                $records['message'] = 'Records have been deleted successfully!';
             }
 
-            $request->validate([
-                'search' => ['nullable', 'string', 'max:50'],
-                'patient_id' => ['nullable', 'integer'],
-                'location_id' => ['nullable', 'integer'],
-                'status' => ['nullable', 'integer', 'in:0,1'],
-                'created_from' => ['nullable', 'date'],
-                'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
-                'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
-            ]);
+            $this->applyFilters($filters, (int) $user->id);
+            $filters = $this->restoreSavedFilters($filters, (int) $user->id);
 
-            $accountId = (int) Auth::user()->account_id;
+            [$orderBy, $order] = getSortBy($request);
+            $canViewInactive = Gate::allows('view_inactive_packages');
 
-            $query = Packages::query()
-                ->with(['user:id,name,phone', 'location:id,name'])
-                ->where('account_id', $accountId)
-                ->whereIn('location_id', ACL::getUserCentres());
+            $totalRecords = $this->bundleService->getTotalRecords($filters, $accountId, $canViewInactive);
+            [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
 
-            if (! Gate::allows('view_inactive_plans')) {
-                $query->where('active', 1);
-            } elseif ($request->filled('status')) {
-                $query->where('active', (int) $request->integer('status'));
+            $bundles = $this->bundleService->getBundlesList(
+                $filters,
+                $accountId,
+                $canViewInactive,
+                $displayStart,
+                $displayLength,
+            );
+
+            $records['data'] = BundleDatatableResource::collection($bundles)->resolve();
+            $records['filter_values'] = BundleHelper::getFilterValues();
+            $records['active_filters'] = Filters::all((int) $user->id, 'bundles');
+            $records['permissions'] = BundleHelper::getPermissions();
+            $records['meta'] = [
+                'field'   => $orderBy,
+                'page'    => $page,
+                'pages'   => $pages,
+                'perpage' => $displayLength,
+                'total'   => $totalRecords,
+                'sort'    => $order,
+            ];
+
+            return response()->json($records);
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * POST /api/packages/datatable
+     *
+     * Legacy-shape datatable endpoint — identical payload to `index`
+     * but accepts POST so legacy admin-side callers can plug in without
+     * URL changes.
+     */
+    public function datatable(Request $request): JsonResponse
+    {
+        return $this->index($request);
+    }
+
+    /**
+     * POST /api/packages/create
+     *
+     * Permission: `packages_create`.
+     */
+    public function store(StoreBundleRequest $request): JsonResponse
+    {
+        if (! Gate::allows('packages_create')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $this->bundleService->createBundle($request->validated());
+
+            return $this->successResponse('Package has been created successfully.');
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * GET /api/packages/{id}
+     *
+     * Detail (bundle + bundle_services + relationships).
+     * Permission: `packages_manage`.
+     */
+    public function show(int $id): JsonResponse
+    {
+        if (! Gate::allows('packages_manage')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $data = $this->bundleService->getBundleDetails($id);
+
+            return $this->successResponse('Record found', new BundleDetailResource($data));
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * GET /api/packages/{id}/edit
+     *
+     * Form data for the edit screen.
+     * Permission: `packages_edit`.
+     */
+    public function edit(int $id): JsonResponse
+    {
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $data = $this->bundleService->getBundleForEdit($id);
+
+            return $this->successResponse('Record found', new BundleFormDataResource($data));
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * PATCH /api/packages/{id}
+     */
+    public function update(UpdateBundleRequest $request, int $id): JsonResponse
+    {
+        try {
+            $this->bundleService->updateBundle($id, $request->validated());
+
+            return $this->successResponse('Package has been updated successfully.');
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * DELETE /api/packages/{id}
+     *
+     * Permission: `packages_destroy`.
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        if (! Gate::allows('packages_destroy')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $this->bundleService->deleteBundle($id);
+
+            return $this->successResponse('Package has been deleted successfully.');
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * POST /api/packages/status
+     *
+     * Body: `{ id, status }`. Gates are enforced by `UpdateBundleStatusRequest`.
+     */
+    public function status(UpdateBundleStatusRequest $request): JsonResponse
+    {
+        try {
+            $id = (int) $request->validated('id');
+            $status = (int) $request->validated('status');
+
+            $this->bundleService->updateStatus($id, $status);
+
+            $message = $status === 1
+                ? 'Package has been activated successfully.'
+                : 'Package has been inactivated successfully.';
+
+            return $this->successResponse($message);
+        } catch (BundleException $e) {
+            return $this->failResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * GET /api/packages/sort/get
+     *
+     * Active packages ordered for drag-and-drop reorder.
+     */
+    public function sortOrderGet(): JsonResponse
+    {
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $bundles = $this->bundleService->getBundlesForSort((int) Auth::user()->account_id);
+
+            return $this->successResponse('Success', $bundles);
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    /**
+     * POST /api/packages/sort/save
+     *
+     * Body: `{ item_ids: [3, 1, 2] }`.
+     */
+    public function sortOrderSave(Request $request): JsonResponse
+    {
+        if (! Gate::allows('packages_edit')) {
+            return $this->unauthorizedResponse();
+        }
+
+        try {
+            $itemIds = $request->input('item_ids', []);
+
+            if (empty($itemIds) || ! is_array($itemIds)) {
+                return $this->failResponse('No items to sort.');
             }
 
-            if ($request->filled('patient_id')) {
-                $query->where('patient_id', (int) $request->integer('patient_id'));
+            $saved = $this->bundleService->saveSortOrder($itemIds, (int) Auth::user()->account_id);
+
+            return $saved
+                ? $this->successResponse('Sort order saved!')
+                : $this->failResponse('Something went wrong.');
+        } catch (\Exception $e) {
+            return $this->exceptionToResponse($e);
+        }
+    }
+
+    // ── filter persistence helpers (mirror Api\BundlesController) ──
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyFilters(array $filters, int $userId): void
+    {
+        $filename = 'bundles';
+        $applyFilter = checkFilters($filters, $filename);
+
+        foreach (['name', 'price', 'total_services', 'status'] as $key) {
+            if (hasFilter($filters, $key)) {
+                Filters::put($userId, $filename, $key, $filters[$key]);
+            } elseif ($applyFilter) {
+                Filters::forget($userId, $filename, $key);
             }
+        }
 
-            if ($request->filled('location_id')) {
-                $query->where('location_id', (int) $request->integer('location_id'));
+        $dateFilters = [
+            'created_from' => 'created_from',
+            'created_to'   => 'created_to',
+            'startdate'    => 'start',
+            'enddate'      => 'end',
+        ];
+
+        foreach ($dateFilters as $filterKey => $storageKey) {
+            if (hasFilter($filters, $filterKey)) {
+                Filters::put($userId, $filename, $storageKey, $filters[$filterKey]);
+            } elseif ($applyFilter) {
+                Filters::forget($userId, $filename, $storageKey);
             }
+        }
+    }
 
-            if ($request->filled('search')) {
-                $search = trim((string) $request->string('search'));
-                if ($search !== '') {
-                    $query->where(function ($q) use ($search): void {
-                        $q->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('plan_name', 'like', '%'.$search.'%');
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    private function restoreSavedFilters(array $filters, int $userId): array
+    {
+        $filename = 'bundles';
 
-                        $numeric = ltrim($search, '0');
-                        if ($numeric !== '' && ctype_digit($numeric)) {
-                            $q->orWhere('id', (int) $numeric);
-                        }
-                    });
+        if (checkFilters($filters, $filename)) {
+            return $filters;
+        }
+
+        foreach (['name', 'price', 'total_services'] as $key) {
+            if (! hasFilter($filters, $key)) {
+                $saved = Filters::get($userId, $filename, $key);
+                if ($saved !== null) {
+                    $filters[$key] = $saved;
                 }
             }
-
-            if ($request->filled('created_from')) {
-                $query->where('created_at', '>=', Carbon::parse($request->input('created_from'))->startOfDay());
-            }
-
-            if ($request->filled('created_to')) {
-                $query->where('created_at', '<=', Carbon::parse($request->input('created_to'))->endOfDay());
-            }
-
-            $perPage = (int) ($request->integer('per_page') ?: 25);
-
-            $paginated = $query->orderByDesc('updated_at')->paginate($perPage);
-
-            return $this->successResponse(
-                'Packages retrieved successfully.',
-                [
-                    'items' => PackageResource::collection($paginated->items()),
-                    'meta' => [
-                        'current_page' => $paginated->currentPage(),
-                        'last_page' => $paginated->lastPage(),
-                        'per_page' => $paginated->perPage(),
-                        'total' => $paginated->total(),
-                    ],
-                ],
-            );
-        } catch (ValidationException $e) {
-            return $this->errorResponse($e->getMessage(), 422, $e->errors());
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Api\\PackagesController@index');
         }
+
+        if (! hasFilter($filters, 'status')) {
+            $saved = Filters::get($userId, $filename, 'status');
+            if (in_array($saved, [0, 1, '0', '1'], true)) {
+                $filters['status'] = $saved;
+            }
+        }
+
+        $dateMapping = [
+            'created_from' => 'created_from',
+            'created_to'   => 'created_to',
+            'startdate'    => 'start',
+            'enddate'      => 'end',
+        ];
+
+        foreach ($dateMapping as $filterKey => $storageKey) {
+            if (! hasFilter($filters, $filterKey)) {
+                $saved = Filters::get($userId, $filename, $storageKey);
+                if ($saved !== null) {
+                    $filters[$filterKey] = $saved;
+                }
+            }
+        }
+
+        return $filters;
     }
 
-    /**
-     * GET /api/packages/{package}
-     *
-     * Full display payload — delegates to `PlanService::getDisplayData()`
-     * which returns package + bundles + services + advances + cash
-     * summary + membership. Shape is preserved verbatim so downstream
-     * consumers stay stable (see `PackageDetailResource` note).
-     *
-     * Permission: `managePlans` (policy).
-     */
-    public function show(Packages $package): JsonResponse
+    // ── response helpers (mirror Api\BundlesController) ──
+
+    protected function successResponse(string $message, mixed $data = null, int $code = 200): JsonResponse
     {
-        try {
-            if (! Gate::allows('managePlans', Packages::class)) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            if (! $this->ownedByCaller($package)) {
-                return $this->errorResponse('Package not found.', 404);
-            }
-
-            $data = $this->planService->getDisplayData((int) $package->id);
-
-            return $this->successResponse(
-                'Package retrieved successfully.',
-                new PackageDetailResource($data),
-            );
-        } catch (\Throwable $e) {
-            return $this->handleException($e, 'Api\\PackagesController@show');
-        }
+        return response()->json([
+            'success' => true,
+            'status'  => true,
+            'message' => $message,
+            'data'    => $data,
+            'errors'  => [],
+        ], $code);
     }
 
-    /**
-     * GET /api/packages/patient/{patientId}
-     *
-     * Per-patient plan list. Mirrors the legacy
-     * `planDatatable/{id}` endpoint — used by the patient profile screen.
-     *
-     * Permission: `managePlans` (policy).
-     */
-    public function forPatient(int $patientId, Request $request): JsonResponse
+    private function failResponse(string $message, array $errors = []): JsonResponse
     {
-        try {
-            if (! Gate::allows('managePlans', Packages::class)) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            $request->validate([
-                'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
-            ]);
-
-            $accountId = (int) Auth::user()->account_id;
-
-            $query = Packages::query()
-                ->with(['user:id,name,phone', 'location:id,name'])
-                ->where('account_id', $accountId)
-                ->where('patient_id', $patientId)
-                ->whereIn('location_id', ACL::getUserCentres());
-
-            if (! Gate::allows('view_inactive_plans')) {
-                $query->where('active', 1);
-            }
-
-            $perPage = (int) ($request->integer('per_page') ?: 25);
-
-            $paginated = $query->orderByDesc('updated_at')->paginate($perPage);
-
-            return $this->successResponse(
-                'Patient packages retrieved successfully.',
-                [
-                    'items' => PackageResource::collection($paginated->items()),
-                    'meta' => [
-                        'current_page' => $paginated->currentPage(),
-                        'last_page' => $paginated->lastPage(),
-                        'per_page' => $paginated->perPage(),
-                        'total' => $paginated->total(),
-                    ],
-                ],
-            );
-        } catch (ValidationException $e) {
-            return $this->errorResponse($e->getMessage(), 422, $e->errors());
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Api\\PackagesController@forPatient');
-        }
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => $errors,
+        ], 200);
     }
 
-    /**
-     * PATCH /api/packages/{package}/status
-     *
-     * Activate (`status=1`) or deactivate (`status=0`). The Policy
-     * `inactivatePlan` gates both directions (matches legacy behaviour —
-     * there's no separate `activatePlan` ability).
-     */
-    public function status(PackageStatusRequest $request, Packages $package): JsonResponse
+    private function unauthorizedResponse(): JsonResponse
     {
-        try {
-            if (! $this->ownedByCaller($package)) {
-                return $this->errorResponse('Package not found.', 404);
-            }
-
-            $statusValue = (int) $request->validated()['status'];
-            $action = $statusValue === 1 ? 'activate' : 'inactivate';
-
-            $result = $this->planService->toggleStatus((int) $package->id, $action);
-
-            if (empty($result['success'])) {
-                return $this->errorResponse(
-                    (string) ($result['message'] ?? 'Status change failed.'),
-                    (int) ($result['status_code'] ?? 400),
-                );
-            }
-
-            $package->refresh()->load(['user:id,name,phone', 'location:id,name']);
-
-            return $this->successResponse(
-                (string) $result['message'],
-                new PackageResource($package),
-            );
-        } catch (ValidationException $e) {
-            return $this->errorResponse($e->getMessage(), 422, $e->errors());
-        } catch (\Throwable $e) {
-            return $this->handleException($e, 'Api\\PackagesController@status');
-        }
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => 'You are not authorized to access this resource.',
+            'data'    => null,
+            'errors'  => [],
+        ], 403);
     }
 
-    /**
-     * DELETE /api/packages/{package}
-     *
-     * Soft-delete. Returns **409** when the plan has linked
-     * invoice_details or package_advances — mirrors
-     * `Packages::isChildExists`.
-     *
-     * Permission: `destroyPlan` (policy).
-     */
-    public function destroy(Packages $package): JsonResponse
+    private function exceptionToResponse(\Exception $e): JsonResponse
     {
-        try {
-            if (! Gate::allows('destroyPlan', Packages::class)) {
-                return $this->errorResponse('You are not authorized to perform this action.', 403);
-            }
+        $message = config('app.debug')
+            ? $e->getMessage().' Line '.$e->getLine().' File '.$e->getFile()
+            : 'Something went wrong, please try again later.';
 
-            if (! $this->ownedByCaller($package)) {
-                return $this->errorResponse('Package not found.', 404);
-            }
-
-            $result = $this->planService->deletePlan((int) $package->id);
-
-            if (empty($result['status'])) {
-                $message = strtolower((string) ($result['message'] ?? ''));
-                $status = str_contains($message, 'child') ? 409 : 400;
-
-                return $this->errorResponse(
-                    (string) ($result['message'] ?? 'Delete failed.'),
-                    $status,
-                );
-            }
-
-            return $this->successResponse((string) $result['message']);
-        } catch (\Throwable $e) {
-            return $this->handleException($e, 'Api\\PackagesController@destroy');
-        }
-    }
-
-    /**
-     * GET /api/packages/{package}/sms-logs
-     *
-     * Returns SMS history for this package, newest first.
-     */
-    public function smsLogs(Packages $package): JsonResponse
-    {
-        try {
-            if (! Gate::allows('managePlans', Packages::class)) {
-                return $this->errorResponse('You are not authorized to access this resource.', 403);
-            }
-
-            if (! $this->ownedByCaller($package)) {
-                return $this->errorResponse('Package not found.', 404);
-            }
-
-            $logs = SMSLogs::where('package_id', $package->id)
-                ->orderByDesc('created_at')
-                ->get();
-
-            return $this->successResponse(
-                'Package SMS logs retrieved successfully.',
-                PackageSMSLogResource::collection($logs),
-            );
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Api\\PackagesController@smsLogs');
-        }
-    }
-
-    /**
-     * POST /api/packages/{package}/resend-sms
-     *
-     * Re-sends a previously-logged SMS for this package. Body: `{ id }`.
-     * Delegates to the legacy admin `sendLogSMS` so the Telenor/Jazz
-     * operator routing stays in one place.
-     */
-    public function resendSMS(ResendPackageSMSRequest $request, Packages $package): JsonResponse
-    {
-        try {
-            if (! $this->ownedByCaller($package)) {
-                return $this->errorResponse('Package not found.', 404);
-            }
-
-            $logId = (int) $request->validated()['id'];
-
-            $log = SMSLogs::where('id', $logId)
-                ->where('package_id', $package->id)
-                ->first();
-
-            if (! $log) {
-                return $this->errorResponse('SMS log not found for this package.', 404);
-            }
-
-            $proxied = new Request(['id' => $logId]);
-            $response = $this->adminController->sendLogSMS($proxied);
-
-            $payload = $response->getData(true);
-            $ok = isset($payload['status']) && (int) $payload['status'] === 1;
-
-            return $ok
-                ? $this->successResponse('SMS has been re-sent successfully.')
-                : $this->errorResponse('SMS could not be re-sent. Please try again.', 502);
-        } catch (ValidationException $e) {
-            return $this->errorResponse($e->getMessage(), 422, $e->errors());
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'Api\\PackagesController@resendSMS');
-        }
-    }
-
-    // ── internal helpers ──
-
-    private function ownedByCaller(Packages $package): bool
-    {
-        return (int) $package->account_id === (int) Auth::user()->account_id;
+        return response()->json([
+            'success' => false,
+            'status'  => false,
+            'message' => $message,
+            'data'    => null,
+            'errors'  => [],
+        ], 500);
     }
 }
