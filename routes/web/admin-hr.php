@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\HR\DesignationController;
 use App\Http\Controllers\Admin\HR\EmployeeController;
 use App\Http\Controllers\Admin\HR\EmployeeDocumentController;
 use App\Http\Controllers\Admin\HR\HRDashboardController;
+use App\Http\Controllers\Admin\HR\HrReportController;
 use App\Http\Controllers\Admin\HR\InterviewController;
 use App\Http\Controllers\Admin\HR\LeaveApplicationController;
 use App\Http\Controllers\Admin\HR\LeaveBalanceController;
@@ -98,6 +99,12 @@ Route::prefix('hr')->name('hr.')->group(function () {
     Route::post('interviews', [InterviewController::class, 'store'])
         ->middleware('permission:hr_recruitment_interview_manage')
         ->name('interviews.store');
+
+    // ── Reports (read-only) ──
+    Route::prefix('reports')->name('reports.')->middleware('permission:hr_employees_view')->group(function () {
+        Route::get('birthdays', [HrReportController::class, 'birthdays'])->name('birthdays');
+        Route::get('anniversaries', [HrReportController::class, 'anniversaries'])->name('anniversaries');
+    });
 
     // ── Self-Service (My HR) ──
     Route::prefix('my')->name('my.')->group(function () {
