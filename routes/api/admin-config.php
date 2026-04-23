@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\CentresController as ApiCentresController;
 use App\Http\Controllers\Api\CitiesController as ApiCitiesController;
 use App\Http\Controllers\Api\LeadSourcesController as ApiLeadSourcesController;
 use App\Http\Controllers\Api\LeadStatusesController as ApiLeadStatusesController;
+use App\Http\Controllers\Api\MachineTypesController as ApiMachineTypesController;
 use App\Http\Controllers\Api\OperatorSettingsController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RegionsController as ApiRegionsController;
@@ -297,4 +298,15 @@ Route::get('machine_types/{id}/edit', [MachineTypeController::class, 'edit'])->n
 Route::put('machine_types/{id}', [MachineTypeController::class, 'update'])->name('machine_types.update');
 Route::delete('machine_types/{id}', [MachineTypeController::class, 'destroy'])->name('machine_types.destroy');
 Route::post('machine_types/status', [MachineTypeController::class, 'status'])->name('machine_types.status');
+
+// Machine Types — REST API additions (non-conflicting methods/URIs only;
+// legacy endpoints above keep the admin UI working unchanged)
+Route::prefix('machine_types')->name('machine_types.api.')->group(function () {
+    Route::get('/', [ApiMachineTypesController::class, 'index'])->name('index');
+    Route::get('dropdown', [ApiMachineTypesController::class, 'dropdown'])->name('dropdown');
+    Route::post('create', [ApiMachineTypesController::class, 'store'])->name('create');
+    Route::get('{machineType}', [ApiMachineTypesController::class, 'show'])->name('show')->whereNumber('machineType');
+    Route::patch('{machineType}', [ApiMachineTypesController::class, 'update'])->name('update')->whereNumber('machineType');
+    Route::patch('{machineType}/status', [ApiMachineTypesController::class, 'status'])->name('status')->whereNumber('machineType');
+});
 // Machine Types Routes End

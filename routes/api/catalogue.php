@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\VouchersController;
 use App\Http\Controllers\Api\BundlesController;
+use App\Http\Controllers\Api\ResourcesController as ApiResourcesController;
+use App\Http\Controllers\Api\SMSTemplatesController as ApiSMSTemplatesController;
 use App\Http\Controllers\Api\BusinessClosureController;
 use App\Http\Controllers\Api\BusinessWorkingDaysController;
 use App\Http\Controllers\Api\DiscountsController as ApiDiscountsController;
@@ -49,13 +51,47 @@ Route::post('sms_templates/datatable', [SMSTemplatesController::class, 'datatabl
 Route::get('sms_templates/{id}/edit', [SMSTemplatesController::class, 'edit'])->name('sms_templates.edit');
 Route::put('sms_templates/{id}', [SMSTemplatesController::class, 'update'])->name('sms_templates.update');
 Route::post('sms_templates/status', [SMSTemplatesController::class, 'status'])->name('sms_templates.status');
+
+// SMS Templates — REST API additions (non-conflicting methods/URIs only;
+// legacy endpoints above keep the admin UI working unchanged)
+Route::prefix('sms_templates')->name('sms_templates.api.')->group(function () {
+    Route::get('/', [ApiSMSTemplatesController::class, 'index'])->name('index');
+    Route::get('dropdown', [ApiSMSTemplatesController::class, 'dropdown'])->name('dropdown');
+    Route::post('create', [ApiSMSTemplatesController::class, 'store'])->name('create');
+    Route::get('{smsTemplate}', [ApiSMSTemplatesController::class, 'show'])->name('show')->whereNumber('smsTemplate');
+    Route::get('{smsTemplate}/variables', [ApiSMSTemplatesController::class, 'variables'])->name('variables')->whereNumber('smsTemplate');
+    Route::patch('{smsTemplate}', [ApiSMSTemplatesController::class, 'update'])->name('update')->whereNumber('smsTemplate');
+    Route::patch('{smsTemplate}/status', [ApiSMSTemplatesController::class, 'status'])->name('status')->whereNumber('smsTemplate');
+    Route::delete('{smsTemplate}', [ApiSMSTemplatesController::class, 'destroy'])->name('destroy')->whereNumber('smsTemplate');
+});
 // Sms Templates End
 
 // Resource Route start
+
+// Resources — REST API additions (registered first so literal paths win
+// over the legacy `Route::resource` wildcard `{resource}`; legacy PUT/
+// DELETE continue to serve the admin UI untouched)
+Route::prefix('resources')->name('resources.api.')->group(function () {
+    Route::get('/', [ApiResourcesController::class, 'index'])->name('index');
+    Route::get('dropdown', [ApiResourcesController::class, 'dropdown'])->name('dropdown');
+    Route::get('form-data', [ApiResourcesController::class, 'formData'])->name('form_data');
+    Route::get('machine-types', [ApiResourcesController::class, 'machineTypesByLocation'])->name('machine_types');
+    Route::post('create', [ApiResourcesController::class, 'store'])->name('create');
+    Route::get('{resource}', [ApiResourcesController::class, 'show'])->name('show')->whereNumber('resource');
+    Route::patch('{resource}', [ApiResourcesController::class, 'update'])->name('update')->whereNumber('resource');
+    Route::patch('{resource}/status', [ApiResourcesController::class, 'status'])->name('status')->whereNumber('resource');
+});
+
 Route::post('resources/datatable', [ResourcesController::class, 'datatable'])->name('resources.datatable');
 Route::post('resources/status', [ResourcesController::class, 'status'])->name('resources.status');
 Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
-Route::resource('resources', ResourcesController::class)->except('index');
+
+// Legacy admin resource — `show` and `update` are excluded because the
+// REST API above already owns `GET /resources/{id}` and
+// `PATCH /resources/{id}`. Admin UI posts updates as `PUT` (Blade
+// `@method('put')` form-spoof), so we re-register PUT-only for legacy.
+Route::resource('resources', ResourcesController::class)->except(['index', 'show', 'update']);
+Route::put('resources/{id}', [ResourcesController::class, 'update'])->name('resources.update')->whereNumber('id');
 
 // Doctors API Routes (Optimized)
 Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manage')->group(function () {
