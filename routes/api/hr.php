@@ -4,6 +4,7 @@
 
 use App\Http\Controllers\Admin\HR\HrNotificationController;
 use App\Http\Controllers\Admin\HR\LeaveApplicationController as AdminLeaveApplicationController;
+use App\Http\Controllers\Api\HR\DashboardController;
 use App\Http\Controllers\Api\HR\DepartmentController;
 use App\Http\Controllers\Api\HR\DesignationController;
 use App\Http\Controllers\Api\HR\EmployeeController;
@@ -14,10 +15,21 @@ use App\Http\Controllers\Api\HR\LeaveBalanceController;
 use App\Http\Controllers\Api\HR\LeaveBalanceDatatableController;
 use App\Http\Controllers\Api\HR\LeaveTypeController;
 use App\Http\Controllers\Api\HR\MyHrmController;
+use App\Http\Controllers\Api\HR\RecruitmentController;
 use App\Http\Controllers\Api\HR\RecruitmentDatatableController;
+use App\Http\Controllers\Api\HR\RecruitmentInterviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('hr')->name('hr.')->group(function () {
+
+    // ── Dashboard (gate applied in-controller) ──
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::get('kpis', [DashboardController::class, 'kpis'])->name('kpis');
+        Route::get('pending-leaves', [DashboardController::class, 'pendingLeaves'])->name('pending-leaves');
+        Route::get('upcoming-leaves', [DashboardController::class, 'upcomingLeaves'])->name('upcoming-leaves');
+        Route::get('recent-hires', [DashboardController::class, 'recentHiresEndpoint'])->name('recent-hires');
+    });
 
     // ── Datatable Endpoints ──
     Route::post('employees/datatable', [EmployeeDatatableController::class, 'datatable'])->name('employees.datatable');
@@ -97,6 +109,31 @@ Route::prefix('hr')->name('hr.')->group(function () {
         Route::post('allocate', [LeaveBalanceController::class, 'allocate'])->name('allocate');
         Route::post('bulk-allocate', [LeaveBalanceController::class, 'bulkAllocate'])->name('bulk-allocate');
         Route::delete('{leaveBalance}', [LeaveBalanceController::class, 'destroy'])->name('destroy');
+    });
+
+    // ── Recruitment (gates applied in-controller to match the rest of /api/* HR) ──
+    Route::prefix('recruitment')->name('recruitment.')->group(function () {
+        Route::get('/', [RecruitmentController::class, 'index'])->name('index');
+        Route::post('/', [RecruitmentController::class, 'store'])->name('store');
+        Route::get('summary', [RecruitmentController::class, 'summary'])->name('summary');
+
+        // Flat interview endpoints (legacy-compatible + by-id ops)
+        Route::post('interviews', [RecruitmentInterviewController::class, 'store'])->name('interviews.store');
+        Route::patch('interviews/{interview}', [RecruitmentInterviewController::class, 'update'])->name('interviews.update');
+        Route::delete('interviews/{interview}', [RecruitmentInterviewController::class, 'destroy'])->name('interviews.destroy');
+
+        // Candidate resource
+        Route::get('{candidate}', [RecruitmentController::class, 'show'])->name('show');
+        Route::patch('{candidate}', [RecruitmentController::class, 'update'])->name('update');
+        Route::delete('{candidate}', [RecruitmentController::class, 'destroy'])->name('destroy');
+        Route::patch('{candidate}/status', [RecruitmentController::class, 'updateStatus'])->name('status');
+        Route::get('{candidate}/cv', [RecruitmentController::class, 'previewCv'])->name('cv.preview');
+        Route::get('{candidate}/cv/download', [RecruitmentController::class, 'downloadCv'])->name('cv.download');
+        Route::post('{candidate}/convert', [RecruitmentController::class, 'convert'])->name('convert');
+
+        // Nested interview endpoints (under candidate)
+        Route::get('{candidate}/interviews', [RecruitmentInterviewController::class, 'index'])->name('interviews.index');
+        Route::post('{candidate}/interviews', [RecruitmentInterviewController::class, 'store'])->name('interviews.create');
     });
 
     // ── Leave Types (gates applied in-controller to match the rest of /api/* HR) ──

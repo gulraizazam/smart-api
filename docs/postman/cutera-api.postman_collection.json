@@ -1142,9 +1142,928 @@
       ]
     },
     {
+      "name": "Regions",
+      "description": "Per-account regions (top level of the Region → City → Location hierarchy). The root `slug='all'` row is internal and never exposed by REST. User-created regions all have `slug='custom'` and carry a `sort_number`.\n\nPermissions: `regions_manage` (read), `regions_create`, `regions_edit`, `regions_active`, `regions_inactive`, `regions_sort`, `regions_destroy`. Callers lacking `view_inactive_regions` see active rows only.\n\nThe REST endpoints below add `index`, `show`, `PATCH update`, `PATCH status`, `dropdown`, `sorted`, and `POST sort` on top of the legacy datatable/PUT/POST-store/DELETE endpoints. Legacy URIs remain live so the admin UI keeps working — REST consumers should prefer the new endpoints.",
+      "item": [
+        {
+          "name": "Regions — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions?search=&status=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions"],
+              "query": [
+                { "key": "search", "value": "", "description": "Optional. Substring match on `name`." },
+                { "key": "status", "value": "", "description": "0 = inactive, 1 = active. Admin-only filter (needs `view_inactive_regions`); otherwise callers only ever see active rows." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated `RegionResource` list, ordered by `sort_number` asc. Only `slug='custom'` rows. Each row exposes `locations_count` + `active_locations_count`. Permission: `regions_manage`."
+          }
+        },
+        {
+          "name": "Regions — dropdown",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions/dropdown",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", "dropdown"]
+            },
+            "description": "Active regions as `{ id, name }[]` in sort order — the shape mobile pickers expect. Permission: `regions_manage`."
+          }
+        },
+        {
+          "name": "Regions — sorted (for DnD)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions/sorted",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", "sorted"]
+            },
+            "description": "Full region list in `sort_number` order — used to seed the drag-and-drop reorder UI. Permission: `regions_sort`."
+          }
+        },
+        {
+          "name": "Regions — sort (bulk reorder)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_ids\": [3, 1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/sort",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", "sort"]
+            },
+            "description": "Bulk reorder — the resulting `sort_number` is the array index (0 for the first id). REST wrapper around `RegionService::saveSortOrder`. Permission: `regions_sort`."
+          }
+        },
+        {
+          "name": "Regions — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions/:region",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":region"],
+              "variable": [{ "key": "region", "value": "1" }]
+            },
+            "description": "Detail for a single region with `locations_count` + `active_locations_count`. Cross-account rows return 404. Permission: `regions_manage`."
+          }
+        },
+        {
+          "name": "Regions — update (REST)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"North (renamed)\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/:region",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":region"],
+              "variable": [{ "key": "region", "value": "1" }]
+            },
+            "description": "Update name / active flag. `name` unique per account (scoped to `slug='custom'`, soft-deletes ignored). Root region (`slug='all'`) cannot be modified — returns 422. Delegates to `Regions::updateRecord` so audit trail + widget hooks fire. Permission: `regions_edit`."
+          }
+        },
+        {
+          "name": "Regions — status (REST)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/:region/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":region", "status"],
+              "variable": [{ "key": "region", "value": "1" }]
+            },
+            "description": "Activate (`status=1`) or deactivate (`status=0`). Gated by `regions_active` / `regions_inactive` respectively (enforced in the Form Request `authorize`). Root region cannot be deactivated — 422."
+          }
+        },
+        {
+          "name": "Regions — create (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"North\",\n  \"active\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions"]
+            },
+            "description": "Create a region. Legacy route — calls `Admin\\RegionsController@store` → `RegionService::validateAndCreate` which only requires `name`. Legacy UI relies on this for the create flow. Permission: `regions_create`."
+          }
+        },
+        {
+          "name": "Regions — update (legacy, PUT)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"North (legacy)\",\n  \"active\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Legacy PUT — same side effects as the REST PATCH but no uniqueness validation, no `JsonResource` response. Prefer the REST `PATCH /api/regions/{region}` for new integrations. Permission: `regions_edit`."
+          }
+        },
+        {
+          "name": "Regions — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Soft-delete via `Regions::DeleteRecord`. **Guards:** root region (`slug='all'`) → 422; region with linked Leads or Appointments → 409. Cities + Locations under the region are cascade-deleted inside the service (preserved exactly from legacy). Permission: `regions_destroy`."
+          }
+        },
+        {
+          "name": "Regions — status (legacy POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"status\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", "status"]
+            },
+            "description": "Legacy POST — takes the `id` in the body. Prefer the REST `PATCH /api/regions/{region}/status` for new integrations. Gated by `regions_active` / `regions_inactive`."
+          }
+        },
+        {
+          "name": "Regions — datatable (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"name\": null,\n  \"status\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", "datatable"]
+            },
+            "description": "Legacy KTDatatable-protocol list. Prefer the REST `list` endpoint. Permission: `regions_manage`."
+          }
+        },
+        {
+          "name": "Regions — edit (legacy fetch)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Legacy fetch-for-edit endpoint used by the admin UI. Prefer the REST `show` endpoint. Permission: `regions_edit`."
+          }
+        },
+        {
+          "name": "Regions — sort list (legacy)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/regions_sort",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions_sort"]
+            },
+            "description": "Legacy sort-list. Prefer the REST `GET /api/regions/sorted`. Permission: `regions_sort`."
+          }
+        },
+        {
+          "name": "Regions — sort save (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_ids\": [3, 1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/regions_sort_save",
+              "host": ["{{base_url}}"],
+              "path": ["api", "regions_sort_save"]
+            },
+            "description": "Legacy bulk reorder. Prefer the REST `POST /api/regions/sort`. Permission: `regions_sort`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Operator Settings",
+      "description": "Per-account configuration for external operator/gateway integrations (e.g. SMS, comms providers). Two tables back this module:\n\n- `global_operator_settings` — read-only templates shared across accounts (the list of supported operators).\n- `user_operator_settings` — the caller's account-scoped credentials + per-account overrides (URL, username, password, mask, sandbox flag, extra string fields).\n\nPermissions: `user_operator_settings_manage` (read), `user_operator_settings_edit` (write). Password is encrypted at rest (`EncryptedLegacy` cast) and is **always masked** in responses — credentials never leave the server. Sending an empty/missing `password` on update preserves the existing one.\n\nThe legacy datatable endpoint (`POST /api/user_operator_settings/datatable` + `GET /{id}/edit` + `PUT /{id}`) is kept for the admin UI. The REST endpoints below are the mobile- and integration-friendly surface.",
+      "item": [
+        {
+          "name": "Operator settings — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings?search=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings"],
+              "query": [
+                { "key": "search", "value": "", "description": "Optional. Substring match on `operator_name`." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated `OperatorSettingResource` list scoped to the caller's account, ordered by `operator_name` asc. Permission: `user_operator_settings_manage`."
+          }
+        },
+        {
+          "name": "Operator settings — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings/:operatorSetting",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings", ":operatorSetting"],
+              "variable": [{ "key": "operatorSetting", "value": "1" }]
+            },
+            "description": "Detail for a single user-operator row. Password is masked (`********`). Cross-account rows return 404. Permission: `user_operator_settings_manage`."
+          }
+        },
+        {
+          "name": "Operator settings — update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operator_name\": \"Twilio — Prod\",\n  \"url\": \"https://api.twilio.com/2010-04-01\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"CUTERA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings/:operatorSetting",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings", ":operatorSetting"],
+              "variable": [{ "key": "operatorSetting", "value": "1" }]
+            },
+            "description": "Partial update — every field is optional. **`password` empty/omitted preserves the existing value** (so clients can safely re-submit a form without re-typing the secret). `test_mode` is an integer (`0` or `1`). Audit-logged via the existing `UserOperatorSettingsService::update` path. Permission: `user_operator_settings_edit`."
+          }
+        },
+        {
+          "name": "Operator settings — toggle test mode",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test_mode\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings/:operatorSetting/test-mode",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings", ":operatorSetting", "test-mode"],
+              "variable": [{ "key": "operatorSetting", "value": "1" }]
+            },
+            "description": "Convenience endpoint — flip between sandbox (`1`) and live (`0`) without re-sending every field. Permission: `user_operator_settings_edit`."
+          }
+        },
+        {
+          "name": "Operator settings — global templates list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings/global",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings", "global"]
+            },
+            "description": "Read-only list of `global_operator_settings` templates — the supported operators across all accounts. Use when populating a picker before cloning a template into the account. Permission: `user_operator_settings_manage`."
+          }
+        },
+        {
+          "name": "Operator settings — global template show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/operator-settings/global/:globalOperator",
+              "host": ["{{base_url}}"],
+              "path": ["api", "operator-settings", "global", ":globalOperator"],
+              "variable": [{ "key": "globalOperator", "value": "1" }]
+            },
+            "description": "Single global template. Replaces the legacy `loadOperator` POST endpoint — same payload, REST-friendly method + path. Password masked. Permission: `user_operator_settings_manage`."
+          }
+        },
+        {
+          "name": "Operator settings — datatable (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"operator_name\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user_operator_settings/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_operator_settings", "datatable"]
+            },
+            "description": "Legacy KTDatatable-protocol list. Prefer the REST `list` endpoint above for new integrations. Permission: `user_operator_settings_manage`."
+          }
+        },
+        {
+          "name": "Operator settings — edit (legacy)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/user_operator_settings/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_operator_settings", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Legacy fetch-for-edit endpoint. Returns the raw model (password masked by the model's `$hidden`). Prefer the REST `show` endpoint. Permission: `user_operator_settings_edit`."
+          }
+        },
+        {
+          "name": "Operator settings — update (legacy)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operator_name\": \"Twilio\",\n  \"url\": \"https://api.twilio.com\",\n  \"username\": \"AC...\",\n  \"password\": \"supersecret\",\n  \"mask\": \"CUTERA\",\n  \"test_mode\": 0,\n  \"string_1\": null,\n  \"string_2\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/user_operator_settings/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user_operator_settings", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Legacy PUT update — **requires `test_mode`** even on partial changes. New integrations should prefer the REST `PATCH /api/operator-settings/{id}` endpoint which allows true partial updates and preserves existing passwords on empty submit. Permission: `user_operator_settings_manage`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Working Days",
+      "description": "Weekly open/closed pattern + per-date exceptions. Stored as: (1) a `settings` row keyed by `slug=business_working_days` holding the 7-day map; (2) a `working_day_exceptions` row per overriding date.\n\nPermission: `schedule_manage`. Defaults to Mon–Sat open / Sun closed when nothing has been saved yet. The legacy `/api/schedule/get-business-working-days` + `/api/schedule/save-business-working-days` endpoints stay for the admin UI — the REST endpoints below are the preferred surface and split the concerns (pattern vs. exceptions) so callers can update one without wiping the other.",
+      "item": [
+        {
+          "name": "Working days — show config",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days"]
+            },
+            "description": "Current 7-day weekly pattern + every saved exception. Response: `{ working_days: {monday..sunday: bool}, exceptions: WorkingDayExceptionResource[] }`. Falls back to Mon–Sat open / Sun closed when nothing is saved. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — update config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"working_days\": {\n    \"monday\": true,\n    \"tuesday\": true,\n    \"wednesday\": true,\n    \"thursday\": true,\n    \"friday\": true,\n    \"saturday\": true,\n    \"sunday\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days"]
+            },
+            "description": "Update the weekly pattern only — every day is **required**. Unlike the legacy `save-business-working-days` this **does not touch** the exceptions list; use the `/exceptions` sub-resource for that. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — check date",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/check?date=2026-05-01",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "check"],
+              "query": [
+                { "key": "date", "value": "2026-05-01", "description": "ISO date (YYYY-MM-DD)." }
+              ]
+            },
+            "description": "Is the business open on this date? Exception override wins over the weekly pattern. Response: `{ date, day_of_week, is_working, is_exception, exception: WorkingDayExceptionResource | null }`. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — calendar range",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/calendar?start_date=2026-05-01&end_date=2026-05-31",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "calendar"],
+              "query": [
+                { "key": "start_date", "value": "2026-05-01" },
+                { "key": "end_date", "value": "2026-05-31" }
+              ]
+            },
+            "description": "Per-date open/closed for a range (max 365 days). Each day entry: `{ date, day_of_week, is_working, is_exception, exception_title }`. Designed for mobile calendar dots. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exceptions list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions?start_date=&end_date=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions"],
+              "query": [
+                { "key": "start_date", "value": "", "description": "Optional ISO date filter (inclusive)." },
+                { "key": "end_date", "value": "", "description": "Optional ISO date filter (inclusive)." }
+              ]
+            },
+            "description": "All override-dates for the account, oldest first, with the creator eager-loaded. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exception create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exception_date\": \"2026-05-01\",\n  \"is_working\": false,\n  \"title\": \"Labour Day\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions"]
+            },
+            "description": "Idempotent — a second call for the same `exception_date` updates the existing row. Returns 201 on create, 200 on update. `is_working=true` = make a normally-closed day open; `false` = make an open day closed. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exception show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions/:exception",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions", ":exception"],
+              "variable": [{ "key": "exception", "value": "1" }]
+            },
+            "description": "Single exception detail. Cross-account rows return 404. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exception update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_working\": true,\n  \"title\": \"Labour Day (moved)\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions/:exception",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions", ":exception"],
+              "variable": [{ "key": "exception", "value": "1" }]
+            },
+            "description": "Partial update — all fields optional. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exception delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions/:exception",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions", ":exception"],
+              "variable": [{ "key": "exception", "value": "1" }]
+            },
+            "description": "Remove a single exception — the date then falls back to the weekly pattern. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — exceptions bulk replace",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"exceptions\": [\n    { \"exception_date\": \"2026-05-01\", \"is_working\": false, \"title\": \"Labour Day\" },\n    { \"exception_date\": \"2026-08-15\", \"is_working\": false, \"title\": \"Independence Day\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-working-days/exceptions/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-working-days", "exceptions", "bulk"]
+            },
+            "description": "**Replace-all** semantics — deletes every existing exception for the account and inserts the new set inside a `DB::transaction`. Mirrors the legacy `/schedule/save-business-working-days` exception handling but as a standalone endpoint. `exceptions` may be empty (clears everything). Max 365 rows; `exception_date`s must be distinct. Permission: `schedule_manage`."
+          }
+        },
+        {
+          "name": "Working days — legacy get (schedule route)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/schedule/get-business-working-days",
+              "host": ["{{base_url}}"],
+              "path": ["api", "schedule", "get-business-working-days"]
+            },
+            "description": "Legacy endpoint used by the admin Settings page. Same payload as the REST `show` endpoint but exceptions come back as a flat array with formatted date strings. Prefer the REST endpoint for new integrations."
+          }
+        },
+        {
+          "name": "Working days — legacy save (schedule route)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"working_days\": {\n    \"monday\": true,\n    \"tuesday\": true,\n    \"wednesday\": true,\n    \"thursday\": true,\n    \"friday\": true,\n    \"saturday\": true,\n    \"sunday\": false\n  },\n  \"exceptions\": [\n    { \"exception_date\": \"2026-05-01\", \"is_working\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/schedule/save-business-working-days",
+              "host": ["{{base_url}}"],
+              "path": ["api", "schedule", "save-business-working-days"]
+            },
+            "description": "**Legacy combined save** — wipes all exceptions and recreates them every call. Use the REST endpoints above if you want to update only the pattern OR only specific exceptions without touching the other. Kept for admin UI compatibility."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Closures",
+      "description": "Business closure periods (multi-day store-wide or location-specific shutdowns). Permissions: `business_closures_manage` (read + parent), `business_closures_create`, `business_closures_edit`, `business_closures_delete`.\n\nThe legacy endpoints (datatable / create / edit / update / destroy) stay for the admin web UI. The REST endpoints below (list / show / upcoming / check / bulk-delete) are the mobile- and integration-friendly surface, returning `BusinessClosureResource` with locations + creator eager-loaded.",
+      "item": [
+        {
+          "name": "Business closures — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures?location_id=&start_date=&end_date=&search=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures"],
+              "query": [
+                { "key": "location_id", "value": "", "description": "Optional. Matches closures that either cover this location or are account-wide (no locations attached)." },
+                { "key": "start_date", "value": "", "description": "ISO date (YYYY-MM-DD). Returns closures ending on/after this date." },
+                { "key": "end_date", "value": "", "description": "ISO date. Returns closures starting on/before this date." },
+                { "key": "search", "value": "", "description": "Title substring match." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated `BusinessClosureResource` list with locations + creator eager-loaded. Newest `start_date` first. Account-scoped via `Auth::user()->account_id`. Permission: `business_closures_manage`."
+          }
+        },
+        {
+          "name": "Business closures — upcoming",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/upcoming?days=30&location_id=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", "upcoming"],
+              "query": [
+                { "key": "days", "value": "30", "description": "1–365 window in days. Defaults to 30." },
+                { "key": "location_id", "value": "", "description": "Optional location scope (matches location-specific + account-wide closures)." }
+              ]
+            },
+            "description": "Closures overlapping the next `days` window, ordered by `start_date` asc. Response: `{ window_days, from, to, items[] }`. Permission: `business_closures_manage`."
+          }
+        },
+        {
+          "name": "Business closures — check date",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-05-01\",\n  \"location_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/check",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", "check"]
+            },
+            "description": "Is the business closed on a given date? Intended for pre-booking checks. Returns `{ date, location_id, is_closed, closures[] }` — `is_closed=true` when any closure matches. Omitting `location_id` checks all closures for the account. Permission: `business_closures_manage`."
+          }
+        },
+        {
+          "name": "Business closures — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/:businessClosure",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", ":businessClosure"],
+              "variable": [{ "key": "businessClosure", "value": "1" }]
+            },
+            "description": "REST detail — pure `BusinessClosureResource` shape with locations + creator. Unlike `/{id}/edit`, does not include the locations dropdown. Cross-account rows return 404. Permission: `business_closures_manage`."
+          }
+        },
+        {
+          "name": "Business closures — create (form data)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", "create"]
+            },
+            "description": "Returns the active-locations dropdown for the create form. ACL-scoped to the caller's allowed centres. Permission: `business_closures_create`."
+          }
+        },
+        {
+          "name": "Business closures — store",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Diwali closure\",\n  \"start_date\": \"2026-11-01\",\n  \"end_date\": \"2026-11-03\",\n  \"location_ids\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-closures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures"]
+            },
+            "description": "Create closure. `location_ids` required — pass `[\"all\"]` (string literal) to mark account-wide (service treats any entry of `\"all\"` as no-locations-attached). Wrapped in `DB::transaction` with `AuditTrails` logging. Permission: `business_closures_create`."
+          }
+        },
+        {
+          "name": "Business closures — edit (form data)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Returns `{ closure, location_ids, locations }` — includes the dropdown the edit form needs. Permission: `business_closures_edit`."
+          }
+        },
+        {
+          "name": "Business closures — update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Diwali closure (revised)\",\n  \"start_date\": \"2026-11-01\",\n  \"end_date\": \"2026-11-04\",\n  \"location_ids\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Update closure. `location_ids` with a single `\"all\"` entry clears all attachments (account-wide). Permission: `business_closures_edit`."
+          }
+        },
+        {
+          "name": "Business closures — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Soft-delete a single closure. Account-scoped via `firstOrFail`. Permission: `business_closures_delete`."
+          }
+        },
+        {
+          "name": "Business closures — bulk delete",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/bulk-delete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", "bulk-delete"]
+            },
+            "description": "Clean REST wrapper around `BusinessClosureService::bulkDelete`. `ids` must be 1–500 distinct integers. Cross-account ids are silently skipped (service enforces account scope per row). Returns `{ deleted_count }`. Permission: `business_closures_delete`."
+          }
+        },
+        {
+          "name": "Business closures — datatable (legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"draw\": 1,\n  \"start\": 0,\n  \"length\": 10,\n  \"search\": { \"value\": \"\" },\n  \"location_id\": null,\n  \"start_date\": null,\n  \"end_date\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/business-closures/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "business-closures", "datatable"]
+            },
+            "description": "Legacy datatable endpoint (DataTables-protocol body, KTDatatable-shaped response). Prefer the REST `list` endpoint above for new integrations. Also accepts a `delete` filter with a comma-separated id list for legacy bulk-delete (prefer the dedicated `bulk-delete` endpoint). Permission: `business_closures_manage`."
+          }
+        }
+      ]
+    },
+    {
       "name": "HRM",
       "description": "HRM module — employee management, leave mgmt, recruitment, notifications, self-service. Fiscal year is Jul–Jun (formatted `YYYY-YY`, e.g. `2025-26`). Leave durations are typed enums: Full=1.0, Half=0.5, Short=0.25.\n\n**Current API surface is limited**: 4 datatables + 1 calendar feed + 3 notification endpoints. Employee CRUD, leave approve/reject/cancel, recruitment CRUD, and self-service flows are web-only today (`/hr/*`) and need API wrappers. See the backlog in `docs/audits/` (coming) for the build list.",
       "item": [
+        {
+          "name": "Dashboard — full payload",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/dashboard?pending_limit=10&upcoming_days=7&recent_hire_days=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "dashboard"],
+              "query": [
+                { "key": "pending_limit", "value": "10", "description": "1–50. Max pending leaves in the response. Defaults to 10." },
+                { "key": "upcoming_days", "value": "7", "description": "1–90. Upcoming-leaves window in days. Defaults to 7." },
+                { "key": "recent_hire_days", "value": "30", "description": "1–365. Recent-hires window in days. Defaults to 30." }
+              ]
+            },
+            "description": "Unified HRM dashboard payload: `{ kpis, pending_leaves[], upcoming_leaves[], recent_hires[], generated_at }`. Mirrors the web dashboard view plus two mobile-friendly extras (upcoming leaves + recent hires). Permission: `hr_dashboard_view`."
+          }
+        },
+        {
+          "name": "Dashboard — KPIs only",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/dashboard/kpis",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "dashboard", "kpis"]
+            },
+            "description": "Lightweight counts only: `{ total_employees, pending_leaves, approved_this_month, open_candidates, on_leave_today }`. Use this for pull-to-refresh when the full dashboard payload is overkill. Permission: `hr_dashboard_view`."
+          }
+        },
+        {
+          "name": "Dashboard — pending leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/dashboard/pending-leaves?per_page=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "dashboard", "pending-leaves"],
+              "query": [
+                { "key": "per_page", "value": "10", "description": "1–100; defaults to 10." }
+              ]
+            },
+            "description": "Paginated list of all pending leave applications for the caller's account, most recent first. Each item is a `LeaveApplicationResource` with the applicant + designation + leave type eager-loaded. Permission: `hr_dashboard_view`."
+          }
+        },
+        {
+          "name": "Dashboard — upcoming leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/dashboard/upcoming-leaves?days=7&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "dashboard", "upcoming-leaves"],
+              "query": [
+                { "key": "days", "value": "7", "description": "1–90; window size in days. Defaults to 7." },
+                { "key": "per_page", "value": "20", "description": "1–100; defaults to 20." }
+              ]
+            },
+            "description": "Approved leaves starting within the next `days` window, ordered by `start_date` asc. Useful for roster planning. Permission: `hr_dashboard_view`."
+          }
+        },
+        {
+          "name": "Dashboard — recent hires",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/dashboard/recent-hires?days=30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "dashboard", "recent-hires"],
+              "query": [
+                { "key": "days", "value": "30", "description": "1–365; window size in days. Defaults to 30." }
+              ]
+            },
+            "description": "Employees whose `employee_details.hire_date` falls within the last `days`, most recent first (max 20). Response item shape: `{ id, name, designation, department, hire_date }`. Permission: `hr_dashboard_view`."
+          }
+        },
         {
           "name": "Employees — datatable",
           "request": {
@@ -1223,6 +2142,284 @@
               "path": ["api", "hr", "recruitment", "datatable"]
             },
             "description": "Paginated candidates. `status` enum: `scheduled, in_review, shortlisted, on_hold, offer, hired, offer_declined, rejected, blacklisted`. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment?status=&designation_id=&location_id=&search=&only_open=&per_page=25",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment"],
+              "query": [
+                { "key": "status", "value": "", "description": "Optional. `scheduled | in_review | shortlisted | on_hold | offer | hired | offer_declined | rejected | blacklisted`." },
+                { "key": "designation_id", "value": "" },
+                { "key": "location_id", "value": "" },
+                { "key": "search", "value": "", "description": "Matches `name`, `email`, or `phone`." },
+                { "key": "only_open", "value": "", "description": "`true` to constrain to open pipeline statuses (scheduled / in_review / shortlisted / on_hold / offer)." },
+                { "key": "per_page", "value": "25", "description": "1–200; defaults to 25." }
+              ]
+            },
+            "description": "Paginated `RecruitmentCandidateResource` list with designation, city, location, converted user eager-loaded and `interviews_count` attached. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", "summary"]
+            },
+            "description": "Candidate counts keyed by status plus `open` + `total`. Drives the recruitment pipeline widget / badge counter. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — create candidate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Asha Patel", "type": "text" },
+                { "key": "email", "value": "asha@example.com", "type": "text" },
+                { "key": "phone", "value": "+91 98765 43210", "type": "text" },
+                { "key": "designation_id", "value": "1", "type": "text" },
+                { "key": "city_id", "value": "1", "type": "text" },
+                { "key": "location_id", "value": "1", "type": "text" },
+                { "key": "notes", "value": "Sourced via referral.", "type": "text" },
+                { "key": "interview_type", "value": "hr", "type": "text", "description": "`ceo | director | hr`" },
+                { "key": "interviewer_id", "value": "1", "type": "text" },
+                { "key": "interview_date", "value": "2026-05-01T10:00:00", "type": "text" },
+                { "key": "cv", "type": "file", "src": "", "description": "Optional. PDF / DOC / DOCX, max 5 MB. Stored on the `r2` disk under `accounts/{account_id}/hr/recruitment`." }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment"]
+            },
+            "description": "Creates the candidate AND schedules the first interview in one transaction (matches the legacy business rule). Status starts at `scheduled`. Multipart form; `cv` is optional. Permission: `hr_recruitment_create`. Returns `RecruitmentCandidateResource` (201)."
+          }
+        },
+        {
+          "name": "Recruitment — show",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Candidate detail with designation, city, location, interviews (+ interviewer), and converted user. Cross-account rows return 404. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — update candidate",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Asha Patel (updated)", "type": "text" },
+                { "key": "email", "value": "asha.new@example.com", "type": "text" },
+                { "key": "phone", "value": "+91 98765 43210", "type": "text" },
+                { "key": "designation_id", "value": "1", "type": "text" },
+                { "key": "city_id", "value": "1", "type": "text" },
+                { "key": "location_id", "value": "1", "type": "text" },
+                { "key": "notes", "value": "", "type": "text" },
+                { "key": "cv", "type": "file", "src": "", "description": "Optional. Replacing a CV deletes the previous file from R2." }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Update candidate profile. A new `cv` replaces the existing file; the old object is deleted from R2. Permission: `hr_recruitment_edit`."
+          }
+        },
+        {
+          "name": "Recruitment — update status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"shortlisted\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "status"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Transition candidate status. Allowed values: `scheduled, in_review, shortlisted, on_hold, offer, hired, offer_declined, rejected, blacklisted`. Permission: `hr_recruitment_status_update`."
+          }
+        },
+        {
+          "name": "Recruitment — CV preview",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "*/*" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/cv",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "cv"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Streams the CV binary with `Content-Disposition: inline` for in-browser preview. 404 if the candidate has no CV on file. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — CV download",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "*/*" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/cv/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "cv", "download"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Same stream as preview but served with `Content-Disposition: attachment` so clients save the file. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — convert to employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Asha Patel\",\n  \"email\": \"asha@example.com\",\n  \"phone\": \"+91 98765 43210\",\n  \"password\": \"TempPassword#1\",\n  \"user_type_id\": 2,\n  \"department_id\": 1,\n  \"hire_date\": \"2026-05-01\",\n  \"employment_type\": \"full_time\",\n  \"salary\": 75000,\n  \"role_id\": 3\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/convert",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "convert"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Creates a `User` + `EmployeeDetail`, assigns the optional role and the candidate's location (via `user_has_locations`), then flips the candidate to `hired` with `converted_user_id` set. Wrapped in one transaction via `RecruitmentService::convertToEmployee`. Returns **409** if already converted. Permission: `hr_recruitment_convert`."
+          }
+        },
+        {
+          "name": "Recruitment — delete candidate",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Soft-delete. Returns **409** if the candidate has already been converted to an employee (preserves the hire audit trail). Permission: `hr_recruitment_delete`."
+          }
+        },
+        {
+          "name": "Recruitment — interviews list",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/interviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "interviews"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "All interview rounds for a candidate, newest first. Each row includes the scorecard, average score, verdict, and interviewer. Permission: `hr_recruitment_view`."
+          }
+        },
+        {
+          "name": "Recruitment — interview create (nested)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"interviewer_id\": 1,\n  \"interview_date\": \"2026-05-05T11:00:00\",\n  \"interview_type\": \"hr\",\n  \"interview_notes\": \"Strong communicator.\",\n  \"score_communication\": 5,\n  \"score_technical\": 4,\n  \"score_cultural_fit\": 5,\n  \"score_experience\": 4,\n  \"score_personality\": 5,\n  \"verdict\": \"hire\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/:candidate/interviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", ":candidate", "interviews"],
+              "variable": [{ "key": "candidate", "value": "1" }]
+            },
+            "description": "Add a new interview round under the candidate. If a scorecard or verdict is submitted and the candidate is still `scheduled`, the candidate is auto-transitioned to `in_review` (mirrors legacy behaviour). Scores are 1–5. Permission: `hr_recruitment_interview_manage`."
+          }
+        },
+        {
+          "name": "Recruitment — interview create (flat, legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"candidate_id\": 1,\n  \"interviewer_id\": 1,\n  \"interview_date\": \"2026-05-05T11:00:00\",\n  \"interview_type\": \"hr\",\n  \"interview_notes\": \"Strong communicator.\",\n  \"score_communication\": 5,\n  \"score_technical\": 4,\n  \"score_cultural_fit\": 5,\n  \"score_experience\": 4,\n  \"score_personality\": 5,\n  \"verdict\": \"hire\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/interviews",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", "interviews"]
+            },
+            "description": "Legacy-compatible flat endpoint: same as the nested version but `candidate_id` lives in the body. Same permission and auto-transition behaviour. Permission: `hr_recruitment_interview_manage`."
+          }
+        },
+        {
+          "name": "Recruitment — interview update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score_communication\": 5,\n  \"score_technical\": 5,\n  \"verdict\": \"strong_hire\",\n  \"interview_notes\": \"Exceeded expectations on system design.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/interviews/:interview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", "interviews", ":interview"],
+              "variable": [{ "key": "interview", "value": "1" }]
+            },
+            "description": "Edit scorecard / notes / schedule. All fields are optional — partial updates supported. Submitting a scorecard still triggers the `scheduled → in_review` auto-transition. Permission: `hr_recruitment_interview_manage`."
+          }
+        },
+        {
+          "name": "Recruitment — interview delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/hr/recruitment/interviews/:interview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hr", "recruitment", "interviews", ":interview"],
+              "variable": [{ "key": "interview", "value": "1" }]
+            },
+            "description": "Remove an interview round. Cross-account rows return 404. Permission: `hr_recruitment_interview_manage`."
           }
         },
         {
