@@ -176,13 +176,17 @@ class SMSTemplates extends BaseModel
     /**
      * Create Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * Accepts either an `Illuminate\Http\Request` or a raw array payload.
+     * Callers upstream sometimes pass a validated array (from FormRequest)
+     * and sometimes a full request — normalise here.
+     *
+     * @param  \Illuminate\Http\Request|array<string, mixed>  $request
      * @return (mixed)
      */
     public static function createRecord($request, $account_id)
     {
 
-        $data = $request->all();
+        $data = is_array($request) ? $request : $request->all();
 
         // Set Account ID
         $data['account_id'] = $account_id;
@@ -197,14 +201,17 @@ class SMSTemplates extends BaseModel
     /**
      * Update Record
      *
-     * @param  \Illuminate\Http\Request  $request
+     * Accepts either an `Illuminate\Http\Request` or a raw array payload —
+     * see `createRecord()` for context.
+     *
+     * @param  \Illuminate\Http\Request|array<string, mixed>  $request
      * @return (mixed)
      */
     public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (SMSTemplates::find($id))->toArray();
 
-        $data = $request->all();
+        $data = is_array($request) ? $request : $request->all();
 
         // Set Account ID
         $data['account_id'] = $account_id;
