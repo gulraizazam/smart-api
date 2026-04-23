@@ -75,7 +75,7 @@ class SMSTemplateService
             return ['success' => false, 'error' => $validator->errors()->first(), 'errors' => $validator->errors()];
         }
 
-        if (SMSTemplates::createRecord((object) $data, $accountId)) {
+        if (SMSTemplates::createRecord($data, $accountId)) {
             return ['success' => true, 'message' => 'Record has been created successfully.'];
         }
 
@@ -105,7 +105,7 @@ class SMSTemplateService
             return ['success' => false, 'error' => $validator->errors()->first(), 'errors' => $validator->errors()];
         }
 
-        if (SMSTemplates::updateRecord($id, (object) $data, $accountId)) {
+        if (SMSTemplates::updateRecord($id, $data, $accountId)) {
             return ['success' => true, 'message' => 'Record has been updated successfully.'];
         }
 

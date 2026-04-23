@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\VouchersController;
 use App\Http\Controllers\Api\BundlesController;
+use App\Http\Controllers\Api\CentreTargetsController as ApiCentreTargetsController;
 use App\Http\Controllers\Api\ResourcesController as ApiResourcesController;
 use App\Http\Controllers\Api\SMSTemplatesController as ApiSMSTemplatesController;
 use App\Http\Controllers\Api\BusinessClosureController;
@@ -185,10 +186,31 @@ Route::prefix('service-bundles')->name('service-bundles.')->group(function () {
 // Service Bundles Route End
 
 // Centre Target
+// Centre Targets — REST API additions (registered first so literal paths
+// win over the legacy `Route::resource` wildcard `{centre_target}`)
+Route::prefix('centre_targets')->name('centre_targets.api.')->group(function () {
+    Route::get('/', [ApiCentreTargetsController::class, 'index'])->name('index');
+    Route::get('form-data', [ApiCentreTargetsController::class, 'formData'])->name('form_data');
+    Route::post('centres', [ApiCentreTargetsController::class, 'loadCentres'])->name('centres');
+    Route::post('create', [ApiCentreTargetsController::class, 'store'])->name('create');
+    Route::get('{centreTarget}', [ApiCentreTargetsController::class, 'show'])->name('show')->whereNumber('centreTarget');
+    Route::patch('{centreTarget}', [ApiCentreTargetsController::class, 'update'])->name('update')->whereNumber('centreTarget');
+    Route::delete('{centreTarget}', [ApiCentreTargetsController::class, 'destroy'])->name('destroy')->whereNumber('centreTarget');
+});
+
 Route::post('centre_targets/load-centres', [CentreTargetsController::class, 'leadtargetcentre'])->name('centre_targets.load_target_centre');
 Route::get('centre_targets/diplay/{id}', [CentreTargetsController::class, 'display'])->name('centre_targets.display');
 Route::post('centre_targets/datatable', [CentreTargetsController::class, 'datatable'])->name('centre_targets.datatable');
-Route::resource('centre_targets', CentreTargetsController::class)->except('index');
+
+// Legacy admin resource — `show` and `update` are excluded because the
+// REST API above already owns `GET /centre_targets/{id}` (legacy had no
+// `show` method, so this also fixes that latent bug) and
+// `PATCH /centre_targets/{id}`. Admin UI posts updates as `PUT` via
+// `@method('put')` form-spoof, so we re-register PUT-only for legacy.
+// DELETE also left to API (legacy deleteRecord ends with a flash+redirect
+// on failure which doesn't fit a JSON response).
+Route::resource('centre_targets', CentreTargetsController::class)->except(['index', 'show', 'update', 'destroy']);
+Route::put('centre_targets/{id}', [CentreTargetsController::class, 'update'])->name('centre_targets.update')->whereNumber('id');
 
 // Package Advance route start
 Route::post('packagesadvances/datatable', [PackageAdvancesController::class, 'datatable'])->name('packagesadvances.datatable');

@@ -5,15 +5,29 @@
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Api\InvoicesController as ApiInvoicesController;
 use App\Http\Controllers\Admin\LeadsController as AdminLeadsController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Api\ApplicationUserController;
+use App\Http\Controllers\Api\PackagesController as ApiPackagesController;
 use App\Http\Controllers\Api\LeadsController;
 use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
     //Invoice Management route start
+
+    // Invoices — REST API additions (registered first so literal paths
+    // like `/invoices/{id}/cancel` beat the legacy Route::resource
+    // wildcard `{invoice}` below)
+    Route::prefix('invoices')->name('invoices.api.')->group(function () {
+        Route::get('/', [ApiInvoicesController::class, 'index'])->name('index');
+        Route::get('{invoice}', [ApiInvoicesController::class, 'show'])->name('show')->whereNumber('invoice');
+        Route::post('{invoice}/cancel', [ApiInvoicesController::class, 'cancel'])->name('cancel')->whereNumber('invoice');
+        Route::get('{invoice}/sms-logs', [ApiInvoicesController::class, 'smsLogs'])->name('sms_logs')->whereNumber('invoice');
+        Route::post('{invoice}/resend-sms', [ApiInvoicesController::class, 'resendSMS'])->name('resend_sms')->whereNumber('invoice');
+    });
+
     Route::post('invoices/datatable/&{id?}', [InvoicesController::class, 'datatable'])->name('invoices.datatable');
 
     Route::post('invoices/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoices.cancel');
@@ -25,7 +39,15 @@ use Illuminate\Support\Facades\Route;
 
     Route::post('invoices/send_logged_sms', [InvoicesController::class, 'sendLogSMS']);
 
-    Route::resource('invoices', InvoicesController::class)->except('index');
+    // Legacy admin resource — every verb it would register points to
+    // methods that don't exist on the admin InvoicesController, so they
+    // would surface as BadMethodCallException 500s (same latent bug we
+    // fixed on Resources / Centre Targets). Invoices are read + cancelled
+    // only via the REST API above; the legacy explicit routes handle the
+    // admin datatable/display/sms flows.
+    Route::resource('invoices', InvoicesController::class)->except([
+        'index', 'show', 'store', 'update', 'destroy', 'create', 'edit',
+    ]);
     //Invoice Management route end
 
     Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
@@ -109,7 +131,28 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getsoldbydata', [PackagesController::class, 'getSoldByData'])->name('packages.getsoldbydata');
     Route::get('packages/checkDuplicateServiceForSoldBy', [PackagesController::class, 'checkDuplicateServiceForSoldBy'])->name('packages.checkDuplicateServiceForSoldBy');
     Route::post('packages/updatesoldby', [PackagesController::class, 'updateSoldBy'])->name('packages.updatesoldby');
-    Route::resource('packages', PackagesController::class)->except('index');
+    // Packages — REST API additions (registered first so literal paths
+    // beat the legacy `Route::resource` wildcard `{package}`). Create/
+    // update intentionally not exposed — see Api\PackagesController
+    // header docblock for the reason.
+    Route::prefix('packages')->name('packages.api.')->group(function () {
+        Route::get('/', [ApiPackagesController::class, 'index'])->name('index');
+        Route::get('patient/{patientId}', [ApiPackagesController::class, 'forPatient'])->name('for_patient')->whereNumber('patientId');
+        Route::get('{package}', [ApiPackagesController::class, 'show'])->name('show')->whereNumber('package');
+        Route::patch('{package}/status', [ApiPackagesController::class, 'status'])->name('status')->whereNumber('package');
+        Route::delete('{package}', [ApiPackagesController::class, 'destroy'])->name('destroy')->whereNumber('package');
+        Route::get('{package}/sms-logs', [ApiPackagesController::class, 'smsLogs'])->name('sms_logs')->whereNumber('package');
+        Route::post('{package}/resend-sms', [ApiPackagesController::class, 'resendSMS'])->name('resend_sms')->whereNumber('package');
+    });
+
+    // Legacy admin resource — `store`/`show` are admin-side `abort(404)`
+    // stubs (the real flow uses the staged savepackages/updatepackages
+    // endpoints above). `destroy` is excluded because the REST API above
+    // owns `DELETE /packages/{id}` — both paths funnel through
+    // `PlanService::deletePlan()`, so the API route serves admin UI
+    // delete calls equivalently. `edit` + `update` stay for the admin UI
+    // edit form.
+    Route::resource('packages', PackagesController::class)->except(['index', 'store', 'show', 'create', 'destroy']);
 
     // Non Plans Refunds API routes removed — functionality not in use
 
