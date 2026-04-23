@@ -60,6 +60,46 @@ class HrReportService
     }
 
     /**
+     * All in-scope employees with a DOB, ordered by month/day. Used by the
+     * full-list export.
+     *
+     * @return Collection<int, User>
+     */
+    public function allBirthdays(int $accountId, ?int $departmentId = null): Collection
+    {
+        return $this->baseQuery($accountId, $departmentId)
+            ->whereNotNull('users.dob')
+            ->orderByRaw('MONTH(users.dob) ASC')
+            ->orderByRaw('DAY(users.dob) ASC')
+            ->orderBy('users.name')
+            ->get();
+    }
+
+    /**
+     * All in-scope employees with a hire_date. Employees hired this calendar
+     * year are still included in the full list — they just won't have a
+     * completed anniversary yet (the export records that as 0 years).
+     *
+     * @return Collection<int, User>
+     */
+    public function allAnniversaries(int $accountId, ?int $departmentId = null): Collection
+    {
+        return $this->baseQuery($accountId, $departmentId)
+            ->whereHas('employeeDetail', function (Builder $q): void {
+                $q->whereNotNull('hire_date');
+            })
+            ->get()
+            ->sortBy(function (User $user): string {
+                $hire = $user->employeeDetail?->hire_date;
+
+                return $hire
+                    ? sprintf('%02d-%02d', $hire->month, $hire->day)
+                    : '99-99';
+            })
+            ->values();
+    }
+
+    /**
      * Departments the caller can see in the filter dropdown.
      *
      * @return Collection<int, Department>
