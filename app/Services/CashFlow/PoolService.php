@@ -244,15 +244,18 @@ class PoolService
         }
 
         $oldValues = $pool->toArray();
-        $pool->delete();
 
-        $this->auditService->log(
-            CashflowAuditLog::ACTION_DELETED,
-            CashflowAuditLog::ENTITY_CASH_POOL,
-            $poolId,
-            $oldValues,
-            null
-        );
+        DB::transaction(function () use ($pool, $oldValues, $poolId) {
+            $pool->delete();
+
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_DELETED,
+                CashflowAuditLog::ENTITY_CASH_POOL,
+                $poolId,
+                $oldValues,
+                null
+            );
+        });
 
         $this->clearCache($accountId);
     }
