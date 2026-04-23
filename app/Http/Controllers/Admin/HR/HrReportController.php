@@ -16,41 +16,40 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HrReportController extends Controller
 {
+    private const TAB_BIRTHDAYS = 'birthdays';
+
+    private const TAB_ANNIVERSARIES = 'anniversaries';
+
     public function __construct(
         protected readonly HrReportService $service,
     ) {}
 
-    public function birthdays(Request $request): View
+    /**
+     * Combined Birthdays + Anniversaries report with tabs, mini calendar
+     * and employee cards. The active tab is driven by ?tab=birthdays|anniversaries.
+     */
+    public function celebrations(Request $request): View
     {
-        [$month, $departmentId] = $this->resolveFilters($request);
+        [$tab, $month, $departmentId] = $this->resolveCelebrationFilters($request);
         $accountId = (int) Auth::user()->account_id;
+        $currentYear = (int) CarbonImmutable::now()->year;
 
-        $employees = $this->service->birthdays($accountId, $month, $departmentId);
-        $departments = $this->service->departmentsForFilter($accountId);
+        $employees = $tab === self::TAB_ANNIVERSARIES
+            ? $this->service->anniversaries($accountId, $month, $departmentId)
+            : $this->service->birthdays($accountId, $month, $departmentId);
 
-        return view('admin.hr.reports.birthdays', [
+        $eventsByDay = $this->groupEventsByDay($employees, $tab);
+
+        return view('admin.hr.reports.celebrations', [
+            'tab' => $tab,
             'employees' => $employees,
-            'departments' => $departments,
+            'eventsByDay' => $eventsByDay,
+            'departments' => $this->service->departmentsForFilter($accountId),
             'selectedMonth' => $month,
             'selectedDepartmentId' => $departmentId,
             'months' => $this->monthOptions(),
-        ]);
-    }
-
-    public function anniversaries(Request $request): View
-    {
-        [$month, $departmentId] = $this->resolveFilters($request);
-        $accountId = (int) Auth::user()->account_id;
-
-        $employees = $this->service->anniversaries($accountId, $month, $departmentId);
-        $departments = $this->service->departmentsForFilter($accountId);
-
-        return view('admin.hr.reports.anniversaries', [
-            'employees' => $employees,
-            'departments' => $departments,
-            'selectedMonth' => $month,
-            'selectedDepartmentId' => $departmentId,
-            'months' => $this->monthOptions(),
+            'currentYear' => $currentYear,
+            'calendar' => $this->buildCalendar($currentYear, $month),
         ]);
     }
 
@@ -92,6 +91,60 @@ class HrReportController extends Controller
             ['#', 'Name', 'Department', 'Designation', 'Hire Date', 'Years Completing (this year)'],
             $this->buildAnniversaryRows($employees),
         );
+    }
+
+    /**
+     * @param  Collection<int, User>  $employees
+     * @return array<int, array<int, array{id:int,name:string,sub:string}>>  Keyed by day-of-month (1..31).
+     */
+    private function groupEventsByDay(Collection $employees, string $tab): array
+    {
+        $currentYear = (int) CarbonImmutable::now()->year;
+        $grouped = [];
+
+        foreach ($employees as $employee) {
+            if ($tab === self::TAB_ANNIVERSARIES) {
+                $source = $employee->employeeDetail?->hire_date;
+                $value = $source ? $currentYear - (int) $source->year : null;
+                $sub = $value !== null && $value > 0
+                    ? ($value . ' ' . ($value === 1 ? 'year' : 'years'))
+                    : '';
+            } else {
+                $source = $employee->dob;
+                $value = $source ? $currentYear - (int) $source->year : null;
+                $sub = $value !== null ? 'Turning ' . $value : '';
+            }
+
+            if ($source === null) {
+                continue;
+            }
+
+            $day = (int) $source->day;
+            $grouped[$day] ??= [];
+            $grouped[$day][] = [
+                'id' => (int) $employee->id,
+                'name' => (string) $employee->name,
+                'sub' => $sub,
+            ];
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * @return array{daysInMonth:int,leadingBlanks:int,today:?int}
+     */
+    private function buildCalendar(int $year, int $month): array
+    {
+        $first = CarbonImmutable::create($year, $month, 1);
+        $today = CarbonImmutable::now();
+
+        return [
+            'daysInMonth' => $first->daysInMonth,
+            // dayOfWeek: 0=Sun..6=Sat — align to a Sunday-start grid.
+            'leadingBlanks' => (int) $first->dayOfWeek,
+            'today' => ($today->year === $year && $today->month === $month) ? (int) $today->day : null,
+        ];
     }
 
     /**
@@ -167,6 +220,26 @@ class HrReportController extends Controller
     }
 
     /**
+     * @return array{0:string,1:int,2:?int} [tab, month 1-12, optional department id]
+     */
+    private function resolveCelebrationFilters(Request $request): array
+    {
+        $validated = $request->validate([
+            'tab' => ['nullable', 'in:birthdays,anniversaries'],
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+        ]);
+
+        $tab = ($validated['tab'] ?? self::TAB_BIRTHDAYS) === self::TAB_ANNIVERSARIES
+            ? self::TAB_ANNIVERSARIES
+            : self::TAB_BIRTHDAYS;
+        $month = (int) ($validated['month'] ?? CarbonImmutable::now()->month);
+        $departmentId = isset($validated['department_id']) ? (int) $validated['department_id'] : null;
+
+        return [$tab, $month, $departmentId];
+    }
+
+    /**
      * @return array{0:'month'|'all',1:int,2:?int}
      */
     private function resolveExportFilters(Request $request): array
@@ -182,22 +255,6 @@ class HrReportController extends Controller
         $departmentId = isset($validated['department_id']) ? (int) $validated['department_id'] : null;
 
         return [$scope, $month, $departmentId];
-    }
-
-    /**
-     * @return array{0:int,1:?int} [month 1-12, optional department id]
-     */
-    private function resolveFilters(Request $request): array
-    {
-        $validated = $request->validate([
-            'month' => ['nullable', 'integer', 'between:1,12'],
-            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-        ]);
-
-        $month = (int) ($validated['month'] ?? CarbonImmutable::now()->month);
-        $departmentId = isset($validated['department_id']) ? (int) $validated['department_id'] : null;
-
-        return [$month, $departmentId];
     }
 
     /**

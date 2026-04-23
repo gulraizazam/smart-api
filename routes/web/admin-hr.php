@@ -102,9 +102,8 @@ Route::prefix('hr')->name('hr.')->group(function () {
 
     // ── Reports (read-only) ──
     Route::prefix('reports')->name('reports.')->middleware('permission:hr_employees_view')->group(function () {
-        Route::get('birthdays', [HrReportController::class, 'birthdays'])->name('birthdays');
+        Route::get('celebrations', [HrReportController::class, 'celebrations'])->name('celebrations');
         Route::get('birthdays/export', [HrReportController::class, 'exportBirthdays'])->name('birthdays.export');
-        Route::get('anniversaries', [HrReportController::class, 'anniversaries'])->name('anniversaries');
         Route::get('anniversaries/export', [HrReportController::class, 'exportAnniversaries'])->name('anniversaries.export');
     });
 
