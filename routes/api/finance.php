@@ -131,27 +131,31 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/getsoldbydata', [PackagesController::class, 'getSoldByData'])->name('packages.getsoldbydata');
     Route::get('packages/checkDuplicateServiceForSoldBy', [PackagesController::class, 'checkDuplicateServiceForSoldBy'])->name('packages.checkDuplicateServiceForSoldBy');
     Route::post('packages/updatesoldby', [PackagesController::class, 'updateSoldBy'])->name('packages.updatesoldby');
-    // Packages — REST API additions (registered first so literal paths
-    // beat the legacy `Route::resource` wildcard `{package}`). Create/
-    // update intentionally not exposed — see Api\PackagesController
-    // header docblock for the reason.
+    // Packages — REST API (registered first so literal paths beat the
+    // legacy `Route::resource` wildcard `{package}`). In this system the
+    // UI label "Packages" maps to the `bundles` table (the literal
+    // `packages` table holds patient plans, served elsewhere). This
+    // controller delegates to `BundleService`, so it shares behaviour
+    // with `/api/bundles/*` verbatim — response shape matches the
+    // `/admin/bundles` datatable.
     Route::prefix('packages')->name('packages.api.')->group(function () {
         Route::get('/', [ApiPackagesController::class, 'index'])->name('index');
-        Route::get('patient/{patientId}', [ApiPackagesController::class, 'forPatient'])->name('for_patient')->whereNumber('patientId');
-        Route::get('{package}', [ApiPackagesController::class, 'show'])->name('show')->whereNumber('package');
-        Route::patch('{package}/status', [ApiPackagesController::class, 'status'])->name('status')->whereNumber('package');
-        Route::delete('{package}', [ApiPackagesController::class, 'destroy'])->name('destroy')->whereNumber('package');
-        Route::get('{package}/sms-logs', [ApiPackagesController::class, 'smsLogs'])->name('sms_logs')->whereNumber('package');
-        Route::post('{package}/resend-sms', [ApiPackagesController::class, 'resendSMS'])->name('resend_sms')->whereNumber('package');
+        Route::post('datatable', [ApiPackagesController::class, 'datatable'])->name('datatable');
+        Route::post('status', [ApiPackagesController::class, 'status'])->name('status');
+        Route::get('sort/get', [ApiPackagesController::class, 'sortOrderGet'])->name('sort_get');
+        Route::post('sort/save', [ApiPackagesController::class, 'sortOrderSave'])->name('sort_save');
+        Route::post('create', [ApiPackagesController::class, 'store'])->name('create');
+        Route::get('{id}', [ApiPackagesController::class, 'show'])->name('show')->whereNumber('id');
+        Route::get('{id}/edit', [ApiPackagesController::class, 'edit'])->name('edit')->whereNumber('id');
+        Route::patch('{id}', [ApiPackagesController::class, 'update'])->name('update')->whereNumber('id');
+        Route::delete('{id}', [ApiPackagesController::class, 'destroy'])->name('destroy')->whereNumber('id');
     });
 
     // Legacy admin resource — `store`/`show` are admin-side `abort(404)`
     // stubs (the real flow uses the staged savepackages/updatepackages
     // endpoints above). `destroy` is excluded because the REST API above
-    // owns `DELETE /packages/{id}` — both paths funnel through
-    // `PlanService::deletePlan()`, so the API route serves admin UI
-    // delete calls equivalently. `edit` + `update` stay for the admin UI
-    // edit form.
+    // owns `DELETE /packages/{id}`. `edit` + `update` stay for the
+    // legacy admin edit form.
     Route::resource('packages', PackagesController::class)->except(['index', 'store', 'show', 'create', 'destroy']);
 
     // Non Plans Refunds API routes removed — functionality not in use
