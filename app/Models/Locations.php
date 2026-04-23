@@ -845,18 +845,19 @@ class Locations extends BaseModel
         $data['account_id'] = $account_id;
         // Set Region ID
         $data['region_id'] = Cities::findOrFail($data['city_id'])->region_id;
-        // Set Image
+        // Set Image — uploaded to Cloudflare R2 under `centre_logo/`; the
+        // row stores only the object key (image_src).
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
                 // Filename hardening — sanitise the browser-supplied
-                // basename before joining it to a public storage path.
+                // basename before joining it to the R2 object key.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
                     ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
                 );
-                $file->storeAs('public/centre_logo', $fileName);
+                $file->storeAs('centre_logo', $fileName, 'r2');
                 $data['image_src'] = $fileName;
             }
         }
@@ -976,19 +977,25 @@ class Locations extends BaseModel
         } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
-        // Set Image
+        // Set Image — uploaded to Cloudflare R2 under `centre_logo/`; the
+        // previous object (if any) is removed so orphans don't accumulate.
         if ($request->file('file')) {
             $file = $request->file('file');
             $ext = strtolower($file->getClientOriginalExtension());
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
                 // Filename hardening — sanitise the browser-supplied
-                // basename before joining it to a public storage path.
+                // basename before joining it to the R2 object key.
                 $fileName = time().'-'.SafeFilename::sanitize(
                     $file->getClientOriginalName(),
                     ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'],
                 );
-                $file->storeAs('public/centre_logo', $fileName);
+                $file->storeAs('centre_logo', $fileName, 'r2');
                 $data['image_src'] = $fileName;
+
+                if (! empty($old_data['image_src']) && $old_data['image_src'] !== $fileName) {
+                    \Illuminate\Support\Facades\Storage::disk('r2')
+                        ->delete('centre_logo/'.$old_data['image_src']);
+                }
             }
         }
         $record = self::where([

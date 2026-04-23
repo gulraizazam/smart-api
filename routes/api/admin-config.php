@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Api\ApplicationUserController;
+use App\Http\Controllers\Api\AppointmentStatusesController as ApiAppointmentStatusesController;
+use App\Http\Controllers\Api\CentresController as ApiCentresController;
 use App\Http\Controllers\Api\CitiesController as ApiCitiesController;
 use App\Http\Controllers\Api\LeadSourcesController as ApiLeadSourcesController;
 use App\Http\Controllers\Api\LeadStatusesController as ApiLeadStatusesController;
@@ -226,6 +228,22 @@ Route::put('locations/edit_update/{id}', [LocationsController::class, 'update'])
 Route::post('lcation_sort_save', [LocationsController::class, 'sortorder_save'])->name('locations.sort_save');
 Route::resource('locations', LocationsController::class)->except('index');
 
+// Centres — REST API (backed by the Locations model/service). Uses a
+// distinct `/centres` URL prefix so there is zero overlap with the legacy
+// `/locations/*` routes above — the admin UI continues to work unchanged.
+Route::prefix('centres')->name('centres.api.')->group(function () {
+    Route::get('/', [ApiCentresController::class, 'index'])->name('index');
+    Route::get('dropdown', [ApiCentresController::class, 'dropdown'])->name('dropdown');
+    Route::get('sorted', [ApiCentresController::class, 'sorted'])->name('sorted');
+    Route::post('sort', [ApiCentresController::class, 'sort'])->name('sort');
+    Route::post('create', [ApiCentresController::class, 'store'])->name('create');
+    Route::get('{centre}', [ApiCentresController::class, 'show'])->name('show')->whereNumber('centre');
+    Route::patch('{centre}', [ApiCentresController::class, 'update'])->name('update')->whereNumber('centre');
+    Route::patch('{centre}/status', [ApiCentresController::class, 'status'])->name('status')->whereNumber('centre');
+    Route::get('{centre}/services', [ApiCentresController::class, 'services'])->name('services')->whereNumber('centre');
+    Route::delete('{centre}', [ApiCentresController::class, 'destroy'])->name('destroy')->whereNumber('centre');
+});
+
 // Lead Statuses Routes Start
 Route::post('lead_statuses/datatable', [LeadStatusesController::class, 'datatable'])->name('lead_statuses.datatable');
 Route::post('lead_statuses', [LeadStatusesController::class, 'store'])->name('lead_statuses.store');
@@ -258,6 +276,18 @@ Route::get('appointment_statuses/{id}/edit', [AppointmentStatusesController::cla
 Route::put('appointment_statuses/{id}', [AppointmentStatusesController::class, 'update'])->name('appointment_statuses.update');
 Route::delete('appointment_statuses/{id}', [AppointmentStatusesController::class, 'destroy'])->name('appointment_statuses.destroy');
 Route::post('appointment_statuses/status', [AppointmentStatusesController::class, 'status'])->name('appointment_statuses.status');
+
+// Appointment Statuses — REST API additions (non-conflicting methods/URIs
+// only; legacy endpoints above keep the admin UI working unchanged)
+Route::prefix('appointment_statuses')->name('appointment_statuses.api.')->group(function () {
+    Route::get('/', [ApiAppointmentStatusesController::class, 'index'])->name('index');
+    Route::get('dropdown', [ApiAppointmentStatusesController::class, 'dropdown'])->name('dropdown');
+    Route::get('parents', [ApiAppointmentStatusesController::class, 'parents'])->name('parents');
+    Route::post('create', [ApiAppointmentStatusesController::class, 'store'])->name('create');
+    Route::get('{appointmentStatus}', [ApiAppointmentStatusesController::class, 'show'])->name('show')->whereNumber('appointmentStatus');
+    Route::patch('{appointmentStatus}', [ApiAppointmentStatusesController::class, 'update'])->name('update')->whereNumber('appointmentStatus');
+    Route::patch('{appointmentStatus}/status', [ApiAppointmentStatusesController::class, 'status'])->name('status')->whereNumber('appointmentStatus');
+});
 // Appointment Statuses Routes End
 
 // Machine Types Routes Start
