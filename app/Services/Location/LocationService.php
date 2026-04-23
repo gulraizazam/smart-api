@@ -225,7 +225,7 @@ class LocationService
     {
         $locatUser = [];
         $location_slug_all = Locations::where('slug', '=', 'all')->first();
-        $user_has_location_data = UserHasLocations::where('location_id', '=', $location_slug_all->id ?? 0)->groupby('user_id')->get();
+        $user_has_location_data = UserHasLocations::where('location_id', '=', $location_slug_all->id ?? 0)->select('user_id')->groupBy('user_id')->get();
         if (!empty($user_has_location_data)) {
             foreach ($user_has_location_data as $user) {
                 $user_has_locations = [
