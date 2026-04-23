@@ -183,7 +183,6 @@ class EmployeeService
                 'cnic' => $data['cnic'] ?? null,
                 'dob' => $data['dob'] ?? null,
                 'gender' => $data['gender'] ?? null,
-                'address' => $data['address'] ?? null,
                 'user_type_id' => (int) ($data['user_type_id'] ?? 2),
                 'account_id' => $accountId,
                 'active' => 1,
@@ -205,6 +204,7 @@ class EmployeeService
                 'emergency_contact_name' => $data['emergency_contact_name'] ?? null,
                 'emergency_contact_phone' => $data['emergency_contact_phone'] ?? null,
                 'emergency_contact_relation' => $data['emergency_contact_relation'] ?? null,
+                'address' => $data['address'] ?? null,
                 'account_id' => $accountId,
                 'created_by' => Auth::id(),
             ]);

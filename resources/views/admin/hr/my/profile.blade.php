@@ -66,7 +66,7 @@
                                     </div>
                                     <div class="col-12 col-md-4 mb-3">
                                         <div class="text-muted font-size-sm">Address</div>
-                                        <div class="font-weight-bold">{{ $user->address ?? '---' }}</div>
+                                        <div class="font-weight-bold">{{ $user->employeeDetail?->address ?? '---' }}</div>
                                     </div>
                                 </div>
                             </div>
