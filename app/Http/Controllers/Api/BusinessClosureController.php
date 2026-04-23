@@ -1,19 +1,23 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\ACL;
 use App\Http\Controllers\Controller;
-use App\Services\Schedule\BusinessClosureService;
 use App\Http\Requests\Schedule\StoreBusinessClosureRequest;
 use App\Http\Requests\Schedule\UpdateBusinessClosureRequest;
-use App\Helpers\ACL;
+use App\Http\Resources\Schedule\BusinessClosureResource;
+use App\Models\BusinessClosure;
 use App\Models\Locations;
-use Illuminate\Http\Request;
+use App\Services\Schedule\BusinessClosureService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class BusinessClosureController extends Controller
 {
@@ -22,11 +26,246 @@ class BusinessClosureController extends Controller
     ) {}
 
     /**
+     * GET /api/catalogue/business-closures
+     *
+     * Paginated REST list of business closures with locations + creator
+     * eager-loaded. Filters: `location_id`, `start_date`, `end_date`,
+     * `search` (title), `per_page` (1–200; default 25).
+     *
+     * Permission: `business_closures_manage`.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        if (! Gate::allows('business_closures_manage')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        try {
+            $request->validate([
+                'location_id' => ['nullable', 'integer'],
+                'start_date' => ['nullable', 'date'],
+                'end_date' => ['nullable', 'date'],
+                'search' => ['nullable', 'string', 'max:100'],
+                'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+            ]);
+
+            $accountId = (int) Auth::user()->account_id;
+
+            $query = BusinessClosure::with(['locations:id,name', 'creator:id,name'])
+                ->where('account_id', $accountId);
+
+            if ($request->filled('location_id')) {
+                $locationId = (int) $request->integer('location_id');
+                $query->where(function ($q) use ($locationId): void {
+                    $q->whereHas('locations', fn ($sub) => $sub->where('locations.id', $locationId))
+                        ->orWhereDoesntHave('locations');
+                });
+            }
+
+            if ($request->filled('start_date')) {
+                $query->whereDate('end_date', '>=', $request->date('start_date')?->toDateString());
+            }
+
+            if ($request->filled('end_date')) {
+                $query->whereDate('start_date', '<=', $request->date('end_date')?->toDateString());
+            }
+
+            if ($request->filled('search')) {
+                $term = '%'.$request->string('search')->trim().'%';
+                $query->where('title', 'like', $term);
+            }
+
+            $perPage = (int) ($request->integer('per_page') ?: 25);
+
+            $paginated = $query->orderByDesc('start_date')->paginate($perPage);
+
+            return $this->successResponse(
+                'Business closures retrieved successfully.',
+                [
+                    'items' => BusinessClosureResource::collection($paginated->items()),
+                    'meta' => [
+                        'current_page' => $paginated->currentPage(),
+                        'last_page' => $paginated->lastPage(),
+                        'per_page' => $paginated->perPage(),
+                        'total' => $paginated->total(),
+                    ],
+                ],
+            );
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Api\\BusinessClosureController@index');
+        }
+    }
+
+    /**
+     * GET /api/catalogue/business-closures/{businessClosure}
+     *
+     * REST detail endpoint. Unlike `edit`, does not include a locations
+     * dropdown payload — pure resource shape for mobile / read clients.
+     */
+    public function show(BusinessClosure $businessClosure): JsonResponse
+    {
+        if (! Gate::allows('business_closures_manage')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        if ((int) $businessClosure->account_id !== (int) Auth::user()->account_id) {
+            return $this->errorResponse('Business closure not found.', 404);
+        }
+
+        try {
+            $businessClosure->load(['locations:id,name', 'creator:id,name']);
+
+            return $this->successResponse(
+                'Business closure retrieved successfully.',
+                new BusinessClosureResource($businessClosure),
+            );
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Api\\BusinessClosureController@show');
+        }
+    }
+
+    /**
+     * GET /api/catalogue/business-closures/upcoming
+     *
+     * Closures that overlap the next `days` window (default 30, max 365).
+     * Useful for dashboards and mobile "upcoming closures" widgets.
+     */
+    public function upcoming(Request $request): JsonResponse
+    {
+        if (! Gate::allows('business_closures_manage')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        try {
+            $request->validate([
+                'days' => ['nullable', 'integer', 'min:1', 'max:365'],
+                'location_id' => ['nullable', 'integer'],
+            ]);
+
+            $accountId = (int) Auth::user()->account_id;
+            $days = (int) ($request->integer('days') ?: 30);
+            $today = Carbon::now()->toDateString();
+            $horizon = Carbon::now()->addDays($days)->toDateString();
+
+            $query = BusinessClosure::with(['locations:id,name', 'creator:id,name'])
+                ->where('account_id', $accountId)
+                ->where('end_date', '>=', $today)
+                ->where('start_date', '<=', $horizon);
+
+            if ($request->filled('location_id')) {
+                $locationId = (int) $request->integer('location_id');
+                $query->where(function ($q) use ($locationId): void {
+                    $q->whereHas('locations', fn ($sub) => $sub->where('locations.id', $locationId))
+                        ->orWhereDoesntHave('locations');
+                });
+            }
+
+            $closures = $query->orderBy('start_date')->get();
+
+            return $this->successResponse(
+                'Upcoming business closures retrieved successfully.',
+                [
+                    'window_days' => $days,
+                    'from' => $today,
+                    'to' => $horizon,
+                    'items' => BusinessClosureResource::collection($closures),
+                ],
+            );
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Api\\BusinessClosureController@upcoming');
+        }
+    }
+
+    /**
+     * POST /api/catalogue/business-closures/check
+     *
+     * Is the business closed on a given date (+ optional location)?
+     * Designed for pre-booking checks on mobile / booking flows.
+     */
+    public function check(Request $request): JsonResponse
+    {
+        if (! Gate::allows('business_closures_manage')) {
+            return $this->errorResponse('You are not authorized to access this resource.', 403);
+        }
+
+        try {
+            $validated = $request->validate([
+                'date' => ['required', 'date'],
+                'location_id' => ['nullable', 'integer', 'exists:locations,id'],
+            ]);
+
+            $accountId = (int) Auth::user()->account_id;
+            $date = Carbon::parse($validated['date'])->toDateString();
+            $locationId = isset($validated['location_id']) ? (int) $validated['location_id'] : null;
+
+            $query = BusinessClosure::with(['locations:id,name'])
+                ->where('account_id', $accountId)
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date);
+
+            if ($locationId !== null) {
+                $query->where(function ($q) use ($locationId): void {
+                    $q->whereHas('locations', fn ($sub) => $sub->where('locations.id', $locationId))
+                        ->orWhereDoesntHave('locations');
+                });
+            }
+
+            $closures = $query->get();
+
+            return $this->successResponse('Business closure check complete.', [
+                'date' => $date,
+                'location_id' => $locationId,
+                'is_closed' => $closures->isNotEmpty(),
+                'closures' => BusinessClosureResource::collection($closures),
+            ]);
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Api\\BusinessClosureController@check');
+        }
+    }
+
+    /**
+     * POST /api/catalogue/business-closures/bulk-delete
+     *
+     * Clean REST endpoint over the existing service bulk-delete. The legacy
+     * datatable endpoint keeps its comma-separated `delete` filter; this one
+     * accepts a proper `ids` array.
+     */
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        if (! Gate::allows('business_closures_delete')) {
+            return $this->errorResponse('You are not authorized to perform this action.', 403);
+        }
+
+        try {
+            $validated = $request->validate([
+                'ids' => ['required', 'array', 'min:1', 'max:500'],
+                'ids.*' => ['integer', 'distinct'],
+            ]);
+
+            $deleted = $this->service->bulkDelete($validated['ids']);
+
+            return $this->successResponse("{$deleted} business closures deleted successfully.", [
+                'deleted_count' => $deleted,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Api\\BusinessClosureController@bulkDelete');
+        }
+    }
+
+    /**
      * Get business closures datatable data
      */
     public function datatable(Request $request): JsonResponse
     {
-        if (!Gate::allows('business_closures_manage')) {
+        if (! Gate::allows('business_closures_manage')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -37,6 +276,7 @@ class BusinessClosureController extends Controller
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $deleted = $this->service->bulkDelete($ids);
+
                 return $this->successResponse("{$deleted} records deleted successfully.");
             }
 
@@ -54,8 +294,8 @@ class BusinessClosureController extends Controller
             ];
 
             foreach ($closures as $closure) {
-                $locationNames = $closure->locations->isEmpty() 
-                    ? 'All Locations' 
+                $locationNames = $closure->locations->isEmpty()
+                    ? 'All Locations'
                     : $closure->locations->pluck('name')->implode(', ');
 
                 $records['data'][] = [
@@ -101,7 +341,7 @@ class BusinessClosureController extends Controller
      */
     public function create(): JsonResponse
     {
-        if (!Gate::allows('business_closures_create')) {
+        if (! Gate::allows('business_closures_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -111,11 +351,11 @@ class BusinessClosureController extends Controller
                 ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
             ]);
-            
-            if ($userCentres && is_array($userCentres) && !empty($userCentres)) {
+
+            if ($userCentres && is_array($userCentres) && ! empty($userCentres)) {
                 $locationsQuery->whereIn('id', $userCentres);
             }
-            
+
             $locations = $locationsQuery->orderBy('name', 'asc')->get(['id', 'name']);
 
             return $this->successResponse('Data loaded successfully.', [
@@ -131,7 +371,7 @@ class BusinessClosureController extends Controller
      */
     public function store(StoreBusinessClosureRequest $request): JsonResponse
     {
-        if (!Gate::allows('business_closures_create')) {
+        if (! Gate::allows('business_closures_create')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -151,14 +391,14 @@ class BusinessClosureController extends Controller
      */
     public function edit(int $id): JsonResponse
     {
-        if (!Gate::allows('business_closures_edit')) {
+        if (! Gate::allows('business_closures_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
         try {
             $closure = $this->service->getById($id);
 
-            if (!$closure) {
+            if (! $closure) {
                 return $this->errorResponse('Business closure not found.', 500);
             }
 
@@ -167,11 +407,11 @@ class BusinessClosureController extends Controller
                 ['account_id', '=', Auth::user()->account_id],
                 ['active', '=', '1'],
             ]);
-            
-            if ($userCentres && is_array($userCentres) && !empty($userCentres)) {
+
+            if ($userCentres && is_array($userCentres) && ! empty($userCentres)) {
                 $locationsQuery->whereIn('id', $userCentres);
             }
-            
+
             $locations = $locationsQuery->orderBy('name', 'asc')->get(['id', 'name']);
 
             return $this->successResponse('Data loaded successfully.', [
@@ -189,7 +429,7 @@ class BusinessClosureController extends Controller
      */
     public function update(UpdateBusinessClosureRequest $request, int $id): JsonResponse
     {
-        if (!Gate::allows('business_closures_edit')) {
+        if (! Gate::allows('business_closures_edit')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
@@ -209,7 +449,7 @@ class BusinessClosureController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        if (!Gate::allows('business_closures_delete')) {
+        if (! Gate::allows('business_closures_delete')) {
             return $this->errorResponse('You are not authorized to access this resource.', 401);
         }
 
