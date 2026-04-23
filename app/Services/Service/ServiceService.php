@@ -256,8 +256,6 @@ final class ServiceService
     }
 
     /**
-<<<<<<< Updated upstream
-=======
      * Re-price every ServiceBundle whose service price just changed,
      * and log one history row per affected bundle.
      *
@@ -359,7 +357,6 @@ final class ServiceService
     }
 
     /**
->>>>>>> Stashed changes
      * Delete a service after dependency checks.
      *
      * @return array{status: bool, message: string}
@@ -508,10 +505,18 @@ final class ServiceService
             }
         }
 
-        // Prevent parent/end_node changes when children exist
+        // Prevent parent/end_node changes when children exist. Parent services
+        // store parent_id as NULL in the DB but the form submits integer 0 for
+        // "no parent" — normalise both sides to int before comparing so a
+        // parent edit doesn't incorrectly trip `parentChangeNotAllowed`.
         if ($this->hasChildServices($id, $accountId)) {
-            $parentChanged = $service->parent_id !== (int) ($data['parent_id'] ?? $service->parent_id);
-            $endNodeChanged = $service->end_node !== (int) ($data['end_node'] ?? $service->end_node);
+            $currentParentId = (int) ($service->parent_id ?? 0);
+            $submittedParentId = (int) ($data['parent_id'] ?? $currentParentId);
+            $parentChanged = $currentParentId !== $submittedParentId;
+
+            $currentEndNode = (int) ($service->end_node ?? 0);
+            $submittedEndNode = (int) ($data['end_node'] ?? $currentEndNode);
+            $endNodeChanged = $currentEndNode !== $submittedEndNode;
 
             if ($parentChanged || $endNodeChanged) {
                 throw ServiceException::parentChangeNotAllowed($id);
