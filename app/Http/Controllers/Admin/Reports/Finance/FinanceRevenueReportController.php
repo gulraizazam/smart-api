@@ -44,7 +44,11 @@ class FinanceRevenueReportController extends Controller
         if (! Gate::allows('finance_general_revenue_reports_manage')) {
             return abort(401);
         }
+        // The "all" slug is a system-managed service used to represent
+        // "every service" in legacy flows. It may be missing (deleted or
+        // never seeded on this account) — guard before dereferencing.
         $allserviceslug = Services::where(['slug' => 'all'])->isActive()->first();
+        $allServiceName = $allserviceslug?->name;
 
         $parentGroups = new NodesTree;
         $parentGroups->current_id = -1;
@@ -52,13 +56,22 @@ class FinanceRevenueReportController extends Controller
         $parentGroups->toList($parentGroups, -1);
         $services = $parentGroups->nodeList;
 
+        // Drop the synthetic "all" entry from the dropdown (it's only used
+        // internally to represent "every service"). Also drop any orphaned
+        // nodes the tree produced with an empty name (skipped rows — see
+        // NodesTree::build null-guard) so they don't render blank options.
         foreach ($services as $key => $ser) {
-            if ($key) {
-                if (isset($ser['name']) && $ser['name'] == $allserviceslug->name) {
-                    unset($services[$key]);
-                }
+            if (! $key) {
+                continue;
             }
-
+            $name = $ser['name'] ?? null;
+            if ($name === null || trim((string) $name) === '') {
+                unset($services[$key]);
+                continue;
+            }
+            if ($allServiceName !== null && $name === $allServiceName) {
+                unset($services[$key]);
+            }
         }
 
         $employees = User::getAllActiveEmployeeRecords(Auth::user()->account_id, ACL::getUserCentres())->pluck('name', 'id');
