@@ -23,6 +23,16 @@
                         </span>
                         <h3 class="card-label">Work Anniversaries — {{ $months[$selectedMonth] }}</h3>
                     </div>
+                    <div class="card-toolbar">
+                        <a href="{{ route('admin.hr.reports.anniversaries.export', ['scope' => 'month', 'month' => $selectedMonth, 'department_id' => $selectedDepartmentId]) }}"
+                           class="btn btn-light-primary btn-sm mr-2">
+                            <i class="la la-download"></i> Export {{ $months[$selectedMonth] }}
+                        </a>
+                        <a href="{{ route('admin.hr.reports.anniversaries.export', ['scope' => 'all', 'department_id' => $selectedDepartmentId]) }}"
+                           class="btn btn-light-success btn-sm">
+                            <i class="la la-download"></i> Export All
+                        </a>
+                    </div>
                 </div>
 
                 <div class="card-body">
