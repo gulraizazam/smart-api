@@ -240,9 +240,15 @@ function setEditData(response) {
             }
         });
 
-        $("#edit_parent_service").val(service.parent_id);
+        // Parents store parent_id as NULL in the DB — normalise to "0" so
+        // the <option value="0">Parent Service</option> entry is picked.
+        // `.trigger('change')` makes Select2 redraw the selection.
+        let editParentId = (service.parent_id === null || typeof service.parent_id === 'undefined')
+            ? '0'
+            : String(service.parent_id);
+        $("#edit_parent_service").val(editParentId).trigger('change');
         $("#edit_service_name").val(service.name);
-        $("#edit_duration").val(service.duration);
+        $("#edit_duration").val(service.duration).trigger('change');
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
         $("#edit_price").data('original-price', service.price);
@@ -265,6 +271,14 @@ function setEditData(response) {
             $("#edit_complimentory").prop("checked", true);
         } else {
             $("#edit_complimentory").prop("checked", false);
+        }
+
+        // Show/hide child-only fields (Duration, Price, Description, End Node,
+        // Complimentary, Tax) based on whether this is a parent (parent_id 0)
+        // or a child service. `getEditColor()` from index.blade.php toggles
+        // `.servicefield` visibility based on the #edit_parent_service value.
+        if (typeof getEditColor === 'function') {
+            getEditColor();
         }
 
     } catch (error) {
@@ -350,9 +364,14 @@ function setDuplicateData(response) {
             }
         });
 
-        $("#edit_parent_service").val(service.parent_id);
+        // Parents store parent_id as NULL — normalise to "0" so the
+        // "Parent Service" default option is selected in Select2.
+        let dupParentId = (service.parent_id === null || typeof service.parent_id === 'undefined')
+            ? '0'
+            : String(service.parent_id);
+        $("#edit_parent_service").val(dupParentId).trigger('change');
         $("#edit_service_name").val(service.name);
-        $("#edit_duration").val(service.duration);
+        $("#edit_duration").val(service.duration).trigger('change');
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
         $("#edit_price").data('original-price', service.price);
@@ -375,6 +394,11 @@ function setDuplicateData(response) {
             $("#edit_complimentory").prop("checked", true);
         } else {
             $("#edit_complimentory").prop("checked", false);
+        }
+
+        // Duplicate of a child → show child fields; duplicate of a parent → hide.
+        if (typeof getEditColor === 'function') {
+            getEditColor();
         }
 
     } catch (error) {

@@ -67,6 +67,10 @@ var EditValidation = function () {
     var validation = function () {
         let modal_id = 'modal_edit_services_form';
         let form = document.getElementById(modal_id);
+        // Duration/Price are nullable server-side and legitimately blank when
+        // editing a parent service — keep client-side validators aligned with
+        // AddValidation (name/parent_id/color only) so hidden child-only fields
+        // don't block parent-service updates.
         let validate = FormValidation.formValidation(
             form,
             {
@@ -85,14 +89,6 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    duration: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The duration field is required'
-                            }
-                        }
-                    },
-
                     color: {
                         validators: {
                             notEmpty: {
@@ -100,20 +96,6 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The price field is required'
-                            }
-                        }
-                    },
-                    /*end_node: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The end node field is required'
-                            }
-                        }
-                    },*/
                 },
 
                 plugins: {
