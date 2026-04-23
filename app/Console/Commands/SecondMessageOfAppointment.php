@@ -37,7 +37,7 @@ class SecondMessageOfAppointment extends Command
      *
      * @var string
      */
-    protected $description = 'Send reminder message to patients with appointments scheduled today';
+    protected $description = 'Send reminder message to patients with appointments scheduled tomorrow';
 
     /**
      * Create a new command instance.
@@ -81,11 +81,19 @@ class SecondMessageOfAppointment extends Command
            
             
         $log_type = '2nd_sms';
-        
+
+        // Operational visibility — previously this command ran silently with
+        // no signal when the query returned zero rows. Log the candidate
+        // count so ops can tell "query found 0" from "SMS API failed".
+        Log::info('SecondMessageOfAppointment candidates', [
+            'tomorrow' => $tomorrow,
+            'count' => $appointments->count(),
+        ]);
+
         if ($appointments) {
-            
+
             foreach ($appointments as $appointment) {
-            
+
                 $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
@@ -93,32 +101,63 @@ class SecondMessageOfAppointment extends Command
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
-                   
+
                 if ($smsLog) {
                     continue;
                 }
 
                 try {
-                    $account = Accounts::first();
+                    // Use the appointment's own account — fetching "first"
+                    // account in a multi-tenant system picks the wrong
+                    // templates/settings and causes SMSTemplates::getBySlug()
+                    // to silently return null for tenants whose account
+                    // isn't row #1.
+                    $accountId = (int) $appointment->account_id;
 
-                    if ($appointment->appointment_type_id === AppointmentType::Consultancy->value) {
+                    // `appointment_type_id` has no cast on the Appointments
+                    // model and PDO can return integer columns as strings
+                    // from raw SELECTs; cast before the strict comparison
+                    // so a string "1" still resolves to Consultancy.
+                    if ((int) $appointment->appointment_type_id === AppointmentType::Consultancy->value) {
                         if ($appointment->consultancy_type == 'virtual') {
-                            $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms', $account->id);
+                            $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms', $accountId);
                         } else {
-                            $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id);
+                            $SMSTemplate = SMSTemplates::getBySlug('second-sms', $accountId);
                         }
                     } else {
-                        $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $account->id);
+                        $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $accountId);
                     }
 
                     if (! $SMSTemplate) {
+                        Log::warning('SecondMessageOfAppointment template missing', [
+                            'appointment_id' => $appointment->appointment_id,
+                            'account_id' => $accountId,
+                            'type_id' => $appointment->appointment_type_id,
+                            'consultancy_type' => $appointment->consultancy_type,
+                        ]);
                         continue;
                     }
 
                     $preparedText = Appointments::prepareSMSContent($appointment->appointment_id, $SMSTemplate->content);
 
                     $setting = Settings::whereSlug('sys-current-sms-operator')->first();
-                    $UserOperatorSettings = UserOperatorSettings::getRecord($account->id, $setting->data);
+                    if (! $setting) {
+                        Log::warning('SecondMessageOfAppointment sms-operator setting missing', [
+                            'appointment_id' => $appointment->appointment_id,
+                            'account_id' => $accountId,
+                        ]);
+                        continue;
+                    }
+
+                    $UserOperatorSettings = UserOperatorSettings::getRecord($accountId, (int) $setting->data);
+                    if (! $UserOperatorSettings) {
+                        Log::warning('SecondMessageOfAppointment operator credentials missing', [
+                            'appointment_id' => $appointment->appointment_id,
+                            'account_id' => $accountId,
+                            'operator' => $setting->data,
+                        ]);
+                        continue;
+                    }
 
                     if ($setting->data == 1) {
                         $SMSObj = [
