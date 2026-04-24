@@ -453,7 +453,7 @@
             }
 
             $.ajax({
-                url: '{{ route("admin.hr.recruitment.datatable") }}',
+                url: '{{ route("admin.api.hr.recruitment.datatable") }}',
                 method: 'POST',
                 data: {
                     query: { search: searchData },

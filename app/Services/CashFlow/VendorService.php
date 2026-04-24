@@ -482,7 +482,7 @@ class VendorService
 
         $oldValues = $tx->toArray();
 
-        DB::transaction(function () use ($tx) {
+        DB::transaction(function () use ($tx, $oldValues) {
             // Reverse vendor cached_balance
             if ($tx->type === VendorTransactionType::Purchase) {
                 // Only reverse balance for delivered purchases (ordered ones never touched the balance)
@@ -493,15 +493,18 @@ class VendorService
                 DB::table('cashflow_vendors')->where('id', $tx->vendor_id)->increment('cached_balance', $tx->amount);
             }
             $tx->delete();
-        });
 
-        $this->auditService->log(
-            CashflowAuditLog::ACTION_DELETED,
-            CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
-            $tx->id,
-            $oldValues,
-            null
-        );
+            // Audit inside the transaction so the delete + audit trail are
+            // atomic — if the audit write fails we rollback the delete too,
+            // instead of leaving the row gone while the client sees an error.
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_DELETED,
+                CashflowAuditLog::ENTITY_VENDOR_TRANSACTION,
+                $tx->id,
+                $oldValues,
+                null
+            );
+        });
 
         $this->clearCache($accountId);
     }

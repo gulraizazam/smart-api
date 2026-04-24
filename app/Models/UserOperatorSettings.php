@@ -39,12 +39,21 @@ class UserOperatorSettings extends BaseModel
     }
 
     /**
+     * Look up an operator-credentials row by account + operator id.
+     *
+     * The `$id` argument is commonly sourced from `settings.data`, which is
+     * a VARCHAR column — so every caller that forgot to cast would hit a
+     * TypeError under a strict `int` hint (see SMS commands: Second/Third
+     * MessageOfAppointment, DeliverNotSentAppointment, PlanService, etc.).
+     * Accept int|string and coerce here so the null-return path is the only
+     * failure mode callers need to handle.
+     *
      * @deprecated Use UserOperatorSettingsService::find() instead
      */
-    public static function getRecord(int $accountId, int $id): ?static
+    public static function getRecord(int|string $accountId, int|string $id): ?static
     {
-        return self::where('account_id', $accountId)
-            ->where('id', $id)
+        return self::where('account_id', (int) $accountId)
+            ->where('id', (int) $id)
             ->first();
     }
 

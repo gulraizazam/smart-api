@@ -1411,7 +1411,7 @@
 
                 {{-- ── HRM Module ── --}}
                 @if (Gate::allows('hr_dashboard_view') || Gate::allows('hr_employees_view') || Gate::allows('hr_departments_view') || Gate::allows('hr_designations_view') || Gate::allows('hr_leave_view') || Gate::allows('hr_leave_approve') || Gate::allows('hr_recruitment_view'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.hr.dashboard', 'admin.hr.employees.index', 'admin.hr.employees.show', 'admin.hr.departments.index', 'admin.hr.designations.index', 'admin.hr.leave-types.index', 'admin.hr.leave-balances.index', 'admin.hr.leave-applications.index', 'admin.hr.leave-applications.calendar', 'admin.hr.recruitment.index', 'admin.hr.recruitment.show']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.hr.dashboard', 'admin.hr.employees.index', 'admin.hr.employees.show', 'admin.hr.departments.index', 'admin.hr.designations.index', 'admin.hr.leave-types.index', 'admin.hr.leave-balances.index', 'admin.hr.leave-applications.index', 'admin.hr.leave-applications.calendar', 'admin.hr.recruitment.index', 'admin.hr.recruitment.show', 'admin.hr.reports.celebrations']) }}" aria-haspopup="true" data-menu-toggle="hover">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon">
                             <i class="font-icon la la-users"></i>
@@ -1487,6 +1487,14 @@
                                 <a href="{{ route('admin.hr.recruitment.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot"><span></span></i>
                                     <span class="menu-text">Recruitment</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('hr_employees_view')
+                            <li class="menu-item {{ activeMenu('admin.hr.reports.celebrations') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.hr.reports.celebrations') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot"><span></span></i>
+                                    <span class="menu-text">Celebrations</span>
                                 </a>
                             </li>
                             @endcan

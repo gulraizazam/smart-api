@@ -86,7 +86,10 @@ class EmployeeController extends Controller
             $validated = $request->validated();
 
             DB::transaction(function () use ($validated, $user, $accountId): void {
-                $profileFields = ['name', 'email', 'phone', 'cnic', 'dob', 'gender', 'address'];
+                // `address` lives on employee_details (see migration
+                // 2026_04_23_120000_add_address_to_employee_details_table.php) —
+                // it flows through to $hrFields via the except() below.
+                $profileFields = ['name', 'email', 'phone', 'cnic', 'dob', 'gender'];
 
                 $profileUpdates = collect($validated)->only($profileFields)->toArray();
                 if (!empty($validated['password'])) {

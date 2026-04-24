@@ -417,12 +417,32 @@ class OrderService
         return $users + $FDMUsers;
     }
 
-    public function getDoctorsForSales(int $locationId): array
+    public function getDoctorsForSales(int|array|string $locationId): array
     {
-        $doctors = DoctorHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+        $raw = (array) $locationId;
+
+        // The centre multi-select uses 'all' as the "no filter" sentinel.
+        // When present (or the list is empty after normalising), fall back
+        // to every centre the caller can access — same semantics as the
+        // inventory/sales report services.
+        $wantsAll = in_array('all', $raw, true);
+
+        $locationIds = array_values(array_filter(
+            array_map('intval', $raw),
+            fn (int $id): bool => $id > 0,
+        ));
+
+        if ($wantsAll || $locationIds === []) {
+            $locationIds = ACL::getUserCentres();
+        }
+
+        if ($locationIds === []) {
+            return [];
+        }
+
+        $doctors = DoctorHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
         $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
 
-        $locationIds = [$locationId];
         $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
         $findRole = DB::table('roles')->where('name', 'FDM')->first();
         $roleHasUser = RoleHasUsers::where('role_id', $findRole->id)->pluck('user_id')->toArray();
