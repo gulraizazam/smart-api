@@ -26,14 +26,20 @@ use Illuminate\Support\Facades\Route;
         Route::get('scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'nonScheduled'])->name('non_scheduled');
         Route::get('statistics/data', [\App\Http\Controllers\Api\AppointmentsController::class, 'statistics'])->name('statistics');
+
+        // Appointment Comments
+        Route::get('{appointment}/comments', [\App\Http\Controllers\Api\AppointmentCommentController::class, 'index'])->name('comments.index');
+        Route::post('comments', [\App\Http\Controllers\Api\AppointmentCommentController::class, 'store'])->name('comments.store');
     });
 
     // Consultancy API Routes (Optimized)
     Route::prefix('consultancy')->name('consultancy.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('api_index');
         Route::post('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'show'])->name('show');
         Route::put('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'update'])->name('update');
         Route::delete('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'destroy'])->name('destroy');
+        Route::put('{id}/status', [\App\Http\Controllers\Api\ConsultancyController::class, 'updateStatus'])->name('update_status');
         Route::post('{id}/schedule', [\App\Http\Controllers\Api\ConsultancyController::class, 'schedule'])->name('schedule');
         Route::get('scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'nonScheduled'])->name('non_scheduled');

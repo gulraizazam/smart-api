@@ -87,11 +87,6 @@ class AppointmentService
             $query->where('appointment_type_id', $appointmentTypeId);
         }
 
-        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
-        if ($cancelledStatus) {
-            $query->where('base_appointment_status_id', '!=', $cancelledStatus->id);
-        }
-
         $query = $this->applyFilters($query, $filters);
 
         return $query;
