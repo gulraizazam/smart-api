@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\AppointmentException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
 use App\Http\Requests\Consultancy\ScheduleConsultancyRequest;
 use App\Http\Requests\Consultancy\StoreConsultancyRequest;
 use App\Http\Requests\Consultancy\UpdateConsultancyRequest;
@@ -36,13 +37,20 @@ class ConsultancyController extends Controller
 
             $query = $this->consultancyService->getConsultancyList($filters);
 
-            $consultancies = ($request->get('paginate') === 'false')
-                ? $query->get()
-                : $query->paginate((int) $request->get('per_page', 15));
+            if ($request->get('paginate') === 'false') {
+                return $this->successResponse(
+                    'Consultancies retrieved successfully.',
+                    ConsultancyResource::collection($query->get()),
+                );
+            }
 
-            return $this->successResponse(
+            $perPage = max(1, min((int) $request->get('per_page', 15), 100));
+            $paginator = $query->paginate($perPage)->appends($request->query());
+
+            return $this->paginatedResponse(
                 'Consultancies retrieved successfully.',
-                ConsultancyResource::collection($consultancies),
+                $paginator,
+                ConsultancyResource::class,
             );
         } catch (AppointmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode());
@@ -69,6 +77,26 @@ class ConsultancyController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Throwable $e) {
             return $this->handleException($e, 'Error creating consultancy');
+        }
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('consultations_manage') && !Gate::allows('appointments_view')) {
+                throw AppointmentException::unauthorized();
+            }
+
+            $consultancy = $this->consultancyService->getConsultancyById($id);
+
+            return $this->successResponse(
+                'Consultancy retrieved successfully.',
+                new ConsultancyResource($consultancy),
+            );
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'Error fetching consultancy');
         }
     }
 
@@ -106,6 +134,26 @@ class ConsultancyController extends Controller
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Throwable $e) {
             return $this->handleException($e, 'Error deleting consultancy');
+        }
+    }
+
+    public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_status_update')) {
+                throw AppointmentException::unauthorized();
+            }
+
+            $consultancy = $this->consultancyService->updateConsultancyStatus($id, $request->validated());
+
+            return $this->successResponse(
+                'Consultancy status updated successfully.',
+                new ConsultancyResource($consultancy),
+            );
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'Error updating consultancy status');
         }
     }
 

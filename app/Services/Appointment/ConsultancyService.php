@@ -152,4 +152,24 @@ class ConsultancyService extends AppointmentService
 
         return $this->scheduleAppointment($id, $data);
     }
+
+    public function getConsultancyById(int $id): Appointments
+    {
+        $this->findConsultancyOrFail($id);
+
+        $appointment = $this->getAppointmentById($id);
+
+        if (!$appointment) {
+            throw AppointmentException::notFound();
+        }
+
+        return $appointment;
+    }
+
+    public function updateConsultancyStatus(int $id, array $data): Appointments
+    {
+        $this->findConsultancyOrFail($id);
+
+        return $this->updateAppointmentStatus($id, $data);
+    }
 }
