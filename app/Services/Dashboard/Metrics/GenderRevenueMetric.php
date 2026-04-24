@@ -7,21 +7,22 @@ namespace App\Services\Dashboard\Metrics;
 use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Revenue split by patient gender (male / female / unknown).
  *
- * Filters mirror the legacy GenderWiseRevenueReport exactly:
+ * Filters:
  *  - package_advances.cash_flow = 'in'
  *  - is_adjustment = '0', is_tax = '0', is_cancel = '0'
  *  - cash_amount > 0
- *  - appointment_type_id = 1 (consultation-linked cash only — matches the
- *    existing Gender-Wise Revenue report in the Reports module)
  *
- * // CUTERA-REVIEW: appointment_type_id=1 filter comes from the legacy report.
- * // If management wants total revenue (consultations + treatments) split by
- * // gender, drop that clause. Flagged for product decision.
+ * Covers ALL appointment types — consultations AND treatments/packages
+ * — so this is true total revenue split by gender. (Earlier versions
+ * restricted to appointment_type_id = 1 to match the legacy Gender-Wise
+ * Revenue report; that caveat is resolved per product decision: the
+ * dashboard panel's whole-picture intent outweighs legacy parity.)
  *
  * Respects MetricScope (account + optional branch subset via packages.location_id).
  *
@@ -39,6 +40,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class GenderRevenueMetric implements Metric
 {
+    private const CACHE_TTL = 300;
+
     /**
      * @return array<string, mixed>
      */
@@ -48,6 +51,18 @@ final class GenderRevenueMetric implements Metric
             return $this->empty();
         }
 
+        $cacheKey = 'mgmt_dash:gender_revenue:'
+            .$scope->cacheKey()
+            .'|'.$range->startString().'..'.$range->endString();
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->build($scope, $range));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function build(MetricScope $scope, DateRange $range): array
+    {
         $start = $range->startString().' 00:00:00';
         $end = $range->endString().' 23:59:59';
 
@@ -67,8 +82,7 @@ final class GenderRevenueMetric implements Metric
             ->where('pa.is_tax', '0')
             ->where('pa.is_cancel', '0')
             ->where('pa.cash_amount', '>', 0)
-            ->whereBetween('pa.created_at', [$start, $end])
-            ->where('a.appointment_type_id', 1);
+            ->whereBetween('pa.created_at', [$start, $end]);
 
         if ($scope->isBranchScoped() && $scope->branchIds !== null) {
             if ($scope->branchIds === []) {

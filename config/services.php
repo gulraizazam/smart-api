@@ -35,4 +35,14 @@ return [
         'password_client_secret' => env('PASSPORT_PASSWORD_CLIENT_SECRET'),
     ],
 
+    // Round 4 Auth-C1 — Cloudflare Turnstile keys for the progressive
+    // login CAPTCHA gate. The gate is a no-op when either value is empty,
+    // so leaving these unset in local dev means no captcha prompts.
+    // Provision a site at https://dash.cloudflare.com/?to=/:account/turnstile
+    // and paste both keys into .env to enable.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
 ];

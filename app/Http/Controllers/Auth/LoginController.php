@@ -7,6 +7,7 @@ use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Providers\AppServiceProvider;
+use App\Services\Auth\LoginAuditLogger;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class LoginController extends Controller
 
     protected $redirectTo = AppServiceProvider::HOME;
 
-    public function __construct()
+    public function __construct(private LoginAuditLogger $audit)
     {
         $this->middleware('guest')->except('logout');
     }
@@ -33,9 +34,8 @@ class LoginController extends Controller
      * @param  mixed  $user
      * @return mixed
      */
-    protected function authenticated(): void
+    protected function authenticated(Request $request, $authedUser): void
     {
-        $authedUser = Auth::user();
         $account_id = $authedUser->account_id;
         session(['account_id' => $account_id]);
         $account = DB::table('accounts')->find($account_id);
@@ -45,6 +45,7 @@ class LoginController extends Controller
         // user has fully authenticated.
         if ($authedUser instanceof User) {
             $authedUser->recordSuccessfulLogin();
+            $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_SUCCESS, $authedUser->{$this->username()}, $authedUser);
         }
     }
 
@@ -52,8 +53,22 @@ class LoginController extends Controller
     {
         $this->validateLogin($request);
 
+        // Round 4 Auth-E1 — enumeration-safe error messaging. Every
+        // non-success path below returns the same generic "sign-in failed"
+        // wording so an attacker probing emails cannot tell apart:
+        //   • wrong password on a valid account
+        //   • valid credentials on a deactivated account
+        //   • account that does not exist
+        // The lockout path is kept visually distinct in the SPA via the
+        // `Retry-After` header (UX), but the message body itself uses the
+        // same "Too many attempts" wording as the IP throttle so attackers
+        // can't confirm whether a target account actually exists from the
+        // message content alone.
+        $genericFail = 'Sign-in failed. Please check your credentials and try again.';
+
         // ThrottlesLogins (cache-keyed, per IP+username). Existing behavior.
         if ($this->hasTooManyLoginAttempts($request)) {
+            $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_RATE_LIMITED, $request->input($this->username()));
             $this->fireLockoutEvent($request);
 
             return $this->sendLockoutResponse($request);
@@ -68,27 +83,30 @@ class LoginController extends Controller
             : null;
 
         if ($candidate && $candidate->isLocked()) {
+            $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_ACCOUNT_LOCKED, $username, $candidate);
             $minutes = max(1, (int) ceil(now()->diffInMinutes($candidate->locked_until, false)));
             return redirect()
                 ->back()
                 ->withInput($request->only($this->username(), 'remember'))
-                ->with(['error' => "Account is temporarily locked due to repeated failed login attempts. Try again in {$minutes} minute(s)."]);
+                ->with(['error' => "Too many attempts. Try again in {$minutes} minute(s)."]);
         }
 
         if ($this->guard()->validate($this->credentials($request))) {
             /** @var User $user */
             $user = $this->guard()->getLastAttempted();
 
-            // Inactive account: count this as a failed attempt for both
-            // the IP throttle and the per-account lockout, then bail.
+            // Inactive account: count as a failed attempt but return the
+            // SAME generic message as wrong-creds — do not confirm that
+            // the address corresponds to a real (if deactivated) account.
             if (! $user->active) {
                 $this->incrementLoginAttempts($request);
                 $user->recordFailedLogin();
+                $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_ACCOUNT_DEACTIVATED, $username, $user);
 
                 return redirect()
                     ->back()
                     ->withInput($request->only($this->username(), 'remember'))
-                    ->with(['error' => 'Your account has been deactivated, please contact administrator.']);
+                    ->with(['error' => $genericFail]);
             }
 
             if ($this->attemptLogin($request)) {
@@ -101,12 +119,15 @@ class LoginController extends Controller
         $this->incrementLoginAttempts($request);
         if ($candidate) {
             $candidate->recordFailedLogin();
+            $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_WRONG_PASSWORD, $username, $candidate);
+        } else {
+            $this->audit->record($request, 'web', LoginAuditLogger::OUTCOME_ACCOUNT_NOT_FOUND, $username);
         }
 
         return redirect()
             ->back()
             ->withInput()
-            ->with(['error' => 'Your credentials did not match with our record.']);
+            ->with(['error' => $genericFail]);
     }
 
     /**

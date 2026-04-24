@@ -8,6 +8,7 @@ use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -35,6 +36,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class AvgTransactionValueMetric implements Metric
 {
+    private const CACHE_TTL = 300;
+
     /**
      * @return array<string, mixed>
      */
@@ -44,6 +47,20 @@ final class AvgTransactionValueMetric implements Metric
             return ['series' => [], 'latest' => null, 'prior3_avg' => null, 'prior3_delta_pct' => null];
         }
 
+        // Window is "now's trailing 12 months" — not range-dependent — so key
+        // by scope + current month to stay correct across a month boundary.
+        $cacheKey = 'mgmt_dash:avg_transaction_value:'
+            .$scope->cacheKey()
+            .'|'.now()->format('Y-m');
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->build($scope));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function build(MetricScope $scope): array
+    {
         $end = CarbonImmutable::now()->endOfMonth();
         $start = $end->subMonths(11)->startOfMonth();
 

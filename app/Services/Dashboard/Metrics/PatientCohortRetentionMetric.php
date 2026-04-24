@@ -9,6 +9,7 @@ use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -31,6 +32,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class PatientCohortRetentionMetric implements Metric
 {
+    private const CACHE_TTL = 300;
+
     /**
      * @return array{
      *   months: list<string>,
@@ -48,6 +51,31 @@ final class PatientCohortRetentionMetric implements Metric
             return ['months' => [], 'windows' => [], 'cohorts' => []];
         }
 
+        $cacheKey = 'mgmt_dash:patient_cohort_retention:'
+            .$scope->cacheKey()
+            .'|'.$range->startString().'..'.$range->endString()
+            .'|mb='.$monthsBack.'|ext='.($extendedWindows ? 1 : 0);
+
+        return Cache::remember(
+            $cacheKey,
+            self::CACHE_TTL,
+            fn () => $this->build($scope, $range, $monthsBack, $extendedWindows),
+        );
+    }
+
+    /**
+     * @return array{
+     *   months: list<string>,
+     *   windows: list<int>,
+     *   cohorts: array<string, array{size: int, retention: array<int, float>}>
+     * }
+     */
+    private function build(
+        MetricScope $scope,
+        DateRange $range,
+        int $monthsBack,
+        bool $extendedWindows,
+    ): array {
         $windows = $extendedWindows ? [30, 60, 90, 180, 365] : [30, 60, 90, 180];
         $end = CarbonImmutable::parse($range->endString())->endOfMonth();
 

@@ -166,6 +166,7 @@ final class BranchLeaderboardMetric implements Metric
             ->whereIn('location_id', $branchIds)
             ->whereDate('created_at', '>=', $range->startString())
             ->whereDate('created_at', '<=', $range->endString())
+            ->whereNull('deleted_at')
             ->where('cash_flow', 'out')
             ->where('is_refund', 1)
             ->where('cash_amount', '>', 0)
