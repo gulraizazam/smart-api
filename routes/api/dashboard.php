@@ -52,12 +52,25 @@ Route::prefix('management-dashboard')
     ->name('management_dashboard_api.')
     ->middleware(['can:management_dashboard.view', 'throttle:120,1'])
     ->group(function () {
+        Route::get('filter-branches', [ManagementDashboardApiController::class, 'filterBranches'])->name('filter_branches');
         Route::get('overview', [ManagementDashboardApiController::class, 'overview'])->name('overview');
         Route::get('branches', [ManagementDashboardApiController::class, 'branches'])->name('branches');
+        Route::get('branch-feedback', [ManagementDashboardApiController::class, 'branchFeedback'])->name('branch_feedback');
+        Route::get('branch-doctor-feedback', [ManagementDashboardApiController::class, 'branchDoctorFeedback'])->name('branch_doctor_feedback');
+        Route::get('branch-doctor-retention', [ManagementDashboardApiController::class, 'branchDoctorRetention'])->name('branch_doctor_retention');
+        Route::get('retention-trend', [ManagementDashboardApiController::class, 'retentionTrend'])->name('retention_trend');
+        Route::get('at-risk-summary', [ManagementDashboardApiController::class, 'atRiskSummary'])->name('at_risk_summary');
+        Route::get('at-risk-list', [ManagementDashboardApiController::class, 'atRiskList'])->name('at_risk_list');
+        Route::get('arrival-rate', [ManagementDashboardApiController::class, 'arrivalRate'])->name('arrival_rate');
         Route::get('people', [ManagementDashboardApiController::class, 'people'])->name('people');
+        Route::get('utilization', [ManagementDashboardApiController::class, 'utilization'])->name('utilization');
+        Route::get('utilization-heatmap', [ManagementDashboardApiController::class, 'utilizationHeatmap'])->name('utilization_heatmap');
+        Route::get('utilization-trend', [ManagementDashboardApiController::class, 'utilizationTrend'])->name('utilization_trend');
+        Route::get('utilization-trend-by-branch', [ManagementDashboardApiController::class, 'utilizationTrendByBranch'])->name('utilization_trend_by_branch');
         Route::get('patients', [ManagementDashboardApiController::class, 'patients'])->name('patients');
         Route::get('new-returning', [ManagementDashboardApiController::class, 'newReturning'])->name('new_returning');
         Route::get('service-category-trend', [ManagementDashboardApiController::class, 'serviceCategoryTrend'])->name('service_category_trend');
+        Route::get('service-sales-trend', [ManagementDashboardApiController::class, 'serviceSalesTrend'])->name('service_sales_trend');
         Route::get('avg-transaction-value', [ManagementDashboardApiController::class, 'avgTransactionValue'])->name('avg_transaction_value');
         Route::get('avg-conversion-value', [ManagementDashboardApiController::class, 'avgConversionValue'])->name('avg_conversion_value');
         Route::get('lead-gender-funnel', [ManagementDashboardApiController::class, 'leadGenderFunnel'])->name('lead_gender_funnel');

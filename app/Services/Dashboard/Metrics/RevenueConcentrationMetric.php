@@ -7,6 +7,7 @@ namespace App\Services\Dashboard\Metrics;
 use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -28,6 +29,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class RevenueConcentrationMetric implements Metric
 {
+    private const CACHE_TTL = 300;
+
     /**
      * @return array{
      *   total_revenue: float,
@@ -43,6 +46,24 @@ final class RevenueConcentrationMetric implements Metric
             return $this->empty();
         }
 
+        $cacheKey = 'mgmt_dash:revenue_concentration:'
+            .$scope->cacheKey()
+            .'|'.$range->startString().'..'.$range->endString();
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->build($scope, $range));
+    }
+
+    /**
+     * @return array{
+     *   total_revenue: float,
+     *   total_patients: int,
+     *   top_20_pct_share: float,
+     *   top_10_pct_share: float,
+     *   lorenz: list<array{x: float, y: float}>
+     * }
+     */
+    private function build(MetricScope $scope, DateRange $range): array
+    {
         $query = DB::table('package_advances as pa')
             ->join('packages as p', 'pa.package_id', '=', 'p.id')
             ->where('pa.account_id', $scope->accountId)
