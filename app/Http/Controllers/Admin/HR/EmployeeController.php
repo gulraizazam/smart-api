@@ -108,8 +108,12 @@ class EmployeeController extends Controller
                 'location_ids.*' => ['integer', "exists:locations,id,account_id,{$accountId}"],
             ]);
 
-            // Update user profile fields
-            $profileFields = ['name', 'email', 'phone', 'cnic', 'dob', 'gender', 'address'];
+            // Update user profile fields. `address` is intentionally NOT in
+            // this list — the `users.address` column was dropped in migration
+            // 2026_04_18_120000_drop_address_from_users_table.php and the
+            // HR-scoped replacement lives on `employee_details.address`
+            // (see 2026_04_23_120000_add_address_to_employee_details_table.php).
+            $profileFields = ['name', 'email', 'phone', 'cnic', 'dob', 'gender'];
             $user->update(collect($validated)->only($profileFields)->toArray());
 
             // Update HR details

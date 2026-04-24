@@ -80,14 +80,17 @@ class MyHrmController extends Controller
             $validated = $request->validated();
 
             $userFields = collect($validated)
-                ->only(['phone', 'dob', 'gender', 'address'])
+                ->only(['phone', 'dob', 'gender'])
                 ->toArray();
 
+            // `address` lives on employee_details (see migration
+            // 2026_04_23_120000_add_address_to_employee_details_table.php).
             $detailFields = collect($validated)
                 ->only([
                     'emergency_contact_name',
                     'emergency_contact_phone',
                     'emergency_contact_relation',
+                    'address',
                 ])
                 ->toArray();
 

@@ -118,5 +118,26 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
+        <script>
+            (function () {
+                function refreshDoctorFilter() {
+                    if ($('#report_type').val() !== 'doctor_sales_report') {
+                        return;
+                    }
+                    var locationIds = $('#centre_id').val() || [];
+                    if (!locationIds.length) {
+                        $('#doctor_id_filter').html('<option value="">Select Doctor</option>').trigger('change.select2');
+                        return;
+                    }
+                    getEmployeesForSales(locationIds);
+                }
+
+                $(function () {
+                    $('#centre_id').on('change', refreshDoctorFilter);
+                    $('#report_type').on('change', refreshDoctorFilter);
+                    refreshDoctorFilter();
+                });
+            })();
+        </script>
     @endpush
 @endsection

@@ -330,7 +330,7 @@ class OrdersController extends Controller
 
     public function getDoctorsForSales(Request $request): JsonResponse
     {
-        $users = $this->orderService->getDoctorsForSales((int) $request->location_id);
+        $users = $this->orderService->getDoctorsForSales($request->input('location_id', []));
 
         return response()->json(['users' => $users]);
     }

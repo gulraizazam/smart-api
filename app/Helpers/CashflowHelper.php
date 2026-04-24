@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 
 class CashflowHelper
 {
@@ -32,18 +33,34 @@ class CashflowHelper
             return collect();
         }
 
-        // If user has the select_all flag, return all active locations
+        $accountId = (int) $user->account_id;
+
+        // If user has the select_all flag, return all active real locations.
         if ($user->select_all) {
             return Locations::where('active', 1)
-                ->where('account_id', $user->account_id)
+                ->where('account_id', $accountId)
+                ->where('name', '!=', 'All Centres')
                 ->orderBy('name')
                 ->get(['id', 'name']);
         }
 
-        $locationIds = $user->user_has_locations->pluck('location_id')->toArray();
+        $locationIds = array_map('intval', $user->user_has_locations->pluck('location_id')->toArray());
+        $allCentresId = (int) Config::get('constants.all_centres_location_id');
+
+        // If the pivot grants the virtual "All Centres" location, expand to
+        // every real active centre for the account — branch queries must run
+        // against real ids, not the virtual rollup.
+        if ($allCentresId !== 0 && in_array($allCentresId, $locationIds, true)) {
+            return Locations::where('active', 1)
+                ->where('account_id', $accountId)
+                ->where('name', '!=', 'All Centres')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
 
         return Locations::whereIn('id', $locationIds)
             ->where('active', 1)
+            ->where('name', '!=', 'All Centres')
             ->orderBy('name')
             ->get(['id', 'name']);
     }

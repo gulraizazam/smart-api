@@ -102,7 +102,7 @@
             // Load balance table
             function loadBalanceTable() {
                 $.ajax({
-                    url: '{{ route("admin.hr.leave-balances.datatable") }}',
+                    url: '{{ route("admin.api.hr.leave-balances.datatable") }}',
                     method: 'POST',
                     data: { fiscal_year: '{{ $fiscalYear }}' },
                     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},

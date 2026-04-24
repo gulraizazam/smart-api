@@ -98,7 +98,7 @@
 
     @push('datatable-js')
     <script>
-        var table_url = '{{ route("admin.hr.leave-applications.datatable") }}';
+        var table_url = '{{ route("admin.api.hr.leave-applications.datatable") }}';
 
         var table_columns = [
             { field: 'employee_name', title: 'Employee', width: 'auto', sortable: false },
