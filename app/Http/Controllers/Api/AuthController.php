@@ -5,12 +5,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Auth\LoginAuditLogger;
+use App\Services\Auth\LoginCaptchaGate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private LoginAuditLogger $audit,
+        private LoginCaptchaGate $captcha,
+    ) {}
+
     /**
      * Login for Apis.
      *
@@ -42,28 +49,67 @@ class AuthController extends Controller
                 return $this->errorResponse($validate->errors()->first(), 422, $validate->errors()->all());
             }
 
+            $clientIp = (string) $request->ip();
+
+            // Round 4 Auth-C1 — progressive CAPTCHA gate. After THRESHOLD
+            // misses from this IP inside the rolling window, the SPA must
+            // submit a valid Turnstile token alongside the credentials.
+            // Checked BEFORE the per-account lockout so the captcha
+            // challenge is honoured regardless of which account is being
+            // targeted. When Turnstile keys aren't provisioned the gate
+            // short-circuits to a no-op.
+            if ($this->captcha->isRequired($clientIp)) {
+                if (! $this->captcha->verify($request->input('cf-turnstile-response'), $clientIp)) {
+                    return $this->errorResponse('Please complete the verification.', 401, [
+                        'captcha_required' => true,
+                        'site_key' => $this->captcha->siteKey(),
+                    ]);
+                }
+            }
+
             /** @var User|null $user */
             $user = User::where('email', $request->input('email'))->first();
+
+            // Round 4 Auth-E1 — enumeration-safe error messages. All
+            // failure paths below return the same generic wording so an
+            // attacker probing emails cannot distinguish a wrong password
+            // from a deactivated / non-existent account. The lockout path
+            // keeps the "Too many attempts" wording shared with 429 so
+            // the message body alone does not confirm that the account
+            // exists; the `Retry-After` header lets the SPA still render
+            // a precise countdown.
+            $genericFail = 'Sign-in failed. Please check your credentials and try again.';
 
             // Per-account lockout check before we touch the password —
             // mirrors the web LoginController flow so brute-forcing the
             // API endpoint is not a way around the DB lockout.
+            //
+            // Seconds (not just minutes) are surfaced via the standard
+            // Retry-After header so the SPA can render an exact live
+            // countdown — same mechanism the 429 throttle middleware uses,
+            // which keeps the frontend handler a single code path.
             if ($user && $user->isLocked()) {
-                $minutes = max(1, (int) ceil(now()->diffInMinutes($user->locked_until, false)));
+                $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_ACCOUNT_LOCKED, $request->input('email'), $user);
+                $seconds = max(1, (int) ceil(now()->diffInSeconds($user->locked_until, false)));
+                $minutes = max(1, (int) ceil($seconds / 60));
                 return $this->errorResponse(
-                    "Account is temporarily locked. Try again in {$minutes} minute(s).",
+                    "Too many attempts. Try again in {$minutes} minute(s).",
                     423
-                );
+                )->header('Retry-After', (string) $seconds);
             }
 
             // Validate credentials WITHOUT establishing a session — that
             // way a bad password is just a counter increment, not a
             // partial login that other code could pick up.
             if (! Auth::guard('web')->validate($request->only(['email', 'password']))) {
+                $this->captcha->recordMiss($clientIp);
                 if ($user) {
                     $user->recordFailedLogin();
+                    $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_WRONG_PASSWORD, $request->input('email'), $user);
+                } else {
+                    $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_ACCOUNT_NOT_FOUND, $request->input('email'));
                 }
-                return $this->errorResponse(__('auth.failed'), 401);
+                return $this->errorResponse($genericFail, 401);
             }
 
             // Re-fetch in case the validate call mutated state (it shouldn't,
@@ -71,10 +117,14 @@ class AuthController extends Controller
             $user = User::where('email', $request->input('email'))->first();
 
             if (! $user || ! $user->active) {
+                $this->captcha->recordMiss($clientIp);
                 if ($user) {
                     $user->recordFailedLogin();
+                    $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_ACCOUNT_DEACTIVATED, $request->input('email'), $user);
+                } else {
+                    $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_ACCOUNT_NOT_FOUND, $request->input('email'));
                 }
-                return $this->errorResponse('Your account has been deactivated, please contact administrator.', 403);
+                return $this->errorResponse($genericFail, 401);
             }
 
             // All gates cleared — establish the auth user, reset the
@@ -84,8 +134,10 @@ class AuthController extends Controller
             // remember-me / event side-effects unnecessarily.
             Auth::guard('web')->login($user);
             $user->recordSuccessfulLogin();
+            $this->captcha->clear($clientIp);
             $user->api_token = $user->createToken('login')->plainTextToken;
 
+            $this->audit->record($request, 'api', LoginAuditLogger::OUTCOME_SUCCESS, $request->input('email'), $user);
             return $this->successResponse('Success', $user);
 
         } catch (\Exception $e) {

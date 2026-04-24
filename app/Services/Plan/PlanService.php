@@ -119,8 +119,21 @@ final class PlanService
             ->pluck('name', 'id')
             ->toArray();
 
-        $countQuery = $this->buildCountQuery($whereConditions);
-        $total = $countQuery->count();
+        $resultQuery = $this->buildOptimizedResultQuery($whereConditions, $accountId);
+        $this->applyPresetFilters($resultQuery, $filters);
+
+        // When preset filters reference aggregated columns (cash_receive,
+        // consumed_count, latest_advance_updated_at) the cheap
+        // buildCountQuery — which has no joinSubs — would over-count.
+        // Detect any preset and fall back to counting from the full
+        // result query in that case.
+        $hasPresets = $this->hasAnyPresetFilter($filters);
+        if ($hasPresets) {
+            $total = (clone $resultQuery)->count();
+        } else {
+            $countQuery = $this->buildCountQuery($whereConditions);
+            $total = $countQuery->count();
+        }
 
         Log::debug('Global Plans Datatable Debug', [
             'filters' => $filters,
@@ -128,16 +141,89 @@ final class PlanService
             'userCentres' => $userCentres,
             'accountId' => $accountId,
             'total' => $total,
-            'sql' => $countQuery->toSql(),
+            'has_presets' => $hasPresets,
         ]);
 
         return [
             'total' => $total,
-            'query' => $this->buildOptimizedResultQuery($whereConditions, $accountId),
+            'query' => $resultQuery,
             'orderBy' => $orderBy,
             'order' => $order,
             'filter_values' => ['locations' => $locations],
         ];
+    }
+
+    /**
+     * Detect whether any of the quick-filter preset chips are active.
+     * Used to decide whether the cheap count query is safe (it isn't —
+     * presets reference aggregate columns the cheap query can't see).
+     */
+    private function hasAnyPresetFilter(array $filters): bool
+    {
+        foreach (['has_balance', 'stale_90d', 'unused_inventory', 'mostly_done'] as $key) {
+            if (! empty($filters[$key])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Apply quick-filter preset chips to the result query. Each preset
+     * is a curated saved scan ops would otherwise rebuild manually:
+     *
+     *   at_risk_only      Has remaining sessions AND no future booking
+     *                     at the branch — the operational at-risk pool.
+     *   has_balance       Patient still owes money on the plan.
+     *   stale_90d         No payment / consumption in the last 90 days.
+     *   unused_inventory  At least one session, none consumed yet —
+     *                     fresh purchases that never started.
+     *   mostly_done       80%+ consumed — upsell candidates ready for
+     *                     the next plan.
+     *
+     * Presets are additive: combining "at_risk_only" + "mostly_done"
+     * narrows to mostly-completed plans where the patient is at risk.
+     */
+    private function applyPresetFilters(Builder $query, array $filters): void
+    {
+        if (! empty($filters['has_balance'])) {
+            // total > received - refund   ⇔   outstanding > 0
+            $query->whereRaw('
+                CASE WHEN packages.plan_type = "membership"
+                    THEN COALESCE(pb_agg.bundle_total, 0)
+                    ELSE COALESCE(ps_agg.service_total, 0)
+                END
+                - COALESCE(pa_agg.cash_receive, 0)
+                + COALESCE(pa_agg.refund_amount_calculated, 0) > 0
+            ');
+        }
+
+        if (! empty($filters['stale_90d'])) {
+            // Stale = no payment/bundle/service activity within 90 days.
+            // NULL latest counts as stale (never had any activity).
+            $query->where(function ($q): void {
+                $q->whereNull('pa_agg.max_updated')
+                    ->orWhereRaw('GREATEST(
+                        COALESCE(pa_agg.max_updated, "1970-01-01"),
+                        COALESCE(pb_agg.max_updated, "1970-01-01"),
+                        COALESCE(ps_agg.max_updated, "1970-01-01")
+                    ) < DATE_SUB(NOW(), INTERVAL 90 DAY)');
+            });
+        }
+
+        if (! empty($filters['unused_inventory'])) {
+            $query->whereRaw('COALESCE(ps_agg.session_count, 0) > 0')
+                ->whereRaw('COALESCE(ps_agg.consumed_count, 0) = 0');
+        }
+
+        if (! empty($filters['mostly_done'])) {
+            $query->whereRaw('COALESCE(ps_agg.session_count, 0) > 0')
+                ->whereRaw('
+                    (COALESCE(ps_agg.consumed_count, 0) * 100.0 / NULLIF(ps_agg.session_count, 0)) >= 80
+                ');
+        }
+
     }
 
     // ──────────────────────────────────────────────────
@@ -1083,6 +1169,25 @@ final class PlanService
                 DB::raw('COALESCE(pa_agg.settle_amount, 0) as settle_amount'),
                 DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
                 DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
+                DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
+                // At-risk flag — plan has unused sessions AND the
+                // patient has NO future booking at the same branch.
+                // Same definition as AtRiskPatientsMetric uses for the
+                // abandoned-package bucket; computed in SQL so the row
+                // ships with a ready-to-render flag.
+                DB::raw('CASE
+                    WHEN COALESCE(ps_agg.session_count, 0) > COALESCE(ps_agg.consumed_count, 0)
+                     AND packages.active = 1
+                     AND packages.is_refund = 0
+                     AND NOT EXISTS (
+                        SELECT 1 FROM appointments af_atrisk
+                        WHERE af_atrisk.patient_id = packages.patient_id
+                          AND af_atrisk.location_id = packages.location_id
+                          AND af_atrisk.scheduled_date > CURDATE()
+                          AND af_atrisk.deleted_at IS NULL
+                     )
+                    THEN 1 ELSE 0
+                END as is_at_risk'),
                 DB::raw('GREATEST(
                     COALESCE(pa_agg.max_updated, "1970-01-01"),
                     COALESCE(pb_agg.max_updated, "1970-01-01"),
@@ -1112,13 +1217,14 @@ final class PlanService
                 SELECT package_id,
                     SUM(tax_including_price) as service_total,
                     COUNT(*) as session_count,
+                    SUM(CASE WHEN is_consumed = 1 THEN 1 ELSE 0 END) as consumed_count,
                     MAX(updated_at) as max_updated
                 FROM package_services
                 WHERE package_id IN ('.$scopedSql.')
                 GROUP BY package_id
             ) as ps_agg'), fn ($join) => $join->on('ps_agg.package_id', '=', 'packages.id'))
             ->with([
-                'user:id,name,account_id',
+                'user:id,name,phone,account_id',
                 'user.membership:id,patient_id,code,active,end_date,is_referral',
                 'location:id,name,city_id',
                 'location.city:id,name',
@@ -1241,6 +1347,10 @@ final class PlanService
             return [];
         }
 
+        // Legacy "Name - phone" composite (autocomplete output) splits on
+        // the separator. Standalone inputs always search both name and
+        // phone columns so a phone-only query (e.g. "03026177615" pasted
+        // from the at-risk modal) actually finds the patient.
         $phone = null;
         if (str_contains($name, ' - ')) {
             [$namePart, $phonePart] = array_map('trim', explode(' - ', $name, 2));
@@ -1250,7 +1360,8 @@ final class PlanService
 
         return Patients::query()
             ->where(function ($q) use ($name, $phone): void {
-                $q->where('name', 'LIKE', '%'.$name.'%');
+                $q->where('name', 'LIKE', '%'.$name.'%')
+                    ->orWhere('phone', 'LIKE', '%'.$name.'%');
                 if ($phone !== null) {
                     $q->orWhere('phone', 'LIKE', '%'.$phone.'%');
                 }
@@ -1318,6 +1429,11 @@ final class PlanService
             $order = 'DESC';
         }
 
+        // Whitelist for click-to-sort headers in the datatable. Aliases
+        // (total_price, cash_receive, etc.) are computed in the SELECT
+        // list of buildOptimizedResultQuery, so MySQL can sort by them
+        // directly. `balance` is derived (total - cash + refund) and
+        // sorts by the equivalent expression.
         $fieldMap = [
             'id' => 'packages.id',
             'package_id' => 'packages.id',
@@ -1325,6 +1441,12 @@ final class PlanService
             'updated_at' => 'packages.updated_at',
             'packages.updated_at' => 'packages.updated_at',
             'latest_advance_updated_at' => 'latest_advance_updated_at',
+            'latest_activity' => 'latest_advance_updated_at',
+            'total' => 'total_price',
+            'total_price' => 'total_price',
+            'cash_receive' => 'cash_receive',
+            'session_count' => 'session_count',
+            'consumed_count' => 'consumed_count',
         ];
 
         return [$fieldMap[$orderBy] ?? 'packages.updated_at', $order];
