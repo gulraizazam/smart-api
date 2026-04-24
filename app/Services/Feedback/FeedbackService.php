@@ -95,9 +95,11 @@ class FeedbackService
 
     public function store(int $appointmentId, int $rating, ?string $comment = null): Feedback
     {
+        $appointment = Appointments::findOrFail($appointmentId);
+
+        $this->ensureAppointmentIsArrivedTreatment($appointment);
         $this->ensureNoDuplicateFeedback($appointmentId);
 
-        $appointment = Appointments::findOrFail($appointmentId);
         $patient = Patients::findOrFail($appointment->patient_id);
         $treatmentService = Services::findOrFail($appointment->service_id);
 
@@ -357,6 +359,26 @@ class FeedbackService
 
         if ($exists) {
             abort(422, 'Feedback already added for this appointment.');
+        }
+    }
+
+    /**
+     * Feedback is only valid on an arrived treatment (i.e. a procedure that
+     * actually took place). Rejects any appointment that is not a treatment
+     * or has not reached the "arrived" status — mirrors the eligibility
+     * shown on the management-dashboard Branch Feedback panel.
+     */
+    private function ensureAppointmentIsArrivedTreatment(Appointments $appointment): void
+    {
+        $isTreatment = (int) $appointment->appointment_type_id === 2;
+        $isArrived = (int) $appointment->appointment_status_id === 2;
+
+        if (! $isTreatment) {
+            abort(422, 'Feedback can only be recorded for treatment appointments.');
+        }
+
+        if (! $isArrived) {
+            abort(422, 'Feedback can only be recorded once the treatment has arrived.');
         }
     }
 

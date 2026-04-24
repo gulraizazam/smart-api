@@ -204,42 +204,231 @@ final class NewReturningMetric implements Metric
     }
 
     /**
-     * 45-day follow-up rate per branch — mirrors the doctor dashboard's
-     * Patient Return Rate semantics, but scoped to branch instead of doctor.
+     * Per-doctor retention at a specific branch — same matured 30–60 day
+     * cohort as the branch-level `follow_up_rate`, but grouped by the
+     * doctor who saw the patient in their a1 treatment so the dashboard
+     * can surface "who's holding patients at this branch".
      *
-     *   total           = distinct patients who had an arrived treatment at
-     *                     Branch X during the current range
-     *   with_followup   = of those, patients who had ANOTHER arrived treatment
-     *                     at Branch X within 45 days of their first treatment
-     *                     in range
-     *   follow_up_rate  = with_followup / total × 100
+     * Two rates per doctor:
+     *   - retention_rate             = "institutional" — patient returned
+     *                                  to the same branch (possibly to a
+     *                                  different doctor). Matches the
+     *                                  branch-level metric's semantics.
+     *   - same_doctor_retention_rate = "sticky" — patient returned and
+     *                                  was seen by the same doctor again.
+     *                                  Tells you how personally bonded
+     *                                  their patients are.
      *
-     * Answers "is the branch booking the next appointment?" — a short-horizon
-     * operational signal. Complements retention (which is long-horizon).
+     * Notes:
+     *   - A patient who saw two different doctors in the cohort at the
+     *     same branch counts once per doctor (each doctor's retention is
+     *     measured independently). Branch-level totals still dedupe.
+     *   - Doctors are sorted by branch retention_rate desc; cohort < 5
+     *     land at the bottom (low signal).
+     *
+     * @return array{
+     *   branch_id: int,
+     *   branch_name: string|null,
+     *   rows: list<array{doctor_id:int, doctor_name:string, cohort_count:int, returned_count:int, retention_rate:float|null, same_doctor_returned_count:int, same_doctor_retention_rate:float|null}>,
+     *   totals: array{cohort_count:int, returned_count:int, retention_rate:float|null},
+     * }
+     */
+    public function branchDoctorRetention(MetricScope $scope, int $branchId): array
+    {
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === []) {
+            return [
+                'branch_id' => $branchId,
+                'branch_name' => null,
+                'rows' => [],
+                'totals' => ['cohort_count' => 0, 'returned_count' => 0, 'retention_rate' => null],
+            ];
+        }
+
+        // Same matured trailing cohort the branch-level metric uses —
+        // keeps both views comparable.
+        $cohortEnd = now()->subDays(30)->toDateString();
+        $cohortStart = now()->subDays(60)->toDateString();
+        $today = now()->toDateString();
+
+        // Per-(doctor, patient) pair at the branch: two follow-up flags —
+        //   has_followup_branch      = later treatment at the branch by
+        //                              any doctor (institutional retention)
+        //   has_followup_same_doctor = later treatment at the branch by
+        //                              the SAME doctor as a1 (personal
+        //                              "sticky" retention)
+        // Two left-joins with different match conditions so both can be
+        // aggregated in one pass over the cohort rows.
+        $pairs = DB::table('appointments as a1')
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $today): void {
+                $join->on('a2.patient_id', '=', 'a1.patient_id')
+                    ->on('a2.location_id', '=', 'a1.location_id')
+                    ->where('a2.appointment_type_id', 2)
+                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2.scheduled_date', '<=', $today)
+                    ->whereColumn('a2.id', '!=', 'a1.id')
+                    ->whereNull('a2.deleted_at');
+            })
+            ->leftJoin('appointments as a2d', function ($join) use ($treatmentStatusIds, $today): void {
+                $join->on('a2d.patient_id', '=', 'a1.patient_id')
+                    ->on('a2d.location_id', '=', 'a1.location_id')
+                    ->on('a2d.doctor_id', '=', 'a1.doctor_id')
+                    ->where('a2d.appointment_type_id', 2)
+                    ->whereIn('a2d.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2d.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2d.scheduled_date', '<=', $today)
+                    ->whereColumn('a2d.id', '!=', 'a1.id')
+                    ->whereNull('a2d.deleted_at');
+            })
+            ->where('a1.account_id', $scope->accountId)
+            ->where('a1.location_id', $branchId)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
+            ->whereNull('a1.deleted_at')
+            ->select('a1.doctor_id', 'a1.patient_id')
+            ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_branch')
+            ->selectRaw('MAX(CASE WHEN a2d.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_same_doctor')
+            ->groupBy('a1.doctor_id', 'a1.patient_id');
+
+        $rows = DB::query()
+            ->fromSub($pairs, 'pb')
+            ->select('doctor_id')
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('SUM(has_followup_branch) AS with_followup_branch')
+            ->selectRaw('SUM(has_followup_same_doctor) AS with_followup_same')
+            ->groupBy('doctor_id')
+            ->get();
+
+        // Resolve doctor names in one query.
+        $doctorIds = $rows->pluck('doctor_id')->map(fn ($v): int => (int) $v)->all();
+        $names = $doctorIds === []
+            ? []
+            : DB::table('users')->whereIn('id', $doctorIds)->pluck('name', 'id')->toArray();
+
+        $branchName = DB::table('locations')->where('id', $branchId)->value('name');
+
+        $list = [];
+        foreach ($rows as $row) {
+            $doctorId = (int) $row->doctor_id;
+            $cohort = (int) $row->total;
+            $returnedBranch = (int) $row->with_followup_branch;
+            $returnedSame = (int) $row->with_followup_same;
+            $rateBranch = $cohort > 0 ? round(($returnedBranch / $cohort) * 100, 1) : null;
+            $rateSame = $cohort > 0 ? round(($returnedSame / $cohort) * 100, 1) : null;
+
+            $list[] = [
+                'doctor_id' => $doctorId,
+                'doctor_name' => $names[$doctorId] ?? "User #{$doctorId}",
+                'cohort_count' => $cohort,
+                'returned_count' => $returnedBranch,
+                'retention_rate' => $rateBranch,
+                'same_doctor_returned_count' => $returnedSame,
+                'same_doctor_retention_rate' => $rateSame,
+            ];
+        }
+
+        // Sort: low-cohort doctors (<5) get pushed to the bottom so 100%
+        // on 1 patient doesn't dominate. Within each tier, higher rate
+        // first — then cohort size as tiebreaker.
+        usort($list, function (array $a, array $b): int {
+            $aLow = $a['cohort_count'] < 5 ? 1 : 0;
+            $bLow = $b['cohort_count'] < 5 ? 1 : 0;
+            if ($aLow !== $bLow) {
+                return $aLow <=> $bLow;
+            }
+            $ar = $a['retention_rate'] ?? -1;
+            $br = $b['retention_rate'] ?? -1;
+            if ($ar !== $br) {
+                return $br <=> $ar;
+            }
+
+            return $b['cohort_count'] <=> $a['cohort_count'];
+        });
+
+        // Branch-level totals — patient counted once regardless of how
+        // many doctors saw them, so the card reconciles with the main
+        // panel's row rate. Re-uses followUpSplit() with a single-branch
+        // array so we're not inlining the same self-join twice.
+        $branchSplit = $this->followUpSplit($scope, [$branchId], $cohortStart, $cohortEnd);
+        $branchCohort = $branchSplit[$branchId]['total'] ?? 0;
+        $branchReturned = $branchSplit[$branchId]['with_followup'] ?? 0;
+        $branchRate = $branchCohort > 0
+            ? round(($branchReturned / $branchCohort) * 100, 1)
+            : null;
+
+        return [
+            'branch_id' => $branchId,
+            'branch_name' => $branchName,
+            'rows' => $list,
+            'totals' => [
+                'cohort_count' => $branchCohort,
+                'returned_count' => $branchReturned,
+                'retention_rate' => $branchRate,
+            ],
+        ];
+    }
+
+    /**
+     * Return rate per branch — ALWAYS uses a matured trailing cohort,
+     * independent of the top-bar date filter. This keeps the metric a
+     * true "rebook health" signal rather than an immature-window mirage
+     * on short ranges.
+     *
+     *   cohort (a1)     = distinct patients who had an ARRIVED treatment
+     *                     at Branch X between (today − 60d) and (today − 30d)
+     *   returned (a2)   = those cohort patients who have since had ANOTHER
+     *                     arrived treatment at Branch X (up to today),
+     *                     scheduled MORE THAN 7 DAYS after their a1
+     *   follow_up_rate  = returned / cohort × 100
+     *
+     * The 7-day gap filter excludes same-package multi-session noise
+     * (e.g. a laser package scheduling two sessions in the same week)
+     * so the metric reflects genuine rebooking, not continuation of an
+     * already-purchased course.
+     *
+     * Observation window per patient is 30–60 days depending on where in
+     * the cohort their a1 landed — every member has had ≥ 30 days to
+     * return, so the rate is always mature and comparable across branches.
+     *
+     * Answers "are patients coming back for more treatments?" — short-
+     * horizon operational signal, complements retention (long-horizon).
      *
      * @param  list<int>  $branchIds
      * @return array<int, array{total: int, with_followup: int}>
      */
-    private function followUpSplit(MetricScope $scope, array $branchIds, string $rangeStart, string $rangeEnd): array
+    private function followUpSplit(MetricScope $scope, array $branchIds, string $rangeStart, string $rangeEnd, ?string $asOf = null): array
     {
         $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
         if ($treatmentStatusIds === []) {
             return [];
         }
 
-        // Self-join: for each treatment at (branch, patient) in range, does a
-        // later treatment at same branch within 45 days exist? Aggregate to
-        // one "has_followup" flag per (patient, branch) pair, then sum per
-        // branch. MySQL runs this in a single pass with the composite index
-        // on (account_id, location_id, patient_id, scheduled_date).
+        // Fixed matured cohort. The method signature still takes the top-
+        // filter range so the caller doesn't need to change, but the
+        // values are deliberately unused here. `$asOf` lets callers
+        // reconstruct a historical snapshot (retention trend) — when
+        // null we anchor on today.
+        unset($rangeStart, $rangeEnd);
+        $anchor = $asOf !== null ? \Carbon\CarbonImmutable::parse($asOf) : \Carbon\CarbonImmutable::now();
+        $cohortEnd = $anchor->subDays(30)->toDateString();
+        $cohortStart = $anchor->subDays(60)->toDateString();
+        $today = $anchor->toDateString();
+
+        // Self-join: for each treatment at (branch, patient) in the cohort
+        // window, does any later ARRIVED treatment at the same branch exist
+        // MORE THAN 7 DAYS later and up to today? The 7-day gap filters
+        // multi-session-of-same-package noise. Aggregate to one
+        // has_followup flag per (patient, branch) pair, then sum per branch.
         $pairs = DB::table('appointments as a1')
-            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds): void {
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $today): void {
                 $join->on('a2.patient_id', '=', 'a1.patient_id')
                     ->on('a2.location_id', '=', 'a1.location_id')
                     ->where('a2.appointment_type_id', 2)
                     ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
-                    ->whereColumn('a2.scheduled_date', '>', 'a1.scheduled_date')
-                    ->whereRaw('a2.scheduled_date <= DATE_ADD(a1.scheduled_date, INTERVAL 45 DAY)')
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2.scheduled_date', '<=', $today)
                     ->whereColumn('a2.id', '!=', 'a1.id')
                     ->whereNull('a2.deleted_at');
             })
@@ -247,7 +436,7 @@ final class NewReturningMetric implements Metric
             ->whereIn('a1.location_id', $branchIds)
             ->where('a1.appointment_type_id', 2)
             ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
-            ->whereBetween('a1.scheduled_date', [$rangeStart, $rangeEnd])
+            ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
             ->whereNull('a1.deleted_at')
             ->select('a1.location_id', 'a1.patient_id')
             ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup')
@@ -390,6 +579,184 @@ final class NewReturningMetric implements Metric
             ->whereNull('deleted_at')
             ->groupBy('patient_id')
             ->select('patient_id', DB::raw('MIN(scheduled_date) as first_visit'));
+    }
+
+    /**
+     * Monthly retention-rate trend over the last N months, per branch +
+     * pooled. Each month gets its OWN matured 30-60 day cohort anchored
+     * at that month's end (clamped to today for the current month), so
+     * every data point is apples-to-apples — every cohort has had ≥30
+     * days to rebook by the time we measure it.
+     *
+     * Example: for "Feb 2026" on 2026-04-23:
+     *   asOf        = 2026-02-28
+     *   cohortStart = 2025-12-30   (asOf − 60d)
+     *   cohortEnd   = 2026-01-29   (asOf − 30d)
+     *   follow-ups counted through 2026-02-28
+     *
+     * Returns rows sorted by latest retention rate desc — same ranking
+     * UX as utilizationTrendByBranch — plus a pool row.
+     *
+     * @return array{months: list<string>, rows: list<array{branch_id:int, branch_name:string, points: list<array{month:string, cohort:int, returned:int, rate:float|null}>}>, pool: list<array{month:string, cohort:int, returned:int, rate:float|null}>}
+     */
+    public function retentionTrend(MetricScope $scope, int $monthsBack = 6): array
+    {
+        $branchIds = $this->branches->idsInScope($scope);
+        if ($branchIds === []) {
+            return ['months' => [], 'rows' => [], 'pool' => []];
+        }
+
+        $today = \Carbon\CarbonImmutable::now();
+        $branchNames = $this->branches->names($branchIds);
+
+        // Build the list of month anchors: oldest → newest. Each anchor
+        // is the last day of that calendar month, clamped to today for
+        // the current month (so "this month" isn't measured mid-way).
+        $anchors = [];
+        for ($i = $monthsBack - 1; $i >= 0; $i--) {
+            $monthStart = $today->subMonths($i)->startOfMonth();
+            $monthEnd = $monthStart->endOfMonth();
+            $asOf = $monthEnd->greaterThan($today) ? $today : $monthEnd;
+            $anchors[] = [
+                'label' => $monthStart->format('M Y'),
+                'key' => $monthStart->format('Y-m'),
+                'asOf' => $asOf->toDateString(),
+            ];
+        }
+
+        $months = array_map(fn ($a) => $a['key'], $anchors);
+
+        // Per-branch per-month bucket — seed zeros then fill.
+        $perBranch = [];
+        foreach ($branchIds as $bid) {
+            $perBranch[$bid] = [];
+            foreach ($anchors as $a) {
+                $perBranch[$bid][$a['key']] = ['cohort' => 0, 'returned' => 0];
+            }
+        }
+        $poolMonthly = [];
+        foreach ($anchors as $a) {
+            $poolMonthly[$a['key']] = ['cohort' => 0, 'returned' => 0];
+        }
+
+        // One followUpSplit() per month (it's a single grouped query,
+        // ~6× total). Pool aggregation dedupes patients across branches
+        // via a separate helper call so two-branch patients don't
+        // double-count.
+        foreach ($anchors as $a) {
+            $perBranchMonth = $this->followUpSplit($scope, $branchIds, '', '', $a['asOf']);
+            foreach ($branchIds as $bid) {
+                $perBranch[$bid][$a['key']] = [
+                    'cohort' => $perBranchMonth[$bid]['total'] ?? 0,
+                    'returned' => $perBranchMonth[$bid]['with_followup'] ?? 0,
+                ];
+            }
+            $pool = $this->followUpPool($scope, $branchIds, $a['asOf']);
+            $poolMonthly[$a['key']] = $pool;
+        }
+
+        $rows = [];
+        foreach ($branchIds as $bid) {
+            $points = [];
+            foreach ($anchors as $a) {
+                $c = $perBranch[$bid][$a['key']]['cohort'];
+                $r = $perBranch[$bid][$a['key']]['returned'];
+                $points[] = [
+                    'month' => $a['key'],
+                    'cohort' => $c,
+                    'returned' => $r,
+                    'rate' => $c > 0 ? round(($r / $c) * 100, 1) : null,
+                ];
+            }
+            $rows[] = [
+                'branch_id' => $bid,
+                'branch_name' => $branchNames[$bid] ?? "Branch #{$bid}",
+                'points' => $points,
+            ];
+        }
+
+        // Sort by latest-month rate desc (null last). Matches the
+        // ranked-list UX of utilizationTrendByBranch.
+        usort($rows, function (array $a, array $b): int {
+            $last = count($a['points']) - 1;
+            $ar = $a['points'][$last]['rate'] ?? -1;
+            $br = $b['points'][$last]['rate'] ?? -1;
+            return $br <=> $ar;
+        });
+
+        $pool = [];
+        foreach ($anchors as $a) {
+            $c = $poolMonthly[$a['key']]['cohort'];
+            $r = $poolMonthly[$a['key']]['returned'];
+            $pool[] = [
+                'month' => $a['key'],
+                'cohort' => $c,
+                'returned' => $r,
+                'rate' => $c > 0 ? round(($r / $c) * 100, 1) : null,
+            ];
+        }
+
+        return [
+            'months' => $months,
+            'rows' => $rows,
+            'pool' => $pool,
+        ];
+    }
+
+    /**
+     * Pool-level follow-up for a given asOf anchor — dedupes patients
+     * across branches so a patient who treated at two branches in the
+     * cohort window only counts once, and is "returned" if they rebooked
+     * at ANY branch. Same 7-day gap + matured-cohort rules.
+     *
+     * @param  list<int>  $branchIds
+     * @return array{cohort:int, returned:int}
+     */
+    private function followUpPool(MetricScope $scope, array $branchIds, string $asOf): array
+    {
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === []) {
+            return ['cohort' => 0, 'returned' => 0];
+        }
+
+        $anchor = \Carbon\CarbonImmutable::parse($asOf);
+        $cohortEnd = $anchor->subDays(30)->toDateString();
+        $cohortStart = $anchor->subDays(60)->toDateString();
+        $today = $anchor->toDateString();
+
+        // Per-patient (not per-(patient, branch)): did this patient have
+        // ANY cohort treatment, and if so, ANY later treatment >7d after
+        // one of their cohort visits at any branch in scope?
+        $pairs = DB::table('appointments as a1')
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $today, $branchIds): void {
+                $join->on('a2.patient_id', '=', 'a1.patient_id')
+                    ->whereIn('a2.location_id', $branchIds)
+                    ->where('a2.appointment_type_id', 2)
+                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2.scheduled_date', '<=', $today)
+                    ->whereColumn('a2.id', '!=', 'a1.id')
+                    ->whereNull('a2.deleted_at');
+            })
+            ->where('a1.account_id', $scope->accountId)
+            ->whereIn('a1.location_id', $branchIds)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
+            ->whereNull('a1.deleted_at')
+            ->select('a1.patient_id')
+            ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup')
+            ->groupBy('a1.patient_id');
+
+        $row = DB::query()
+            ->fromSub($pairs, 'p')
+            ->selectRaw('COUNT(*) AS cohort, SUM(has_followup) AS returned')
+            ->first();
+
+        return [
+            'cohort' => (int) ($row->cohort ?? 0),
+            'returned' => (int) ($row->returned ?? 0),
+        ];
     }
 
     // Branch id/name resolution moved to BranchResolver (shared across metrics).

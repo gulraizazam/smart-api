@@ -7,8 +7,12 @@ namespace App\Services\ManagementDashboard;
 use App\Models\User;
 use App\Services\Dashboard\Metrics\ActivityPulseMetric;
 use App\Services\Dashboard\Metrics\AppointmentsMetric;
+use App\Services\Dashboard\Metrics\ArrivalRateMetric;
+use App\Services\Dashboard\Metrics\AtRiskPatientsMetric;
 use App\Services\Dashboard\Metrics\AvgConversionValueMetric;
 use App\Services\Dashboard\Metrics\AvgTransactionValueMetric;
+use App\Services\Dashboard\Metrics\BranchDoctorFeedbackMetric;
+use App\Services\Dashboard\Metrics\BranchFeedbackMetric;
 use App\Services\Dashboard\Metrics\BranchLeaderboardMetric;
 use App\Services\Dashboard\Metrics\GenderRevenueMetric;
 use App\Services\Dashboard\Metrics\LeadGenderDeepDiveMetric;
@@ -19,11 +23,14 @@ use App\Services\Dashboard\Metrics\PatientCohortRetentionMetric;
 use App\Services\Dashboard\Metrics\ResourceLeaderboardMetric;
 use App\Services\Dashboard\Metrics\RevenueConcentrationMetric;
 use App\Services\Dashboard\Metrics\ServiceCategoryTrendMetric;
+use App\Services\Dashboard\Metrics\ServiceSalesTrendMetric;
+use App\Services\Dashboard\Metrics\UtilizationMetric;
 use App\Services\Dashboard\Support\Money;
 use App\Services\Dashboard\Support\ResourceScopeResolver;
 use App\Services\Dashboard\Support\SalesLedgerQuery;
 use App\Services\Dashboard\ValueObjects\DateRange;
 use App\Services\Dashboard\ValueObjects\MetricScope;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Thin orchestrator. Composes scope-aware Metric classes into section-level
@@ -44,6 +51,7 @@ final class ManagementDashboardService
         private readonly PatientCohortRetentionMetric $cohorts,
         private readonly RevenueConcentrationMetric $concentration,
         private readonly ServiceCategoryTrendMetric $categoryTrend,
+        private readonly ServiceSalesTrendMetric $serviceSalesTrend,
         private readonly ActivityPulseMetric $pulse,
         private readonly NewReturningMetric $newReturning,
         private readonly GenderRevenueMetric $genderRevenue,
@@ -52,6 +60,11 @@ final class ManagementDashboardService
         private readonly LeadGenderFunnelMetric $leadGenderFunnel,
         private readonly LeadGenderDeepDiveMetric $leadGenderDeepDive,
         private readonly LeadServiceInterestMetric $leadServiceInterest,
+        private readonly BranchFeedbackMetric $branchFeedback,
+        private readonly BranchDoctorFeedbackMetric $branchDoctorFeedback,
+        private readonly UtilizationMetric $utilization,
+        private readonly ArrivalRateMetric $arrivalRate,
+        private readonly AtRiskPatientsMetric $atRiskPatients,
     ) {}
 
     /**
@@ -90,6 +103,17 @@ final class ManagementDashboardService
     {
         $ratios = $this->appointments->ratios($scope, $range);
 
+        // Prior-period ratios = same window shifted one calendar month back.
+        // Gives each KPI tile a "% vs last period" chip without a second
+        // endpoint trip. We deliberately use the month-shift (not a rolling
+        // N-day shift) to match how management reads comparisons and to
+        // stay consistent with salesDeltas below.
+        $priorRange = new DateRange(
+            $range->from->subMonthNoOverflow(),
+            $range->to->subMonthNoOverflow(),
+        );
+        $priorRatios = $this->appointments->ratios($scope, $priorRange);
+
         return [
             'stats' => [
                 'sales' => $ratios['sales'],
@@ -98,10 +122,48 @@ final class ManagementDashboardService
                 'consultations_total' => $ratios['consultations']['total'],
                 'treatments_arrived' => $ratios['treatments']['arrived'],
                 'treatments_total' => $ratios['treatments']['total'],
+                'deltas' => [
+                    'sales_pct' => Money::percentDelta($ratios['sales'], $priorRatios['sales']),
+                    'revenue_pct' => Money::percentDelta($ratios['revenue_consumed'], $priorRatios['revenue_consumed']),
+                    'consultations_arrived_pct' => Money::percentDelta(
+                        $ratios['consultations']['arrived'],
+                        $priorRatios['consultations']['arrived'],
+                    ),
+                    'treatments_arrived_pct' => Money::percentDelta(
+                        $ratios['treatments']['arrived'],
+                        $priorRatios['treatments']['arrived'],
+                    ),
+                ],
             ],
             'centre_sales' => $this->appointments->salesByCentre($scope, $range),
-            'sales_deltas' => $this->salesDeltas($scope, $range, (float) $ratios['sales']),
+            'sales_deltas' => $this->cachedSalesDeltas($scope, $range, (float) $ratios['sales']),
         ];
+    }
+
+    /**
+     * Sales Momentum is expensive (two extra SalesLedgerQuery::totalNet
+     * passes for MoM and YoY baselines) and the inputs change only when
+     * scope/range change. 5-min cache mirrors the policy used across
+     * individual metric classes.
+     *
+     * Keyed by scope + range + the current sales value so the deltas stay
+     * consistent with whatever Stats displayed — if Stats recomputes a
+     * different current value (cache miss), we recompute deltas too.
+     *
+     * @return array<string, mixed>
+     */
+    private function cachedSalesDeltas(MetricScope $scope, DateRange $range, float $current): array
+    {
+        $cacheKey = 'mgmt_dash:sales_deltas:'
+            .$scope->cacheKey()
+            .'|'.$range->startString().'..'.$range->endString()
+            .'|c='.(int) round($current);
+
+        return Cache::remember(
+            $cacheKey,
+            300,
+            fn () => $this->salesDeltas($scope, $range, $current),
+        );
     }
 
     /**
@@ -235,6 +297,59 @@ final class ManagementDashboardService
     }
 
     /**
+     * Per-doctor retention breakdown for a single branch — used by the
+     * hover card on the Client Retention Rate panel.
+     *
+     * @return array<string, mixed>
+     */
+    public function branchDoctorRetention(MetricScope $scope, int $branchId): array
+    {
+        return $this->newReturning->branchDoctorRetention($scope, $branchId);
+    }
+
+    /**
+     * Monthly retention-rate trend per branch + pool over the last N
+     * months. Each month gets its own matured 30-60 day cohort anchored
+     * at the month-end so the points are comparable.
+     *
+     * @return array<string, mixed>
+     */
+    public function retentionTrend(MetricScope $scope, int $monthsBack = 6): array
+    {
+        return $this->newReturning->retentionTrend($scope, $monthsBack);
+    }
+
+    /**
+     * Pool-level Recoverable Revenue across all branches in scope —
+     * powers the headline tile on the Client Retention Rate panel.
+     *
+     * @return array<string, mixed>
+     */
+    public function atRiskSummary(MetricScope $scope): array
+    {
+        return $this->atRiskPatients->summary($scope);
+    }
+
+    /**
+     * Named at-risk patients at a single branch, classified into one of
+     * four buckets and value-tiered. Drives the drill-in modal.
+     *
+     * @param  list<string>|null  $riskTypes
+     * @param  list<string>|null  $valueTiers
+     * @return array<string, mixed>
+     */
+    public function atRiskList(
+        MetricScope $scope,
+        int $branchId,
+        ?array $riskTypes,
+        ?array $valueTiers,
+        int $limit,
+        int $offset,
+    ): array {
+        return $this->atRiskPatients->list($scope, $branchId, $riskTypes, $valueTiers, $limit, $offset);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function branches(MetricScope $scope, DateRange $range): array
@@ -245,9 +360,76 @@ final class ManagementDashboardService
     /**
      * @return array<string, mixed>
      */
+    public function arrivalRate(MetricScope $scope, DateRange $range, int $type, string $groupBy): array
+    {
+        return $this->arrivalRate->compute($scope, $range, $type, $groupBy);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function branchFeedback(MetricScope $scope, DateRange $range): array
+    {
+        return $this->branchFeedback->compute($scope, $range);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function branchDoctorFeedback(MetricScope $scope, DateRange $range, int $branchId): array
+    {
+        return $this->branchDoctorFeedback->compute($scope, $range, $branchId);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function people(MetricScope $scope, DateRange $range): array
     {
         return $this->resourceLeaderboard->compute($scope, $range);
+    }
+
+    /**
+     * Per-doctor service utilization (arrived service minutes / rota-
+     * available minutes). See UtilizationMetric for business rules.
+     *
+     * @return array<string, mixed>
+     */
+    public function utilization(MetricScope $scope, DateRange $range): array
+    {
+        return $this->utilization->compute($scope, $range);
+    }
+
+    /**
+     * Hour × day-of-week utilization heatmap for the doctor pool.
+     *
+     * @return array<string, mixed>
+     */
+    public function utilizationHeatmap(MetricScope $scope, DateRange $range): array
+    {
+        return $this->utilization->heatmap($scope, $range);
+    }
+
+    /**
+     * Pool utilization trend over the last N full calendar months.
+     * Date range is derived from `now()`, not the top-bar filter — the
+     * trend is a fixed-horizon view.
+     *
+     * @return array<string, mixed>
+     */
+    public function utilizationTrend(MetricScope $scope, int $monthsBack = 6): array
+    {
+        return $this->utilization->trend($scope, $monthsBack);
+    }
+
+    /**
+     * Per-branch utilization trend over the last N months.
+     *
+     * @return array<string, mixed>
+     */
+    public function utilizationTrendByBranch(MetricScope $scope, int $monthsBack = 6): array
+    {
+        return $this->utilization->trendByBranch($scope, $monthsBack);
     }
 
     /**
@@ -271,6 +453,18 @@ final class ManagementDashboardService
     public function serviceCategoryTrend(MetricScope $scope, DateRange $range, int $months = 12): array
     {
         return $this->categoryTrend->compute($scope, $range, $months);
+    }
+
+    /**
+     * Service-level sales trend — same response shape as
+     * serviceCategoryTrend but grouped by individual service instead of
+     * rolled up to top-level category.
+     *
+     * @return array<string, mixed>
+     */
+    public function serviceSalesTrend(MetricScope $scope, DateRange $range, int $months = 12): array
+    {
+        return $this->serviceSalesTrend->compute($scope, $range, $months);
     }
 
     /**

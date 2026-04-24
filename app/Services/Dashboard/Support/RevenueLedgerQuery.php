@@ -35,6 +35,7 @@ final class RevenueLedgerQuery
 
         return $query
             ->where("{$p}cash_amount", '!=', 0)
+            ->whereNull("{$p}deleted_at")
             ->where(function (Builder $outer) use ($p): void {
                 $outer->where(function (Builder $in) use ($p): void {
                     $in->where("{$p}cash_flow", 'in')
