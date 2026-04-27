@@ -289,9 +289,23 @@ class BusinessClosureController extends Controller
                 'data' => [],
             ];
 
+            // "All Centres" detection: pivot empty (our "all" sentinel), the
+            // special All-Centres virtual location attached (ID 30, see
+            // BusinessClosureService), or legacy data where every active
+            // location for the account is attached.
+            $allCentresVirtualId = 30;
+            $activeLocationCount = Locations::where('account_id', Auth::user()->account_id)
+                ->where('active', '1')
+                ->count();
+
             foreach ($closures as $closure) {
-                $locationNames = $closure->locations->isEmpty()
-                    ? 'All Locations'
+                $attachedIds = $closure->locations->pluck('id');
+                $isAllCentres = $closure->locations->isEmpty()
+                    || $attachedIds->contains($allCentresVirtualId)
+                    || ($activeLocationCount > 0 && $attachedIds->count() >= $activeLocationCount);
+
+                $locationNames = $isAllCentres
+                    ? 'All Centres'
                     : $closure->locations->pluck('name')->implode(', ');
 
                 $records['data'][] = [

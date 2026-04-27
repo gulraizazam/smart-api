@@ -445,7 +445,7 @@ function populateLocations(selector, locations) {
     var $select = $(selector);
     $select.empty();
 
-    $select.append(new Option('All Locations', 'all', false, false));
+    $select.append(new Option('All Centres', 'all', false, false));
 
     if (locations && locations.length > 0) {
         for (var i = 0; i < locations.length; i++) {
