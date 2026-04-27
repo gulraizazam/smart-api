@@ -69,6 +69,20 @@ class ManagementDashboardApiController extends Controller
         return $this->handleSection($request, 'branches', fn ($scope, $range) => $this->service->branches($scope, $range));
     }
 
+    public function branchDoctorBreakdown(Request $request): JsonResponse
+    {
+        $branchId = (int) $request->query('branch_id', 0);
+        if ($branchId <= 0) {
+            return $this->errorResponse('Invalid request.', 422, ['branch_id' => ['branch_id is required.']]);
+        }
+
+        return $this->handleSection(
+            $request,
+            'branch-doctor-breakdown',
+            fn ($scope, $range) => $this->service->branchDoctorBreakdown($scope, $branchId, $range),
+        );
+    }
+
     public function branchFeedback(Request $request): JsonResponse
     {
         return $this->handleSection($request, 'branch-feedback', fn ($scope, $range) => $this->service->branchFeedback($scope, $range));
@@ -122,6 +136,17 @@ class ManagementDashboardApiController extends Controller
         );
     }
 
+    public function atRiskOverview(Request $request): JsonResponse
+    {
+        $patientLimit = max(1, min(100, (int) $request->query('patient_limit', 25)));
+
+        return $this->handleSection(
+            $request,
+            'at-risk-overview',
+            fn ($scope) => $this->service->atRiskOverview($scope, $patientLimit),
+        );
+    }
+
     public function atRiskList(Request $request): JsonResponse
     {
         $branchId = (int) $request->query('branch_id', 0);
@@ -129,7 +154,7 @@ class ManagementDashboardApiController extends Controller
             return $this->errorResponse('Invalid request.', 422, ['branch_id' => ['branch_id is required.']]);
         }
 
-        $riskTypes = $this->csvParam($request->query('risk_types'));
+        $signals = $this->csvParam($request->query('signals'));
         $valueTiers = $this->csvParam($request->query('value_tiers'));
         $limit = max(1, min(200, (int) $request->query('limit', 50)));
         $offset = max(0, (int) $request->query('offset', 0));
@@ -140,7 +165,7 @@ class ManagementDashboardApiController extends Controller
             fn ($scope) => $this->service->atRiskList(
                 $scope,
                 $branchId,
-                $riskTypes,
+                $signals,
                 $valueTiers,
                 $limit,
                 $offset,

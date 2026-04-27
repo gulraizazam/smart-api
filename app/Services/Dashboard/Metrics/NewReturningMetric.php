@@ -81,8 +81,27 @@ final class NewReturningMetric implements Metric
         $rangeStart = $range->startString();
         $rangeEnd = $range->endString();
 
-        $headcountByBranch = $this->headcountSplit($scope, $branchIds, $qualifyingStatusIds, $rangeStart, $rangeEnd);
-        $revenueByBranch = $this->revenueSplit($scope, $branchIds, $qualifyingStatusIds, $rangeStart, $rangeEnd);
+        // Pre-compute the lifetime-first-visit map ONCE for only the
+        // patients that actually appear in the current range. The naive
+        // approach (a join-subquery against `appointments` with no
+        // patient filter) made the planner aggregate first-visit for
+        // every patient ever recorded — slow on the in-range scan that
+        // came after. Two cheap pre-queries instead of one giant one.
+        $patientsInRange = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->whereIn('appointment_status_id', $qualifyingStatusIds)
+            ->whereBetween('scheduled_date', [$rangeStart, $rangeEnd])
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->pluck('patient_id')
+            ->map(static fn ($v): int => (int) $v)
+            ->all();
+
+        $firstVisitByPatient = $this->firstVisitMap($scope, $qualifyingStatusIds, $patientsInRange);
+
+        $headcountByBranch = $this->headcountSplit($scope, $branchIds, $qualifyingStatusIds, $rangeStart, $rangeEnd, $firstVisitByPatient);
+        $revenueByBranch = $this->revenueSplit($scope, $branchIds, $qualifyingStatusIds, $rangeStart, $rangeEnd, $firstVisitByPatient);
         $retentionByBranch = $this->retentionSplit($scope, $branchIds, $qualifyingStatusIds, $range);
         $followUpByBranch = $this->followUpSplit($scope, $branchIds, $rangeStart, $rangeEnd);
         $branchNames = $this->branches->names($branchIds);
@@ -471,33 +490,32 @@ final class NewReturningMetric implements Metric
         array $statusIds,
         string $rangeStart,
         string $rangeEnd,
+        array $firstVisitByPatient = [],
     ): array {
-        $firstVisits = $this->firstVisitSubquery($scope, $statusIds);
-
-        $rows = DB::table('appointments as a')
-            ->joinSub($firstVisits, 'firsts', 'firsts.patient_id', '=', 'a.patient_id')
-            ->where('a.account_id', $scope->accountId)
-            ->whereIn('a.location_id', $branchIds)
-            ->whereIn('a.appointment_status_id', $statusIds)
-            ->whereBetween('a.scheduled_date', [$rangeStart, $rangeEnd])
-            ->whereNull('a.deleted_at')
-            ->selectRaw(
-                '
-                    a.location_id,
-                    COUNT(DISTINCT CASE WHEN firsts.first_visit >= ? THEN a.patient_id END) AS new_patients,
-                    COUNT(DISTINCT CASE WHEN firsts.first_visit <  ? THEN a.patient_id END) AS returning_patients
-                ',
-                [$rangeStart, $rangeStart],
-            )
-            ->groupBy('a.location_id')
+        // Single scan over in-range appointments + a PHP-side bucket
+        // using the pre-computed first-visit map. Avoids the heavy
+        // join-subquery against the full appointments table.
+        $rows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->whereIn('appointment_status_id', $statusIds)
+            ->whereBetween('scheduled_date', [$rangeStart, $rangeEnd])
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->select('location_id', 'patient_id')
             ->get();
 
         $out = [];
         foreach ($rows as $row) {
-            $out[(int) $row->location_id] = [
-                'new' => (int) $row->new_patients,
-                'returning' => (int) $row->returning_patients,
-            ];
+            $bid = (int) $row->location_id;
+            $pid = (int) $row->patient_id;
+            $out[$bid] ??= ['new' => 0, 'returning' => 0];
+            $first = $firstVisitByPatient[$pid] ?? null;
+            if ($first !== null && $first >= $rangeStart) {
+                $out[$bid]['new']++;
+            } else {
+                $out[$bid]['returning']++;
+            }
         }
 
         return $out;
@@ -518,47 +536,81 @@ final class NewReturningMetric implements Metric
         array $statusIds,
         string $rangeStart,
         string $rangeEnd,
+        array $firstVisitByPatient = [],
     ): array {
-        $firstVisits = $this->firstVisitSubquery($scope, $statusIds);
-
-        $rows = DB::table('package_advances as pa')
-            ->join('packages as p', 'pa.package_id', '=', 'p.id')
-            ->joinSub($firstVisits, 'firsts', 'firsts.patient_id', '=', 'p.patient_id')
-            ->where('pa.account_id', $scope->accountId)
-            ->whereIn('pa.location_id', $branchIds)
-            ->whereDate('pa.created_at', '>=', $rangeStart)
-            ->whereDate('pa.created_at', '<=', $rangeEnd)
-            ->where('pa.cash_amount', '!=', 0)
+        // SUM per (location, patient) at the DB. `package_advances`
+        // already carries patient_id, so the previous JOIN to `packages`
+        // was redundant — dropped it. Yields ~one row per patient-branch
+        // instead of one row per ledger event. Bucketing into new vs
+        // returning happens in PHP using the pre-computed first-visit map.
+        $rows = DB::table('package_advances')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->whereDate('created_at', '>=', $rangeStart)
+            ->whereDate('created_at', '<=', $rangeEnd)
+            ->where('cash_amount', '!=', 0)
+            ->whereNull('deleted_at')
             ->where(function ($outer): void {
                 $outer->where(function ($in): void {
-                    $in->where('pa.cash_flow', 'in')
-                        ->where('pa.is_adjustment', 0)
-                        ->where('pa.is_tax', 0)
-                        ->where('pa.is_cancel', 0);
+                    $in->where('cash_flow', 'in')
+                        ->where('is_adjustment', 0)
+                        ->where('is_tax', 0)
+                        ->where('is_cancel', 0);
                 })->orWhere(function ($out): void {
-                    $out->where('pa.cash_flow', 'out')
-                        ->where('pa.is_refund', 1);
+                    $out->where('cash_flow', 'out')
+                        ->where('is_refund', 1);
                 });
             })
+            ->groupBy('location_id', 'patient_id')
+            ->select('location_id', 'patient_id')
             ->selectRaw(
-                "
-                    pa.location_id,
-                    COALESCE(SUM(CASE WHEN firsts.first_visit >= ? AND pa.cash_flow = 'in'  THEN pa.cash_amount ELSE 0 END), 0)
-                      - COALESCE(SUM(CASE WHEN firsts.first_visit >= ? AND pa.cash_flow = 'out' THEN pa.cash_amount ELSE 0 END), 0) AS new_revenue,
-                    COALESCE(SUM(CASE WHEN firsts.first_visit <  ? AND pa.cash_flow = 'in'  THEN pa.cash_amount ELSE 0 END), 0)
-                      - COALESCE(SUM(CASE WHEN firsts.first_visit <  ? AND pa.cash_flow = 'out' THEN pa.cash_amount ELSE 0 END), 0) AS returning_revenue
-                ",
-                [$rangeStart, $rangeStart, $rangeStart, $rangeStart],
+                "COALESCE(SUM(CASE WHEN cash_flow = 'in' THEN cash_amount ELSE 0 END), 0)
+                 - COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_refund = 1 THEN cash_amount ELSE 0 END), 0) AS net"
             )
-            ->groupBy('pa.location_id')
             ->get();
 
         $out = [];
-        foreach ($rows as $row) {
-            $out[(int) $row->location_id] = [
-                'new' => (float) $row->new_revenue,
-                'returning' => (float) $row->returning_revenue,
-            ];
+        foreach ($rows as $r) {
+            $bid = (int) $r->location_id;
+            $pid = (int) $r->patient_id;
+            $first = $firstVisitByPatient[$pid] ?? null;
+            $bucket = ($first !== null && $first >= $rangeStart) ? 'new' : 'returning';
+            $out[$bid] ??= ['new' => 0.0, 'returning' => 0.0];
+            $out[$bid][$bucket] += (float) $r->net;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Lifetime-first qualified visit per patient — pre-computed in PHP
+     * and indexed by patient_id. Filters to only patients we actually
+     * need so the GROUP BY is bounded.
+     *
+     * @param  list<int>  $statusIds
+     * @param  list<int>  $patientIds
+     * @return array<int, string>  patient_id => first_visit (Y-m-d)
+     */
+    private function firstVisitMap(MetricScope $scope, array $statusIds, array $patientIds): array
+    {
+        if ($patientIds === []) {
+            return [];
+        }
+
+        $out = [];
+        foreach (array_chunk($patientIds, 5000) as $chunk) {
+            $rows = DB::table('appointments')
+                ->where('account_id', $scope->accountId)
+                ->whereIn('appointment_status_id', $statusIds)
+                ->whereIn('patient_id', $chunk)
+                ->whereNull('deleted_at')
+                ->groupBy('patient_id')
+                ->select('patient_id')
+                ->selectRaw('MIN(scheduled_date) AS first_visit')
+                ->get();
+            foreach ($rows as $r) {
+                $out[(int) $r->patient_id] = (string) $r->first_visit;
+            }
         }
 
         return $out;

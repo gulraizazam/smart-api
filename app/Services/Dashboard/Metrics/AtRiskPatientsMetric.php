@@ -12,39 +12,52 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
- * At-Risk Patients — turns the Client Retention Rate metric into an
- * actionable callback queue.
+ * At-Risk Patients — actionable callback queue driven by three
+ * independent slippage signals. A patient is "at-risk" if ANY of the
+ * signals fire as of today.
  *
- * Anchors on the same matured 30–60 day cohort as
- * NewReturningMetric::followUpSplit() so the panel-to-list bridge is
- * exact: the patients in this list ARE the (cohort − returned) gap
- * that the retention rate measures.
+ *   1. Cadence Break
+ *      ≥2 arrived treatments in the trailing 180-day baseline window,
+ *      and days_since_last_visit > max(1.5 × median_gap, 30).
+ *      The 30-day floor prevents false positives on tightly-spaced
+ *      sequences (consult → treatment within a week).
+ *
+ *   2. Abandoned Package
+ *      Active package + unused sessions + no future booking + last
+ *      visit ≥ 30 days. Patient may have zero recent treatments — they
+ *      qualify on the unused-money signal alone. Each abandoned-package
+ *      patient gets a Priority tag:
+ *        High   — remaining ≥ PKR 1,000 AND last_visit 30–60 days
+ *        Medium — remaining ≥ PKR 1,000 AND last_visit 60–90 days
+ *        Low    — remaining < PKR 1,000 OR  last_visit > 90 days
+ *
+ *   3. Broken Commitment
+ *      No-show or cancellation AFTER the patient's last successful
+ *      visit, within the last 90 days, AND no future booking. A patient
+ *      who already ghosted on a booking and hasn't re-booked is more
+ *      at-risk than one who simply went silent.
+ *
+ * Exclusions:
+ *   - 0 visits in last 180 days AND no abandoned package → Dormant
+ *     pool (separate re-engagement campaign, not surfaced here).
+ *   - Single-visit-only patients (lifetime visits = 1) → first-visit
+ *     retention pool, separate funnel.
+ *   - last_visit < 30 days AND no other signal → still on schedule.
+ *
+ * Patients hitting multiple signals appear once, classified by their
+ * highest-priority signal in this order:
+ *   abandoned_package(high) > cadence_break > broken_commitment >
+ *   abandoned_package(medium) > abandoned_package(low)
+ * Other firing signals are listed in `signals[]` for the UI to badge.
+ *
+ * Sort within Cadence Break is by absolute days overdue (`days_since_last
+ * - threshold`) desc — a monthly customer 60d overdue is more recoverable
+ * than a quarterly one 60d overdue.
  *
  * Two public surfaces:
- *
- *   summary($scope)
- *     Pool-level Recoverable Revenue tile across all branches in scope.
- *     Splits the headline number into (a) prepaid_unused — money
- *     already received that we still owe service against — and
- *     (b) unbilled_commitment — future revenue we lose if the patient
- *     walks. The split matters operationally: prepaid-unused-dominant
- *     packages are the easiest saves (patient already paid, just needs
- *     to book), while unbilled-commitment-dominant packages need a
- *     collections-tinged conversation.
- *
- *   list($scope, $branchId, $riskTypes, $valueTiers, $limit, $offset)
- *     Named patients at a single branch, classified into one of five
- *     buckets, ranked by recoverable value. Filters drive the operator
- *     view (default to VIP+High × Abandoned+Lapsed in the UI).
- *
- * Risk buckets, checked in priority order per cohort patient:
- *   1. Abandoned package    — has ≥1 active package with unused sessions
- *   2. Lapsed regular       — ≥3 prior visits + broke their cadence
- *   3. Maintenance overdue  — 2 prior visits + all packages exhausted +
- *                             past their cadence
- *   4. Tried-once dropout   — exactly 1 lifetime arrived treatment
- *   5. (filtered out)       — has a future booking, or doesn't fit any
- *                             of the above
+ *   summary($scope) — pool-level Recoverable Revenue tile.
+ *   overview($scope) / list($scope, $branchId, ...) — branch + patient
+ *     drill-down for the dashboard panel and modal.
  *
  * Value tiers are percentile-based on trailing-12mo spend computed once
  * per query against the in-scope patient pool. Reuses the canonical
@@ -58,16 +71,34 @@ final class AtRiskPatientsMetric
 {
     private const CACHE_TTL = 300;
 
-    private const COHORT_DAYS_END = 30;
+    /** Trailing window used to score cadence and define candidate pool. */
+    private const BASELINE_WINDOW_DAYS = 180;
 
-    private const COHORT_DAYS_START = 60;
+    /** Cadence-break: trigger floor (no flag fires before 30d since last visit). */
+    private const CADENCE_FLOOR_DAYS = 30;
 
-    private const REBOOK_GAP_DAYS = 7;
+    /** Cadence-break: multiplier on personal median gap. */
+    private const CADENCE_MULTIPLIER = 1.5;
 
+    /** Abandoned package: minimum days since last visit before flagging. */
+    private const ABANDONED_MIN_DAYS = 30;
+
+    /** Abandoned package: priority value cutoff (PKR). */
+    private const ABANDONED_VALUE_CUTOFF = 1000.0;
+
+    /** Abandoned package: high-priority recency boundary (last visit days ≤ this). */
+    private const ABANDONED_HIGH_DAYS_END = 60;
+
+    /** Abandoned package: medium-priority recency boundary. */
+    private const ABANDONED_MEDIUM_DAYS_END = 90;
+
+    /** Package created-date cutoff — only consider packages from last 365d. */
     private const PACKAGE_RECENCY_DAYS = 365;
 
+    /** Value-tier window — trailing 12mo spend. */
     private const VALUE_WINDOW_DAYS = 365;
 
+    /** Broken-commitment lookback. */
     private const BROKEN_COMMITMENT_WINDOW_DAYS = 90;
 
     /** Status ids: 3 = "Didn't show up", 4 = "Cancelled". */
@@ -93,9 +124,275 @@ final class AtRiskPatientsMetric
      */
     public function summary(MetricScope $scope): array
     {
-        $cacheKey = 'mgmt_dash:at_risk_summary:'.$scope->cacheKey();
+        $cacheKey = 'mgmt_dash:at_risk_summary:v2:'.$scope->cacheKey();
 
         return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->buildSummary($scope));
+    }
+
+    /**
+     * Two-lens overview that powers the inline At-Risk panel next to the
+     * Client Retention Rate panel. One round trip returns:
+     *   - branches  : per-branch rollup sorted by recoverable_value desc
+     *   - top_patients_by_recoverable : top N patients across all branches
+     *   - top_patients_by_spend       : top N patients by trailing-12mo spend
+     *
+     * Both patient lists carry branch_id/branch_name so the inline panel
+     * can route a row click to the existing AtRiskPatientsModal.
+     *
+     * @return array{
+     *   branches: list<array{
+     *     branch_id: int,
+     *     branch_name: string|null,
+     *     at_risk_count: int,
+     *     recoverable_value: float,
+     *     prepaid_unused: float,
+     *     unbilled_commitment: float,
+     *     cadence_break_count: int,
+     *     abandoned_package_count: int,
+     *     broken_commitment_count: int,
+     *     priority_high_count: int,
+     *     priority_medium_count: int,
+     *     priority_low_count: int,
+     *   }>,
+     *   top_patients_by_recoverable: list<array<string, mixed>>,
+     *   top_patients_by_spend: list<array<string, mixed>>,
+     *   pool_total: int,
+     *   pool_recoverable: float,
+     * }
+     */
+    public function overview(MetricScope $scope, int $patientLimit = 25): array
+    {
+        $cacheKey = 'mgmt_dash:at_risk_overview:v2:'
+            .$scope->cacheKey()
+            .'|p'.$patientLimit;
+
+        return Cache::remember(
+            $cacheKey,
+            self::CACHE_TTL,
+            fn () => $this->buildOverview($scope, $patientLimit),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildOverview(MetricScope $scope, int $patientLimit): array
+    {
+        $branchIds = $this->branches->idsInScope($scope);
+        if ($branchIds === []) {
+            return [
+                'branches' => [],
+                'top_patients_by_recoverable' => [],
+                'top_patients_by_spend' => [],
+                'pool_total' => 0,
+                'pool_recoverable' => 0.0,
+            ];
+        }
+
+        $branchNames = $this->branches->names($branchIds);
+
+        // Pre-fetch the slow shared queries across ALL branches in one
+        // shot. Modal/list path keeps the per-branch queries — fine for
+        // a single-click drill-down.
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        $today = now()->toDateString();
+
+        if ($treatmentStatusIds === []) {
+            $bulkAbandoned = $bulkCohort = [];
+        } else {
+            // Abandoned packages first — feed into candidate-pool union.
+            $bulkAbandoned = $this->abandonedPackagesByBranchPatient(
+                $scope,
+                array_map('intval', $branchIds),
+            );
+            // Candidate pool = recent-treatment ∪ abandoned-package, minus
+            // future-bookings. Composed against the bulk-abandoned map.
+            $bulkCohort = $this->candidatePoolByBranch(
+                $scope,
+                array_map('intval', $branchIds),
+                $treatmentStatusIds,
+                $bulkAbandoned,
+                $today,
+            );
+        }
+
+        // Union of every candidate patient across branches — trailing
+        // spend + profile lookups are branch-agnostic.
+        $allPatientIds = [];
+        $patientIdsByBranch = [];
+        foreach ($bulkCohort as $b => $branchPatients) {
+            foreach ($branchPatients as $pid => $_) {
+                $allPatientIds[$pid] = true;
+                $patientIdsByBranch[(int) $b][] = (int) $pid;
+            }
+        }
+        $allPatientIds = array_keys($allPatientIds);
+        $bulkSpend = $allPatientIds !== [] ? $this->trailingSpend($scope, $allPatientIds) : [];
+        $bulkProfiles = $allPatientIds !== [] ? $this->patientProfiles($allPatientIds) : [];
+
+        // Pre-fetch the heavy per-branch queries in bulk — visit stats,
+        // lifetime counts, broken commitments. Each is one DB roundtrip
+        // covering every (branch, candidate-patient) pair, then sliced
+        // per-branch into buildBranchPoolBody. Cuts the per-branch loop
+        // from ~3 queries × N branches to a constant 3 queries.
+        $bulkBaselineStats = $treatmentStatusIds !== [] && $allPatientIds !== []
+            ? $this->visitStatsInWindowByBranch(
+                $scope,
+                array_map('intval', $branchIds),
+                $treatmentStatusIds,
+                $patientIdsByBranch,
+                now()->subDays(self::BASELINE_WINDOW_DAYS)->toDateString(),
+                $today,
+            )
+            : [];
+        $bulkLifetimeCounts = $treatmentStatusIds !== [] && $allPatientIds !== []
+            ? $this->lifetimeVisitCountsByBranch(
+                $scope,
+                array_map('intval', $branchIds),
+                $treatmentStatusIds,
+                $patientIdsByBranch,
+                $today,
+            )
+            : [];
+        $bulkBroken = $allPatientIds !== []
+            ? $this->brokenCommitmentsByPatientBulk(
+                $scope,
+                array_map('intval', $branchIds),
+                $bulkCohort,
+                $today,
+            )
+            : [];
+
+        // Doctor names — collect every last-visit doctor across all
+        // branches in one users lookup. Matches the existing pattern for
+        // patient profiles + spend.
+        $allDoctorIds = [];
+        foreach ($bulkCohort as $branchPatients) {
+            foreach ($branchPatients as $info) {
+                $did = $info['last_doctor_id'] ?? null;
+                if ($did !== null) {
+                    $allDoctorIds[$did] = true;
+                }
+            }
+        }
+        $bulkDoctorNames = $allDoctorIds === []
+            ? []
+            : DB::table('users')
+                ->whereIn('id', array_keys($allDoctorIds))
+                ->pluck('name', 'id')
+                ->toArray();
+
+        $branches = [];
+        $allPatients = [];
+        foreach ($branchIds as $branchId) {
+            // Read pool from cache; on miss, build directly with the
+            // pre-fetched abandoned slice and write into the same key
+            // so modal's branchPool() reads back from this cache entry.
+            $cacheKey = $this->branchPoolCacheKey($scope, (int) $branchId);
+            $pool = Cache::get($cacheKey);
+            if (! is_array($pool)) {
+                $pool = $treatmentStatusIds === []
+                    ? ['branch_name' => $branchNames[$branchId] ?? null, 'rows' => [], 'signal_counts' => []]
+                    : $this->buildBranchPoolBody(
+                        $scope,
+                        (int) $branchId,
+                        $treatmentStatusIds,
+                        $bulkAbandoned[(int) $branchId] ?? [],
+                        $bulkCohort[(int) $branchId] ?? [],
+                        $bulkSpend,
+                        $bulkProfiles,
+                        $bulkBaselineStats[(int) $branchId] ?? [],
+                        $bulkLifetimeCounts[(int) $branchId] ?? [],
+                        $bulkBroken[(int) $branchId] ?? [],
+                        $bulkDoctorNames,
+                    );
+                Cache::put($cacheKey, $pool, self::CACHE_TTL);
+            }
+            $rows = $pool['rows'] ?? [];
+            $branchName = $pool['branch_name'] ?? ($branchNames[$branchId] ?? null);
+
+            $recoverable = 0.0;
+            $prepaid = 0.0;
+            $unbilled = 0.0;
+            foreach ($rows as $r) {
+                $recoverable += (float) ($r['recoverable_value'] ?? 0);
+                $prepaid += (float) ($r['prepaid_unused'] ?? 0);
+                $unbilled += (float) ($r['unbilled_commitment'] ?? 0);
+
+                // Tag each patient with branch context for the cross-branch
+                // patient lenses, then collect into the global pool.
+                $r['branch_id'] = (int) $branchId;
+                $r['branch_name'] = $branchName;
+                $allPatients[] = $r;
+            }
+
+            $signalCounts = $pool['signal_counts'] ?? [];
+            $branches[] = [
+                'branch_id' => (int) $branchId,
+                'branch_name' => $branchName,
+                'at_risk_count' => count($rows),
+                'recoverable_value' => round($recoverable, 2),
+                'prepaid_unused' => round($prepaid, 2),
+                'unbilled_commitment' => round($unbilled, 2),
+                'cadence_break_count' => (int) ($signalCounts['cadence_break'] ?? 0),
+                'abandoned_package_count' => (int) ($signalCounts['abandoned_package'] ?? 0),
+                'broken_commitment_count' => (int) ($signalCounts['broken_commitment'] ?? 0),
+                'priority_high_count' => (int) ($signalCounts['priority_high'] ?? 0),
+                'priority_medium_count' => (int) ($signalCounts['priority_medium'] ?? 0),
+                'priority_low_count' => (int) ($signalCounts['priority_low'] ?? 0),
+            ];
+        }
+
+        // Branches: sort by recoverable_value desc — biggest dollar opportunity
+        // first. Ties broken by at_risk_count desc.
+        usort($branches, static function (array $a, array $b): int {
+            $cmp = ($b['recoverable_value'] <=> $a['recoverable_value']);
+
+            return $cmp !== 0 ? $cmp : ($b['at_risk_count'] <=> $a['at_risk_count']);
+        });
+
+        // Top patients — two sorts, two slices.
+        $byRecoverable = $this->sortPatients($allPatients, 'recoverable_value');
+        $bySpend = $this->sortPatients($allPatients, 'trailing_12mo_spend');
+
+        $poolRecoverable = array_sum(array_column($branches, 'recoverable_value'));
+        $poolTotal = array_sum(array_column($branches, 'at_risk_count'));
+
+        return [
+            'branches' => array_values($branches),
+            'top_patients_by_recoverable' => array_slice($byRecoverable, 0, $patientLimit),
+            'top_patients_by_spend' => array_slice($bySpend, 0, $patientLimit),
+            'pool_total' => (int) $poolTotal,
+            'pool_recoverable' => round((float) $poolRecoverable, 2),
+        ];
+    }
+
+    /**
+     * Rank patients by a numeric field desc, with non-abandoned patients
+     * (no recoverable inventory) falling to bottom of the recoverable sort.
+     *
+     * @param  list<array<string, mixed>>  $patients
+     * @return list<array<string, mixed>>
+     */
+    private function sortPatients(array $patients, string $sortKey): array
+    {
+        $copy = $patients;
+        usort($copy, static function (array $a, array $b) use ($sortKey): int {
+            $av = (float) ($a[$sortKey] ?? 0);
+            $bv = (float) ($b[$sortKey] ?? 0);
+            if ($av === $bv) {
+                // Stable secondary: abandoned ahead of others when ranking
+                // by recoverable, since non-abandoned rows have $0 there.
+                $aw = ($a['primary_signal'] ?? '') === 'abandoned_package' ? 1 : 0;
+                $bw = ($b['primary_signal'] ?? '') === 'abandoned_package' ? 1 : 0;
+
+                return $bw <=> $aw;
+            }
+
+            return $bv <=> $av;
+        });
+
+        return array_values($copy);
     }
 
     /**
@@ -172,205 +469,38 @@ final class AtRiskPatientsMetric
     }
 
     /**
-     * At-risk patient list for a single branch. Patients are pulled from
-     * the same matured 30–60 day cohort the retention rate uses, then
-     * classified and value-tiered.
+     * At-risk patient list for a single branch. Patients are evaluated
+     * against the three slippage signals (cadence break, abandoned
+     * package, broken commitment) and ranked by the priority order.
      *
-     * @param  list<string>|null  $riskTypes  Filter — null = all five buckets
-     * @param  list<string>|null  $valueTiers Filter — null = all four tiers
+     * @param  list<string>|null  $signals     Filter on primary_signal — null = all
+     * @param  list<string>|null  $valueTiers  Filter — null = all four tiers
      * @return array{
      *   branch_id: int,
      *   branch_name: string|null,
      *   rows: list<array<string, mixed>>,
      *   total_count: int,
-     *   bucket_counts: array<string, int>,
+     *   signal_counts: array<string, int>,
      * }
      */
     public function list(
         MetricScope $scope,
         int $branchId,
-        ?array $riskTypes,
+        ?array $signals,
         ?array $valueTiers,
         int $limit = 50,
         int $offset = 0,
     ): array {
-        // Validate the requested branch is in scope. Don't silently drop.
-        $allowed = $this->branches->idsInScope($scope);
-        if (! in_array($branchId, $allowed, true)) {
-            return [
-                'branch_id' => $branchId,
-                'branch_name' => null,
-                'rows' => [],
-                'total_count' => 0,
-                'bucket_counts' => [],
-            ];
-        }
+        // Cached unfiltered superset — heavy work happens once per
+        // (scope, branch) and is reused across filter combos and the
+        // overview rollup.
+        $pool = $this->branchPool($scope, $branchId);
+        $rows = $pool['rows'];
 
-        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
-        if ($treatmentStatusIds === []) {
-            return [
-                'branch_id' => $branchId,
-                'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
-                'rows' => [],
-                'total_count' => 0,
-                'bucket_counts' => [],
-            ];
-        }
-
-        $cohortEnd = now()->subDays(self::COHORT_DAYS_END)->toDateString();
-        $cohortStart = now()->subDays(self::COHORT_DAYS_START)->toDateString();
-        $today = now()->toDateString();
-
-        // 1. Cohort = patients who had an arrived treatment at this branch
-        //    in the matured window AND have NOT had a follow-up >7 days
-        //    later AND have NO future booking at the branch. The exact
-        //    population the retention metric leaves out.
-        $cohort = $this->cohortPatientsAtBranch(
-            $scope,
-            $branchId,
-            $treatmentStatusIds,
-            $cohortStart,
-            $cohortEnd,
-            $today,
-        );
-
-        if ($cohort === []) {
-            return [
-                'branch_id' => $branchId,
-                'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
-                'rows' => [],
-                'total_count' => 0,
-                'bucket_counts' => [],
-            ];
-        }
-
-        $patientIds = array_keys($cohort);
-
-        // 2. Per-patient lifetime visit counts at this branch — used to
-        //    distinguish lapsed regular (≥3) vs maintenance (2) vs
-        //    tried-once (1).
-        $visitStats = $this->lifetimeVisitStats(
-            $scope,
-            $branchId,
-            $treatmentStatusIds,
-            $patientIds,
-            $today,
-        );
-
-        // 3. Per-patient abandoned packages. May be 0..n per patient.
-        $abandonedByPatient = $this->abandonedPackagesByPatient($scope, $branchId, $patientIds);
-
-        // 4. Per-patient trailing-12mo spend → drives value tier.
-        $spendByPatient = $this->trailingSpend($scope, $patientIds);
-
-        // 4b. Broken commitments since cohort visit — cancellations and
-        //     no-shows. A patient who already broke a booking once is
-        //     more at-risk than one who simply went silent. Surfaced as
-        //     a tag in the UI without changing the risk-type bucket.
-        $brokenByPatient = $this->brokenCommitmentsByPatient(
-            $scope,
-            $branchId,
-            $patientIds,
-            $cohort,
-            $today,
-        );
-
-        // 5. Patient profile (name, phone, last doctor name).
-        $profiles = $this->patientProfiles($patientIds);
-        $doctorIds = array_unique(array_filter(array_map(
-            static fn (array $c): ?int => $c['last_doctor_id'],
-            $cohort,
-        )));
-        $doctorNames = $doctorIds === []
-            ? []
-            : DB::table('users')
-                ->whereIn('id', $doctorIds)
-                ->pluck('name', 'id')
-                ->toArray();
-
-        // 6. Compute value-tier cutoffs from the spend distribution.
-        $tierThresholds = $this->valueTierThresholds(array_values($spendByPatient));
-
-        // 7. Classify and assemble rows.
-        $rows = [];
-        $bucketCounts = [
-            'abandoned_package' => 0,
-            'lapsed_regular' => 0,
-            'maintenance_overdue' => 0,
-            'tried_once_dropout' => 0,
-        ];
-
-        foreach ($cohort as $patientId => $cohortInfo) {
-            $stats = $visitStats[$patientId] ?? ['visit_count' => 0, 'median_gap_days' => null];
-            $abandoned = $abandonedByPatient[$patientId] ?? [];
-            $spend = (float) ($spendByPatient[$patientId] ?? 0.0);
-            $profile = $profiles[$patientId] ?? ['name' => "Patient #{$patientId}", 'phone' => null];
-
-            $bucket = $this->classify(
-                $abandoned,
-                $stats['visit_count'],
-                $stats['median_gap_days'],
-                $cohortInfo['last_visit_date'],
-                $today,
-            );
-
-            if ($bucket === null) {
-                continue;
-            }
-
-            $tier = $this->valueTierFor($spend, $tierThresholds);
-
-            // Sum recoverable across all of this patient's abandoned packages.
-            // For non-abandoned buckets, "recoverable" falls back to trailing
-            // spend so the row still ranks by value.
-            $unusedSum = 0.0;
-            $prepaidSum = 0.0;
-            $unbilledSum = 0.0;
-            foreach ($abandoned as $pkg) {
-                // Same overpayment cap as the summary tile — see comment there.
-                $prepaidUnused = min($pkg['unused_value'], max(0.0, $pkg['paid'] - $pkg['consumed_value']));
-                $unbilled = max(0.0, $pkg['unused_value'] - $prepaidUnused);
-                $unusedSum += $pkg['unused_value'];
-                $prepaidSum += $prepaidUnused;
-                $unbilledSum += $unbilled;
-            }
-
-            $bucketCounts[$bucket]++;
-
-            $broken = $brokenByPatient[$patientId] ?? null;
-
-            $rows[] = [
-                'patient_id' => $patientId,
-                'patient_name' => $profile['name'],
-                'phone' => $profile['phone'],
-                'last_visit_date' => $cohortInfo['last_visit_date'],
-                'last_doctor_id' => $cohortInfo['last_doctor_id'],
-                'last_doctor_name' => $cohortInfo['last_doctor_id'] !== null
-                    ? ($doctorNames[$cohortInfo['last_doctor_id']] ?? null)
-                    : null,
-                'risk_type' => $bucket,
-                'value_tier' => $tier,
-                'trailing_12mo_spend' => round($spend, 2),
-                'recoverable_value' => $bucket === 'abandoned_package'
-                    ? round($unusedSum, 2)
-                    : 0.0,
-                'prepaid_unused' => round($prepaidSum, 2),
-                'unbilled_commitment' => round($unbilledSum, 2),
-                'abandoned_package_count' => count($abandoned),
-                'lifetime_visits' => $stats['visit_count'],
-                'no_show_since' => $broken['no_show_count'] ?? 0,
-                'cancelled_since' => $broken['cancelled_count'] ?? 0,
-                'last_broken_date' => $broken['last_broken_date'] ?? null,
-                // Used by the sort below; not part of public API
-                '_rank_key' => $bucket === 'abandoned_package' ? $unusedSum : $spend,
-            ];
-        }
-
-        // Filter
-        if ($riskTypes !== null && $riskTypes !== []) {
+        if ($signals !== null && $signals !== []) {
             $rows = array_values(array_filter(
                 $rows,
-                static fn (array $r): bool => in_array($r['risk_type'], $riskTypes, true),
+                static fn (array $r): bool => in_array($r['primary_signal'], $signals, true),
             ));
         }
         if ($valueTiers !== null && $valueTiers !== []) {
@@ -380,81 +510,379 @@ final class AtRiskPatientsMetric
             ));
         }
 
-        // Sort: abandoned-package rows first by recoverable_value desc, then
-        // everything else by trailing spend desc. Tier rank is a tiebreaker
-        // so VIP tied on $0 still beats Low tied on $0.
-        $tierRank = ['vip' => 0, 'high' => 1, 'mid' => 2, 'low' => 3];
-        usort($rows, static function (array $a, array $b) use ($tierRank): int {
-            $ar = (float) $a['_rank_key'];
-            $br = (float) $b['_rank_key'];
-            if ($ar !== $br) {
-                return $br <=> $ar;
-            }
-
-            return ($tierRank[$a['value_tier']] ?? 9) <=> ($tierRank[$b['value_tier']] ?? 9);
-        });
-
         $totalCount = count($rows);
         $page = array_slice($rows, $offset, $limit);
-        // Strip the internal sort key from the public payload.
-        $page = array_map(static function (array $r): array {
-            unset($r['_rank_key']);
-
-            return $r;
-        }, $page);
 
         return [
             'branch_id' => $branchId,
-            'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+            'branch_name' => $pool['branch_name'],
             'rows' => $page,
             'total_count' => $totalCount,
-            'bucket_counts' => $bucketCounts,
+            'signal_counts' => $pool['signal_counts'],
         ];
     }
 
     /**
-     * Cohort patients at a branch — same matured 30–60 day window the
-     * retention metric uses, with the additional filter "no future
-     * booking at this branch". Returns one row per patient with their
-     * latest cohort-window visit date and the doctor they saw on it.
+     * Cached per-branch unfiltered superset. Returns every classified
+     * at-risk patient at the branch (sorted) plus bucket counts. Public
+     * `list()` and the overview rollup both read from here so the heavy
+     * cohort/abandoned/spend/broken-commitment queries run once per
+     * (scope, branch) per 5 minutes.
      *
-     * @param  list<int>  $treatmentStatusIds
-     * @return array<int, array{last_visit_date: string, last_doctor_id: int|null}>
+     * @return array{
+     *   branch_name: string|null,
+     *   rows: list<array<string, mixed>>,
+     *   signal_counts: array<string, int>,
+     * }
      */
-    private function cohortPatientsAtBranch(
+    private function branchPool(MetricScope $scope, int $branchId): array
+    {
+        $cacheKey = 'mgmt_dash:at_risk_pool:v2:'.$scope->cacheKey().'|b'.$branchId;
+
+        return Cache::remember(
+            $cacheKey,
+            self::CACHE_TTL,
+            fn () => $this->buildBranchPool($scope, $branchId),
+        );
+    }
+
+    /**
+     * Cache key for a branch pool — exposed so the overview path can
+     * write directly into the same cache slot after a bulk build.
+     */
+    private function branchPoolCacheKey(MetricScope $scope, int $branchId): string
+    {
+        return 'mgmt_dash:at_risk_pool:v2:'.$scope->cacheKey().'|b'.$branchId;
+    }
+
+    /**
+     * @return array{
+     *   branch_name: string|null,
+     *   rows: list<array<string, mixed>>,
+     *   signal_counts: array<string, int>,
+     * }
+     */
+    private function buildBranchPool(MetricScope $scope, int $branchId): array
+    {
+        // Validate the requested branch is in scope. Don't silently drop.
+        $allowed = $this->branches->idsInScope($scope);
+        if (! in_array($branchId, $allowed, true)) {
+            return [
+                'branch_name' => null,
+                'rows' => [],
+                'signal_counts' => [],
+            ];
+        }
+
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === []) {
+            return [
+                'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+                'rows' => [],
+                'signal_counts' => [],
+            ];
+        }
+
+        return $this->buildBranchPoolBody($scope, $branchId, $treatmentStatusIds, null);
+    }
+
+    /**
+     * @param  list<int>  $treatmentStatusIds
+     * @return array{
+     *   branch_name: string|null,
+     *   rows: list<array<string, mixed>>,
+     *   signal_counts: array<string, int>,
+     * }
+     */
+    /**
+     * @param  array<int, float>|null  $prefetchedSpend
+     * @param  array<int, array{name: string, phone: string|null}>|null  $prefetchedProfiles
+     */
+    private function buildBranchPoolBody(
         MetricScope $scope,
         int $branchId,
         array $treatmentStatusIds,
-        string $cohortStart,
-        string $cohortEnd,
+        ?array $prefetchedAbandoned,
+        ?array $prefetchedCohort = null,
+        ?array $prefetchedSpend = null,
+        ?array $prefetchedProfiles = null,
+        ?array $prefetchedBaselineStats = null,
+        ?array $prefetchedLifetimeCounts = null,
+        ?array $prefetchedBroken = null,
+        ?array $prefetchedDoctorNames = null,
+    ): array {
+        $today = now()->toDateString();
+
+        // 1. Per-patient abandoned packages at this branch. Drives both
+        //    the candidate-pool union (so package-only patients are
+        //    included even with no recent visits) and the recoverable
+        //    valuation per row.
+        $abandonedByPatient = $prefetchedAbandoned !== null
+            ? $prefetchedAbandoned
+            : $this->abandonedPackagesAtBranch($scope, $branchId);
+
+        $abandonedPatientIds = array_map('intval', array_keys($abandonedByPatient));
+
+        // 2. Candidate pool = recent-treatment patients ∪ abandoned-package
+        //    patients, minus anyone with a future booking at the branch.
+        $candidates = $prefetchedCohort !== null
+            ? $prefetchedCohort
+            : $this->candidatePoolAtBranch(
+                $scope,
+                $branchId,
+                $treatmentStatusIds,
+                $abandonedPatientIds,
+                $today,
+            );
+
+        if ($candidates === []) {
+            return [
+                'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+                'rows' => [],
+                'signal_counts' => [
+                    'cadence_break' => 0,
+                    'abandoned_package' => 0,
+                    'broken_commitment' => 0,
+                    'priority_high' => 0,
+                    'priority_medium' => 0,
+                    'priority_low' => 0,
+                ],
+            ];
+        }
+
+        $patientIds = array_map('intval', array_keys($candidates));
+
+        // 3. Per-patient visit stats — count + median gap, restricted to
+        //    the baseline window (180d). Lifetime count fetched separately
+        //    for the single-visit exclusion check.
+        $baselineStats = $prefetchedBaselineStats !== null
+            ? array_intersect_key($prefetchedBaselineStats, array_flip($patientIds))
+            : $this->visitStatsInWindow(
+                $scope,
+                $branchId,
+                $treatmentStatusIds,
+                $patientIds,
+                now()->subDays(self::BASELINE_WINDOW_DAYS)->toDateString(),
+                $today,
+            );
+        $lifetimeCounts = $prefetchedLifetimeCounts !== null
+            ? array_intersect_key($prefetchedLifetimeCounts, array_flip($patientIds))
+            : $this->lifetimeVisitCounts(
+                $scope,
+                $branchId,
+                $treatmentStatusIds,
+                $patientIds,
+                $today,
+            );
+
+        // 4. Trailing 12mo spend (for value tier).
+        $spendByPatient = $prefetchedSpend !== null
+            ? array_intersect_key($prefetchedSpend, array_flip($patientIds))
+            : $this->trailingSpend($scope, $patientIds);
+
+        // 5. Broken commitments AFTER last successful visit, last 90 days.
+        $brokenByPatient = $prefetchedBroken !== null
+            ? array_intersect_key($prefetchedBroken, array_flip($patientIds))
+            : $this->brokenCommitmentsByPatient(
+                $scope,
+                $branchId,
+                $patientIds,
+                $candidates,
+                $today,
+            );
+
+        // 6. Profiles + doctor names for last-visit doctor.
+        $profiles = $prefetchedProfiles !== null
+            ? array_intersect_key($prefetchedProfiles, array_flip($patientIds))
+            : $this->patientProfiles($patientIds);
+        if ($prefetchedDoctorNames !== null) {
+            $doctorNames = $prefetchedDoctorNames;
+        } else {
+            $doctorIds = array_unique(array_filter(array_map(
+                static fn (array $c): ?int => $c['last_doctor_id'] ?? null,
+                $candidates,
+            )));
+            $doctorNames = $doctorIds === []
+                ? []
+                : DB::table('users')
+                    ->whereIn('id', $doctorIds)
+                    ->pluck('name', 'id')
+                    ->toArray();
+        }
+
+        // 7. Value-tier thresholds from the spend distribution.
+        $tierThresholds = $this->valueTierThresholds(array_values($spendByPatient));
+
+        // 8. Evaluate signals per candidate; assemble at-risk rows.
+        $rows = [];
+        $signalCounts = [
+            'cadence_break' => 0,
+            'abandoned_package' => 0,
+            'broken_commitment' => 0,
+            'priority_high' => 0,
+            'priority_medium' => 0,
+            'priority_low' => 0,
+        ];
+
+        foreach ($candidates as $patientId => $info) {
+            $bs = $baselineStats[$patientId] ?? ['visit_count' => 0, 'median_gap_days' => null];
+            $abandoned = $abandonedByPatient[$patientId] ?? [];
+            $broken = $brokenByPatient[$patientId] ?? null;
+            $lifetime = (int) ($lifetimeCounts[$patientId] ?? 0);
+
+            $eval = $this->evaluateSignals(
+                $abandoned,
+                (int) $bs['visit_count'],
+                $lifetime,
+                $bs['median_gap_days'],
+                $info['last_visit_date'],
+                $broken,
+                $today,
+            );
+
+            if ($eval === null) {
+                continue;
+            }
+
+            $tier = $this->valueTierFor((float) ($spendByPatient[$patientId] ?? 0), $tierThresholds);
+
+            // Aggregate package money — same overpayment cap as summary tile.
+            $unusedSum = 0.0;
+            $prepaidSum = 0.0;
+            $unbilledSum = 0.0;
+            foreach ($abandoned as $pkg) {
+                $prepaidUnused = min($pkg['unused_value'], max(0.0, $pkg['paid'] - $pkg['consumed_value']));
+                $unbilled = max(0.0, $pkg['unused_value'] - $prepaidUnused);
+                $unusedSum += $pkg['unused_value'];
+                $prepaidSum += $prepaidUnused;
+                $unbilledSum += $unbilled;
+            }
+
+            // Tally counters. A patient with multiple firing signals
+            // increments every signal counter (so badges add up); the
+            // priority counter only fires for abandoned-package patients.
+            foreach ($eval['signals'] as $sig) {
+                $signalCounts[$sig]++;
+            }
+            if ($eval['priority'] !== null) {
+                $signalCounts['priority_'.$eval['priority']]++;
+            }
+
+            $rows[] = [
+                'patient_id' => $patientId,
+                'patient_name' => $profiles[$patientId]['name'] ?? "Patient #{$patientId}",
+                'phone' => $profiles[$patientId]['phone'] ?? null,
+                'last_visit_date' => $info['last_visit_date'],
+                'last_doctor_id' => $info['last_doctor_id'] ?? null,
+                'last_doctor_name' => isset($info['last_doctor_id']) && $info['last_doctor_id'] !== null
+                    ? ($doctorNames[$info['last_doctor_id']] ?? null)
+                    : null,
+                'signals' => $eval['signals'],
+                'primary_signal' => $eval['primary_signal'],
+                'priority' => $eval['priority'],
+                'days_since_last' => $eval['days_since_last'],
+                'median_gap_days' => $eval['median_gap_days'] !== null
+                    ? round($eval['median_gap_days'], 1)
+                    : null,
+                'threshold_days' => $eval['threshold_days'],
+                'days_overdue' => $eval['days_overdue'],
+                'overdue_multiplier' => $eval['overdue_multiplier'],
+                'value_tier' => $tier,
+                'trailing_12mo_spend' => round((float) ($spendByPatient[$patientId] ?? 0), 2),
+                'recoverable_value' => $abandoned !== [] ? round($unusedSum, 2) : 0.0,
+                'prepaid_unused' => round($prepaidSum, 2),
+                'unbilled_commitment' => round($unbilledSum, 2),
+                'abandoned_package_count' => count($abandoned),
+                'lifetime_visits' => $lifetime,
+                'visits_in_baseline' => (int) $bs['visit_count'],
+                'no_show_since' => $broken['no_show_count'] ?? 0,
+                'cancelled_since' => $broken['cancelled_count'] ?? 0,
+                'last_broken_date' => $broken['last_broken_date'] ?? null,
+            ];
+        }
+
+        // Sort per the locked spec:
+        //   1. Abandoned + High priority
+        //   2. Cadence Break (most days_overdue first)
+        //   3. Broken Commitment
+        //   4. Abandoned + Medium priority
+        //   5. Abandoned + Low priority
+        // Within each tier, value-tier (VIP first) breaks ties, then
+        // recoverable value desc, then trailing spend desc.
+        $tierRank = ['vip' => 0, 'high' => 1, 'mid' => 2, 'low' => 3];
+        $sortBucket = static function (array $r): int {
+            if ($r['primary_signal'] === 'abandoned_package' && $r['priority'] === 'high') return 0;
+            if ($r['primary_signal'] === 'cadence_break') return 1;
+            if ($r['primary_signal'] === 'broken_commitment') return 2;
+            if ($r['primary_signal'] === 'abandoned_package' && $r['priority'] === 'medium') return 3;
+            if ($r['primary_signal'] === 'abandoned_package' && $r['priority'] === 'low') return 4;
+            return 9;
+        };
+        usort($rows, static function (array $a, array $b) use ($sortBucket, $tierRank): int {
+            $ab = $sortBucket($a);
+            $bb = $sortBucket($b);
+            if ($ab !== $bb) return $ab <=> $bb;
+            // Within Cadence Break, sort by absolute days overdue desc.
+            if ($a['primary_signal'] === 'cadence_break') {
+                $cmp = ($b['days_overdue'] ?? 0) <=> ($a['days_overdue'] ?? 0);
+                if ($cmp !== 0) return $cmp;
+            }
+            // Otherwise: value-tier rank, then recoverable, then spend.
+            $ta = $tierRank[$a['value_tier']] ?? 9;
+            $tb = $tierRank[$b['value_tier']] ?? 9;
+            if ($ta !== $tb) return $ta <=> $tb;
+            $cmp = ((float) $b['recoverable_value']) <=> ((float) $a['recoverable_value']);
+            if ($cmp !== 0) return $cmp;
+            return ((float) $b['trailing_12mo_spend']) <=> ((float) $a['trailing_12mo_spend']);
+        });
+
+        return [
+            'branch_name' => $this->branches->names([$branchId])[$branchId] ?? null,
+            'rows' => $rows,
+            'signal_counts' => $signalCounts,
+        ];
+    }
+
+    /**
+     * Candidate pool at a branch — patients who could plausibly fire any
+     * at-risk signal. Defined as the union of:
+     *   (a) ≥1 arrived treatment in the last BASELINE_WINDOW_DAYS, OR
+     *   (b) ≥1 abandoned-package patient at the branch, OR
+     *   (c) ≥1 no-show/cancel in the broken-commitment window AFTER their
+     *       last successful visit at this branch.
+     * Excluding any patient with a future booking at the branch.
+     *
+     * Returns latest arrived-treatment date (all-time, not window-bounded)
+     * and the doctor seen on that visit. last_visit_date may be null in
+     * the rare case the candidate has zero arrived treatments at the
+     * branch ever (entered the pool only via an abandoned package owned
+     * elsewhere — defensive case).
+     *
+     * @param  list<int>  $treatmentStatusIds
+     * @param  list<int>  $abandonedPatientIds  patients owning ≥1 abandoned package at this branch
+     * @return array<int, array{last_visit_date: string|null, last_doctor_id: int|null}>
+     */
+    private function candidatePoolAtBranch(
+        MetricScope $scope,
+        int $branchId,
+        array $treatmentStatusIds,
+        array $abandonedPatientIds,
         string $today,
     ): array {
-        // Cohort a1 = arrived treatment at the branch in the window.
-        // Exclude patients with a follow-up a2 >7d later up to today
-        // (those are "returned" — already counted as retained).
-        // Also exclude patients with any future-scheduled booking at
-        // the branch — they're on track, not at-risk.
-        $rows = DB::table('appointments as a1')
+        $baselineCutoff = now()->subDays(self::BASELINE_WINDOW_DAYS)->toDateString();
+        $brokenCutoff = now()->subDays(self::BROKEN_COMMITMENT_WINDOW_DAYS)->toDateString();
+
+        // 1. Patients with ≥1 arrived treatment in baseline window.
+        $recentRows = DB::table('appointments as a1')
             ->where('a1.account_id', $scope->accountId)
             ->where('a1.location_id', $branchId)
             ->where('a1.appointment_type_id', 2)
             ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
-            ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
+            ->where('a1.scheduled_date', '>=', $baselineCutoff)
+            ->where('a1.scheduled_date', '<=', $today)
             ->whereNull('a1.deleted_at')
-            ->whereNotExists(function ($sub) use ($branchId, $treatmentStatusIds, $today): void {
-                $sub->select(DB::raw(1))
-                    ->from('appointments as a2')
-                    ->whereColumn('a2.patient_id', 'a1.patient_id')
-                    ->where('a2.location_id', $branchId)
-                    ->where('a2.appointment_type_id', 2)
-                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
-                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL '.self::REBOOK_GAP_DAYS.' DAY)')
-                    ->where('a2.scheduled_date', '<=', $today)
-                    ->whereColumn('a2.id', '!=', 'a1.id')
-                    ->whereNull('a2.deleted_at');
-            })
             ->whereNotExists(function ($sub) use ($branchId, $today): void {
-                // Future booking of any kind at the branch — they're scheduled, not at-risk.
+                // Future booking → on track, drop.
                 $sub->select(DB::raw(1))
                     ->from('appointments as af')
                     ->whereColumn('af.patient_id', 'a1.patient_id')
@@ -464,40 +892,105 @@ final class AtRiskPatientsMetric
             })
             ->groupBy('a1.patient_id')
             ->select('a1.patient_id')
-            ->selectRaw('MAX(a1.scheduled_date) AS last_visit_date')
             ->get();
 
-        if ($rows->isEmpty()) {
+        $candidateIds = $recentRows->pluck('patient_id')->map(static fn ($v): int => (int) $v)->all();
+
+        // 2. Union with abandoned-package patients (filter to those without
+        //    a future booking at this branch).
+        if ($abandonedPatientIds !== []) {
+            $abandonedWithFuture = DB::table('appointments')
+                ->where('account_id', $scope->accountId)
+                ->where('location_id', $branchId)
+                ->whereIn('patient_id', $abandonedPatientIds)
+                ->where('scheduled_date', '>', $today)
+                ->whereNull('deleted_at')
+                ->pluck('patient_id')
+                ->map(static fn ($v): int => (int) $v)
+                ->unique()
+                ->all();
+
+            $abandonedKeep = array_diff($abandonedPatientIds, $abandonedWithFuture);
+            $candidateIds = array_values(array_unique(array_merge($candidateIds, $abandonedKeep)));
+        }
+
+        // 3. Union with broken-commitment-only patients — no-show/cancel
+        //    after their last successful visit, within window, no future
+        //    booking. Catches patients whose last actual visit was >180d
+        //    ago but who recently broke a booking.
+        $brokenIds = DB::table('appointments as bc')
+            ->where('bc.account_id', $scope->accountId)
+            ->where('bc.location_id', $branchId)
+            ->where('bc.appointment_type_id', 2)
+            ->whereIn('bc.appointment_status_id', [self::NO_SHOW_STATUS_ID, self::CANCELLED_STATUS_ID])
+            ->where('bc.scheduled_date', '>=', $brokenCutoff)
+            ->where('bc.scheduled_date', '<=', $today)
+            ->whereNull('bc.deleted_at')
+            ->whereNotExists(function ($sub) use ($branchId, $today): void {
+                $sub->select(DB::raw(1))->from('appointments as af')
+                    ->whereColumn('af.patient_id', 'bc.patient_id')
+                    ->where('af.location_id', $branchId)
+                    ->where('af.scheduled_date', '>', $today)
+                    ->whereNull('af.deleted_at');
+            })
+            ->whereExists(function ($sub) use ($branchId, $treatmentStatusIds): void {
+                // Must have ≥1 successful arrived visit BEFORE the broken
+                // commitment — broken-commitment requires "after last
+                // successful visit" semantics.
+                $sub->select(DB::raw(1))->from('appointments as lv')
+                    ->whereColumn('lv.patient_id', 'bc.patient_id')
+                    ->where('lv.location_id', $branchId)
+                    ->where('lv.appointment_type_id', 2)
+                    ->whereIn('lv.appointment_status_id', $treatmentStatusIds)
+                    ->whereColumn('lv.scheduled_date', '<', 'bc.scheduled_date')
+                    ->whereNull('lv.deleted_at');
+            })
+            ->groupBy('bc.patient_id')
+            ->select('bc.patient_id')
+            ->pluck('patient_id')
+            ->map(static fn ($v): int => (int) $v)
+            ->all();
+        if ($brokenIds !== []) {
+            $candidateIds = array_values(array_unique(array_merge($candidateIds, $brokenIds)));
+        }
+
+        if ($candidateIds === []) {
             return [];
         }
 
-        // Resolve doctor on the most-recent cohort visit per patient.
-        // Done as a second pass to keep the cohort query plan simple.
-        $patientIds = $rows->pluck('patient_id')->map(static fn ($v): int => (int) $v)->all();
-        $doctorMap = DB::table('appointments')
+        // 3. For every candidate, fetch latest arrived-treatment date +
+        //    doctor (all-time at this branch — abandoned-package candidates
+        //    may have a last visit older than the baseline window).
+        $latestRows = DB::table('appointments')
             ->where('account_id', $scope->accountId)
             ->where('location_id', $branchId)
             ->where('appointment_type_id', 2)
             ->whereIn('appointment_status_id', $treatmentStatusIds)
-            ->whereIn('patient_id', $patientIds)
-            ->whereBetween('scheduled_date', [$cohortStart, $cohortEnd])
+            ->whereIn('patient_id', $candidateIds)
+            ->where('scheduled_date', '<=', $today)
             ->whereNull('deleted_at')
-            ->select('patient_id', 'doctor_id', 'scheduled_date')
+            ->select('patient_id', 'doctor_id', 'scheduled_date', 'id')
             ->orderBy('patient_id')
             ->orderByDesc('scheduled_date')
             ->orderByDesc('id')
-            ->get()
-            ->groupBy('patient_id')
-            ->map(static fn ($group) => $group->first())
-            ->toArray();
+            ->get();
+
+        $latestByPatient = [];
+        foreach ($latestRows as $r) {
+            $pid = (int) $r->patient_id;
+            if (! isset($latestByPatient[$pid])) {
+                $latestByPatient[$pid] = [
+                    'last_visit_date' => (string) $r->scheduled_date,
+                    'last_doctor_id' => $r->doctor_id !== null ? (int) $r->doctor_id : null,
+                ];
+            }
+        }
 
         $out = [];
-        foreach ($rows as $r) {
-            $pid = (int) $r->patient_id;
-            $doctor = $doctorMap[$pid] ?? null;
-            $out[$pid] = [
-                'last_visit_date' => (string) $r->last_visit_date,
-                'last_doctor_id' => $doctor ? (int) $doctor->doctor_id : null,
+        foreach ($candidateIds as $pid) {
+            $out[$pid] = $latestByPatient[$pid] ?? [
+                'last_visit_date' => null,
+                'last_doctor_id' => null,
             ];
         }
 
@@ -505,22 +998,195 @@ final class AtRiskPatientsMetric
     }
 
     /**
-     * Lifetime arrived-treatment count per patient at the branch, plus a
-     * median inter-visit gap (in days) used as the cadence baseline.
+     * Bulk variant — runs the candidate-pool query once across every
+     * branch in scope. Returns `branch_id -> patient_id -> {last_visit_date,
+     * last_doctor_id}` map. Used by the overview path.
      *
-     * Median gap is null when the patient has fewer than 2 prior visits
-     * (no gap exists yet).
+     * @param  list<int>  $branchIds
+     * @param  list<int>  $treatmentStatusIds
+     * @param  array<int, array<int, mixed>>  $abandonedByBranch  branch_id -> patient_id -> packages[]
+     * @return array<int, array<int, array{last_visit_date: string|null, last_doctor_id: int|null}>>
+     */
+    private function candidatePoolByBranch(
+        MetricScope $scope,
+        array $branchIds,
+        array $treatmentStatusIds,
+        array $abandonedByBranch,
+        string $today,
+    ): array {
+        if ($branchIds === []) {
+            return [];
+        }
+
+        $baselineCutoff = now()->subDays(self::BASELINE_WINDOW_DAYS)->toDateString();
+        $brokenCutoff = now()->subDays(self::BROKEN_COMMITMENT_WINDOW_DAYS)->toDateString();
+
+        // 1. (branch, patient) pairs with ≥1 arrived treatment in baseline window.
+        $recentRows = DB::table('appointments as a1')
+            ->where('a1.account_id', $scope->accountId)
+            ->whereIn('a1.location_id', $branchIds)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->where('a1.scheduled_date', '>=', $baselineCutoff)
+            ->where('a1.scheduled_date', '<=', $today)
+            ->whereNull('a1.deleted_at')
+            ->whereNotExists(function ($sub) use ($today): void {
+                $sub->select(DB::raw(1))
+                    ->from('appointments as af')
+                    ->whereColumn('af.patient_id', 'a1.patient_id')
+                    ->whereColumn('af.location_id', 'a1.location_id')
+                    ->where('af.scheduled_date', '>', $today)
+                    ->whereNull('af.deleted_at');
+            })
+            ->groupBy('a1.location_id', 'a1.patient_id')
+            ->select('a1.location_id', 'a1.patient_id')
+            ->get();
+
+        $candidateMap = []; // branch_id -> patient_id -> true
+        foreach ($recentRows as $r) {
+            $b = (int) $r->location_id;
+            $p = (int) $r->patient_id;
+            $candidateMap[$b][$p] = true;
+        }
+
+        // 2. Union abandoned-package patients per branch (filter out those
+        //    with future bookings at the same branch).
+        $allAbandonedPairs = []; // for the future-booking lookup
+        foreach ($abandonedByBranch as $b => $patients) {
+            foreach ($patients as $p => $_) {
+                $allAbandonedPairs[] = [(int) $b, (int) $p];
+            }
+        }
+
+        if ($allAbandonedPairs !== []) {
+            $patientIds = array_values(array_unique(array_map(static fn ($p) => $p[1], $allAbandonedPairs)));
+            $futureRows = DB::table('appointments')
+                ->where('account_id', $scope->accountId)
+                ->whereIn('location_id', $branchIds)
+                ->whereIn('patient_id', $patientIds)
+                ->where('scheduled_date', '>', $today)
+                ->whereNull('deleted_at')
+                ->select('location_id', 'patient_id')
+                ->get();
+            $futureSet = []; // branch_id -> patient_id -> true
+            foreach ($futureRows as $f) {
+                $futureSet[(int) $f->location_id][(int) $f->patient_id] = true;
+            }
+
+            foreach ($allAbandonedPairs as [$b, $p]) {
+                if (isset($futureSet[$b][$p])) {
+                    continue;
+                }
+                $candidateMap[$b][$p] = true;
+            }
+        }
+
+        // 3. Union broken-commitment-only patients per branch.
+        $brokenRows = DB::table('appointments as bc')
+            ->where('bc.account_id', $scope->accountId)
+            ->whereIn('bc.location_id', $branchIds)
+            ->where('bc.appointment_type_id', 2)
+            ->whereIn('bc.appointment_status_id', [self::NO_SHOW_STATUS_ID, self::CANCELLED_STATUS_ID])
+            ->where('bc.scheduled_date', '>=', $brokenCutoff)
+            ->where('bc.scheduled_date', '<=', $today)
+            ->whereNull('bc.deleted_at')
+            ->whereNotExists(function ($sub) use ($today): void {
+                $sub->select(DB::raw(1))->from('appointments as af')
+                    ->whereColumn('af.patient_id', 'bc.patient_id')
+                    ->whereColumn('af.location_id', 'bc.location_id')
+                    ->where('af.scheduled_date', '>', $today)
+                    ->whereNull('af.deleted_at');
+            })
+            ->whereExists(function ($sub) use ($treatmentStatusIds): void {
+                $sub->select(DB::raw(1))->from('appointments as lv')
+                    ->whereColumn('lv.patient_id', 'bc.patient_id')
+                    ->whereColumn('lv.location_id', 'bc.location_id')
+                    ->where('lv.appointment_type_id', 2)
+                    ->whereIn('lv.appointment_status_id', $treatmentStatusIds)
+                    ->whereColumn('lv.scheduled_date', '<', 'bc.scheduled_date')
+                    ->whereNull('lv.deleted_at');
+            })
+            ->groupBy('bc.location_id', 'bc.patient_id')
+            ->select('bc.location_id', 'bc.patient_id')
+            ->get();
+        foreach ($brokenRows as $r) {
+            $b = (int) $r->location_id;
+            $p = (int) $r->patient_id;
+            $candidateMap[$b][$p] = true;
+        }
+
+        if ($candidateMap === []) {
+            return [];
+        }
+
+        // 3. Latest arrived-treatment date + doctor per (branch, patient)
+        //    across all-time (so abandoned-package candidates with old
+        //    last visits still get a date).
+        $allCandidatePatientIds = [];
+        foreach ($candidateMap as $patients) {
+            foreach ($patients as $pid => $_) {
+                $allCandidatePatientIds[$pid] = true;
+            }
+        }
+        $allCandidatePatientIds = array_keys($allCandidatePatientIds);
+
+        $latestRows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->where('appointment_type_id', 2)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
+            ->whereIn('patient_id', $allCandidatePatientIds)
+            ->where('scheduled_date', '<=', $today)
+            ->whereNull('deleted_at')
+            ->select('location_id', 'patient_id', 'doctor_id', 'scheduled_date', 'id')
+            ->orderBy('location_id')
+            ->orderBy('patient_id')
+            ->orderByDesc('scheduled_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $latestMap = []; // branch_id -> patient_id -> {date, doctor_id}
+        foreach ($latestRows as $r) {
+            $b = (int) $r->location_id;
+            $p = (int) $r->patient_id;
+            if (! isset($latestMap[$b][$p])) {
+                $latestMap[$b][$p] = [
+                    'last_visit_date' => (string) $r->scheduled_date,
+                    'last_doctor_id' => $r->doctor_id !== null ? (int) $r->doctor_id : null,
+                ];
+            }
+        }
+
+        $out = [];
+        foreach ($candidateMap as $b => $patients) {
+            foreach ($patients as $p => $_) {
+                $out[$b][$p] = $latestMap[$b][$p] ?? [
+                    'last_visit_date' => null,
+                    'last_doctor_id' => null,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Per-patient arrived-treatment count + median inter-visit gap within
+     * the supplied date window. The median gap is the cadence baseline
+     * for cadence-break detection; null when the patient has fewer than
+     * 2 visits in the window (no gap exists).
      *
      * @param  list<int>  $treatmentStatusIds
      * @param  list<int>  $patientIds
      * @return array<int, array{visit_count: int, median_gap_days: float|null}>
      */
-    private function lifetimeVisitStats(
+    private function visitStatsInWindow(
         MetricScope $scope,
         int $branchId,
         array $treatmentStatusIds,
         array $patientIds,
-        string $today,
+        string $windowStart,
+        string $windowEnd,
     ): array {
         if ($patientIds === []) {
             return [];
@@ -532,7 +1198,8 @@ final class AtRiskPatientsMetric
             ->where('appointment_type_id', 2)
             ->whereIn('appointment_status_id', $treatmentStatusIds)
             ->whereIn('patient_id', $patientIds)
-            ->where('scheduled_date', '<=', $today)
+            ->where('scheduled_date', '>=', $windowStart)
+            ->where('scheduled_date', '<=', $windowEnd)
             ->whereNull('deleted_at')
             ->select('patient_id', 'scheduled_date')
             ->orderBy('patient_id')
@@ -567,6 +1234,261 @@ final class AtRiskPatientsMetric
     }
 
     /**
+     * Bulk visit-stats query — runs visitStatsInWindow logic across every
+     * (branch, candidate-patient) pair in scope in a single DB roundtrip.
+     * Returns `branch_id -> patient_id -> {visit_count, median_gap_days}`.
+     *
+     * @param  list<int>  $branchIds
+     * @param  list<int>  $treatmentStatusIds
+     * @param  array<int, list<int>>  $patientIdsByBranch  branch_id -> [patient_ids]
+     * @return array<int, array<int, array{visit_count: int, median_gap_days: float|null}>>
+     */
+    private function visitStatsInWindowByBranch(
+        MetricScope $scope,
+        array $branchIds,
+        array $treatmentStatusIds,
+        array $patientIdsByBranch,
+        string $windowStart,
+        string $windowEnd,
+    ): array {
+        $allPatientIds = [];
+        foreach ($patientIdsByBranch as $ids) {
+            foreach ($ids as $pid) {
+                $allPatientIds[$pid] = true;
+            }
+        }
+        $allPatientIds = array_keys($allPatientIds);
+        if ($allPatientIds === [] || $branchIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->where('appointment_type_id', 2)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
+            ->whereIn('patient_id', $allPatientIds)
+            ->where('scheduled_date', '>=', $windowStart)
+            ->where('scheduled_date', '<=', $windowEnd)
+            ->whereNull('deleted_at')
+            ->select('location_id', 'patient_id', 'scheduled_date')
+            ->orderBy('location_id')
+            ->orderBy('patient_id')
+            ->orderBy('scheduled_date')
+            ->get();
+
+        // Group dates by (branch, patient).
+        $byBranchPatient = [];
+        foreach ($rows as $r) {
+            $byBranchPatient[(int) $r->location_id][(int) $r->patient_id][] = (string) $r->scheduled_date;
+        }
+
+        $out = [];
+        foreach ($byBranchPatient as $branchId => $patients) {
+            foreach ($patients as $pid => $dates) {
+                $count = count($dates);
+                $median = null;
+                if ($count >= 2) {
+                    $gaps = [];
+                    for ($i = 1; $i < $count; $i++) {
+                        $gaps[] = (strtotime($dates[$i]) - strtotime($dates[$i - 1])) / 86400;
+                    }
+                    sort($gaps);
+                    $g = count($gaps);
+                    $median = $g % 2 === 0
+                        ? ($gaps[$g / 2 - 1] + $gaps[$g / 2]) / 2.0
+                        : (float) $gaps[(int) floor($g / 2)];
+                }
+                $out[$branchId][$pid] = ['visit_count' => $count, 'median_gap_days' => $median];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Bulk variant of lifetimeVisitCounts — `branch_id -> patient_id -> count`.
+     *
+     * @param  list<int>  $branchIds
+     * @param  list<int>  $treatmentStatusIds
+     * @param  array<int, list<int>>  $patientIdsByBranch
+     * @return array<int, array<int, int>>
+     */
+    private function lifetimeVisitCountsByBranch(
+        MetricScope $scope,
+        array $branchIds,
+        array $treatmentStatusIds,
+        array $patientIdsByBranch,
+        string $today,
+    ): array {
+        $allPatientIds = [];
+        foreach ($patientIdsByBranch as $ids) {
+            foreach ($ids as $pid) {
+                $allPatientIds[$pid] = true;
+            }
+        }
+        $allPatientIds = array_keys($allPatientIds);
+        if ($allPatientIds === [] || $branchIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->where('appointment_type_id', 2)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
+            ->whereIn('patient_id', $allPatientIds)
+            ->where('scheduled_date', '<=', $today)
+            ->whereNull('deleted_at')
+            ->groupBy('location_id', 'patient_id')
+            ->select('location_id', 'patient_id')
+            ->selectRaw('COUNT(*) AS visit_count')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(int) $r->location_id][(int) $r->patient_id] = (int) $r->visit_count;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Bulk broken-commitment query across every (branch, candidate-patient)
+     * pair. Same "AFTER last successful visit, last 90 days" semantics as
+     * the per-branch version, but slices the work into one DB roundtrip.
+     *
+     * @param  list<int>  $branchIds
+     * @param  array<int, array<int, array{last_visit_date: string|null, last_doctor_id: int|null}>>  $candidatesByBranch
+     * @return array<int, array<int, array{no_show_count: int, cancelled_count: int, last_broken_date: string}>>
+     */
+    private function brokenCommitmentsByPatientBulk(
+        MetricScope $scope,
+        array $branchIds,
+        array $candidatesByBranch,
+        string $today,
+    ): array {
+        $allPatientIds = [];
+        foreach ($candidatesByBranch as $patients) {
+            foreach ($patients as $pid => $_) {
+                $allPatientIds[$pid] = true;
+            }
+        }
+        $allPatientIds = array_keys($allPatientIds);
+        if ($allPatientIds === [] || $branchIds === []) {
+            return [];
+        }
+
+        $lookback = now()->subDays(self::BROKEN_COMMITMENT_WINDOW_DAYS)->toDateString();
+
+        $rows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->where('appointment_type_id', 2)
+            ->whereIn('patient_id', $allPatientIds)
+            ->whereIn('appointment_status_id', [self::NO_SHOW_STATUS_ID, self::CANCELLED_STATUS_ID])
+            ->where('scheduled_date', '<=', $today)
+            ->where('scheduled_date', '>=', $lookback)
+            ->whereNull('deleted_at')
+            ->select('location_id', 'patient_id', 'scheduled_date', 'appointment_status_id')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $bid = (int) $r->location_id;
+            $pid = (int) $r->patient_id;
+            $lastVisit = $candidatesByBranch[$bid][$pid]['last_visit_date'] ?? null;
+            if ($lastVisit === null || $r->scheduled_date <= $lastVisit) {
+                continue;
+            }
+            $out[$bid][$pid] ??= [
+                'no_show_count' => 0,
+                'cancelled_count' => 0,
+                'last_broken_date' => '',
+            ];
+            if ((int) $r->appointment_status_id === self::NO_SHOW_STATUS_ID) {
+                $out[$bid][$pid]['no_show_count']++;
+            } else {
+                $out[$bid][$pid]['cancelled_count']++;
+            }
+            $date = (string) $r->scheduled_date;
+            if ($date > $out[$bid][$pid]['last_broken_date']) {
+                $out[$bid][$pid]['last_broken_date'] = $date;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Lifetime arrived-treatment count per patient at the branch — used
+     * exclusively for the single-visit exclusion gate. Cheaper than
+     * loading all visit dates because we only need COUNT(*).
+     *
+     * @param  list<int>  $treatmentStatusIds
+     * @param  list<int>  $patientIds
+     * @return array<int, int>  patient_id -> count
+     */
+    private function lifetimeVisitCounts(
+        MetricScope $scope,
+        int $branchId,
+        array $treatmentStatusIds,
+        array $patientIds,
+        string $today,
+    ): array {
+        if ($patientIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('appointments')
+            ->where('account_id', $scope->accountId)
+            ->where('location_id', $branchId)
+            ->where('appointment_type_id', 2)
+            ->whereIn('appointment_status_id', $treatmentStatusIds)
+            ->whereIn('patient_id', $patientIds)
+            ->where('scheduled_date', '<=', $today)
+            ->whereNull('deleted_at')
+            ->groupBy('patient_id')
+            ->select('patient_id')
+            ->selectRaw('COUNT(*) AS visit_count')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(int) $r->patient_id] = (int) $r->visit_count;
+        }
+
+        return $out;
+    }
+
+    /**
+     * All abandoned-package valuations at a branch, grouped by patient.
+     * Used by the per-branch (modal) path where we need the abandoned
+     * set BEFORE the candidate pool is composed. Bulk path uses
+     * abandonedPackagesByBranchPatient directly.
+     *
+     * @return array<int, list<array{package_id: int, unused_value: float, consumed_value: float, paid: float, remaining_sessions: int}>>
+     */
+    private function abandonedPackagesAtBranch(MetricScope $scope, int $branchId): array
+    {
+        $rows = $this->abandonedPackageValuationQuery($scope, [$branchId], /* patientIds */ null)->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $pid = (int) $r->patient_id;
+            $out[$pid][] = [
+                'package_id' => (int) $r->package_id,
+                'unused_value' => (float) $r->unused_value,
+                'consumed_value' => (float) $r->consumed_value,
+                'paid' => (float) $r->paid,
+                'remaining_sessions' => (int) $r->remaining_sessions,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Abandoned packages grouped by patient. Each value is a list of
      * package valuations (unused_value, consumed_value, paid). A patient
      * may own more than one abandoned package — they all aggregate.
@@ -592,6 +1514,160 @@ final class AtRiskPatientsMetric
                 'paid' => (float) $r->paid,
                 'remaining_sessions' => (int) $r->remaining_sessions,
             ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Bulk variant — one query covers every branch in scope. Returns a
+     * `branch_id -> patient_id -> packages[]` map so the per-branch
+     * builder can look up its slice without hitting the DB. Used by
+     * the overview path; modal path stays on the per-branch query
+     * (single 1.7s query is fine for one click).
+     *
+     * @param  list<int>  $branchIds
+     * @return array<int, array<int, list<array<string, mixed>>>>
+     */
+    private function abandonedPackagesByBranchPatient(MetricScope $scope, array $branchIds): array
+    {
+        if ($branchIds === []) {
+            return [];
+        }
+
+        $cutoff = now()->subDays(self::PACKAGE_RECENCY_DAYS)->toDateString();
+
+        // Step 1 — pull candidate package metadata once, indexed lookup
+        // via idx_packages_account_location_active. This is cheap.
+        $candidates = DB::table('packages')
+            ->select('id', 'patient_id', 'location_id')
+            ->where('account_id', $scope->accountId)
+            ->whereIn('location_id', $branchIds)
+            ->where('active', 1)
+            ->where('is_refund', 0)
+            ->whereNull('deleted_at')
+            ->whereDate('created_at', '>=', $cutoff)
+            ->get();
+
+        if ($candidates->isEmpty()) {
+            return [];
+        }
+
+        $packageIds = $candidates->pluck('id')->map(static fn ($v): int => (int) $v)->all();
+
+        // Step 2 — two aggregations in parallel, both filtered to the
+        // candidate package IDs. Indexed by package_id, so each scan is
+        // bounded by the candidate set instead of the full table.
+        $svcRows = $this->servicesAggregateForPackages($packageIds);
+        $paidRows = $this->paidAggregateForPackages($packageIds);
+
+        $out = [];
+        foreach ($candidates as $p) {
+            $svc = $svcRows[(int) $p->id] ?? null;
+            if (! $svc || $svc['remaining_sessions'] <= 0) {
+                continue;
+            }
+            $paid = $paidRows[(int) $p->id] ?? 0.0;
+            $bid = (int) $p->location_id;
+            $pid = (int) $p->patient_id;
+            $out[$bid][$pid][] = [
+                'package_id' => (int) $p->id,
+                'unused_value' => $svc['unused_value'],
+                'consumed_value' => $svc['consumed_value'],
+                'paid' => $paid,
+                'remaining_sessions' => $svc['remaining_sessions'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Per-package consumed/unused/remaining aggregates for a bounded set
+     * of package IDs. Uses MySQL's IN-list — fine up to a few thousand
+     * IDs; chunks if larger.
+     *
+     * @param  list<int>  $packageIds
+     * @return array<int, array{consumed_value: float, unused_value: float, remaining_sessions: int}>
+     */
+    private function servicesAggregateForPackages(array $packageIds): array
+    {
+        if ($packageIds === []) {
+            return [];
+        }
+
+        $priceExpr = '
+            CASE
+                WHEN price > 0 THEN price
+                WHEN tax_including_price > 0 THEN tax_including_price
+                WHEN actual_price > 0 THEN actual_price
+                WHEN orignal_price > 0 THEN orignal_price
+                ELSE 0
+            END
+        ';
+
+        $out = [];
+        foreach (array_chunk($packageIds, 5000) as $chunk) {
+            $rows = DB::table('package_services')
+                ->select('package_id')
+                ->selectRaw("SUM(CASE WHEN is_consumed = 1 THEN {$priceExpr} ELSE 0 END) AS consumed_value")
+                ->selectRaw("SUM(CASE WHEN is_consumed = 0 THEN {$priceExpr} ELSE 0 END) AS unused_value")
+                ->selectRaw('SUM(CASE WHEN is_consumed = 0 THEN 1 ELSE 0 END) AS remaining_sessions')
+                ->whereIn('package_id', $chunk)
+                ->groupBy('package_id')
+                ->get();
+
+            foreach ($rows as $r) {
+                $out[(int) $r->package_id] = [
+                    'consumed_value' => (float) $r->consumed_value,
+                    'unused_value' => (float) $r->unused_value,
+                    'remaining_sessions' => (int) $r->remaining_sessions,
+                ];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Per-package paid amount for a bounded set of package IDs. Same
+     * canonical ledger filter as RevenueLedgerQuery.
+     *
+     * @param  list<int>  $packageIds
+     * @return array<int, float>
+     */
+    private function paidAggregateForPackages(array $packageIds): array
+    {
+        if ($packageIds === []) {
+            return [];
+        }
+
+        $out = [];
+        foreach (array_chunk($packageIds, 5000) as $chunk) {
+            $rows = DB::table('package_advances')
+                ->select('package_id')
+                ->selectRaw(
+                    "SUM(CASE WHEN cash_flow = 'in' THEN cash_amount ELSE -cash_amount END) AS paid"
+                )
+                ->where('cash_amount', '>', 0)
+                ->where(function ($q): void {
+                    $q->where(function ($in): void {
+                        $in->where('cash_flow', 'in')
+                            ->where('is_adjustment', 0)
+                            ->where('is_tax', 0)
+                            ->where('is_cancel', 0);
+                    })->orWhere(function ($refund): void {
+                        $refund->where('cash_flow', 'out')
+                            ->where('is_refund', 1);
+                    });
+                })
+                ->whereIn('package_id', $chunk)
+                ->groupBy('package_id')
+                ->get();
+
+            foreach ($rows as $r) {
+                $out[(int) $r->package_id] = (float) $r->paid;
+            }
         }
 
         return $out;
@@ -720,9 +1796,13 @@ final class AtRiskPatientsMetric
 
         $lookback = now()->subDays(self::BROKEN_COMMITMENT_WINDOW_DAYS)->toDateString();
 
+        // Cohort is treatment-only, so broken commitments must also be
+        // treatment-only — a cancelled consultation doesn't belong on a
+        // treatment-cohort patient's "Cancelled" chip.
         $rows = DB::table('appointments')
             ->where('account_id', $scope->accountId)
             ->where('location_id', $branchId)
+            ->where('appointment_type_id', 2)
             ->whereIn('patient_id', $patientIds)
             ->whereIn('appointment_status_id', [self::NO_SHOW_STATUS_ID, self::CANCELLED_STATUS_ID])
             ->where('scheduled_date', '<=', $today)
@@ -894,50 +1974,179 @@ final class AtRiskPatientsMetric
     }
 
     /**
-     * Bucket assignment, priority order. Returns null when the patient
-     * doesn't fit any at-risk bucket.
+     * Evaluate the three slippage signals for one candidate patient and
+     * pick the primary signal per the locked priority order. Returns null
+     * if no signal fires (patient drops out of the at-risk pool).
+     *
+     * Priority for primary_signal selection:
+     *   1. abandoned_package + priority='high'
+     *   2. cadence_break (most overdue first via days_overdue sort)
+     *   3. broken_commitment
+     *   4. abandoned_package + priority='medium'
+     *   5. abandoned_package + priority='low'
      *
      * @param  list<array{package_id: int, unused_value: float, consumed_value: float, paid: float, remaining_sessions: int}>  $abandonedPackages
+     * @param  array{no_show_count: int, cancelled_count: int, last_broken_date: string}|null  $broken
+     * @return array{
+     *   signals: list<string>,
+     *   primary_signal: string,
+     *   priority: string|null,
+     *   days_since_last: int|null,
+     *   median_gap_days: float|null,
+     *   threshold_days: int|null,
+     *   days_overdue: int|null,
+     *   overdue_multiplier: float|null,
+     * }|null
      */
-    private function classify(
+    private function evaluateSignals(
         array $abandonedPackages,
-        int $visitCount,
+        int $visitsInBaseline,
+        int $lifetimeVisits,
         ?float $medianGapDays,
-        string $lastVisitDate,
+        ?string $lastVisitDate,
+        ?array $broken,
         string $today,
-    ): ?string {
+    ): ?array {
+        $daysSinceLast = $lastVisitDate !== null
+            ? max(0, (int) round((strtotime($today) - strtotime($lastVisitDate)) / 86400))
+            : null;
+
+        // --- Signal 1: Cadence Break --------------------------------------
+        // ≥2 arrived treatments in baseline window AND
+        // days_since_last > max(1.5 × median_gap, 30).
+        // Threshold uses native float math — a patient with median 25 fires
+        // at day 38 (38 > 37.5), not day 39. The display value is rounded
+        // for the UI but the comparison is precise.
+        $cadenceBreak = false;
+        $thresholdDays = null;
+        $daysOverdue = null;
+        $overdueMultiplier = null;
+        if (
+            $visitsInBaseline >= 2
+            && $medianGapDays !== null
+            && $daysSinceLast !== null
+        ) {
+            $rawThreshold = max(
+                (float) self::CADENCE_FLOOR_DAYS,
+                $medianGapDays * self::CADENCE_MULTIPLIER,
+            );
+            if ($daysSinceLast > $rawThreshold) {
+                $cadenceBreak = true;
+                $thresholdDays = (int) round($rawThreshold);
+                $daysOverdue = $daysSinceLast - $thresholdDays;
+                $overdueMultiplier = $medianGapDays > 0
+                    ? round($daysSinceLast / $medianGapDays, 2)
+                    : null;
+            }
+        }
+
+        // --- Signal 2: Abandoned Package ----------------------------------
+        // ≥1 active package with unused sessions AND last_visit ≥ 30 days.
+        // (No future booking is already enforced upstream when the candidate
+        // pool was built.)
+        $abandonedFires = false;
+        $priority = null;
+        $abandonedRemainingValue = 0.0;
         if ($abandonedPackages !== []) {
-            return 'abandoned_package';
+            foreach ($abandonedPackages as $pkg) {
+                $abandonedRemainingValue += (float) $pkg['unused_value'];
+            }
+            $hasMinRecency = $daysSinceLast !== null
+                && $daysSinceLast >= self::ABANDONED_MIN_DAYS;
+            if ($hasMinRecency) {
+                $abandonedFires = true;
+                $priority = $this->priorityFor(
+                    $abandonedRemainingValue,
+                    $daysSinceLast,
+                );
+            }
         }
 
-        $daysSinceLast = max(
-            0,
-            (int) round((strtotime($today) - strtotime($lastVisitDate)) / 86400),
-        );
+        // --- Signal 3: Broken Commitment ----------------------------------
+        // No-show or cancellation AFTER last successful visit, within 90d,
+        // AND no future booking (enforced upstream).
+        // brokenCommitmentsByPatient already filters to "after last visit"
+        // and within the 90-day window, so its presence implies the signal.
+        $brokenFires = $broken !== null
+            && (($broken['no_show_count'] ?? 0) + ($broken['cancelled_count'] ?? 0)) > 0;
 
-        if ($visitCount >= 3) {
-            // Lapsed regular needs a broken cadence — if they're still
-            // within 1.5× their median gap they're not yet "lapsed".
-            if ($medianGapDays !== null && $daysSinceLast > $medianGapDays * 1.5) {
-                return 'lapsed_regular';
-            }
-            // Regular but still on cadence → on track, drop them.
+        if (! $cadenceBreak && ! $abandonedFires && ! $brokenFires) {
             return null;
         }
 
-        if ($visitCount === 2) {
-            // Maintenance overdue — completed-plan patient past their
-            // personal cadence. Same heuristic applies.
-            if ($medianGapDays !== null && $daysSinceLast > $medianGapDays * 1.5) {
-                return 'maintenance_overdue';
-            }
+        // Single-visit-only exclusion: lifetime arrived treatments == 1
+        // belongs to the first-visit retention funnel, not at-risk —
+        // unless they have an abandoned package or broken commitment
+        // (which are independent signals worth surfacing).
+        if (
+            $lifetimeVisits === 1
+            && ! $abandonedFires
+            && ! $brokenFires
+        ) {
             return null;
         }
 
-        if ($visitCount === 1) {
-            return 'tried_once_dropout';
+        $signals = [];
+        if ($cadenceBreak) {
+            $signals[] = 'cadence_break';
+        }
+        if ($abandonedFires) {
+            $signals[] = 'abandoned_package';
+        }
+        if ($brokenFires) {
+            $signals[] = 'broken_commitment';
         }
 
-        return null;
+        // Pick primary per the locked priority order.
+        $primary = null;
+        if ($abandonedFires && $priority === 'high') {
+            $primary = 'abandoned_package';
+        } elseif ($cadenceBreak) {
+            $primary = 'cadence_break';
+        } elseif ($brokenFires) {
+            $primary = 'broken_commitment';
+        } elseif ($abandonedFires) {
+            // medium or low
+            $primary = 'abandoned_package';
+        }
+
+        return [
+            'signals' => $signals,
+            'primary_signal' => $primary,
+            // Priority of the abandoned-package signal when it fires.
+            // Set whenever the patient has an actionable abandoned
+            // package, regardless of which signal is primary — the
+            // branch-level priority counters use this to surface "how
+            // much high-value money is at risk?" independent of the
+            // patient's headline classification.
+            'priority' => $priority,
+            'days_since_last' => $daysSinceLast,
+            'median_gap_days' => $medianGapDays,
+            'threshold_days' => $thresholdDays,
+            'days_overdue' => $daysOverdue,
+            'overdue_multiplier' => $overdueMultiplier,
+        ];
+    }
+
+    /**
+     * Abandoned-package priority bucket.
+     *
+     *   High   — remaining ≥ 1,000  AND  last_visit 30–60 days
+     *   Medium — remaining ≥ 1,000  AND  last_visit 60–90 days
+     *   Low    — remaining < 1,000  OR   last_visit > 90 days
+     */
+    private function priorityFor(float $remainingValue, int $daysSinceLast): string
+    {
+        if ($remainingValue < self::ABANDONED_VALUE_CUTOFF) {
+            return 'low';
+        }
+        if ($daysSinceLast <= self::ABANDONED_HIGH_DAYS_END) {
+            return 'high';
+        }
+        if ($daysSinceLast <= self::ABANDONED_MEDIUM_DAYS_END) {
+            return 'medium';
+        }
+
+        return 'low';
     }
 }

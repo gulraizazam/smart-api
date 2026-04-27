@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Dashboard\Metrics;
 
 use App\Helpers\DoctorDashboardHelper;
+use App\Services\Conversion\ConversionService;
 use App\Services\Dashboard\Contracts\Metric;
 use App\Services\Dashboard\Support\BranchResolver;
 use App\Services\Dashboard\Support\RevenueLedgerQuery;
@@ -38,6 +39,7 @@ final class BranchLeaderboardMetric implements Metric
 
     public function __construct(
         private readonly BranchResolver $branches,
+        private readonly ConversionService $conversion,
     ) {}
 
     /**
@@ -50,6 +52,272 @@ final class BranchLeaderboardMetric implements Metric
             .'|'.$range->startString().'..'.$range->endString();
 
         return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->build($scope, $range));
+    }
+
+    /**
+     * Per-doctor breakdown at a single branch for the hover card on the
+     * Sales by Centre list. Doctor attribution uses the consulting doctor
+     * (appointments.doctor_id) so the numbers answer "what did this
+     * doctor's bookings produce" rather than "what did this user ring up".
+     *
+     * Produces two sales figures per doctor:
+     *   - total_sales       = cash collected in range on ANY package whose
+     *                         originating consult has this doctor
+     *   - conversion_sales  = same, restricted to converted consults whose
+     *                         converted_at falls in the window
+     * Both use the canonical RevenueLedgerQuery filter on package_advances
+     * so they reconcile with the branch Sales tile and the outer row's
+     * net_revenue. `revenue` is preserved as an alias for total_sales so
+     * legacy response consumers keep working.
+     *
+     * Three bulk queries (appointments + total_sales + conversion_sales)
+     * stitched per doctor — same pattern the branch rollup uses.
+     *
+     * @return array{
+     *   branch_id: int,
+     *   branch_name: string|null,
+     *   rows: list<array{doctor_id:int, doctor_name:string, appts_total:int, appts_arrived:int, appts_converted:int, conversion_rate:float|null, revenue:float, total_sales:float, conversion_sales:float, avg_value:float|null}>,
+     *   totals: array{appts_total:int, appts_arrived:int, appts_converted:int, conversion_rate:float|null, revenue:float, total_sales:float, conversion_sales:float, avg_value:float|null},
+     * }
+     */
+    public function branchDoctorBreakdown(MetricScope $scope, int $branchId, DateRange $range): array
+    {
+        $cacheKey = 'mgmt_dash:branch_doctor_breakdown:'
+            .$scope->cacheKey()
+            .'|b'.$branchId
+            .'|'.$range->startString().'..'.$range->endString();
+
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn () => $this->buildBranchDoctorBreakdown($scope, $branchId, $range));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildBranchDoctorBreakdown(MetricScope $scope, int $branchId, DateRange $range): array
+    {
+        $allowed = $this->branches->idsInScope($scope);
+        if (! in_array($branchId, $allowed, true)) {
+            return [
+                'branch_id' => $branchId,
+                'branch_name' => null,
+                'rows' => [],
+                'totals' => $this->emptyBreakdownTotals(),
+            ];
+        }
+
+        $branchName = $this->branches->names([$branchId])[$branchId] ?? null;
+
+        // Appointment aggregates per doctor — same semantic as
+        // appointmentStatsByBranch but grouped by doctor_id and scoped to
+        // a single branch.
+        $consultationStatusIds = DoctorDashboardHelper::getConsultationStatusIds();
+        $apptRows = DB::table('appointments as a')
+            ->where('a.account_id', $scope->accountId)
+            ->where('a.location_id', $branchId)
+            ->whereBetween('a.scheduled_date', [$range->startString(), $range->endString()])
+            ->whereNotNull('a.doctor_id')
+            ->whereNull('a.deleted_at')
+            ->groupBy('a.doctor_id')
+            ->select('a.doctor_id')
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw(
+                'SUM(CASE WHEN a.appointment_type_id = 1 AND a.appointment_status_id IN ('
+                .implode(',', $consultationStatusIds)
+                .') THEN 1 ELSE 0 END) AS arrived',
+            )
+            ->selectRaw('SUM(CASE WHEN a.appointment_type_id = 1 AND a.converted_at IS NOT NULL THEN 1 ELSE 0 END) AS converted')
+            ->get();
+
+        // Total Sales per doctor — ledger revenue from package_advances,
+        // grouped by the consulting doctor on the package's originating
+        // appointment. Uses the canonical RevenueLedgerQuery filter so the
+        // number reconciles with the branch Sales tile.
+        $totalSalesRows = $this->doctorSalesQuery($scope->accountId, $branchId, $range)
+            ->groupBy('a.doctor_id')
+            ->select('a.doctor_id')
+            ->selectRaw($this->salesNetSelectRaw().' AS sales')
+            ->get();
+
+        // Conversion Sales per doctor — delegates to ConversionService's
+        // validated pipeline (invoice → package_service → first-payment-
+        // in-range → net>0) so the number matches /admin/reports/conversion
+        // byte-for-byte instead of approximating with a converted_at gate.
+        $conversionByDoctor = $this->conversion->byDoctorsAtBranch(
+            $branchId,
+            $range->startString(),
+            $range->endString(),
+            $scope->accountId,
+        );
+
+        $byDoctor = [];
+        foreach ($apptRows as $r) {
+            $id = (int) $r->doctor_id;
+            $byDoctor[$id] = [
+                'doctor_id' => $id,
+                'appts_total' => (int) $r->total,
+                'appts_arrived' => (int) $r->arrived,
+                'appts_converted' => (int) $r->converted,
+                'total_sales' => 0.0,
+                'conversion_sales' => 0.0,
+            ];
+        }
+        $ensure = function (int $id) use (&$byDoctor): void {
+            $byDoctor[$id] ??= [
+                'doctor_id' => $id,
+                'appts_total' => 0,
+                'appts_arrived' => 0,
+                'appts_converted' => 0,
+                'total_sales' => 0.0,
+                'conversion_sales' => 0.0,
+            ];
+        };
+        foreach ($totalSalesRows as $r) {
+            $id = (int) $r->doctor_id;
+            if ($id === 0) {
+                continue;
+            }
+            $ensure($id);
+            $byDoctor[$id]['total_sales'] = (float) $r->sales;
+        }
+        foreach ($conversionByDoctor as $id => $v) {
+            if ($id === 0) {
+                continue;
+            }
+            $ensure($id);
+            $byDoctor[$id]['conversion_sales'] = (float) ($v['spend'] ?? 0);
+            // Override the converted count with the validated count from
+            // ConversionService so avg_value numerator and denominator
+            // come from the same pipeline (matches admin/reports/conversion
+            // and the Avg Conversion Value sparkline).
+            $byDoctor[$id]['appts_converted'] = (int) ($v['count'] ?? 0);
+        }
+
+        $doctorIds = array_keys($byDoctor);
+        $names = $doctorIds === []
+            ? []
+            : DB::table('users')->whereIn('id', $doctorIds)->pluck('name', 'id')->toArray();
+
+        $rows = [];
+        foreach ($byDoctor as $id => $d) {
+            $rate = $d['appts_arrived'] > 0
+                ? round(($d['appts_converted'] / $d['appts_arrived']) * 100, 1)
+                : null;
+            // Avg value anchors to conversion sales ÷ converted consults
+            // — "what did a typical conversion generate for this doctor"
+            // — which stays internally consistent (numerator and denominator
+            // both refer to the same validated set).
+            $avg = $d['appts_converted'] > 0
+                ? round($d['conversion_sales'] / $d['appts_converted'], 2)
+                : null;
+
+            $rows[] = [
+                'doctor_id' => $id,
+                'doctor_name' => $names[$id] ?? "User #{$id}",
+                'appts_total' => $d['appts_total'],
+                'appts_arrived' => $d['appts_arrived'],
+                'appts_converted' => $d['appts_converted'],
+                'conversion_rate' => $rate,
+                'total_sales' => round($d['total_sales'], 2),
+                'conversion_sales' => round($d['conversion_sales'], 2),
+                // Back-compat alias — legacy consumers read `revenue`.
+                'revenue' => round($d['total_sales'], 2),
+                'avg_value' => $avg,
+            ];
+        }
+
+        // Sort: total_sales desc by default. Low-signal rows (zero consult
+        // arrivals) land last so 100% conversion on 1 patient doesn't
+        // dominate the top of the card.
+        usort($rows, static function (array $a, array $b): int {
+            $aLow = $a['appts_arrived'] < 3 ? 1 : 0;
+            $bLow = $b['appts_arrived'] < 3 ? 1 : 0;
+            if ($aLow !== $bLow) {
+                return $aLow <=> $bLow;
+            }
+
+            return $b['total_sales'] <=> $a['total_sales'];
+        });
+
+        $sumTotal = array_sum(array_column($rows, 'appts_total'));
+        $sumArrived = array_sum(array_column($rows, 'appts_arrived'));
+        $sumConverted = array_sum(array_column($rows, 'appts_converted'));
+        $sumTotalSales = array_sum(array_column($rows, 'total_sales'));
+        $sumConversionSales = array_sum(array_column($rows, 'conversion_sales'));
+
+        return [
+            'branch_id' => $branchId,
+            'branch_name' => $branchName,
+            'rows' => $rows,
+            'totals' => [
+                'appts_total' => $sumTotal,
+                'appts_arrived' => $sumArrived,
+                'appts_converted' => $sumConverted,
+                'conversion_rate' => $sumArrived > 0
+                    ? round(($sumConverted / $sumArrived) * 100, 1)
+                    : null,
+                'total_sales' => round($sumTotalSales, 2),
+                'conversion_sales' => round($sumConversionSales, 2),
+                'revenue' => round($sumTotalSales, 2),
+                'avg_value' => $sumConverted > 0 ? round($sumConversionSales / $sumConverted, 2) : null,
+            ],
+        ];
+    }
+
+    /**
+     * Shared base query for the two per-doctor ledger sums. Joins
+     * package_advances → packages → appointments so the caller can
+     * further narrow on appointment attributes (converted_at, type, etc).
+     *
+     * Applies the canonical RevenueLedgerQuery filter on the advance
+     * rows and the package + advance date-range scoping. Appointments are
+     * filtered by branch so we don't cross-count cases where a package
+     * was moved between locations mid-lifecycle.
+     */
+    private function doctorSalesQuery(int $accountId, int $branchId, DateRange $range): \Illuminate\Database\Query\Builder
+    {
+        $query = DB::table('package_advances as pa')
+            ->join('packages as p', 'p.id', '=', 'pa.package_id')
+            ->join('appointments as a', 'a.id', '=', 'p.appointment_id')
+            ->where('pa.account_id', $accountId)
+            ->where('a.location_id', $branchId)
+            ->whereNull('p.deleted_at')
+            ->whereNull('a.deleted_at')
+            ->whereNotNull('a.doctor_id')
+            ->whereDate('pa.created_at', '>=', $range->startString())
+            ->whereDate('pa.created_at', '<=', $range->endString());
+
+        RevenueLedgerQuery::applyValidRevenueFilters($query, 'pa.');
+
+        return $query;
+    }
+
+    /**
+     * SQL fragment for the net-ledger sum (in − refund_out). Matches
+     * RevenueLedgerQuery semantics; extracted so the two doctor queries
+     * emit byte-identical aggregates.
+     */
+    private function salesNetSelectRaw(): string
+    {
+        return "COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' THEN pa.cash_amount ELSE 0 END), 0)"
+            .' - '
+            ."COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_refund = 1 THEN pa.cash_amount ELSE 0 END), 0)";
+    }
+
+    /**
+     * @return array{appts_total:int, appts_arrived:int, appts_converted:int, conversion_rate:float|null, revenue:float, total_sales:float, conversion_sales:float, avg_value:float|null}
+     */
+    private function emptyBreakdownTotals(): array
+    {
+        return [
+            'appts_total' => 0,
+            'appts_arrived' => 0,
+            'appts_converted' => 0,
+            'conversion_rate' => null,
+            'total_sales' => 0.0,
+            'conversion_sales' => 0.0,
+            'revenue' => 0.0,
+            'avg_value' => null,
+        ];
     }
 
     /**
@@ -71,6 +339,18 @@ final class BranchLeaderboardMetric implements Metric
         $apptStats = $this->appointmentStatsByBranch($branchIds, $range, $scope->accountId);
         $refundMap = $this->refundsByBranch($branchIds, $range, $scope->accountId);
 
+        // Validated conversion numbers across ALL branches in one pass —
+        // the same pipeline that powers /admin/reports/conversion and the
+        // per-doctor tooltip. Previously this fanned out to one
+        // ConversionService call per branch (12 × ~165ms). Now: one
+        // candidate-fetch + one validation pass, partitioned by branch.
+        $convByBranchDoctor = $this->conversion->byBranchAndDoctor(
+            array_map('intval', $branchIds),
+            $range->startString(),
+            $range->endString(),
+            $scope->accountId,
+        );
+
         $rows = [];
         foreach ($branchIds as $branchId) {
             $revenue = (float) ($revenueMap[$branchId] ?? 0);
@@ -79,20 +359,27 @@ final class BranchLeaderboardMetric implements Metric
             $refundTotal = (float) ($refundMap[$branchId] ?? 0);
             $target = $targetMap[$branchId] ?? null;
 
+            $validatedConverted = 0;
+            $validatedSpend = 0.0;
+            foreach (($convByBranchDoctor[(int) $branchId] ?? []) as $r) {
+                $validatedConverted += (int) ($r['count'] ?? 0);
+                $validatedSpend += (float) ($r['spend'] ?? 0);
+            }
+
             $percentToTarget = $target !== null && $target > 0
                 ? round(($revenue / $target) * 100, 1)
                 : null;
 
             $conversionRate = $stats['arrived'] > 0
-                ? round(($stats['converted'] / $stats['arrived']) * 100, 1)
+                ? round(($validatedConverted / $stats['arrived']) * 100, 1)
                 : 0.0;
 
             $noShowRate = $stats['total'] > 0
                 ? round(($stats['cancelled'] / $stats['total']) * 100, 1)
                 : 0.0;
 
-            $avgValue = $stats['converted'] > 0
-                ? round($revenue / $stats['converted'], 2)
+            $avgValue = $validatedConverted > 0
+                ? round($validatedSpend / $validatedConverted, 2)
                 : 0.0;
 
             $momDelta = $prevRevenue > 0
