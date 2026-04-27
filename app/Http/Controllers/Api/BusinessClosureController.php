@@ -265,10 +265,6 @@ class BusinessClosureController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $filters = getFilters($request->all());
 
