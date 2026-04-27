@@ -91,26 +91,68 @@ final class PatientCohortRetentionMetric implements Metric
             ];
         }
 
+        // Bulk approach — replaces a per-month, per-window fan-out
+        // (12 cohort queries × 4 window queries = 60 trips) with three
+        // queries total:
+        //   1. Patient IDs with any qualifying appointment in the window
+        //      that includes all cohort months PLUS the longest retention
+        //      window after the latest month (so returns count correctly).
+        //   2. Lifetime first-visit per those patients, filtered to those
+        //      whose first-visit lands in the cohort range.
+        //   3. All qualifying return appointments for cohort patients.
+        // Then we bucket month + window in PHP.
+        $earliestMonthStart = end($monthBounds)['start'];
+        $latestMonthEnd = $monthBounds[$months[0]]['end'];
+        $maxWindow = max($windows);
+        $returnsBoundEnd = CarbonImmutable::parse($latestMonthEnd)
+            ->addDays($maxWindow)
+            ->format('Y-m-d');
+
+        $cohortFirstVisits = $this->cohortFirstVisitsBulk(
+            $scope,
+            $earliestMonthStart,
+            $latestMonthEnd,
+            $returnsBoundEnd,
+        );
+
+        // Group cohort patients by their first-visit month label.
+        $byMonth = [];
+        foreach ($cohortFirstVisits as $patientId => $firstDate) {
+            $monthLabel = substr($firstDate, 0, 7); // YYYY-MM
+            $byMonth[$monthLabel][$patientId] = $firstDate;
+        }
+
+        // One pass to fetch all return appointments for cohort patients.
+        $cohortPatientIds = array_keys($cohortFirstVisits);
+        $returnsByPatient = $this->returnsByPatientBulk($cohortPatientIds, $earliestMonthStart, $returnsBoundEnd);
+
         $cohorts = [];
         foreach ($months as $label) {
-            $bounds = $monthBounds[$label];
-            $firstVisits = $this->firstVisitsInMonth($scope, $bounds['start'], $bounds['end']);
-
-            if ($firstVisits === []) {
+            $monthCohort = $byMonth[$label] ?? [];
+            $cohortSize = count($monthCohort);
+            if ($cohortSize === 0) {
                 $cohorts[$label] = ['size' => 0, 'retention' => array_fill_keys($windows, 0.0)];
 
                 continue;
             }
 
             $retention = [];
-            $cohortSize = count($firstVisits);
             foreach ($windows as $window) {
-                $returned = $this->countReturnedWithin($firstVisits, $window);
+                $returned = 0;
+                foreach ($monthCohort as $patientId => $firstDate) {
+                    $windowEnd = date('Y-m-d', strtotime($firstDate.' +'.$window.' days'));
+                    foreach ($returnsByPatient[$patientId] ?? [] as $d) {
+                        if ($d > $firstDate && $d <= $windowEnd) {
+                            $returned++;
+                            break;
+                        }
+                    }
+                }
                 $retention[$window] = round(($returned / $cohortSize) * 100, 1);
             }
 
             $cohorts[$label] = [
-                'size' => count($firstVisits),
+                'size' => $cohortSize,
                 'retention' => $retention,
             ];
         }
@@ -123,81 +165,98 @@ final class PatientCohortRetentionMetric implements Metric
     }
 
     /**
-     * Patients whose very first arrived appointment fell in this month.
+     * Lifetime first-visit per patient, filtered to patients whose first
+     * visit falls inside the cohort range. Scopes the GROUP BY to
+     * patients active in the relevant window so the planner doesn't
+     * aggregate across every patient ever.
      *
-     * @return array<int, string> [patient_id => first_visit_date]
+     * @return array<int, string> patient_id => YYYY-MM-DD
      */
-    private function firstVisitsInMonth(MetricScope $scope, string $monthStart, string $monthEnd): array
-    {
-        $qualifyingStatusIds = array_unique(array_merge(
+    private function cohortFirstVisitsBulk(
+        MetricScope $scope,
+        string $earliestMonthStart,
+        string $latestMonthEnd,
+        string $returnsBoundEnd,
+    ): array {
+        $statusIds = array_unique(array_merge(
             DoctorDashboardHelper::getConsultationStatusIds(),
             DoctorDashboardHelper::getTreatmentStatusIds(),
         ));
 
-        $query = DB::table('appointments')
+        // Step 1 — patient IDs with any qualifying appointment in the
+        // window of interest. Cheap indexed scan.
+        $pidQ = DB::table('appointments')
             ->where('account_id', $scope->accountId)
-            ->whereIn('appointment_status_id', $qualifyingStatusIds)
+            ->whereIn('appointment_status_id', $statusIds)
+            ->whereBetween('scheduled_date', [$earliestMonthStart, $returnsBoundEnd])
             ->whereNull('deleted_at');
-
         if ($scope->isBranchScoped() && $scope->branchIds !== null) {
-            $query->whereIn('location_id', $scope->branchIds);
+            $pidQ->whereIn('location_id', $scope->branchIds);
+        }
+        $patientIds = $pidQ->distinct()->pluck('patient_id')->map(static fn ($v): int => (int) $v)->all();
+
+        if ($patientIds === []) {
+            return [];
         }
 
-        $firstPerPatient = $query
-            ->select('patient_id', DB::raw('MIN(scheduled_date) as first_date'))
-            ->groupBy('patient_id');
-
-        $sql = DB::query()
-            ->fromSub($firstPerPatient, 'fp')
-            ->whereBetween('first_date', [$monthStart, $monthEnd])
-            ->pluck('first_date', 'patient_id');
-
+        // Step 2 — for those patients, lifetime MIN(scheduled_date),
+        // filtered (HAVING) to those whose first visit lands in the
+        // cohort range.
         $out = [];
-        foreach ($sql as $patientId => $date) {
-            $out[(int) $patientId] = (string) $date;
+        foreach (array_chunk($patientIds, 5000) as $chunk) {
+            $rows = DB::table('appointments')
+                ->where('account_id', $scope->accountId)
+                ->whereIn('appointment_status_id', $statusIds)
+                ->whereIn('patient_id', $chunk)
+                ->whereNull('deleted_at')
+                ->select('patient_id')
+                ->selectRaw('MIN(scheduled_date) AS first_date')
+                ->groupBy('patient_id')
+                ->having('first_date', '>=', $earliestMonthStart)
+                ->having('first_date', '<=', $latestMonthEnd)
+                ->get();
+            foreach ($rows as $r) {
+                $out[(int) $r->patient_id] = (string) $r->first_date;
+            }
         }
 
         return $out;
     }
 
     /**
-     * Of the given {patient_id => first_visit_date} pairs, count how many had
-     * a return visit within $windowDays.
+     * Return appointments for the cohort patients within the relevant
+     * outer window. One query covers every (patient, window) check we
+     * need — bucketing happens in PHP.
      *
-     * @param  array<int, string>  $firstVisits
+     * @param  list<int>  $patientIds
+     * @return array<int, list<string>>
      */
-    private function countReturnedWithin(array $firstVisits, int $windowDays): int
+    private function returnsByPatientBulk(array $patientIds, string $rangeStart, string $rangeEnd): array
     {
-        if ($firstVisits === []) {
-            return 0;
+        if ($patientIds === []) {
+            return [];
         }
 
-        $patientIds = array_keys($firstVisits);
-        $qualifyingStatusIds = array_unique(array_merge(
+        $statusIds = array_unique(array_merge(
             DoctorDashboardHelper::getConsultationStatusIds(),
             DoctorDashboardHelper::getTreatmentStatusIds(),
         ));
 
-        $rows = DB::table('appointments')
-            ->whereIn('patient_id', $patientIds)
-            ->whereIn('appointment_status_id', $qualifyingStatusIds)
-            ->whereNull('deleted_at')
-            ->select('patient_id', 'scheduled_date')
-            ->get()
-            ->groupBy('patient_id');
-
-        $returned = 0;
-        foreach ($firstVisits as $patientId => $firstDate) {
-            $windowEnd = date('Y-m-d', strtotime($firstDate.' +'.$windowDays.' days'));
-            $patientRows = $rows->get($patientId, collect());
-            $hasReturn = $patientRows->contains(static fn (object $r): bool => $r->scheduled_date > $firstDate
-                && $r->scheduled_date <= $windowEnd);
-
-            if ($hasReturn) {
-                $returned++;
+        $out = [];
+        foreach (array_chunk($patientIds, 5000) as $chunk) {
+            $rows = DB::table('appointments')
+                ->whereIn('patient_id', $chunk)
+                ->whereIn('appointment_status_id', $statusIds)
+                ->whereBetween('scheduled_date', [$rangeStart, $rangeEnd])
+                ->whereNull('deleted_at')
+                ->select('patient_id', 'scheduled_date')
+                ->get();
+            foreach ($rows as $r) {
+                $out[(int) $r->patient_id][] = (string) $r->scheduled_date;
             }
         }
 
-        return $returned;
+        return $out;
     }
+
 }

@@ -331,22 +331,34 @@ final class ManagementDashboardService
     }
 
     /**
-     * Named at-risk patients at a single branch, classified into one of
-     * four buckets and value-tiered. Drives the drill-in modal.
+     * Two-lens overview that powers the inline At-Risk panel: per-branch
+     * rollup + top patients across all branches by recoverable and by
+     * trailing-12mo spend. One round trip serves both lenses.
      *
-     * @param  list<string>|null  $riskTypes
+     * @return array<string, mixed>
+     */
+    public function atRiskOverview(MetricScope $scope, int $patientLimit = 25): array
+    {
+        return $this->atRiskPatients->overview($scope, $patientLimit);
+    }
+
+    /**
+     * Named at-risk patients at a single branch, evaluated against the
+     * three slippage signals and value-tiered. Drives the drill-in modal.
+     *
+     * @param  list<string>|null  $signals     primary_signal filter
      * @param  list<string>|null  $valueTiers
      * @return array<string, mixed>
      */
     public function atRiskList(
         MetricScope $scope,
         int $branchId,
-        ?array $riskTypes,
+        ?array $signals,
         ?array $valueTiers,
         int $limit,
         int $offset,
     ): array {
-        return $this->atRiskPatients->list($scope, $branchId, $riskTypes, $valueTiers, $limit, $offset);
+        return $this->atRiskPatients->list($scope, $branchId, $signals, $valueTiers, $limit, $offset);
     }
 
     /**
@@ -355,6 +367,19 @@ final class ManagementDashboardService
     public function branches(MetricScope $scope, DateRange $range): array
     {
         return $this->branchLeaderboard->compute($scope, $range);
+    }
+
+    /**
+     * Per-doctor breakdown at a single branch — powers the hover card
+     * on the Sales by Centre list. Returns revenue / conversion / avg
+     * per doctor so the card can emphasise whichever metric the pill
+     * toggle is on.
+     *
+     * @return array<string, mixed>
+     */
+    public function branchDoctorBreakdown(MetricScope $scope, int $branchId, DateRange $range): array
+    {
+        return $this->branchLeaderboard->branchDoctorBreakdown($scope, $branchId, $range);
     }
 
     /**
