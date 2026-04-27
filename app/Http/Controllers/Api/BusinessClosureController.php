@@ -289,20 +289,31 @@ class BusinessClosureController extends Controller
                 'data' => [],
             ];
 
-            // "All Centres" detection: pivot empty (our "all" sentinel), the
-            // special All-Centres virtual location attached (ID 30, see
-            // BusinessClosureService), or legacy data where every active
-            // location for the account is attached.
-            $allCentresVirtualId = 30;
-            $activeLocationCount = Locations::where('account_id', Auth::user()->account_id)
+            // "All Centres" detection (mirrors the pattern in App\Helpers\ACL
+            // and PatientAccessScope): pivot empty (our "all" sentinel), the
+            // configured All-Centres virtual location attached, any pseudo
+            // rollup centre by name, or every real (non-pseudo) active
+            // location for the account attached.
+            $accountId = (int) Auth::user()->account_id;
+            $pseudoCentreNames = ['All Centres', 'All South Region', 'All Central Region'];
+            $allCentresVirtualId = (int) config('constants.all_centres_location_id');
+
+            $realActiveLocationCount = Locations::where('account_id', $accountId)
                 ->where('active', '1')
+                ->whereNotIn('name', $pseudoCentreNames)
                 ->count();
 
             foreach ($closures as $closure) {
                 $attachedIds = $closure->locations->pluck('id');
+                $attachedNames = $closure->locations->pluck('name');
+                $realAttachedCount = $closure->locations
+                    ->reject(fn ($loc) => in_array($loc->name, $pseudoCentreNames, true))
+                    ->count();
+
                 $isAllCentres = $closure->locations->isEmpty()
-                    || $attachedIds->contains($allCentresVirtualId)
-                    || ($activeLocationCount > 0 && $attachedIds->count() >= $activeLocationCount);
+                    || ($allCentresVirtualId > 0 && $attachedIds->contains($allCentresVirtualId))
+                    || $attachedNames->intersect($pseudoCentreNames)->isNotEmpty()
+                    || ($realActiveLocationCount > 0 && $realAttachedCount >= $realActiveLocationCount);
 
                 $locationNames = $isAllCentres
                     ? 'All Centres'
