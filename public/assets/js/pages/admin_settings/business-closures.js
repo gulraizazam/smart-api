@@ -213,6 +213,28 @@ function initSelect2() {
         allowClear: true,
         dropdownParent: $('#modal_edit_business_closure'),
     });
+
+    // "All Locations" is mutually exclusive with specific locations
+    $('#add_location_ids, #edit_location_ids').on('change', handleAllLocationsToggle);
+}
+
+function handleAllLocationsToggle(e) {
+    var $select = $(e.target);
+    var values = $select.val() || [];
+
+    if (values.length <= 1) {
+        return;
+    }
+
+    var lastSelected = values[values.length - 1];
+
+    if (lastSelected === 'all') {
+        // User just picked "All Locations" — drop everything else.
+        $select.val(['all']).trigger('change.select2');
+    } else if (values.indexOf('all') !== -1) {
+        // User picked a specific location while "All" was selected — drop "All".
+        $select.val(values.filter(function (v) { return v !== 'all'; })).trigger('change.select2');
+    }
 }
 
 function initFormHandlers() {
@@ -365,13 +387,15 @@ function editClosure(id) {
                 var locationIds = response.data.location_ids;
                 
                 populateLocations('#edit_location_ids', response.data.locations);
-                
+
                 $('#edit_closure_id').val(closure.id);
                 $('#edit_title').val(closure.title || '');
                 $('#edit_start_date').val(closure.start_date.split('T')[0]);
                 $('#edit_end_date').val(closure.end_date.split('T')[0]);
-                
-                $('#edit_location_ids').val(locationIds).trigger('change');
+
+                // No attached locations means the closure applies to all locations.
+                var selection = (locationIds && locationIds.length > 0) ? locationIds : ['all'];
+                $('#edit_location_ids').val(selection).trigger('change');
                 
                 $('#modal_edit_business_closure').modal('show');
             } else {
@@ -420,13 +444,15 @@ function deleteClosure(id) {
 function populateLocations(selector, locations) {
     var $select = $(selector);
     $select.empty();
-    
+
+    $select.append(new Option('All Centres', 'all', false, false));
+
     if (locations && locations.length > 0) {
         for (var i = 0; i < locations.length; i++) {
             $select.append(new Option(locations[i].name, locations[i].id, false, false));
         }
     }
-    
+
     $select.trigger('change');
 }
 
