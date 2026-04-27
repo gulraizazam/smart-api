@@ -602,7 +602,7 @@ function actions(data) {
         let edit_url = route('admin.packages.edit', { id: id });
         let display_url = route('admin.packages.display', { id: id });
         let details_url = route('admin.packages.view.package', { id: id });
-        let delete_url = route('admin.packages.destroy', { id: id });
+        let delete_url = route('admin.plans.destroy', { id: id });
         let sms_log_url = route('admin.packages.sms_logs', { id: id });
         let log_url = route('admin.packages.log', { id: id, type: 'web' });
         let refund_url = route('admin.refunds.refund_create', { id: id });
