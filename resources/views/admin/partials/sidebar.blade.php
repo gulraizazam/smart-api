@@ -459,7 +459,7 @@
                                 </a>
                             </li>
                             @endif
-                            @if (Gate::allows('business_closures_manage'))
+                            
                             <li class="menu-item {{ activeMenu('admin.business-closures.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.business-closures.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -468,7 +468,7 @@
                                     <span class="menu-text">Business Closed Periods</span>
                                 </a>
                             </li>
-                            @endif
+                           
                         </ul>
                     </div>
                 </li>
