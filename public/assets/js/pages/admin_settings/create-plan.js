@@ -1513,13 +1513,32 @@ function displayData(response) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
-                // Handle both bundle and membership types
-                let itemName = '-';
-                if (packagebundle.bundle && packagebundle.bundle.name) {
-                    itemName = '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a>';
+                // Resolve item name using source_type (per-row discriminator) so the
+                // correct relation is read — bundle_id is overloaded across services /
+                // bundles / service_bundles tables and a blind .bundle read can pull a
+                // stale or unrelated record sharing the same numeric id.
+                let sourceType = packagebundle.source_type || '';
+                let resolvedName = '-';
+
+                if (sourceType === 'service' && packagebundle.service && packagebundle.service.name) {
+                    resolvedName = packagebundle.service.name;
+                } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
+                    resolvedName = packagebundle.bundle.name;
+                } else if (sourceType === 'service_bundle' && packagebundle.service_bundle && packagebundle.service_bundle.service) {
+                    resolvedName = packagebundle.qty + 'x ' + packagebundle.service_bundle.service.name;
+                } else if (sourceType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
+                    resolvedName = packagebundle.membership_type.name;
+                } else if (packagebundle.service && packagebundle.service.name) {
+                    resolvedName = packagebundle.service.name;
+                } else if (packagebundle.bundle && packagebundle.bundle.name) {
+                    resolvedName = packagebundle.bundle.name;
                 } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
-                    itemName = packagebundle.membership_type.name;
+                    resolvedName = packagebundle.membership_type.name;
                 }
+
+                let itemName = (sourceType === 'bundle' || sourceType === 'service_bundle')
+                    ? '<a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + resolvedName + '</a>'
+                    : resolvedName;
                 service_options += '<td>' + itemName + '</td>';
                 service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
