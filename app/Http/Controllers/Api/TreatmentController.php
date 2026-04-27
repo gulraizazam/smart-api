@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AppointmentType;
 use App\Exceptions\AppointmentException;
 use App\Exceptions\TreatmentException;
+use App\Exports\ExportConsultancies;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Appointment\UpdateAppointmentStatusRequest;
+use App\Http\Requests\Consultancy\ScheduleConsultancyRequest;
 use App\Http\Requests\Treatment\AvailableResourcesRequest;
 use App\Http\Requests\Treatment\CheckPatientLastTreatmentRequest;
 use App\Http\Requests\Treatment\RescheduleTreatmentRequest;
@@ -14,12 +18,19 @@ use App\Http\Requests\Treatment\StoreTreatmentRequest;
 use App\Http\Requests\Treatment\UpdateTreatmentRequest;
 use App\Http\Resources\Treatment\TreatmentEditResource;
 use App\Http\Resources\Treatment\TreatmentResource;
+use App\Models\Appointments;
+use App\Models\SMSTemplates;
+use App\Services\Appointment\AppointmentService;
 use App\Services\Appointment\TreatmentUpdateService;
 use App\Services\Treatment\TreatmentService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Unified Treatment API Controller.
@@ -32,6 +43,7 @@ final class TreatmentController extends Controller
     public function __construct(
         private readonly TreatmentService $treatmentService,
         private readonly TreatmentUpdateService $updateService,
+        private readonly AppointmentService $appointmentService,
     ) {}
 
     // ──────────────────────────────────────────────────
@@ -189,21 +201,303 @@ final class TreatmentController extends Controller
                 'patient_id', 'phone', 'location_id', 'doctor_id', 'service_id',
                 'appointment_status_id', 'scheduled_date_from', 'scheduled_date_to',
                 'created_date_from', 'created_date_to', 'scheduled',
+                'created_by', 'updated_by', 'rescheduled_by',
             ]);
+
+            // Sort wire format mirrors consultancy: ?sort[field]=...&sort[sort]=...
+            // Whitelist enforced server-side; unknown fields fall back to default.
+            $filters['sort'] = $this->resolveSort($request);
 
             $query = $this->treatmentService->getTreatmentList($filters);
 
-            $treatments = ($request->input('paginate') === 'false')
-                ? $query->get()
-                : $query->paginate($request->integer('per_page', 15));
+            if ($request->input('paginate') === 'false') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Treatments retrieved successfully.',
+                    'data'    => TreatmentResource::collection($query->get()),
+                ]);
+            }
 
-            return $this->successResponse('Treatments retrieved successfully.', $treatments);
+            $perPage = max(1, min((int) $request->get('per_page', 15), 100));
+            $paginator = $query->paginate($perPage)->appends($request->query());
+
+            // Hand-rolled pagination envelope so the SPA's Paginated<T>
+            // shape (data + meta + links siblings) lines up with what
+            // its consultations module already expects.
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatments retrieved successfully.',
+                'data'    => TreatmentResource::collection($paginator->items()),
+                'meta'    => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page'     => $paginator->perPage(),
+                    'total'        => $paginator->total(),
+                    'last_page'    => $paginator->lastPage(),
+                    'from'         => $paginator->firstItem(),
+                    'to'           => $paginator->lastItem(),
+                ],
+                'links'   => [
+                    'first' => $paginator->url(1),
+                    'last'  => $paginator->url($paginator->lastPage()),
+                    'prev'  => $paginator->previousPageUrl(),
+                    'next'  => $paginator->nextPageUrl(),
+                ],
+            ]);
         } catch (AppointmentException $e) {
             return $this->errorResponse($e->getMessage(), $e->getCode());
         } catch (\Exception $e) {
             Log::error('Error fetching treatments: ' . $e->getMessage());
             return $this->handleException($e, 'TreatmentController');
         }
+    }
+
+    // ──────────────────────────────────────────────────
+    //  Show / Destroy / Status / Schedule / WhatsApp / Export
+    //  (mirror of the consultancy controller's methods so the SPA
+    //  can drive the same dialogs against treatments)
+    // ──────────────────────────────────────────────────
+
+    public function show(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_view')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $treatment = $this->requireTreatment($id);
+
+            return $this->successResponse(
+                'Treatment retrieved successfully.',
+                new TreatmentResource($treatment),
+            );
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'TreatmentController');
+        }
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('treatments_services')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $this->requireTreatment($id);
+            $this->appointmentService->deleteAppointment($id);
+
+            return $this->successResponse('Treatment deleted successfully.');
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'TreatmentController');
+        }
+    }
+
+    public function updateStatus(UpdateAppointmentStatusRequest $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('appointments_manage') && !Gate::allows('appointments_status_update')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $this->requireTreatment($id);
+            $treatment = $this->appointmentService->updateAppointmentStatus($id, $request->validated());
+
+            return $this->successResponse(
+                'Treatment status updated successfully.',
+                new TreatmentResource($treatment),
+            );
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'TreatmentController');
+        }
+    }
+
+    public function schedule(ScheduleConsultancyRequest $request, int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('treatments_services')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $this->requireTreatment($id);
+            $treatment = $this->appointmentService->scheduleAppointment($id, $request->toServiceData());
+
+            return $this->successResponse(
+                'Treatment scheduled successfully.',
+                new TreatmentResource($treatment),
+            );
+        } catch (AppointmentException $e) {
+            return $this->errorResponse($e->getMessage(), $e->getCode());
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'TreatmentController');
+        }
+    }
+
+    public function whatsappData(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_view')) {
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $appointment = Appointments::with([
+                'patient', 'doctor', 'location', 'service', 'appointment_status',
+            ])->find($id);
+
+            if (!$appointment || $appointment->appointment_type_id !== AppointmentType::Treatment->value) {
+                return $this->errorResponse('Treatment not found.', 404);
+            }
+
+            $rawPhone = $appointment->patient?->phone;
+            if (!$rawPhone) {
+                return $this->errorResponse('Customer WhatsApp number not found.', 422);
+            }
+
+            // Same PK normalisation as the consultancy endpoint.
+            $whatsapp = preg_replace('/[^0-9]/', '', (string) $rawPhone);
+            if (str_starts_with($whatsapp, '0')) {
+                $whatsapp = '92' . substr($whatsapp, 1);
+            } elseif (strlen($whatsapp) === 10 && !str_starts_with($whatsapp, '92')) {
+                $whatsapp = '92' . $whatsapp;
+            }
+
+            $template = SMSTemplates::getBySlug('treatment_whatsapp', Auth::user()->account_id);
+            if (!$template) {
+                return $this->errorResponse(
+                    'WhatsApp template not configured. Create an SMS template with slug "treatment_whatsapp".',
+                    422,
+                );
+            }
+
+            $appointmentTime = 'N/A';
+            if ($appointment->scheduled_date && $appointment->scheduled_time) {
+                try {
+                    $appointmentTime = Carbon::parse($appointment->scheduled_time)->format('h:i A');
+                } catch (\Throwable $e) {
+                    $appointmentTime = (string) $appointment->scheduled_time;
+                }
+            }
+
+            $tokens = [
+                'patient_name'      => $appointment->patient?->name ?? 'N/A',
+                'appointment_time'  => $appointmentTime,
+                'patient_id'        => (string) ($appointment->patient?->id ?? 'N/A'),
+                'appointment_id'    => (string) $appointment->id,
+                'doctor_name'       => $appointment->doctor?->name ?? 'N/A',
+                'location_name'     => $appointment->location?->name ?? 'N/A',
+                'centre_google_map' => $appointment->location?->google_map ?? 'N/A',
+                'service_name'      => $appointment->service?->name ?? 'N/A',
+                'scheduled_date'    => $appointment->scheduled_date
+                    ? $appointment->scheduled_date->format('Y-m-d')
+                    : 'N/A',
+                'scheduled_time'    => $appointment->scheduled_time
+                    ? (string) $appointment->scheduled_time
+                    : 'N/A',
+                'status'            => $appointment->appointment_status?->name ?? 'N/A',
+            ];
+
+            $message = $template->content;
+            foreach ($tokens as $key => $value) {
+                $message = str_replace('##' . $key . '##', $value, $message);
+                $message = str_replace('#' . $key . '#', $value, $message);
+            }
+
+            return $this->successResponse('WhatsApp data retrieved.', [
+                'whatsapp' => $whatsapp,
+                'message'  => $message,
+            ]);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, 'TreatmentController');
+        }
+    }
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        if (!Gate::allows('treatments_manage') && !Gate::allows('appointments_export_all')
+            && !Gate::allows('appointments_export_today') && !Gate::allows('appointments_export_this_month')) {
+            abort(403, 'You are not authorised to export treatments.');
+        }
+
+        ini_set('memory_limit', '1024M');
+        ini_set('max_execution_time', '0');
+
+        // Force appointment_type=treatment so this endpoint can never
+        // bleed consultancy rows. The legacy ExportConsultancies
+        // exporter is type-agnostic — appointment_type filter selects
+        // which rows it actually emits.
+        $treatmentTypeId = AppointmentType::Treatment->value;
+
+        $request->merge([
+            'appointmenttype'              => $treatmentTypeId,
+            'filter_date_from'             => $request->input('scheduled_date_from'),
+            'filter_date_to'               => $request->input('scheduled_date_to'),
+            'filter_created_from_id'       => $request->input('created_date_from'),
+            'filter_created_to_id'         => $request->input('created_date_to'),
+            'filter_doctor_id'             => $request->input('doctor_id'),
+            'filter_center_id'             => $request->input('location_id'),
+            'filter_service_id'            => $request->input('service_id'),
+            'filter_status_id'             => $request->input('appointment_status_id'),
+            'filter_patient_id'            => $request->input('patient_id'),
+            'filter_created_by_id'         => $request->input('created_by'),
+            'filter_updated_by_id'         => $request->input('updated_by'),
+            'filter_rescheduled_by_id'     => $request->input('rescheduled_by'),
+            'filter_phone'                 => $request->input('phone'),
+        ]);
+
+        return Excel::download(new ExportConsultancies(10000, 0, $request), 'treatments.xlsx');
+    }
+
+    /**
+     * Resolve a safe sort tuple from the request — matches the
+     * consultancy controller's resolveSort().
+     *
+     * @return array{field: string, direction: string}
+     */
+    private function resolveSort(Request $request): array
+    {
+        $allowed = [
+            'name'                  => 'appointments.name',
+            'scheduled_date'        => 'appointments.scheduled_date',
+            'created_at'            => 'appointments.created_at',
+            'updated_at'            => 'appointments.updated_at',
+            'appointment_status_id' => 'appointments.appointment_status_id',
+            'location_id'           => 'appointments.location_id',
+            'doctor_id'             => 'appointments.doctor_id',
+            'service_id'            => 'appointments.service_id',
+        ];
+
+        $field = $request->input('sort.field');
+        $direction = strtolower((string) $request->input('sort.sort', 'desc'));
+
+        if (!is_string($field) || !array_key_exists($field, $allowed)) {
+            return ['field' => 'appointments.created_at', 'direction' => 'desc'];
+        }
+
+        if ($direction !== 'asc' && $direction !== 'desc') {
+            $direction = 'desc';
+        }
+
+        return ['field' => $allowed[$field], 'direction' => $direction];
+    }
+
+    /**
+     * Load a row by id and 404 if it isn't a treatment. Centralises
+     * the type-guard so the various write actions can't accidentally
+     * mutate a consultancy via a treatment endpoint.
+     */
+    private function requireTreatment(int $id): Appointments
+    {
+        $appointment = $this->appointmentService->getAppointmentById($id);
+
+        if (!$appointment || $appointment->appointment_type_id !== AppointmentType::Treatment->value) {
+            throw AppointmentException::notFound();
+        }
+
+        return $appointment;
     }
 
     // ──────────────────────────────────────────────────

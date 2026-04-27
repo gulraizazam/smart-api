@@ -73,10 +73,22 @@ class ConsultancyResource extends JsonResource
                 'id' => $this->lead->id,
                 'name' => $this->lead->name,
             ]),
-            'created_by' => $this->whenLoaded('user', fn () => [
+            'created_by' => $this->whenLoaded('user', fn () => $this->user ? [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-            ]),
+            ] : null),
+            // Surface the two remaining audit-user fields the SPA's row
+            // expander shows alongside Created By. `converted_by` is what
+            // the legacy admin labels "Rescheduled By" — same column,
+            // historical naming kept for the export filter compatibility.
+            'updated_by' => $this->whenLoaded('user_updated_by', fn () => $this->user_updated_by ? [
+                'id' => $this->user_updated_by->id,
+                'name' => $this->user_updated_by->name,
+            ] : null),
+            'rescheduled_by' => $this->whenLoaded('user_converted_by', fn () => $this->user_converted_by ? [
+                'id' => $this->user_converted_by->id,
+                'name' => $this->user_converted_by->name,
+            ] : null),
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s'),
         ];

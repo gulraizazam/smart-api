@@ -145,6 +145,22 @@ class AppointmentService
                 ->whereNull('scheduled_time');
         }
 
+        // Sort. The controller has already validated the field against
+        // an allow-list and resolved it to a safe `table.column` form,
+        // so injecting it directly into orderBy is safe here.
+        if (isset($filters['sort']) && is_array($filters['sort'])) {
+            $field = (string) ($filters['sort']['field'] ?? 'appointments.created_at');
+            $direction = (string) ($filters['sort']['direction'] ?? 'desc');
+            $query->orderBy($field, $direction);
+            // For scheduled_date sorts, break ties by time so two rows
+            // on the same day land in a sensible order.
+            if ($field === 'appointments.scheduled_date') {
+                $query->orderBy('appointments.scheduled_time', $direction);
+            }
+        } else {
+            $query->orderBy('appointments.created_at', 'desc');
+        }
+
         return $query;
     }
 
