@@ -337,10 +337,6 @@ class BusinessClosureController extends Controller
      */
     public function create(): JsonResponse
     {
-        if (! Gate::allows('business_closures_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $userCentres = ACL::getUserCentres();
             $locationsQuery = Locations::where([
@@ -367,10 +363,6 @@ class BusinessClosureController extends Controller
      */
     public function store(StoreBusinessClosureRequest $request): JsonResponse
     {
-        if (! Gate::allows('business_closures_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $closure = $this->service->create($request->validated());
 
