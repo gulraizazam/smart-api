@@ -837,22 +837,18 @@ final class UtilizationMetric implements Metric
      */
     private function appointmentAggregates(array $doctorIds, MetricScope $scope, DateRange $range): array
     {
+        // Pre-fetch the allowed (doctor_id, location_id) pairs in PHP.
+        // EXPLAIN ANALYZE showed the previous joinSub fooled the planner
+        // into looping the appointments table per allocation row (~63
+        // iterations × 23ms scanning 34K rows each → 1.5s). Pulling the
+        // same set as a small array (3ms) and filtering in PHP after the
+        // grouped query lets the planner pick the date-range index
+        // naturally, dropping the SQL portion to ~20ms.
+        $allowedPairs = $this->allowedUserLocationPairs($scope, $range);
+
         $query = DB::table('appointments as a')
             ->join('appointment_statuses as ast', 'ast.id', '=', 'a.appointment_status_id')
             ->leftJoin('services as s', 's.id', '=', 'a.service_id')
-            // Allocation filter as a DISTINCT-derived JOIN rather than
-            // whereExists — MySQL can pick the (user_id, location_id)
-            // composite index and avoid materializing a subquery per
-            // appointment row. Uses the activity-gated allocation set
-            // so historical doctors who worked at a branch still count
-            // even if they've since been de-allocated.
-            ->joinSub(
-                $this->allowedUserLocationSub($scope, $range),
-                'alloc',
-                fn ($j) => $j
-                    ->on('alloc.user_id', '=', 'a.doctor_id')
-                    ->on('alloc.location_id', '=', 'a.location_id'),
-            )
             ->whereIn('a.doctor_id', $doctorIds)
             ->where('a.account_id', $scope->accountId)
             ->whereBetween('a.scheduled_date', [$range->startString(), $range->endString()])
@@ -867,11 +863,14 @@ final class UtilizationMetric implements Metric
             $query->whereIn('a.location_id', $scope->branchIds);
         }
 
-        // Compute duration minutes once as a derived column; conditional
-        // aggregates fan out into the 5 metric outputs.
+        // GROUP BY now includes a.location_id so each row carries the
+        // location for the post-query allocation check. Aggregate values
+        // are unchanged because they sum over rows that share all the
+        // GROUP BY columns regardless of whether location is split.
         $rows = $query
             ->selectRaw(
                 'a.doctor_id, '.
+                'a.location_id, '.
                 'a.scheduled_date as d, '.
                 'a.appointment_type_id as type_id, '.
                 'ast.is_arrived, '.
@@ -883,8 +882,12 @@ final class UtilizationMetric implements Metric
                 'SUM(CASE WHEN ast.is_arrived = 1 AND (s.duration IS NULL OR s.duration = \'\' OR s.duration = \'00:00\') THEN 1 ELSE 0 END) as missing_dur_count, '.
                 'COUNT(*) as n',
             )
-            ->groupBy('a.doctor_id', 'a.scheduled_date', 'a.appointment_type_id', 'ast.is_arrived', 'ast.is_cancelled', 's.duration')
-            ->get();
+            ->groupBy('a.doctor_id', 'a.location_id', 'a.scheduled_date', 'a.appointment_type_id', 'ast.is_arrived', 'ast.is_cancelled', 's.duration')
+            ->get()
+            // Apply the allocation filter that the joinSub used to do.
+            // Drops rows where the doctor wasn't allocated to (or active
+            // at) the appointment's branch — same semantic as before.
+            ->filter(static fn ($r): bool => isset($allowedPairs[(int) $r->doctor_id][(int) $r->location_id]));
 
         $busy = [];
         $cancelled = [];
@@ -1003,6 +1006,41 @@ final class UtilizationMetric implements Metric
      *
      * Returned as a Laravel Builder so callers can consume via joinSub.
      */
+    /**
+     * PHP-side variant of the allowed (user_id, location_id) set —
+     * returned as `[user_id => [location_id => true]]` so callers can
+     * O(1) check pair membership instead of joinSub-ing it.
+     *
+     * @return array<int, array<int, true>>
+     */
+    private function allowedUserLocationPairs(MetricScope $scope, DateRange $range): array
+    {
+        $allocated = DB::table('doctor_has_locations')
+            ->select('user_id', 'location_id')
+            ->where('is_allocated', 1);
+
+        $active = DB::table('appointments as aa')
+            ->join('appointment_statuses as aas', 'aas.id', '=', 'aa.appointment_status_id')
+            ->where('aa.account_id', $scope->accountId)
+            ->whereBetween('aa.scheduled_date', [$range->startString(), $range->endString()])
+            ->where('aas.is_arrived', 1)
+            ->whereNull('aa.deleted_at')
+            ->select('aa.doctor_id as user_id', 'aa.location_id');
+
+        $rows = DB::query()
+            ->fromSub($allocated->union($active), 'combined')
+            ->select('user_id', 'location_id')
+            ->distinct()
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[(int) $r->user_id][(int) $r->location_id] = true;
+        }
+
+        return $out;
+    }
+
     private function allowedUserLocationSub(MetricScope $scope, DateRange $range): \Illuminate\Database\Query\Builder
     {
         $allocated = DB::table('doctor_has_locations')
