@@ -32,6 +32,13 @@ use Illuminate\Support\Facades\Route;
         Route::post('comments', [\App\Http\Controllers\Api\AppointmentCommentController::class, 'store'])->name('comments.store');
     });
 
+    // Active application-user dropdown — feeds the SPA's
+    // Created/Updated/Rescheduled-by filters on the consultations
+    // screen. Light auth (auth.api.dual on the parent group) is
+    // sufficient: no PII, just `{id, name}` rows scoped to the caller's
+    // account, matching the legacy admin's filter dropdown behaviour.
+    Route::get('users/dropdown/application-users', [\App\Http\Controllers\Api\ApplicationUserController::class, 'applicationUsersDropdown'])->name('users.dropdown.application_users');
+
     // Consultancy API Routes (Optimized)
     Route::prefix('consultancy')->name('consultancy.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('api_index');
@@ -65,12 +72,21 @@ use Illuminate\Support\Facades\Route;
     Route::prefix('treatment')->name('treatment.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('api_index');
         Route::post('/', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'show'])->name('show');
         Route::put('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'destroy'])->name('destroy');
+        Route::put('{id}/status', [\App\Http\Controllers\Api\TreatmentController::class, 'updateStatus'])->name('update_status');
+        Route::post('{id}/schedule', [\App\Http\Controllers\Api\TreatmentController::class, 'schedule'])->name('schedule');
         Route::get('scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'nonScheduled'])->name('non_scheduled');
         Route::get('statistics/data', [\App\Http\Controllers\Api\TreatmentController::class, 'statistics'])->name('statistics');
         Route::get('resources/available', [\App\Http\Controllers\Api\TreatmentController::class, 'availableResources'])->name('available_resources');
         Route::get('services/by-location', [\App\Http\Controllers\Api\TreatmentController::class, 'servicesByLocation'])->name('services_by_location');
+
+        // Page extras: WhatsApp prefill + xlsx export — same shape as
+        // the consultancy equivalents so the SPA can reuse its primitives.
+        Route::get('{id}/whatsapp-data', [\App\Http\Controllers\Api\TreatmentController::class, 'whatsappData'])->name('whatsapp_data');
+        Route::post('export', [\App\Http\Controllers\Api\TreatmentController::class, 'export'])->name('export');
     });
 
     // Appointment Routes - Using API Controller with Service Layer
