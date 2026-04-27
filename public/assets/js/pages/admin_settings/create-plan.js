@@ -578,7 +578,7 @@ var table_columns = [
         sortable: false,
         width: 70,
         template: function (data) {
-            let status_url = route('admin.packages.status');
+            let status_url = route('admin.plans.status');
             return statuses(data, status_url);
         }
     }, {
