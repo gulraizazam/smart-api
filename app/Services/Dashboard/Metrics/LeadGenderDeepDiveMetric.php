@@ -250,16 +250,22 @@ final class LeadGenderDeepDiveMetric implements Metric
             $query->whereIn('l.location_id', $scope->branchIds);
         }
 
+        // Single-value effective gender — patient profile wins, lead
+        // signup falls back. Matches LeadGenderFunnelMetric/trend/sources
+        // so a lead whose signup and profile disagree is counted in
+        // exactly one bucket (prior OR-pattern dual-counted such leads).
+        $effectiveGender = 'COALESCE(NULLIF(p.gender, 0), NULLIF(l.gender, 0))';
+
         // DISTINCT lead_id per service so a lead enquiring about the same
         // service twice doesn't double-inflate the denominator.
         $rows = $query
             ->selectRaw('s.id AS service_id, s.name AS service_name')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN l.gender=2 OR p.gender=2 THEN l.id END) AS f_leads')
-            ->selectRaw("COUNT(DISTINCT CASE WHEN (l.gender=2 OR p.gender=2) AND l.lead_status_id IN ({$convertedList}) THEN l.id END) AS f_conv")
-            ->selectRaw('COUNT(DISTINCT CASE WHEN l.gender=1 OR p.gender=1 THEN l.id END) AS m_leads')
-            ->selectRaw("COUNT(DISTINCT CASE WHEN (l.gender=1 OR p.gender=1) AND l.lead_status_id IN ({$convertedList}) THEN l.id END) AS m_conv")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN {$effectiveGender} = 2 THEN l.id END) AS f_leads")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN {$effectiveGender} = 2 AND l.lead_status_id IN ({$convertedList}) THEN l.id END) AS f_conv")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN {$effectiveGender} = 1 THEN l.id END) AS m_leads")
+            ->selectRaw("COUNT(DISTINCT CASE WHEN {$effectiveGender} = 1 AND l.lead_status_id IN ({$convertedList}) THEN l.id END) AS m_conv")
             ->selectRaw('COUNT(DISTINCT l.id) AS total_leads')
-            ->selectRaw('COUNT(DISTINCT CASE WHEN (l.gender NOT IN (1,2) OR l.gender IS NULL) AND (p.gender NOT IN (1,2) OR p.gender IS NULL) THEN l.id END) AS u_leads')
+            ->selectRaw("COUNT(DISTINCT CASE WHEN {$effectiveGender} NOT IN (1,2) OR {$effectiveGender} IS NULL THEN l.id END) AS u_leads")
             ->groupBy('s.id', 's.name')
             ->orderByDesc('total_leads')
             ->limit(15)

@@ -55,11 +55,13 @@ Route::prefix('management-dashboard')
         Route::get('filter-branches', [ManagementDashboardApiController::class, 'filterBranches'])->name('filter_branches');
         Route::get('overview', [ManagementDashboardApiController::class, 'overview'])->name('overview');
         Route::get('branches', [ManagementDashboardApiController::class, 'branches'])->name('branches');
+        Route::get('branch-doctor-breakdown', [ManagementDashboardApiController::class, 'branchDoctorBreakdown'])->name('branch_doctor_breakdown');
         Route::get('branch-feedback', [ManagementDashboardApiController::class, 'branchFeedback'])->name('branch_feedback');
         Route::get('branch-doctor-feedback', [ManagementDashboardApiController::class, 'branchDoctorFeedback'])->name('branch_doctor_feedback');
         Route::get('branch-doctor-retention', [ManagementDashboardApiController::class, 'branchDoctorRetention'])->name('branch_doctor_retention');
         Route::get('retention-trend', [ManagementDashboardApiController::class, 'retentionTrend'])->name('retention_trend');
         Route::get('at-risk-summary', [ManagementDashboardApiController::class, 'atRiskSummary'])->name('at_risk_summary');
+        Route::get('at-risk-overview', [ManagementDashboardApiController::class, 'atRiskOverview'])->name('at_risk_overview');
         Route::get('at-risk-list', [ManagementDashboardApiController::class, 'atRiskList'])->name('at_risk_list');
         Route::get('arrival-rate', [ManagementDashboardApiController::class, 'arrivalRate'])->name('arrival_rate');
         Route::get('people', [ManagementDashboardApiController::class, 'people'])->name('people');
