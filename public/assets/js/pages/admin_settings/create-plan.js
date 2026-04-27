@@ -599,7 +599,7 @@ function actions(data) {
         let id = data.id;
 
 
-        let edit_url = route('admin.packages.edit', { id: id });
+        let edit_url = route('admin.plans.edit', { id: id });
         let display_url = route('admin.packages.display', { id: id });
         let details_url = route('admin.packages.view.package', { id: id });
         let delete_url = route('admin.plans.destroy', { id: id });
