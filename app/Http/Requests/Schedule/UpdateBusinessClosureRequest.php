@@ -3,6 +3,8 @@
 declare(strict_types=1);
 namespace App\Http\Requests\Schedule;
 
+use App\Models\Locations;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBusinessClosureRequest extends FormRequest
@@ -23,7 +25,14 @@ class UpdateBusinessClosureRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'location_ids' => 'required|array|min:1',
-            'location_ids.*' => 'required|integer|exists:locations,id',
+            'location_ids.*' => ['required', function (string $attribute, mixed $value, Closure $fail): void {
+                if ($value === 'all') {
+                    return;
+                }
+                if (! is_numeric($value) || ! Locations::whereKey((int) $value)->exists()) {
+                    $fail('The selected location is invalid.');
+                }
+            }],
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
         ];
