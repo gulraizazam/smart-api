@@ -118,7 +118,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
         Route::get('view-package/{id}', [PackagesController::class, 'viewPackage'])->name('packages.view.package');
 
-        Route::resource('packages', PackagesController::class)->only('index')->middleware('permission:plans_manage');
+        Route::resource('packages', PackagesController::class)->only(['index', 'create'])->middleware('permission:plans_manage');
         Route::post('packages/resetvoucherpacakgebundles', [PackagesController::class, 'resetvoucherpacakgebundles'])->name('packages.resetvoucherpacakgebundles');
         Route::get('packages/getserviceinfo_for_plan', [PackagesController::class, 'getserviceinfo_for_plan'])->name('packages.getserviceinfo_for_plan');
         Route::get('packages/getdiscountinfo_for_plan', [PackagesController::class, 'getdiscountinfo_for_plan'])->name('packages.getdiscountinfo_for_plan');
