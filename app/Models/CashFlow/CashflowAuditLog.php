@@ -41,6 +41,7 @@ class CashflowAuditLog extends Model
     const ACTION_AUTO_CREATED = 'auto_created';
     const ACTION_RESET = 'reset';
     const ACTION_DELETED = 'deleted';
+    const ACTION_UNFLAGGED = 'unflagged';
 
     // Entity type constants
     const ENTITY_EXPENSE = 'expense';
