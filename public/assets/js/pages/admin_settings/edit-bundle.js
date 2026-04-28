@@ -113,8 +113,29 @@ function setEditBundleData(response) {
                     return ps.package_bundle_id == packagebundle.id;
                 }).length;
 
-                // Only add toggle link if bundle has more than 1 child service
-                let bundleName = escapeHtml(packagebundle.bundle.name);
+                // Resolve display name via source_type — bundle_id is overloaded across
+                // services / bundles / service_bundles, so reading .bundle.name blindly
+                // can return a stale or unrelated record that shares the same id.
+                let sourceType = packagebundle.source_type || '';
+                let resolvedName = '';
+
+                if (sourceType === 'service' && packagebundle.service && packagebundle.service.name) {
+                    resolvedName = packagebundle.service.name;
+                } else if (sourceType === 'bundle' && packagebundle.bundle && packagebundle.bundle.name) {
+                    resolvedName = packagebundle.bundle.name;
+                } else if (sourceType === 'service_bundle' && packagebundle.service_bundle && packagebundle.service_bundle.service) {
+                    resolvedName = packagebundle.qty + 'x ' + packagebundle.service_bundle.service.name;
+                } else if (sourceType === 'membership' && packagebundle.membership_type && packagebundle.membership_type.name) {
+                    resolvedName = packagebundle.membership_type.name;
+                } else if (packagebundle.service && packagebundle.service.name) {
+                    resolvedName = packagebundle.service.name;
+                } else if (packagebundle.bundle && packagebundle.bundle.name) {
+                    resolvedName = packagebundle.bundle.name;
+                } else if (packagebundle.membership_type && packagebundle.membership_type.name) {
+                    resolvedName = packagebundle.membership_type.name;
+                }
+
+                let bundleName = escapeHtml(resolvedName);
                 if (childServiceCount > 1) {
                     bundleName = '<a href="javascript:void(0);" onclick="toggle(' + parseInt(packagebundle.id) + ')">' + bundleName + '</a>';
                 }
