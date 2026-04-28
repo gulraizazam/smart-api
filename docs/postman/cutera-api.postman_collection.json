@@ -3221,6 +3221,403 @@
           }
         }
       ]
+    },
+    {
+      "name": "Vouchers",
+      "description": "Voucher management. The module has two layers:\n\n- **Voucher Types** — `discounts` rows where `discount_type = 'voucher'`, managed via `Admin\\VouchersController` (`/api/voucherTypes/*`). A voucher type is a template (name, validity window, role gating, optional location/service allocations).\n- **User Vouchers** — `user_vouchers` rows linking a patient (`user_id`) to a voucher type (`voucher_id`) with a credit balance. Managed via `Admin\\UserVouchersController` (`/api/vouchers/*`).\n\n`user_vouchers.amount` is the **remaining** credit and is decremented as the patient redeems against services; `total_amount` is the original face value at issuance and is only mutated by an explicit update — never by redemption. A voucher type that is already assigned to any patient cannot be renamed or deleted; an assigned voucher already applied to a package cannot be edited or deleted. Permissions: `voucher_types_*` for the type catalogue, `vouchers_*` for patient assignments.",
+      "item": [
+        {
+          "name": "Voucher types — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start\": 0,\n  \"length\": 10,\n  \"name\": \"\",\n  \"status\": \"\",\n  \"created_from\": \"\",\n  \"created_to\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", "datatable"]
+            },
+            "description": "Paginated list of voucher types (rows from `discounts` where `discount_type = 'voucher'`). Filterable by name/status/created date range and by validity window (`startdate`, `enddate`). Returns `data`, `meta`, `permissions`, `filter_values`, and `active_filters` blocks for the index UI. Permission: `voucher_types_manage`."
+          }
+        },
+        {
+          "name": "Voucher types — create dropdowns",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", "create"]
+            },
+            "description": "Returns lookup data needed to render the create form: `discount_types`, `discount_groups`, `amount_types` (all sourced from `config/constants.php`). Permission: `voucher_types_create`."
+          }
+        },
+        {
+          "name": "Voucher types — store",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Diwali Cashback\",\n  \"start\": \"2026-04-01\",\n  \"end\": \"2026-12-31\",\n  \"amount\": 0,\n  \"active\": 1,\n  \"roles\": [3, 5]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes"]
+            },
+            "description": "Creates a new voucher type. Server stamps `discount_type='voucher'`, `type='Fixed'`, and `account_id` from the authed user. `amount` on the type is informational only — patient credit lives on `user_vouchers.amount`. `roles` (optional) syncs role gating. Permission: `voucher_types_create`."
+          }
+        },
+        {
+          "name": "Voucher types — edit fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1", "description": "Voucher type id (discounts.id)." }]
+            },
+            "description": "Returns the voucher type, allocated services, locations, and `is_assigned` flag. When `is_assigned=true` the name is locked (cannot be renamed). Permission: `voucher_types_edit`."
+          }
+        },
+        {
+          "name": "Voucher types — update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Diwali Cashback (extended)\",\n  \"start\": \"2026-04-01\",\n  \"end\": \"2027-01-31\",\n  \"amount\": 0,\n  \"active\": 1,\n  \"roles\": [3, 5]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Updates the voucher type. If the type has been assigned to any patient, `name` cannot be changed — sending a different `name` returns 404 with `Cannot change voucher name as it is already assigned to patients.` Permission: `voucher_types_edit`."
+          }
+        },
+        {
+          "name": "Voucher types — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Deletes a voucher type. Returns 500 with `Cannot delete voucher type as it is already assigned to patients.` if any `user_vouchers` row references it. Permission: `voucher_types_destroy`."
+          }
+        },
+        {
+          "name": "Voucher types — toggle status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"status\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", "status"]
+            },
+            "description": "Activate (`status=1`) or deactivate (`status=0`) a voucher type. Inactive types cannot be assigned to new patients. Permission: `voucher_types_active`."
+          }
+        },
+        {
+          "name": "Voucher types — listing (dropdown)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/vouchersTypes/getListing?search=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchersTypes", "getListing"],
+              "query": [
+                { "key": "search", "value": "", "description": "Optional name fragment for autocomplete." }
+              ]
+            },
+            "description": "Returns up to 50 voucher types as `{ id: name }` pairs — used for select2/autocomplete pickers when assigning to patients. No specific permission gate (admin scope inherited from the route group)."
+          }
+        },
+        {
+          "name": "Voucher types — location allocations",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/locations/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", "locations", ":id"],
+              "variable": [{ "key": "id", "value": "1", "description": "Voucher type id." }]
+            },
+            "description": "Returns the voucher type, the global location dropdown, and the existing `discount_has_locations` rows (with service + city eager-loaded) for the allocation UI. Permission: `voucher_types_allocate`."
+          }
+        },
+        {
+          "name": "Voucher types — services for location",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/getDservice?id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "getDservice"],
+              "query": [
+                { "key": "id", "value": "1", "description": "Location id to scope the service tree to." }
+              ]
+            },
+            "description": "Returns the service hierarchy for a location, used while allocating a voucher type to specific services. Permission: `voucher_types_allocate`."
+          }
+        },
+        {
+          "name": "Voucher types — discount services",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/getDiscountServices?id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "getDiscountServices"],
+              "query": [
+                { "key": "id", "value": "1", "description": "Discount/voucher type id." }
+              ]
+            },
+            "description": "Returns the service hierarchy for the given voucher/discount, with already-allocated services flagged. Permission: `voucher_types_allocate`."
+          }
+        },
+        {
+          "name": "Voucher types — save service allocation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voucher_id\": 1,\n  \"id\": \"1,42\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/saveDervice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "saveDervice"]
+            },
+            "description": "Assigns a (location, service) pair to a voucher type. `id` is a comma-separated `\"<location_id>,<service_id>\"` pair (kept for legacy admin UI compatibility). Returns 404 with `Duplicate record found.` if the pair already exists. Permission: `voucher_types_allocate`."
+          }
+        },
+        {
+          "name": "Voucher types — delete service allocation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 7\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deleteDservice",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deleteDservice"]
+            },
+            "description": "Deletes a `discount_has_locations` row by id. Permission: `voucher_types_allocate`."
+          }
+        },
+        {
+          "name": "Voucher types — assign to patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"voucher_id\": 1,\n  \"patient_id\": 42,\n  \"amount\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/voucherTypes/assignToPatient",
+              "host": ["{{base_url}}"],
+              "path": ["api", "voucherTypes", "assignToPatient"]
+            },
+            "description": "Issues a voucher of this type to a patient with the given face value. Server stamps `total_amount = amount` (original face value) and `amount` (remaining balance) equal at issuance. Inactive voucher types are rejected. Permission: `voucher_types_assign`."
+          }
+        },
+        {
+          "name": "User vouchers — datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start\": 0,\n  \"length\": 10,\n  \"patient_id\": \"\",\n  \"voucher_type\": \"\",\n  \"created_from\": \"\",\n  \"created_to\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vouchers/datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchers", "datatable"]
+            },
+            "description": "Paginated list of patient voucher assignments (`user_vouchers`). `can_edit`/`can_delete` per row reflect whether the voucher has already been applied to a package — applied vouchers are read-only. Permission: `vouchers_view` (UI permissions returned in the response)."
+          }
+        },
+        {
+          "name": "User vouchers — store (assign)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": 42,\n  \"voucher_id\": 1,\n  \"amount\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vouchers",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchers"]
+            },
+            "description": "Assigns a voucher to a patient. Stamps `amount` (remaining) and `total_amount` (face value) equal at issuance, then records an `ActivityLogger::logVoucherAssigned` event after commit. Permission: `vouchers_create`."
+          }
+        },
+        {
+          "name": "User vouchers — edit fetch",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/vouchers/:id/edit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchers", ":id", "edit"],
+              "variable": [{ "key": "id", "value": "1", "description": "user_vouchers.id" }]
+            },
+            "description": "Returns the user voucher with `patient_name` and `voucher_type_name`. Returns 500 with `This voucher cannot be edited as it is already applied to services.` once the voucher is referenced by `package_vouchers`. Permission: `vouchers_edit`."
+          }
+        },
+        {
+          "name": "User vouchers — update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"total_amount\": 2000\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/vouchers/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchers", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Updates the face value (`total_amount`) and remaining balance (`amount`) of an unused voucher; both are written equal. Returns 500 if the voucher has already been applied to a package. Logs `ActivityLogger::logVoucherUpdated` with old/new amount. Permission: `vouchers_edit`."
+          }
+        },
+        {
+          "name": "User vouchers — delete",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/vouchers/:id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "vouchers", ":id"],
+              "variable": [{ "key": "id", "value": "1" }]
+            },
+            "description": "Soft-deletes a `user_vouchers` row. Returns 500 if the voucher has already been applied to a package. Permission: `vouchers_destroy`."
+          }
+        },
+        {
+          "name": "Patient — assign voucher (legacy patient flow)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": 42,\n  \"voucher_id\": 1,\n  \"amount\": 1500\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/assignvoucher",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "assignvoucher"]
+            },
+            "description": "Patient-screen variant of voucher assignment — same outcome as `POST /api/voucherTypes/assignToPatient`, kept for the legacy patient profile UI. Permission gating mirrors `vouchers_create` via the patient route group."
+          }
+        },
+        {
+          "name": "Patient — vouchers datatable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start\": 0,\n  \"length\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id/vouchers-datatable",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id", "vouchers-datatable"],
+              "variable": [{ "key": "id", "value": "42", "description": "Patient (user) id." }]
+            },
+            "description": "Patient-scoped view of `user_vouchers` for the patient profile **Vouchers** tab. Same shape as `/api/vouchers/datatable`, but the `patient_id` filter is forced from the URL segment. Accepts GET as well — KTDatatable defaults to POST. Permission: `vouchers_view`."
+          }
+        },
+        {
+          "name": "Patient — voucher history",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/api/patients/:id/voucher-history/:userVoucherId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", ":id", "voucher-history", ":userVoucherId"],
+              "variable": [
+                { "key": "id", "value": "42", "description": "Patient (user) id." },
+                { "key": "userVoucherId", "value": "1", "description": "user_vouchers.id" }
+              ]
+            },
+            "description": "Returns the redemption ledger for a single voucher: each `package_vouchers` row joined to bundle/service/discount info, used by the patient voucher detail modal. Permission: `vouchers_view`."
+          }
+        }
+      ]
     }
   ]
 }
