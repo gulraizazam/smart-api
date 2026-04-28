@@ -9,6 +9,7 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Http\Resources\Feedback\FeedbackDatatableResource;
 use App\Models\Appointments;
+use App\Models\DoctorHasLocations;
 use App\Models\Feedback;
 use App\Models\Locations;
 use App\Models\Patients;
@@ -175,15 +176,30 @@ class FeedbackService
 
         $hasLocation = ! empty($locationIds);
 
+        // Mirror the admin-home Doctor Feedback widget's scope: feedback is
+        // counted only for doctors currently allocated (is_allocated=1) to
+        // the selected centres AND active in users. Without this clamp the
+        // report inflates ratings/counts with rows from doctors who have
+        // since been transferred or deactivated, producing different numbers
+        // than the dashboard for the same date range.
+        $allocatedDoctorIds = $hasLocation
+            ? $this->getAllocatedActiveDoctorIds($locationIds)
+            : null;
+
+        if ($hasLocation && empty($allocatedDoctorIds)) {
+            return new Collection();
+        }
+
         $baseQuery = Feedback::query()
             ->when($hasLocation, fn (Builder $q) => $q->whereIn('location_id', $locationIds))
+            ->when($allocatedDoctorIds !== null, fn (Builder $q) => $q->whereIn('doctor_id', $allocatedDoctorIds))
             ->when($serviceId, fn (Builder $q) => $q->where('service_id', $serviceId))
             ->when($doctorId, fn (Builder $q) => $q->where('doctor_id', $doctorId))
             ->whereBetween('created_at', [$startDate, $endDate]);
 
         return match (true) {
             // CASE 7: All three filters
-            $hasLocation && $doctorId !== null && $serviceId !== null => $this->reportAllFilters($locationIds, $doctorId, $serviceId, $startDate, $endDate),
+            $hasLocation && $doctorId !== null && $serviceId !== null => $this->reportAllFilters($locationIds, $doctorId, $serviceId, $startDate, $endDate, $allocatedDoctorIds),
 
             // CASE 6: service + doctor (no location)
             $serviceId !== null && $doctorId !== null && ! $hasLocation => $this->reportSingleResult($baseQuery, ['doctor_id', 'service_id'], ['doctor', 'service']),
@@ -327,7 +343,11 @@ class FeedbackService
     }
 
     /**
-     * @param  int[]  $locationIds
+     * @param  int[]       $locationIds
+     * @param  int[]|null  $allocatedDoctorIds  Restricts the rating set to
+     *                                          doctors currently allocated
+     *                                          to $locationIds (and active),
+     *                                          matching the dashboard widget.
      */
     private function reportAllFilters(
         array $locationIds,
@@ -335,7 +355,12 @@ class FeedbackService
         int $serviceId,
         string $startDate,
         string $endDate,
+        ?array $allocatedDoctorIds = null,
     ): array {
+        if ($allocatedDoctorIds !== null && ! in_array($doctorId, $allocatedDoctorIds, true)) {
+            return [];
+        }
+
         $feedback = Feedback::whereIn('location_id', $locationIds)
             ->where('doctor_id', $doctorId)
             ->where('service_id', $serviceId)
@@ -347,6 +372,34 @@ class FeedbackService
             ->first();
 
         return $feedback?->total_feedbacks > 0 ? [$feedback] : [];
+    }
+
+    /**
+     * Doctor IDs that are (a) marked is_allocated=1 in doctor_has_locations
+     * for the given centres and (b) active in users. Mirrors the scoping in
+     * {@see \App\Services\Dashboard\DashboardChartService::getDoctorWiseFeedback}
+     * so the Doctor Feedback report matches the admin-home widget exactly.
+     *
+     * @param  int[]  $locationIds
+     * @return int[]
+     */
+    private function getAllocatedActiveDoctorIds(array $locationIds): array
+    {
+        $allocated = DoctorHasLocations::where('is_allocated', 1)
+            ->whereIn('location_id', $locationIds)
+            ->distinct()
+            ->pluck('user_id')
+            ->all();
+
+        if (empty($allocated)) {
+            return [];
+        }
+
+        return User::whereIn('id', $allocated)
+            ->where('active', 1)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
     }
 
     // =========================================================================
