@@ -24,6 +24,27 @@ class UpsellingReportController extends Controller
     ) {}
 
     /**
+     * Strip the "all" sentinel option emitted by the multi-select before
+     * validation runs. Without this, "All Centres" reaches the integer
+     * validator and rejects the request.
+     */
+    private function stripAllSentinel(Request $request): void
+    {
+        $raw = $request->input('centre_id');
+
+        if ($raw === null) {
+            return;
+        }
+
+        $cleaned = array_values(array_filter(
+            (array) $raw,
+            fn ($value): bool => $value !== 'all' && $value !== '',
+        ));
+
+        $request->merge(['centre_id' => $cleaned]);
+    }
+
+    /**
      * Normalise the incoming `centre_id` filter into a clean int[]. Empty input
      * falls back to the user's permitted centres so "no selection" means
      * "everywhere I can see" rather than "nowhere".
@@ -62,6 +83,8 @@ class UpsellingReportController extends Controller
 
     public function loadUpsellingReport(Request $request): View|JsonResponse
     {
+        $this->stripAllSentinel($request);
+
         $request->validate([
             'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
@@ -146,6 +169,8 @@ class UpsellingReportController extends Controller
 
     public function loadConsultantRevenueReport(Request $request): View|JsonResponse
     {
+        $this->stripAllSentinel($request);
+
         $request->validate([
             'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
@@ -332,6 +357,8 @@ class UpsellingReportController extends Controller
      */
     public function loadDoctorRevenueReport(Request $request): View|JsonResponse
     {
+        $this->stripAllSentinel($request);
+
         $request->validate([
             'centre_id' => 'nullable|array',
             'centre_id.*' => 'integer|exists:locations,id',
