@@ -3,8 +3,11 @@
 
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
-        <!--begin::Modal title-->
-        <h2 class="fw-bolder rota-title">Display</h2>
+        <!--begin::Modal title — patient + order # so it reads the same way
+             as the consultancy / treatment invoice modal headers. -->
+        <h2 class="fw-bolder rota-title">
+            {{ ucfirst($patient->name) }} — Order Invoice <span style="color: #3699FF;">#{{ $invoice_info->id }}</span>
+        </h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -70,21 +73,30 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Product Name</th>
-                                    <th>Product Price</th>
+                                    <th>Unit Price</th>
                                     <th>Quantity</th>
-                                    <th>Sub Total</th>
                                     <th>Discount (%)</th>
+                                    <th>Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $orderSubtotal = 0;
+                                @endphp
                                 @foreach ($invoice_info->orderDetail as $product)
+                                    @php
+                                        $unit = (float) ($product->sale_price ?? 0);
+                                        $qty = (int) ($product->quantity ?? 0);
+                                        $lineTotal = $unit * $qty;
+                                        $orderSubtotal += $lineTotal;
+                                    @endphp
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $product->product->name }} </td>
-                                        <td>{{ $product->sale_price }}</td>
-                                        <td>{{ $product->quantity }}</td>
-                                        <td>{{ $product->sale_price * $product->quantity }}</td>
-                                        <td>{{ $invoice_info->discount }}</td>
+                                        <td>{{ $product->product->name }}</td>
+                                        <td>{{ number_format($unit) }}</td>
+                                        <td>{{ $qty }}</td>
+                                        <td>{{ $invoice_info->discount ?? 0 }}</td>
+                                        <td>{{ number_format($lineTotal) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -94,9 +106,22 @@
 
                 <div class="row">
                     <div class="col-md-12 col-sm-12 col-xs-12 mt-10">
+                        @php
+                            $orderDiscountPct = (float) ($invoice_info->discount ?? 0);
+                            $orderDiscountAmount = $orderSubtotal * ($orderDiscountPct / 100);
+                            $orderGrand = (float) ($invoice_info->total_price ?? max(0, $orderSubtotal - $orderDiscountAmount));
+                        @endphp
                         <ul class="list-unstyled amounts float-right">
                             <li>
-                                <strong>Total:</strong> <?php echo number_format($invoice_info->total_price); ?>/-
+                                <strong>Subtotal:</strong> {{ number_format($orderSubtotal) }}/-
+                            </li>
+                            @if ($orderDiscountPct > 0)
+                                <li>
+                                    <strong>Discount ({{ $orderDiscountPct }}%):</strong> &minus; {{ number_format($orderDiscountAmount) }}/-
+                                </li>
+                            @endif
+                            <li>
+                                <strong>Total:</strong> {{ number_format($orderGrand) }}/-
                             </li>
                         </ul>
                         <br />

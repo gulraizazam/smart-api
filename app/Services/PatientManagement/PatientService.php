@@ -17,6 +17,7 @@ use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\Membership;
 use App\Models\MembershipType;
+use App\Models\PackageBundles;
 use App\Models\Packages;
 use App\Models\PackageVouchers;
 use App\Models\PatientNote;
@@ -918,6 +919,11 @@ class PatientService
             return ['status' => false, 'message' => 'Voucher does not belong to this patient.'];
         }
 
+        // Pull every redemption tied to this patient + voucher type. The
+        // `package_vouchers.amount` column has occasionally been left null on
+        // older rows, so when it's missing we cross-reference the matching
+        // package_bundles row (same key the legacy `view_content.blade.php`
+        // uses) and read `discount_price` as the deducted amount.
         $rawHistory = PackageVouchers::where('user_id', $patientId)
             ->where('voucher_id', $userVoucher->voucher_id)
             ->orderByDesc('created_at')
@@ -933,19 +939,51 @@ class PatientService
             ? DB::table('bundles')->whereIn('id', $serviceIds)->pluck('name', 'id')
             : collect();
 
-        $usageHistory = $rawHistory->map(function ($item) use ($packageIdMap, $serviceNameMap): array {
+        // Fallback amount lookup: PackageBundles keyed by (random_id, bundle_id)
+        // for the rows where `package_vouchers.amount` is null/0.
+        $voucherName = $userVoucher->voucher?->name;
+        $allRandomIds = $rawHistory->pluck('package_random_id')->filter()->unique();
+        $bundleAmountByKey = ($voucherName && $allRandomIds->isNotEmpty() && $serviceIds->isNotEmpty())
+            ? PackageBundles::whereIn('random_id', $allRandomIds)
+                ->whereIn('bundle_id', $serviceIds)
+                ->where('discount_name', $voucherName)
+                ->get()
+                ->mapWithKeys(fn ($b): array => [
+                    $b->random_id.'|'.$b->bundle_id => (float) ($b->discount_price ?? 0),
+                ])
+            : collect();
+
+        $usageHistory = $rawHistory->map(function ($item) use ($packageIdMap, $serviceNameMap, $bundleAmountByKey): array {
             $packageId = $item->package_id ?: ($packageIdMap[$item->package_random_id] ?? null);
+            $amount = (float) ($item->amount ?? 0);
+
+            if ($amount <= 0) {
+                $key = $item->package_random_id.'|'.$item->main_service_id;
+                $amount = (float) ($bundleAmountByKey[$key] ?? 0);
+            }
 
             return [
+                'kind' => 'used',
                 'package_id' => $packageId,
                 'service_name' => $serviceNameMap[$item->main_service_id] ?? 'N/A',
-                'amount_deducted' => $item->amount ?? 0,
+                'amount_deducted' => $amount,
                 'applied_date' => $item->created_at?->format('M d, Y h:i A') ?? '-',
             ];
-        });
+        })->values()->all();
 
-        $totalAmount = $userVoucher->total_amount ?? 0;
-        $currentBalance = $userVoucher->amount ?? 0;
+        // Append the assignment itself as a synthetic "issued" entry so the
+        // dialog always has at least one line of context, even before the
+        // voucher has been redeemed against any package.
+        $usageHistory[] = [
+            'kind' => 'issued',
+            'package_id' => null,
+            'service_name' => 'Voucher issued',
+            'amount_deducted' => (float) ($userVoucher->total_amount ?? 0),
+            'applied_date' => $userVoucher->created_at?->format('M d, Y h:i A') ?? '-',
+        ];
+
+        $totalAmount = (float) ($userVoucher->total_amount ?? 0);
+        $currentBalance = (float) ($userVoucher->amount ?? 0);
 
         return [
             'status' => true,

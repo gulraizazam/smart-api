@@ -62,7 +62,10 @@ final class StoreTreatmentRequest extends FormRequest
             'service_id'        => ['required', 'integer', 'exists:services,id'],
             'location_id'       => ['required', 'integer', 'exists:locations,id'],
             'doctor_id'         => ['required', 'integer', 'exists:users,id'],
-            'patient_id'        => ['required', 'integer', 'exists:users,id'],
+            // patient_id is now nullable — when absent, TreatmentService
+            // looks the patient up by phone and creates one inline if no
+            // match exists. Mirrors the consultancy create flow.
+            'patient_id'        => ['nullable', 'integer', 'exists:users,id'],
             'scheduled_date'    => ['nullable', 'date'],
             'scheduled_time'    => ['nullable', 'date_format:H:i:s'],
             'base_service_id'   => ['nullable', 'integer', 'exists:services,id'],
@@ -72,6 +75,8 @@ final class StoreTreatmentRequest extends FormRequest
             'end'               => ['nullable', 'date'],
             'old_phone'         => ['nullable', 'string', 'max:20'],
             'gender'            => ['nullable', 'in:0,1,2'],
+            'email'             => ['nullable', 'email', 'max:255'],
+            'new_patient'       => ['nullable', 'boolean'],
             'referred_by'       => ['nullable', 'integer', 'exists:users,id'],
             'coming_from'       => ['nullable', 'string', 'max:255'],
             'send_message'      => ['nullable', 'boolean'],

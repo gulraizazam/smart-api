@@ -115,6 +115,20 @@ final class TreatmentService
         $user = Auth::user();
         $accountId = (int) $user->account_id;
 
+        // Resolve or create the patient so the rest of the flow can
+        // assume `patient_id` is set. The SPA's slim treatment-create
+        // form (Service / Phone / Name / Time only) doesn't send
+        // patient_id — we look up by phone and fall back to creating a
+        // minimal patient + lead pair inline. Parity with the
+        // consultancy create flow that AppointmentService already does.
+        if (empty($validated['patient_id']) && !empty($validated['phone'])) {
+            $validated['patient_id'] = $this->resolveOrCreatePatient($validated, $accountId);
+        }
+
+        if (empty($validated['patient_id'])) {
+            throw TreatmentException::invalidData('Patient is required.');
+        }
+
         $service = Services::find($validated['service_id'])
             ?? throw TreatmentException::resourceNotFound('Service');
 
@@ -208,6 +222,57 @@ final class TreatmentService
                 'id' => $appointment->id,
             ];
         });
+    }
+
+    /**
+     * Look up an existing patient by phone, or create a new one inline.
+     *
+     * Cleans the phone of formatting first, scopes the lookup to the
+     * caller's account + patient user_type, and creates a minimal
+     * patient row when no match exists. Mirrors the consultancy create
+     * flow's `shouldCreateNewPatient` branch in AppointmentService.
+     *
+     * Returns the resolved patient id; throws if creation fails.
+     */
+    private function resolveOrCreatePatient(array $data, int $accountId): int
+    {
+        $cleaned = preg_replace('/[^0-9]/', '', (string) ($data['phone'] ?? ''));
+        if ($cleaned === '') {
+            throw TreatmentException::invalidData('Phone is required to resolve the patient.');
+        }
+
+        // Patient lookup: same scoping as the legacy `load/lead` endpoint
+        // — account-bound, restricted to patient user_type, exact phone match
+        // after stripping formatting.
+        $patient = User::where('account_id', $accountId)
+            ->where('user_type_id', config('constants.patient_id'))
+            ->where('phone', $cleaned)
+            ->first();
+
+        if ($patient) {
+            return (int) $patient->id;
+        }
+
+        // Inline create. Name is required by the form so it should always
+        // be present here; gender defaults to 0 (matches the consultancy
+        // path) since the leads table has a NOT NULL gender column.
+        $patient = User::create([
+            'name'         => $data['name'] ?? null,
+            'phone'        => $cleaned,
+            'email'        => $data['email'] ?? null,
+            'gender'       => $data['gender'] ?? 0,
+            'referred_by'  => $data['referred_by'] ?? null,
+            'account_id'   => $accountId,
+            'user_type_id' => config('constants.patient_id'),
+            'password'     => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+            'active'       => 1,
+        ]);
+
+        if (!$patient) {
+            throw TreatmentException::invalidData('Failed to create patient.');
+        }
+
+        return (int) $patient->id;
     }
 
     // ──────────────────────────────────────────────────
@@ -304,8 +369,16 @@ final class TreatmentService
         $startDateTime = $validated['start'] ?? null;
 
         $arrivedStatusId = $this->getArrivedStatusId();
+        $accountId = (int) Auth::user()->account_id;
 
+        // Account-scope the lookup so a guessed patient_id from another
+        // tenant can't surface their treatment history. Cross-CENTRE
+        // matches inside the account ARE allowed on purpose — the
+        // warning is about patient continuity of care, not centre
+        // membership; an operator at centre B should still see the
+        // patient's prior arrived treatment performed at centre A.
         $query = Appointments::where('appointments.patient_id', $patientId)
+            ->where('appointments.account_id', $accountId)
             ->where('appointments.appointment_type_id', $this->getTreatmentTypeId())
             ->where('appointments.appointment_status_id', $arrivedStatusId)
             ->where('appointments.service_id', $serviceId)
@@ -329,15 +402,20 @@ final class TreatmentService
             return ['last_treatment' => null];
         }
 
-        if (! $this->checkDoctorAllocation($lastTreatment->doctor_id, $locationId, $serviceId)) {
-            return ['last_treatment' => null];
-        }
-
-        $hasDoctorRota = $this->checkDoctorRotaForDateTime(
-            $lastTreatment->doctor_id,
-            $locationId,
-            $startDateTime,
-        );
+        // ⚠ DO NOT short-circuit on `checkDoctorAllocation` failure.
+        // The legacy code returned null here, which silently hid the
+        // warning whenever the previous doctor wasn't allocated to the
+        // new centre — operators could re-route a patient to a brand
+        // new doctor without any prompt, defeating the whole guard.
+        //
+        // The downstream UX already handles the unallocated case: the
+        // doctor's rota check below returns false, the SPA renders the
+        // "Schedule with previous doctor" radio in a disabled state
+        // with a "(not available in this time slot)" note, and the
+        // "Proceed with selected doctor" radio remains the only path
+        // forward (gated on `can_edit_doctor`).
+        $hasDoctorRota = $this->checkDoctorAllocation($lastTreatment->doctor_id, $locationId, $serviceId)
+            && $this->checkDoctorRotaForDateTime($lastTreatment->doctor_id, $locationId, $startDateTime);
 
         return [
             'last_treatment' => [
