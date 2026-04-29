@@ -45,13 +45,6 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('invoices_create'))
-                                <a href="javascript:void(0);" onclick="createRota('{{ route('admin.invoices.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_invoices">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
-                        @endif
-
                         <!--end::Button-->
                         </div>
 

@@ -14,6 +14,28 @@ class FeedbackReportRequest extends FormRequest
         return Gate::allows('feedbacks_manage');
     }
 
+    /**
+     * Strip the "all" sentinel emitted by the Centres multi-select before
+     * validation runs — otherwise it reaches the integer rule and 422s.
+     * Empty input then falls back to the user's permitted centres in the
+     * controller.
+     */
+    protected function prepareForValidation(): void
+    {
+        $raw = $this->input('centre_id');
+
+        if ($raw === null) {
+            return;
+        }
+
+        $this->merge([
+            'centre_id' => array_values(array_filter(
+                (array) $raw,
+                fn ($value): bool => $value !== 'all' && $value !== '',
+            )),
+        ]);
+    }
+
     public function rules(): array
     {
         return [

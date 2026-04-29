@@ -230,7 +230,10 @@ Route::get('business-closures/create', [BusinessClosureController::class, 'creat
 Route::post('business-closures', [BusinessClosureController::class, 'store'])->name('business-closures.store');
 
 // REST-style additions (static segments first so they don't get captured as ids)
-Route::get('business-closures', [BusinessClosureController::class, 'index'])->name('business-closures.index');
+// Note: `business-closures.index` is reserved for the web admin page route name
+// (resources/views/admin/partials/sidebar.blade.php, schedule-calendar.js). This
+// API listing keeps a distinct name to avoid Ziggy/route() collision.
+Route::get('business-closures', [BusinessClosureController::class, 'index'])->name('business-closures.list');
 Route::get('business-closures/upcoming', [BusinessClosureController::class, 'upcoming'])->name('business-closures.upcoming');
 Route::post('business-closures/check', [BusinessClosureController::class, 'check'])->name('business-closures.check');
 Route::post('business-closures/bulk-delete', [BusinessClosureController::class, 'bulkDelete'])->name('business-closures.bulk-delete');
