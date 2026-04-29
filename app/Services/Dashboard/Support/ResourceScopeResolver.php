@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace App\Services\Dashboard\Support;
 
 use App\Models\User;
-use App\Models\UserBranch;
+use App\Models\UserHasLocations;
+use Illuminate\Support\Facades\Config;
 
 /**
  * Single authority for "which branches can this user see on the Management
  * Dashboard?" Every calculator, controller, and policy pulls the answer from
  * here.
  *
- * Semantics:
- *   - no rows in user_branches  ⇒ company-wide (returns null)
- *   - rows in user_branches     ⇒ regional subset (returns list<int>)
+ * Semantics (mirror CashflowHelper::getUserBranches() — the established
+ * project-wide rule for user→location scoping):
+ *   - users.select_all = 1                          ⇒ company-wide (null)
+ *   - user_has_locations contains "All Centres" id  ⇒ company-wide (null)
+ *   - otherwise                                     ⇒ list<int> of physical
+ *                                                    location ids (the virtual
+ *                                                    All Centres id is never
+ *                                                    returned to callers)
  *
  * Per-request cache avoids re-querying the pivot on every widget.
  */
@@ -34,17 +40,28 @@ final class ResourceScopeResolver
             return $this->cache[$userId];
         }
 
-        $rows = UserBranch::query()
-            ->where('account_id', (int) $user->account_id)
+        if ((bool) ($user->select_all ?? false)) {
+            return $this->cache[$userId] = null;
+        }
+
+        $allCentresId = (int) Config::get('constants.all_centres_location_id');
+
+        $locationIds = UserHasLocations::query()
             ->where('user_id', $userId)
             ->pluck('location_id')
             ->map(static fn ($id): int => (int) $id)
-            ->values()
             ->all();
 
-        $this->cache[$userId] = $rows === [] ? null : $rows;
+        if ($allCentresId !== 0 && in_array($allCentresId, $locationIds, true)) {
+            return $this->cache[$userId] = null;
+        }
 
-        return $this->cache[$userId];
+        $physical = array_values(array_filter(
+            $locationIds,
+            static fn (int $id): bool => $id !== $allCentresId,
+        ));
+
+        return $this->cache[$userId] = $physical;
     }
 
     public function canAccessBranch(User $user, int $branchId): bool
@@ -60,7 +77,7 @@ final class ResourceScopeResolver
     }
 
     /**
-     * Forget cached result for a user — call after the admin UI edits user_branches.
+     * Forget cached result for a user — call after admin UI edits user_has_locations.
      */
     public function invalidate(int $userId): void
     {

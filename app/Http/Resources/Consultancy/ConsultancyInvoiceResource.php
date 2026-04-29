@@ -18,6 +18,9 @@ class ConsultancyInvoiceResource extends JsonResource
             'settle_amount' => $this->resource['settle_amount'] ?? null,
             'outstanding' => $this->resource['outstanding'] ?? null,
             'invoice_status' => $this->resource['invoice_status'] ?? false,
+            // Present when invoice_status === true so the SPA preview
+            // dialog can offer re-print without a second round trip.
+            'invoice_id' => $this->resource['invoice_id'] ?? null,
             'service' => $this->resource['service'] ?? null,
             'appointment_type' => $this->resource['appointment_type'] ?? null,
             'location_info' => $this->resource['location_info'] ?? null,

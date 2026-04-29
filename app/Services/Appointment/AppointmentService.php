@@ -83,6 +83,16 @@ class AppointmentService
             'user_updated_by',
         ])->where('account_id', $this->getAccountId());
 
+        // Centre-level ACL — every list endpoint that flows through
+        // here (consultancy index, treatment index, scheduled /
+        // non-scheduled / statistics) is scoped to the centres the
+        // logged-in user has been assigned. The legacy datatable
+        // services already do this directly; mirroring it here so the
+        // REST API matches. Super-admin (user 1) and practitioners get
+        // their full set via ACL::getUserCentres() — the helper
+        // handles those branches centrally.
+        $query->whereIn('appointments.location_id', \App\Helpers\ACL::getUserCentres());
+
         if ($appointmentTypeId) {
             $query->where('appointment_type_id', $appointmentTypeId);
         }
@@ -117,6 +127,24 @@ class AppointmentService
             $query->where('service_id', $filters['service_id']);
         }
 
+        // `service_parent_id` is the SPA's "parent selected on the
+        // services tree picker" filter — expands to the parent's
+        // active children so the table shows every treatment booked
+        // against any sub-service of the chosen category. Mutually
+        // exclusive with `service_id` in the UI; if both arrive we
+        // honour `service_id` (more specific) and ignore the parent.
+        if (! empty($filters['service_parent_id']) && empty($filters['service_id'])) {
+            $childIds = \App\Models\Services::query()
+                ->where('parent_id', (int) $filters['service_parent_id'])
+                ->where('active', 1)
+                ->pluck('id')
+                ->all();
+            // Include the parent id itself too — some legacy rows
+            // bind to the parent service directly.
+            $childIds[] = (int) $filters['service_parent_id'];
+            $query->whereIn('service_id', $childIds);
+        }
+
         if (! empty($filters['appointment_status_id'])) {
             $query->where('appointment_status_id', $filters['appointment_status_id']);
         }
@@ -143,6 +171,22 @@ class AppointmentService
         } elseif (isset($filters['scheduled']) && $filters['scheduled'] === false) {
             $query->whereNull('scheduled_date')
                 ->whereNull('scheduled_time');
+        }
+
+        // Sort. The controller has already validated the field against
+        // an allow-list and resolved it to a safe `table.column` form,
+        // so injecting it directly into orderBy is safe here.
+        if (isset($filters['sort']) && is_array($filters['sort'])) {
+            $field = (string) ($filters['sort']['field'] ?? 'appointments.created_at');
+            $direction = (string) ($filters['sort']['direction'] ?? 'desc');
+            $query->orderBy($field, $direction);
+            // For scheduled_date sorts, break ties by time so two rows
+            // on the same day land in a sensible order.
+            if ($field === 'appointments.scheduled_date') {
+                $query->orderBy('appointments.scheduled_time', $direction);
+            }
+        } else {
+            $query->orderBy('appointments.created_at', 'desc');
         }
 
         return $query;
@@ -793,7 +837,12 @@ class AppointmentService
             'resource',
         ])->whereNotNull('scheduled_date')
             ->where('appointment_type_id', 1)
-            ->whereNotNull('scheduled_time');
+            ->whereNotNull('scheduled_time')
+            // Centre-level ACL — see getAppointmentsList for the
+            // rationale; same scoping applied to the un-paginated
+            // scheduled / non-scheduled / statistics list endpoints.
+            ->where('account_id', $this->getAccountId())
+            ->whereIn('appointments.location_id', \App\Helpers\ACL::getUserCentres());
 
         $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
@@ -819,7 +868,9 @@ class AppointmentService
             'patient',
         ])->where('account_id', $this->getAccountId())
             ->whereNull('scheduled_date')
-            ->whereNull('scheduled_time');
+            ->whereNull('scheduled_time')
+            // Same centre ACL as the list / scheduled endpoints.
+            ->whereIn('appointments.location_id', \App\Helpers\ACL::getUserCentres());
 
         $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
@@ -985,7 +1036,14 @@ class AppointmentService
         ])->where([
             'id' => $id,
             'account_id' => $this->getAccountId(),
-        ])->first();
+        ])
+            // Centre ACL: a guessed id outside the user's assigned
+            // centres surfaces as a clean 404 rather than an
+            // information-leaky 200 with cross-centre data. Hardens
+            // every show / update / delete / status / schedule path
+            // that flows through this helper.
+            ->whereIn('appointments.location_id', \App\Helpers\ACL::getUserCentres())
+            ->first();
 
         if (! $appointment) {
             throw AppointmentException::notFound();
@@ -1068,10 +1126,18 @@ class AppointmentService
 
     public function getAppointmentStatistics(array $filters = []): array
     {
-        $cacheKey = "appointment_stats_{$this->getAccountId()}_".md5(json_encode($filters));
+        // Centre-ACL hash bakes the user's accessible centre set into
+        // the cache key so two users on the same account with
+        // different centre allocations don't share each other's tile
+        // counts.
+        $userCentres = \App\Helpers\ACL::getUserCentres();
+        $cacheKey = "appointment_stats_{$this->getAccountId()}_"
+            . md5(json_encode($filters))
+            . '_' . md5(json_encode($userCentres));
 
-        return Cache::remember($cacheKey, 300, function () use ($filters) {
-            $query = Appointments::where('account_id', $this->getAccountId());
+        return Cache::remember($cacheKey, 300, function () use ($filters, $userCentres) {
+            $query = Appointments::where('account_id', $this->getAccountId())
+                ->whereIn('location_id', $userCentres);
             $query = $this->applyFilters($query, $filters);
 
             return [

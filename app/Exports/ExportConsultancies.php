@@ -153,11 +153,34 @@ class ExportConsultancies implements FromQuery, WithHeadings, WithMapping, WithE
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->where($where)
+            // Eager-load every relation `map()` touches. Without this
+            // each row would lazy-fire ~10 queries (doctor, region,
+            // city, location, service, appointment_status,
+            // appointment_type, user, user_updated_by,
+            // user_converted_by) → 10K queries for a 1K-row export and
+            // ~minutes of wall time. With this it's a small constant.
+            ->with([
+                'doctor:id,name',
+                'region:id,name',
+                'city:id,name',
+                'location:id,name',
+                'service:id,name',
+                'appointment_status:id,name',
+                'appointment_type:id,name',
+                'user:id,name',
+                'user_updated_by:id,name',
+                'user_converted_by:id,name',
+            ])
             ->orderBy('scheduled_time', 'asc');
 
         if ($this->request->filter_phone) {
-            $phone = substr($this->request->filter_phone, 1);
-            $query->where('users.phone', '=', $phone);
+            // Substring match, normalised to digits only — matches the
+            // index endpoint's behaviour. The previous code stripped a
+            // leading char and did exact `=` which silently never hit.
+            $phone = preg_replace('/[^0-9]/', '', (string) $this->request->filter_phone);
+            if ($phone !== '') {
+                $query->where('users.phone', 'like', '%' . $phone . '%');
+            }
         }
 
         return $query->limit($this->limit)->offset($this->offset);
