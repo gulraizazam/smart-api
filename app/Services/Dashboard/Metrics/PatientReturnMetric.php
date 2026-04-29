@@ -55,6 +55,42 @@ final class PatientReturnMetric implements Metric
         return $this->aggregate($scope, $range);
     }
 
+    /**
+     * Same shape as {@see compute()} but reports the "any-doctor" return
+     * rate — did this doctor's treated patients come back to *anyone* in
+     * the network within 45 days? Higher than `compute()`'s same-doctor
+     * rate ⇒ patient leak.
+     *
+     * Doctor scope only: branch / company aggregation isn't meaningful for
+     * this signal (the existing aggregate query already excludes the
+     * doctor filter); falls back to {@see aggregate()} for those scopes.
+     *
+     * @return array{total_unique_patients: int, patients_returned: int, return_rate: float}
+     */
+    public function computeAnyDoctor(MetricScope $scope, DateRange $range): array
+    {
+        if ($scope->isDenyAll()) {
+            return $this->empty();
+        }
+
+        if ($scope->isResourceScoped() && $scope->resourceType === ResourceType::Doctor) {
+            $result = $this->calculator->calculateAnyDoctor(
+                (int) $scope->resourceId,
+                $range->startString(),
+                $range->endString(),
+                $scope->accountId,
+            );
+
+            return [
+                'total_unique_patients' => (int) $result['total_unique_patients'],
+                'patients_returned' => (int) $result['patients_returned'],
+                'return_rate' => (float) $result['return_rate'],
+            ];
+        }
+
+        return $this->aggregate($scope, $range);
+    }
+
     private function aggregate(MetricScope $scope, DateRange $range): array
     {
         $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();

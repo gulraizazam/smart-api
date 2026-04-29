@@ -64,6 +64,43 @@ class CashFlowDashboardController extends Controller
     }
 
     /**
+     * Slim snapshot endpoint — returns only the three sections the
+     * SPA's Cash Flow Statement panel actually renders (summary, pools,
+     * daily trend), skipping the dozen-plus aggregations that
+     * dashboardData computes for the legacy admin page. Cuts response
+     * time substantially when the consumer doesn't need vendor /
+     * staff / pending / category sections.
+     */
+    public function dashboardSnapshot(Request $request): JsonResponse
+    {
+        try {
+
+            $accountId = Auth::user()->account_id;
+
+            $filters = $request->only(['date_from', 'date_to', 'branch_id']);
+            [$dateFrom, $dateTo] = CashflowHelper::defaultDateRange($filters);
+            $branchId = isset($filters['branch_id']) ? (int) $filters['branch_id'] : null;
+            $goLiveDate = $this->settingService->getGoLiveDate($accountId);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'summary'     => $this->dashboardService->getSummaryCards($accountId, $goLiveDate),
+                    'pools'       => $this->dashboardService->getPoolBalances($accountId),
+                    'daily_trend' => $this->dashboardService->getDailyTrend($accountId, $dateFrom, $dateTo, $branchId, $goLiveDate),
+                    'vendors'     => $this->dashboardService->getVendorSnapshot($accountId),
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+
+            \Illuminate\Support\Facades\Log::error($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred. Please try again.'], 500);
+
+        }
+    }
+
+    /**
      * Reconciliation check (admin only).
      */
     public function dashboardReconciliation(): JsonResponse

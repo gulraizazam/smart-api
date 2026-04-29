@@ -278,7 +278,11 @@ final class NewReturningMetric implements Metric
         //                              "sticky" retention)
         // Two left-joins with different match conditions so both can be
         // aggregated in one pass over the cohort rows.
+        // Inner-join `users` to filter to active doctors only — former
+        // / deactivated doctors with old appointments in the cohort
+        // window otherwise show up as ghost rows on the FDM panel.
         $pairs = DB::table('appointments as a1')
+            ->join('users as u', 'a1.doctor_id', '=', 'u.id')
             ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $today): void {
                 $join->on('a2.patient_id', '=', 'a1.patient_id')
                     ->on('a2.location_id', '=', 'a1.location_id')
@@ -306,6 +310,7 @@ final class NewReturningMetric implements Metric
             ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
             ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
             ->whereNull('a1.deleted_at')
+            ->where('u.active', 1)
             ->select('a1.doctor_id', 'a1.patient_id')
             ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_branch')
             ->selectRaw('MAX(CASE WHEN a2d.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_same_doctor')
@@ -387,6 +392,198 @@ final class NewReturningMetric implements Metric
                 'retention_rate' => $branchRate,
             ],
         ];
+    }
+
+    /**
+     * Per-doctor retention trend for a single branch. Same matured
+     * 30–60 day cohort logic as `branchDoctorRetention`, applied at
+     * each calendar-month anchor going back `monthsBack` months.
+     *
+     * Used by the FDM dashboard's Trend tab (and by Overview when the
+     * filter is narrowed to a single branch). Returns one row per
+     * doctor with one point per month — same shape as `retentionTrend`
+     * but rows are doctors, not branches.
+     *
+     * Branch-level rollup is included as `branch_pool` so the SPA can
+     * render "this branch overall" alongside the doctor lines for an
+     * at-a-glance comparison.
+     *
+     * @return array{
+     *   branch_id: int,
+     *   branch_name: string|null,
+     *   months: list<string>,
+     *   rows: list<array{doctor_id:int, doctor_name:string, points: list<array{month:string, cohort:int, returned:int, rate:float|null}>}>,
+     *   branch_pool: list<array{month:string, cohort:int, returned:int, rate:float|null}>,
+     * }
+     */
+    public function branchDoctorRetentionTrend(MetricScope $scope, int $branchId, int $monthsBack = 6): array
+    {
+        $treatmentStatusIds = DoctorDashboardHelper::getTreatmentStatusIds();
+        if ($treatmentStatusIds === []) {
+            return [
+                'branch_id' => $branchId,
+                'branch_name' => null,
+                'months' => [],
+                'rows' => [],
+                'branch_pool' => [],
+            ];
+        }
+
+        $today = \Carbon\CarbonImmutable::now();
+
+        // Build month anchors (oldest → newest). Each anchor = month-end,
+        // clamped to today for the in-progress month so we measure "as of
+        // now" instead of overshooting into the future.
+        $anchors = [];
+        for ($i = $monthsBack - 1; $i >= 0; $i--) {
+            $monthStart = $today->subMonths($i)->startOfMonth();
+            $monthEnd = $monthStart->endOfMonth();
+            $asOf = $monthEnd->greaterThan($today) ? $today : $monthEnd;
+            $anchors[] = [
+                'key' => $monthStart->format('Y-m'),
+                'asOf' => $asOf->toDateString(),
+            ];
+        }
+        $monthKeys = array_map(static fn ($a) => $a['key'], $anchors);
+
+        // Per-doctor per-month bucket — fill in two passes so doctors
+        // that only show up in some months still get a complete points
+        // array (with `null`/zero points where they had no cohort).
+        $perDoctor = [];
+        $branchPool = [];
+        foreach ($anchors as $anchor) {
+            $rows = $this->branchDoctorCohortAsOf($scope, $branchId, $anchor['asOf'], $treatmentStatusIds);
+            foreach ($rows as $row) {
+                $doctorId = (int) $row->doctor_id;
+                if (! isset($perDoctor[$doctorId])) {
+                    $perDoctor[$doctorId] = [];
+                    foreach ($monthKeys as $k) {
+                        $perDoctor[$doctorId][$k] = ['cohort' => 0, 'returned' => 0];
+                    }
+                }
+                $perDoctor[$doctorId][$anchor['key']] = [
+                    'cohort' => (int) $row->total,
+                    'returned' => (int) $row->with_followup_branch,
+                ];
+            }
+
+            // Branch-level pool for this anchor — same followUpSplit
+            // path the existing retentionTrend uses, single-branch.
+            $branchSplit = $this->followUpSplit($scope, [$branchId], '', '', $anchor['asOf']);
+            $bucket = $branchSplit[$branchId] ?? ['total' => 0, 'with_followup' => 0];
+            $branchPool[] = [
+                'month' => $anchor['key'],
+                'cohort' => (int) ($bucket['total'] ?? 0),
+                'returned' => (int) ($bucket['with_followup'] ?? 0),
+                'rate' => ($bucket['total'] ?? 0) > 0
+                    ? round((($bucket['with_followup'] ?? 0) / $bucket['total']) * 100, 1)
+                    : null,
+            ];
+        }
+
+        $doctorIds = array_keys($perDoctor);
+        $names = $doctorIds === []
+            ? []
+            : DB::table('users')->whereIn('id', $doctorIds)->pluck('name', 'id')->toArray();
+        $branchName = DB::table('locations')->where('id', $branchId)->value('name');
+
+        $resultRows = [];
+        foreach ($perDoctor as $doctorId => $monthly) {
+            $points = [];
+            foreach ($anchors as $anchor) {
+                $c = $monthly[$anchor['key']]['cohort'];
+                $r = $monthly[$anchor['key']]['returned'];
+                $points[] = [
+                    'month' => $anchor['key'],
+                    'cohort' => $c,
+                    'returned' => $r,
+                    'rate' => $c > 0 ? round(($r / $c) * 100, 1) : null,
+                ];
+            }
+            $resultRows[] = [
+                'doctor_id' => $doctorId,
+                'doctor_name' => $names[$doctorId] ?? "User #{$doctorId}",
+                'points' => $points,
+            ];
+        }
+
+        // Sort by latest-month rate desc; null/empty trailing months go
+        // to the bottom — same posture as branch-level retentionTrend.
+        usort($resultRows, function (array $a, array $b): int {
+            $lastA = $a['points'][count($a['points']) - 1]['rate'] ?? -1;
+            $lastB = $b['points'][count($b['points']) - 1]['rate'] ?? -1;
+            return $lastB <=> $lastA;
+        });
+
+        return [
+            'branch_id' => $branchId,
+            'branch_name' => $branchName,
+            'months' => $monthKeys,
+            'rows' => $resultRows,
+            'branch_pool' => $branchPool,
+        ];
+    }
+
+    /**
+     * Per-doctor cohort + follow-up counts for a branch as of a given
+     * date. Same matured trailing 30–60 day cohort window as
+     * `branchDoctorRetention`, just anchored on `$asOf` instead of
+     * `now()` — so callers can compute historical snapshots.
+     *
+     * @param  list<int>  $treatmentStatusIds
+     * @return \Illuminate\Support\Collection<int, object{doctor_id: int, total: int, with_followup_branch: int, with_followup_same: int}>
+     */
+    private function branchDoctorCohortAsOf(MetricScope $scope, int $branchId, string $asOf, array $treatmentStatusIds): \Illuminate\Support\Collection
+    {
+        $cohortEnd = \Carbon\Carbon::parse($asOf)->subDays(30)->toDateString();
+        $cohortStart = \Carbon\Carbon::parse($asOf)->subDays(60)->toDateString();
+
+        // Inner-join `users` to filter to active doctors only — former
+        // / deactivated doctors with old cohort appointments otherwise
+        // show up as ghost rows on the FDM panel's trend.
+        $pairs = DB::table('appointments as a1')
+            ->join('users as u', 'a1.doctor_id', '=', 'u.id')
+            ->leftJoin('appointments as a2', function ($join) use ($treatmentStatusIds, $asOf): void {
+                $join->on('a2.patient_id', '=', 'a1.patient_id')
+                    ->on('a2.location_id', '=', 'a1.location_id')
+                    ->where('a2.appointment_type_id', 2)
+                    ->whereIn('a2.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2.scheduled_date', '<=', $asOf)
+                    ->whereColumn('a2.id', '!=', 'a1.id')
+                    ->whereNull('a2.deleted_at');
+            })
+            ->leftJoin('appointments as a2d', function ($join) use ($treatmentStatusIds, $asOf): void {
+                $join->on('a2d.patient_id', '=', 'a1.patient_id')
+                    ->on('a2d.location_id', '=', 'a1.location_id')
+                    ->on('a2d.doctor_id', '=', 'a1.doctor_id')
+                    ->where('a2d.appointment_type_id', 2)
+                    ->whereIn('a2d.appointment_status_id', $treatmentStatusIds)
+                    ->whereRaw('a2d.scheduled_date > DATE_ADD(a1.scheduled_date, INTERVAL 7 DAY)')
+                    ->where('a2d.scheduled_date', '<=', $asOf)
+                    ->whereColumn('a2d.id', '!=', 'a1.id')
+                    ->whereNull('a2d.deleted_at');
+            })
+            ->where('a1.account_id', $scope->accountId)
+            ->where('a1.location_id', $branchId)
+            ->where('a1.appointment_type_id', 2)
+            ->whereIn('a1.appointment_status_id', $treatmentStatusIds)
+            ->whereBetween('a1.scheduled_date', [$cohortStart, $cohortEnd])
+            ->whereNull('a1.deleted_at')
+            ->where('u.active', 1)
+            ->select('a1.doctor_id', 'a1.patient_id')
+            ->selectRaw('MAX(CASE WHEN a2.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_branch')
+            ->selectRaw('MAX(CASE WHEN a2d.id IS NOT NULL THEN 1 ELSE 0 END) AS has_followup_same_doctor')
+            ->groupBy('a1.doctor_id', 'a1.patient_id');
+
+        return DB::query()
+            ->fromSub($pairs, 'pb')
+            ->select('doctor_id')
+            ->selectRaw('COUNT(*) AS total')
+            ->selectRaw('SUM(has_followup_branch) AS with_followup_branch')
+            ->selectRaw('SUM(has_followup_same_doctor) AS with_followup_same')
+            ->groupBy('doctor_id')
+            ->get();
     }
 
     /**
