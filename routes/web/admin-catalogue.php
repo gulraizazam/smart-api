@@ -106,7 +106,7 @@ use Illuminate\Support\Facades\Route;
         Route::get('resourcerotas/repeating-shifts', [ResourceRotasController::class, 'repeatingShifts'])->name('resourcerotas.repeating-shifts')->middleware('permission:resourcerotas_manage');
 
         //Business Closures Management
-        Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index')->middleware('permission:business_closures_manage');
+        Route::get('business-closures', [App\Http\Controllers\Admin\BusinessClosureController::class, 'index'])->name('business-closures.index');
 
         //Invoice Management route start
         Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');

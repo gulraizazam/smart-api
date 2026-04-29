@@ -11,6 +11,7 @@ use App\Http\Requests\CashFlow\RejectExpenseRequest;
 use App\Http\Requests\CashFlow\StoreExpenseRequest;
 use App\Http\Requests\CashFlow\UpdateExpenseRequest;
 use App\Http\Requests\CashFlow\VoidExpenseRequest;
+use App\Models\CashFlow\CashflowAuditLog;
 use App\Models\CashFlow\Expense;
 use App\Services\CashFlow\CashflowAuditService;
 use App\Services\CashFlow\CashflowSettingService;
@@ -349,7 +350,14 @@ class CashFlowExpensesController extends Controller
 
 
 
-            $this->auditService->log('unflagged', 'expense', $expense->id, ['is_flagged' => true], ['is_flagged' => false], 'Expense unflagged by admin');
+            $this->auditService->log(
+                CashflowAuditLog::ACTION_UNFLAGGED,
+                CashflowAuditLog::ENTITY_EXPENSE,
+                $expense->id,
+                ['is_flagged' => true],
+                ['is_flagged' => false],
+                'Expense unflagged by admin'
+            );
 
 
 

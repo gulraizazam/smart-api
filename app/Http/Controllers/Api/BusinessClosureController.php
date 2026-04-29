@@ -265,10 +265,6 @@ class BusinessClosureController extends Controller
      */
     public function datatable(Request $request): JsonResponse
     {
-        if (! Gate::allows('business_closures_manage')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $filters = getFilters($request->all());
 
@@ -293,9 +289,34 @@ class BusinessClosureController extends Controller
                 'data' => [],
             ];
 
+            // "All Centres" detection (mirrors the pattern in App\Helpers\ACL
+            // and PatientAccessScope): pivot empty (our "all" sentinel), the
+            // configured All-Centres virtual location attached, any pseudo
+            // rollup centre by name, or every real (non-pseudo) active
+            // location for the account attached.
+            $accountId = (int) Auth::user()->account_id;
+            $pseudoCentreNames = ['All Centres', 'All South Region', 'All Central Region'];
+            $allCentresVirtualId = (int) config('constants.all_centres_location_id');
+
+            $realActiveLocationCount = Locations::where('account_id', $accountId)
+                ->where('active', '1')
+                ->whereNotIn('name', $pseudoCentreNames)
+                ->count();
+
             foreach ($closures as $closure) {
-                $locationNames = $closure->locations->isEmpty()
-                    ? 'All Locations'
+                $attachedIds = $closure->locations->pluck('id');
+                $attachedNames = $closure->locations->pluck('name');
+                $realAttachedCount = $closure->locations
+                    ->reject(fn ($loc) => in_array($loc->name, $pseudoCentreNames, true))
+                    ->count();
+
+                $isAllCentres = $closure->locations->isEmpty()
+                    || ($allCentresVirtualId > 0 && $attachedIds->contains($allCentresVirtualId))
+                    || $attachedNames->intersect($pseudoCentreNames)->isNotEmpty()
+                    || ($realActiveLocationCount > 0 && $realAttachedCount >= $realActiveLocationCount);
+
+                $locationNames = $isAllCentres
+                    ? 'All Centres'
                     : $closure->locations->pluck('name')->implode(', ');
 
                 $records['data'][] = [
@@ -341,10 +362,6 @@ class BusinessClosureController extends Controller
      */
     public function create(): JsonResponse
     {
-        if (! Gate::allows('business_closures_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $userCentres = ACL::getUserCentres();
             $locationsQuery = Locations::where([
@@ -371,10 +388,6 @@ class BusinessClosureController extends Controller
      */
     public function store(StoreBusinessClosureRequest $request): JsonResponse
     {
-        if (! Gate::allows('business_closures_create')) {
-            return $this->errorResponse('You are not authorized to access this resource.', 401);
-        }
-
         try {
             $closure = $this->service->create($request->validated());
 

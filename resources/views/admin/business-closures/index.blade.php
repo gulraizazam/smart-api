@@ -31,12 +31,10 @@
                         </div>
 
                         <div class="card-toolbar">
-                            @if(Gate::allows('business_closures_create'))
-                                <a href="javascript:void(0);" onclick="openAddModal();" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_business_closure">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
-                            @endif
+                            <a href="javascript:void(0);" onclick="openAddModal();" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_business_closure">
+                                <i class="la la-plus"></i>
+                                Add New
+                            </a>
                         </div>
 
                     </div>
