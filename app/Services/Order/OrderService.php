@@ -77,6 +77,14 @@ class OrderService
             $order->patient_name = $patient?->name;
             $order->patient_phone = $patient?->phone;
 
+            // Flatten the product list so the SPA can render a comma-separated
+            // summary in the order row without walking orderDetail[].product.
+            $order->product_names = $order->orderDetail
+                ?->pluck('product.name')
+                ->filter()
+                ->values()
+                ->all() ?? [];
+
             return $order;
         });
     }
