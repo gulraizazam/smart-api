@@ -286,9 +286,37 @@ final class UserVoucherService
         $applyFilter = $params['apply_filter'] ?? false;
 
         $where = $this->buildWhereConditions($params, $userId, $applyFilter);
+        $phone = $this->getPhoneFilter($params, $userId, $applyFilter);
 
         return UserVouchers::query()
-            ->when(! empty($where), fn (Builder $q): Builder => $q->where($where));
+            ->when(! empty($where), fn (Builder $q): Builder => $q->where($where))
+            ->when(
+                $phone !== null && $phone !== '',
+                fn (Builder $q): Builder => $q->whereHas(
+                    'user',
+                    fn ($u) => $u->where('phone', 'like', '%'.$phone.'%'),
+                ),
+            );
+    }
+
+    private function getPhoneFilter(array $params, int $userId, bool $applyFilter): ?string
+    {
+        if (! empty($params['phone'])) {
+            $value = (string) $params['phone'];
+            Filters::put($userId, self::FILTER_KEY, 'phone', $value);
+
+            return $value;
+        }
+
+        if ($applyFilter) {
+            Filters::forget($userId, self::FILTER_KEY, 'phone');
+
+            return null;
+        }
+
+        $stored = Filters::get($userId, self::FILTER_KEY, 'phone');
+
+        return $stored !== null && $stored !== '' ? (string) $stored : null;
     }
 
     private function buildUsedVouchersLookup(Collection $vouchers): array

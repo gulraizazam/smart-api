@@ -12,7 +12,6 @@ use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\TownController;
-use App\Http\Controllers\Admin\UserBranchesController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\Api\ApplicationUserController;
@@ -68,14 +67,9 @@ Route::post('update_password', [ChangePasswordController::class, 'changePassword
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/doctor-dashboard', [DoctorDashboardController::class, 'index'])->name('doctor_dashboard');
 
-// / Admin UI for assigning Management Dashboard branch visibility.
-Route::get('user-branches', [UserBranchesController::class, 'index'])
-    ->middleware('permission:users_manage')
-    ->name('user_branches.index');
-
 // Management Dashboard (desktop-primary, 2 sections: overview + practitioners).
-// Access gated by `management_dashboard.view` permission; branch visibility scoped
-// via the user_branches pivot (see ResourceScopeResolver).
+// Access gated by `management_dashboard.view` permission; branch visibility
+// scoped via user_has_locations (see ResourceScopeResolver).
 Route::prefix('management-dashboard')
     ->name('management_dashboard.')
     ->middleware('can:management_dashboard.view')

@@ -241,8 +241,18 @@ class ConsultancyInvoiceService
         $paymentModes = PaymentModes::where('type', 'application')->pluck('name', 'id');
         $paymentModes->prepend('Select', '0');
 
+        // Surface the existing paid invoice id so the SPA's preview
+        // dialog can offer "Re-print invoice" / "Print consultation form"
+        // without making a second round trip.
+        $paidStatus = InvoiceStatuses::where('slug', 'paid')->first();
+        $existingInvoice = Invoices::where([
+            ['appointment_id', '=', $appointmentId],
+            ['invoice_status_id', '=', $paidStatus?->id],
+        ])->first();
+
         return [
             'invoice_status' => true,
+            'invoice_id' => $existingInvoice?->id,
             'price' => null,
             'appointment_type' => null,
             'service' => null,

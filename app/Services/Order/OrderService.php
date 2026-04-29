@@ -70,6 +70,21 @@ class OrderService
                 : 'N/A';
             $order->status = $order->status == 1 ? 'completed' : 'pending';
 
+            // Surface patient name + phone for the SPA's avatar-style row.
+            // The relation is already eager-loaded above; we flatten it here
+            // so the frontend doesn't have to walk a nested object.
+            $patient = $order->patients;
+            $order->patient_name = $patient?->name;
+            $order->patient_phone = $patient?->phone;
+
+            // Flatten the product list so the SPA can render a comma-separated
+            // summary in the order row without walking orderDetail[].product.
+            $order->product_names = $order->orderDetail
+                ?->pluck('product.name')
+                ->filter()
+                ->values()
+                ->all() ?? [];
+
             return $order;
         });
     }
@@ -515,10 +530,18 @@ class OrderService
     {
         $where = $this->buildOrderWhereConditions($params);
         $productId = $this->resolveProductFilter($params);
+        $phone = $this->resolvePhoneFilter($params);
 
         return Order::query()
             ->when(! empty($where), fn ($q) => $q->where($where))
             ->when($productId !== null && ! empty($productId), fn ($q) => $q->whereHas('orderDetail.product', fn ($q) => $q->whereIn('id', $productId)))
+            ->when(
+                $phone !== null && $phone !== '',
+                fn ($q) => $q->whereHas(
+                    'patients',
+                    fn ($qq) => $qq->where('phone', 'like', '%'.$phone.'%'),
+                ),
+            )
             ->where(fn ($query) => $query->whereIn('location_id', ACL::getUserCentres()))
             ->where('order_type', 'sale');
     }
@@ -541,6 +564,11 @@ class OrderService
         }
         if (hasFilter($filters, 'patient_id')) {
             $where[][] = ['patient_id' => $filters['patient_id']];
+        }
+        // SPA shorthand for the centre filter (vs the legacy
+        // location_type+location pair). Sales are always at a centre.
+        if (hasFilter($filters, 'location_id')) {
+            $where[][] = ['location_id' => $filters['location_id']];
         }
         if (hasFilter($filters, 'location_type')) {
             if ($filters['location_type'] === 'branch') {
@@ -568,13 +596,31 @@ class OrderService
     private function resolveProductFilter(array $params): ?array
     {
         $requestData = $params['request_data'] ?? [];
+        $productId = $requestData['query']['search']['product_id'] ?? null;
 
-        if (! empty($requestData['query']['search']['product_id'])) {
-            return Product::where('name', 'like', '%'.$requestData['query']['search']['product_id'].'%')
-                ->pluck('id')->toArray();
+        if ($productId === null || $productId === '') {
+            return null;
         }
 
-        return null;
+        // Accept either a numeric id (modern SPA dropdown sends this) or
+        // a name fragment (legacy free-text input).
+        if (is_numeric($productId)) {
+            return [(int) $productId];
+        }
+
+        return Product::where('name', 'like', '%'.$productId.'%')->pluck('id')->toArray();
+    }
+
+    private function resolvePhoneFilter(array $params): ?string
+    {
+        $filters = $params['filters'] ?? [];
+        if (hasFilter($filters, 'phone')) {
+            return (string) $filters['phone'];
+        }
+        $requestData = $params['request_data'] ?? [];
+        $phone = $requestData['query']['search']['phone'] ?? null;
+
+        return $phone !== null && $phone !== '' ? (string) $phone : null;
     }
 
     private function sendOrderSMS(array $data, Order $order): void

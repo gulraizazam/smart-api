@@ -338,4 +338,38 @@ class ApplicationUserController extends Controller
             return $this->errorResponse('Failed to get user centers.', 500);
         }
     }
+
+    /**
+     * Active application-user dropdown for filter UIs.
+     *
+     * Returns {id, name}[] for the SPA's Created/Updated/Rescheduled-by
+     * filters on the consultations screen. Scope:
+     *   • account-bound (no cross-tenant leakage)
+     *   • active = 1
+     *   • user_type_id IN [administrator_id, application_user_id]
+     *     — i.e. operators and admins, the only roles that actually
+     *     write to appointment audit columns. Doctors and patients are
+     *     excluded.
+     */
+    public function applicationUsersDropdown(): JsonResponse
+    {
+        try {
+            $users = \App\Models\User::query()
+                ->where('account_id', Auth::user()->account_id)
+                ->where('active', 1)
+                ->whereIn('user_type_id', [
+                    config('constants.administrator_id'),
+                    config('constants.application_user_id'),
+                ])
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn ($u) => ['id' => (int) $u->id, 'name' => (string) $u->name])
+                ->values();
+
+            return $this->successResponse('Application users.', $users);
+        } catch (\Throwable $e) {
+            Log::error('applicationUsersDropdown failed: ' . $e->getMessage());
+            return $this->errorResponse('Failed to load application users.', 500);
+        }
+    }
 }
