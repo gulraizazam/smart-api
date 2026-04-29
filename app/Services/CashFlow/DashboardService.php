@@ -71,40 +71,40 @@ class DashboardService
             // Patient payments (net of refunds) from go-live to end of last month
             $prePayments = (float) PackageAdvances::where('account_id', $accountId)
                 ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
-                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('cash_amount');
 
             $preRefunds = (float) PackageAdvances::where('account_id', $accountId)
                 ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
-                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('cash_amount');
 
             // Inventory sales (net of refunds) from go-live to end of last month
             $preInventorySales = (float) Order::where('account_id', $accountId)
                 ->where('order_type', 'sale')
-                ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('total_price');
 
             $preInventoryRefunds = (float) Order::where('account_id', $accountId)
                 ->where('order_type', 'refund')
-                ->whereBetween(DB::raw('DATE(created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('total_price');
 
             // Expenses from go-live to end of last month
             $preExpenses = (float) Expense::forAccount($accountId)
                 ->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)
-                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('amount');
 
             // Staff advances net from go-live to end of last month
             $preAdvances = (float) StaffAdvance::where('account_id', $accountId)
                 ->whereNull('deleted_at')->whereNull('voided_at')
-                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('amount');
 
             $preReturns = (float) StaffReturn::where('account_id', $accountId)
                 ->whereNull('deleted_at')->whereNull('voided_at')
-                ->whereBetween(DB::raw('DATE(system_created_at)'), [$goLiveDate, $lastDayPrev])
+                ->whereBetween('system_created_at', [$goLiveDate . ' 00:00:00', $lastDayPrev . ' 23:59:59'])
                 ->sum('amount');
 
             $openingBalance += ($prePayments - $preRefunds)
@@ -116,38 +116,38 @@ class DashboardService
         // Current month inflows: patient payments (net of refunds) + inventory (net of refunds)
         $payments = (float) PackageAdvances::where('account_id', $accountId)
             ->where('cash_flow', 'in')->where('is_cancel', 0)->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('cash_amount');
 
         $refunds = (float) PackageAdvances::where('account_id', $accountId)
             ->where('cash_flow', 'out')->where('is_refund', 1)->where('is_cancel', 0)->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('cash_amount');
 
         $inventorySales = (float) Order::where('account_id', $accountId)
             ->where('order_type', 'sale')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$monthStart, $today])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('total_price');
 
         $inventoryRefunds = (float) Order::where('account_id', $accountId)
             ->where('order_type', 'refund')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$monthStart, $today])
+            ->whereBetween('created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('total_price');
 
         // Current month outflows: expenses + staff advances net
         $expenses = (float) Expense::forAccount($accountId)
             ->whereNull('voided_at')->where('status', '!=', ExpenseStatus::Rejected)
-            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
         $advances = (float) StaffAdvance::where('account_id', $accountId)
             ->whereNull('deleted_at')->whereNull('voided_at')
-            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
         $returns = (float) StaffReturn::where('account_id', $accountId)
             ->whereNull('deleted_at')->whereNull('voided_at')
-            ->whereBetween(DB::raw('DATE(system_created_at)'), [$monthStart, $today])
+            ->whereBetween('system_created_at', [$monthStart . ' 00:00:00', $today . ' 23:59:59'])
             ->sum('amount');
 
         $totalInflows = ($payments - $refunds) + ($inventorySales - $inventoryRefunds);
@@ -286,7 +286,7 @@ class DashboardService
             ->where('cash_flow', 'in')
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $inflowQuery->where('system_created_at', '>=', $goLiveDate);
@@ -308,7 +308,7 @@ class DashboardService
             ->where('is_refund', 1)
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $refundQuery->where('system_created_at', '>=', $goLiveDate);
@@ -327,7 +327,7 @@ class DashboardService
         // Inventory sales by day (all payment modes)
         $inventoryQuery = Order::where('account_id', $accountId)
             ->where('order_type', 'sale')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $inventoryQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
@@ -346,7 +346,7 @@ class DashboardService
         // Inventory refunds by day (all payment modes)
         $inventoryRefundQuery = Order::where('account_id', $accountId)
             ->where('order_type', 'refund')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $inventoryRefundQuery->where('created_at', '>=', $goLiveDate.' 00:00:00');
@@ -487,6 +487,43 @@ class DashboardService
             ->limit(10)
             ->get(['id', 'name', 'cached_balance', 'payment_terms'])
             ->toArray();
+    }
+
+    /**
+     * Vendor snapshot for the slim cash flow panel — single query
+     * against the (small) active vendors table, returning the
+     * aggregate outstanding (positive balances only — money we owe
+     * vendors) plus the top contributors. Negative balances (we
+     * overpaid) are excluded from "outstanding" semantics; they're a
+     * separate "money to recover" signal that the dashboard doesn't
+     * surface today.
+     */
+    public function getVendorSnapshot(int $accountId, int $topLimit = 10): array
+    {
+        $vendors = Vendor::forAccount($accountId)
+            ->where('is_active', 1)
+            ->where('cached_balance', '>', 0)
+            ->orderByDesc('cached_balance')
+            ->get(['id', 'name', 'cached_balance', 'payment_terms']);
+
+        $totalOutstanding = (float) $vendors->sum('cached_balance');
+
+        $top = $vendors
+            ->take($topLimit)
+            ->map(fn ($v) => [
+                'id' => $v->id,
+                'name' => $v->name,
+                'balance' => (float) $v->cached_balance,
+                'payment_terms' => $v->payment_terms,
+            ])
+            ->values()
+            ->toArray();
+
+        return [
+            'total_outstanding' => round($totalOutstanding, 2),
+            'count_outstanding' => $vendors->count(),
+            'top' => $top,
+        ];
     }
 
     /**
@@ -776,7 +813,7 @@ class DashboardService
             ->where('cash_flow', 'in')
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $query->where('system_created_at', '>=', $goLiveDate);
@@ -794,7 +831,7 @@ class DashboardService
             ->where('is_refund', 1)
             ->where('is_cancel', 0)
             ->whereNull('deleted_at')
-            ->whereBetween(DB::raw('DATE(created_at)'), [$dateFrom, $dateTo]);
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
 
         if ($goLiveDate) {
             $refundQuery->where('system_created_at', '>=', $goLiveDate);
