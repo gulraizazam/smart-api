@@ -98,7 +98,6 @@
         'admin.users.index' => 'people',
         'admin.doctors.index' => 'people',
         'admin.user_types.index' => 'people',
-        'admin.user_branches.index' => 'people',
         'admin.centre_targets.index' => 'people',
 
         // Settings (General + Locations + Taxonomies + Forms)
@@ -874,10 +873,6 @@
                         @can('users_manage')
                             <a href="{{ route('admin.users.index') }}"
                                class="cs-sub {{ $isActive(['admin.users.index']) }}"><span>Application Users</span></a>
-                        @endcan
-                        @can('users_manage')
-                            <a href="{{ route('admin.user_branches.index') }}"
-                               class="cs-sub {{ $isActive(['admin.user_branches.index']) }}"><span>Branch Assignments</span></a>
                         @endcan
                         @can('roles_manage')
                             <a href="{{ route('admin.roles.index') }}"
