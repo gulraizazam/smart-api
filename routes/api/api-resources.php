@@ -32,6 +32,13 @@ use Illuminate\Support\Facades\Route;
         Route::post('comments', [\App\Http\Controllers\Api\AppointmentCommentController::class, 'store'])->name('comments.store');
     });
 
+    // Active application-user dropdown — feeds the SPA's
+    // Created/Updated/Rescheduled-by filters on the consultations
+    // screen. Light auth (auth.api.dual on the parent group) is
+    // sufficient: no PII, just `{id, name}` rows scoped to the caller's
+    // account, matching the legacy admin's filter dropdown behaviour.
+    Route::get('users/dropdown/application-users', [\App\Http\Controllers\Api\ApplicationUserController::class, 'applicationUsersDropdown'])->name('users.dropdown.application_users');
+
     // Consultancy API Routes (Optimized)
     Route::prefix('consultancy')->name('consultancy.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('api_index');
@@ -65,12 +72,43 @@ use Illuminate\Support\Facades\Route;
     Route::prefix('treatment')->name('treatment.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('api_index');
         Route::post('/', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'show'])->name('show');
         Route::put('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'destroy'])->name('destroy');
+        Route::put('{id}/status', [\App\Http\Controllers\Api\TreatmentController::class, 'updateStatus'])->name('update_status');
+        Route::post('{id}/schedule', [\App\Http\Controllers\Api\TreatmentController::class, 'schedule'])->name('schedule');
         Route::get('scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'nonScheduled'])->name('non_scheduled');
         Route::get('statistics/data', [\App\Http\Controllers\Api\TreatmentController::class, 'statistics'])->name('statistics');
         Route::get('resources/available', [\App\Http\Controllers\Api\TreatmentController::class, 'availableResources'])->name('available_resources');
         Route::get('services/by-location', [\App\Http\Controllers\Api\TreatmentController::class, 'servicesByLocation'])->name('services_by_location');
+
+        // Page extras: WhatsApp prefill + xlsx export — same shape as
+        // the consultancy equivalents so the SPA can reuse its primitives.
+        Route::get('{id}/whatsapp-data', [\App\Http\Controllers\Api\TreatmentController::class, 'whatsappData'])->name('whatsapp_data');
+        Route::post('export', [\App\Http\Controllers\Api\TreatmentController::class, 'export'])->name('export');
+
+        // Treatment invoice load — JSON parallel to the legacy
+        // `appointments/invoice/{id}` Blade route. Save still flows
+        // through the consultancy invoice subsystem (which is
+        // appointment_id-keyed, so it works for treatments too).
+        Route::get('invoice/{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'invoice'])->name('invoice.show');
+        // Plan-tree (bundles + services + lock data) for a chosen
+        // package — JSON parallel to legacy `getplansinformation`.
+        Route::get('invoice/{id}/plan/{packageId}', [\App\Http\Controllers\Api\TreatmentController::class, 'invoicePlanInfo'])->name('invoice.plan');
+        // Per-service price + outstanding/settle/remaining — JSON
+        // parallel to legacy `getpackageprice`.
+        Route::get('invoice/{id}/package-price', [\App\Http\Controllers\Api\TreatmentController::class, 'invoicePackagePrice'])->name('invoice.package_price');
+        // Save the consumed-from-plan invoice. Routes directly at the
+        // legacy `AppointmentInvoiceController::saveinvoice` because
+        // that method already returns proper JSON envelopes
+        // (`successResponse` / `errorResponse`) and contains all the
+        // package-advances writes, SMS triggers, status transitions
+        // and audit-log code we need. Re-implementing it here would
+        // duplicate ~400 lines of business logic and silently drift.
+        // The method reads `appointment_id` from the request body, so
+        // POSTing it from the SPA works unchanged.
+        Route::post('invoice', [\App\Http\Controllers\Admin\Appointments\AppointmentInvoiceController::class, 'saveinvoice'])->name('invoice.save');
     });
 
     // Appointment Routes - Using API Controller with Service Layer

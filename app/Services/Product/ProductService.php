@@ -12,8 +12,6 @@ use App\Models\Locations;
 use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductDetail;
-use App\Models\Purchase;
-use App\Models\PurchaseDetail;
 use App\Models\Stock;
 use App\Models\TransferProduct;
 use App\Models\User;
@@ -25,7 +23,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Activity;
 
 class ProductService
@@ -90,20 +87,24 @@ class ProductService
     {
         $accountId = Auth::user()->account_id;
 
-        $slug = Str::slug($data['name']);
-        $originalSlug = $slug;
-        $counter = 1;
-        while (Product::where('slug', $slug)->exists()) {
-            $slug = $originalSlug.'-'.$counter;
-            $counter++;
-        }
+        // The slug uniqueness loop that previously sat here referenced a
+        // `products.slug` column that doesn't exist in the schema (and
+        // isn't in the model's $fillable). The SKU column already enforces
+        // its own unique constraint via StoreProductRequest, which is the
+        // identifier callers actually need.
 
         $product = new Product;
         $product->name = $data['name'];
-        $product->slug = $slug;
         $product->account_id = $accountId;
         $product->brand_id = $data['brand_id'];
-        $product->sale_price = $data['sale_price'] ?? null;
+        // `sale_price` and `purchase_price` are NOT NULL columns on the
+        // products table but neither is a meaningful catalog-level value:
+        // sale price lives on `inventories.sale_price` per location, and
+        // purchase price lives on `product_details.purchase_price` per
+        // batch. Stamp 0 so the insert satisfies the constraint without
+        // pretending the catalog row carries a real price.
+        $product->sale_price = $data['sale_price'] ?? 0;
+        $product->purchase_price = $data['purchase_price'] ?? 0;
         $product->sku = $data['sku'];
         $product->product_type = 'for_sale';
         $product->created_by = Auth::id();
@@ -230,34 +231,72 @@ class ProductService
     {
         $accountId = Auth::user()->account_id;
 
-        $request = new Request($data);
-        $productDetail = ProductDetail::createRecord($request, $accountId, $productId);
+        return DB::transaction(function () use ($data, $accountId, $productId): bool {
+            // Resolve the target inventory. Two flows:
+            //   - Legacy: caller supplies inventory_id directly.
+            //   - Modern: caller supplies centre_id; we look up the existing
+            //     inventory at that centre, OR create one when this is the
+            //     product's first receipt at that centre. The first-time
+            //     case requires `sale_price` so the centre's customer-
+            //     facing price is set right alongside the stock receipt
+            //     (this is the Allocate flow, folded in).
+            $inventory = null;
 
-        if (! $productDetail) {
-            return false;
-        }
+            if (! empty($data['inventory_id'])) {
+                $inventory = Inventory::where('product_id', $productId)
+                    ->where('id', $data['inventory_id'])
+                    ->first();
+            } elseif (! empty($data['centre_id'])) {
+                $inventory = Inventory::where('product_id', $productId)
+                    ->where('location_id', $data['centre_id'])
+                    ->first();
 
-        $inventory = Inventory::where('product_id', $productId)
-            ->where('id', $data['inventory_id'])
-            ->first();
+                if (! $inventory) {
+                    if (empty($data['sale_price']) || $data['sale_price'] <= 0) {
+                        return false;
+                    }
 
-        $inventory->update(['quantity' => $inventory->quantity + $data['quantity']]);
+                    $inventory = Inventory::create([
+                        'product_id'  => $productId,
+                        'location_id' => $data['centre_id'],
+                        'is_saleable' => 1,
+                        'quantity'    => 0,
+                        'sale_price'  => $data['sale_price'],
+                    ]);
+                }
+            }
 
-        $purchase = new Purchase;
-        $purchase->items = $data['total_purchase_price'];
-        $purchase->account_id = $accountId;
-        $purchase->total_price = $data['quantity'];
-        $purchase->save();
+            if (! $inventory) {
+                return false;
+            }
 
-        $purchaseDetail = new PurchaseDetail;
-        $purchaseDetail->product_id = $productId;
-        $purchaseDetail->purchase_id = $purchase->id;
-        $purchaseDetail->purchase_price = $data['purchase_price'];
-        $purchaseDetail->total_purchase_price = $data['total_purchase_price'];
-        $purchaseDetail->quantity = $data['quantity'];
-        $purchaseDetail->save();
+            // ProductDetail::createRecord reads `inventory_id` from the
+            // request payload to link the stock movement back to this
+            // inventory row, so make sure the resolved id is in $data
+            // (the modern flow only sends `centre_id`).
+            $data['inventory_id'] = $inventory->id;
 
-        return true;
+            $request = new Request($data);
+            $productDetail = ProductDetail::createRecord($request, $accountId, $productId);
+
+            if (! $productDetail) {
+                return false;
+            }
+
+            $updates = ['quantity' => $inventory->quantity + $data['quantity']];
+
+            // The SPA always sends sale_price now (required field on the
+            // Add stock dialog). Honour it on top-ups too so the operator
+            // can correct or refresh a centre's customer-facing price as
+            // part of receiving stock — same row, same flow.
+            if (! empty($data['sale_price']) && $data['sale_price'] > 0) {
+                $updates['sale_price'] = $data['sale_price'];
+            }
+
+            $inventory->update($updates);
+
+            return true;
+        });
     }
 
     // ---------------------------------------------------------------
@@ -266,10 +305,12 @@ class ProductService
 
     public function getStockDetailData(int $productId): array
     {
-        $total = Stock::where('product_id', $productId)->count();
-        $data = Stock::with('product')->where('product_id', $productId)->orderBy('id', 'desc')->get();
+        $rows = Stock::with('product')
+            ->where('product_id', $productId)
+            ->orderBy('id', 'desc')
+            ->get();
 
-        return ['data' => $data, 'total' => $total];
+        return ['data' => $rows, 'total' => $rows->count()];
     }
 
     public function getInventoryDetailData(int $productId): array
@@ -644,12 +685,10 @@ class ProductService
     private function buildWhereConditions(array $params): array
     {
         $where = [];
-        $applyFilter = $params['apply_filter'] ?? false;
-
-        if (! $applyFilter) {
-            return $where;
-        }
-
+        // `apply_filter` is the legacy KTDatatable sentinel — set when the
+        // user clicked the "Filter" button. Modern SPA callers don't send
+        // it, so we no longer use it as a master gate. Each filter below
+        // guards itself with hasFilter()/!empty(), which is enough.
         $filters = $params['filters'] ?? [];
 
         [$startDateTime, $endDateTime] = self::parseDateRangeForFilter(

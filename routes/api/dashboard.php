@@ -4,7 +4,6 @@
 
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\GoogleReviewsController;
-use App\Http\Controllers\Admin\UserBranchesController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\V1\ManagementDashboardApiController;
 use App\Http\Controllers\DoctorDashboardController;
@@ -39,11 +38,6 @@ Route::prefix('doctor-dashboard')->name('doctor_dashboard.')->group(function () 
     Route::get('appointments', [DoctorDashboardController::class, 'getTodaysAppointments'])->name('appointments');
     Route::get('benchmarks', [DoctorDashboardController::class, 'getBenchmarks'])->name('benchmarks');
 });
-
-// User-branch assignment API (management dashboard scoping).
-Route::match(['put', 'post'], 'user-branches/{id}', [UserBranchesController::class, 'update'])
-    ->middleware(['permission:users_manage', 'throttle:30,1'])
-    ->name('user_branches.update');
 
 // Management Dashboard API Routes — one composite endpoint per section + cross-cutting.
 // throttle is per-authenticated-user; sections fan out to ~10 endpoints on load,
