@@ -37,7 +37,7 @@ class CashFlowVendorsController extends Controller
 
             $filters = $request->only(['search', 'is_active', 'sort']);
 
-            $vendors = $this->vendorService->getVendors($accountId, $filters, $request->input('per_page', 25));
+            $vendors = $this->vendorService->getVendors($accountId, $filters, (int) $request->input('per_page', 25));
 
 
 
@@ -501,7 +501,7 @@ class CashFlowVendorsController extends Controller
 
             $status = $request->input('status');
 
-            $requests = $this->vendorService->getVendorRequests($accountId, $status, $request->input('per_page', 25));
+            $requests = $this->vendorService->getVendorRequests($accountId, $status, (int) $request->input('per_page', 25));
 
 
 

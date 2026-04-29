@@ -47,11 +47,20 @@ use Illuminate\Support\Facades\Route;
     Route::post('reports/inventory_reports/result', [InventoryReportController::class, 'reportResult'])->name('reports.inventory_report_result');
     Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     Route::post('reports/general-sales', [\App\Http\Controllers\Api\Reports\GeneralSalesReportController::class, '__invoke'])->name('api.reports.general-sales');
+    Route::post('reports/general-sales/export', [\App\Http\Controllers\Api\Reports\GeneralSalesReportController::class, 'export'])->name('api.reports.general-sales.export');
+    Route::get('reports/general-sales/filters', [\App\Http\Controllers\Api\Reports\GeneralSalesFiltersApiController::class, '__invoke'])->name('api.reports.general-sales.filters');
+    Route::get('reports/general-sales/doctors', [\App\Http\Controllers\Api\Reports\GeneralSalesFiltersApiController::class, 'doctorsForCentres'])->name('api.reports.general-sales.doctors');
     Route::post('reports/operations', [\App\Http\Controllers\Api\Reports\OperationsReportController::class, '__invoke'])->name('api.reports.operations');
     Route::post('reports/memberships', [\App\Http\Controllers\Api\Reports\MembershipReportController::class, '__invoke'])->name('api.reports.memberships');
+    Route::get('reports/memberships/filters', [\App\Http\Controllers\Api\Reports\MembershipReportFiltersApiController::class, '__invoke'])->name('api.reports.memberships.filters');
+    Route::get('reports/memberships/export', [\App\Http\Controllers\Api\Reports\MembershipReportController::class, 'export'])->name('api.reports.memberships.export');
     Route::post('reports/appointments', [\App\Http\Controllers\Api\Reports\AppointmentsReportController::class, '__invoke'])->name('api.reports.appointments');
     Route::get('reports/csr-dashboard', [\App\Http\Controllers\Api\Reports\CsrDashboardController::class, '__invoke'])->name('api.reports.csr-dashboard');
     Route::post('reports/arrived-not-converted', [\App\Http\Controllers\Api\Reports\ArrivedNotConvertedController::class, '__invoke'])->name('api.reports.arrived-not-converted');
+    Route::get('reports/doctor-ratings/filters', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'filters'])->name('api.reports.doctor-ratings.filters');
+    Route::get('reports/doctor-ratings/doctors', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'doctorsForCentres'])->name('api.reports.doctor-ratings.doctors');
+    Route::post('reports/doctor-ratings/data', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'data'])->name('api.reports.doctor-ratings.data');
+    Route::get('reports/doctor-ratings/export', [\App\Http\Controllers\Api\Reports\DoctorRatingsApiController::class, 'export'])->name('api.reports.doctor-ratings.export');
     /*Warehouseroutes*/
 
     /*Brand routes*/

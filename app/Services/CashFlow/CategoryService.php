@@ -151,11 +151,21 @@ class CategoryService
             $request->toArray()
         );
 
-        $this->notificationService->notifyCategoryRequest(
-            $data['name'],
-            \Illuminate\Support\Facades\Auth::user()->name,
-            $accountId
-        );
+        // Best-effort admin notification — see VendorService::createVendorRequest
+        // for the same defensive treatment. A missing permission seed should
+        // not block the user's request.
+        try {
+            $this->notificationService->notifyCategoryRequest(
+                $data['name'],
+                \Illuminate\Support\Facades\Auth::user()->name,
+                $accountId
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                'notifyCategoryRequest failed: ' . $e->getMessage(),
+                ['file' => $e->getFile(), 'line' => $e->getLine(), 'request_id' => $request->id]
+            );
+        }
 
         return $request;
     }

@@ -669,11 +669,22 @@ class VendorService
             $request->toArray()
         );
 
-        $this->notificationService->notifyVendorRequest(
-            $data['name'],
-            Auth::user()->name,
-            $accountId
-        );
+        // Admin notification is best-effort — if a permission name referenced
+        // by the notifier hasn't been seeded yet (Spatie throws PermissionDoesNotExist
+        // on lookup of unknown names), we still want the request to land. Log
+        // the failure for ops to follow up, then return the saved request.
+        try {
+            $this->notificationService->notifyVendorRequest(
+                $data['name'],
+                Auth::user()->name,
+                $accountId
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning(
+                'notifyVendorRequest failed: ' . $e->getMessage(),
+                ['file' => $e->getFile(), 'line' => $e->getLine(), 'request_id' => $request->id]
+            );
+        }
 
         return $request;
     }

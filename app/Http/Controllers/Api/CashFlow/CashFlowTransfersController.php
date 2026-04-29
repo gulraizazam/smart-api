@@ -33,7 +33,9 @@ class CashFlowTransfersController extends Controller
 
             $filters = $request->only(['date_from', 'date_to', 'pool_id', 'method', 'search']);
 
-            $transfers = $this->transferService->getTransfers($accountId, $filters, $request->input('per_page', 25));
+            // Request input is always string-typed; cast to int to satisfy
+            // the service's strict `int $perPage` parameter.
+            $transfers = $this->transferService->getTransfers($accountId, $filters, (int) $request->input('per_page', 25));
 
 
 
