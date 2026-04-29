@@ -147,14 +147,16 @@ class CashFlowStaffController extends Controller
 
             $staff = $this->staffAdvanceService->getEligibleStaff($accountId);
 
+            // Attach outstanding balance for each staff member.
+            // Batched: 3 GROUP BY queries total instead of 3 × N for
+            // a per-user loop.
+            $balances = $this->staffAdvanceService->getOutstandingForUsers(
+                $staff->pluck('id')->toArray(),
+                $accountId,
+            );
 
-
-            // Attach outstanding balance for each staff member
-
-            $staff->each(function ($user) use ($accountId) {
-
-                $user->outstanding = $this->staffAdvanceService->getOutstanding($user->id, $accountId);
-
+            $staff->each(function ($user) use ($balances) {
+                $user->outstanding = $balances[$user->id] ?? 0;
             });
 
 

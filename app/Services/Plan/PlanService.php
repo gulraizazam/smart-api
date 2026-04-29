@@ -47,6 +47,8 @@ use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
 use App\Models\UserVouchers;
+use App\Services\Dashboard\Metrics\AtRiskPatientsMetric;
+use App\Services\Dashboard\ValueObjects\MetricScope;
 use App\Services\Membership\StudentVerificationService;
 use App\Services\MetaConversionApiService;
 use App\Services\Reports\Concerns\ParsesDateRange;
@@ -71,6 +73,7 @@ final class PlanService
         private readonly PlanDiscountService $discountService,
         private readonly PlanRefundService $refundService,
         private readonly PlanMembershipService $membershipService,
+        private readonly AtRiskPatientsMetric $atRiskMetric,
     ) {}
 
     // ──────────────────────────────────────────────────
@@ -224,6 +227,50 @@ final class PlanService
                 ');
         }
 
+    }
+
+    /**
+     * Build the SQL `IN (…)` clause matching the dashboard at-risk pool.
+     * Returns a parenthesised list of `'<location_id>_<patient_id>'` literals
+     * (e.g. `('5_123','5_456','7_99')`) for use with the
+     * `CONCAT(location_id, '_', patient_id) IN …` predicate in the datatable
+     * SELECT. Non-empty sentinel `('__none__')` keeps the SQL valid when the
+     * pool is empty (matches no row) without conditional clause assembly.
+     *
+     * Patient/branch IDs are integers from internal sources (auth + ACL),
+     * not user input — safe to interpolate. The helper is called once per
+     * query build; AtRiskPatientsMetric handles its own per-branch caching.
+     */
+    private function buildAtRiskInClause(int $accountId): string
+    {
+        if ($accountId <= 0) {
+            return '("__none__")';
+        }
+
+        $userCentres = array_values(array_unique(array_map('intval', ACL::getUserCentres())));
+        $userCentres = array_values(array_filter($userCentres, static fn (int $id): bool => $id > 0));
+        if ($userCentres === []) {
+            return '("__none__")';
+        }
+
+        $scope = MetricScope::branches($accountId, $userCentres);
+        $map = $this->atRiskMetric->patientIdsByBranch($scope, $userCentres);
+        if ($map === []) {
+            return '("__none__")';
+        }
+
+        $tuples = [];
+        foreach ($map as $branchId => $patientIds) {
+            $bid = (int) $branchId;
+            foreach ($patientIds as $patientId) {
+                $pid = (int) $patientId;
+                $tuples[] = sprintf('"%d_%d"', $bid, $pid);
+            }
+        }
+
+        return $tuples === []
+            ? '("__none__")'
+            : '('.implode(',', $tuples).')';
     }
 
     // ──────────────────────────────────────────────────
@@ -1170,22 +1217,17 @@ final class PlanService
                 DB::raw('COALESCE(pa_agg.refund_amount_calculated, 0) as refund_amount_calculated'),
                 DB::raw('COALESCE(ps_agg.session_count, 0) as session_count'),
                 DB::raw('COALESCE(ps_agg.consumed_count, 0) as consumed_count'),
-                // At-risk flag — plan has unused sessions AND the
-                // patient has NO future booking at the same branch.
-                // Same definition as AtRiskPatientsMetric uses for the
-                // abandoned-package bucket; computed in SQL so the row
-                // ships with a ready-to-render flag.
+                // At-risk flag — plan has unused sessions AND the patient
+                // is in the dashboard at-risk pool for the plan's branch
+                // (any of: cadence_break, abandoned_package, broken_commitment).
+                // The pool is computed by AtRiskPatientsMetric and cached for
+                // 5 min per (scope, branch); we materialize it as a tuple-IN
+                // list so each plan row resolves with no extra subquery.
                 DB::raw('CASE
                     WHEN COALESCE(ps_agg.session_count, 0) > COALESCE(ps_agg.consumed_count, 0)
                      AND packages.active = 1
                      AND packages.is_refund = 0
-                     AND NOT EXISTS (
-                        SELECT 1 FROM appointments af_atrisk
-                        WHERE af_atrisk.patient_id = packages.patient_id
-                          AND af_atrisk.location_id = packages.location_id
-                          AND af_atrisk.scheduled_date > CURDATE()
-                          AND af_atrisk.deleted_at IS NULL
-                     )
+                     AND CONCAT(packages.location_id, "_", packages.patient_id) IN '.$this->buildAtRiskInClause((int) $accountId).'
                     THEN 1 ELSE 0
                 END as is_at_risk'),
                 DB::raw('GREATEST(

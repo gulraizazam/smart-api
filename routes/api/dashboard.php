@@ -58,17 +58,22 @@ Route::prefix('management-dashboard')
         Route::get('branch-doctor-breakdown', [ManagementDashboardApiController::class, 'branchDoctorBreakdown'])->name('branch_doctor_breakdown');
         Route::get('branch-feedback', [ManagementDashboardApiController::class, 'branchFeedback'])->name('branch_feedback');
         Route::get('branch-doctor-feedback', [ManagementDashboardApiController::class, 'branchDoctorFeedback'])->name('branch_doctor_feedback');
+        Route::get('branch-feedback-trend', [ManagementDashboardApiController::class, 'branchFeedbackTrend'])->name('branch_feedback_trend');
+        Route::get('branch-doctor-feedback-trend', [ManagementDashboardApiController::class, 'branchDoctorFeedbackTrend'])->name('branch_doctor_feedback_trend');
         Route::get('branch-doctor-retention', [ManagementDashboardApiController::class, 'branchDoctorRetention'])->name('branch_doctor_retention');
         Route::get('retention-trend', [ManagementDashboardApiController::class, 'retentionTrend'])->name('retention_trend');
+        Route::get('branch-doctor-retention-trend', [ManagementDashboardApiController::class, 'branchDoctorRetentionTrend'])->name('branch_doctor_retention_trend');
         Route::get('at-risk-summary', [ManagementDashboardApiController::class, 'atRiskSummary'])->name('at_risk_summary');
         Route::get('at-risk-overview', [ManagementDashboardApiController::class, 'atRiskOverview'])->name('at_risk_overview');
         Route::get('at-risk-list', [ManagementDashboardApiController::class, 'atRiskList'])->name('at_risk_list');
+        Route::get('at-risk-by-doctor', [ManagementDashboardApiController::class, 'atRiskByDoctor'])->name('at_risk_by_doctor');
         Route::get('arrival-rate', [ManagementDashboardApiController::class, 'arrivalRate'])->name('arrival_rate');
         Route::get('people', [ManagementDashboardApiController::class, 'people'])->name('people');
         Route::get('utilization', [ManagementDashboardApiController::class, 'utilization'])->name('utilization');
         Route::get('utilization-heatmap', [ManagementDashboardApiController::class, 'utilizationHeatmap'])->name('utilization_heatmap');
         Route::get('utilization-trend', [ManagementDashboardApiController::class, 'utilizationTrend'])->name('utilization_trend');
         Route::get('utilization-trend-by-branch', [ManagementDashboardApiController::class, 'utilizationTrendByBranch'])->name('utilization_trend_by_branch');
+        Route::get('branch-doctor-utilization-trend', [ManagementDashboardApiController::class, 'branchDoctorUtilizationTrend'])->name('branch_doctor_utilization_trend');
         Route::get('patients', [ManagementDashboardApiController::class, 'patients'])->name('patients');
         Route::get('new-returning', [ManagementDashboardApiController::class, 'newReturning'])->name('new_returning');
         Route::get('service-category-trend', [ManagementDashboardApiController::class, 'serviceCategoryTrend'])->name('service_category_trend');
@@ -79,6 +84,11 @@ Route::prefix('management-dashboard')
         Route::get('lead-service-interest', [ManagementDashboardApiController::class, 'leadServiceInterest'])->name('lead_service_interest');
         Route::get('gender-revenue', [ManagementDashboardApiController::class, 'genderRevenue'])->name('gender_revenue');
         Route::get('today-activities', [ManagementDashboardApiController::class, 'todayActivities'])->name('today_activities');
+
+        // FDM dashboard panels (Front-Desk / Branch Manager tab on the SPA).
+        Route::get('today-status-board', [ManagementDashboardApiController::class, 'todayStatusBoard'])->name('today_status_board');
+        Route::get('no-show-trend', [ManagementDashboardApiController::class, 'noShowTrend'])->name('no_show_trend');
+        Route::get('target-pacing', [ManagementDashboardApiController::class, 'targetPacing'])->name('target_pacing');
     });
 
 // Google Reviews API Routes
