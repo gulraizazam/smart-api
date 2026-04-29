@@ -342,6 +342,56 @@ class StaffAdvanceService
     }
 
     /**
+     * Batched outstanding lookup for many users at once. Returns
+     * [user_id => outstanding] for every user in $userIds, defaulting
+     * to 0 for users with no advances.
+     *
+     * Replaces the N+1 pattern of calling getOutstanding() in a loop
+     * (which fires 3 SUM queries per user). This version fires 3
+     * GROUP BY queries total — same SQL count regardless of how many
+     * users are in the list.
+     */
+    public function getOutstandingForUsers(array $userIds, int $accountId): array
+    {
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $advances = StaffAdvance::forAccount($accountId)
+            ->whereIn('user_id', $userIds)
+            ->whereNull('voided_at')
+            ->select('user_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id')
+            ->toArray();
+
+        $returns = StaffReturn::forAccount($accountId)
+            ->whereIn('user_id', $userIds)
+            ->whereNull('voided_at')
+            ->select('user_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id')
+            ->toArray();
+
+        $expenses = Expense::forAccount($accountId)
+            ->whereIn('staff_id', $userIds)
+            ->whereNull('voided_at')
+            ->where('status', '!=', 'rejected')
+            ->select('staff_id', DB::raw('SUM(amount) as total'))
+            ->groupBy('staff_id')
+            ->pluck('total', 'staff_id')
+            ->toArray();
+
+        $balances = [];
+        foreach ($userIds as $userId) {
+            $balances[$userId] = (float) ($advances[$userId] ?? 0)
+                - (float) ($returns[$userId] ?? 0)
+                - (float) ($expenses[$userId] ?? 0);
+        }
+        return $balances;
+    }
+
+    /**
      * Get recent advances and returns across all staff (for overview cards).
      */
     public function getRecentActivity(int $accountId, int $limit = 5): array
