@@ -42,6 +42,14 @@ class PatientService
 {
     use ParsesDateRange;
 
+    public function __construct(
+        // Tier-1 list-enrichment metrics. Composes AtRiskPatientsMetric for
+        // the at-risk badge so the dashboard's signal definition stays the
+        // single source of truth — no duplicate rule logic on the patient
+        // datatable.
+        private readonly PatientLifecycleMetric $lifecycleMetric,
+    ) {}
+
     private const FILTER_KEY = 'patients';
 
     private const CACHE_TTL = 300;
@@ -111,6 +119,29 @@ class PatientService
             ->limit($iDisplayLength)
             ->get();
 
+        // Tier-1 enrichment — at-risk + last visit + LTV + outstanding +
+        // active-packages-count + next-appointment, all batched per page
+        // (not per-patient) so the cost stays bounded against the 174k
+        // total patient set. At-risk composes AtRiskPatientsMetric so the
+        // dashboard's signal definition stays the canonical source.
+        if ($patients->isNotEmpty()) {
+            $pageIds = $patients->pluck('id')->all();
+            $metrics = $this->lifecycleMetric->batch($pageIds);
+            foreach ($patients as $p) {
+                $m = $metrics[(int) $p->id] ?? null;
+                if (! $m) {
+                    continue;
+                }
+                $p->is_at_risk            = $m['is_at_risk'];
+                $p->last_visit_at         = $m['last_visit_at'];
+                $p->last_visit_days_ago   = $m['last_visit_days_ago'];
+                $p->lifetime_value        = $m['lifetime_value'];
+                $p->outstanding_balance   = $m['outstanding_balance'];
+                $p->active_packages_count = $m['active_packages_count'];
+                $p->next_appointment_at   = $m['next_appointment_at'];
+            }
+        }
+
         $records = $this->getFiltersDataCached($records, $userId);
 
         if ($patients->isNotEmpty()) {
@@ -177,6 +208,16 @@ class PatientService
 
     private function applyOptimizedFilters(Builder $query, array $filters, bool $applyFilter, int $userId): void
     {
+        // Unified search field — same engine the Plans datatable, picker
+        // typeahead, and invoices typeahead use. The SPA sends a single
+        // `q` value; PatientSearchService::applyPatientFilter classifies
+        // and routes it (id / phone / FT name). The legacy `patient_id`
+        // / `name` / `phone` keys below are kept for any caller that
+        // still sends them.
+        $this->applyFilter($query, $filters, $applyFilter, $userId, 'q', function ($builder, $value): void {
+            PatientSearchService::applyPatientFilter($builder, (string) $value, 'id', Auth::user()->account_id);
+        });
+
         $this->applyFilter($query, $filters, $applyFilter, $userId, 'patient_id', function ($q, $value): void {
             $q->where('id', 'like', '%'.PatientSearchService::patientSearch($value).'%');
         });
@@ -672,9 +713,16 @@ class PatientService
 
     public function searchPatients(string $search, int $accountId): array
     {
-        $originalSearch = $search;
-        $search = PatientSearchService::patientSearch($search);
-        $cleanedSearch = PhoneFormattingService::clearnString($search);
+        $search = trim($search);
+        if ($search === '') {
+            return [];
+        }
+
+        // Single classifier shared with PlanService::applyUnifiedSearch and
+        // Patients::getPatientSearchOptimized. `short_id` is treated as a
+        // patient id here (this endpoint serves the invoices typeahead and
+        // similar non-Plans pickers — there's no plan-id ambiguity).
+        $shape = PatientSearchService::classifySearchInput($search);
 
         $baseQuery = Patients::where('user_type_id', Config::get('constants.patient_id'))
             ->where('active', 1)
@@ -686,27 +734,31 @@ class PatientService
         // query so every cloned branch (id, phone, name) inherits it.
         PatientAccessScope::applyTo($baseQuery);
 
-        if (is_numeric($cleanedSearch)) {
-            $numericValue = (int) $cleanedSearch;
-
-            $exactMatch = (clone $baseQuery)->where('id', $numericValue)->select('name', 'id', 'phone')->first();
-            if ($exactMatch) {
-                return [$exactMatch->toArray()];
-            }
-
-            $phone = PhoneFormattingService::cleanNumber($originalSearch);
-
-            return (clone $baseQuery)
-                ->where(fn ($q) => $q->where('id', 'LIKE', "%{$numericValue}%")->orWhere('phone', 'LIKE', "%{$phone}%"))
+        if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
+            $row = (clone $baseQuery)
+                ->where('id', (int) $shape['digits'])
                 ->select('name', 'id', 'phone')
-                ->limit(20)
-                ->get()
-                ->toArray();
+                ->first();
+
+            return $row ? [$row->toArray()] : [];
         }
 
+        $candidateIds = $shape['type'] === 'phone'
+            ? PatientSearchService::resolvePatientIdsByPhone($shape['digits'], $accountId)
+            : PatientSearchService::resolvePatientIdsByText($search, $accountId);
+
+        if ($candidateIds === []) {
+            return [];
+        }
+
+        // Preserve resolver order: MATCH relevance for text, prefix-match for
+        // phone. Without FIELD() MySQL would re-order by primary key.
+        $orderExpr = 'FIELD(id, '.implode(',', array_fill(0, count($candidateIds), '?')).')';
+
         return (clone $baseQuery)
-            ->where('name', 'LIKE', "%{$search}%")
+            ->whereIn('id', $candidateIds)
             ->select('name', 'id', 'phone')
+            ->orderByRaw($orderExpr, $candidateIds)
             ->limit(20)
             ->get()
             ->toArray();
