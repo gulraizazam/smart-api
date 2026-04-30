@@ -1398,8 +1398,11 @@ class PackagesController extends Controller
 
             return $result['status'] ? $this->successResponse($result['message']) : $this->errorResponse($result['message'], 400);
         } catch (PlanException $e) {
-            // Return clean error message without file path
-            return $this->errorResponse($e->getMessage(), 500);
+            // Honour the exception's own status (e.g. 409 hasChildRecords,
+            // 404 notFound). Forcing 500 here masks the real reason — the
+            // SPA's generic 500 mapping then shows "Something went wrong"
+            // instead of the actionable message body.
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 500);
         } catch (\Exception $e) {
             \Log::error('Delete Package Error: '.$e->getMessage());
 

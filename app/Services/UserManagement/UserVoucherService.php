@@ -288,7 +288,7 @@ final class UserVoucherService
         $where = $this->buildWhereConditions($params, $userId, $applyFilter);
         $phone = $this->getPhoneFilter($params, $userId, $applyFilter);
 
-        return UserVouchers::query()
+        $query = UserVouchers::query()
             ->when(! empty($where), fn (Builder $q): Builder => $q->where($where))
             ->when(
                 $phone !== null && $phone !== '',
@@ -297,6 +297,42 @@ final class UserVoucherService
                     fn ($u) => $u->where('phone', 'like', '%'.$phone.'%'),
                 ),
             );
+
+        // Unified patient search — same engine the Plans / Patients /
+        // picker / invoices / treatments / consultations surfaces use.
+        // SPA sends `q`; classifier routes to id / phone_normalized /
+        // FT name and applies the resulting filter against `user_id`.
+        $q = $this->getQueryFilter($params, $userId, $applyFilter);
+        if ($q !== null && $q !== '') {
+            \App\Services\PatientManagement\PatientSearchService::applyPatientFilter(
+                $query,
+                $q,
+                'user_id',
+                Auth::user()?->account_id,
+            );
+        }
+
+        return $query;
+    }
+
+    private function getQueryFilter(array $params, int $userId, bool $applyFilter): ?string
+    {
+        if (! empty($params['q'])) {
+            $value = (string) $params['q'];
+            Filters::put($userId, self::FILTER_KEY, 'q', $value);
+
+            return $value;
+        }
+
+        if ($applyFilter) {
+            Filters::forget($userId, self::FILTER_KEY, 'q');
+
+            return null;
+        }
+
+        $stored = Filters::get($userId, self::FILTER_KEY, 'q');
+
+        return $stored !== null && $stored !== '' ? (string) $stored : null;
     }
 
     private function getPhoneFilter(array $params, int $userId, bool $applyFilter): ?string

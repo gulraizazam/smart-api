@@ -231,7 +231,10 @@ class ApplicationUserController extends Controller
     }
 
     /**
-     * @deprecated Use getpatientOptimized() for new implementations
+     * @deprecated Load-bearing for legacy admin Blade JS only
+     *             (admin/appointments, packages, reports, etc. via
+     *             `public/assets/js/custom.js` and friends). New SPA
+     *             flows use getpatientOptimized() instead.
      */
     public function getpatientid(Request $request): JsonResponse
     {
@@ -249,6 +252,10 @@ class ApplicationUserController extends Controller
         }
     }
 
+    /**
+     * @deprecated Load-bearing for legacy admin Blade only (orders flow,
+     *             returns extra membership fields not needed by the SPA).
+     */
     public function getpatientidOrder(Request $request): JsonResponse
     {
         try {
@@ -265,6 +272,9 @@ class ApplicationUserController extends Controller
         }
     }
 
+    /**
+     * @deprecated Load-bearing for legacy admin Blade phone-prefix lookups.
+     */
     public function phoneSearch(Request $request): JsonResponse
     {
         try {

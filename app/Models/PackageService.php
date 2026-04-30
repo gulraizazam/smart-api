@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Exceptions\PlanException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -202,6 +203,41 @@ class PackageService extends Model
     {
         $packageService = self::findOrFail($invoiceDetail->package_service_id);
         $oldData = $packageService->toArray();
+
+        // Configurable-discount cancel-order rule: mirrors the consume-order
+        // rule in reverse. If this row sits inside a config_group, refuse to
+        // un-consume it while a sibling at a HIGHER consumption_order is
+        // still consumed — that sibling depended on this row being the
+        // honoured BUY-side. Forcing reverse-order on cancel keeps the
+        // group internally consistent and prevents the patient from
+        // retaining a discounted/free GET while the paying BUY is undone.
+        //
+        // The bundle relation is used to look up `config_group_id`; each
+        // bundle in the group shares the same group id and each
+        // package_service inside those bundles carries its own
+        // `consumption_order`.
+        if ($packageService->package_bundle_id && $packageService->consumption_order > 0) {
+            $bundle = PackageBundles::find($packageService->package_bundle_id);
+            $configGroupId = $bundle?->config_group_id;
+            if ($configGroupId) {
+                $blockingSibling = self::query()
+                    ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                    ->where('package_bundles.config_group_id', $configGroupId)
+                    ->where('package_services.is_consumed', 1)
+                    ->where('package_services.consumption_order', '>', $packageService->consumption_order)
+                    ->where('package_services.id', '!=', $packageService->id)
+                    ->select('package_services.id', 'services.name as service_name')
+                    ->leftJoin('services', 'package_services.service_id', '=', 'services.id')
+                    ->first();
+
+                if ($blockingSibling) {
+                    $svcName = $blockingSibling->service_name ?? 'a discounted service';
+                    throw PlanException::invalidOperation(
+                        "Cannot cancel this invoice — '{$svcName}' was consumed under the same configurable discount group. Cancel the discounted/free service first, then come back."
+                    );
+                }
+            }
+        }
 
         $packageService->update(['is_consumed' => '0', 'consumed_at' => null]);
 

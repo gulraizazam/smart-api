@@ -452,9 +452,6 @@ final class RefundService
                 Packages::updateRecordRefunds($packageId);
             }
 
-            // Regenerate plan name
-            $this->regeneratePlanName($packageInfo);
-
             // Handle case settlement
             if (($data['case_setteled'] ?? '0') === '1') {
                 $this->handleCaseSettlement(
@@ -746,42 +743,6 @@ final class RefundService
         }
     }
 
-    private function regeneratePlanName(Packages $package): void
-    {
-        if ($package->plan_type === 'membership') {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
-                ->orderBy('package_bundles.id')
-                ->limit(2)
-                ->pluck('membership_types.name')
-                ->toArray();
-
-            if (!empty($names)) {
-                Packages::where('id', $package->id)->update(['plan_name' => implode(', ', $names)]);
-            }
-
-            return;
-        }
-
-        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
-        $joinTable = $package->plan_type === 'plan' ? 'services' : 'bundles';
-
-        $names = PackageBundles::where('package_bundles.package_id', $package->id)
-            ->join($joinTable, 'package_bundles.bundle_id', '=', "{$joinTable}.id")
-            ->orderBy('package_bundles.id')
-            ->limit(2)
-            ->pluck("{$joinTable}.name")
-            ->toArray();
-
-        $planName = !empty($names) ? implode(', ', $names) : '-';
-
-        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
-            $planName .= '...';
-        }
-
-        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
-    }
-
     private function resolveFilterValues(string $filterKey): array
     {
         $userCentres = ACL::getUserCentres();
@@ -794,8 +755,8 @@ final class RefundService
 
         $package = Packages::whereIn('id', $refundedPackageIds)
             ->orderByDesc('id')
-            ->pluck('plan_name', 'id')
-            ->map(fn($name, $id): string => '#' . $id . ' — ' . ($name ?: 'Plan'))
+            ->pluck('id', 'id')
+            ->map(fn($id): string => 'Plan #' . $id)
             ->toArray();
 
         $patient = [];

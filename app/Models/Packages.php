@@ -29,7 +29,6 @@ class Packages extends BaseModel
     protected $fillable = [
         'random_id',
         'name',
-        'plan_name',
         'sessioncount',
         'total_price',
         'is_exclusive',
