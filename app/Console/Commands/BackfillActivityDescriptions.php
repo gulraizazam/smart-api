@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\UnlocksActivitiesMutation;
 use App\Helpers\ActivityLogRenderer;
 use App\Models\Activity;
 use Illuminate\Console\Command;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class BackfillActivityDescriptions extends Command
 {
+    use UnlocksActivitiesMutation;
+
     protected $signature = 'activities:backfill-descriptions
                             {--chunk=1000 : Rows per chunk}
                             {--dry-run : Render but do not write}';
@@ -51,7 +54,7 @@ final class BackfillActivityDescriptions extends Command
                 }
 
                 if (! $dryRun) {
-                    self::bulkUpdate($updates);
+                    $this->withActivitiesMutationAllowed(static fn () => self::bulkUpdate($updates));
                 }
 
                 $bar->advance(count($updates));

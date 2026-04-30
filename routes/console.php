@@ -31,3 +31,16 @@ Schedule::command('management-dashboard:rebuild-metrics --days=3')
     ->dailyAt('06:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Keep the at-risk pool warm so the dashboard, the patient datatable, and
+// the patient detail header all hit the cache instead of materialising on
+// demand (~15-25s for accounts with many branches). Pool TTL is 5 minutes
+// per (scope, branch); we run every 4 minutes so a refresh always lands
+// before expiry. `withoutOverlapping` avoids piling up if a refresh ever
+// runs long. Without this, latency-sensitive callers (PatientLifecycleMetric)
+// gracefully degrade by skipping at-risk on cache miss — but the badge
+// would silently disappear after 5 min idle, which the schedule prevents.
+Schedule::command('mgmt-dash:warm-at-risk')
+    ->everyFourMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

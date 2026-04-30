@@ -149,7 +149,12 @@ final class PlansController extends Controller
             $datatableData = $this->planService->getGlobalDatatableData($filters);
 
             $pagination = $request->paginationParams($datatableData['total']);
-            $packages = $this->executePaginatedQuery($datatableData, $pagination);
+            $packages = $this->planService->fetchGlobalPageRows(
+                $filters,
+                $datatableData,
+                $pagination['start'],
+                $pagination['perpage'],
+            );
 
             return $this->buildDatatableResponse(
                 packages: $packages,
@@ -188,6 +193,7 @@ final class PlansController extends Controller
             return $this->errorResponse('An error occurred while fetching lookup data.', 500);
         }
     }
+
 
     // ── Private helpers ─────────────────────────────────
 
@@ -266,45 +272,6 @@ final class PlansController extends Controller
             ? (int) ceil($datatableData['total'] / $pagination['perpage'])
             : 1;
 
-        // Aggregate totals across the FILTERED query (not just the
-        // visible page) so the footer reads "47 plans · PKR 12.4M total
-        // · PKR 1.8M outstanding". Cloning leaves the paginated $query
-        // untouched. We must clear the existing SELECT list (which is
-        // row-oriented) before adding the aggregate columns, otherwise
-        // MySQL rejects the mixed grouped/non-grouped query under
-        // ONLY_FULL_GROUP_BY.
-        //
-        // Totals are cached for 60s keyed by the SQL+bindings of the
-        // filtered query. The aggregate is expensive at the account-wide
-        // scale (47k packages × 3 sub-aggregates) and barely shifts inside
-        // a minute, so caching makes filter changes feel snappy without
-        // staleness mattering.
-        $totalsQuery = (clone $datatableData['query'])->reorder();
-        $totalsQuery->getQuery()->columns = [];
-        $totalsCacheKey = 'plans_totals:'
-            .md5($totalsQuery->toSql().'|'.serialize($totalsQuery->getBindings()));
-        $totals = \Illuminate\Support\Facades\Cache::remember(
-            $totalsCacheKey,
-            60,
-            fn () => $totalsQuery
-                ->selectRaw('
-                    COUNT(*) AS plan_count,
-                    COALESCE(SUM(CASE
-                        WHEN packages.plan_type = "membership" THEN COALESCE(pb_agg.bundle_total, 0)
-                        ELSE COALESCE(ps_agg.service_total, 0)
-                    END), 0) AS total_value,
-                    COALESCE(SUM(COALESCE(pa_agg.cash_receive, 0)), 0) AS total_received,
-                    COALESCE(SUM(COALESCE(pa_agg.refund_amount_calculated, 0)), 0) AS total_refunded,
-                    COALESCE(SUM(COALESCE(ps_agg.session_count, 0)), 0) AS total_sessions,
-                    COALESCE(SUM(COALESCE(ps_agg.consumed_count, 0)), 0) AS total_consumed
-                ')
-                ->first(),
-        );
-        $totalValue = (float) ($totals->total_value ?? 0);
-        $totalReceived = (float) ($totals->total_received ?? 0);
-        $totalRefunded = (float) ($totals->total_refunded ?? 0);
-        $totalOutstanding = max(0.0, $totalValue - $totalReceived + $totalRefunded);
-
         $collection = new PlanDatatableCollection($packages);
         $collection->setContext(
             meta: [
@@ -314,15 +281,6 @@ final class PlansController extends Controller
                 'total'   => $datatableData['total'],
                 'sort'    => strtolower($datatableData['order']),
                 'field'   => $datatableData['orderBy'],
-                'totals'  => [
-                    'plan_count'      => (int) ($totals->plan_count ?? 0),
-                    'total_value'     => $totalValue,
-                    'total_received'  => $totalReceived,
-                    'total_refunded'  => $totalRefunded,
-                    'total_outstanding' => $totalOutstanding,
-                    'total_sessions'  => (int) ($totals->total_sessions ?? 0),
-                    'total_consumed'  => (int) ($totals->total_consumed ?? 0),
-                ],
             ],
             permissions: $permissions,
             filterValues: $datatableData['filter_values'] ?? [],
