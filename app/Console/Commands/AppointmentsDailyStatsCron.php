@@ -45,9 +45,9 @@ class AppointmentsDailyStatsCron extends Command
     {
         try {
             $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
-            $locations = Locations::whereId(51)->whereActive(1)->pluck('id');
-            $today = '2026-04-01';
-             $tomorrow ='2026-04-01';
+            $locations = Locations::whereActive(1)->pluck('id');
+            $today = Carbon::now()->format('Y-m-d');
+             $tomorrow = Carbon::now()->addDay()->format('Y-m-d');
             foreach ($locations as $location) {
                 $appointments = Appointments::where(function ($query) use ($location, $consultancyslug, $today,$tomorrow) {
                     $query->where([
@@ -73,7 +73,7 @@ class AppointmentsDailyStatsCron extends Command
                                 'appointment_id' => $appointment->id,
                                 'appointment_status_id' => $appointment->base_appointment_status_id,
                                 'scheduled_date' => $appointment->scheduled_date,
-                                'cron_current_date' => '2026-04-01',
+                                'cron_current_date' => Carbon::now()->format('Y-m-d'),
                             ]
                         );
                     }
