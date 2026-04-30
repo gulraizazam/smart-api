@@ -5,6 +5,7 @@
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
+use App\Http\Controllers\Admin\PackagesController as AdminPackagesController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\UserVouchersController;
@@ -116,6 +117,10 @@ Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manag
 Route::post('refunds/datatable', [ApiRefundsController::class, 'datatable'])->name('refunds.datatable');
 Route::get('refunds/refund_create/{id}', [ApiRefundsController::class, 'calculate'])->name('refunds.refund_create');
 Route::get('refunds/detail/{id}', [ApiRefundsController::class, 'detail'])->name('refunds.detail');
+Route::get('refunds/plans-for-patient/{patientId}', [ApiRefundsController::class, 'plansForPatient'])->name('refunds.plans_for_patient');
+Route::get('refunds/history/{packageId}', [ApiRefundsController::class, 'history'])->name('refunds.history');
+Route::get('refunds/edit/{id}', [AdminPackagesController::class, 'editRefund'])->name('refunds.edit_api');
+Route::post('refunds/update', [AdminPackagesController::class, 'updateRefund'])->name('refunds.update_api');
 Route::post('refunds', [ApiRefundsController::class, 'store'])->name('refunds.store');
 
 Route::resource('feedbacks', FeedbackController::class)->only(['store', 'edit', 'update', 'destroy']);
