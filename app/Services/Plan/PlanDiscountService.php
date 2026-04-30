@@ -254,14 +254,6 @@ final class PlanDiscountService
             }
         }
 
-        // Update plan_name after configurable service removal
-        if ($packageService->package_id) {
-            $pkg = Packages::find($packageService->package_id);
-            if ($pkg) {
-                $this->updatePlanNameForPackage($pkg);
-            }
-        }
-
         return [
             'success' => true,
             'message' => 'Record found',
@@ -798,9 +790,17 @@ final class PlanDiscountService
         $generalDiscounts = $generalDiscountsQuery->get();
 
         $voucherDiscounts = SupportCollection::make();
-        $checkUserVouchers = UserVouchers::where('user_id', $data['patient_id'])
-            ->pluck('voucher_id')
-            ->toArray();
+        // patient_id can legitimately be absent on a pre-patient-pick
+        // sanity call (legacy admin sometimes hit this for the lookup
+        // payload). Coalesce so the missing-key warning doesn't blow the
+        // request up — the rest of the function gates voucher logic on
+        // the resulting collection being non-empty anyway.
+        $patientIdForVouchers = $data['patient_id'] ?? null;
+        $checkUserVouchers = $patientIdForVouchers
+            ? UserVouchers::where('user_id', $patientIdForVouchers)
+                ->pluck('voucher_id')
+                ->toArray()
+            : [];
 
         if ($checkUserVouchers) {
             $voucherDiscountsQuery = Discounts::whereIn('id', $discountIds)
@@ -1127,15 +1127,7 @@ final class PlanDiscountService
                                 continue;
                             }
                             for ($i = 0; $i < $group['count']; $i++) {
-                                if ($gs->discount_type === 'complimentory') {
-                                    $net = 0;
-                                    $disc_label = 'Complimentary';
-                                    $disc_price = $svc->price;
-                                } else {
-                                    $disc_price = round($svc->price * ($gs->discount_amount / 100), 2);
-                                    $net = $svc->price - $disc_price;
-                                    $disc_label = $gs->discount_amount.'% Off';
-                                }
+                                [$disc_price, $net, $disc_label] = self::resolveGetDiscountAmounts($svc->price, $gs);
                                 $preview_rows[] = [
                                     'service_id' => $svc->id,
                                     'service_name' => $svc->name,
@@ -1157,15 +1149,7 @@ final class PlanDiscountService
                             if (! $svc) {
                                 continue;
                             }
-                            if ($gs->discount_type === 'complimentory') {
-                                $net = 0;
-                                $disc_label = 'Complimentary';
-                                $disc_price = $svc->price;
-                            } else {
-                                $disc_price = round($svc->price * ($gs->discount_amount / 100), 2);
-                                $net = $svc->price - $disc_price;
-                                $disc_label = $gs->discount_amount.'% Off';
-                            }
+                            [$disc_price, $net, $disc_label] = self::resolveGetDiscountAmounts($svc->price, $gs);
                             $preview_rows[] = [
                                 'service_id' => $svc->id,
                                 'service_name' => $svc->name,
@@ -1482,15 +1466,18 @@ final class PlanDiscountService
                     $row_net_amount = $svc->price;
                     $row_disc_type = '-';
                     $row_disc_price = 0;
-                } elseif ($ds->discount_type === 'complimentory') {
-                    $row_net_amount = 0;
-                    $row_disc_type = 'Complimentary';
-                    $row_disc_price = $svc->price;
                 } else {
-                    $disc_amt = round($svc->price * ($ds->discount_amount / 100), 2);
-                    $row_net_amount = $svc->price - $disc_amt;
-                    $row_disc_type = 'Percentage';
-                    $row_disc_price = $ds->discount_amount;
+                    [$row_disc_price_calc, $row_net_amount, $rowLabel] = self::resolveGetDiscountAmounts($svc->price, $ds);
+                    if ($ds->discount_type === 'complimentory') {
+                        $row_disc_type  = 'Complimentary';
+                        $row_disc_price = $svc->price;  // legacy: store full price as the "discount" magnitude on complimentary
+                    } elseif ($ds->discount_type === 'fixed') {
+                        $row_disc_type  = 'Fixed';
+                        $row_disc_price = (float) $ds->discount_amount;
+                    } else {
+                        $row_disc_type  = 'Percentage';
+                        $row_disc_price = $ds->discount_amount;
+                    }
                 }
 
                 $bundle_data = $data;
@@ -1571,7 +1558,6 @@ final class PlanDiscountService
             $pkg = Packages::where('random_id', $data['random_id'])->first();
             if ($pkg) {
                 $grand_total = (float) PackageBundles::where('package_id', $pkg->id)->sum('tax_including_price');
-                $this->updatePlanNameForPackage($pkg);
             } else {
                 $grand_total = (float) PackageBundles::where('random_id', $data['random_id'])->sum('tax_including_price');
             }
@@ -1695,11 +1681,6 @@ final class PlanDiscountService
             'net_amount' => $packagebundle->net_amount,
             'total' => $total,
         ];
-
-        $pkgForName = Packages::where('random_id', $data['random_id'])->first();
-        if ($pkgForName) {
-            $this->updatePlanNameForPackage($pkgForName);
-        }
 
         return [
             'success' => true,
@@ -2161,59 +2142,6 @@ final class PlanDiscountService
         }
     }
 
-    // ──────────────────────────────────────────────────
-    //  Private helper (duplicated from PlanService to
-    //  avoid circular dependency)
-    // ──────────────────────────────────────────────────
-
-    /**
-     * Update plan name for a package based on its bundles/memberships.
-     */
-    private function updatePlanNameForPackage(Packages $package): void
-    {
-        if ($package->plan_type === 'membership') {
-            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('membership_types.name')
-                ->toArray();
-
-            if (! empty($membershipNames)) {
-                $planName = implode(', ', $membershipNames);
-                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
-            }
-
-            return;
-        }
-
-        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
-
-        if ($package->plan_type === 'plan') {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('services.name')
-                ->toArray();
-        } else {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('bundles.name')
-                ->toArray();
-        }
-
-        $planName = ! empty($names) ? implode(', ', $names) : '-';
-
-        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
-            $planName .= '...';
-        }
-
-        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
-    }
-
     /**
      * Consume voucher balance for a bundle just created via
      * `savePackagesService`. No-op unless the discount attached to the
@@ -2495,5 +2423,51 @@ final class PlanDiscountService
                 }
             }
         });
+    }
+
+    /**
+     * Resolve the GET-side discount amounts for a configurable discount row.
+     *
+     * Returns [discount_price, net_amount, label] from a service price + a
+     * `GetDiscountService` row. Branches on `discount_type`:
+     *
+     *   - complimentory: net=0, full price recorded as discount magnitude
+     *   - fixed:         net = price − amount (clamped to ≥0); amount is PKR
+     *   - percentage:    net = price × (1 − amount/100); amount is %
+     *   - anything else: legacy fallback — treats amount as percentage
+     *
+     * Pre-fix, every non-complimentary row went through the percentage path —
+     * a `fixed` discount of `500` was therefore interpreted as 500% off and
+     * produced a negative net. Validation now blocks bad input at write
+     * time (StoreConfigurableDiscountRequest / UpdateDiscountRequest), but
+     * this helper also clamps net to ≥0 so any legacy dirty rows already
+     * in the DB render sanely instead of breaking plan totals.
+     *
+     * @param  GetDiscountService  $gs
+     * @return array{0: float, 1: float, 2: string}  [discount_price, net_amount, label]
+     */
+    private static function resolveGetDiscountAmounts(float|string $servicePrice, $gs): array
+    {
+        $price  = (float) $servicePrice;
+        $type   = $gs->discount_type ?? 'percentage';
+        $amount = (float) ($gs->discount_amount ?? 0);
+
+        if ($type === 'complimentory') {
+            return [$price, 0.0, 'Complimentary'];
+        }
+
+        if ($type === 'fixed') {
+            $disc = max(0.0, min($price, $amount));
+            $net  = max(0.0, $price - $disc);
+            return [$disc, $net, 'PKR ' . number_format($amount, 0) . ' Off'];
+        }
+
+        // percentage (and any unrecognised legacy value, which prior to
+        // validation tightening would also have hit this path)
+        $pct  = max(0.0, min(100.0, $amount));
+        $disc = round($price * ($pct / 100), 2);
+        $net  = max(0.0, $price - $disc);
+
+        return [$disc, $net, $amount . '% Off'];
     }
 }

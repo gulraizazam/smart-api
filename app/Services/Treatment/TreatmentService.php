@@ -826,6 +826,18 @@ final class TreatmentService
             $query->where($where);
         }
 
+        // Unified patient search — same engine the Plans / Patients /
+        // picker / invoices surfaces use. SPA sends `q`; classifier
+        // routes to id / phone_normalized / FT name.
+        if (hasFilter($filters, 'q')) {
+            PatientSearchService::applyPatientFilter(
+                $query,
+                (string) $filters['q'],
+                'appointments.patient_id',
+                Auth::user()?->account_id,
+            );
+        }
+
         $statusIds = $this->getStatusIdsForFilter($filters);
         if ($statusIds) {
             $query->whereIn('appointments.base_appointment_status_id', $statusIds);

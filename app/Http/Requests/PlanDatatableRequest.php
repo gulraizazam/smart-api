@@ -36,7 +36,15 @@ final class PlanDatatableRequest extends FormRequest
             'location_id'        => 'sometimes|integer',
             'status'             => 'sometimes|in:0,1',
             'created_at'         => 'sometimes|string|max:50',
-            'patient_id'         => 'sometimes|integer',
+            // String-typed because the SPA may send `C-<id>` or `P-<id>`
+            // along with raw numeric ids. PlanService::addPatientFilter
+            // unwraps the prefix via `GeneralFunctions::patientSearch`
+            // before applying the where clause.
+            'patient_id'         => ['sometimes', 'regex:/^([CcPp]-)?\d+$/'],
+            // Unified search box. Server decides which column to filter
+            // on based on shape — see PlanService::applyUnifiedSearch.
+            // 100 chars is plenty for any name + phone composite.
+            'q'                  => 'sometimes|string|max:100',
             'delete'             => 'sometimes|string',
         ];
     }
@@ -66,7 +74,7 @@ final class PlanDatatableRequest extends FormRequest
             $filters['action'] = $this->input('action');
         }
 
-        $filterFields = ['package_id', 'location_id', 'status', 'created_at', 'patient_id'];
+        $filterFields = ['package_id', 'location_id', 'status', 'created_at', 'patient_id', 'q'];
 
         foreach ($filterFields as $field) {
             if (!isset($filters[$field]) && $this->has($field)) {

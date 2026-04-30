@@ -9,6 +9,7 @@ use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Services\PatientManagement\PatientSearchService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -53,6 +54,19 @@ class AppointmentFilterService
 
         // Apply name search filter
         $this->applyNameFilter($query, $filters);
+
+        // Unified patient search — same engine the Plans / Patients /
+        // picker / invoices / treatments surfaces use. SPA sends `q`;
+        // classifier routes to id / phone_normalized / FT name.
+        if ($this->hasFilter($filters, 'q')) {
+            PatientSearchService::applyPatientFilter(
+                $query,
+                (string) $filters['q'],
+                'appointments.patient_id',
+                $this->accountId(),
+            );
+            $this->saveFilter('q', $filters['q']);
+        }
 
         return $query;
     }

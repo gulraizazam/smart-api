@@ -150,38 +150,31 @@ class PackageAdvancesController extends Controller
     public function savepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
         return DB::transaction(function () use ($request) {
-            $cash_amount = PackageAdvances::where([
-                ['package_id', '=', $request->package_id],
-                ['cash_flow', '=', 'in'],
-            ])->lockForUpdate()->sum('cash_amount');
+            // Overpayment is a legitimate state — operators routinely
+            // collect deposits / advances that exceed the current plan
+            // total. Earlier this endpoint rejected with "Cash amount
+            // should be less than or equal to total amount" which forced
+            // operators to under-record real cash. The cash ledger
+            // (`package_advances`) is signed: any excess simply lands
+            // as a credit (negative balance) and surfaces in the
+            // dashboards' credit column.
 
-            $cash_amount_check = $cash_amount + $request->cash_amount;
-            $total_price = sanitize_money($request->total_price);
+            $data['cash_flow'] = 'in';
+            $data['cash_amount'] = $request->cash_amount;
+            $data['patient_id'] = $request->patient_id;
+            $data['payment_mode_id'] = $request->payment_mode_id;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['created_by'] = Auth::user()->id;
+            $data['updated_by'] = Auth::user()->id;
+            $data['package_id'] = $request->package_id;
 
-            if ($cash_amount_check <= $total_price) {
+            $package_advances = PackageAdvances::createRecord_onlyadvances($data);
 
-                $data['cash_flow'] = 'in';
-                $data['cash_amount'] = $request->cash_amount;
-                $data['patient_id'] = $request->patient_id;
-                $data['payment_mode_id'] = $request->payment_mode_id;
-                $data['account_id'] = Auth::user()->account_id;
-                $data['created_by'] = Auth::user()->id;
-                $data['updated_by'] = Auth::user()->id;
-                $data['package_id'] = $request->package_id;
-
-                $package_advances = PackageAdvances::createRecord_onlyadvances($data);
-
-                if ($package_advances) {
-                    // Update plan_name after payment added
-                    $this->updatePlanNameForPackage($request->package_id);
-                    return $this->successResponse('Record saved successfully.');
-                }
-
-                return $this->errorResponse('Failed to save the record.', 404);
-
+            if ($package_advances) {
+                return $this->successResponse('Record saved successfully.');
             }
 
-            return $this->errorResponse('Cash amount should be less then or equal to total amount.', 404);
+            return $this->errorResponse('Failed to save the record.', 404);
         });
     }
 
@@ -403,39 +396,20 @@ class PackageAdvancesController extends Controller
     public function updatepackagesadvances(Request $request): \Illuminate\Http\JsonResponse
     {
         return DB::transaction(function () use ($request) {
-            $package_advances_info = PackageAdvances::find($request->package_advance_id);
-            $cash_amount_sum = PackageAdvances::where([
-                ['package_id', '=', $request->package_id],
-                ['cash_flow', '=', 'in'],
-            ])->lockForUpdate()->sum('cash_amount');
-            $cash_amount = $cash_amount_sum - $package_advances_info->cash_amount;
-            $cash_amount_check = $cash_amount + $request->cash_amount;
-            $total_price = sanitize_money($request->total_price);
+            $data['cash_flow'] = 'in';
+            $data['cash_amount'] = $request->cash_amount;
+            $data['patient_id'] = $request->patient_id;
+            $data['payment_mode_id'] = $request->payment_mode_id;
+            $data['account_id'] = Auth::user()->account_id;
+            $data['created_by'] = Auth::user()->id;
+            $data['updated_by'] = Auth::user()->id;
+            $data['package_id'] = $request->package_id;
 
-            if ($cash_amount_check <= $total_price) {
+            $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
 
-                $data['cash_flow'] = 'in';
-                $data['cash_amount'] = $request->cash_amount;
-                $data['patient_id'] = $request->patient_id;
-                $data['payment_mode_id'] = $request->payment_mode_id;
-                $data['account_id'] = Auth::user()->account_id;
-                $data['created_by'] = Auth::user()->id;
-                $data['updated_by'] = Auth::user()->id;
-                $data['package_id'] = $request->package_id;
-
-                $package_advances = PackageAdvances::updateRecord_onlyadvances($data, $request->package_advance_id);
-
-                // Update plan_name after payment updated
-                $this->updatePlanNameForPackage($request->package_id);
-
-                return response()->json([
-                    'status' => true,
-                ]);
-            } else {
-                return response()->json([
-                    'status' => false,
-                ]);
-            }
+            return response()->json([
+                'status' => true,
+            ]);
         });
     }
 
@@ -451,15 +425,7 @@ class PackageAdvancesController extends Controller
             return abort(401);
         }
 
-        $advance = PackageAdvances::find($id);
-        $packageId = $advance?->package_id;
-
         PackageAdvances::deleteRecord($id);
-
-        // Update plan_name after payment deleted
-        if ($packageId) {
-            $this->updatePlanNameForPackage($packageId);
-        }
 
         return redirect()->route('admin.packagesadvances.index');
 
@@ -490,62 +456,6 @@ class PackageAdvancesController extends Controller
         $advance_cancel = PackageAdvances::createRecord_onlyadvances($package_advnaces);
 
         return redirect()->route('admin.packagesadvances.index');
-    }
-
-    /**
-     * Update plan_name in packages table based on its bundles/services/memberships.
-     */
-    private function updatePlanNameForPackage(int $packageId): void
-    {
-        $package = Packages::find($packageId);
-        if (!$package) {
-            return;
-        }
-
-        if ($package->plan_type === 'membership') {
-            $membershipNames = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('membership_types', 'package_bundles.membership_type_id', '=', 'membership_types.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('membership_types.name')
-                ->toArray();
-
-            if (!empty($membershipNames)) {
-                $planName = implode(', ', $membershipNames);
-                Packages::where('id', $package->id)->update(['plan_name' => $planName]);
-            }
-            return;
-        }
-
-        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
-
-        if ($package->plan_type === 'plan') {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('services', 'package_bundles.bundle_id', '=', 'services.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('services.name')
-                ->toArray();
-        } else {
-            $names = PackageBundles::where('package_bundles.package_id', $package->id)
-                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-                ->orderBy('package_bundles.id', 'asc')
-                ->limit(2)
-                ->pluck('bundles.name')
-                ->toArray();
-        }
-
-        if (empty($names)) {
-            return;
-        }
-
-        $planName = implode(', ', $names);
-
-        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
-            $planName .= '...';
-        }
-
-        Packages::where('id', $package->id)->update(['plan_name' => $planName]);
     }
 
     /*

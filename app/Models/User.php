@@ -116,6 +116,21 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Keep `phone_normalized` in lockstep with `phone` so the indexed
+        // search path (WHERE phone_normalized LIKE '302%') never diverges
+        // from the canonical column. Strips every non-digit. Cheap regex
+        // — runs only on save, only when phone changed.
+        static::saving(function (User $user): void {
+            if ($user->isDirty('phone')) {
+                $raw = (string) ($user->phone ?? '');
+                $digits = preg_replace('/\D+/', '', $raw) ?? '';
+                $user->phone_normalized = $digits === '' ? null : $digits;
+            }
+        });
+    }
+
     /*
     |--------------------------------------------------------------------------
     | H2 — Lockout helpers

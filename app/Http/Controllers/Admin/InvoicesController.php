@@ -260,19 +260,20 @@ class InvoicesController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($id) {
-            $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
+        try {
+            return DB::transaction(function () use ($id) {
+                $invoice = Invoices::CancelRecord($id, Auth::user()->account_id);
 
-            $invocies = Invoices::find($id);
-            if (!$invocies) {
-                return $this->errorResponse('Invoice not found.', 404);
-            }
+                $invocies = Invoices::find($id);
+                if (!$invocies) {
+                    return $this->errorResponse('Invoice not found.', 404);
+                }
 
-            $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
+                $invoice_detail = InvoiceDetails::where('invoice_id', '=', $id)->first();
 
-            if ($invoice_detail?->package_id) {
-                $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
-            }
+                if ($invoice_detail?->package_id) {
+                    $packageservice = PackageService::InvoiceCancel($invoice_detail, Auth::user()->account_id);
+                }
 
             $appintment = Appointments::find($invocies->appointment_id);
             if (!$appintment) {
@@ -335,7 +336,13 @@ class InvoicesController extends Controller
             }
 
             return $this->errorResponse('Record not found.', 200);
-        });
+            });
+        } catch (\App\Exceptions\PlanException $e) {
+            // Configurable-discount cancel-order rule fired (or any other
+            // plan-side guard). Surface the friendly message — don't 500
+            // and bury it in the generic handler.
+            return $this->errorResponse($e->getMessage(), $e->getCode() ?: 400);
+        }
     }
 
     /*display invoice

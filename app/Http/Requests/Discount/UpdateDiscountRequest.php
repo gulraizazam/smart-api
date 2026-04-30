@@ -19,7 +19,7 @@ final class UpdateDiscountRequest extends FormRequest
     {
         $isConfigurable = $this->input('type') === 'Configurable';
 
-        return [
+        $rules = [
             'name'          => ['required', 'string', 'max:255'],
             'type'          => ['required', 'string', 'in:Fixed,Percentage,Configurable'],
             'amount'        => ['nullable', 'numeric', 'min:0'],
@@ -34,6 +34,27 @@ final class UpdateDiscountRequest extends FormRequest
             'roles.*'       => ['integer', 'exists:roles,id'],
             'customer_type_id' => ['nullable', 'integer', 'exists:membership_types,id'],
         ];
+
+        // Configurable update goes through `Discounts::updateConfigurableDiscount`,
+        // which rebuilds GET-side rows from `edit_disc_type[]` + `configurable_amount[]`.
+        // Tighten those here so the runtime preview math (which branches on
+        // discount_type) only ever sees enum-clean values.
+        if ($isConfigurable) {
+            $editSessions = $this->input('edit_sessions', []);
+            foreach ($editSessions as $key => $_value) {
+                $rules["edit_sessions.{$key}"]   = ['required', 'integer', 'min:1'];
+                $rules["edit_disc_type.{$key}"]  = ['required', 'string', 'in:complimentory,fixed,percentage'];
+
+                $editType = $this->input("edit_disc_type.{$key}");
+                if ($editType === 'percentage') {
+                    $rules["configurable_amount.{$key}"] = ['required', 'numeric', 'between:0,100'];
+                } elseif ($editType === 'fixed') {
+                    $rules["configurable_amount.{$key}"] = ['required', 'numeric', 'min:0'];
+                }
+            }
+        }
+
+        return $rules;
     }
 
     public function messages(): array

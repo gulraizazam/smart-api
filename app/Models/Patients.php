@@ -221,12 +221,11 @@ class Patients extends BaseModel
 
     public static function getPatientSearchOptimized(string $name, int $accountId): array
     {
-        // Reject empty / single-character queries before they hit the LIKE
-        // branch. Without this, `?search=` produces `name LIKE '%'` and
-        // `?search=%` / `?search=_` collapse to wildcard scans, both of
-        // which dump the 10 most-recent patients with PII (phone, cnic,
-        // email, dob). Cache is also bypassed for short input
-        // so attackers cannot bloat it with random short strings.
+        // Reject empty / single-character queries before they hit the search
+        // branch. Without this, `?search=` produces wildcard scans that dump
+        // the 10 most-recent patients with PII (phone, cnic, email, dob).
+        // Cache is also bypassed for short input so attackers cannot bloat
+        // it with random short strings.
         $name = trim($name);
         if (strlen($name) < 2) {
             return [];
@@ -238,49 +237,58 @@ class Patients extends BaseModel
         $cacheKey = "patient_search_{$accountId}_".PatientAccessScope::cacheSuffix().'_'.md5($name);
 
         $rows = Cache::remember($cacheKey, 300, function () use ($name, $accountId, $scopeSql, $scopeBindings): array {
-            $cleaned = strtr($name, [' ' => '', '-' => '', '+' => '', 'C-' => '', 'c-' => '']);
+            // Single classifier shared with PlanService::applyUnifiedSearch
+            // and the SPA's `classifySearch` mirror. Picker semantics differ
+            // from Plans only in the `short_id` branch: there's no plan-id
+            // ambiguity here, so ≤ 6 digit input is treated as a patient id.
+            $shape = PatientSearchService::classifySearchInput($name);
 
-            if (ctype_digit($cleaned)) {
-                $phone = $cleaned[0] === '0' ? substr($cleaned, 1) : $cleaned;
-                if (isset($phone[1]) && $phone[0] === '9' && $phone[1] === '2') {
-                    $phone = substr($phone, 2);
-                }
-
+            if ($shape['type'] === 'patient_code' || $shape['type'] === 'short_id') {
                 $rows = DB::select(
-                    "SELECT DISTINCT name, id, phone, gender, cnic, email, dob
+                    "SELECT name, id, phone, gender, cnic, email, dob
                      FROM users
-                     WHERE user_type_id = 3 AND active = 1 AND account_id = ?
-                       AND (phone = ? OR phone LIKE ? OR phone = ? OR phone LIKE ? OR id = ? OR id LIKE ?)
+                     WHERE id = ? AND user_type_id = 3 AND active = 1 AND account_id = ?
                        {$scopeSql}
-                     ORDER BY CASE
-                         WHEN phone = ? THEN 1 WHEN phone = ? THEN 2 WHEN id = ? THEN 3 ELSE 4
-                     END, id DESC
-                     LIMIT 10",
-                    array_merge(
-                        [$accountId, $phone, $phone.'%', $cleaned, $cleaned.'%', $cleaned, $cleaned.'%'],
-                        $scopeBindings,
-                        [$phone, $cleaned, $cleaned]
-                    )
+                     LIMIT 1",
+                    array_merge([(int) $shape['digits'], $accountId], $scopeBindings)
                 );
 
                 return self::decryptCnicColumn($rows);
             }
 
-            // Escape SQL LIKE metacharacters in user-supplied input. PDO
-            // parameter binding prevents SQL injection but does NOT escape
-            // `%` / `_` inside the bound LIKE pattern, so an authenticated
-            // user could pass `%_%_` to bypass the prefix-search intent.
-            // Backslash is escaped first to avoid double-escaping the
-            // escape sequences we add for `%` and `_`.
-            $escaped = addcslashes($name, '\\%_');
+            // phone / text branches — resolve to candidate patient ids
+            // first, then apply scope/active filters in the outer query.
+            // Resolver pre-filters by account_id so the 200-id headroom
+            // isn't burned on other tenants; outer query keeps the
+            // account check for defence-in-depth.
+            $candidateIds = $shape['type'] === 'phone'
+                ? PatientSearchService::resolvePatientIdsByPhone($shape['digits'], $accountId)
+                : PatientSearchService::resolvePatientIdsByText($name, $accountId);
+
+            if ($candidateIds === []) {
+                return [];
+            }
+
+            // FIELD(id, ?, ?, ...) preserves the resolver's own ordering —
+            // for the text branch that's MATCH() relevance, for phone it's
+            // the prefix-match order. Without this MySQL re-orders the IN
+            // result by primary key, which loses relevance.
+            $placeholders = implode(',', array_fill(0, count($candidateIds), '?'));
 
             $rows = DB::select(
-                "SELECT DISTINCT name, id, phone, gender, cnic, email, dob
+                "SELECT name, id, phone, gender, cnic, email, dob
                  FROM users
-                 WHERE user_type_id = 3 AND active = 1 AND account_id = ? AND name LIKE ?
+                 WHERE id IN ($placeholders)
+                   AND user_type_id = 3 AND active = 1 AND account_id = ?
                    {$scopeSql}
-                 ORDER BY id DESC LIMIT 10",
-                array_merge([$accountId, $escaped.'%'], $scopeBindings)
+                 ORDER BY FIELD(id, $placeholders)
+                 LIMIT 10",
+                array_merge(
+                    $candidateIds,
+                    [$accountId],
+                    $scopeBindings,
+                    $candidateIds,
+                )
             );
 
             return self::decryptCnicColumn($rows);
@@ -329,6 +337,11 @@ class Patients extends BaseModel
         return $rows;
     }
 
+    /**
+     * @deprecated Load-bearing for legacy admin Blade JS only. Returns
+     *             extra membership fields the SPA picker doesn't need.
+     *             New code should use `getPatientSearchOptimized()`.
+     */
     public static function getPatientidAjaxOrder(string $name, int $accountId): Collection
     {
         $canViewContact = Gate::allows('contact');
@@ -383,6 +396,10 @@ class Patients extends BaseModel
         return $users;
     }
 
+    /**
+     * @deprecated Load-bearing for legacy admin Blade JS only. New code
+     *             should use `getPatientSearchOptimized()`.
+     */
     public static function getPatientidAjax(string $name, int $accountId): Collection
     {
         $canViewContact = Gate::allows('contact');
@@ -430,6 +447,9 @@ class Patients extends BaseModel
             ->select('name', 'id', 'phone')->get());
     }
 
+    /**
+     * @deprecated Load-bearing for legacy admin Blade JS only.
+     */
     public static function getPatientPhoneAjax(string $phone, int $accountId): Collection
     {
         // Phone-prefix lookup is meaningless — and leaks enumeration signal —

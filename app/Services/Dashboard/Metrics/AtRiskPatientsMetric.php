@@ -736,6 +736,32 @@ final class AtRiskPatientsMetric
     }
 
     /**
+     * Check whether the at-risk pool is already cached for ALL of the
+     * supplied branches. Latency-sensitive callers (patient list, patient
+     * detail header) read this before composing `patientIdsByBranch` —
+     * on a cache miss the materialisation can take 15-25s, which would
+     * block the list. Returning `false` lets them gracefully skip the
+     * at-risk enrichment for that request and rely on the warm-up
+     * command (or the dashboard) to repopulate the cache.
+     *
+     * Returning `true` guarantees `patientIdsByBranch` for the same
+     * scope+branches will hit the cache (sub-millisecond).
+     */
+    public function isPoolWarm(MetricScope $scope, array $branchIds): bool
+    {
+        if ($branchIds === []) {
+            return true;
+        }
+        foreach ($branchIds as $bid) {
+            if (! Cache::has($this->branchPoolCacheKey($scope, (int) $bid))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @return array{
      *   branch_name: string|null,
      *   rows: list<array<string, mixed>>,

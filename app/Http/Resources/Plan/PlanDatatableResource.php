@@ -27,13 +27,16 @@ final class PlanDatatableResource extends JsonResource
         $settleAmount = (float) ($this->settle_amount ?? 0);
         $refundAmount = (float) ($this->refund_amount_calculated ?? 0);
         $totalPrice = (float) $this->total_price;
-        // Balance = what the patient still OWES us. Money already paid
-        // (less any actual refunds we returned) reduces the balance.
-        // `settle_amount` is internal ledger bookkeeping for service-
-        // consumed-against-prepayment entries — they are NOT refunds and
-        // must not enter the balance calc, otherwise a fully-paid plan
-        // with consumed sessions reads as still owing the consumed value.
-        $balance = max(0.0, $totalPrice - $cashReceive + $refundAmount);
+        // Balance is signed: positive = patient still owes us, negative =
+        // patient over-paid (credit on the plan). `settle_amount` is
+        // internal ledger bookkeeping for service-consumed-against-
+        // prepayment entries — they are NOT refunds and must not enter the
+        // balance calc, otherwise a fully-paid plan with consumed sessions
+        // reads as still owing the consumed value.
+        // We deliberately do not clamp to 0 here: a credit balance is an
+        // operational signal (advance payment, no services attached, or
+        // refund pending) the listing should surface, not hide.
+        $balance = $totalPrice - $cashReceive + $refundAmount;
 
         $planType = $this->plan_type instanceof PlanType
             ? $this->plan_type->value
@@ -42,13 +45,27 @@ final class PlanDatatableResource extends JsonResource
         $sessionCount = (int) ($this->session_count ?? 0);
         $consumedCount = (int) ($this->consumed_count ?? 0);
 
+        // Delete-blocker fields are pre-computed on the row by the
+        // datatable query (joined `pa_agg` + `id_agg`). Mirrors the
+        // `PlanService::deletePlan` server-side check so the SPA can
+        // disable the trash icon and render the reason inline instead
+        // of finding out post-click via a 409 response.
+        $hasAdvances = (int) ($this->has_advances ?? 0) === 1;
+        $invoiceCount = (int) ($this->invoice_count ?? 0);
+        $deleteBlockers = [];
+        if ($invoiceCount > 0) {
+            $deleteBlockers[] = 'invoices';
+        }
+        if ($hasAdvances) {
+            $deleteBlockers[] = 'payments';
+        }
+
         return [
             'id'               => $this->id,
             'patient_id'       => $this->patient_id ?? 'N/A',
             'name'             => $this->user?->name ?? 'N/A',
             'phone'            => $this->user?->phone,
             'package_id'       => $this->name,
-            'plan_name'        => $this->plan_name ?? '',
             'location_id'      => $this->formatLocation(),
             'location_name'    => $this->location?->name ?? 'N/A',
             'city_name'        => $this->location?->city?->name ?? 'N/A',
@@ -72,14 +89,13 @@ final class PlanDatatableResource extends JsonResource
             'latest_activity'  => $this->latest_advance_updated_at
                 ? \Carbon\Carbon::parse($this->latest_advance_updated_at)->toIso8601String()
                 : null,
-            // True when the plan has unused sessions AND the patient has
-            // no future booking at the branch — same as the at-risk
-            // metric's abandoned-package bucket. Drives the at-risk
-            // column chip on the plans list.
-            'is_at_risk'       => (bool) ($this->is_at_risk ?? false),
             'patient_name'     => $this->user?->name ?? 'N/A',
-            'membership_info'  => $this->formatMembershipInfo(),
+            'membership'       => $this->formatMembership(),
             'plan_type'        => $planType,
+            'can_delete'       => $deleteBlockers === [],
+            'delete_blocked_reason' => $deleteBlockers === []
+                ? null
+                : 'Cannot delete — plan has '.implode(' and ', $deleteBlockers).'.',
         ];
     }
 
@@ -92,24 +108,32 @@ final class PlanDatatableResource extends JsonResource
         return $this->location->city->name . ' - ' . $this->location->name;
     }
 
-    private function formatMembershipInfo(): string
+    /**
+     * Structured membership snapshot for the patient cell. Frontend renders
+     * this as a typed badge (gold / student / referral / etc.) so the SPA
+     * doesn't have to parse a pre-formatted string. Returns null when the
+     * patient has no active membership row.
+     *
+     * @return array{type: string, code: string|null, status: 'Active'|'Inactive'|'Expired', is_referral: bool}|null
+     */
+    private function formatMembership(): ?array
     {
         $membership = $this->user?->membership;
-
         if (!$membership) {
-            return 'No Membership';
+            return null;
         }
 
         $endDate = $membership->end_date ? Carbon::parse($membership->end_date) : null;
         $isExpired = $endDate?->isPast() ?? true;
         $status = $isExpired ? 'Expired' : ((bool) $membership->active ? 'Active' : 'Inactive');
 
-        if ((int) ($membership->is_referral ?? 0) === 1) {
-            return "Ref: ({$membership->code}) - {$status}";
-        }
-
         $typeName = $membership->membershipType?->name ?? 'Gold';
 
-        return "{$typeName} - {$membership->code} - {$status}";
+        return [
+            'type'        => $typeName,
+            'code'        => $membership->code,
+            'status'      => $status,
+            'is_referral' => (int) ($membership->is_referral ?? 0) === 1,
+        ];
     }
 }
